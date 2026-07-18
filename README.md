@@ -24,3 +24,10 @@ target/release/excalidraw-render tests/fixtures/basic-shapes.excalidraw -o basic
 target/release/excalidraw-render tests/fixtures/basic-shapes.excalidraw -o basic.png --scale 2
 target/release/excalidraw-render tests/fixtures/basic-shapes.excalidraw -o basic.pdf
 ```
+
+## Reference oracle
+
+The pinned official Excalidraw browser oracle is development-only. Normal Rust
+builds and tests do not need Node, a browser, Docker, or network access. See
+[`tools/reference-oracle/README.md`](tools/reference-oracle/README.md) for the
+opt-in profile verification workflow.
