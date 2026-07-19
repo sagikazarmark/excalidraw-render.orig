@@ -13,8 +13,14 @@ dependency.
 ## Build
 
 ```sh
-cargo build --release
+cargo build --release -p excalidraw-render-cli
 ```
+
+The workspace now separates the future supported Rust library package,
+`excalidraw-render`, from the native `excalidraw-render-cli` package. They share
+one lockstep version. The current CLI still uses proof-of-concept rendering
+internals while the approved public library facade is implemented; those
+internals are not the compatibility revision 1 contract.
 
 ## Run
 
@@ -26,9 +32,9 @@ excalidraw-render <input.excalidraw> -o <output.{svg|png|pdf}> [--scale <f32>] [
 `20.0` pixels on each side.
 
 ```sh
-target/release/excalidraw-render tests/fixtures/basic-shapes.excalidraw -o basic.svg
-target/release/excalidraw-render tests/fixtures/basic-shapes.excalidraw -o basic.png --scale 2
-target/release/excalidraw-render tests/fixtures/basic-shapes.excalidraw -o basic.pdf
+target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.svg
+target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.png --scale 2
+target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.pdf
 ```
 
 ## Reference renderer

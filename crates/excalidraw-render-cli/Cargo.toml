@@ -1,0 +1,22 @@
+[package]
+name = "excalidraw-render-cli"
+version.workspace = true
+edition.workspace = true
+description = "Native CLI for rendering Excalidraw scene documents"
+license.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "excalidraw-render"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+excalidraw-render.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tiny-skia.workspace = true

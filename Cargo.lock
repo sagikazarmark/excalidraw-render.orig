@@ -287,7 +287,6 @@ name = "excalidraw-render"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap",
  "euclid",
  "resvg",
  "roughr",
@@ -296,6 +295,17 @@ dependencies = [
  "svg2pdf",
  "tiny-skia",
  "usvg",
+]
+
+[[package]]
+name = "excalidraw-render-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "excalidraw-render",
+ "serde_json",
+ "tiny-skia",
 ]
 
 [[package]]
