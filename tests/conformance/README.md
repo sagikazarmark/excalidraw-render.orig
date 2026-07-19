@@ -20,3 +20,15 @@ The checked manifest is canonical JSON followed by one LF. Its adjacent digest
 hashes the canonical bytes without that LF. The approval subject excludes only
 the four-field approval object and binds the remaining manifest plus every
 referenced scene, report, provenance, artifact, and raw-raster byte string.
+
+## Visual comparator
+
+`comparator-profiles/canonical-visual-v1.json` freezes the format-neutral
+RGBA8 projection, Pixelmatch, SSIM, crop, and visual-budget protocol. Its
+adjacent digest binds the profile; the profile in turn binds the unpublished
+Rust implementation, workspace lockfile, adversarial vectors, and imported
+Pixelmatch 7.2.0 fixtures. Verify all of them offline with:
+
+```sh
+cargo test --locked -p excalidraw-render-compare
+```

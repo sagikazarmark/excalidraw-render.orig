@@ -1,0 +1,17 @@
+[package]
+name = "excalidraw-render-compare"
+version.workspace = true
+edition.workspace = true
+description = "Test-only canonical visual comparison for excalidraw-render"
+license.workspace = true
+publish = false
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+jsonschema.workspace = true
+png.workspace = true
+serde_json.workspace = true
+sha1.workspace = true
+sha2.workspace = true

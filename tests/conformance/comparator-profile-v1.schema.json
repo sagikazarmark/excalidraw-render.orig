@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sagikazarmark/excalidraw-render.orig/blob/main/tests/conformance/comparator-profile-v1.schema.json",
+  "title": "excalidraw-render canonical visual comparator profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "implementation",
+    "lockfile",
+    "features",
+    "pixelmatch",
+    "ssim",
+    "limits",
+    "vectors",
+    "license"
+  ],
+  "properties": {
+    "schema": { "$ref": "#/$defs/schemaDescriptor" },
+    "id": { "const": "canonical-visual-comparator.v1" },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["crate", "publish", "sources"],
+      "properties": {
+        "crate": { "const": "excalidraw-render-compare" },
+        "publish": { "const": false },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/fileDescriptor" }
+        }
+      }
+    },
+    "lockfile": { "$ref": "#/$defs/fileDescriptor" },
+    "features": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "pixelmatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "commit", "source_blob", "source_sha256", "options"],
+      "properties": {
+        "version": { "const": "7.2.0" },
+        "commit": { "const": "9faed09302aaecec130b4ce0e8505d5ed5221393" },
+        "source_blob": { "const": "be64dc92dae160d6d5ac21b9778b70553c023292" },
+        "source_sha256": { "const": "52c6026c4916a07548d4ce55090ec4ed918d353e15095406dabc3a8a5135d788" },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["threshold_bits", "include_aa", "checkerboard"],
+          "properties": {
+            "threshold_bits": { "const": "3fb999999999999a" },
+            "include_aa": { "const": false },
+            "checkerboard": { "const": true }
+          }
+        }
+      }
+    },
+    "ssim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "window",
+        "sigma",
+        "moments",
+        "edge",
+        "pooling",
+        "kernel_le_u64_sha256",
+        "luma_coefficient_bits",
+        "c1_bits",
+        "c2_bits",
+        "non_finite"
+      ],
+      "properties": {
+        "profile": { "const": "single-scale-wang-bovik-sheikh-simoncelli" },
+        "window": { "const": [11, 11] },
+        "sigma": { "const": "1.5" },
+        "moments": { "const": "population" },
+        "edge": { "const": "valid-only" },
+        "pooling": { "const": "plain-binary64-row-major-mean" },
+        "kernel_le_u64_sha256": { "const": "b931d31602d633632c7a2f29b24dbe5812a49a8e8a016002b07dc8c0ce93efd3" },
+        "luma_coefficient_bits": {
+          "const": ["3fd32119cb582d94", "3fe2c59c7c77f5b0", "3fbd4eb519d2b9f7"]
+        },
+        "c1_bits": { "const": "401a028f5c28f5c3" },
+        "c2_bits": { "const": "404d42e147ae147b" },
+        "non_finite": { "const": "fail-region" }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exact", "geometry_image", "typography", "mixed_representative", "pure_rust_svg_typography", "pdf_js_typography"],
+      "properties": {
+        "exact": { "$ref": "#/$defs/limit" },
+        "geometry_image": { "$ref": "#/$defs/limit" },
+        "typography": { "$ref": "#/$defs/limit" },
+        "mixed_representative": { "$ref": "#/$defs/limit" },
+        "pure_rust_svg_typography": { "$ref": "#/$defs/limit" },
+        "pdf_js_typography": { "$ref": "#/$defs/limit" }
+      }
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/vectorDescriptor" }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expression", "upstream_notice"],
+      "properties": {
+        "expression": { "const": "MIT OR Apache-2.0" },
+        "upstream_notice": { "$ref": "#/$defs/fileDescriptor" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "fileDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "schemaDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": { "const": "excalidraw-render/conformance-comparator-profile/v1" },
+        "path": { "const": "tests/conformance/comparator-profile-v1.schema.json" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "limit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changed_numerator", "changed_denominator", "minimum_ssim_bits"],
+      "properties": {
+        "changed_numerator": { "type": "integer", "minimum": 0 },
+        "changed_denominator": { "type": "integer", "minimum": 1 },
+        "minimum_ssim_bits": { "type": "string", "pattern": "^[0-9a-f]{16}$" }
+      }
+    },
+    "vectorDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}
