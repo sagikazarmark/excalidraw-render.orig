@@ -40,6 +40,14 @@ _Avoid_: Full restore emulation, input cleanup
 The guarantee that one renderer release produces identical artifact bytes for identical scene documents and render options across supported native and WASM targets.
 _Avoid_: Reference byte identity, per-platform determinism
 
+**Canonicalized original scene document**:
+The deterministic preservation-first JSON projection of an admitted scene document used for optional embedding. It retains every original value, source member and array order, and number token, but excludes source whitespace and string-escape spelling, supplemental assets, and compatibility-normalization repairs.
+_Avoid_: Original bytes, normalized rendering view
+
+**Artifact manifest**:
+The versioned format-neutral JSON metadata carried by a static export to describe requested provenance, the frozen pre-metadata diagnostic summary, applicable notices, and an embedded canonicalized original scene document. SVG, PNG, and PDF use different carriers for the same manifest contract.
+_Avoid_: Compatibility report, format-specific metadata schema
+
 **Compatibility exception**:
 An explicit, diagnosed, and tested departure from reference behavior required by the renderer's safety, self-containment, or determinism constraints.
 _Avoid_: Silent divergence, implementation limitation
@@ -47,6 +55,10 @@ _Avoid_: Silent divergence, implementation limitation
 **Static export**:
 A whole-scene SVG, PNG, or PDF representation without interactive editor overlays or viewport state. Frames and their clipping behavior remain part of the scene; exporting one frame separately does not.
 _Avoid_: Editor snapshot, canvas rendering
+
+**Meaningful artifact**:
+A static export produced from a safe, complete, and non-misleading whole-scene plan. A valid empty scene and a scene whose local losses are fully represented by compatibility placeholders, omissions, and diagnostics remain meaningful; merely producing encodable bytes does not make an artifact meaningful.
+_Avoid_: Nonempty output, any valid image
 
 **Vector-first PDF**:
 A PDF static export that preserves ordinary Excalidraw geometry as PDF vectors and text as selectable text. Inherently raster source content remains raster; any additional rasterization is diagnosed and limited to the smallest unsupported nested-image or effect subtree.
@@ -79,3 +91,7 @@ _Avoid_: Cache entry, unique asset
 **Semantic asset identity**:
 The compatibility-revision-specific identity of one validated asset payload kind and its decoded payload bytes. Intrinsic validation, sanitization, decoding, decoded-pixel, work, and logical-memory charges are shared once per identity; occurrence admission and rendered-reference projection remain unshared.
 _Avoid_: File ID, asset path
+
+**Canonical WASM footprint**:
+The paired raw-module and deterministic Brotli byte lengths assigned by the versioned footprint protocol to the complete WASM-safe renderer and bundled asset and license catalog. It is a regression reference, not an absolute size limit or a guarantee about a consumer application's final module.
+_Avoid_: WASM download size, consumer bundle size, binary-size SLA
