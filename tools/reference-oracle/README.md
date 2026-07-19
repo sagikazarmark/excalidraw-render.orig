@@ -40,3 +40,17 @@ container host fonts, browser settings, and evidence invocation rules.
 
 The smoke fixture is profile validation, not approved conformance evidence.
 Conformance cases and their review protocol belong to the conformance corpus.
+
+The repository `xtask` owns explicit conformance generation, read-only
+reproduction, and ordinary offline verification:
+
+```sh
+cargo run --locked -p xtask -- conformance generate focused.rectangle-outline.v1
+cargo run --locked -p xtask -- conformance reproduce focused.rectangle-outline.v1
+cargo run --locked -p xtask -- conformance verify focused.rectangle-outline.v1
+```
+
+Generation and reproduction use the same pinned container and frozen wrapper as
+the reference profile. Generation refuses to replace approved evidence.
+Reproduction writes no corpus files. Verification requires no Node, browser,
+container, network, or system fonts.
