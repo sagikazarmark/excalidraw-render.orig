@@ -1,4 +1,5 @@
 mod conformance;
+mod svg_viewers;
 
 use std::env;
 use std::process::{Command, ExitCode};
@@ -47,6 +48,29 @@ fn run() -> Result<(), String> {
             )?;
             println!("recorded approval for {case_id}");
         }
+        Some("verify-svg-viewers") => {
+            no_more_args(args)?;
+            svg_viewers::verify(true)?;
+            println!("verified canonical SVG viewer qualification");
+        }
+        Some("svg-viewer-approval-subject") => {
+            no_more_args(args)?;
+            println!("sha256:{}", svg_viewers::approval_subject()?);
+        }
+        Some("record-svg-viewer-approval") => {
+            let approved_by = required_arg(&mut args, "GitHub identity")?;
+            let approved_at = required_arg(&mut args, "approval date")?;
+            let approval_url = required_arg(&mut args, "approval URL")?;
+            let expected_subject = required_arg(&mut args, "approval subject")?;
+            no_more_args(args)?;
+            svg_viewers::record_approval(
+                &approved_by,
+                &approved_at,
+                &approval_url,
+                &expected_subject,
+            )?;
+            println!("recorded canonical SVG viewer qualification approval");
+        }
         Some(mode @ ("generate" | "reproduce")) => {
             let case_id = required_arg(&mut args, "case ID")?;
             no_more_args(args)?;
@@ -84,5 +108,5 @@ fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
 }
 
 fn usage() -> String {
-    "usage: cargo run --locked -p xtask -- conformance <generate|reproduce|verify|approval-subject|record-approval> <case-id> [approval fields]".to_owned()
+    "usage: cargo run --locked -p xtask -- conformance <generate|reproduce|verify|approval-subject|record-approval|verify-svg-viewers|svg-viewer-approval-subject|record-svg-viewer-approval> [case-id] [approval fields]".to_owned()
 }

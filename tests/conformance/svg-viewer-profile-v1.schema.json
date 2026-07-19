@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sagikazarmark/excalidraw-render.orig/blob/main/tests/conformance/svg-viewer-profile-v1.schema.json",
+  "title": "excalidraw-render canonical SVG viewer profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "identity", "runtime", "implementation", "settings", "qualification"],
+  "properties": {
+    "schema": { "$ref": "#/$defs/schemaDescriptor" },
+    "id": { "enum": ["canonical-svg.chromium.v1", "canonical-svg.pure-rust.v1"] },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["viewer", "upstream_commit", "reference_profile_digest"],
+      "properties": {
+        "viewer": { "enum": ["chromium", "resvg-usvg"] },
+        "upstream_commit": { "type": ["string", "null"] },
+        "reference_profile_digest": { "$ref": "#/$defs/prefixedSha256" }
+      }
+    },
+    "runtime": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "value"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "value": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lockfile", "sources", "features", "forbidden_features"],
+      "properties": {
+        "lockfile": { "$ref": "#/$defs/fileDescriptor" },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/fileDescriptor" }
+        },
+        "features": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "forbidden_features": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimensions", "color", "lifecycle", "locale", "time", "fonts", "images", "resources", "state"],
+      "properties": {
+        "dimensions": { "$ref": "#/$defs/stringMap" },
+        "color": { "$ref": "#/$defs/stringMap" },
+        "lifecycle": { "$ref": "#/$defs/stringMap" },
+        "locale": { "$ref": "#/$defs/stringMap" },
+        "time": { "$ref": "#/$defs/stringMap" },
+        "fonts": { "$ref": "#/$defs/stringMap" },
+        "images": { "$ref": "#/$defs/stringMap" },
+        "resources": { "$ref": "#/$defs/stringMap" },
+        "state": { "$ref": "#/$defs/stringMap" }
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "declared_font_faces", "declared_image_assets", "restrictions"],
+      "properties": {
+        "case_id": { "const": "focused.rectangle-outline.v1" },
+        "declared_font_faces": { "const": 0 },
+        "declared_image_assets": { "const": 0 },
+        "restrictions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "prefixedSha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "fileDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "schemaDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": { "const": "excalidraw-render/conformance-svg-viewer-profile/v1" },
+        "path": { "const": "tests/conformance/svg-viewer-profile-v1.schema.json" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "stringMap": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

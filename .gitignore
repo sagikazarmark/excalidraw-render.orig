@@ -1,3 +1,4 @@
 /target/
+/tools/svg-viewer-rust/target/
 /tools/reference-oracle/dist/
 /tools/reference-oracle/node_modules/

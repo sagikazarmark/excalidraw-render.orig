@@ -54,3 +54,24 @@ Generation and reproduction use the same pinned container and frozen wrapper as
 the reference profile. Generation refuses to replace approved evidence.
 Reproduction writes no corpus files. Verification requires no Node, browser,
 container, network, or system fonts.
+
+## Canonical SVG viewer
+
+The candidate-comparison Chromium viewer is separate from the reference
+evidence rasterizer above. It loads each SVG as an isolated top-level document,
+installs virtual time before navigation, blocks every undeclared request,
+audits text fonts through DevTools, completes two lifecycle updates, and emits
+canonical straight-alpha RGBA8.
+
+Run its pinned-container qualification with:
+
+```sh
+bash tools/reference-oracle/run-svg-viewer.sh test
+```
+
+Reproduce both the Chromium and pure-Rust qualification buffers without
+changing checked evidence with:
+
+```sh
+bash tools/svg-viewer-qualification.sh reproduce
+```

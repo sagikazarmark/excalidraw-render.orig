@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sagikazarmark/excalidraw-render.orig/blob/main/tests/conformance/svg-viewer-qualification-v1.schema.json",
+  "title": "excalidraw-render canonical SVG viewer qualification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["approval", "schema", "id", "originating_issue", "case", "profiles", "comparator", "implementation", "outputs", "determinism", "rejections"],
+  "properties": {
+    "approval": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["approved_at", "approved_by", "approval_subject_sha256", "approval_url"],
+          "properties": {
+            "approved_at": { "type": "string", "format": "date" },
+            "approved_by": { "type": "string", "minLength": 1 },
+            "approval_subject_sha256": { "$ref": "#/$defs/prefixedSha256" },
+            "approval_url": { "type": "string", "format": "uri" }
+          }
+        }
+      ]
+    },
+    "schema": { "$ref": "#/$defs/schemaDescriptor" },
+    "id": { "const": "svg-viewers.rectangle-outline.v1" },
+    "originating_issue": { "const": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/34" },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reference_svg", "candidate_svg", "asset_schema", "asset_declaration", "candidate_control"],
+      "properties": {
+        "id": { "const": "focused.rectangle-outline.v1" },
+        "reference_svg": { "$ref": "#/$defs/artifactDescriptor" },
+        "candidate_svg": { "$ref": "#/$defs/artifactDescriptor" },
+        "asset_schema": { "$ref": "#/$defs/fileDescriptor" },
+        "asset_declaration": { "$ref": "#/$defs/fileDescriptor" },
+        "candidate_control": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["same_bytes_as_reference", "purpose"],
+          "properties": {
+            "same_bytes_as_reference": { "const": false },
+            "purpose": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chromium", "pure_rust"],
+      "properties": {
+        "chromium": { "$ref": "#/$defs/fileDescriptor" },
+        "pure_rust": { "$ref": "#/$defs/fileDescriptor" }
+      }
+    },
+    "comparator": { "$ref": "#/$defs/fileDescriptor" },
+    "implementation": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/fileDescriptor" }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chromium", "pure_rust"],
+      "properties": {
+        "chromium": { "$ref": "#/$defs/viewerOutput" },
+        "pure_rust": { "$ref": "#/$defs/viewerOutput" }
+      }
+    },
+    "determinism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["samples_per_role", "fresh_processes", "shared_context", "shared_clock", "shared_font_database"],
+      "properties": {
+        "samples_per_role": { "const": 2 },
+        "fresh_processes": { "const": true },
+        "shared_context": { "const": false },
+        "shared_clock": { "const": false },
+        "shared_font_database": { "const": false }
+      }
+    },
+    "rejections": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ambient_fonts", "local_files", "network", "undeclared_data_assets", "proofs"],
+      "properties": {
+        "ambient_fonts": { "const": "rejected" },
+        "local_files": { "const": "rejected" },
+        "network": { "const": "rejected" },
+        "undeclared_data_assets": { "const": "rejected" },
+        "proofs": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/fileDescriptor" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "prefixedSha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "fileDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "artifactDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "byte_length", "width", "height"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "byte_length": { "type": "integer", "minimum": 1 },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "rasterDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "byte_length", "width", "height", "layout", "pixel_format"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "byte_length": { "type": "integer", "minimum": 4 },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "layout": { "const": "top-left-row-major" },
+        "pixel_format": { "const": "straight-alpha-srgb-rgba8" }
+      }
+    },
+    "viewerOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "candidate", "comparison", "reference_run_sha256", "candidate_run_sha256"],
+      "properties": {
+        "reference": { "$ref": "#/$defs/rasterDescriptor" },
+        "candidate": { "$ref": "#/$defs/rasterDescriptor" },
+        "comparison": { "$ref": "#/$defs/fileDescriptor" },
+        "reference_run_sha256": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/sha256" } },
+        "candidate_run_sha256": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/sha256" } }
+      }
+    },
+    "schemaDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": { "const": "excalidraw-render/conformance-svg-viewer-qualification/v1" },
+        "path": { "const": "tests/conformance/svg-viewer-qualification-v1.schema.json" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

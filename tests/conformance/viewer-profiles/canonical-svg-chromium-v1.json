@@ -1,0 +1,108 @@
+{
+  "schema": {
+    "id": "excalidraw-render/conformance-svg-viewer-profile/v1",
+    "path": "tests/conformance/svg-viewer-profile-v1.schema.json",
+    "sha256": "c266dcdc84a8bbebbfe3413bf38d6825768de844b1866496300d254a11e73ac3"
+  },
+  "id": "canonical-svg.chromium.v1",
+  "identity": {
+    "viewer": "chromium",
+    "upstream_commit": null,
+    "reference_profile_digest": "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71"
+  },
+  "runtime": [
+    { "name": "architecture", "value": "linux/amd64" },
+    { "name": "chromium", "value": "149.0.7827.55" },
+    { "name": "container", "value": "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9" },
+    { "name": "node", "value": "24.16.0" },
+    { "name": "playwright", "value": "1.61.0" },
+    { "name": "ubuntu", "value": "24.04" }
+  ],
+  "implementation": {
+    "lockfile": {
+      "path": "tools/reference-oracle/package-lock.json",
+      "sha256": "8857f2792a506163d150a5481122a4bb93b3646e356a57065770747a188d67fc"
+    },
+    "sources": [
+      {
+        "path": "tools/reference-oracle/scripts/svg-viewer.mjs",
+        "sha256": "61968d7bca7fef68fa29af22368b5d7dfddda9be1c9a34e53f479cdb14c1a11b"
+      },
+      {
+        "path": "tools/reference-oracle/scripts/svg-viewer.test.mjs",
+        "sha256": "bf774712bb53610694d58eac0aa2bcf7438f6db63a7fe9f044da9fc11998434e"
+      },
+      {
+        "path": "tools/reference-oracle/run-svg-viewer.sh",
+        "sha256": "772edd58991266cb234d050d75b549475a9349ceff63b2c03b77f8029b28fbbb"
+      },
+      {
+        "path": "tests/conformance/svg-viewer-qualification/rectangle-outline/asset-declaration-v1.schema.json",
+        "sha256": "0cdbf901a61143209c7ba525ba91a4e25772e08d2271218d43f381ba29e03520"
+      }
+    ],
+    "features": ["playwright:chromium", "devtools:font-audit", "node:zlib-png-decoder"],
+    "forbidden_features": ["browser-cache-sharing", "network", "service-workers", "system-font-fallback"]
+  },
+  "settings": {
+    "dimensions": {
+      "document": "isolated top-level SVG",
+      "capture": "exact integer CSS dimensions at x=0,y=0,scale=1 with beyond-viewport capture",
+      "device_pixel_ratio": "1",
+      "viewport_identity": "1280x720",
+      "transforms": "no resize, fit, translation, registration, or alignment search"
+    },
+    "color": {
+      "launch": "--force-color-profile=srgb --disable-gpu --font-render-hinting=none",
+      "background": "transparent compositor background",
+      "output": "top-left-row-major straight-alpha sRGB RGBA8 with zero RGB at alpha zero"
+    },
+    "lifecycle": {
+      "ready": "parse complete, all admitted images decoded, document.fonts.ready",
+      "updates": "two Page.captureScreenshot lifecycle updates followed by one canonical capture",
+      "animation": "initial sample and declared integer-microsecond offsets from the fresh resource-ready epoch"
+    },
+    "locale": {
+      "locale": "en-US",
+      "timezone": "UTC",
+      "color_scheme": "light",
+      "forced_colors": "none",
+      "reduced_motion": "reduce"
+    },
+    "time": {
+      "installation": "CDP virtual time installed before navigation",
+      "resource_ready_policy": "pause at the fresh resource-ready epoch",
+      "capture": "clock remains paused through lifecycle updates and capture"
+    },
+    "fonts": {
+      "policy": "validate declared WOFF2 digest and CSS face metadata before navigation; every used SVG text font must then be custom embedded according to CSS.getPlatformFontsForNode",
+      "ambient": "hard failure before comparison",
+      "qualification_assets": "no text and no declared font faces"
+    },
+    "images": {
+      "policy": "only case-declared canonical-base64 PNG, APNG, JPEG/JFIF, GIF, WebP, BMP, ICO, AVIF, or sanitized nested SVG payload identities may complete before capture",
+      "qualification_assets": "no image elements and no declared data assets",
+      "undeclared": "hard failure before navigation"
+    },
+    "resources": {
+      "origin": "http://reference.invalid/",
+      "routing": "deny by default; only http://reference.invalid/input.svg is fulfilled for this qualification",
+      "container_network": "none",
+      "safe_links": "never followed"
+    },
+    "state": {
+      "process": "fresh Chromium process for every artifact and repeat",
+      "context": "fresh browser context, page, cache, document, and virtual clock",
+      "sharing": "official and candidate inputs share no mutable viewer state"
+    }
+  },
+  "qualification": {
+    "case_id": "focused.rectangle-outline.v1",
+    "declared_font_faces": 0,
+    "declared_image_assets": 0,
+    "restrictions": [
+      "The first qualification case declares no font or image assets.",
+      "Cases with text or images must supply a closed declaration that binds embedded source identity, face metadata or canonical image identity, and reviewed local bytes."
+    ]
+  }
+}
