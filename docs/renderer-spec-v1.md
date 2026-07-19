@@ -1,0 +1,2424 @@
+# Excalidraw Static Renderer Specification
+
+Document version: `1.0.0`
+
+Compatibility revision: `1`
+
+Status: Approved implementation handoff
+
+Approval: [immutable approval record](renderer-spec-v1.approval.json)
+
+## 1. Authority
+
+This document is the normative, implementation-ready contract for compatibility
+revision 1 of `excalidraw-render`. It supersedes conflicting wording in research
+notes, issue bodies, resolution comments, the current MVP, and the repository
+README. Those sources remain rationale and evidence, not parallel specifications.
+
+The keywords MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are normative.
+
+Normative ownership is exclusive rather than a global precedence ladder:
+
+- The [scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json)
+  owns exact field/value dispositions, diagnostic mappings, generated ordinals,
+  notice texts, and fallback recipes.
+- The [reference profile](../tests/oracle/reference-profiles/revision-1.json)
+  and [reference asset manifest](../tests/oracle/reference-profiles/revision-1-assets.json)
+  own exact environment, dependency, asset, and invocation identities.
+- This document owns compatibility policy, public contracts, architecture,
+  format behavior, safety, conformance, performance, packaging, and release
+  rules outside those closed domains.
+- Approved conformance, performance, footprint, and release records instantiate
+  this contract but never override it.
+
+An inconsistency between normative owners invalidates the handoff or affected
+evidence. Implementations MUST NOT select whichever source is convenient. The
+conflict requires an approved artifact or specification revision under the
+compatibility rules below.
+
+The canonical domain terms are defined in [CONTEXT.md](../CONTEXT.md). Serialized
+artifact identifiers such as `oracle.*` and `baseline` MAY retain their frozen
+spellings, but prose and new APIs MUST use the canonical terms.
+
+## 2. Product Contract
+
+The product is a self-contained pure-Rust renderer of local Excalidraw scene
+documents. It produces whole-scene static SVG and PNG with format-specific
+perceptual parity to the pinned reference renderer, plus vector-first PDF whose
+visual authority is the official SVG reference evidence.
+
+The production library MUST:
+
+- Be synchronous, byte-oriented, filesystem-free, network-free, and WASM-safe.
+- Require no JavaScript, V8, Node, browser, OS service, system package, installed
+  font, or runtime asset download.
+- Treat every scene document, supplemental asset, nested SVG, and render option
+  as untrusted input.
+- Produce artifact byte stability for identical scene-document bytes, request,
+  renderer release, and compatibility revision across all supported targets.
+- Return explicit compatibility diagnostics for every declared repair,
+  substitution, omission, fallback, or compatibility exception.
+- Preserve understood content through best-effort rendering whenever the result
+  remains a meaningful artifact.
+
+The following are outside this specification:
+
+- Individual-frame exports.
+- Browser bindings, web APIs, web UI, npm packages, JavaScript glue, a stable
+  C-style WASM ABI, WASI, or a published raw WASM module.
+- Interactive editor overlays, viewport state, collaboration, and editing.
+- Production JavaScript, browser, network, filesystem-resource, or system-font
+  dependencies.
+- Ingestion of exported-image metadata, clipboard payloads, shared links,
+  libraries, or any input other than a scene document.
+- Pixel identity with the reference renderer or official SVG DOM identity.
+- Multi-page, tagged, PDF/A, PDF/X, CMYK, spot-color, or print-production PDF.
+- Installers, code signing, notarization, SBOM policy, or additional targets.
+
+## 3. Compatibility Identity
+
+Compatibility revision 1 is bound to official Excalidraw `v0.18.1`:
+
+- Source commit: `a2ec2889babf7d2295469c6d90ebe77fae57df84`.
+- npm integrity:
+  `sha512-6i5Gt7IDTOH//qa0Z315Ly5iVRhjWpu2whrlQFqkuwrkKUWgRsMk0P5qdE7bpyDpai7jeLeWYkyj1eVAfni1lw==`.
+- Reference-profile digest:
+  `sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71`.
+
+The source commit and npm integrity MUST both match. A material mismatch blocks
+adoption. Excalidraw envelope version `2` is not an Excalidraw release or a
+compatibility revision.
+
+### 3.1 Normative Artifacts
+
+| Artifact | SHA-256 |
+| --- | --- |
+| [Reference profile](../tests/oracle/reference-profiles/revision-1.json) | `1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71` |
+| [Reference asset manifest](../tests/oracle/reference-profiles/revision-1-assets.json) | `02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a` |
+| [Scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json) | `d7dadf8165ef3e42a025e68ec0c1f0f67cc63c7c745199e85442e6938c0c5ade` |
+| [Scene-surface schema](../tests/oracle/scene-surfaces/scene-surface-v1.schema.json) | `29871fad7bf7665142c8d625c3715b34603a6369a78ffa7baf96ade66be63362` |
+| [Scene-surface evidence index](../tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json) | `29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb` |
+
+Where present, adjacent `.sha256` files contain the authoritative lowercase
+digest. The schema digest is fixed by this table and the repository verifier;
+it has no adjacent sidecar. The JSON artifacts are exact canonical bytes.
+Repository-relative links and digests are authoritative; access-scoped GitHub
+URLs and schema `$id` URLs are not.
+
+The scene-surface manifest freezes 202 semantic-path dispositions, every
+revision-1 element kind, all 42 compatibility diagnostic codes, seven
+normalization rules, and five content-addressed official fallback recipes. Its
+coverage status MUST remain `complete` with an empty unresolved set.
+
+### 3.2 Reference Profile
+
+The reference profile MUST immutably bind every evidence-affecting input,
+including Excalidraw identities, npm lock, rendering dependencies, official
+assets and fonts, wrapper, browser bundle, invocation files, browser settings,
+and host settings.
+
+The frozen dependency identities include Rough.js `4.6.4`, Perfect Freehand
+`1.2.0`, points-on-curve `1.0.1`, fractional-indexing `3.2.0`,
+`@braintree/sanitize-url` `6.0.2`, and pako `2.0.3`.
+
+The development reference renderer uses React and React DOM `19.2.3`, Vite
+`8.1.5` with a production Oxc bundle targeting Chrome 149, Playwright `1.61.0`,
+Node `24.16.0`, npm `11.13.0`, and Chromium `149.0.7827.55`. The canonical host
+is Ubuntu 24.04 `linux/amd64`, fontconfig `2.15.0`, in Playwright image
+`sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9`.
+
+Browser execution MUST use headless software rendering, disabled GPU and font
+hinting, forced sRGB, locale `en-US`, timezone `UTC`, device-pixel ratio `1`,
+light color scheme, viewport `1280x720`, one worker, blocked service workers,
+and origin `http://reference.invalid/`.
+
+Profile generation and rendering MUST run with container networking disabled.
+Browser routing MUST admit only that origin, the bound bundle, and
+manifest-listed assets. The profile MUST locally serve and hash all 230 official
+rendering WOFF2 files and 48 fontconfig-visible container font files. The four
+Assistant UI faces remain excluded.
+
+Every evidence invocation MUST explicitly provide background inclusion,
+background color, padding, dark mode, embedded-scene choice, all four frame
+controls, and exactly one sizing mode. `quality` MUST be omitted. Live
+embeddables MUST be off, SVG font inlining and image reuse MUST be on, and
+separate-frame export MUST be off. Elements MUST already have stable identity,
+ordering, seed, version, nonce, and update fields before the official restore
+path processes them.
+
+## 4. Scene Admission and Preservation
+
+### 4.1 Admission
+
+`SceneDocument::parse` MUST admit exactly a JSON object with required own
+members:
+
+- `type` equal to `"excalidraw"`.
+- `version` represented by the integer token `2`.
+- `elements` as an array.
+- `appState` as an object.
+- `files` as an object.
+
+`appState` and `files` MAY be empty but MUST NOT be absent or null. `source` and
+all other root members are permitted and preserved. Bare arrays, scalars, null,
+partial envelopes, clipboard or library payloads, another type, another envelope
+version, or a wrong required container type MUST fail with
+`scene.invalid-envelope`. Duplicate object members MUST be rejected.
+
+After the envelope passes, parsing MUST remain compatibility-revision-neutral.
+It MUST retain every occurrence, including scalar element entries, malformed
+file records, unknown fields, deleted elements, and unreferenced files. It MUST
+NOT validate nested rendering fields or apply compatibility normalization.
+
+Every `elements` member counts as a source element occurrence. Every `files`
+member counts as a scene asset entry. A future envelope version MUST NOT be
+guessed into version 2.
+
+### 4.2 Canonicalized Original Scene Document
+
+Optional embedding MUST serialize the retained parse representation, never the
+compatibility-normalized rendering view. It MUST preserve:
+
+- Every admitted root, app-state, element, file-record, nested, unknown, deleted,
+  malformed, unsupported, and unreferenced value.
+- Array order and object-member source order.
+- Exact token bytes of every valid JSON number.
+
+It MUST exclude supplemental assets, resolved data, generated defaults,
+repairs, compatibility placeholders, rendering-view changes, source whitespace,
+the BOM, and original string-escape spelling.
+
+Serialization MUST be minified UTF-8 without BOM or trailing newline. Strings
+represent Unicode scalar sequences; escaped lone UTF-16 surrogates fail as
+`scene.invalid-json`. Quote and backslash are escaped. Controls use the short
+JSON escapes where available and lowercase `\u00xx` otherwise. Solidus,
+non-ASCII scalars, U+2028, and U+2029 are emitted directly. Number tokens are
+copied exactly without floating-point conversion.
+
+The embedded-scene digest is SHA-256 over these exact uncompressed bytes,
+spelled `sha256:<64 lowercase hex>`.
+
+## 5. Compatibility Normalization
+
+Compatibility normalization MUST reproduce deterministic rendering-affecting
+behavior of the official public restore path, including migrations, defaults,
+negative-dimension normalization, line and arrow point normalization, image and
+frame defaults, and fractional-index repair in array order. It MUST NOT reproduce
+random or current-time repair behavior.
+
+The following deterministic repairs apply:
+
+- Derive a missing element ID from canonical original element content and array
+  position.
+- Retain the first duplicate ID, deterministically rekey later occurrences, and
+  resolve ambiguous references to the first occurrence.
+- Use canonical zero for missing required timestamps.
+- Replace Rough.js seed `0` with a nonzero value derived from compatibility
+  revision and normalized identity.
+- Detect relationship cycles in canonical source order and remove the edge that
+  closes a recoverable cycle.
+
+Every repair emits its declared source-located compatibility diagnostic.
+Repairs affect only the rendering view.
+
+### 5.1 Forward Compatibility
+
+Field/value interpretation MUST use the frozen scene-surface manifest by
+semantic record kind and path, never property-name heuristics. Callers cannot
+extend or override it.
+
+- Supported fields use their declared behavior.
+- Static-export-irrelevant fields and opaque metadata are preserved silently.
+- An unmatched property on a participating record is preserved in the
+  canonicalized original scene document, ignored in the rendering view, and
+  diagnosed as `compatibility.unsupported-property`.
+- A known property with a wrong type, malformed recognized structure, or
+  unsupported value not repaired by normalization is diagnosed as
+  `compatibility.unsupported-property-value` at the narrowest pointer and uses
+  the manifest fallback.
+
+Root and application-state records participate globally. A non-deleted known
+element participates when traversed. A file record participates only when
+authoritative and referenced. Deleted elements and ignored or unreferenced file
+records remain silent.
+
+Diagnostic boundaries MUST prevent floods: one unknown property covers its
+descendants; unknown children of a recognized object remain separate; a wholly
+unknown element emits only its unsupported-element occurrence; and a wholly
+malformed record emits only its malformed-record occurrence.
+
+A malformed element with safe finite bounds uses the malformed-element visual
+grammar. Without recoverable bounds it is omitted with the same warning. A
+referenced malformed file record uses the format-appropriate resource fallback;
+an unreferenced malformed file record remains silent.
+
+A disposition change that alters compatibility diagnostics requires a new
+compatibility revision. A field can become silent only after reviewed primary
+source analysis and focused SVG and PNG reference evidence.
+
+## 6. Public Rust API
+
+The supported facade MUST have this topology:
+
+```rust
+SceneDocument::parse(&[u8]) -> Result<SceneDocument, SceneParseError>
+
+Renderer::new() -> Renderer
+Renderer::for_revision(CompatibilityRevision)
+    -> Result<Renderer, UnsupportedRevisionError>
+Renderer::supported_revisions() -> &'static [CompatibilityRevision]
+Renderer::profile_identity(CompatibilityRevision)
+    -> Result<&'static ReferenceProfileIdentity, UnsupportedRevisionError>
+Renderer::selected_profile_identity(&self) -> &'static ReferenceProfileIdentity
+Renderer::render(&self, &SceneDocument, &RenderRequest)
+    -> Result<RenderOutcome, RenderError>
+
+RenderRequest::builder(OutputFormat) -> RenderRequestBuilder
+RenderRequestBuilder::build() -> Result<RenderRequest, RequestError>
+```
+
+`SceneDocument` is opaque, immutable, cloneable, and `Send + Sync`.
+`Renderer` is immutable, cloneable, and `Send + Sync`; each render creates a
+fresh request-scoped session. Public structs have private fields and read-only
+accessors. Evolvable enums and string-backed code enums are non-exhaustive.
+Requests are constructible only through validated builders.
+
+Every `Renderer` exposes its selected `ReferenceProfileIdentity` through a
+read-only accessor. A successful outcome exposes read-only access to its
+artifact, immutable ordered report, selected revision, Excalidraw release, and
+profile digest. `RenderError` exposes the complete ordered report accumulated
+before failure; pre-render typed failures expose no report.
+
+`CompatibilityRevision` is a public string/number-parseable newtype with named
+constants. `ReferenceProfileIdentity` exposes compatibility revision,
+Excalidraw release, and canonical profile digest. `Renderer::new()` selects the
+documented package default, which is compatibility revision `1` in the first
+release. A named package-default constant is public and callers do not infer it
+from list order. Every revision retained in the semver-major line
+remains selectable. Exact reproduction requires both package release and
+compatibility revision; a profile digest is discoverable but not a selector.
+
+One request produces exactly one `OutputFormat`: `Svg`, `Png`, or `Pdf`, spelled
+`svg`, `png`, and `pdf` in serialized forms.
+
+| Request setting | Contract |
+| --- | --- |
+| `include_background(bool)` | Default `true` |
+| `padding(f64)` | Default `10`; finite and nonnegative |
+| `sizing(Sizing)` | Exactly `Scale(f64)` or `MaxDimension(f64)`; finite and positive |
+| `color_mode(ColorMode)` | `Light` or `Dark`; default `Light` |
+| `frame_options(FrameOptions)` | `enabled`, `clip`, `name`, and `outline`; all default `true` |
+| `metadata_options(MetadataOptions)` | `embedded_scene`, `provenance`, and `diagnostic_summary`; all default `false` |
+| `supplemental_assets(SupplementalAssets)` | Owned bytes only |
+| `resource_limits(ResourceLimits)` | Validated semantic limits |
+| `pdf_options(PdfOptions)` | PDF-only, including raster-fallback policy |
+
+Format options for another format are rejected. The API exposes no generic
+option map, callback, async resolver, path, URL, writer, backend extension point,
+live-embeddable control, external-font control, or font-inlining opt-out.
+Mandatory notices are not optional metadata.
+
+`SupplementalAssets` is an owned deterministic map from nonempty scene file ID
+to bytes plus an optional advisory media type. Duplicate IDs are request errors.
+The renderer sniffs and validates bytes. A supplemental entry fills only an ID
+absent from the scene document. A conflicting scene payload remains
+authoritative and emits `asset.supplement-conflict`; a claimed type mismatch
+emits `asset.media-type-mismatch`.
+
+## 7. CLI Contract
+
+The command is:
+
+```text
+excalidraw-render [OPTIONS] <INPUT> --output <OUTPUT>
+```
+
+`INPUT` and `-o, --output` can be `-` for stdin and artifact stdout. Supplemental assets
+are paths and never consume stdin. `-f, --format <svg|png|pdf>` MAY be omitted
+only when a path output has a recognized case-insensitive extension. It is
+required for stdout and unknown extensions. An explicit mismatch is a usage
+error.
+
+The render controls are exactly:
+
+```text
+--compatibility-revision <N>
+--no-background
+--padding <F64>
+--scale <F64>
+--max-dimension <F64>
+--dark-mode
+--embed-scene
+--embed-provenance
+--embed-diagnostics
+--no-frame-rendering
+--no-frame-clipping
+--no-frame-names
+--no-frame-outlines
+--asset <FILE_ID>=<PATH>
+--asset-mime <FILE_ID>=<MEDIA_TYPE>
+--pdf-raster-fallback <allow-isolated|forbid>
+--report-format <human|json|none>
+--report-output <stderr|PATH>
+--force
+--list-revisions
+```
+
+`--scale` and `--max-dimension` are mutually exclusive. Report format defaults
+to `human`; report output defaults to stderr. Asset options split on the first
+`=` and reject empty or duplicate values. Every MIME declaration has exactly one
+matching asset. The CLI has no resource override, preset, config file,
+environment override, hidden override, schema selector, backend selector, or
+extension map. Every render uses `ResourceLimits::default()`.
+
+The CLI selects one failure in this order:
+
+1. Deterministic report-mode preparse.
+2. Command grammar and standalone-mode validation.
+3. Compatibility-revision selection.
+4. Explicit or inferred format selection.
+5. Request values and asset declarations.
+6. Path-conflict validation.
+7. Existing output and report checks.
+8. Bounded scene read and parse.
+9. Supplemental reads by ascending file-ID UTF-8 bytes.
+10. Render.
+11. Artifact staging and delivery.
+12. Report staging and delivery.
+
+The report-mode preparser recognizes exactly one valid `--report-format json` or
+`--report-format=json`. Missing, malformed, duplicate, or conflicting choices
+remain human usage errors.
+
+`--report-output` with `--report-format none` is `cli.invalid-arguments`.
+
+Output and report paths MUST NOT alias input or supplemental assets, and output
+and report MUST differ. Existing paths use filesystem identity; nonexistent
+paths use normalized absolute lexical paths. `--force` permits replacing both
+destinations but never overrides conflicts.
+
+Both requested path outputs are fully staged in their destination directories
+before either is delivered and are atomically replaced where supported. A
+path-delivery failure leaves no new partial destination. The artifact is
+delivered before the report. A report failure after artifact
+delivery is still command failure and records `artifact_state: "complete"`.
+Stdout write failure uses `possibly_partial` only if bytes may have escaped.
+
+If JSON report-file delivery fails and stderr is not the failed channel, the CLI
+emits one complete canonical `cli.report-write-failed` schema-1 envelope with
+the accumulated diagnostics to emergency stderr and one LF. Human and `none`
+mode emit one non-JSON stderr line. If stderr is the failed channel or its write
+also fails, exit 1 without claiming successful reporting or trying another
+channel. The failure envelope has top-level `artifact: null`; delivery details
+record whether artifact bytes were already delivered.
+
+Human mode prints all diagnostics for a diagnosed success and nothing for clean
+success. JSON mode always emits one report document. `none` suppresses successful
+reporting and emits one non-JSON family/code/message line on failure.
+
+| Exit | Meaning |
+| ---: | --- |
+| `0` | Complete artifact delivered, including diagnosed or metadata-omitted success |
+| `1` | I/O, bounded-read, parse, fatal render/resource, allocation, or delivery failure |
+| `2` | Grammar, request, format, duplicate-ID, or unsupported-revision usage error |
+
+`--list-revisions` accepts only human or JSON report controls and lists revisions
+in increasing order. `--version` is human-only standalone stdout and prints
+package version, default revision, Excalidraw release, and profile digest.
+
+## 8. Rendering Semantics
+
+### 8.1 Shared Controls
+
+Defaults are white background included, 10 logical pixels of padding, scale 1,
+light mode, optional metadata off, and every frame control on.
+
+Explicit scale preserves logical scene bounds. SVG retains its logical
+`viewBox` while multiplying width and height. PNG scales drawing and truncates
+scaled pixel dimensions as the reference wrapper does. Maximum dimension is
+downscale-only and never upscales. It applies to PNG and PDF; the official SVG
+maximum-dimension invocation is a no-transform operation.
+
+Whole-scene bounds, paint order, clipping, masking, frames, bound text, links,
+dark mode, application state, and embedded files participate according to the
+scene-surface manifest. Separate-frame export is not supported.
+
+Element colors use the CSS grammar recognized by the pinned Chromium profile and
+serialize as canonical sRGB plus alpha. Invalid colors emit `color.invalid` and
+substitute `#1e1e1e` for stroke, transparent for element background, and white
+for scene background.
+
+Safe absolute and relative links are preserved under the pinned sanitizer and
+fixed origin. Unsafe links are omitted and diagnosed. PNG has no links.
+Embeddable and iframe-like elements use the official offline fallback while
+preserving a safe link where the format supports one.
+
+### 8.2 Raster and Nested-SVG Assets
+
+Accepted raster families are PNG/APNG, JPEG/JFIF, GIF, WebP, BMP, ICO, and AVIF.
+Stored payload bytes are authoritative; the renderer MUST NOT replay editor
+import, Pica, or canvas transformations or infer import history.
+
+Rendering never resolves network or filesystem resources. Nested SVG is parsed
+and sanitized locally before any viewer library. DTDs, external entities,
+scripts, event attributes, active animation, `foreignObject`, unsafe actions,
+unsupported foreign namespaces, external CSS/fonts, `@import`, and non-fragment
+URLs are removed or rejected under the declared diagnostics. Only same-document
+fragments and admitted bounded data images can resolve.
+
+Direct SVG embeds validated compressed raster payload octets exactly. It does
+not decode, select a frame, apply orientation, transform color, tone-map,
+premultiply, strip metadata, or re-encode. Profiles, metadata, source alpha, and
+live animation survive silently. Data URLs use the validated canonical media
+type and canonical base64 spelling; source lexical spelling is not preserved.
+
+PNG selects the pinned default frame, including ICO's largest-area then
+highest-depth rule; applies the format-specific orientation, profile/chunk/CICP
+and gain-map precedence, color management, HDR tone mapping, transfer behavior,
+and premultiplied-alpha compositing; and writes deterministic untagged sRGB
+RGBA8 with RGB zero wherever alpha is zero. Source bytes, profiles, metadata, animation, and source alpha
+representation are discarded silently.
+
+PNG and PDF emit one informational `image.animation-flattened` occurrence for
+each actually rendered multi-frame asset occurrence. Static, one-frame, and
+unreferenced assets remain silent. PDF uses the same default-frame, orientation,
+and color interpretation and embeds lossless unpremultiplied canonical sRGB with
+a grayscale soft mask. Source raster images are inherent raster content, not
+PDF raster fallback.
+
+A missing local image is omitted in SVG and PDF, uses the official image/error
+fallback in PNG, and is diagnosed in every selected format. Other invalid,
+forbidden, unsupported, or exhausted resources use the format-specific recipe
+and diagnostics in the scene-surface manifest.
+
+### 8.3 Typography
+
+SVG embeds only required, unmodified official Unicode-range font chunks. PNG
+uses deterministic shaping and controlled glyph-outline rasterization. No
+format consults installed fonts or OS text services.
+
+Liberation Sans and Noto Emoji replace local-only Helvetica/Arial and Segoe UI
+Emoji behavior for user text and generated labels, with one informational
+substitution diagnostic per affected occurrence. Missing codepoints use the
+bundled deterministic replacement glyph at defined metrics and identify the
+element and codepoint.
+
+### 8.4 SVG
+
+SVG MUST be semantic and self-contained. It preserves selectable text, safe
+anchors, logical transforms and bounds, clipping, masks, frame appearance,
+paint order, accepted images, required fonts, deterministic IDs, notices,
+metadata, and deterministic serialization.
+
+An owned typed serializer controls namespace and attribute order, number
+formatting, IDs, embedded assets, escaping, links, and bytes. A backend tree
+followed by canonicalization is not permitted.
+
+### 8.5 PNG
+
+PNG MUST execute its canvas-equivalent typed plan directly. Serialized SVG is
+never its rendering oracle. Controlled adapters own paths, glyph outlines,
+images, masks, clips, compositing, dark mode, dimensions, color type, filters,
+compression, chunk order, metadata order, and exclusion of host/time/random
+data.
+
+### 8.6 Vector-First PDF
+
+PDF is a direct semantic projection, not a serialized-SVG pivot. Official SVG
+reference evidence is the transitive visual authority for geometry, paint order,
+frames, clipping, text, links, and images. Official PNG is not authoritative
+where formats differ, and no official PDF reference evidence is implied.
+
+When an approved compatibility exception intentionally changes SVG appearance,
+PDF authority is official SVG reference evidence plus that exception's exact
+reviewed delta. Its crops, expectations, and ceiling apply independently to
+candidate SVG and PDF. Outside the declared delta both retain the ordinary SVG
+gate. Candidate SVG and renderer-owned snapshots never become reference
+evidence.
+
+Each PDF has one page. One logical pixel maps to `0.75` points. Padding precedes
+sizing. `Scale` scales page and content; `MaxDimension` is downscale-only.
+`MediaBox` and `CropBox` equal final bounds at `(0,0)`; no other page boxes,
+rotation, or `UserUnit` are emitted. Included background paints the full page
+first; excluded background emits no page paint.
+
+Apply only these pinned SVG reductions in local logical units before transforms,
+sizing, and the 0.75-point conversion:
+
+- Rough path operation numbers use `fixedDecimalPlaceDigits = 2`.
+- Freedraw uses the exact `getSvgPathFromStroke` two-decimal token-trimming
+  algorithm; generic decimal rounding cannot replace it.
+- Image viewport width and height use official SVG integer rounding exactly
+  where the reference renderer applies it. Crop offsets, transforms, clips,
+  corners, and other image values do not inherit that rounding.
+
+All other geometry retains full `f64`, including text placement, bounds, clips,
+masks, transforms, crop geometry, frames, effect regions, and link
+quadrilaterals. Reductions occur in local coordinates; transforms and sizing
+follow, then point conversion. PDF numbers use deterministic non-exponential
+round-trip decimals, strip redundant zeros, serialize negative zero as `0`, and
+add no second quantization.
+
+Compatibility revision, not backend capability, owns this closed vector matrix.
+Every project-owned operation remains native PDF content:
+
+- Move, line, quadratic, cubic, and close segments, with deterministic lowering
+  of quadratics and arcs to cubics where required.
+- ICC-sRGB solid fills and strokes with alpha, nonzero/even-odd fill, caps,
+  joins, miter limits, dash arrays, and dash offsets.
+- Affine transforms, nested vector clips, alpha and luminosity soft masks,
+  source-over isolated transparency groups, and ordinary opacity.
+- Rough strokes/fills, freedraw, arrowheads, frames and frame clipping, image
+  and arrow-label masks, generated labels, and compatibility placeholders.
+- Shaped scene text and generated labels under the selectable `ToUnicode` and
+  `ActualText` contract.
+- Safe URI annotations over deterministic transformed bounds.
+
+Dark mode is lowered into vector colors and image pixels before this matrix.
+Failure to encode a required operation is fatal, never fallback. Admitted scene
+raster pixels are lossless image XObjects and inherent source content.
+
+After deterministic expansion and lowering, sanitized nested SVG has exactly
+this recursively vector-native subset:
+
+- Containers, nested viewports and `viewBox`/`preserveAspectRatio`,
+  `symbol`/`use`, all basic shapes/path commands, and expanded markers.
+- Solid paints; linear/radial gradients with stop alpha and spread modes; and
+  finite tiling patterns whose referenced content is vector-eligible.
+- Affine transforms, opacity, nested clips, and alpha/luminosity masks.
+- PDF 1.7 blend modes `Normal`, `Multiply`, `Screen`, `Overlay`, `Darken`,
+  `Lighten`, `ColorDodge`, `ColorBurn`, `HardLight`, `SoftLight`, `Difference`,
+  `Exclusion`, `Hue`, `Saturation`, `Color`, and `Luminosity`.
+- Deterministically resolved nested-SVG text lowered to glyph outlines.
+- Admitted nested raster image nodes represented as source image XObjects.
+
+A gradient, pattern, mask, marker, reused subtree, or other resource is
+vector-native only when all required content is vector-eligible.
+
+Additional rasterization is allowed only for isolated pixel-domain operations
+inside sanitized nested SVG that lack exact PDF representation, such as blur,
+convolution, morphology, displacement, turbulence, lighting, post-composite
+color transforms, and non-native blends. Ordinary opacity, clips, masks,
+gradients, patterns, native blends, text, and source raster images are not
+fallback-eligible.
+
+A fallback closure is the smallest isolated subtree containing the innermost
+effect, descendants, resources, inputs, intermediates, and required local
+backdrop. Dependent closures merge only to their least common required
+nested-SVG ancestor. Appearance-equivalent ancestor transforms, clips, opacity,
+masks, and native blends remain outside. A closure never crosses the nested-SVG
+root. An effect requiring external or page backdrop capture fails as
+`pdf.raster-fallback-unisolatable` with no artifact.
+
+Closure bounds include deterministic effect bleed, intersect the viewport and
+unchanged ancestor clips, and floor/ceil to the final 96-DPI device grid. The
+closure renders transparent canonical sRGB RGBA8 at one pixel per final pixel,
+preserves subpixel placement and alpha with a grayscale soft mask, gives a
+nonempty subpixel region at least one pixel, and never downscales.
+
+`PdfRasterFallback` has `AllowIsolated` and `Forbid`; the default is
+`AllowIsolated`. Complete-plan preflight precedes fallback rendering. `Forbid`
+succeeds exactly when no closure remains after lowering, expansion, culling,
+and provable no-op elimination. The first remaining closure fails as
+`pdf.raster-fallback-forbidden`, with no artifact and no fallback warning.
+
+`AllowIsolated` emits exactly one `pdf.raster-fallback` warning per emitted
+closure occurrence, ordered by scene occurrence and expanded nested-tree order.
+It identifies the causative node, logical bounds, final pixel dimensions, and
+all cause pointers. Deduplicated bytes do not deduplicate diagnostics.
+
+PDF text uses deterministic `rustybuzz` shaping, explicit glyph positions,
+stored source lines, reviewed predecoded sfnt chunks, deterministic character
+codes, complete `ToUnicode`, and line-level `ActualText`. It does not reflow,
+outline, rasterize, subset, rename fonts, or consult host services.
+Only reviewed predecoded chunks selected for glyphs actually used are embedded.
+
+Every safe linked element generates one borderless URI annotation from
+deterministic transformed-bound quadrilaterals, clipped to the page and frame
+clips. Empty areas are omitted; overlaps are ordered topmost to bottommost.
+Relative links use the reference-profile origin. JavaScript, Launch, file, and
+other active actions are forbidden.
+
+Output is PDF 1.7 with one project-generated ICC v2.1 matrix/TRC sRGB profile
+and matching output intent. Images and fallback pixels are lossless canonical
+sRGB, unpremultiplied, with invisible RGB canonicalized and alpha in a grayscale
+soft mask. Source profiles, lossy re-encoding, timestamps, random IDs,
+encryption, signatures, incremental revisions, and linearization are forbidden.
+
+Complete bytes are stable through fixed semantic object numbering, classic
+xref/trailer, one revision, canonical decimals and zero, fixed stream filters
+and Flate settings, and fixed dictionary and metadata order.
+
+PDF backend qualification MUST proceed in this order:
+
+1. First qualify an exactly pinned project-owned controlled fork of
+   `svg2pdf 0.13.0` with `pdf-writer 0.12.0` behind the replaceable adapter. The
+   typed PDF plan lowers directly into its bounded tree; serialized SVG is
+   forbidden.
+2. The fork deterministically sorts resources/objects, removes reachable panic
+   and `unwrap`, accepts only resolved assets, lowers dark mode first, and
+   exposes every required operation. The outer writer owns page, annotations,
+   output intent, XMP, attachment, and notices.
+3. Admit it only after the conformance spike proves every vector, text, color,
+   transparency, metadata, safety, and cross-target byte-stability gate without
+   whole-page rasterization or hidden resource access.
+4. If satisfying a gate would effectively rewrite `svg2pdf`, direct
+   `pdf-writer` over the same plan is mandatory. This mechanical result does not
+   reopen the PDF contract.
+
+## 9. Architecture
+
+The implementation MUST use one-way layers:
+
+1. Preserve and parse the scene document.
+2. Apply compatibility normalization.
+3. Resolve built-in and scene-local assets.
+4. Resolve shared semantics and geometry.
+5. Build a typed format-specific projection plan.
+6. Encode artifact bytes.
+
+Compatibility revision 1 is a sealed bundle binding the reference profile,
+defaults, normalization, compatibility algorithms, asset catalog, and projection
+policies. Later revisions add bundles rather than scatter version checks.
+
+Each render owns a request-scoped session containing semantic resource
+accounting, an ordered diagnostic sink, scene-local asset state, and
+deterministic insertion-ordered caches. Hidden mutable globals are forbidden.
+One scene renders sequentially; independent scenes can render concurrently.
+Internal parallelism SHOULD NOT be introduced without demonstrated need.
+
+The shared resolved representation is an immutable paint-ordered semantic graph
+that retains source identity/location, frame/group/clip/mask/order relations,
+sanitized links and hit geometry, text and stored lines, fonts and placement,
+asset provenance/fallback state, styles, opacity, transforms, and resolved
+geometry. It contains no backend-native object.
+
+Geometry uses owned target-neutral `f64` points, transforms, bounds, and
+move/line/quadratic/cubic/close paths. Operation order is deterministic,
+target-specific fast paths are forbidden, non-finite and negative-zero handling
+is canonical, and quantization occurs only at declared projection boundaries.
+No observable order may depend on hash iteration.
+
+SVG, PNG, and PDF have separate typed plans. A universal display list,
+scattered backend conditionals, and serialized-SVG pivot are forbidden.
+
+The current MVP is evidence only, not a migration constraint. Its permissive
+model, discarded fields, local defaults, approximate geometry, SVG pivot,
+backend defaults, silent skips, and current bounds/text/frame/link behavior do
+not define compatibility.
+
+## 10. Dependencies, Assets, and Distribution
+
+A production component qualifies only if it operates natively and on
+`wasm32-unknown-unknown` without production JavaScript, browser, OS service,
+system package, network, or host font; preserves artifact byte stability; is
+bounded and panic-free on the renderer-controlled surface; has compatible
+licensing and provenance; and passes compatibility-critical vectors. Remedy
+failure in this order: adapter, pinned controlled fork, focused owned port.
+
+The renderer MUST directly port the used Rough.js `4.6.4` paths and fillers,
+preserving JavaScript `f64`, signed 32-bit `Math.imul` PRNG behavior, operation
+order, and PRNG-consumption order, without `rand`. `roughr` cannot define
+compatibility. `perfect_freehand` MAY be used unchanged only after exact vectors
+against Perfect Freehand `1.2.0`; otherwise use a focused owned port with the
+official stroke-to-path wrapper.
+
+Raster codecs use individually pinned pure-Rust adapters behind one bounded,
+deterministic contract. AVIF follows the same gate; if no permissively licensed
+pure-Rust/WASM decoder qualifies, the project completes or owns one rather than
+using a platform decoder or weakening compatibility. `usvg`/`resvg` can process
+only sanitized bounded nested SVG under deny-all resource access.
+
+Compatibility revision 1 ships all 230 byte-identical official rendering WOFF2
+files across eight families, exact Liberation Sans and Noto Emoji fallback
+inputs, reviewed lossless predecoded sfnt equivalents, retained deprecated
+families, and exact Font Awesome fallback paths. The asset manifest's lengths
+and digests are authoritative. Assistant remains excluded.
+
+Installed fonts, network fallback, system font services, official nested
+HarfBuzz/WOFF2 WASM helpers, runtime subsetting, merging, and renaming are
+forbidden. Each predecoded sfnt records source and output digests, pinned tool,
+invocation, table/name/metric/license comparison, reviewer, and date. Any
+content, metric, table, or name change needs new approval.
+
+Reserved Font Names `Virgil`, `Cascadia Code`, `Lilita`, and `Liberation` remain
+only on exact official bytes and approved lossless decoding equivalents.
+Excalifont remains exact official content and carries Excalifont and Virgil
+provenance. Noto Emoji `3.003` uses the exact manifested path/hash without a
+stronger historical-origin claim.
+
+Fonts are OFL-1.1 except MIT-licensed Comic Shanns. Font Awesome geometry is CC
+BY 4.0. Copied or ported Excalidraw, Rough.js, Perfect Freehand, and
+points-on-curve code retains its MIT notices. New project-authored code is
+`MIT OR Apache-2.0` with complete license texts.
+
+The asset catalog records identity, profile, upstream path/revision/URL, complete
+and segment digests and lengths, order, license/copyright, Reserved Font Names,
+transform history, Unicode range or role, and output formats. Imported bytes,
+indexes, manifests, and notices are checked in. A repository-owned Rust `xtask`
+is the sole importer; `build.rs` never downloads or generates production assets.
+
+Asset shards SHOULD remain at or below 8 MiB raw and MUST produce `.crate`
+archives below 9.5 MB. Reassembly verifies the complete digest before parsing.
+
+The published virtual workspace exposes only `excalidraw-render` as supported
+Rust API and `excalidraw-render-cli` as the native CLI. Doc-hidden unsupported
+`excalidraw-render-assets-base` and numbered
+`excalidraw-render-assets-data-*` packages carry asset shards. All packages use
+one lockstep semver and exact internal versions.
+Owned ports/assets publish first, then library, then CLI; partial publication
+requires a new version. Production git dependencies are forbidden.
+
+The library always includes SVG, PNG, PDF, every retained compatibility
+revision, and the complete built-in catalog. Public features cannot remove them
+or alter behavior.
+
+Every distributing crate carries applicable notices. The library exposes
+`license_bundle() -> &'static str`; CLI `--licenses` writes exactly those UTF-8
+bytes and exits without render paths. Native archives contain the binary,
+README, both application licenses, `THIRD_PARTY_NOTICES.md`, and `LICENSES/`.
+Linux and macOS use target-named `.tar.gz`; Windows uses `.zip`; one external
+`SHA256SUMS` covers all archives.
+
+First-party production code sets `unsafe_code = "forbid"`. Direct dependencies
+and every transitive package capable of changing rendering or serialization are
+exactly constrained. `Cargo.lock`, `--locked`, packaged-consumer graph checks,
+`cargo-deny`, `cargo-vet`, RustSec, provenance, feature, build-script,
+native-link, and WASM graph checks are release gates.
+
+Every transitive unsafe use has a source audit in the dependency ledger that
+justifies the bounded renderer-facing surface and absence of a safer qualifying
+alternative. Production build scripts are denied by default. An exception is
+recorded, pure Rust, deterministic, offline, and independent of host time,
+locale, path, and randomness; it cannot download, compile C/C++, probe optional
+system libraries, or generate production assets.
+
+A checked tool manifest pins every Rust CI executable by exact version and
+checksum. WASM runner and `wasm-bindgen-test` versions are exact and compatible.
+Third-party GitHub Actions use full commit pins; downloaded tools use exact
+version plus checksum or immutable image digest. Workflows use least privilege,
+never expose release secrets to untrusted pull requests, and update pins only
+through ordinary reviewed dependency changes.
+
+Supported targets are exactly:
+
+- `x86_64-unknown-linux-gnu`.
+- `x86_64-apple-darwin`.
+- `aarch64-apple-darwin`.
+- `x86_64-pc-windows-msvc`.
+- `wasm32-unknown-unknown` in the pinned Chromium harness.
+
+Every target executes renderer and deterministic-output tests. Cross-compilation
+alone is insufficient. `rust-version` equals the official stable compiler. The
+first release promises no explicit native deployment floor beyond the target OS
+ABI; release notes record toolchain and immutable builder identity.
+
+SVG carries complete notices for embedded fonts and rendered Font Awesome
+fallbacks. PNG carries Font Awesome attribution in deterministic `iTXt` only
+when that geometry appears; rasterized font glyphs alone carry no OFL notice.
+Official reference evidence remains byte-identical and carries notices in
+sidecars and evidence packages, not injected into official artifacts.
+
+## 11. Outcomes and Serialized Contracts
+
+`Artifact` owns exactly one `Vec<u8>` and exposes format, canonical media type,
+borrowed bytes, and consuming `into_bytes()`. Media types are `image/svg+xml`,
+`image/png`, and `application/pdf`.
+
+A successful `RenderOutcome` contains exactly one complete artifact, the full
+ordered `CompatibilityReport` even when empty, compatibility revision,
+Excalidraw release, and profile digest. Recoverable repair, replacement,
+omission, local loss, or optional-metadata failure returns that outcome.
+`RenderError` never contains partial artifact bytes.
+
+The four typed library failures are `SceneParseError`, `RequestError`,
+`UnsupportedRevisionError`, and `RenderError`. They implement
+`std::error::Error`, typed accessors, and `descriptor() -> ErrorDescriptor`.
+Descriptors, diagnostics, reports, compatibility identity, and stable views
+implement `serde::Serialize`. Opaque scene documents, artifacts, outcomes,
+failure values, source chains, backtraces, and implementation types have no
+public serialization contract.
+
+A standalone empty report is exactly this JSON, with no trailing LF:
+
+```json
+{"schema_version":1,"diagnostics":[]}
+```
+
+CLI JSON transport appends exactly one LF.
+
+### 11.1 Canonical JSON
+
+Public report and artifact-manifest JSON is minified UTF-8 without BOM, uses
+direct non-ASCII scalars, only required escapes, lowercase `\u00xx` for other
+controls, shortest round-trip finite decimals, lowercase exponent when needed,
+no redundant zeros, canonical `0` for negative zero, integer counters, and the
+declared member order.
+
+Schema-1 errors have this exact member order and explicit nulls:
+
+```json
+{
+  "family": "scene_parse | request | unsupported_revision | render | cli",
+  "category": "input | resource_limit | no_meaningful_artifact | encoding | internal | null",
+  "code": "stable.code",
+  "message": "human explanation",
+  "format": "svg | png | pdf | null",
+  "element_id": "normalized element id | null",
+  "json_pointer": "RFC 6901 pointer | null",
+  "details": null
+}
+```
+
+`category` is non-null only for render failures. A scene-global render error uses
+root pointer `""`. Human messages are non-normative.
+
+`json_pointer` is RFC 6901 into the admitted scene document. Tokens escape `~`
+as `~0` and `/` as `~1`. Errors always include pointer or explicit null;
+diagnostics always contain a non-null pointer and use root `""` when no narrower
+scene source exists. A missing required member points to its expected path.
+
+Parse pointer rules are:
+
+| Code | Pointer |
+| --- | --- |
+| `scene.invalid-utf8` | null |
+| `scene.invalid-json` | Narrowest reliable parser-established path, otherwise null |
+| `scene.invalid-envelope` | Narrowest offending/expected member; root for wrong top-level kind |
+| `scene.input-too-large` | null before a reliable path exists |
+| JSON depth/structure/string/number/parse-memory excess | Value/member whose admission crosses when reliable, otherwise null |
+| `scene.object-key-too-large` | Expected member, containing object, or null in decreasing reliability |
+| `scene.duplicate-object-key` | Expected path of the later duplicate member |
+
+Malformed syntax never causes an invented path. Request, unsupported-revision,
+CLI grammar/path/transport/delivery, and supplemental transport failures use
+null. CLI-preserved library errors preserve the library pointer.
+
+Every render error has an admitted scene. Source-owned failures point to the
+narrowest owner; scene/output-global failures use root. PDF fallback failures
+point to the outermost causative effect node, with nested identity in details.
+Mandatory-notice carrier failure uses root. The pointer belongs to the earliest
+canonical failed transaction, never later speculative work.
+
+Diagnostic pointer rules include:
+
+| Diagnostic | Pointer |
+| --- | --- |
+| Missing ID/timestamp | Expected member path |
+| Duplicate ID or zero seed | Later element's `id` or affected `seed` |
+| Relationship cycle | Source member for the closing edge |
+| Unsupported/malformed element | Whole element occurrence |
+| Unsupported property/value | Narrowest affected property |
+| Known element replacement | Whole element when no narrower primary cause exists |
+| Supplement conflict | Authoritative `/files/<escaped-id>`, or root for request-only source |
+| Media mismatch | Narrowest authoritative payload/media member, or request root |
+| Malformed file record | Whole authoritative file record |
+| Missing image | Referring element's `fileId` |
+| Unsupported/decode-failed image | Authoritative `dataURL` member |
+| Animation flattening | Referring element's `fileId` |
+| Forbidden/unsafe nested content | Owning scene resource plus ordinal nested details |
+| Unsafe link, invalid color | Affected property |
+| Font substitution/missing glyph | Affected text/name/label source |
+| Local resource recovery | Narrowest element/property or authoritative/referring asset source |
+| Optional metadata and `metadata.*` | Root |
+| PDF raster fallback | Outermost causative effect node |
+
+Per-reference diagnostics belong to the referring occurrence; intrinsic asset
+diagnostics belong to the authoritative file record. Supplemental request-only
+diagnostics use root. Generated events use their source owner. Shared content
+never redirects occurrence-specific pointers to a cache or identity.
+
+Diagnostics have this member order:
+
+```json
+{
+  "code": "stable.code",
+  "severity": "info | warning",
+  "format": "svg | png | pdf",
+  "effects": ["input_repair | visual | semantic | metadata"],
+  "element_id": "normalized element id | null",
+  "json_pointer": "required RFC 6901 pointer",
+  "message": "human explanation",
+  "details": null
+}
+```
+
+Effects are nonempty and ordered `input_repair`, `visual`, `semantic`,
+`metadata`. They respectively mean submitted input was repaired, selected, or ignored,
+appearance may differ, links/text/animation/vector semantics may differ, or
+carried metadata may differ.
+
+Schema-1 `details` is null or exactly one closed object below. Every member is
+required in the displayed order and non-null unless marked nullable. Unknown
+members and kinds are invalid.
+
+```text
+{"kind":"parse_limit","field":<string>,"configured":<number>,"value_kind":<value-kind>,"measurement":<measurement>}
+{"kind":"request_value","field":<string>,"asset_id":<string|null>,"option":<string|null>}
+{"kind":"revision","requested":<integer>}
+{"kind":"compatibility","recovery":<recovery>,"recipe_id":<string|null>}
+{"kind":"asset","asset_id":<string>,"claimed_media_type":<string|null>,"validated_media_type":<string|null>,"recovery":<recovery>,"recipe_id":<string|null>}
+{"kind":"resource_limit","field":<string>,"configured":<number>,"value_kind":<value-kind>,"measurement":<measurement>,"recovery":<recovery|null>}
+{"kind":"memory_unavailable","subject_kind":<string>,"subject":<string>}
+{"kind":"missing_glyph","codepoint":<integer>,"recovery":"substituted"}
+{"kind":"metadata","component":<string>,"operation":<string>,"recovery":"metadata_omitted"}
+{"kind":"nested_source","asset_chain":[<asset-chain-entry>],"paths":[<nested-path>],"recovery":<recovery>}
+{"kind":"pdf_raster_fallback","recovery":<"rasterized"|null>,"logical_bounds":<logical-bounds|null>,"pixel_width":<integer|null>,"pixel_height":<integer|null>,"causes":[<nested-path>]}
+{"kind":"cli_argument","argument":<string>,"value":<string|null>}
+{"kind":"cli_path","entries":[<cli-path-entry>]}
+{"kind":"cli_io","role":<"input"|"asset">,"asset_id":<string|null>,"operation":<cli-operation>,"path":<string>}
+{"kind":"delivery","role":<"output"|"report">,"operation":<cli-operation>,"path":<string>,"artifact_state":<delivery-state>}
+```
+
+Nested closed shapes are:
+
+```text
+measurement = {"kind":<"attempted"|"at_least">,"value":<number>}
+asset-chain-entry = {"asset_id":<string|null>,"occurrence":<nonnegative integer>}
+nested-path = {"segments":[{"kind":<nested-segment-kind>,"ordinal":<nonnegative integer>,"name":<string|null>}]}
+logical-bounds = {"x":<finite number>,"y":<finite number>,"width":<finite number>,"height":<finite number>}
+cli-path-entry = {"role":<"input"|"asset"|"output"|"report">,"asset_id":<string|null>,"path":<string>}
+```
+
+Nested segment kinds are `node`, `attribute`, `css_rule`, `css_declaration`,
+`resource_slot`, and `effect_input`. Ordinals, not invented XML JSON pointers,
+define identity. `pdf_raster_fallback.causes` uses the same nested-path shape.
+Fallback bounds use logical units; bounds and pixel dimensions can be null only
+when an unisolatable closure cannot safely determine them before failure.
+
+Measurements are only `attempted` and `at_least`. `at_least` is restricted to
+bounded streaming stopped one unit over a ceiling or checked overflow. Value
+kinds are only `bytes`, `count`, `depth`, `pixels`, `work_units`, `dimension`,
+and `coordinate`. Recovery values are only `repaired`, `ignored`, `placeholder`,
+`omitted`, `removed`, `substituted`, `flattened`, `rasterized`, and
+`metadata_omitted`. Delivery states are `none`, `complete`, and
+`possibly_partial`. CLI operations are `open`, `read`, `create`, `write`,
+`flush`, and `replace`.
+
+Byte/count/depth/pixel/work values are nonnegative integers. Dimensions and
+coordinates are finite numbers. Machine paths retain caller lexical spelling.
+Host canonical paths, OS error numbers, Rust type names, and allocator details
+are forbidden from schema-1 fields.
+
+Detail bindings are fixed, not producer-selected:
+
+| Code family or code | Required details |
+| --- | --- |
+| `scene.invalid-utf8`, `scene.invalid-json`, `scene.invalid-envelope`, `scene.duplicate-object-key` | null |
+| `scene.input-too-large` | `parse_limit`, `max_input_bytes`, bytes |
+| `scene.json-depth-exceeded` | `parse_limit`, `max_json_depth`, depth |
+| `scene.json-structure-exceeded` | `parse_limit`, `max_json_structure_entries`, count |
+| `scene.string-too-large` | `parse_limit`, `max_total_string_bytes` or `max_string_bytes`, bytes |
+| `scene.object-key-too-large` | `parse_limit`, `max_object_key_bytes`, bytes |
+| `scene.number-token-too-large` | `parse_limit`, `max_number_token_bytes`, bytes |
+| `scene.parse-memory-exceeded` | `parse_limit`, `max_parse_working_bytes`, bytes |
+| Every `request.*` | `request_value`; canonical rejected field and applicable asset/option |
+| `revision.unsupported` | `revision` with parsed requested revision |
+| `scene.unbounded-geometry`, encoder/internal failures | null |
+| Fatal PDF fallback | `pdf_raster_fallback`, null recovery, first closure |
+| `resource.memory-unavailable` | `memory_unavailable`; no semantic limit measurement |
+| Other fatal resources | `resource_limit`, null recovery, mapping in Section 11.2 |
+| Normalization diagnostics | `compatibility`; `repaired`, except cycle is `removed`; null recipe |
+| Unsupported/malformed/replaced element | `compatibility`; declared placeholder recipe or omitted/null recipe |
+| Unsupported property | `compatibility`; `ignored`; null recipe |
+| Unsupported property value | `compatibility`; manifest recovery and recipe |
+| `asset.supplement-conflict` | `asset`; `ignored`; null recipe |
+| `asset.media-type-mismatch` | `asset`; `repaired`; both media types |
+| Asset/image failures | `asset` or `nested_source`; format recovery and manifest recipe |
+| `image.animation-flattened` | `asset`; `flattened`; null recipe |
+| `image.unsafe-svg-content-removed` | `nested_source`; `removed` |
+| `link.unsafe-omitted` | `compatibility`; `omitted`; null recipe |
+| `color.invalid` and font substitution | `compatibility`; `substituted` |
+| `font.missing-glyph` | `missing_glyph`; Unicode scalar; `substituted` |
+| Recoverable resource diagnostics | `resource_limit`; exact limit, measurement, and non-null recovery |
+| Metadata failures | `metadata`; fixed component/operation; `metadata_omitted` |
+| `pdf.raster-fallback` | `pdf_raster_fallback`; `rasterized`; finite bounds, dimensions, causes |
+| CLI argument/path/I/O/delivery codes | Matching `cli_argument`, `cli_path`, `cli_io`, or `delivery` shape |
+
+Fatal resource field/value-kind mappings are the Section 11.2 table.
+Recoverable mappings are:
+
+| Code | Field | Value kind |
+| --- | --- | --- |
+| `resource.element-complexity-replaced` | `max_geometry_segments_per_element` or `max_text_scalars_per_element` | count |
+| `resource.element-work-exceeded` | `max_element_work_units` | work_units |
+| `resource.asset-bytes-exceeded` | `max_asset_bytes` | bytes |
+| `resource.asset-work-exceeded` | `max_asset_work_units` | work_units |
+| `resource.image-dimensions-exceeded` | `max_raster_dimension` | dimension |
+| `resource.image-pixels-exceeded` | `max_decoded_pixels_per_asset` or `max_raster_surface_pixels` for replaceable fallback | pixels |
+| `resource.nested-svg-complexity-exceeded` | `max_nested_svg_nodes` | count |
+| `resource.nested-asset-depth-exceeded` | `max_nested_asset_depth` | depth |
+| `resource.coordinate-range-exceeded` | `max_coordinate_magnitude` | coordinate |
+| `resource.optional-metadata-omitted` | exact crossed limit | that limit's kind |
+
+Metadata component/operation bindings are provenance/serialization,
+diagnostic_summary/serialization, embedded_scene/serialization,
+embedded_scene/compression, embedded_scene/embedding,
+manifest/serialization, and manifest/embedding, matching their stable codes.
+A mandatory-notice failure uses fatal `encode.<format>-failed`, not metadata
+details.
+
+`cli_io.asset_id` is non-null only for asset reads. `cli_path` asset entries have
+non-null asset ID; other roles use null. CLI pre-parser scene transport excess
+uses family `cli` with `scene.input-too-large` and parse-limit details.
+Supplemental transport excess uses family `cli`, the precise resource code, and
+fatal resource-limit details.
+
+### 11.2 Error Registry
+
+Scene-parse codes are:
+
+```text
+scene.invalid-utf8
+scene.invalid-json
+scene.invalid-envelope
+scene.input-too-large
+scene.json-depth-exceeded
+scene.json-structure-exceeded
+scene.string-too-large
+scene.object-key-too-large
+scene.number-token-too-large
+scene.duplicate-object-key
+scene.parse-memory-exceeded
+```
+
+Request and revision codes are:
+
+```text
+request.invalid-padding
+request.invalid-scale
+request.invalid-max-dimension
+request.empty-asset-id
+request.duplicate-asset-id
+request.invalid-asset-media-type
+request.incompatible-format-options
+request.invalid-resource-limit
+revision.unsupported
+```
+
+Non-resource render codes are:
+
+```text
+scene.unbounded-geometry
+pdf.raster-fallback-forbidden
+pdf.raster-fallback-unisolatable
+render.no-meaningful-artifact
+encode.svg-failed
+encode.png-failed
+encode.pdf-failed
+render.internal-failure
+```
+
+`render.no-meaningful-artifact` is reserved and unreachable in compatibility
+revision 1. Resource failures use these exact code-to-field mappings:
+
+| Code | Canonical field |
+| --- | --- |
+| `resource.scene-bytes-exceeded` | `max_scene_bytes` |
+| `resource.element-count-exceeded` | `max_elements` |
+| `resource.asset-count-exceeded` | `max_asset_entries` |
+| `resource.total-asset-bytes-exceeded` | `max_total_asset_bytes` |
+| `resource.relationship-depth-exceeded` | `max_relationship_depth` |
+| `resource.total-geometry-exceeded` | `max_total_geometry_segments` |
+| `resource.total-text-exceeded` | `max_total_text_scalars` |
+| `resource.total-decoded-pixels-exceeded` | `max_total_decoded_pixels` |
+| `resource.raster-surface-exceeded` | `max_raster_dimension` for width/height; `max_raster_surface_pixels` for area |
+| `resource.total-rasterized-pixels-exceeded` | `max_total_rasterized_pixels` |
+| `resource.svg-dimensions-exceeded` | `max_svg_dimension` |
+| `resource.pdf-page-dimensions-exceeded` | `max_pdf_page_points` |
+| `resource.diagnostic-count-exceeded` | `max_diagnostics` |
+| `resource.working-bytes-exceeded` | `max_working_bytes` |
+| `resource.output-bytes-exceeded` | `max_output_bytes` |
+| `resource.total-work-exceeded` | `max_total_work_units` |
+| `resource.memory-unavailable` | no semantic configured/measured value |
+
+CLI-native codes are `cli.invalid-arguments`, `cli.format-required`,
+`cli.format-mismatch`, `cli.invalid-asset-option`,
+`cli.asset-mime-without-asset`, `cli.path-conflict`,
+`cli.destination-exists`, `cli.input-read-failed`, `cli.asset-read-failed`,
+`cli.output-write-failed`, `cli.report-write-failed`, and
+`cli.memory-unavailable`. The CLI reuses precise library codes when applicable
+and never substitutes a generic code.
+
+### 11.3 Compatibility Diagnostic Registry
+
+The scene-surface manifest is authoritative for exact format/effect/detail rules.
+Its complete revision-1 vocabulary is:
+
+| Code | Required core behavior |
+| --- | --- |
+| `normalization.missing-element-id` | Warning; repair identity |
+| `normalization.duplicate-element-id` | Warning; repair identity and affected relations |
+| `normalization.missing-timestamp` | Warning; repair to canonical zero |
+| `normalization.zero-rough-seed` | Warning; deterministic visual repair |
+| `normalization.relationship-cycle` | Warning; remove cycle-closing edge |
+| `compatibility.unsupported-element-type` | Warning; unknown-element fallback |
+| `compatibility.malformed-element` | Warning; malformed fallback or omission |
+| `compatibility.unsupported-property` | Warning; ignore with visual/semantic/metadata effects |
+| `compatibility.unsupported-property-value` | Warning; manifest fallback/effects |
+| `compatibility.known-element-replaced` | Warning; known-element fallback or omission |
+| `asset.supplement-conflict` | Warning; scene payload wins |
+| `asset.media-type-mismatch` | Warning; validated type wins |
+| `asset.malformed-file-record` | Warning when referenced |
+| `image.missing-file` | Warning; format-specific omission/fallback |
+| `image.forbidden-resource` | Warning; remove or replace |
+| `image.animation-flattened` | Info; PNG/PDF rendered multi-frame occurrence |
+| `image.unsupported-format` | Warning; format-specific omission/fallback |
+| `image.decode-failed` | Warning; format-specific omission/fallback |
+| `image.unsafe-svg-content-removed` | Warning; remove active/unsafe content |
+| `link.unsafe-omitted` | Warning in SVG/PDF; PNG silent |
+| `color.invalid` | Warning; deterministic color substitution |
+| `font.liberation-sans-substituted` | Info; local-font substitution |
+| `font.noto-emoji-substituted` | Info; emoji-font substitution |
+| `font.missing-glyph` | Warning; replacement glyph |
+| `resource.element-complexity-replaced` | Warning; local fallback/omission |
+| `resource.element-work-exceeded` | Warning; local fallback/omission |
+| `resource.asset-bytes-exceeded` | Warning; local resource fallback/omission |
+| `resource.asset-work-exceeded` | Warning; local resource fallback/omission |
+| `resource.image-dimensions-exceeded` | Warning; local resource fallback/omission |
+| `resource.image-pixels-exceeded` | Warning; local resource fallback/omission |
+| `resource.nested-svg-complexity-exceeded` | Warning; smallest fallback/omission |
+| `resource.nested-asset-depth-exceeded` | Warning; stop and replace/omit |
+| `resource.coordinate-range-exceeded` | Warning; local fallback/omission |
+| `resource.optional-metadata-omitted` | Warning; omit optional metadata |
+| `metadata.provenance-serialization-failed` | Warning; omit provenance |
+| `metadata.diagnostic-summary-serialization-failed` | Warning; omit summary |
+| `metadata.scene-serialization-failed` | Warning; omit embedded scene |
+| `metadata.scene-compression-failed` | Warning; omit embedded scene |
+| `metadata.scene-embedding-failed` | Warning; omit embedded scene |
+| `metadata.manifest-serialization-failed` | Warning or fatal notice failure |
+| `metadata.manifest-embedding-failed` | Warning or fatal notice failure |
+| `pdf.raster-fallback` | Warning; isolated closure rasterized |
+
+Only animation flattening and the two declared font substitutions are
+informational; all other codes are warnings. A narrower field, value, or
+resource diagnostic suppresses a duplicate generic replacement diagnostic.
+Occurrences are never deduplicated.
+
+Final diagnostic order uses this total key:
+
+1. Canonical source owner and preserved source position.
+2. Canonical nested occurrence path.
+3. RFC 6901 pointer bytes.
+4. Stable code UTF-8 bytes.
+5. Canonical phase/event ordinal.
+
+Original owners use depth-first source order, arrays by index, objects by source
+member order, and member before value. Generated events follow their owner at
+the published ordinal. Per-reference asset diagnostics belong to the referring
+element; intrinsic authoritative-asset diagnostics belong to the file record.
+Supplemental request values follow scene file occurrences by file-ID bytes.
+Root metadata events follow content in provenance, summary, embedded-scene
+order. Report order does not alter semantic-accounting transaction precedence.
+
+### 11.4 Meaningful Artifacts and Renderer-Owned Fallbacks
+
+A valid empty scene, deleted/nonpainting-only content, or fully diagnosed local
+fallbacks and omissions remains a meaningful artifact.
+
+Renderer-owned element fallbacks use fill `#f1f3f5`; stroke and diagonal cross
+`#868e96`; stroke width 2 logical pixels; dash `6 4` at phase zero; and centered
+Liberation Sans 14 logical pixels in `#495057`. Labels are:
+
+- `Unsupported: <type>` with `renderer.unknown-element.v1`.
+- `Malformed element` with `renderer.malformed-element.v1`.
+- `Unavailable: <type>` with `renderer.known-element-unavailable.v1`.
+
+They preserve transform, opacity, paint order, frame clipping, and sanitized
+safe link. Centered strokes are clipped to source bounds. Bounds are never
+enlarged and no minimum footprint is invented. Labels escape source text and
+use one U+2026 only if it fits; otherwise omit the label. Components that do not
+fit are omitted. Without safe finite bounds, omit the occurrence under the same
+primary diagnostic.
+
+Official image, image-error, forbidden-resource, nested-resource, and
+embeddable fallbacks MUST use the content-addressed recipes in the scene-surface
+manifest, not the generic box.
+
+### 11.5 CLI JSON
+
+Render report schema 1 has this exact top-level order:
+
+```json
+{
+  "schema_version": 1,
+  "status": "success | failure",
+  "renderer_version": "package semver",
+  "compatibility_revision": 1,
+  "excalidraw_release": "v0.18.1",
+  "reference_profile_digest": "sha256:...",
+  "format": "svg | png | pdf | null",
+  "artifact": {
+    "media_type": "image/svg+xml",
+    "byte_length": 0,
+    "sha256": "sha256:..."
+  },
+  "error": null,
+  "diagnostics": []
+}
+```
+
+Exactly one of artifact and error is non-null. Identity and format become
+populated as soon as selected. Artifact descriptors contain no bytes.
+
+Revision-discovery schema 1 contains schema version, renderer version, and
+increasing revision entries with compatibility revision, Excalidraw release,
+profile digest, and default flag in that order. An incompatible shape or new
+detail kind requires a new report schema; a new stable code can remain in schema
+1 only with null details or an existing detail kind.
+
+## 12. Artifact Manifest
+
+The conditionally present artifact manifest is format-neutral schema-1 canonical
+JSON:
+
+```json
+{
+  "schema_version": 1,
+  "provenance": {
+    "renderer_version": "<Cargo package semver>",
+    "compatibility_revision": 1,
+    "excalidraw_release": "v0.18.1",
+    "reference_profile_digest": "sha256:<64 lowercase hex>"
+  },
+  "diagnostic_summary": {
+    "snapshot": "pre_metadata",
+    "total": 3,
+    "by_severity": {"info": 1, "warning": 2},
+    "by_code": [
+      {"code": "<stable diagnostic code>", "count": 3}
+    ]
+  },
+  "notices": [
+    {"asset_identity": "<canonical built-in identity>", "text": "<complete canonical notice>"}
+  ],
+  "embedded_scene": {
+    "name": "scene.excalidraw",
+    "media_type": "application/vnd.excalidraw+json",
+    "sha256": "sha256:<64 lowercase hex>"
+  }
+}
+```
+
+Unrequested, omitted, or failed provenance, summary, and embedded scene are
+literal null. `notices` is always an array, sorted by canonical asset identity,
+and does not deduplicate equal notice text. `by_severity` always contains info
+then warning. `by_code` contains positive counts sorted by stable-code bytes.
+
+The manifest exists when an optional component survives or a mandatory notice
+applies; otherwise it is absent. Schema 1 is closed and caller-unselectable.
+
+The diagnostic summary is frozen exactly once before metadata processing. It
+includes all pre-metadata diagnostics and excludes summary, optional-metadata,
+and metadata-failure events produced later. It is never regenerated.
+
+### 12.1 SVG and PNG Scene Codec
+
+SVG and PNG embed this exact-key-order wrapper:
+
+```json
+{"version":"1","encoding":"bstring","compressed":true,"encoded":"<byte string>"}
+```
+
+The project-owned zlib stream uses RFC 1950 header `78 01`, no dictionary, RFC
+1951 stored blocks in source order, at most 65,535 source bytes per block,
+little-endian `LEN` and one's-complement `NLEN`, exactly one final block even for
+empty input, and big-endian Adler-32. Each zlib byte maps to the same
+U+0000-U+00FF codepoint in `encoded`. SVG applies official Latin-1-byte-to-base64
+transport; PNG stores wrapper JSON as Latin-1 `tEXt`. Failure never switches
+compression mode, compressor, or carrier.
+
+### 12.2 Format Carriers
+
+SVG root children begin, in order, with `<!-- svg-source:excalidraw -->`, one
+`<metadata>`, then `<defs>`. `<metadata>` always exists. An embedded scene starts
+with this child sequence in order:
+
+```xml
+<!-- payload-type:application/vnd.excalidraw+json -->
+<!-- payload-version:2 -->
+<!-- payload-start -->
+BASE64_TEXT
+<!-- payload-end -->
+```
+
+`BASE64_TEXT` denotes one unwrapped XML text node, not an element.
+
+The manifest follows as one
+`excalidraw-render:manifest` element in namespace
+`urn:excalidraw-render:artifact-manifest:1`, containing one canonically escaped
+JSON text node. No second metadata element is emitted.
+
+PNG application metadata follows final `IDAT` and precedes `IEND`. Embedded
+scene is the first `tEXt`, keyword `application/vnd.excalidraw+json`, followed by
+one uncompressed `iTXt` manifest with keyword
+`excalidraw-render:artifact-manifest`, compression flag/method zero, and empty
+language and translated keyword. No other `tEXt` or `iTXt` is emitted.
+
+PDF attaches raw canonical scene bytes as `scene.excalidraw` with media type
+`application/vnd.excalidraw+json`; it does not use the wrapper. The artifact
+manifest is the sole custom value in this exact bare, unpadded UTF-8 XMP tree:
+
+```xml
+<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:er="urn:excalidraw-render:pdf:metadata:1"><er:manifest>...canonical manifest JSON...</er:manifest></rdf:Description></rdf:RDF></x:xmpmeta>
+```
+
+There is no XML declaration, BOM, processing instruction, indentation, trailing
+LF, `xpacket`, or duplicate information-dictionary metadata. Only required XML
+character-data escaping changes JSON spelling, and XML unescaping reproduces
+the canonical manifest bytes. XMP is absent when no manifest is required.
+
+### 12.3 Atomicity and Failure
+
+The embedded scene, carrier/attachment, and matching descriptor are one atomic
+component. Retention priority is required visual/container bytes and notices,
+then provenance, diagnostic summary, and embedded scene. Failure of one optional
+component does not prevent consideration of later components.
+
+After pre-metadata diagnostics, freeze `S0`. For each optional component in
+priority order:
+
+1. Precheck exact generation work and scratch.
+2. If either cannot fit, reject it and emit
+   `resource.optional-metadata-omitted`.
+3. Otherwise commit measurement work and measure exact marginal encoded bytes
+   against the already accepted component set.
+4. Precheck output-buffer growth, emission work, total work, and output bytes.
+5. If retention cannot fit, reject only retention, release scratch, preserve
+   committed measurement work, emit the omission diagnostic, and continue to
+   every later component.
+
+The omission diagnostic is required report content and can itself cause fatal
+diagnostic, working-byte, or total-work exhaustion. Required visual/container
+bytes and mandatory notices are never omitted. Non-resource serialization or
+compression failure emits its component diagnostic, continues, and never
+regenerates `S0`.
+
+Provenance or summary serialization failure nulls only that component. Scene
+serialization, compression, or carrier failure omits the complete embedded
+scene. Final manifest failure with no notices omits the manifest and all optional
+metadata, including prepared scene payload. Final manifest failure with a
+mandatory notice is fatal `encode.<format>-failed` with no artifact.
+
+Recoverable failures emit exactly one current-format warning with metadata
+effect, root pointer, and no element ID. Resource omission uses
+`resource.optional-metadata-omitted`. Physical allocation refusal is fatal
+`resource.memory-unavailable`. No path exposes partial in-memory metadata or
+artifact bytes.
+
+## 13. Resource Limits and Robustness
+
+`ResourceLimits` is immutable, has private fields and read-only accessors, and
+is built from `ResourceLimits::default()`. Integer fields use target-independent
+`u64`/`u32`; coordinate fields use finite positive `f64`. There is no unlimited
+or target-specific preset.
+
+| Field | Default | Absolute maximum |
+| --- | ---: | ---: |
+| `max_scene_bytes` | 32 MiB | 64 MiB |
+| `max_elements` | 16,384 | 65,536 |
+| `max_asset_entries` | 1,024 | 4,096 |
+| `max_asset_bytes` | 32 MiB | 64 MiB |
+| `max_total_asset_bytes` | 128 MiB | 256 MiB |
+| `max_relationship_depth` | 64 | 128 |
+| `max_nested_asset_depth` | 4 | 8 |
+| `max_nested_svg_nodes` | 65,536 | 262,144 |
+| `max_geometry_segments_per_element` | 262,144 | 1,048,576 |
+| `max_total_geometry_segments` | 4,194,304 | 16,777,216 |
+| `max_text_scalars_per_element` | 262,144 | 1,048,576 |
+| `max_total_text_scalars` | 4,194,304 | 16,777,216 |
+| `max_raster_dimension` | 16,384 | 32,768 |
+| `max_decoded_pixels_per_asset` | 16,777,216 | 67,108,864 |
+| `max_total_decoded_pixels` | 33,554,432 | 134,217,728 |
+| `max_raster_surface_pixels` | 33,554,432 | 134,217,728 |
+| `max_total_rasterized_pixels` | 67,108,864 | 268,435,456 |
+| `max_svg_dimension` | 1,000,000 | 10,000,000 |
+| `max_pdf_page_points` | 14,400 | 14,400 |
+| `max_coordinate_magnitude` | `1e9` | `1e12` |
+| `max_diagnostics` | 65,536 | 262,144 |
+| `max_working_bytes` | 256 MiB | 512 MiB |
+| `max_output_bytes` | 128 MiB | 512 MiB |
+| `max_element_work_units` | 67,108,864 | 268,435,456 |
+| `max_asset_work_units` | 134,217,728 | 536,870,912 |
+| `max_total_work_units` | 1,073,741,824 | 4,294,967,296 |
+
+MiB means 1,048,576 bytes. Equality is accepted. Checked `u64` arithmetic is
+mandatory; overflow is a crossing. Defaults and maxima remain invariant across
+revisions in one semver-major line.
+
+`ResourceLimits::absolute_maxima()` exposes the immutable maximum profile. The
+builder starts from `ResourceLimits::default()` and public read-only accessors
+expose every configured field.
+
+The builder rejects zero, non-finite, negative, above-maximum values and exactly
+these cross-field inconsistencies:
+
+```text
+max_asset_bytes > max_total_asset_bytes
+max_geometry_segments_per_element > max_total_geometry_segments
+max_text_scalars_per_element > max_total_text_scalars
+max_decoded_pixels_per_asset > max_total_decoded_pixels
+max_raster_surface_pixels > max_total_rasterized_pixels
+max_element_work_units > max_total_work_units
+max_asset_work_units > max_total_work_units
+```
+
+Other aggregate infeasibility is evaluated at render time.
+
+`max_svg_dimension` applies to logical `viewBox` extents and final scaled width
+and height. `max_pdf_page_points` applies after padding and sizing; PDF cannot
+evade it with `UserUnit`. Raster side and area limits apply after sizing and
+integer conversion. Main PNG side or surface exhaustion is fatal; an
+independently replaceable fallback surface uses local recovery.
+
+`max_coordinate_magnitude` applies to every normalized coordinate, dimension,
+control point, translated transform coefficient, and intermediate exposed to a
+later semantic operation.
+
+### 13.1 Fixed Parser Envelope
+
+`SceneDocument::parse` always uses these cross-target ceilings:
+
+| Ceiling | Value |
+| --- | ---: |
+| Input bytes | 67,108,864 |
+| JSON depth, root at 1 | 128 |
+| JSON structural entries | 1,048,576 |
+| Total decoded UTF-8 string bytes | 67,108,864 |
+| One decoded string | 67,108,864 |
+| One object key | 4 KiB |
+| One number token | 128 bytes |
+| Canonical parser live bytes | 256 MiB |
+
+A structural entry includes every container, scalar, and object member name.
+Large valid number tokens can remain lexical until consumed. Parser logical
+memory uses `A(n) = 64 * ceil(n / 64)`, with `A(0) = 0`, and these records:
+
+| Parser record | Canonical logical bytes |
+| --- | ---: |
+| Array or object node | `128` |
+| Scalar node | `64` |
+| Object member | `64 + A(key_utf8_bytes)` |
+| Decoded string storage | `64 + A(decoded_utf8_bytes)` |
+| Preserved number token | `64 + A(token_bytes)` |
+| Active parser frame | `64` |
+| Active token scratch | `64 + A(current_token_bytes)` |
+
+The input slice is excluded. Records are acquired before constructing the value
+and released when the opaque document takes ownership or parsing fails.
+Allocator/hash capacity, physical layout, RSS, WASM pages, and reserve capacity
+do not affect this ledger.
+
+CLI scene input streams to the 64 MiB parser ceiling without trusting file
+metadata. One extra byte reports `scene.input-too-large` with
+`at_least = 67,108,865`. A complete scene above the 32 MiB default but within
+the parser envelope parses, then fails `resource.scene-bytes-exceeded`.
+Supplemental files stream by file-ID order against 32 MiB per-file and 128 MiB
+aggregate transport ceilings.
+
+### 13.2 Semantic Accounting
+
+The canonical phase order is admission, JSON traversal and normalization,
+authority/reference census, intrinsic assets and nested discovery, shared
+semantic resolution, format planning, projection/fallback, metadata, then
+encoding/outcome assembly. Implementations can run ahead only while buffering
+results until all earlier canonical transactions settle.
+
+Original JSON traversal is depth-first lexical source order. Relationship sources
+order by element, then frame, group, binding, clip, mask, asset reference, and
+link; ties use target source position and pointer bytes. Format projection orders
+page/background, scene paint order, then published suboperation ordinal.
+
+Every scene file payload, supplemental mapping payload, and accepted nested data
+payload is a separate asset payload occurrence before conflict resolution or
+deduplication. Each occurrence pays exact valid decoded bytes, or the valid
+prefix before the first malformed quantum, against local and aggregate limits.
+Nested bytes count on every discovery.
+
+Top-level occurrences order scene file records by preserved member order, then
+supplemental mappings by file-ID UTF-8 bytes. Inside an accepted authoritative
+parent, nested slots order by source-byte offset then attribute/property ordinal,
+recursively depth-first. Top-level depth is 0. Recursive discovery occurs only
+for a referenced authoritative parent that passed admission, validation,
+sanitization, node, depth, and asset-work checks. Ignored, unreferenced,
+malformed, unsupported, oversized, replaced, or conflicting parents are not
+traversed.
+
+Semantic asset identity is SHA-256 over this exact preimage:
+
+```text
+UTF-8("excalidraw-render:semantic-asset:v1")
+NUL
+u64-le(compatibility revision)
+u64-le(validated media-kind tag)
+u64-le(decoded payload length)
+decoded payload octets
+```
+
+Revision-1 media-kind tags are frozen as `1` PNG/APNG, `2` JPEG/JFIF, `3` GIF,
+`4` WebP, `5` BMP, `6` ICO, `7` AVIF, and `8` sanitized SVG. Claimed MIME, ID,
+pointer, lexical spelling, parameters, path, fragment, and provenance do not
+participate. Malformed content without a validated kind has no identity.
+
+Intrinsic operation kinds are exactly `validate`, `sanitize-svg`,
+`decode-raster`, `select-static-frame`, `color-normalize`,
+`derive-decoded-rgba`, `derive-sanitized-svg`, and `derive-format-resource`.
+They charge once per `(identity, operation kind)`. Occurrence admission,
+references, projection, masking, and compositing do not share charges.
+
+`max_elements` counts all source occurrences. Geometry counts every move, line,
+quadratic, cubic, close, rough operation, clip, mask, and glyph-outline command.
+Text counts normalized Unicode scalars before shaping. Decoded pixels share only
+per identity and decode policy. Each selected raster surface pays its full area;
+the main PNG surface precedes fallbacks.
+
+Every event charges total work and at most one local owner: element-local JSON,
+normalization, relations, geometry, text, format, and diagnostics belong to that
+element; occurrence admission belongs to that occurrence's asset owner;
+intrinsic work belongs to the semantic identity; nested projection belongs to
+the parent identity; optional metadata is total-only. Scene-global/container
+and output work is total-only. Events matching several rows pay every row but
+retain one owner.
+
+The revision-1 work ledger is:
+
+| Weight | Canonical event and multiplicity |
+| ---: | --- |
+| 1 | Each original scene source octet, once |
+| 1 | Each supplemental raw or data-URL lexical payload octet |
+| 1 | Each decoded occurrence octet in `D(o)` |
+| 1 | Each identity payload octet for every selected intrinsic operation |
+| 1 | Each codec-measurement input octet |
+| 1 | Each codec-emission input octet when retained |
+| 1 | Each canonical raster sample operation |
+| 1 | Each retained artifact octet |
+| 4 | Each selected decoded source pixel |
+| 8 | Each original JSON node/member |
+| 8 | Each generated normalized field |
+| 8 | Each format-plan operation |
+| 8 | Each retained diagnostic occurrence |
+| 16 | Each nested XML/CSS token |
+| 16 | Each nested SVG element/text node |
+| 16 | Each accepted, removed, or rejected nested attribute/CSS declaration |
+| 16 | Each canonical selector attempt |
+| 16 | Each accepted or rejected local nested reference |
+| 32 | Each considered relationship traversal, including rejected/cycle edge |
+| 32 | Each source/generated geometry command |
+| 32 | Each normalized Unicode scalar |
+| 32 | Each shaped glyph |
+| 32 | Each line-break step |
+| 32 | Each font fallback probe |
+| 32 | Each glyph-outline command |
+
+Codec measurement and retained emission are two semantic passes even when
+physically fused. Dependencies must prove untrusted-dependent loops are bounded
+by prepaid semantic events.
+
+Raster operations cumulatively charge `P`, `2P`, `4P`, `6P`, `8P`, `12P`,
+`16P`, or `32P` samples for clear, copy, solid background or clip/composite,
+nearest projection, alpha-mask generation, bilinear projection, vector/glyph
+coverage, and bicubic projection respectively. `P` is the clipped conservative
+device-space integer bounding rectangle area using floor minima, ceil maxima,
+and surface clamping.
+
+Canonical logical working bytes, not physical allocations, define
+`max_working_bytes`. All variable records use the `A(n)` function above:
+
+| Canonical record | Logical bytes | Lifetime |
+| --- | ---: | --- |
+| Request session/meter | `4,096` | Render start to outcome handoff |
+| Normalized element | `256` | Normalization through plan completion |
+| Scalar/reference/style field | `64` | Normalization through plan completion |
+| Owned UTF-8/byte field | `64 + A(n)` | Normalization through plan completion |
+| Relationship edge | `64` | Admission through plan completion |
+| Geometry path header/command | `128` / `64` | Geometry admission through plan completion |
+| Text run | `256 + A(source_utf8_bytes)` | Text resolution through plan completion |
+| Glyph/line-break record | `64` / `32` | Text resolution through plan completion |
+| Asset occurrence state | `256 + A(file_id_or_pointer_bytes)` | Admission through authority/discovery or parent completion |
+| Semantic identity and authoritative payload | `512 + A(decoded_payload_bytes)` | Identity processing through last projection use |
+| Decoded RGBA | `256 + 4 * width * height` | Decode through projection completion |
+| Sanitized SVG | `512 + 128N + 64(A_t + T + S + R + C)` | Sanitize through projection completion |
+| Format-plan base/operation/reference | `1,024` / `128` / `64` | Planning through encoding completion |
+| Format clip/mask/link | `128` | Planning through encoding completion |
+| Raster color/mask surface | `256 + 4*pixels` / `256 + pixels` | Selection through final composite/encoding |
+| Diagnostic | `512 + A(pointer) + A(element_id)` | Acceptance through outcome handoff |
+| Metadata scratch | `512 + A(uncompressed) + A(compressed)` | Measurement through acceptance/omission |
+| Raster decoder workspace | `1 MiB + 32 * max(width, height)` | Active decode |
+| SVG sanitizer workspace | `1 MiB` | Active sanitizer |
+| SVG serializer workspace | `256 KiB` | Measurement/emission through encoding |
+| PNG encoder workspace | `2 MiB + 16 * output_width` | Measurement/emission through encoding |
+| PDF stream workspace | `1 MiB` | Active stream |
+| Metadata compression workspace | `1 MiB` | Active compression |
+| Built-in selection state | `256` per selected resource | First use through encoding |
+| Built-in glyph/range state | `64` per selected glyph/range | First use through encoding |
+| Request-derived built-in blob | `256 + A(derived_bytes)` | Derivation through encoding |
+| Output buffer | `512 + A(final_output_bytes)` | Exact admission through handoff |
+
+For sanitized SVG, `N` is accepted nodes; `A_t` accepted/removed
+attributes/declarations; `T` retained tokens; `S` retained selectors; `R`
+retained local-reference slots; and `C` retained nested geometry commands.
+
+Preexisting opaque scene/request/supplemental storage and immutable built-in
+catalog bytes are excluded. Derived and retained state remains charged for its
+published lifetime. Work never refunds.
+
+Sharing is permitted only by these keys: identity payload/state by semantic
+identity; sanitized SVG by `(identity, sanitizer revision)`; RGBA by
+`(identity, decode policy)`; intrinsic work/pixels by `(identity, operation)`;
+element geometry by `(source element, semantic role)`; selected built-ins by
+identity/glyph/range; and format resource body only where that format permits.
+Occurrence admission, relationships, per-reference projection, masking,
+compositing, repeated nested occurrences, plan references, surfaces, fallback,
+diagnostics, optional metadata occurrences, and output octets never share.
+
+Before work, determine an exact delta or permitted lower bound, evaluate every
+applicable limit, reserve accepted work/records, and perform only covered work.
+A rejected transaction commits no work, output, local count, or record.
+`at_least = limit + 1` is allowed only for bounded streaming stopped one unit
+after the ceiling or checked overflow.
+
+For jointly evaluated occurrence bytes, geometry, text, and decoded pixels,
+aggregate crossing wins and neither observation nor local admission commits. If
+only local crosses, the aggregate observation commits, local admission does not,
+and local recovery begins. If neither crosses, both commit. Rejected local work
+commits neither local nor aggregate work because it is not performed.
+
+At one source point, fatal aggregate crossings beat local recovery. Fatal
+precedence is scene bytes, elements, asset entries, total asset bytes,
+relationship depth, total geometry, total text, total decoded pixels, required
+main raster, total rasterized pixels, SVG dimensions, PDF page points,
+diagnostics, working bytes, output bytes, then total work. Local precedence is
+nested depth, occurrence bytes, image side, per-identity pixels/fallback area,
+nested-SVG complexity, coordinate, element complexity, element work, asset work,
+then optional metadata.
+
+For multiple raster crossings, width precedes height, then area. Coordinate
+components order `x`, `y`, `width`, `height`, affine `a`, `b`, `c`, `d`, `e`,
+`f`, then revision-defined components. Across source points the earliest
+canonical phase/source wins. A rejected fatal transaction emits no recovery
+diagnostic.
+
+Fallback is a new fully charged transaction. If it exceeds the same local work
+allowance, omit instead of recursively falling back and retain the original
+diagnostic.
+
+### 13.3 Safety and Recovery
+
+Public fallible operations return typed results rather than panic, unwind, hang,
+recurse without checked bounds, read external resources, or expose partial
+in-memory artifacts. The core exposes no clock, timeout, cancellation callback,
+or async resolver. Hosts needing deadlines isolate calls in a terminable process
+or worker. Elapsed time never affects bytes or semantic outcomes.
+
+`catch_unwind` is not the safety boundary. Renderer-controlled paths remove
+unchecked indexing, user-dependent recursion, unchecked conversion, and
+`unwrap`. All untrusted-dependent allocations are fallible. Physical allocation
+failure is fatal `resource.memory-unavailable`; trusted-catalog corruption is
+internal failure.
+
+Relationships, clipping/masking, nested assets, XML, CSS, and backend trees use
+checked explicit stacks where practical. Cycles are detected in source order.
+Recoverable cycles remove the closing edge; excess relationship depth is fatal.
+
+Local recovery is permitted only for an independently replaceable element,
+asset, nested-image subtree, PDF effect closure, or optional metadata component
+when the remainder stays faithful. The renderer never truncates points, text,
+elements, bytes, diagnostics, scene order, or output; silently lowers
+resolution; selects cheaper filters; returns an encoder prefix; or translates
+allocation failure into a fallback.
+
+Aggregate exhaustion is fatal, discards all in-memory artifact bytes, and
+preserves the already accumulated report. If finite scene bounds cannot be
+established after local recovery, fail `scene.unbounded-geometry`.
+
+Conformance MUST exercise N-1, N, and N+1 for every limit, combined aggregate
+crossings, exact code/pointer/order/artifact behavior, cycles and deep graphs,
+expansion and decompression bombs, numeric excess, oversized dimensions,
+overdraw, diagnostic floods, metadata omission, allocator refusal, output
+exhaustion, fuzzing, and every supported target.
+
+Tests expose an uncharged byte-stable canonical resource trace. Its header has
+revision, profile, format, limits, and input digests. Each ordered transaction or
+release records phase/source ordinal, pointer/element/identity, event, local
+owner, sharing key, record kind, deltas, before/attempted/after values,
+exact-or-at-least, decision, code, fallback parent, and acquire/release. Decisions
+are only `committed`, `rejected_local`, `rejected_fatal`, `shared_intrinsic`, and
+`released`. Allocator, backend, cache, thread, and timing facts are excluded.
+
+Alternate-representation tests vary borrowed/copied payloads, aliases, caches,
+eager/streamed records, fused/split passes, deterministic internal traversal,
+codecs, backends, and allocator growth while preserving artifact/report,
+canonical trace, first crossing, measurement form, fallback, and stable code.
+Only injected physical allocation refusal may diverge to
+`resource.memory-unavailable` after the same committed trace prefix.
+
+## 14. Conformance
+
+### 14.1 Development Reference Renderer
+
+The development-only reference renderer is a repository-owned Playwright wrapper
+around the exact official package. It calls `exportToSvg()` for official SVG and
+independently calls `exportToBlob({ mimeType: "image/png" })` for browser-canvas
+PNG. PNG is never derived from SVG.
+
+Official SVG, direct-canvas PNG, and provenance sidecars are immutable checked-in
+reference evidence. Every evidence tuple is generated twice in fresh browser
+processes with no shared mutable state; encoded SVG hashes, PNG hashes, and raw
+raster hashes must match. Existing approved bytes cannot change while profile,
+scene hash, options, format, and animation offset are unchanged.
+
+Ordinary Rust tests consume approved evidence without requiring Node,
+JavaScript/V8, Playwright, Chromium, OCI, networking, or system fonts. A
+repository `xtask` owns explicit generation and verification. Monthly and
+pre-release regeneration occurs in an isolated location and never automatically
+refreshes evidence. `excalidraw-image 0.2.0` remains diagnostic only.
+
+### 14.2 Corpus and Coverage
+
+Conformance uses independent hard gates. Exact invariants, parsed semantics,
+complete ordered reports, visual budgets, and artifact/report determinism all
+pass per applicable case and region; corpus averages cannot offset failures.
+
+The conformance corpus has five layers:
+
+1. Exact compatibility-critical vectors.
+2. Focused scene documents with official SVG/PNG evidence.
+3. Representative licensed or project-authored scene documents.
+4. Adversarial and resource-boundary scene documents.
+5. Permanent minimized regressions.
+
+Each case is a stable manifested directory recording identity, schema, purpose,
+layer, feature/risk tags, coverage identities, compatibility revision, profile
+digest, complete scene and hash, variants/formats, provenance/license,
+sanitization, assets, evidence hashes/dimensions/generation data, complete
+ordered expected report, semantic expectations, visual class, crops,
+exceptions, determinism tags, and originating issue where applicable.
+
+External scenes require consent or redistribution-compatible licensing and are
+sanitized. Only the immutable sanitized corpus scene is retained. Synthetic
+cases are complete scene documents and avoid random/time restore repairs.
+
+A machine-readable coverage ledger assigns every rendering-affecting `v0.18.1`
+behavior, format-specific difference, compatibility exception, diagnostic row,
+raster/decoder/orientation/alpha/animation class, and declared interaction to
+exactly one primary record or approved exclusion. Exclusions require proof of
+unreachability or no static-export effect. Difficulty, insignificance, or absent
+evidence are not exclusions.
+
+Raster coverage blocks release until every accepted profile and color path,
+HDR/gain-map path, decoder, orientation, alpha representation, and animated
+container class is characterized under the canonical viewer and direct-PNG
+rules. Missing coverage is not a tolerance or runtime best-effort case.
+
+CI rejects unknown identities, stale links, missing variants/formats, duplicate
+primary owners, dead cases, unapproved exclusions, and uncovered inventory.
+
+Exact vectors cover Rough.js, the qualified Perfect Freehand path, PRNG
+consumption, normalization, geometry, color, shaping/fallback, serialization,
+diagnostic order, and format planning. Fixed-seed property tests run on every
+pull request for parsing, normalization idempotence, bounded geometry, stable
+order, repeated rendering, and panic resistance. Parser, normalization,
+image/SVG, and renderer fuzzing runs at least nightly. Confirmed failures become
+permanent minimized regressions.
+
+Every variant first passes exact dimensions and complete report comparison. SVG
+semantic checks cover declared consumer-visible semantics rather than official
+DOM identity. PNG must decode and pass dimensions, color/alpha, deterministic
+chunks/metadata, embedded-scene, and notice checks before visual comparison.
+
+### 14.3 Canonical Raster and Comparators
+
+Every viewer and PNG decoder produces tightly packed, top-left, row-major,
+straight-alpha sRGB RGBA8 with exact dimensions and SHA-256. Resizing,
+translation, alignment search, and color fitting are forbidden. RGB is zeroed
+where alpha is zero. For each `(r,g,b,a)`, create:
+
+```text
+alpha: (a, a, a, 255)
+black: ((r*a+127)/255, (g*a+127)/255, (b*a+127)/255, 255)
+white: ((r*a+255*(255-a)+127)/255,
+        (g*a+255*(255-a)+127)/255,
+        (b*a+255*(255-a)+127)/255,
+        255)
+```
+
+Operations are unsigned integers in displayed order; division truncates after
+the addition. These views are the complete Pixelmatch and SSIM inputs.
+
+Changed pixels use an exact port of Mapbox Pixelmatch `7.2.0`, commit
+`9faed09302aaecec130b4ce0e8505d5ed5221393`, source blob
+`be64dc92dae160d6d5ac21b9778b70553c023292`, fetched SHA-256
+`52c6026c4916a07548d4ce55090ec4ed918d353e15095406dabc3a8a5135d788`.
+Options are threshold binary64 `0x3fb999999999999a` (`0.1`), `includeAA = false`, and
+`checkerboard = true`. The port preserves YIQ coefficients, source operation and
+traversal order, strict delta comparison, anti-alias ties, ECMAScript `ToInt32`
+and remainder, and binary64 rounding. FMA, reassociation, fast math, approximate
+operations, and parallel reductions are forbidden.
+
+Pixelmatch runs separately on alpha, black, and white. The changed mask is their
+coordinate union after anti-alias suppression. Crops are extracted before
+comparison. Fraction limits use exact widened integer cross multiplication;
+equality passes.
+
+SSIM is single-scale Wang/Bovik/Sheikh/Simoncelli SSIM with no filtering or
+downsampling, an 11x11 Gaussian window at sigma 1.5, population moments, valid
+centers only, and an unweighted row-major arithmetic mean.
+
+Black/white luma uses binary64 in this source order, with every multiply/add
+rounded separately and no FMA or reassociation:
+
+```text
+Y = 0x3fd32119cb582d94*r
+  + 0x3fe2c59c7c77f5b0*g
+  + 0x3fbd4eb519d2b9f7*b
+```
+
+Alpha uses the alpha byte directly. These 121 row-major binary64 coefficient
+words are normative. Their concatenated little-endian `u64` digest is
+`b931d31602d633632c7a2f29b24dbe5812a49a8e8a016002b07dc8c0ce93efd3`:
+
+```text
+3eb1be35ac1c34c6 3ee063548b08c281 3f036912a05519ac 3f1d7b5ae8a4fc11 3f2cb61ec7cbd51a 3f31ed983c6c179d 3f2cb61ec7cbd51a 3f1d7b5ae8a4fc11 3f036912a05519ac 3ee063548b08c281 3eb1be35ac1c34c6
+3ee063548b08c281 3f0e45e1f47286ac 3f31ed983c6c179d 3f4b3afa92035fc1 3f5a84ce6c9db06d 3f608f18b8573f7e 3f5a84ce6c9db06d 3f4b3afa92035fc1 3f31ed983c6c179d 3f0e45e1f47286ac 3ee063548b08c281
+3f036912a05519ac 3f31ed983c6c179d 3f553c0d18eb2ec1 3f702050fb9dc09d 3f7f68dcbd7dd57d 3f839ce92f03301e 3f7f68dcbd7dd57d 3f702050fb9dc09d 3f553c0d18eb2ec1 3f31ed983c6c179d 3f036912a05519ac
+3f1d7b5ae8a4fc11 3f4b3afa92035fc1 3f702050fb9dc09d 3f887e5bdea2018b 3f97da7ee69c2aee 3f9dca171b0b58b1 3f97da7ee69c2aee 3f887e5bdea2018b 3f702050fb9dc09d 3f4b3afa92035fc1 3f1d7b5ae8a4fc11
+3f2cb61ec7cbd51a 3f5a84ce6c9db06d 3f7f68dcbd7dd57d 3f97da7ee69c2aee 3fa73aea2efb5b99 3fad02cc3c609d96 3fa73aea2efb5b99 3f97da7ee69c2aee 3f7f68dcbd7dd57d 3f5a84ce6c9db06d 3f2cb61ec7cbd51a
+3f31ed983c6c179d 3f608f18b8573f7e 3f839ce92f03301e 3f9dca171b0b58b1 3fad02cc3c609d96 3fb21d7958fce8e0 3fad02cc3c609d96 3f9dca171b0b58b1 3f839ce92f03301e 3f608f18b8573f7e 3f31ed983c6c179d
+3f2cb61ec7cbd51a 3f5a84ce6c9db06d 3f7f68dcbd7dd57d 3f97da7ee69c2aee 3fa73aea2efb5b99 3fad02cc3c609d96 3fa73aea2efb5b99 3f97da7ee69c2aee 3f7f68dcbd7dd57d 3f5a84ce6c9db06d 3f2cb61ec7cbd51a
+3f1d7b5ae8a4fc11 3f4b3afa92035fc1 3f702050fb9dc09d 3f887e5bdea2018b 3f97da7ee69c2aee 3f9dca171b0b58b1 3f97da7ee69c2aee 3f887e5bdea2018b 3f702050fb9dc09d 3f4b3afa92035fc1 3f1d7b5ae8a4fc11
+3f036912a05519ac 3f31ed983c6c179d 3f553c0d18eb2ec1 3f702050fb9dc09d 3f7f68dcbd7dd57d 3f839ce92f03301e 3f7f68dcbd7dd57d 3f702050fb9dc09d 3f553c0d18eb2ec1 3f31ed983c6c179d 3f036912a05519ac
+3ee063548b08c281 3f0e45e1f47286ac 3f31ed983c6c179d 3f4b3afa92035fc1 3f5a84ce6c9db06d 3f608f18b8573f7e 3f5a84ce6c9db06d 3f4b3afa92035fc1 3f31ed983c6c179d 3f0e45e1f47286ac 3ee063548b08c281
+3eb1be35ac1c34c6 3ee063548b08c281 3f036912a05519ac 3f1d7b5ae8a4fc11 3f2cb61ec7cbd51a 3f31ed983c6c179d 3f2cb61ec7cbd51a 3f1d7b5ae8a4fc11 3f036912a05519ac 3ee063548b08c281 3eb1be35ac1c34c6
+```
+
+For each center initialize `mu_x`, `mu_y`, `E[x^2]`, `E[y^2]`, and `E[xy]`
+to positive binary64 zero. Visit coefficients row-major and execute, in order:
+
+```text
+mu_x   += w*x
+mu_y   += w*y
+E[x^2] += (w*x)*x
+E[y^2] += (w*y)*y
+E[xy]  += (w*x)*y
+```
+
+Every displayed operation rounds separately. Then compute in source-line order:
+
+```text
+var_x  = max(0, E[x^2] - mu_x*mu_x)
+var_y  = max(0, E[y^2] - mu_y*mu_y)
+cov_xy = E[xy] - mu_x*mu_y
+
+ssim = ((2*mu_x*mu_y + C1) * (2*cov_xy + C2))
+     / ((mu_x*mu_x + mu_y*mu_y + C1) * (var_x + var_y + C2))
+
+C1 = 0x401a028f5c28f5c3
+C2 = 0x404d42e147ae147b
+```
+
+Sum local scores with plain binary64 addition in center row-major order and
+divide once by center count. Run views independently and take their minimum.
+Any non-finite value fails. Threshold exact values, never displayed rounding.
+Declared crops MUST be at least 11x11. Only a complete artifact smaller than
+11x11 can use the exception: it passes only when all three complete view buffers
+are byte-identical, producing exact score 1.
+
+| Visual class | Maximum changed pixels | Minimum SSIM | Pure-Rust SVG typography allowance |
+| --- | ---: | ---: | ---: |
+| Exact | `0/1` | `0x3ff0000000000000` (`1.000`) | Same |
+| Geometry/image | `1/400` | `0x3feff7ced916872b` (`0.999`) | Same |
+| Typography | `1/40` | `0x3fefd70a3d70a3d7` (`0.995`) | `3/100`, `0x3fefae147ae147ae` (`0.990`) |
+| Mixed representative | `1/100` | `0x3fefe76c8b439581` (`0.997`) | Same |
+
+Whole artifacts and every crop pass both metrics. Mixed cases include focused
+typography and non-text crops. Compatibility revision 1 permits no ignored
+pixel masks, excluded rectangles, transparent don't-care regions, denominator
+removal, alignment search, or metric weighting.
+
+Canonical Chromium renders official and candidate SVG independently as isolated
+top-level documents in fresh contexts using exact dimensions, transparent
+capture, virtual time zero, completed images, `document.fonts.ready`, and two
+lifecycle updates without advancing time. It uses the exact reference-profile
+browser/host/launch/color/origin identity, DPR 1, no margins, disabled GPU and
+font hinting, blocked service workers, and a route allowlist limited to the fixed
+origin, bundle, and manifested assets. Every other request fails.
+
+Virtual time is installed before navigation. Parsing, every admitted data-image
+decode, and fonts complete at offset zero before the two lifecycle updates and
+transparent capture. DevTools MUST report every SVG text font as custom
+embedded; platform-font use is a hard failure before metrics. Official and
+candidate runs never share document, cache, mutable context, or clock.
+Live-animation evidence samples the initial point and one integer-microsecond
+midpoint from every source-frame interval in the first loop relative to its
+fresh resource-ready epoch, each in a fresh context and reproducible in both
+oracle runs.
+
+The pure-Rust SVG gate uses test-only `resvg`/`usvg 0.47.0`, commit
+`3a0fdba53ccf2d346b54cc53ba7adf0ee60d0707`, separate from any production
+version, with a complete lockfile and exact transitive checksums. Default
+features, system/memory-mapped fonts, ambient fonts, and file-backed faces are
+disabled; only reviewed text and raster-image features are enabled.
+
+Its explicit profile is 96 DPI; languages `["en-US"]`; default Liberation Sans
+12; shape `GeometricPrecision`; text `OptimizeLegibility`; image
+`OptimizeQuality`; fallback viewport 100x100; no resource directory or injected
+stylesheet; admitted-data-URL-only image resolver; transparent sRGB output;
+native tree dimensions; identity transform. Local and network resolution fail.
+The image resolver covers every accepted raster family using exact-pinned
+pure-Rust decoders and revision-1 frame/orientation/color conversion, then
+supplies a deterministic in-memory PNG. Nested SVG remains sanitized SVG.
+
+Each artifact gets a fresh empty font database. The viewer parses every embedded
+`@font-face` and WOFF2 data URL; verifies payload hash, family, style, weight,
+stretch, Unicode range, and media type against the asset catalog; maps the exact
+identity to its reviewed sfnt; loads only artifact-declared faces in catalog
+order; rejects duplicate `(family, stretch, style, weight)` tuples; and maps
+every generic family explicitly to Liberation Sans. Catalog order is also
+fallback order. If Liberation Sans is absent, no ambient replacement is added.
+Full-catalog preload, scanning, aliases, host fallback, shared
+databases, and any other face are forbidden.
+
+Premultiplied output sets RGB zero at alpha zero; otherwise each channel is
+`min(255, (premultiplied_channel*255 + floor(alpha/2))/alpha)` with integer
+arithmetic.
+
+Candidate PNG compares directly to official browser-canvas PNG. Candidate PDF
+uses exact-pinned PDFium and PDF.js renderings at 96 DPI against canonical
+Chromium rendering of official SVG. Both viewers must pass independently.
+
+PDF visual classes use the same exact, geometry/image, typography, and mixed
+thresholds for PDFium; PDF.js typography permits 3% changed pixels and 0.990
+SSIM. Structural parsing also asserts page boxes, vector/text operators, fonts,
+`ToUnicode`, `ActualText`, annotations, clips/masks/transparency, output intent,
+XMP/notices/attachments, and exact image-XObject inventory. A full-page image,
+rasterized ordinary text/geometry, undeclared image, missing semantic object,
+parser warning, or viewer failure is a hard failure.
+
+Focused PDF evidence proves every project-owned and nested-SVG vector family
+emits neither `pdf.raster-fallback` nor fallback image XObjects. Every allowed
+fallback family is tested alone and in merged, clipped, transformed, reused,
+root-minimal, and unisolatable forms. Source images and statically empty or fully
+clipped effects succeed under `Forbid`. Required-vector backend failures remain
+distinct fatal failures and never become fallback.
+
+### 14.4 Approval and Determinism
+
+One designated compatibility maintainer judges case class, crops, coverage,
+exclusions, tolerance exceptions, and reference-evidence acceptance. Recorded
+self-approval is allowed when there is one maintainer. Approval records GitHub
+identity, UTC date, issue/PR URL, and SHA-256 of a canonical approval subject.
+
+The subject is a canonical bundle containing the case manifest without its
+approval object, every evidence/raw-buffer hash, semantic and complete ordered
+report expectations, whole/crop classes, crops, coverage records, exceptions,
+and all reference/comparator/viewer profile identities. The approval object has
+only `approved_by`, `approved_at`, `approval_url`, and
+`approval_subject_sha256`; it is excluded from its own digest. Any
+judgment-bearing or referenced-byte change invalidates approval. Multi-case
+approval lists every case and digest. Coverage-ledger changes additionally
+approve the ledger digest. CI validates schema, hashes, identities, links,
+reproducibility, approval presence, and scope but makes no judgment or rewrite.
+
+A tolerance exception names one case, variant, format, viewer, and region;
+documents a non-defect cause and immutable approval; and sets ceilings to the
+exact observed count and binary64 score with no margin.
+
+Canonical renderer-owned snapshots are generated on
+`x86_64-unknown-linux-gnu` with the pinned Rust toolchain, `--release --locked`,
+and only the public API. Every corpus variant renders twice through fresh
+sessions. The risk set also runs in a fresh process with reversed or
+deterministically shuffled order.
+
+Exact artifact and report bytes match canonical snapshots on all five supported
+targets. An aggregation job directly compares target uploads. The risk set
+covers every backend, numeric/PRNG path, font/fallback, decoder/nested-SVG path,
+frame/clip/mask path, metadata/compression path, diagnostic behavior, fallback,
+and target-sensitive dependency. Pull requests run the release-mode risk set
+without path filters. Releases rerun from the protected tag and packaged crates.
+
+## 15. Performance Protocol
+
+Performance is a parity-first regression guard, not a latency SLA. Conformance,
+safety, and artifact byte stability are prerequisites.
+
+The immutable workload set contains:
+
+| Workload | Required role |
+| --- | --- |
+| `empty` | Format/request/operation-matched fixed-cost control |
+| `common-32` | 32-element common scene with image, frames, bindings, text, and styles |
+| `mixed-512` | Sixteen varied common tiles with raster and nested-SVG slots |
+| `geometry-{128,512,2048,8192}` | Prefix-stable geometry ladder |
+| `text-{64,256,1024,4096}` | Prefix-stable official/fallback/CJK/emoji/missing/bidi text ladder |
+| `decoded-image-{1,4,16}mp` | Exact selected decoded-pixel ladder |
+| `png-surface-{1,4,16}mp` | Exact PNG output-pixel ladder |
+| `frame-binding-2048` | Fixed 64-frame, depth-8, 512-binding stress scene |
+| `codec-1mp` | Each accepted raster family and sanitized nested SVG |
+| `diagnostic-512` | Exactly 512 ordered recoverable diagnostics |
+
+`common-32` contains exactly 6 rectangles, 4 ellipses, 3 diamonds, 4
+lines, 4 arrows, 3 freedraw elements, 5 text elements, one local 256x256 image,
+and 2 frames. Its checked schedule covers bound/unbound linear elements, bound
+text, nested frame clipping, common rough/fill/stroke combinations, official and
+fallback text, overlap, and frame placement without changing the total.
+
+`mixed-512` is 16 uniquely positioned/content-varied common tiles. Its image
+slots alternate 8 raster and 8 sanitized nested-SVG assets. The checked schedule
+covers common roughness, fill, stroke, text, binding, frame, safe-link, and
+expected-diagnostic classes; content remains unique where deduplication could
+erase representative work.
+
+The geometry base motif is exactly 128 elements: 24 rectangles, 20 ellipses, 20
+diamonds, 24 lines, 24 arrows, and 16 freedraw elements. Exactly 16 arrows bind
+at both endpoints. The ladder repeats the motif 1, 4, 16, and 64 times with
+prefix stability and fixed style/point/binding schedules.
+
+The text base motif is exactly 64 runs: 24 official-family Latin, 8 Liberation
+Sans fallback, 8 Xiaolai/CJK, 8 Noto Emoji, 4 missing-glyph, and 12
+bidirectional/wrapped/bound/frame-label runs. Catalog order and fixed alignment,
+direction, wrapping, size, and binding schedules apply. Larger points use unique
+strings and placements.
+
+Decoded-image points contain exactly 1,048,576, 4,194,304, and 16,777,216 unique
+selected decoded pixels with stable-entropy patterns and identities while other
+costs stay fixed. PNG-surface points produce exactly those output-pixel counts
+while scene semantics and decoded-image pixels stay fixed.
+
+`frame-binding-2048` has 64 frames as eight depth-8 chains, 640 rectangles, 256
+ellipses, 256 diamonds, 256 arrows, 384 text elements, 128 lines, and 64
+freedraw elements. Its 512 bindings are 384 arrow-endpoint and 128
+container-text bindings. Non-frame elements split equally among inside,
+crossing, clipped, and overlapping placement classes.
+
+`codec-1mp` independently gates PNG, JPEG/JFIF, GIF, WebP, BMP, ICO, AVIF, and
+sanitized nested SVG. Every raster variant supplies 1,048,576 selected pixels
+with equivalent stable-entropy appearance; animation-capable formats include a
+contrasting non-selected frame. If one legal source cannot supply the count, use
+the minimum unique sources summing to it. Nested SVG uses a 1024x1024 viewBox.
+
+`diagnostic-512` yields an artifact and exactly 128 ordered occurrences in each
+of repairs, substitutions, unsupported behavior, and resource fallbacks.
+Minimal independent triggers distribute round-robin over canonically sorted
+applicable codes, with earlier codes receiving any remainder. The expected
+report proves no coalescing, omission, or fatal conversion.
+
+Fixtures, assets, recipes, generators, driver, schemas, statistics, runner
+profiles, and policy records share one versioned protocol digest. Activation
+freezes exact bytes, options, identities, and hashes. Runtime pseudorandom
+generation is forbidden. A validator recomputes all declared composition,
+ladder, pixel, diagnostic, applicability, and digest facts. Maximum and
+representative fixtures pass default resource limits.
+
+All generated families are deterministic, versioned, prefix-stable, and checked
+by output hash. Larger points use unique IDs/content/placement where needed and
+hold non-target cost drivers fixed.
+
+Targeted variants are only dark-mode `common-32`, embedded-scene `common-32`,
+scale-2 PNG `common-32`, and default `diagnostic-512` where applicable. No
+arbitrary option cross-product is allowed.
+
+### 15.1 Collection and Statistics
+
+Public timing boundaries are parse, renderer construction, parse plus first
+render, first render of a pre-parsed scene with new renderer, repeated render,
+and native CLI end to end. Cold operations use fresh processes. Warm operations
+reuse only immutable scene and renderer while creating a fresh session and
+fully consuming/dropping each outcome.
+
+Candidate versus merge-base and candidate versus checkpoint each collect exactly
+30 valid adjacent timing pairs in 15 quartets alternating `A/B/B/A` and
+`B/A/A/B`. Their quartets are interleaved in one job but estimates and bootstrap
+streams remain separate. If reference commit and protocol digest are identical,
+one series serves both comparisons; otherwise each gets 30 pairs.
+
+Before collection, calibrate both references for the exact result by doubling an
+integer batch count until three consecutive trials all exceed the greater of 50
+ms and 10,000 measured monotonic-clock quanta. The larger reference requirement
+applies to candidate, merge-base, and checkpoint. Calibration, excluded setup,
+and declared warm-up are not samples. Batch count cannot change after observing
+candidate results. Record integer nanoseconds and normalize with the common
+count.
+
+There is no outcome-dependent early stop. A sample is invalid only for a
+predeclared mechanical failure: wrong build/protocol/environment/fixture,
+nonconformant output, missing invocation, clock or supervisor failure, or
+whole-runner-health failure. Any invalid member reruns its complete quartet.
+Slow runs, page faults, context switches, isolated load spikes, and watchdog
+timeouts are not removable outliers; timeout is measured failure.
+
+The runner pins CPU/microcode, affinity, governor/turbo, memory, OS image,
+browser/tools, clock, process allowlist, and numeric memory/disk/thermal limits.
+Identity/topology change, clock fault, throttle increase, OOM/machine check,
+unexpected competitor, or threshold breach invalidates the whole job. One clean
+retry is allowed; two consecutive invalid jobs are infrastructure failure.
+
+For pair `i`, compute `ratio_i = c_i / r_i` and `delta_i = c_i - r_i`. Sort
+numerically. An odd median is the center; an even median is the arithmetic mean
+of its two centers. No trimming, winsorization, or manual exclusion is allowed.
+
+The confidence bound uses exactly 100,000 paired percentile-bootstrap
+replicates, resampling all complete rows and recomputing median ratio. Seed is
+the first 64 big-endian bits of SHA-256 over protocol digest and canonical
+result identity. SplitMix64 uses wrapping `u64` exactly:
+
+```text
+state += 0x9E3779B97F4A7C15
+z = state
+z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9
+z = (z ^ (z >> 27)) * 0x94D049BB133111EB
+output = z ^ (z >> 31)
+```
+
+Row selection rejects outputs at or above `floor(2^64 / n) * n`, then uses
+`output mod n`. The one-sided 95% lower bound is sorted zero-based index 4,999.
+
+Memory is measured separately from timing in three layers: Linux fresh-process
+high-water RSS including materialized outcome; renderer-attributed native heap
+high-water and post-drop live bytes through a counting allocator; and browser
+WASM linear-memory high-water and repeated-call growth. Browser RSS is telemetry.
+Each layer uses exactly 10 valid adjacent pairs, five balanced quartets, per
+reference comparison, with median ratio/delta, no bootstrap, and no deletion.
+
+Retention orders every active tuple by case identity, variant identity, then
+format. It warms each tuple once through shared immutable scenes/renderers,
+performs exactly 100 fresh-session renders cycling that list and consuming and
+dropping each outcome, then repeats the sequence three times in fresh processes
+or WASM instances. Any run over cap fails. Artifact size is measured only after
+byte stability.
+
+### 15.2 Gates
+
+A timing comparison fails only when all three strict conditions in its row hold;
+equality passes. Failure against merge-base or checkpoint fails.
+
+| Operation/platform | Median ratio | Median delta | Bootstrap lower bound |
+| --- | ---: | ---: | ---: |
+| Linux batched parse/construction/warm API | `> 1.10` | `> 0.25 ms/op` | `> 1.05` |
+| Linux first render/parse-first/CLI | `> 1.10` | `> 5 ms` | `> 1.05` |
+| WASM batched API | `> 1.15` | `> 1 ms/op` | `> 1.08` |
+| WASM first render/parse-first | `> 1.15` | `> 10 ms` | `> 1.08` |
+
+Linux RSS fails only above both 10% and 16 MiB. Native heap and WASM linear
+memory fail only above both 10% and 4 MiB. After warm-up and 100 renders,
+additional native live heap is at most 64 KiB and WASM growth at most two 64-KiB
+pages. SVG/PDF size fails above both 10% and 4 KiB; PNG above both 10% and 64
+KiB. Savings elsewhere do not offset growth.
+
+Scaling subtracts matched empty median. A nonpositive or sub-quantum net value
+clamps only to monotonic-clock quantum divided by batch count for time, one byte
+for native heap/artifact size, or one 64-KiB page for WASM linear memory. Every
+clamp is reported. Unweighted natural-log OLS over all points must have elapsed
+exponent at most 1.2, memory exponent at most 1.1, and SVG/PDF byte exponent at
+most 1.1. No adjacent 4x step exceeds 6x elapsed or 5x memory. If fewer than
+three points or the maximum are measurable, exponent remains explicit
+non-blocking telemetry while the adjacent-step gate still applies.
+
+Sample watchdog is `max(5 seconds, 10 * approved median)`, capped at 120 seconds
+native and 180 seconds WASM. Before approval, use the cap.
+
+Every pull request without path exemptions runs the complete active Linux
+matrix across operation boundaries, formats, ladder points, targeted variants,
+memory layers, retention, artifact size, and scaling. It also runs a blocking
+Chromium/WASM subset with `common-32`, `mixed-512`, every applicable maximum
+ladder/risk endpoint and format, and retention. Nightly and release run every
+active WASM ladder and variant. macOS and Windows performance is telemetry;
+correctness and bytes remain hard gates. Release repeats performance from the
+protected tag and packaged sources.
+
+Before activation a case is telemetry. Every mandatory case activates before
+first release. The first checkpoint can be the first fully conformant
+implementation after evidence approval, byte stability, default-limit,
+retention, and resolvable scaling gates pass.
+
+Checkpoint and protocol transitions use immutable records with commits, old/new
+digests, overlap evidence, reproduction commands, and maintainer approval. A
+performance exception is machine-readable, narrowly scoped, approved, and
+expires no later than the next release. It cannot waive conformance, safety,
+artifact byte stability, resource isolation, or default-limit admission.
+
+Exceptions cannot use wildcards, overlap, stack, rely on mutable labels, or be
+renewed in place. Continued need requires a new evidence-backed record. Expired
+exceptions fail closed. An active exception cannot be absorbed into or coexist
+with a checkpoint transition; a checkpoint move must pass ordinary gates against
+the old checkpoint without exception.
+
+Every result report includes all candidate/merge-base/checkpoint comparisons,
+raw samples, confidence data, memory high-water and retention values, artifact
+sizes, scaling fits, environment identities, threshold decisions, active
+exceptions, and reproduction commands.
+
+## 16. Canonical WASM Footprint
+
+The first release has no absolute WASM size SLA. It gates canonical WASM
+footprint: raw-module and deterministic Brotli lengths for a release-shaped,
+non-published harness containing every output path and the complete asset and
+license catalog. JavaScript glue, browser/test code, fixtures, expected outputs,
+and measurement tooling remain outside the measured module.
+
+The dedicated footprint harness is separate from the `wasm-bindgen-test` smoke.
+It depends on the packaged `excalidraw-render` crate and invokes only supported
+public Rust API through a fixed adapter making SVG, PNG, PDF, report
+serialization, and `license_bundle()` reachable. It calls no internals and
+creates no public browser interface. Its checked fixtures and coverage manifest
+remain external to the module, are supplied through the adapter, and validate
+coverage identities against the compatibility asset and scene-surface manifests.
+
+The harness exercises SVG, PNG, PDF, every font/fallback/deprecated family,
+every decoder and nested-SVG path, fallback geometry/notices, report
+serialization, and `license_bundle()`. Missing coverage, unexpected diagnostics,
+nonconformant artifacts, default-limit failure, or unreachable catalog content
+invalidates evidence.
+
+The canonical profile uses `opt-level = "z"`, fat LTO, one codegen unit, aborting
+panics, no debug/name metadata, exact-pinned `wasm-bindgen --target web`,
+exact-pinned `wasm-opt -Oz`, and canonical stripping. Two isolated builds produce
+byte-identical modules and record SHA-256.
+
+Independent gates are raw bytes and deterministic generic Brotli quality 11,
+window 22. The protocol digest binds every measurement-affecting tool, graph,
+profile, harness, fixture, manifest, compatibility revision, browser,
+compressor, and schema. Different protocol digests require a reviewed
+dual-protocol transition.
+
+Each metric compares independently against merge-base and approved checkpoint.
+It fails only when growth is greater than both 1% and 131,072 raw bytes, or both
+1% and 65,536 Brotli bytes. Equality passes; metrics cannot offset each other.
+Every increase is reported even when it passes.
+
+Every pull request without path exemptions builds the canonical module twice,
+validates harness coverage/conformance/default limits, and performs raw and
+Brotli comparisons against merge-base and the approved checkpoint. Nightly and
+release repeat from clean immutable environments; release uses protected-tag and
+packaged sources.
+
+A binding checkpoint is required before release and records complete coverage,
+conformance, default-limit success, reproducible module hashes/sizes, protocol,
+commands, and maintainer approval. Upward transitions require approval.
+Temporary exceptions are candidate- and metric-specific with narrow ceiling and
+next-release expiry. They cannot waive correctness, safety, determinism,
+catalog completeness, or coverage.
+
+Footprint exceptions cannot use wildcards, overlap, stack, rely on mutable
+labels, or renew in place; expiry fails closed. Active exceptions cannot be
+absorbed into or coexist with a checkpoint transition. Upward checkpoint moves
+are permitted only for parity, safety, newly supported contract behavior, or the
+fixed complete catalog, with ordinary gate evidence.
+
+Deterministic gzip size and WASM section/code/data/asset/dependency attribution
+are recorded as non-gating telemetry. Every result reports raw/Brotli bytes,
+deltas against both references, threshold decisions, protocol/checkpoint,
+exceptions, module digest, and reproduction command. Release notes publish raw
+and Brotli sizes, deltas, checkpoint identity, and protocol digest.
+
+## 17. Release and Upgrade Policy
+
+One complete lockstep release ships through crates.io, GitHub source, and four
+native archives. It includes all formats, retained compatibility revisions,
+assets, notices, and supported-target evidence.
+
+Every pull request without path filters runs asset/manifest/license/provenance,
+package-consumer, dependency, unsafe/build-script/native-link, and WASM graph
+checks. It runs `cargo package` and `cargo publish --dry-run` for every published
+package, enforces compressed-size and package-file allowlists, verifies complete
+licenses/notices and lockstep exact internal dependencies, and builds/tests from
+packaged sources. It also runs full canonical Linux conformance; release-mode
+artifact/report risk tests and direct aggregation across all four native targets
+and browser WASM; the browser public-API smoke; and canonical WASM footprint
+comparison. Each supported target executes tests rather than only
+cross-compiling. Release CI repeats the complete matrix from the protected tag
+and packaged crate sources.
+
+The browser WASM smoke uses a non-published `wasm-bindgen-test` adapter calling
+only public Rust API in exact-pinned headless Chromium. One checked scene renders
+through SVG, PNG, and PDF and exercises rough geometry, bundled and fallback
+text, an image, frames/clipping, and ordered diagnostics. Complete artifact bytes
+and serialized report data match checked native expectations from the same
+package. Repeated calls expose global state or cache nondeterminism. Inputs are
+served locally with network and system-font resolution disabled.
+
+The only release trigger is a protected semver tag on a fully green commit. The
+workflow completes package dry runs, requires maintainer environment approval,
+publishes exact lockstep crates in dependency order, builds archives from that
+tag on pinned builders, reruns supported-target checks, then creates the GitHub
+release.
+
+Every non-prerelease stable Excalidraw release is evaluated by release-note and
+source-diff review. When needed, create a complete candidate reference profile,
+regenerate affected evidence, classify all changes, prove two-process stability,
+make renderer behavior and diagnostics conform, obtain explicit approval, and
+activate atomically with conformance and release documentation.
+
+A contract-relevant visual, structural, dimensional, admitted-input, or
+diagnostic change creates the next monotonic compatibility revision. A new
+reference profile can retain a revision only when no contract-relevant behavior
+changes. Reproducibility failure alone never authorizes refreshed evidence.
+
+Exactly one reference-evidence tree MUST be active. Superseded evidence remains
+recoverable through immutable history, release tags, and archived release
+artifacts.
+
+Release is blocked by unmanifested assets, unapproved byte changes, missing
+provenance/transformation/license records, improper Reserved Font Names, missing
+output-traveling attribution, font-bearing evidence without notice packages,
+production installed/network font access, dependency-audit failure, incomplete
+target execution, incomplete corpus coverage, or missing mandatory checkpoint.
+
+Concrete compiler, builder, PDF viewer, WASM tool, compressor, ICC profile,
+qualified decoder/port, backend-adapter, fixture, and checkpoint identities are
+immutable implementation or release evidence selected under the closed gates
+above. Their materialization is implementation work, not an unresolved product,
+compatibility, architecture, API, robustness, platform, performance, or test
+strategy decision. Where qualification fails, this document already specifies
+the required fallback or release block.
+
+## 18. Approval and Completion
+
+This document resolves the final map ticket. Its exact bytes are bound by the
+adjacent approval record and the matching approval comment on
+[Publish and approve the canonical renderer specification](https://github.com/sagikazarmark/excalidraw-render.orig/issues/26).
+
+The specification is implementation-ready when all of these remain true:
+
+- Every accepted decision is represented here or in an explicitly incorporated
+  immutable closed artifact.
+- The reference profile and scene-surface manifest validate and match their
+  adjacent digests.
+- No compatibility, architecture, API, robustness, platform, performance, or
+  test-strategy choice is left to implementation discretion.
+- Remaining choices are only qualified implementation selection under a fixed
+  gate, evidence materialization, or ordinary private code organization.
+- Implementation and implementation-ticket decomposition remain outside this
+  wayfinding effort.
+
+## Appendix A. Decision Provenance
+
+These linked ticket resolutions are the rationale incorporated by this
+specification. They do not override its normalized wording.
+
+- [Inventory official Excalidraw static-export behavior](https://github.com/sagikazarmark/excalidraw-render.orig/issues/6)
+- [Evaluate deterministic reference-oracle options](https://github.com/sagikazarmark/excalidraw-render.orig/issues/13)
+- [Survey pure-Rust and WASM parity paths](https://github.com/sagikazarmark/excalidraw-render.orig/issues/2)
+- [Audit required asset licensing and distribution](https://github.com/sagikazarmark/excalidraw-render.orig/issues/4)
+- [Choose the reference baseline and upgrade policy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/9)
+- [Define the static-export compatibility contract](https://github.com/sagikazarmark/excalidraw-render.orig/issues/3)
+- [Choose the native rendering architecture](https://github.com/sagikazarmark/excalidraw-render.orig/issues/5)
+- [Define the public library and CLI contracts](https://github.com/sagikazarmark/excalidraw-render.orig/issues/14)
+- [Set platform, packaging, and dependency policy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/10)
+- [Design the conformance and regression strategy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/15)
+- [Set performance budgets and benchmark method](https://github.com/sagikazarmark/excalidraw-render.orig/issues/11)
+- [Define vector-first PDF behavior](https://github.com/sagikazarmark/excalidraw-render.orig/issues/12)
+- [Set robustness and resource-limit policy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/7)
+- [Confirm the implementation-ready rendering specification](https://github.com/sagikazarmark/excalidraw-render.orig/issues/8)
+- [Research reference raster-asset semantics](https://github.com/sagikazarmark/excalidraw-render.orig/issues/19)
+- [Define semantic resource accounting and CLI controls](https://github.com/sagikazarmark/excalidraw-render.orig/issues/17)
+- [Materialize compatibility revision 1 reference profile](https://github.com/sagikazarmark/excalidraw-render.orig/issues/22)
+- [Define scene admission and forward-compatibility boundaries](https://github.com/sagikazarmark/excalidraw-render.orig/issues/18)
+- [Approve the distributable font asset plan](https://github.com/sagikazarmark/excalidraw-render.orig/issues/23)
+- [Define canonical scene preservation and artifact metadata](https://github.com/sagikazarmark/excalidraw-render.orig/issues/20)
+- [Define the performance workload and statistics protocol](https://github.com/sagikazarmark/excalidraw-render.orig/issues/24)
+- [Clarify vector-first PDF conformance and fallback boundaries](https://github.com/sagikazarmark/excalidraw-render.orig/issues/25)
+- [Set the first-release WASM footprint policy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/27)
+- [Choose compatibility revision 1 raster normalization and SVG passthrough policy](https://github.com/sagikazarmark/excalidraw-render.orig/issues/28)
+- [Define public outcomes and serialized contracts](https://github.com/sagikazarmark/excalidraw-render.orig/issues/16)
+- [Define the conformance comparison and approval protocol](https://github.com/sagikazarmark/excalidraw-render.orig/issues/21)
+- [Materialize the compatibility revision 1 scene-surface manifest](https://github.com/sagikazarmark/excalidraw-render.orig/issues/29)
