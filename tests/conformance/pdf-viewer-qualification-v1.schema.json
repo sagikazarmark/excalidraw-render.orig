@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sagikazarmark/excalidraw-render.orig/blob/main/tests/conformance/pdf-viewer-qualification-v1.schema.json",
+  "title": "excalidraw-render canonical PDF viewer and structural harness qualification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["approval", "schema", "id", "originating_issue", "case", "profiles", "comparator", "implementation", "outputs", "structures", "determinism"],
+  "properties": {
+    "approval": {
+      "oneOf": [
+        {"type":"null"},
+        {"type":"object","additionalProperties":false,"required":["approved_at","approved_by","approval_subject_sha256","approval_url"],"properties":{"approved_at":{"type":"string","format":"date"},"approved_by":{"type":"string","minLength":1},"approval_subject_sha256":{"$ref":"#/$defs/prefixedSha256"},"approval_url":{"type":"string","format":"uri"}}}
+      ]
+    },
+    "schema": { "$ref": "#/$defs/schemaDescriptor" },
+    "id": { "const": "pdf-viewers.rectangle-outline.v1" },
+    "originating_issue": { "const": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/35" },
+    "case": {
+      "type":"object","additionalProperties":false,
+      "required":["id","visual_authority","fixtures","expected_structures","control"],
+      "properties":{
+        "id":{"const":"focused.rectangle-outline.v1"},"visual_authority":{"$ref":"#/$defs/rasterDescriptor"},
+        "fixtures":{
+          "type":"object","additionalProperties":false,"required":["valid","visual_fail","structure_fail","parser_warning","coverage","active_action"],
+          "properties":{"valid":{"$ref":"#/$defs/artifactDescriptor"},"visual_fail":{"$ref":"#/$defs/artifactDescriptor"},"structure_fail":{"$ref":"#/$defs/artifactDescriptor"},"parser_warning":{"$ref":"#/$defs/artifactDescriptor"},"coverage":{"$ref":"#/$defs/artifactDescriptor"},"active_action":{"$ref":"#/$defs/artifactDescriptor"}}
+        },
+        "expected_structures":{"type":"object","additionalProperties":false,"required":["calibration","visual_fail","coverage"],"properties":{"calibration":{"$ref":"#/$defs/fileDescriptor"},"visual_fail":{"$ref":"#/$defs/fileDescriptor"},"coverage":{"$ref":"#/$defs/fileDescriptor"}}},
+        "control":{"type":"object","additionalProperties":false,"required":["purpose","renderer_evidence","vector_only","calibration"],"properties":{"purpose":{"type":"string","minLength":1},"renderer_evidence":{"const":false},"vector_only":{"const":true},"calibration":{"type":"string","minLength":1}}}
+      }
+    },
+    "profiles": {"type":"object","additionalProperties":false,"required":["pdfium","pdfjs","structure"],"properties":{"pdfium":{"$ref":"#/$defs/fileDescriptor"},"pdfjs":{"$ref":"#/$defs/fileDescriptor"},"structure":{"$ref":"#/$defs/fileDescriptor"}}},
+    "comparator": { "$ref": "#/$defs/fileDescriptor" },
+    "implementation": { "type":"array", "minItems":5, "items":{"$ref":"#/$defs/fileDescriptor"} },
+    "outputs": {
+      "type":"object","additionalProperties":false,"required":["pdfium","pdfjs"],
+      "properties":{"pdfium":{"$ref":"#/$defs/viewerOutput"},"pdfjs":{"$ref":"#/$defs/viewerOutput"}}
+    },
+    "structures": {
+      "type":"object","additionalProperties":false,"required":["valid","visual_fail","structure_fail","parser_warning","coverage","active_action"],
+      "properties":{"valid":{"$ref":"#/$defs/structureOutput"},"visual_fail":{"$ref":"#/$defs/structureOutput"},"structure_fail":{"$ref":"#/$defs/structureOutput"},"parser_warning":{"$ref":"#/$defs/structureOutput"},"coverage":{"$ref":"#/$defs/structureOutput"},"active_action":{"$ref":"#/$defs/structureOutput"}}
+    },
+    "determinism": {
+      "type":"object","additionalProperties":false,"required":["samples_per_role","fresh_processes","shared_viewer_state","shared_parser_state","resolution_dpi"],
+      "properties":{"samples_per_role":{"const":2},"fresh_processes":{"const":true},"shared_viewer_state":{"const":false},"shared_parser_state":{"const":false},"resolution_dpi":{"const":96}}
+    }
+  },
+  "$defs": {
+    "sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"prefixedSha256":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
+    "fileDescriptor":{"type":"object","additionalProperties":false,"required":["path","sha256"],"properties":{"path":{"type":"string","minLength":1},"sha256":{"$ref":"#/$defs/sha256"}}},
+    "artifactDescriptor":{"type":"object","additionalProperties":false,"required":["path","sha256","byte_length"],"properties":{"path":{"type":"string","minLength":1},"sha256":{"$ref":"#/$defs/sha256"},"byte_length":{"type":"integer","minimum":1}}},
+    "rasterDescriptor":{"type":"object","additionalProperties":false,"required":["path","sha256","byte_length","width","height","layout","pixel_format"],"properties":{"path":{"type":"string","minLength":1},"sha256":{"$ref":"#/$defs/sha256"},"byte_length":{"type":"integer","minimum":4},"width":{"type":"integer","minimum":1},"height":{"type":"integer","minimum":1},"layout":{"const":"top-left-row-major"},"pixel_format":{"const":"straight-alpha-srgb-rgba8"}}},
+    "visualControl":{"type":"object","additionalProperties":false,"required":["raster","comparison","expected_pass","run_sha256"],"properties":{"raster":{"$ref":"#/$defs/rasterDescriptor"},"comparison":{"$ref":"#/$defs/fileDescriptor"},"expected_pass":{"type":"boolean"},"run_sha256":{"type":"array","minItems":2,"maxItems":2,"items":{"$ref":"#/$defs/sha256"}}}},
+    "viewerOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valid", "visual_fail", "structure_fail"],
+      "properties": {
+        "valid": { "$ref": "#/$defs/visualControl" },
+        "visual_fail": { "$ref": "#/$defs/visualControl" },
+        "structure_fail": { "$ref": "#/$defs/visualControl" }
+      }
+    },
+    "structureOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["report", "expected_pass", "failure_checks", "run_sha256"],
+      "properties": {
+        "report": { "$ref": "#/$defs/fileDescriptor" },
+        "expected_pass": { "type": "boolean" },
+        "failure_checks": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "run_sha256": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/sha256" } }
+      }
+    },
+    "schemaDescriptor":{"type":"object","additionalProperties":false,"required":["id","path","sha256"],"properties":{"id":{"const":"excalidraw-render/conformance-pdf-viewer-qualification/v1"},"path":{"const":"tests/conformance/pdf-viewer-qualification-v1.schema.json"},"sha256":{"$ref":"#/$defs/sha256"}}}
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sagikazarmark/excalidraw-render.orig/blob/main/tests/conformance/pdf-structure-profile-v1.schema.json",
+  "title": "excalidraw-render canonical PDF structural inspection profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "identity", "runtime", "implementation", "settings", "qualification"],
+  "properties": {
+    "schema": { "$ref": "#/$defs/schemaDescriptor" },
+    "id": { "const": "canonical-pdf-structure.qpdf.v1" },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parser", "upstream_version", "upstream_commit", "reference_profile_digest"],
+      "properties": {
+        "parser": { "const": "qpdf" },
+        "upstream_version": { "const": "12.3.2" },
+        "upstream_commit": { "pattern": "^[0-9a-f]{40}$" },
+        "reference_profile_digest": { "$ref": "#/$defs/prefixedSha256" }
+      }
+    },
+    "runtime": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "value"],
+        "properties": { "name": { "type": "string", "minLength": 1 }, "value": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lockfile", "sources", "artifact"],
+      "properties": {
+        "lockfile": { "$ref": "#/$defs/fileDescriptor" },
+        "sources": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/fileDescriptor" } },
+        "artifact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "url", "sha256"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "url": { "type": "string", "format": "uri" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parser", "warnings", "operations", "fonts", "annotations", "graphics", "images", "metadata", "state"],
+      "properties": {
+        "parser": { "$ref": "#/$defs/stringMap" },
+        "warnings": { "$ref": "#/$defs/stringMap" },
+        "operations": { "$ref": "#/$defs/stringMap" },
+        "fonts": { "$ref": "#/$defs/stringMap" },
+        "annotations": { "$ref": "#/$defs/stringMap" },
+        "graphics": { "$ref": "#/$defs/stringMap" },
+        "images": { "$ref": "#/$defs/stringMap" },
+        "metadata": { "$ref": "#/$defs/stringMap" },
+        "state": { "$ref": "#/$defs/stringMap" }
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "report_schema", "expectation_schema", "covered_fields"],
+      "properties": {
+        "case_id": { "const": "focused.rectangle-outline.v1" },
+        "report_schema": { "$ref": "#/$defs/fileDescriptor" },
+        "expectation_schema": { "$ref": "#/$defs/fileDescriptor" },
+        "covered_fields": { "type": "array", "minItems": 10, "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "prefixedSha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "fileDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": { "path": { "type": "string", "minLength": 1 }, "sha256": { "$ref": "#/$defs/sha256" } }
+    },
+    "schemaDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": { "const": "excalidraw-render/conformance-pdf-structure-profile/v1" },
+        "path": { "const": "tests/conformance/pdf-structure-profile-v1.schema.json" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "stringMap": { "type": "object", "minProperties": 1, "additionalProperties": { "type": "string" } }
+  }
+}

@@ -1,4 +1,5 @@
 mod conformance;
+mod pdf_viewers;
 mod svg_viewers;
 
 use std::env;
@@ -71,6 +72,29 @@ fn run() -> Result<(), String> {
             )?;
             println!("recorded canonical SVG viewer qualification approval");
         }
+        Some("verify-pdf-viewers") => {
+            no_more_args(args)?;
+            pdf_viewers::verify(true)?;
+            println!("verified canonical PDF viewer and structural qualification");
+        }
+        Some("pdf-viewer-approval-subject") => {
+            no_more_args(args)?;
+            println!("sha256:{}", pdf_viewers::approval_subject()?);
+        }
+        Some("record-pdf-viewer-approval") => {
+            let approved_by = required_arg(&mut args, "GitHub identity")?;
+            let approved_at = required_arg(&mut args, "approval date")?;
+            let approval_url = required_arg(&mut args, "approval URL")?;
+            let expected_subject = required_arg(&mut args, "approval subject")?;
+            no_more_args(args)?;
+            pdf_viewers::record_approval(
+                &approved_by,
+                &approved_at,
+                &approval_url,
+                &expected_subject,
+            )?;
+            println!("recorded canonical PDF harness qualification approval");
+        }
         Some(mode @ ("generate" | "reproduce")) => {
             let case_id = required_arg(&mut args, "case ID")?;
             no_more_args(args)?;
@@ -108,5 +132,5 @@ fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
 }
 
 fn usage() -> String {
-    "usage: cargo run --locked -p xtask -- conformance <generate|reproduce|verify|approval-subject|record-approval|verify-svg-viewers|svg-viewer-approval-subject|record-svg-viewer-approval> [case-id] [approval fields]".to_owned()
+    "usage: cargo run --locked -p xtask -- conformance <generate|reproduce|verify|approval-subject|record-approval|verify-svg-viewers|svg-viewer-approval-subject|record-svg-viewer-approval|verify-pdf-viewers|pdf-viewer-approval-subject|record-pdf-viewer-approval> [case-id] [approval fields]".to_owned()
 }

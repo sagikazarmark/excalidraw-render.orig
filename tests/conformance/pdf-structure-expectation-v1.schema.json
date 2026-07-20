@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sagikazarmark/excalidraw-render.orig/blob/main/tests/conformance/pdf-structure-expectation-v1.schema.json",
+  "title": "excalidraw-render PDF structure expectation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "pdf_version", "page_count", "media_box", "crop_box", "operation_count", "operation_sha256", "inventory_sha256", "operation_minimums", "font_count", "form_count", "mapping_count", "annotation_count", "action_kinds", "clip_count", "mask_count", "image_count", "images", "attachment_count", "xmp_present", "output_intent_count", "required_icc_tags"],
+  "properties": {
+    "schema": { "const": "excalidraw-render/pdf-structure-expectation/v1" },
+    "pdf_version": { "const": "1.7" },
+    "page_count": { "const": 1 },
+    "media_box": { "$ref": "#/$defs/box" },
+    "crop_box": { "$ref": "#/$defs/box" },
+    "operation_count": {"type":"integer","minimum":0},
+    "operation_sha256": {"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "inventory_sha256": {"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "operation_minimums": { "type": "object", "minProperties": 1, "additionalProperties": { "type": "integer", "minimum": 1 } },
+    "font_count": { "type": "integer", "minimum": 0 },
+    "form_count": { "type": "integer", "minimum": 0 },
+    "mapping_count": { "type": "integer", "minimum": 0 },
+    "annotation_count": { "type": "integer", "minimum": 0 },
+    "action_kinds": {"type":"array","items":{"type":"string"}},
+    "clip_count": { "type": "integer", "minimum": 0 },
+    "mask_count": { "type": "integer", "minimum": 0 },
+    "image_count": { "type": "integer", "minimum": 0 },
+    "images": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["resource","classification"],"properties":{"resource":{"type":"string","minLength":1},"classification":{"enum":["source","fallback","undeclared"]}}},"uniqueItems":true},
+    "attachment_count": {"type":"integer","minimum":0},
+    "xmp_present": {"type":"boolean"},
+    "output_intent_count": { "type": "integer", "minimum": 0 },
+    "required_icc_tags": { "type": "array", "items": { "type": "string", "pattern": "^[ -~]{4}$" }, "uniqueItems": true }
+  },
+  "$defs": {
+    "box": { "type": "array", "prefixItems": [{"type":"number"},{"type":"number"},{"type":"number"},{"type":"number"}], "items": false }
+  }
+}

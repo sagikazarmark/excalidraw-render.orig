@@ -64,3 +64,48 @@ on undeclared text and image payloads, local files, network resources, and
 undeclared data URLs. Cases containing text or images supply a closed declaration
 that binds embedded source identities to reviewed sfnt faces or canonical
 in-memory image bytes; ambient fallback is never permitted.
+
+## Canonical PDF harnesses
+
+The PDF qualification pins PDFium, PDF.js, and qpdf independently. PDFium and
+PDF.js render one page at exactly 96 DPI into canonical RGBA8, then use the
+approved comparator against canonical Chromium rendering of official SVG.
+qpdf and the owned inspector separately report and gate page boxes, ordered
+vector and text operations, fonts and mappings, annotations, clips, masks,
+transparency, image XObjects, metadata, attachments, output intent, ICC profile,
+and parser warnings. Exact operation-sequence and structural-inventory digests
+prevent extra or missing objects from passing count-only checks; Form XObjects
+and soft-mask forms are traversed recursively.
+
+Ordinary verification and comparison are offline:
+
+```sh
+cargo run --locked -p xtask -- conformance verify-pdf-viewers
+cargo test --locked -p excalidraw-render-compare --test pdf_viewer_qualification
+```
+
+The first valid PDF is a project-authored calibration control, not renderer PDF
+evidence. It uses PDF vectors only, retains the rough cubic path for structural
+extraction, and uses pixel-grid rectangle fills to qualify both viewer adapters
+against the approved raster without making PDFium antialiasing a hidden
+tolerance exception. Separate controls prove visual failure with structural
+success, visual success with an undeclared Image XObject, and hard failure on
+qpdf parser-recovery warnings.
+
+Additional hard-failure controls cover a catalog JavaScript `OpenAction` and an
+unused image nested inside an unused Form. Image soft-mask bytes are separately
+inventoried and hashed, and complete catalog/page/annotation action graphs are
+classified so disabled viewer annotations cannot hide active content.
+
+A separate structural-coverage control exercises recursive Form and soft-mask
+content, embedded-font and complete ToUnicode digests, line-level ActualText,
+URI annotations, clipping, transparency groups, a declared source image, XMP,
+the embedded-scene carrier, and output intent without pretending to be official
+PDF evidence.
+
+Install the pinned development-only tools once, then reproduce without network:
+
+```sh
+bash tools/pdf-harness/install.sh
+bash tools/pdf-viewer-qualification.sh reproduce
+```

@@ -1,0 +1,14 @@
+{
+  "name": "excalidraw-render-pdfjs-harness",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.16.0",
+    "npm": "11.13.0"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "1.0.2",
+    "pdfjs-dist": "6.1.200"
+  }
+}

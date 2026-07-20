@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sagikazarmark/excalidraw-render.orig/blob/main/tests/conformance/pdf-structure-report-v1.schema.json",
+  "title": "excalidraw-render deterministic PDF structure report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "passed", "expected_pass", "parser", "errors", "document", "pages", "checks"],
+  "properties": {
+    "schema": { "const": "excalidraw-render/pdf-structure-report/v1" },
+    "passed": { "type": "boolean" },
+    "expected_pass": { "type": "boolean" },
+    "parser": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version", "status", "warnings"],
+      "properties": {
+        "name": { "const": "qpdf" }, "version": { "const": "12.3.2" },
+        "status": { "enum": ["clean", "warning", "error"] },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "errors": { "type": "array", "items": { "type": "string" } },
+    "document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["pdf_version", "page_count", "encrypted", "linearized", "incremental_revisions", "file_ids", "signatures", "info_dictionary", "xmp", "attachments", "actions", "output_intents"],
+      "properties": {
+        "pdf_version": { "type": ["string", "null"] }, "page_count": { "type": "integer", "minimum": 0 },
+        "encrypted": { "type": "boolean" }, "linearized": { "type": "boolean" },
+        "incremental_revisions": { "type": "integer", "minimum": 0 }, "file_ids": {},
+        "signatures": { "type": "array" }, "info_dictionary": { "type": ["object", "null"] },
+        "xmp": { "oneOf": [{"type":"null"},{"$ref":"#/$defs/byteDescriptor"}] },
+        "attachments": { "type": "object" },
+        "actions": {"type":"array","items":{"$ref":"#/$defs/action"}},
+        "output_intents": { "type": "array", "items": { "$ref": "#/$defs/outputIntent" } }
+      }
+    },
+    "pages": { "type": "array", "items": { "$ref": "#/$defs/page" } },
+    "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "byteDescriptor": {
+      "type": "object", "additionalProperties": false, "required": ["byte_length", "sha256"],
+      "properties": { "byte_length": { "type": "integer", "minimum": 0 }, "sha256": { "$ref": "#/$defs/sha256" } }
+    },
+    "operation": {
+      "type": "object", "additionalProperties": false, "required": ["sequence", "scope", "operator", "operands"],
+      "properties": { "sequence": { "type": "integer", "minimum": 0 }, "scope": {"type":"string","minLength":1}, "operator": { "type": "string", "minLength": 1 }, "operands": { "type": "array", "items": { "type": "string" } } }
+    },
+    "font": {
+      "type": "object", "additionalProperties": false,
+      "required": ["resource", "object", "subtype", "base_font", "encoding", "descendant_subtype", "embedded", "embedded_sha256", "to_unicode", "to_unicode_byte_length", "to_unicode_sha256"],
+      "properties": {
+        "resource": {"type":"string"}, "object": {"type":["string","null"]}, "subtype": {"type":["string","null"]},
+        "base_font": {"type":["string","null"]}, "encoding": {}, "descendant_subtype": {"type":["string","null"]},
+        "embedded": {"type":"boolean"}, "embedded_sha256": {"oneOf":[{"type":"null"},{"$ref":"#/$defs/sha256"}]},
+        "to_unicode": {"type":"boolean"}, "to_unicode_byte_length":{"type":["integer","null"],"minimum":0}, "to_unicode_sha256":{"oneOf":[{"type":"null"},{"$ref":"#/$defs/sha256"}]}
+      }
+    },
+    "mapping": {
+      "type":"object", "additionalProperties":false, "required":["kind","resource","scope","sequence","sha256","byte_length","operands"],
+      "properties":{"kind":{"enum":["to-unicode","actual-text"]},"resource":{"type":["string","null"]},"scope":{"type":"string"},"sequence":{"type":["integer","null"],"minimum":0},"sha256":{"oneOf":[{"type":"null"},{"$ref":"#/$defs/sha256"}]},"byte_length":{"type":["integer","null"],"minimum":0},"operands":{"type":"array","items":{"type":"string"}}}
+    },
+    "annotation": {
+      "type":"object", "additionalProperties":false,
+      "required":["object","subtype","rect","quad_points","border","flags","action","additional_actions"],
+      "properties":{
+        "object":{"type":["string","null"]},"subtype":{"type":["string","null"]},"rect":{},"quad_points":{},"border":{},"flags":{"type":"integer"},
+        "action":{"oneOf":[{"type":"null"},{"type":"object","additionalProperties":false,"required":["kind","uri"],"properties":{"kind":{"type":["string","null"]},"uri":{"type":["string","null"]}}}]},"additional_actions":{}
+      }
+    },
+    "action": {
+      "type":"object","additionalProperties":false,"required":["classification","kind","location","object","details"],
+      "properties":{"classification":{"enum":["uri","prohibited"]},"kind":{"type":["string","null"]},"location":{"type":"string"},"object":{"type":["string","null"]},"details":{"type":"object"}}
+    },
+    "transparency": {
+      "type":"object", "additionalProperties":false,
+      "required":["resource","object","stroke_alpha","fill_alpha","blend_mode","soft_mask","alpha_is_shape"],
+      "properties":{
+        "resource":{"type":"string"},"object":{"type":["string","null"]},"stroke_alpha":{"type":"number"},"fill_alpha":{"type":"number"},
+        "blend_mode":{},"soft_mask":{},"alpha_is_shape":{"type":"boolean"}
+      }
+    },
+    "image": {
+      "type":"object", "additionalProperties":false,
+      "required":["resource","object","width","height","color_space","bits_per_component","byte_length","filters","soft_mask","mask","interpolate","occurrences","classification","data_sha256"],
+      "properties":{
+        "resource":{"type":"string"},"object":{"type":["string","null"]},"width":{"type":["integer","null"],"minimum":1},"height":{"type":["integer","null"],"minimum":1},
+        "color_space":{},"bits_per_component":{"type":["integer","null"]},"byte_length":{"type":["integer","null"],"minimum":0},"filters":{},"soft_mask":{"type":["string","null"]},"mask":{},
+        "interpolate":{"type":"boolean"},"occurrences":{"type":"integer","minimum":0},"classification":{"type":"string"},"data_sha256":{"oneOf":[{"type":"null"},{"$ref":"#/$defs/sha256"}]}
+      }
+    },
+    "form": {
+      "type":"object", "additionalProperties":false,
+      "required":["resource","object","bbox","matrix","group","occurrences"],
+      "properties":{
+        "resource":{"type":"string"},"object":{"type":["string","null"]},"bbox":{},"matrix":{},"occurrences":{"type":"integer","minimum":0},
+        "group":{"oneOf":[{"type":"null"},{"type":"object","additionalProperties":false,"required":["subtype","isolated","knockout","color_space"],"properties":{"subtype":{"type":["string","null"]},"isolated":{"type":"boolean"},"knockout":{"type":"boolean"},"color_space":{}}}]}
+      }
+    },
+    "page": {
+      "type":"object", "additionalProperties":false,
+      "required":["media_box","crop_box","other_boxes","rotate","user_unit","operations","vector_operations","text_operations","fonts","forms","mappings","annotations","clips","masks","transparency","images"],
+      "properties":{
+        "media_box":{},"crop_box":{},"other_boxes":{"type":"object"},"rotate":{"type":"number"},"user_unit":{"type":"number"},
+        "operations":{"type":"array","items":{"$ref":"#/$defs/operation"}},"vector_operations":{"type":"array","items":{"$ref":"#/$defs/operation"}},
+        "text_operations":{"type":"array","items":{"$ref":"#/$defs/operation"}},"fonts":{"type":"array","items":{"$ref":"#/$defs/font"}},
+        "forms":{"type":"array","items":{"$ref":"#/$defs/form"}},
+        "mappings":{"type":"array","items":{"$ref":"#/$defs/mapping"}},"annotations":{"type":"array","items":{"$ref":"#/$defs/annotation"}},
+        "clips":{"type":"array","items":{"$ref":"#/$defs/operation"}},"masks":{"type":"array"},
+        "transparency":{"type":"array","items":{"$ref":"#/$defs/transparency"}},"images":{"type":"array","items":{"$ref":"#/$defs/image"}}
+      }
+    },
+    "icc": {
+      "type":"object", "additionalProperties":false,
+      "required":["byte_length","sha256","valid_header","version","device_class","color_space","pcs","signature","tags"],
+      "properties":{
+        "byte_length":{"type":"integer","minimum":0},"sha256":{"$ref":"#/$defs/sha256"},"valid_header":{"type":"boolean"},
+        "version":{"type":"string"},"device_class":{"type":"string"},"color_space":{"type":"string"},"pcs":{"type":"string"},
+        "signature":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}}
+      }
+    },
+    "outputIntent": {
+      "type":"object", "additionalProperties":false,
+      "required":["object","subtype","condition_identifier","info","profile_object","profile"],
+      "properties":{
+        "object":{"type":["string","null"]},"subtype":{"type":["string","null"]},"condition_identifier":{"type":["string","null"]},
+        "info":{"type":["string","null"]},"profile_object":{"type":["string","null"]},"profile":{"oneOf":[{"type":"null"},{"$ref":"#/$defs/icc"}]}
+      }
+    },
+    "check": {
+      "type":"object", "additionalProperties":false, "required":["id","actual","expected","passed"],
+      "properties":{"id":{"type":"string"},"actual":{},"expected":{},"passed":{"type":"boolean"}}
+    }
+  }
+}
