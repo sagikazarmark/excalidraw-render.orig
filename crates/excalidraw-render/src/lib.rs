@@ -7,11 +7,14 @@ mod backends;
 mod compatibility;
 mod model;
 mod render_svg;
+mod scene;
 
 pub use compatibility::{
-    CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily,
-    ReferenceProfileIdentity, Renderer, UnsupportedRevisionError, DEFAULT_COMPATIBILITY_REVISION,
+    CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily, Measurement,
+    ReferenceProfileIdentity, Renderer, UnsupportedRevisionError, ValueKind,
+    DEFAULT_COMPATIBILITY_REVISION,
 };
+pub use scene::{SceneDocument, SceneParseError};
 
 /// Temporary integration seam for the proof-of-concept CLI.
 ///

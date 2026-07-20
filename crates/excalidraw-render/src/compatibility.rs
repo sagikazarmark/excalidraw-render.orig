@@ -176,6 +176,8 @@ impl UnsupportedRevisionError {
 #[non_exhaustive]
 #[serde(rename_all = "snake_case")]
 pub enum ErrorFamily {
+    /// Scene-document bytes could not be admitted.
+    SceneParse,
     /// A requested compatibility revision is not retained.
     UnsupportedRevision,
 }
@@ -184,6 +186,7 @@ impl ErrorFamily {
     /// Returns the stable serialized spelling.
     pub const fn as_str(self) -> &'static str {
         match self {
+            Self::SceneParse => "scene_parse",
             Self::UnsupportedRevision => "unsupported_revision",
         }
     }
@@ -201,6 +204,39 @@ impl fmt::Display for ErrorFamily {
 pub struct ErrorCode(&'static str);
 
 impl ErrorCode {
+    /// The scene-document bytes are not valid UTF-8.
+    pub const SCENE_INVALID_UTF8: Self = Self("scene.invalid-utf8");
+
+    /// The scene-document bytes do not contain valid JSON syntax.
+    pub const SCENE_INVALID_JSON: Self = Self("scene.invalid-json");
+
+    /// The scene envelope does not have the required version-2 shape.
+    pub const SCENE_INVALID_ENVELOPE: Self = Self("scene.invalid-envelope");
+
+    /// The scene-document bytes exceed the fixed parser input ceiling.
+    pub const SCENE_INPUT_TOO_LARGE: Self = Self("scene.input-too-large");
+
+    /// The JSON nesting exceeds the fixed parser depth ceiling.
+    pub const SCENE_JSON_DEPTH_EXCEEDED: Self = Self("scene.json-depth-exceeded");
+
+    /// The JSON structure exceeds the fixed parser entry ceiling.
+    pub const SCENE_JSON_STRUCTURE_EXCEEDED: Self = Self("scene.json-structure-exceeded");
+
+    /// A decoded string or the decoded-string aggregate exceeds its ceiling.
+    pub const SCENE_STRING_TOO_LARGE: Self = Self("scene.string-too-large");
+
+    /// An object key exceeds the fixed parser key ceiling.
+    pub const SCENE_OBJECT_KEY_TOO_LARGE: Self = Self("scene.object-key-too-large");
+
+    /// A number token exceeds the fixed parser token ceiling.
+    pub const SCENE_NUMBER_TOKEN_TOO_LARGE: Self = Self("scene.number-token-too-large");
+
+    /// A later object member duplicates an earlier decoded key.
+    pub const SCENE_DUPLICATE_OBJECT_KEY: Self = Self("scene.duplicate-object-key");
+
+    /// Canonical parser live bytes exceed the fixed parser memory ceiling.
+    pub const SCENE_PARSE_MEMORY_EXCEEDED: Self = Self("scene.parse-memory-exceeded");
+
     /// The requested compatibility revision is not retained.
     pub const REVISION_UNSUPPORTED: Self = Self("revision.unsupported");
 
@@ -221,10 +257,59 @@ impl fmt::Display for ErrorCode {
 #[non_exhaustive]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ErrorDetails {
+    /// Identifies a fixed scene-parser ceiling crossing.
+    ParseLimit {
+        /// The canonical parser-limit field.
+        field: &'static str,
+        /// The fixed configured ceiling.
+        configured: u64,
+        /// The unit measured by this ceiling.
+        value_kind: ValueKind,
+        /// The measured attempted or lower-bound value.
+        measurement: Measurement,
+    },
     /// Identifies a requested compatibility revision.
     Revision {
         /// The revision supplied by the caller.
         requested: CompatibilityRevision,
+    },
+}
+
+/// Unit used by a stable limit measurement.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[non_exhaustive]
+#[serde(rename_all = "snake_case")]
+pub enum ValueKind {
+    /// A byte count.
+    Bytes,
+    /// A structural-entry count.
+    Count,
+    /// A nesting depth.
+    Depth,
+    /// A pixel count.
+    Pixels,
+    /// A deterministic work-unit count.
+    WorkUnits,
+    /// A dimension.
+    Dimension,
+    /// A coordinate magnitude.
+    Coordinate,
+}
+
+/// Stable form of a parser or resource-limit measurement.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[non_exhaustive]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum Measurement {
+    /// The exact attempted value is known.
+    Attempted {
+        /// The exact attempted value.
+        value: u64,
+    },
+    /// Bounded processing stopped after establishing this lower bound.
+    AtLeast {
+        /// The established lower bound.
+        value: u64,
     },
 }
 
@@ -242,6 +327,24 @@ pub struct ErrorDescriptor {
 }
 
 impl ErrorDescriptor {
+    pub(crate) fn scene_parse(
+        code: ErrorCode,
+        message: String,
+        json_pointer: Option<String>,
+        details: Option<ErrorDetails>,
+    ) -> Self {
+        Self {
+            family: ErrorFamily::SceneParse,
+            category: None,
+            code,
+            message,
+            format: None,
+            element_id: None,
+            json_pointer,
+            details,
+        }
+    }
+
     /// Returns the typed failure family.
     pub const fn family(&self) -> ErrorFamily {
         self.family
