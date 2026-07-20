@@ -18,3 +18,7 @@ serde_json.workspace = true
 svg2pdf.workspace = true
 tiny-skia.workspace = true
 usvg.workspace = true
+
+[dev-dependencies]
+excalidraw-render-compare = { path = "../excalidraw-render-compare" }
+png.workspace = true

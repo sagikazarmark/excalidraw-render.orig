@@ -17,6 +17,12 @@ use crate::{
 
 use self::{pdf::PdfPlan, png::PngPlan, svg::SvgPlan};
 
+const RECTANGLE_NORMALIZED_FIELD_COUNT: u64 = 15;
+const RECTANGLE_GEOMETRY_SEGMENTS: u64 = 16;
+const RECTANGLE_GEOMETRY_WORK_UNITS: u64 = RECTANGLE_GEOMETRY_SEGMENTS * 32;
+const RECTANGLE_BASE_ELEMENT_WORK_UNITS: u64 =
+    RECTANGLE_NORMALIZED_FIELD_COUNT * 8 + RECTANGLE_GEOMETRY_WORK_UNITS + 8;
+
 pub(super) enum FormatEncodeError {
     Encoding(String),
     MemoryUnavailable {
@@ -142,7 +148,7 @@ impl RenderSession {
             semantic_working_bytes = 0;
             ResolvedScene::empty(request)
         } else {
-            if request.format() != OutputFormat::Svg {
+            if request.format() == OutputFormat::Pdf {
                 return Err(self.internal_failure(
                     request.format(),
                     "nonempty rendering is not implemented for the selected format",
@@ -156,10 +162,6 @@ impl RenderSession {
                     "/elements",
                 )
             })?;
-            const NORMALIZED_FIELD_COUNT: u64 = 15;
-            const GEOMETRY_SEGMENTS: u64 = 16;
-            const GEOMETRY_WORK_UNITS: u64 = GEOMETRY_SEGMENTS * 32;
-            const ELEMENT_WORK_UNITS: u64 = NORMALIZED_FIELD_COUNT * 8 + GEOMETRY_WORK_UNITS + 8;
             let normalized_working_bytes = 256
                 + 10 * 64
                 + owned_field_bytes(source.id)
@@ -168,7 +170,7 @@ impl RenderSession {
                 + owned_field_bytes(source.fill_style)
                 + owned_field_bytes(source.stroke_style)
                 + source.view_background_color.map_or(0, owned_field_bytes);
-            let geometry_working_bytes = 128 + GEOMETRY_SEGMENTS * 64;
+            let geometry_working_bytes = 128 + RECTANGLE_GEOMETRY_SEGMENTS * 64;
             self.transact(
                 request,
                 ResourceContext::new(
@@ -180,14 +182,14 @@ impl RenderSession {
                 .with_local_owner(Some(source.id)),
                 ResourceDelta {
                     working_bytes: normalized_working_bytes,
-                    total_work_units: NORMALIZED_FIELD_COUNT * 8,
+                    total_work_units: RECTANGLE_NORMALIZED_FIELD_COUNT * 8,
                     ..ResourceDelta::default()
                 },
             )?;
             let geometry_delta = ResourceDelta {
-                geometry_segments: GEOMETRY_SEGMENTS,
+                geometry_segments: RECTANGLE_GEOMETRY_SEGMENTS,
                 working_bytes: geometry_working_bytes,
-                total_work_units: GEOMETRY_WORK_UNITS,
+                total_work_units: RECTANGLE_GEOMETRY_WORK_UNITS,
                 ..ResourceDelta::default()
             };
             let geometry_context = ResourceContext::new(
@@ -207,8 +209,12 @@ impl RenderSession {
                     )),
                 };
             }
-            let local_crossing =
-                rectangle_local_crossing(source, request, GEOMETRY_SEGMENTS, ELEMENT_WORK_UNITS);
+            let local_crossing = rectangle_local_crossing(
+                source,
+                request,
+                RECTANGLE_GEOMETRY_SEGMENTS,
+                RECTANGLE_BASE_ELEMENT_WORK_UNITS,
+            );
             let include_outline = local_crossing.is_none();
             if let Some(crossing) = local_crossing {
                 let diagnostic =
@@ -346,9 +352,40 @@ impl RenderSession {
                 }
             }
             OutputFormat::Png => {
-                let plan = PngPlan::new(&resolved, request).map_err(|error| {
+                if let Some((element_id, json_pointer)) = resolved.primary_source() {
+                    self.transact(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::FormatPlanning,
+                            "element_operation",
+                            json_pointer,
+                        )
+                        .with_element_id(Some(element_id))
+                        .with_local_owner(Some(element_id))
+                        .with_record(ResourceRecordKind::FormatPlanOperation),
+                        ResourceDelta {
+                            working_bytes: 128,
+                            total_work_units: 8,
+                            ..ResourceDelta::default()
+                        },
+                    )?;
+                }
+                let mut plan = PngPlan::new(resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error)
                 })?;
+                if semantic_working_bytes != 0 {
+                    let mut context = ResourceContext::new(
+                        ResourcePhase::FormatPlanning,
+                        "resolved_rectangle",
+                        "/elements/0",
+                    );
+                    if let Some((element_id, _)) = plan.primary_source() {
+                        context = context
+                            .with_element_id(Some(element_id))
+                            .with_local_owner(Some(element_id));
+                    }
+                    self.release_working(request, context, semantic_working_bytes)?;
+                }
                 let pixels = u64::from(plan.width()).saturating_mul(u64::from(plan.height()));
                 let rgba_bytes = pixels.saturating_mul(4);
                 let surface_bytes = 256_u64.saturating_add(rgba_bytes);
@@ -360,12 +397,12 @@ impl RenderSession {
                 .with_record(ResourceRecordKind::RasterColorSurface);
                 self.acquire_working(request, surface, surface_bytes)?;
 
-                let raster_work = if resolved.include_background {
+                let raster_work = if plan.includes_background() {
                     pixels.saturating_mul(4)
                 } else {
                     pixels
                 };
-                let raster_event = if resolved.include_background {
+                let raster_event = if plan.includes_background() {
                     "solid_background_samples"
                 } else {
                     "clear_samples"
@@ -375,6 +412,51 @@ impl RenderSession {
                     ResourceContext::new(ResourcePhase::ProjectionAndFallback, raster_event, ""),
                     raster_work,
                 )?;
+                if let Some((element_id, json_pointer)) = plan.primary_source() {
+                    let vector_work = plan.vector_coverage_area().saturating_mul(16);
+                    let context = ResourceContext::new(
+                        ResourcePhase::ProjectionAndFallback,
+                        "vector_coverage_samples",
+                        json_pointer,
+                    )
+                    .with_element_id(Some(element_id))
+                    .with_local_owner(Some(element_id));
+                    let delta = ResourceDelta {
+                        total_work_units: vector_work,
+                        ..ResourceDelta::default()
+                    };
+                    if self.meter.would_cross_fatal(delta) {
+                        self.charge_work(request, context, vector_work)?;
+                    }
+                    let element_work =
+                        RECTANGLE_BASE_ELEMENT_WORK_UNITS.saturating_add(vector_work);
+                    let element_work_limit = request.resource_limits().max_element_work_units();
+                    if element_work > element_work_limit {
+                        let diagnostic = RectangleLocalCrossing {
+                            code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
+                            field: "max_element_work_units",
+                            configured: ResourceValue::Integer(element_work_limit),
+                            value_kind: ValueKind::WorkUnits,
+                            attempted: ResourceValue::Integer(element_work),
+                            json_pointer: "/elements/0",
+                            message:
+                                "rectangle omitted because its semantic work exceeds its limit",
+                        }
+                        .diagnostic(request.format(), element_id)
+                        .map_err(|_| {
+                            self.memory_failure(request, "compatibility_report", "local_recovery")
+                        })?;
+                        self.retain_diagnostic(
+                            request,
+                            ResourcePhase::ProjectionAndFallback,
+                            "rectangle_local_resource_recovery",
+                            diagnostic,
+                        )?;
+                        plan.omit_elements();
+                    } else {
+                        self.charge_work(request, context, vector_work)?;
+                    }
+                }
 
                 let workspace_bytes = 2_u64
                     .saturating_mul(1_048_576)
@@ -403,6 +485,20 @@ impl RenderSession {
                 )?;
                 self.release_working(request, workspace, workspace_bytes)?;
                 self.release_working(request, surface, surface_bytes)?;
+                if let Some((element_id, json_pointer)) = plan.primary_source() {
+                    self.release_working(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::EncodingAndOutcomeAssembly,
+                            "element_operation",
+                            json_pointer,
+                        )
+                        .with_element_id(Some(element_id))
+                        .with_local_owner(Some(element_id))
+                        .with_record(ResourceRecordKind::FormatPlanOperation),
+                        128,
+                    )?;
+                }
             }
             OutputFormat::Pdf => {
                 let workspace_bytes = 1_048_576;

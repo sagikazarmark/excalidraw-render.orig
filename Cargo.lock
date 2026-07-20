@@ -402,6 +402,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "euclid",
+ "excalidraw-render-compare",
+ "png",
  "resvg",
  "roughr",
  "serde",
