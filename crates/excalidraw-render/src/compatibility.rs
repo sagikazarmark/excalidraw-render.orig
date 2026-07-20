@@ -6,8 +6,9 @@ use std::str::FromStr;
 use serde::ser::SerializeStruct;
 use serde::Serialize;
 
-use crate::outcome::RenderErrorCategory;
-use crate::request::OutputFormat;
+use crate::outcome::{RenderError, RenderErrorCategory, RenderOutcome};
+use crate::request::{OutputFormat, RenderRequest};
+use crate::scene::SceneDocument;
 
 /// Identifies a retained static-export compatibility promise.
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
@@ -123,6 +124,15 @@ impl Renderer {
     /// Returns this renderer's selected reference profile identity.
     pub const fn selected_profile_identity(&self) -> &'static ReferenceProfileIdentity {
         self.profile
+    }
+
+    /// Renders one admitted scene into the request's selected output format.
+    pub fn render(
+        &self,
+        scene: &SceneDocument,
+        request: &RenderRequest,
+    ) -> Result<RenderOutcome, RenderError> {
+        crate::render::render(self.profile, scene, request)
     }
 }
 

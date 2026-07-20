@@ -7,6 +7,7 @@ mod backends;
 mod compatibility;
 mod model;
 mod outcome;
+mod render;
 mod render_svg;
 mod request;
 mod resource_limits;

@@ -131,6 +131,16 @@ impl SceneDocument {
         write_canonical_json(&self._root, &mut bytes)?;
         Ok(bytes)
     }
+
+    pub(crate) fn has_no_element_occurrences(&self) -> bool {
+        let JsonValue::Object(members) = &*self._root else {
+            return false;
+        };
+        matches!(
+            member_value(members, "elements"),
+            Some(JsonValue::Array(elements)) if elements.is_empty()
+        )
+    }
 }
 
 impl fmt::Debug for SceneDocument {

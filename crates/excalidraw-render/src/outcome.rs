@@ -349,10 +349,10 @@ impl RenderErrorCategory {
 pub struct RenderError {
     pub(crate) category: RenderErrorCategory,
     pub(crate) code: ErrorCode,
-    pub(crate) message: String,
+    pub(crate) message: Box<str>,
     pub(crate) format: OutputFormat,
     pub(crate) element_id: Option<String>,
-    pub(crate) json_pointer: String,
+    pub(crate) json_pointer: Box<str>,
     pub(crate) details: Option<Box<ErrorDetails>>,
     pub(crate) report: CompatibilityReport,
 }
@@ -398,10 +398,10 @@ impl RenderError {
         ErrorDescriptor::render(
             self.category,
             self.code,
-            self.message.clone(),
+            self.message.to_string(),
             self.format,
             self.element_id.clone(),
-            self.json_pointer.clone(),
+            self.json_pointer.to_string(),
             self.details.as_deref().cloned(),
         )
     }
@@ -482,10 +482,10 @@ mod tests {
         let error = RenderError {
             category: RenderErrorCategory::ResourceLimit,
             code: ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED,
-            message: "output byte limit exceeded".to_owned(),
+            message: "output byte limit exceeded".into(),
             format: OutputFormat::Svg,
             element_id: None,
-            json_pointer: "".to_owned(),
+            json_pointer: Box::from(""),
             details: Some(Box::new(ErrorDetails::ResourceLimit {
                 field: "max_output_bytes",
                 configured: ResourceValue::Integer(134_217_728),
