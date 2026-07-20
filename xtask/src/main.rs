@@ -1,3 +1,4 @@
+mod catalog;
 mod conformance;
 mod pdf_viewers;
 mod svg_viewers;
@@ -17,10 +18,38 @@ fn main() -> ExitCode {
 
 fn run() -> Result<(), String> {
     let mut args = env::args().skip(1);
-    if args.next().as_deref() != Some("conformance") {
-        return Err(usage());
+    match args.next().as_deref() {
+        Some("catalog") => run_catalog(args),
+        Some("conformance") => run_conformance(args),
+        _ => Err(usage()),
     }
+}
 
+fn run_catalog(mut args: impl Iterator<Item = String>) -> Result<(), String> {
+    match args.next().as_deref() {
+        Some("verify") => {
+            no_more_args(args)?;
+            catalog::verify()?;
+            println!("verified compatibility revision 1 catalog");
+        }
+        Some("import") => {
+            let source_root = required_arg(&mut args, "local Excalidraw dist/prod path")?;
+            no_more_args(args)?;
+            catalog::import(&source_root)?;
+            println!("imported compatibility revision 1 catalog");
+        }
+        Some("import-license-sources") => {
+            let source_root = required_arg(&mut args, "local license source path")?;
+            no_more_args(args)?;
+            catalog::import_license_sources(&source_root)?;
+            println!("imported compatibility revision 1 license sources");
+        }
+        _ => return Err(usage()),
+    }
+    Ok(())
+}
+
+fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String> {
     match args.next().as_deref() {
         Some("verify") => {
             let case_id = required_arg(&mut args, "case ID")?;
@@ -132,5 +161,13 @@ fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
 }
 
 fn usage() -> String {
-    "usage: cargo run --locked -p xtask -- conformance <generate|reproduce|verify|approval-subject|record-approval|verify-svg-viewers|svg-viewer-approval-subject|record-svg-viewer-approval|verify-pdf-viewers|pdf-viewer-approval-subject|record-pdf-viewer-approval> [case-id] [approval fields]".to_owned()
+    concat!(
+        "usage: cargo run --locked -p xtask -- ",
+        "catalog <import <local-dist-prod>|import-license-sources <local-path>|verify> | ",
+        "conformance <generate|reproduce|verify|approval-subject|record-approval|",
+        "verify-svg-viewers|svg-viewer-approval-subject|record-svg-viewer-approval|",
+        "verify-pdf-viewers|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
+        "[case-id] [approval fields]"
+    )
+    .to_owned()
 }

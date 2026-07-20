@@ -1,2 +1,8 @@
+*.bin binary
+*.json text eol=lf
 *.pdf binary
 *.rgba binary
+*.sha256 text eol=lf
+*.txt text eol=lf
+LICENSE-* text eol=lf
+crates/excalidraw-render-assets-base/license-parts/CC-BY-4.0.txt whitespace=-blank-at-eof

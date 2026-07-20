@@ -44,6 +44,25 @@ builds and tests do not need Node, a browser, Docker, or network access. See
 [`tools/reference-oracle/README.md`](tools/reference-oracle/README.md) for the
 opt-in profile verification workflow.
 
+## Revision catalog
+
+Compatibility revision 1 incorporates its approved manifests, license bundle,
+and official rendering-font bytes into a sealed catalog. Ordinary verification
+is offline and read-only:
+
+```sh
+cargo run --locked -p xtask -- catalog verify
+```
+
+Maintainers can reproduce the checked asset shards from an explicit local
+`@excalidraw/excalidraw` `dist/prod` directory. The importer verifies every
+source byte against the approved reference asset manifest and never downloads
+or generates production data during a build:
+
+```sh
+cargo run --locked -p xtask -- catalog import <local-dist-prod>
+```
+
 ## Artifact byte stability
 
 `tests/package-consumer` depends on Cargo's unpacked package output rather than
@@ -52,7 +71,7 @@ facade to SVG, PNG, and PDF twice and compares complete artifact and report
 bytes with the checked native expectations.
 
 ```sh
-cargo package --locked -p excalidraw-render
+cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare
 cargo test --locked --release --manifest-path tests/package-consumer/Cargo.toml --test public_facade
 ```
 

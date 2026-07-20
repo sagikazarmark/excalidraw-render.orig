@@ -62,6 +62,18 @@ pub struct ReferenceProfileIdentity {
 }
 
 impl ReferenceProfileIdentity {
+    pub(crate) const fn new(
+        compatibility_revision: CompatibilityRevision,
+        excalidraw_release: &'static str,
+        reference_profile_digest: &'static str,
+    ) -> Self {
+        Self {
+            compatibility_revision,
+            excalidraw_release,
+            reference_profile_digest,
+        }
+    }
+
     /// Returns the compatibility revision bound to this reference profile.
     pub const fn compatibility_revision(&self) -> CompatibilityRevision {
         self.compatibility_revision
@@ -78,52 +90,44 @@ impl ReferenceProfileIdentity {
     }
 }
 
-const REFERENCE_PROFILE_REVISION_1: ReferenceProfileIdentity = ReferenceProfileIdentity {
-    compatibility_revision: CompatibilityRevision::REVISION_1,
-    excalidraw_release: "v0.18.1",
-    reference_profile_digest:
-        "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71",
-};
-
-const SUPPORTED_REVISIONS: &[CompatibilityRevision] = &[CompatibilityRevision::REVISION_1];
-
 /// Immutable renderer configured for one compatibility revision.
 #[derive(Clone, Debug)]
 pub struct Renderer {
-    profile: &'static ReferenceProfileIdentity,
+    catalog: &'static crate::catalog::RevisionCatalog,
 }
 
 impl Renderer {
     /// Constructs a renderer for [`DEFAULT_COMPATIBILITY_REVISION`].
     pub const fn new() -> Self {
         Self {
-            profile: &REFERENCE_PROFILE_REVISION_1,
+            catalog: &crate::catalog::REVISION_1,
         }
     }
 
     /// Constructs a renderer for a retained compatibility revision.
     pub fn for_revision(revision: CompatibilityRevision) -> Result<Self, UnsupportedRevisionError> {
-        Self::profile_identity(revision).map(|profile| Self { profile })
+        crate::catalog::for_revision(revision)
+            .map(|catalog| Self { catalog })
+            .ok_or(UnsupportedRevisionError { revision })
     }
 
     /// Returns retained compatibility revisions in increasing order.
     pub const fn supported_revisions() -> &'static [CompatibilityRevision] {
-        SUPPORTED_REVISIONS
+        crate::catalog::SUPPORTED_REVISIONS
     }
 
     /// Returns the reference profile identity for a retained revision.
     pub fn profile_identity(
         revision: CompatibilityRevision,
     ) -> Result<&'static ReferenceProfileIdentity, UnsupportedRevisionError> {
-        match revision {
-            CompatibilityRevision::REVISION_1 => Ok(&REFERENCE_PROFILE_REVISION_1),
-            revision => Err(UnsupportedRevisionError { revision }),
-        }
+        crate::catalog::for_revision(revision)
+            .map(crate::catalog::RevisionCatalog::profile)
+            .ok_or(UnsupportedRevisionError { revision })
     }
 
     /// Returns this renderer's selected reference profile identity.
     pub const fn selected_profile_identity(&self) -> &'static ReferenceProfileIdentity {
-        self.profile
+        self.catalog.profile()
     }
 
     /// Renders one admitted scene into the request's selected output format.
@@ -132,7 +136,7 @@ impl Renderer {
         scene: &SceneDocument,
         request: &RenderRequest,
     ) -> Result<RenderOutcome, RenderError> {
-        crate::render::render(self.profile, scene, request)
+        crate::render::render(self.catalog, scene, request)
     }
 }
 

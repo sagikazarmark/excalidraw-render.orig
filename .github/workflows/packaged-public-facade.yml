@@ -30,8 +30,10 @@ jobs:
       - name: Install pinned Rust toolchain
         shell: bash
         run: bash tests/package-consumer/install-rust-toolchain.sh "${{ matrix.target }}" "$RUNNER_TEMP/rust"
+      - name: Verify sealed revision catalog
+        run: cargo run --locked -p xtask -- catalog verify
       - name: Package library
-        run: cargo package --locked -p excalidraw-render
+        run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare
       - name: Execute packaged public facade
         working-directory: tests/package-consumer
         run: cargo test --locked --release --target ${{ matrix.target }} --test public_facade
@@ -57,8 +59,10 @@ jobs:
       - name: Install pinned WASM test runner
         shell: bash
         run: bash tests/package-consumer/install-wasm-test-runner.sh "$RUNNER_TEMP/wasm-test-runner"
+      - name: Verify sealed revision catalog
+        run: cargo run --locked -p xtask -- catalog verify
       - name: Package library
-        run: cargo package --locked -p excalidraw-render
+        run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare
       - name: Execute packaged public facade in Chromium
         working-directory: tests/package-consumer
         env:

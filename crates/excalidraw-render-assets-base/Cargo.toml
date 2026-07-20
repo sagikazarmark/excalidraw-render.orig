@@ -1,0 +1,22 @@
+[package]
+name = "excalidraw-render-assets-base"
+version.workspace = true
+edition.workspace = true
+description = "Implementation-detail catalog for excalidraw-render"
+license.workspace = true
+include = [
+    "/src/",
+    "/tests/",
+    "/catalog/",
+    "/license-parts/",
+    "/LICENSE-BUNDLE.txt",
+    "/LICENSE-BUNDLE.sha256",
+]
+
+[lints]
+workspace = true
+
+[dependencies]
+excalidraw-render-assets-data-000.workspace = true
+excalidraw-render-assets-data-001.workspace = true
+sha2.workspace = true

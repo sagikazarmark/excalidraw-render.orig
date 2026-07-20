@@ -5,6 +5,7 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 mod backends;
+mod catalog;
 mod compatibility;
 #[cfg(not(target_arch = "wasm32"))]
 mod model;
@@ -35,6 +36,11 @@ pub use request::{
 };
 pub use resource_limits::{ResourceLimits, ResourceLimitsBuilder};
 pub use scene::{SceneDocument, SceneParseError};
+
+/// Returns the complete package-wide license and attribution bundle.
+pub const fn license_bundle() -> &'static str {
+    include_str!("../LICENSE-BUNDLE.txt")
+}
 
 /// Temporary integration seam for the proof-of-concept CLI.
 ///

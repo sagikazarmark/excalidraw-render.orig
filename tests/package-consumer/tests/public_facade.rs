@@ -1,4 +1,5 @@
-use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{license_bundle, OutputFormat, RenderRequest, Renderer, SceneDocument};
+use sha2::{Digest, Sha256};
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen_test::wasm_bindgen_test;
@@ -10,6 +11,8 @@ const SCENE: &[u8] =
     include_bytes!("../../conformance/cases/focused/rectangle-outline/scene.excalidraw");
 const EXPECTED_REPORT: &[u8] =
     include_bytes!("../../conformance/cases/focused/rectangle-outline/expected-report.json");
+const LICENSE_BUNDLE_SHA256: &str =
+    "a3236318603e4035951ad166ad827ef9fd3a98d9eeae9996e804aa6048d20077";
 
 struct ArtifactExpectation {
     format: OutputFormat,
@@ -44,6 +47,17 @@ fn packaged_public_facade_preserves_artifact_byte_stability() {
     assert!(
         forward_round == reverse_round,
         "repeated render calls or format order changed their bytes"
+    );
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn packaged_public_facade_exposes_the_exact_license_bundle() {
+    let bundle: &'static str = license_bundle();
+
+    assert_eq!(
+        format!("{:x}", Sha256::digest(bundle.as_bytes())),
+        LICENSE_BUNDLE_SHA256
     );
 }
 

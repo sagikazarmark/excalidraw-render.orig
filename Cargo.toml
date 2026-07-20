@@ -1,6 +1,9 @@
 [workspace]
 members = [
     "crates/excalidraw-render",
+    "crates/excalidraw-render-assets-base",
+    "crates/excalidraw-render-assets-data-000",
+    "crates/excalidraw-render-assets-data-001",
     "crates/excalidraw-render-cli",
     "crates/excalidraw-render-compare",
     "xtask",
@@ -17,6 +20,9 @@ anyhow = "=1.0.98"
 clap = { version = "=4.5.41", features = ["derive"] }
 euclid = "=0.22.11"
 excalidraw-render = { path = "crates/excalidraw-render", version = "=0.1.0" }
+excalidraw-render-assets-base = { path = "crates/excalidraw-render-assets-base", version = "=0.1.0" }
+excalidraw-render-assets-data-000 = { path = "crates/excalidraw-render-assets-data-000", version = "=0.1.0" }
+excalidraw-render-assets-data-001 = { path = "crates/excalidraw-render-assets-data-001", version = "=0.1.0" }
 jsonschema = { version = "=0.33.0", default-features = false }
 png = "=0.17.16"
 resvg = { version = "=0.45.1", default-features = false }

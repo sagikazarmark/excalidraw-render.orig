@@ -9,6 +9,7 @@ license.workspace = true
 workspace = true
 
 [dependencies]
+excalidraw-render-assets-base.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tiny-skia.workspace = true
@@ -24,3 +25,4 @@ usvg.workspace = true
 [dev-dependencies]
 excalidraw-render-compare = { path = "../excalidraw-render-compare" }
 png.workspace = true
+sha2.workspace = true

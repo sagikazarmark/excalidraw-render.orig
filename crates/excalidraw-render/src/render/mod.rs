@@ -4,6 +4,7 @@ mod rough;
 mod svg;
 
 use crate::{
+    catalog::RevisionCatalog,
     resource_accounting::{
         ResourceContext, ResourceCrossing, ResourceDelta, ResourceMeter, ResourcePhase,
         ResourceRecordKind,
@@ -32,10 +33,19 @@ pub(super) enum FormatEncodeError {
 }
 
 pub(crate) fn render(
-    profile: &'static ReferenceProfileIdentity,
+    catalog: &'static RevisionCatalog,
     scene: &SceneDocument,
     request: &RenderRequest,
 ) -> Result<RenderOutcome, RenderError> {
+    let profile = catalog.profile();
+    debug_assert_eq!(
+        catalog.asset_catalog().compatibility_revision,
+        profile.compatibility_revision().get()
+    );
+    debug_assert_eq!(
+        catalog.asset_catalog().reference_profile_digest,
+        profile.profile_digest()
+    );
     let mut session = RenderSession::new(profile, request);
     session.render(scene, request)
 }
@@ -1278,7 +1288,7 @@ mod tests {
         assert_eq!(approval["approved_at"], "2026-07-20");
         assert_eq!(
             approval["approval_url"],
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5026448604"
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5027454753"
         );
         let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
         canonical.push(b'\n');

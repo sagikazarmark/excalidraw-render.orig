@@ -402,16 +402,35 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "euclid",
+ "excalidraw-render-assets-base",
  "excalidraw-render-compare",
  "png",
  "resvg",
  "roughr",
  "serde",
  "serde_json",
+ "sha2",
  "svg2pdf",
  "tiny-skia",
  "usvg",
 ]
+
+[[package]]
+name = "excalidraw-render-assets-base"
+version = "0.1.0"
+dependencies = [
+ "excalidraw-render-assets-data-000",
+ "excalidraw-render-assets-data-001",
+ "sha2",
+]
+
+[[package]]
+name = "excalidraw-render-assets-data-000"
+version = "0.1.0"
+
+[[package]]
+name = "excalidraw-render-assets-data-001"
+version = "0.1.0"
 
 [[package]]
 name = "excalidraw-render-cli"
