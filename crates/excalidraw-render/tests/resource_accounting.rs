@@ -199,6 +199,35 @@ fn canonical_peak_working_bytes_are_independent_of_physical_allocations() {
 }
 
 #[test]
+fn pdf_icc_profile_selection_is_live_through_artifact_retention() {
+    let output_bytes = default_artifact_len(OutputFormat::Pdf);
+    let peak = 4_096 + 1_024 + 128 + 256 + 1_048_576 + 512 + logical_aligned_bytes(output_bytes);
+
+    let equality = ResourceLimits::builder()
+        .max_working_bytes(peak)
+        .build()
+        .expect("PDF ICC selection equality limit is valid");
+    render_empty(OutputFormat::Pdf, equality)
+        .expect("the ICC selection record fits at exact equality");
+
+    let crossing = ResourceLimits::builder()
+        .max_working_bytes(peak - 1)
+        .build()
+        .expect("PDF ICC selection crossing limit is valid");
+    let error = render_empty(OutputFormat::Pdf, crossing)
+        .expect_err("the retained ICC selection contributes to the working-byte peak");
+    assert_resource_failure(
+        &error,
+        ErrorCode::RESOURCE_WORKING_BYTES_EXCEEDED,
+        "max_working_bytes",
+        peak - 1,
+        peak,
+        "bytes",
+        "",
+    );
+}
+
+#[test]
 fn canonical_total_work_is_charged_through_artifact_retention() {
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let output_bytes = default_artifact_len(format);
@@ -342,7 +371,7 @@ fn canonical_empty_working_byte_peak(format: OutputFormat, output_bytes: u64) ->
     let workspace_and_surface = match format {
         OutputFormat::Svg => 256 * 1_024,
         OutputFormat::Png => (256 + 4 * 20 * 20) + (2 * 1_048_576 + 16 * 20),
-        OutputFormat::Pdf => 1_048_576,
+        OutputFormat::Pdf => 256 + 1_048_576,
         _ => unreachable!("all revision-1 formats are covered"),
     };
     session_and_plan + workspace_and_surface + 512 + logical_aligned_bytes(output_bytes)

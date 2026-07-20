@@ -51,11 +51,6 @@ fn render_with_trace(
     (result, session.meter.trace_bytes())
 }
 
-fn format_finite_number(value: f64, subject: &str) -> Result<String, String> {
-    let value = FiniteValue::new(value).ok_or_else(|| format!("{subject} must be finite"))?;
-    serde_json::to_string(&value).map_err(|_| format!("failed to serialize {subject}"))
-}
-
 struct RenderSession {
     profile: &'static ReferenceProfileIdentity,
     report: CompatibilityReport,
@@ -148,13 +143,6 @@ impl RenderSession {
             semantic_working_bytes = 0;
             ResolvedScene::empty(request)
         } else {
-            if request.format() == OutputFormat::Pdf {
-                return Err(self.internal_failure(
-                    request.format(),
-                    "nonempty rendering is not implemented for the selected format",
-                    "/elements",
-                ));
-            }
             let source = scene.single_rectangle().ok_or_else(|| {
                 self.internal_failure(
                     request.format(),
@@ -267,12 +255,26 @@ impl RenderSession {
         request: &RenderRequest,
         semantic_working_bytes: u64,
     ) -> Result<Vec<u8>, RenderError> {
-        if request.format() == OutputFormat::Svg {
-            self.validate_svg_dimensions(&resolved, request)?;
+        match request.format() {
+            OutputFormat::Svg => self.validate_svg_dimensions(&resolved, request)?,
+            OutputFormat::Pdf => self.validate_pdf_dimensions(&resolved, request)?,
+            OutputFormat::Png => {}
         }
         let plan_base = ResourceContext::new(ResourcePhase::FormatPlanning, "format_plan_base", "")
             .with_record(ResourceRecordKind::FormatPlanBase);
         self.acquire_working(request, plan_base, 1_024)?;
+        let pdf_profile_selection = if request.format() == OutputFormat::Pdf {
+            let selection = ResourceContext::new(
+                ResourcePhase::FormatPlanning,
+                "pdf_srgb_profile_selection",
+                "",
+            )
+            .with_record(ResourceRecordKind::BuiltInSelectionState);
+            self.acquire_working(request, selection, 256)?;
+            Some(selection)
+        } else {
+            None
+        };
         let operation_bytes = if resolved.include_background { 128 } else { 0 };
         let background_operation =
             ResourceContext::new(ResourcePhase::FormatPlanning, "background_operation", "")
@@ -501,10 +503,41 @@ impl RenderSession {
                 }
             }
             OutputFormat::Pdf => {
+                if let Some((element_id, json_pointer)) = resolved.primary_source() {
+                    self.transact(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::FormatPlanning,
+                            "element_operation",
+                            json_pointer,
+                        )
+                        .with_element_id(Some(element_id))
+                        .with_local_owner(Some(element_id))
+                        .with_record(ResourceRecordKind::FormatPlanOperation),
+                        ResourceDelta {
+                            working_bytes: 128,
+                            total_work_units: 8,
+                            ..ResourceDelta::default()
+                        },
+                    )?;
+                }
                 let workspace_bytes = 1_048_576;
-                let plan = PdfPlan::new(&resolved, request).map_err(|error| {
+                let plan = PdfPlan::new(resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_PDF_FAILED, error)
                 })?;
+                if semantic_working_bytes != 0 {
+                    let mut context = ResourceContext::new(
+                        ResourcePhase::FormatPlanning,
+                        "resolved_rectangle",
+                        "/elements/0",
+                    );
+                    if let Some((element_id, _)) = plan.primary_source() {
+                        context = context
+                            .with_element_id(Some(element_id))
+                            .with_local_owner(Some(element_id));
+                    }
+                    self.release_working(request, context, semantic_working_bytes)?;
+                }
                 let workspace = ResourceContext::new(
                     ResourcePhase::EncodingAndOutcomeAssembly,
                     "pdf_stream_workspace",
@@ -516,9 +549,26 @@ impl RenderSession {
                     plan.encode()
                 })?;
                 self.release_working(request, workspace, workspace_bytes)?;
+                if let Some((element_id, json_pointer)) = plan.primary_source() {
+                    self.release_working(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::EncodingAndOutcomeAssembly,
+                            "element_operation",
+                            json_pointer,
+                        )
+                        .with_element_id(Some(element_id))
+                        .with_local_owner(Some(element_id))
+                        .with_record(ResourceRecordKind::FormatPlanOperation),
+                        128,
+                    )?;
+                }
             }
         }
 
+        if let Some(profile_selection) = pdf_profile_selection {
+            self.release_working(request, profile_selection, 256)?;
+        }
         if operation_bytes != 0 {
             self.release_working(request, background_operation, operation_bytes)?;
         }
@@ -752,6 +802,60 @@ impl RenderSession {
                         measurement: Measurement::Attempted {
                             value: ResourceValue::Finite(attempted),
                         },
+                        recovery: None,
+                    })),
+                    report: std::mem::take(&mut self.report),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_pdf_dimensions(
+        &mut self,
+        resolved: &ResolvedScene,
+        request: &RenderRequest,
+    ) -> Result<(), RenderError> {
+        let limit = request.resource_limits().max_pdf_page_points();
+        let scale = resolved.raster_or_pdf_scale(request.sizing());
+        for logical in [resolved.logical_width, resolved.logical_height] {
+            let attempted = logical * scale * pdf::POINTS_PER_LOGICAL_PIXEL;
+            if attempted > limit {
+                let configured = FiniteValue::new(limit).ok_or_else(|| {
+                    self.internal_failure(
+                        request.format(),
+                        "validated PDF page limit is not finite",
+                        "",
+                    )
+                })?;
+                let measurement = if let Some(attempted) = FiniteValue::new(attempted) {
+                    Measurement::Attempted {
+                        value: ResourceValue::Finite(attempted),
+                    }
+                } else {
+                    let lower_bound = FiniteValue::new(limit + 1.0).ok_or_else(|| {
+                        self.internal_failure(
+                            request.format(),
+                            "PDF page crossing lower bound is not finite",
+                            "",
+                        )
+                    })?;
+                    Measurement::AtLeast {
+                        value: ResourceValue::Finite(lower_bound),
+                    }
+                };
+                return Err(RenderError {
+                    category: RenderErrorCategory::ResourceLimit,
+                    code: ErrorCode::RESOURCE_PDF_PAGE_DIMENSIONS_EXCEEDED,
+                    message: Box::from("PDF page point limit exceeded"),
+                    format: request.format(),
+                    element_id: None,
+                    json_pointer: Box::from(""),
+                    details: Some(Box::new(ErrorDetails::ResourceLimit {
+                        field: "max_pdf_page_points",
+                        configured: ResourceValue::Finite(configured),
+                        value_kind: ValueKind::Dimension,
+                        measurement,
                         recovery: None,
                     })),
                     report: std::mem::take(&mut self.report),
@@ -1133,9 +1237,115 @@ mod tests {
         DiagnosticSeverity, Renderer, ResourceLimits,
     };
     use serde_json::json;
+    use std::fs;
+    use std::path::Path;
 
     const EMPTY_SCENE: &[u8] =
         br#"{"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}}"#;
+
+    #[test]
+    fn focused_pdf_expectations_are_approval_bound() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .and_then(Path::parent)
+            .expect("crate is inside the workspace");
+        let path = root.join(concat!(
+            "tests/conformance/cases/focused/rectangle-outline/",
+            "pdf-renderer-expectations.json"
+        ));
+        let mut manifest: serde_json::Value =
+            serde_json::from_slice(&fs::read(path).expect("PDF expectation manifest exists"))
+                .expect("PDF expectation manifest is valid JSON");
+        assert_eq!(manifest["case_id"], "focused.rectangle-outline.v1");
+        assert_eq!(manifest["format"], "pdf");
+        assert_eq!(manifest["compatibility_revision"], 1);
+        assert_eq!(manifest["variant"], "default");
+        assert_eq!(manifest["regions"], json!(["whole"]));
+        assert_eq!(manifest["visual_class"], "geometry/image");
+        assert_eq!(manifest["crops"], json!([]));
+        assert_eq!(manifest["coverage"].as_array().map(Vec::len), Some(4));
+        assert_eq!(
+            manifest["case_manifest_approval_subject_sha256"],
+            "sha256:90f12e04953edec55aa051d0abf8a49c28da5a2e6d9a28d4e2b57196775f4698"
+        );
+
+        let approval = manifest
+            .as_object_mut()
+            .expect("PDF expectation manifest is an object")
+            .remove("approval")
+            .expect("PDF expectation manifest is approved");
+        assert_eq!(approval["approved_by"], "sagikazarmark");
+        assert_eq!(approval["approved_at"], "2026-07-20");
+        assert_eq!(
+            approval["approval_url"],
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5026448604"
+        );
+        let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
+        canonical.push(b'\n');
+        assert_eq!(
+            approval["approval_subject_sha256"],
+            format!(
+                "sha256:{}",
+                crate::resource_accounting::sha256_hex(&canonical)
+            )
+        );
+
+        let files = manifest["files"]
+            .as_array()
+            .expect("PDF expectation files are an array");
+        assert_eq!(files.len(), 13);
+        for descriptor in files {
+            let path = descriptor["path"]
+                .as_str()
+                .expect("PDF expectation path is a string");
+            let bytes = fs::read(root.join(path)).expect("PDF expectation dependency exists");
+            assert_eq!(
+                descriptor["sha256"],
+                crate::resource_accounting::sha256_hex(&bytes),
+                "stale PDF expectation dependency {path}"
+            );
+        }
+
+        let exception: serde_json::Value = serde_json::from_slice(
+            &fs::read(root.join(concat!(
+                "tests/conformance/cases/focused/rectangle-outline/",
+                "pdf-visual-exception.json"
+            )))
+            .expect("PDF visual exception exists"),
+        )
+        .expect("PDF visual exception is valid JSON");
+        let keys: Vec<_> = exception
+            .as_object()
+            .expect("PDF visual exception is an object")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(
+            keys,
+            [
+                "approved_issue",
+                "authority",
+                "case_id",
+                "format",
+                "max_changed_pixels",
+                "minimum_ssim_bits",
+                "reason",
+                "region",
+                "schema",
+                "variant",
+                "viewer_profile",
+                "visual_class",
+            ]
+        );
+        assert_eq!(exception["case_id"], "focused.rectangle-outline.v1");
+        assert_eq!(exception["variant"], "default");
+        assert_eq!(exception["format"], "pdf");
+        assert_eq!(exception["viewer_profile"], "canonical-pdf.pdfium.v1");
+        assert_eq!(exception["region"], "whole");
+        assert_eq!(exception["visual_class"], "geometry/image");
+        assert_eq!(exception["max_changed_pixels"], 0);
+        assert_eq!(exception["minimum_ssim_bits"], "3fefec69adc2369e");
+    }
 
     #[test]
     fn diagnostic_transaction_uses_fatal_precedence_and_never_appends_a_rejection() {
@@ -1258,7 +1468,7 @@ mod tests {
             ),
             (
                 OutputFormat::Pdf,
-                "2fe91836dcd24a658d49d86449ebeb5384168b36c3a95be883d0abb1c965e336",
+                "29fdab71a03d23839b02fc361575610d541fa7d84169946b7eb0f59b4798fa15",
             ),
         ];
 

@@ -137,22 +137,6 @@ fn approved_rectangle_passes_both_canonical_svg_visual_gates() {
 }
 
 #[test]
-fn unimplemented_rectangle_pdf_does_not_succeed_with_an_empty_artifact() {
-    let scene = approved_scene();
-
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("default request is valid");
-    let error = Renderer::new()
-        .render(&scene, &request)
-        .expect_err("unimplemented projection must not silently omit the rectangle");
-
-    assert_eq!(error.code(), ErrorCode::RENDER_INTERNAL_FAILURE);
-    assert_eq!(error.json_pointer(), "/elements");
-    assert!(error.report().is_empty());
-}
-
-#[test]
 fn rough_operations_are_admitted_atomically_at_the_geometry_boundary() {
     for configured in [16, 17] {
         let limits = ResourceLimits::builder()

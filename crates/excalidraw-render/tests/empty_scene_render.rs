@@ -80,7 +80,12 @@ fn valid_empty_scene_renders_a_complete_one_page_pdf_artifact() {
     assert!(!pdf.contains("/ArtBox"));
     assert!(!pdf.contains("/Rotate"));
     assert!(!pdf.contains("/UserUnit"));
-    assert!(pdf.contains("1 1 1 rg\n0 0 15 15 re\nf\n"));
+    assert!(pdf.contains(concat!(
+        "q\n0.75 0 0 -0.75 0 15 cm\n",
+        "/CS1 cs\n1 1 1 scn\n0 0 20 20 re\nf\nQ"
+    )));
+    assert!(pdf.contains("/ColorSpace << /CS1 [/ICCBased 5 0 R] >>"));
+    assert!(pdf.contains("/OutputIntents [6 0 R]"));
     assert!(!bytes.windows(4).any(|window| window == b"<svg"));
 
     let repeated = render_empty_scene(OutputFormat::Pdf);

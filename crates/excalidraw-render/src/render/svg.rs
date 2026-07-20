@@ -201,9 +201,9 @@ fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeE
         match operation {
             PathOperation::Move(point) => {
                 output.push('M');
-                push_rough_number(output, point.x)?;
+                super::rough::push_number(output, point.x)?;
                 output.push(' ');
-                push_rough_number(output, point.y)?;
+                super::rough::push_number(output, point.y)?;
             }
             PathOperation::Cubic {
                 control_1,
@@ -211,42 +211,19 @@ fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeE
                 end,
             } => {
                 output.push('C');
-                push_rough_number(output, control_1.x)?;
+                super::rough::push_number(output, control_1.x)?;
                 output.push(' ');
-                push_rough_number(output, control_1.y)?;
+                super::rough::push_number(output, control_1.y)?;
                 output.push_str(", ");
-                push_rough_number(output, control_2.x)?;
+                super::rough::push_number(output, control_2.x)?;
                 output.push(' ');
-                push_rough_number(output, control_2.y)?;
+                super::rough::push_number(output, control_2.y)?;
                 output.push_str(", ");
-                push_rough_number(output, end.x)?;
+                super::rough::push_number(output, end.x)?;
                 output.push(' ');
-                push_rough_number(output, end.y)?;
+                super::rough::push_number(output, end.y)?;
             }
         }
-    }
-    Ok(())
-}
-
-fn push_rough_number(output: &mut String, value: f64) -> Result<(), FormatEncodeError> {
-    let (negative, units) = fixed_two_decimal_units(value)?;
-    if negative && units != 0 {
-        output.push('-');
-    }
-    let whole = units / 100;
-    let fraction = units % 100;
-    write!(output, "{whole}")
-        .map_err(|_| FormatEncodeError::Encoding("failed to write Rough path number".to_owned()))?;
-    if fraction != 0 {
-        output.push('.');
-        if fraction % 10 == 0 {
-            write!(output, "{}", fraction / 10)
-        } else {
-            write!(output, "{fraction:02}")
-        }
-        .map_err(|_| {
-            FormatEncodeError::Encoding("failed to write Rough path fraction".to_owned())
-        })?;
     }
     Ok(())
 }
@@ -276,46 +253,6 @@ fn push_escaped_attribute(output: &mut String, value: &str) {
             character => output.push(character),
         }
     }
-}
-
-fn fixed_two_decimal_units(value: f64) -> Result<(bool, u128), FormatEncodeError> {
-    if !value.is_finite() || value.abs() >= 1e21 {
-        return Err(FormatEncodeError::Encoding(
-            "Rough path number is outside fixed-decimal range".to_owned(),
-        ));
-    }
-    let bits = value.to_bits();
-    let negative = bits >> 63 != 0;
-    let exponent_bits = ((bits >> 52) & 0x7ff) as i32;
-    let fraction = bits & ((1_u64 << 52) - 1);
-    if exponent_bits == 0 && fraction == 0 {
-        return Ok((false, 0));
-    }
-    let (significand, exponent) = if exponent_bits == 0 {
-        (u128::from(fraction), -1074)
-    } else {
-        (
-            u128::from(fraction | (1_u64 << 52)),
-            exponent_bits - 1023 - 52,
-        )
-    };
-    let scaled = significand.checked_mul(100).ok_or_else(svg_size_error)?;
-    let units = if exponent >= 0 {
-        scaled
-            .checked_shl(u32::try_from(exponent).map_err(|_| svg_size_error())?)
-            .ok_or_else(svg_size_error)?
-    } else {
-        let denominator_shift = exponent.unsigned_abs();
-        if denominator_shift >= 128 {
-            0
-        } else {
-            let denominator = 1_u128 << denominator_shift;
-            let quotient = scaled / denominator;
-            let remainder = scaled % denominator;
-            quotient + u128::from(remainder >= denominator - remainder)
-        }
-    };
-    Ok((negative, units))
 }
 
 fn escaped_capacity(value: &str) -> Result<usize, FormatEncodeError> {

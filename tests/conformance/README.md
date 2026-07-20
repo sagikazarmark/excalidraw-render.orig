@@ -112,6 +112,22 @@ URI annotations, clipping, transparency groups, a declared source image, XMP,
 the embedded-scene carrier, and output intent without pretending to be official
 PDF evidence.
 
+Run the renderer-owned focused rectangle candidate through both PDF viewers and
+the structural inspector with:
+
+```sh
+cargo test --locked --release -p excalidraw-render \
+  --test rectangle_pdf_render \
+  approved_rectangle_passes_both_canonical_pdf_visual_gates -- \
+  --ignored --exact --nocapture
+```
+
+The candidate expectation manifest approval-binds the two viewer profiles, the
+comparator and structure profiles, the direct 31-operation structure, and the
+narrow PDFium antialiasing exception approved on issue #44. The exception keeps
+the global comparator unchanged and requires zero Pixelmatch changed pixels;
+PDF.js remains subject to the ordinary canonical visual gate.
+
 Install the pinned development-only tools once, then reproduce without network:
 
 ```sh

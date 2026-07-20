@@ -114,6 +114,7 @@ pub(crate) enum ResourceRecordKind {
     RequestSessionMeter,
     FormatPlanBase,
     FormatPlanOperation,
+    BuiltInSelectionState,
     RasterColorSurface,
     #[allow(dead_code)]
     Diagnostic,

@@ -1,3 +1,8 @@
+use std::collections::TryReserveError;
+use std::fmt::Write as _;
+
+use super::FormatEncodeError;
+
 #[derive(Clone, Copy)]
 pub(super) struct Point {
     pub(super) x: f64,
@@ -15,6 +20,73 @@ pub(super) enum PathOperation {
 
 pub(super) struct Path {
     pub(super) operations: Vec<PathOperation>,
+}
+
+pub(super) fn push_number(output: &mut String, value: f64) -> Result<(), FormatEncodeError> {
+    let (negative, units) = fixed_two_decimal_units(value)?;
+    if negative && units != 0 {
+        output.push('-');
+    }
+    let whole = units / 100;
+    let fraction = units % 100;
+    write!(output, "{whole}")
+        .map_err(|_| FormatEncodeError::Encoding("failed to write Rough path number".to_owned()))?;
+    if fraction != 0 {
+        output.push('.');
+        if fraction % 10 == 0 {
+            write!(output, "{}", fraction / 10)
+        } else {
+            write!(output, "{fraction:02}")
+        }
+        .map_err(|_| {
+            FormatEncodeError::Encoding("failed to write Rough path fraction".to_owned())
+        })?;
+    }
+    Ok(())
+}
+
+fn fixed_two_decimal_units(value: f64) -> Result<(bool, u128), FormatEncodeError> {
+    if !value.is_finite() || value.abs() >= 1e21 {
+        return Err(FormatEncodeError::Encoding(
+            "Rough path number is outside fixed-decimal range".to_owned(),
+        ));
+    }
+    let bits = value.to_bits();
+    let negative = bits >> 63 != 0;
+    let exponent_bits = ((bits >> 52) & 0x7ff) as i32;
+    let fraction = bits & ((1_u64 << 52) - 1);
+    if exponent_bits == 0 && fraction == 0 {
+        return Ok((false, 0));
+    }
+    let (significand, exponent) = if exponent_bits == 0 {
+        (u128::from(fraction), -1074)
+    } else {
+        (
+            u128::from(fraction | (1_u64 << 52)),
+            exponent_bits - 1023 - 52,
+        )
+    };
+    let scaled = significand.checked_mul(100).ok_or_else(number_error)?;
+    let units = if exponent >= 0 {
+        scaled
+            .checked_shl(u32::try_from(exponent).map_err(|_| number_error())?)
+            .ok_or_else(number_error)?
+    } else {
+        let denominator_shift = exponent.unsigned_abs();
+        if denominator_shift >= 128 {
+            0
+        } else {
+            let denominator = 1_u128 << denominator_shift;
+            let quotient = scaled / denominator;
+            let remainder = scaled % denominator;
+            quotient + u128::from(remainder >= denominator - remainder)
+        }
+    };
+    Ok((negative, units))
+}
+
+fn number_error() -> FormatEncodeError {
+    FormatEncodeError::Encoding("Rough path number exceeds serializer capacity".to_owned())
 }
 
 pub(super) fn rectangle(
@@ -197,5 +269,3 @@ impl Random {
 // Focused port of Rough.js 4.6.4 rectangle/line generation.
 // Copyright (c) 2019 Preet Shihn, licensed under MIT. See
 // `crates/excalidraw-render/LICENSES/roughjs-MIT.txt`.
-
-use std::collections::TryReserveError;
