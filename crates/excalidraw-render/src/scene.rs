@@ -90,6 +90,9 @@ struct ParserLimit {
 #[derive(Clone)]
 pub struct SceneDocument {
     _root: Arc<JsonValue>,
+    source_bytes: u64,
+    #[cfg(test)]
+    source_sha256: [u8; 32],
 }
 
 impl SceneDocument {
@@ -122,6 +125,9 @@ impl SceneDocument {
 
         Ok(Self {
             _root: Arc::new(root),
+            source_bytes: input_bytes,
+            #[cfg(test)]
+            source_sha256: crate::resource_accounting::sha256_digest(bytes),
         })
     }
 
@@ -141,6 +147,40 @@ impl SceneDocument {
             Some(JsonValue::Array(elements)) if elements.is_empty()
         )
     }
+
+    pub(crate) const fn source_bytes(&self) -> u64 {
+        self.source_bytes
+    }
+
+    #[cfg(test)]
+    pub(crate) const fn source_sha256(&self) -> &[u8; 32] {
+        &self.source_sha256
+    }
+
+    pub(crate) fn visit_original_json_entries<E>(
+        &self,
+        mut visit: impl FnMut(OriginalJsonEntry<'_>) -> Result<(), E>,
+    ) -> Result<(), OriginalJsonVisitError<E>> {
+        visit_json_value(&self._root, "", false, &mut visit)
+    }
+}
+
+pub(crate) enum OriginalJsonVisitError<E> {
+    Visitor(E),
+    MemoryUnavailable { json_pointer: String },
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct OriginalJsonEntry<'a> {
+    pub(crate) kind: OriginalJsonEntryKind,
+    pub(crate) json_pointer: &'a str,
+    pub(crate) is_element_occurrence: bool,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum OriginalJsonEntryKind {
+    Node,
+    Member,
 }
 
 impl fmt::Debug for SceneDocument {
@@ -892,6 +932,168 @@ fn member_value<'a>(members: &'a [JsonMember], key: &str) -> Option<&'a JsonValu
         .iter()
         .find(|member| &*member.key == key)
         .map(|member| &member.value)
+}
+
+fn visit_json_value<E>(
+    value: &JsonValue,
+    json_pointer: &str,
+    is_element_occurrence: bool,
+    visit: &mut impl FnMut(OriginalJsonEntry<'_>) -> Result<(), E>,
+) -> Result<(), OriginalJsonVisitError<E>> {
+    let mut root_pointer = String::new();
+    if root_pointer.try_reserve_exact(json_pointer.len()).is_err() {
+        return Err(OriginalJsonVisitError::MemoryUnavailable {
+            json_pointer: String::new(),
+        });
+    }
+    root_pointer.push_str(json_pointer);
+
+    let mut pending = Vec::new();
+    if pending.try_reserve_exact(1).is_err() {
+        return Err(OriginalJsonVisitError::MemoryUnavailable {
+            json_pointer: root_pointer,
+        });
+    }
+    pending.push(OriginalJsonVisit::Node {
+        value,
+        json_pointer: root_pointer,
+        is_element_occurrence,
+    });
+
+    while let Some(entry) = pending.pop() {
+        match entry {
+            OriginalJsonVisit::Member {
+                value,
+                json_pointer,
+            } => {
+                visit(OriginalJsonEntry {
+                    kind: OriginalJsonEntryKind::Member,
+                    json_pointer: &json_pointer,
+                    is_element_occurrence: false,
+                })
+                .map_err(OriginalJsonVisitError::Visitor)?;
+                if pending.try_reserve(1).is_err() {
+                    return Err(OriginalJsonVisitError::MemoryUnavailable { json_pointer });
+                }
+                pending.push(OriginalJsonVisit::Node {
+                    value,
+                    json_pointer,
+                    is_element_occurrence: false,
+                });
+            }
+            OriginalJsonVisit::Node {
+                value,
+                json_pointer,
+                is_element_occurrence,
+            } => {
+                visit(OriginalJsonEntry {
+                    kind: OriginalJsonEntryKind::Node,
+                    json_pointer: &json_pointer,
+                    is_element_occurrence,
+                })
+                .map_err(OriginalJsonVisitError::Visitor)?;
+
+                match value {
+                    JsonValue::Array(values) => {
+                        if pending.try_reserve(values.len()).is_err() {
+                            return Err(OriginalJsonVisitError::MemoryUnavailable { json_pointer });
+                        }
+                        let elements = json_pointer == "/elements";
+                        for (index, value) in values.iter().enumerate().rev() {
+                            let child_pointer = match pointer_index(&json_pointer, index) {
+                                Ok(pointer) => pointer,
+                                Err(_) => {
+                                    return Err(OriginalJsonVisitError::MemoryUnavailable {
+                                        json_pointer,
+                                    });
+                                }
+                            };
+                            pending.push(OriginalJsonVisit::Node {
+                                value,
+                                json_pointer: child_pointer,
+                                is_element_occurrence: elements,
+                            });
+                        }
+                    }
+                    JsonValue::Object(members) => {
+                        if pending.try_reserve(members.len()).is_err() {
+                            return Err(OriginalJsonVisitError::MemoryUnavailable { json_pointer });
+                        }
+                        for member in members.iter().rev() {
+                            let child_pointer = match pointer_child(&json_pointer, &member.key) {
+                                Ok(pointer) => pointer,
+                                Err(_) => {
+                                    return Err(OriginalJsonVisitError::MemoryUnavailable {
+                                        json_pointer,
+                                    });
+                                }
+                            };
+                            pending.push(OriginalJsonVisit::Member {
+                                value: &member.value,
+                                json_pointer: child_pointer,
+                            });
+                        }
+                    }
+                    JsonValue::Null
+                    | JsonValue::Bool(_)
+                    | JsonValue::Number(_)
+                    | JsonValue::String(_) => {}
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+enum OriginalJsonVisit<'a> {
+    Node {
+        value: &'a JsonValue,
+        json_pointer: String,
+        is_element_occurrence: bool,
+    },
+    Member {
+        value: &'a JsonValue,
+        json_pointer: String,
+    },
+}
+
+fn pointer_child(parent: &str, segment: &str) -> Result<String, TryReserveError> {
+    let escaped_bytes = segment.len().saturating_mul(2);
+    let capacity = parent
+        .len()
+        .checked_add(escaped_bytes)
+        .and_then(|length| length.checked_add(1))
+        .unwrap_or(usize::MAX);
+    let mut pointer = String::new();
+    pointer.try_reserve(capacity)?;
+    pointer.push_str(parent);
+    pointer.push('/');
+    push_pointer_segment(&mut pointer, segment);
+    Ok(pointer)
+}
+
+fn pointer_index(parent: &str, index: usize) -> Result<String, TryReserveError> {
+    let capacity = parent.len().saturating_add(21);
+    let mut pointer = String::new();
+    pointer.try_reserve(capacity)?;
+    pointer.push_str(parent);
+    pointer.push('/');
+
+    let mut digits = [0_u8; 20];
+    let mut remaining = index;
+    let mut start = digits.len();
+    loop {
+        start -= 1;
+        digits[start] = u8::try_from(remaining % 10).unwrap_or(0);
+        remaining /= 10;
+        if remaining == 0 {
+            break;
+        }
+    }
+    for digit in &digits[start..] {
+        pointer.push(char::from(b'0' + *digit));
+    }
+    Ok(pointer)
 }
 
 fn write_canonical_json(value: &JsonValue, bytes: &mut Vec<u8>) -> Result<(), TryReserveError> {

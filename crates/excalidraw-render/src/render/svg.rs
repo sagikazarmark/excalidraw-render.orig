@@ -1,6 +1,6 @@
 use crate::{RenderRequest, Sizing};
 
-use super::{format_finite_number, ResolvedScene};
+use super::{format_finite_number, FormatEncodeError, ResolvedScene};
 
 pub(super) struct SvgPlan {
     logical_width: f64,
@@ -25,14 +25,21 @@ impl SvgPlan {
         }
     }
 
-    pub(super) fn encode(&self) -> Result<Vec<u8>, String> {
-        let logical_width = format_finite_number(self.logical_width, "SVG width")?;
-        let logical_height = format_finite_number(self.logical_height, "SVG height")?;
-        let output_width = format_finite_number(self.output_width, "scaled SVG width")?;
-        let output_height = format_finite_number(self.output_height, "scaled SVG height")?;
+    pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
+        let logical_width = format_finite_number(self.logical_width, "SVG width")
+            .map_err(FormatEncodeError::Encoding)?;
+        let logical_height = format_finite_number(self.logical_height, "SVG height")
+            .map_err(FormatEncodeError::Encoding)?;
+        let output_width = format_finite_number(self.output_width, "scaled SVG width")
+            .map_err(FormatEncodeError::Encoding)?;
+        let output_height = format_finite_number(self.output_height, "scaled SVG height")
+            .map_err(FormatEncodeError::Encoding)?;
         let mut svg = String::new();
         svg.try_reserve(256)
-            .map_err(|_| "failed to allocate SVG output".to_owned())?;
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "artifact",
+                subject: "svg_output",
+            })?;
         svg.push_str("<svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 ");
         svg.push_str(&logical_width);
         svg.push(' ');

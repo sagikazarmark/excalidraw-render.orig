@@ -2,7 +2,7 @@ use std::io::Write;
 
 use crate::RenderRequest;
 
-use super::{format_finite_number, ResolvedScene};
+use super::{format_finite_number, FormatEncodeError, ResolvedScene};
 
 const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
 
@@ -13,7 +13,10 @@ pub(super) struct PdfPlan {
 }
 
 impl PdfPlan {
-    pub(super) fn new(scene: &ResolvedScene, request: &RenderRequest) -> Result<Self, String> {
+    pub(super) fn new(
+        scene: &ResolvedScene,
+        request: &RenderRequest,
+    ) -> Result<Self, FormatEncodeError> {
         let scale = scene.raster_or_pdf_scale(request.sizing());
         let page_width = point_dimension(scene.logical_width * scale)?;
         let page_height = point_dimension(scene.logical_height * scale)?;
@@ -24,10 +27,18 @@ impl PdfPlan {
         })
     }
 
-    pub(super) fn encode(self) -> Result<Vec<u8>, String> {
-        let page_width = format_finite_number(self.page_width, "PDF page width")?;
-        let page_height = format_finite_number(self.page_height, "PDF page height")?;
+    pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
+        let page_width = format_finite_number(self.page_width, "PDF page width")
+            .map_err(FormatEncodeError::Encoding)?;
+        let page_height = format_finite_number(self.page_height, "PDF page height")
+            .map_err(FormatEncodeError::Encoding)?;
         let mut content = Vec::new();
+        content
+            .try_reserve(128)
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_workspace",
+                subject: "pdf_content_stream",
+            })?;
         if self.include_background {
             write!(content, "1 1 1 rg\n0 0 {page_width} {page_height} re\nf\n")
                 .map_err(write_error)?;
@@ -35,7 +46,10 @@ impl PdfPlan {
 
         let mut pdf = Vec::new();
         pdf.try_reserve(768 + content.len())
-            .map_err(|_| "failed to allocate PDF output".to_owned())?;
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "artifact",
+                subject: "pdf_output",
+            })?;
         pdf.extend_from_slice(b"%PDF-1.7\n%\x80\x80\x80\x80\n\n");
         let mut offsets = [0; 4];
 
@@ -77,19 +91,25 @@ impl PdfPlan {
     }
 }
 
-fn begin_object(output: &mut Vec<u8>, offsets: &mut [usize; 4], id: usize) -> Result<(), String> {
+fn begin_object(
+    output: &mut Vec<u8>,
+    offsets: &mut [usize; 4],
+    id: usize,
+) -> Result<(), FormatEncodeError> {
     offsets[id - 1] = output.len();
     writeln!(output, "{id} 0 obj").map_err(write_error)
 }
 
-fn point_dimension(logical: f64) -> Result<f64, String> {
+fn point_dimension(logical: f64) -> Result<f64, FormatEncodeError> {
     let points = logical * POINTS_PER_LOGICAL_PIXEL;
     if !points.is_finite() || points <= 0.0 {
-        return Err("PDF page dimensions must be finite positive point values".to_owned());
+        return Err(FormatEncodeError::Encoding(
+            "PDF page dimensions must be finite positive point values".to_owned(),
+        ));
     }
     Ok(points)
 }
 
-fn write_error(_: std::io::Error) -> String {
-    "failed to encode PDF bytes".to_owned()
+fn write_error(_: std::io::Error) -> FormatEncodeError {
+    FormatEncodeError::Encoding("failed to encode PDF bytes".to_owned())
 }

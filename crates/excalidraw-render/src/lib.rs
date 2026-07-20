@@ -10,6 +10,7 @@ mod outcome;
 mod render;
 mod render_svg;
 mod request;
+mod resource_accounting;
 mod resource_limits;
 mod scene;
 
