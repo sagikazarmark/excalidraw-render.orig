@@ -1,0 +1,655 @@
+use std::collections::BTreeMap;
+use std::error::Error;
+use std::fmt;
+
+use serde::Serialize;
+
+use crate::{ErrorCode, ErrorDescriptor, ErrorDetails, ResourceLimits};
+
+/// Indicates that a render request could not be validated.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RequestError {
+    code: ErrorCode,
+    message: &'static str,
+    field: &'static str,
+    asset_id: Option<String>,
+    option: Option<&'static str>,
+}
+
+impl RequestError {
+    pub(crate) fn new(code: ErrorCode, message: &'static str, field: &'static str) -> Self {
+        Self {
+            code,
+            message,
+            field,
+            asset_id: None,
+            option: None,
+        }
+    }
+
+    fn for_option(
+        code: ErrorCode,
+        message: &'static str,
+        field: &'static str,
+        option: &'static str,
+    ) -> Self {
+        Self {
+            code,
+            message,
+            field,
+            asset_id: None,
+            option: Some(option),
+        }
+    }
+
+    fn for_asset(
+        code: ErrorCode,
+        message: &'static str,
+        asset_id: String,
+        option: Option<&'static str>,
+    ) -> Self {
+        Self {
+            code,
+            message,
+            field: "supplemental_assets",
+            asset_id: Some(asset_id),
+            option,
+        }
+    }
+
+    /// Returns the stable machine-readable request error code.
+    pub const fn code(&self) -> ErrorCode {
+        self.code
+    }
+
+    /// Returns the rejected canonical request field.
+    pub const fn field(&self) -> &str {
+        self.field
+    }
+
+    /// Returns the applicable supplemental asset ID.
+    pub fn asset_id(&self) -> Option<&str> {
+        self.asset_id.as_deref()
+    }
+
+    /// Returns the applicable format-option name.
+    pub const fn option(&self) -> Option<&str> {
+        self.option
+    }
+
+    /// Returns this failure's stable serializable descriptor.
+    pub fn descriptor(&self) -> ErrorDescriptor {
+        ErrorDescriptor::request(
+            self.code,
+            self.to_string(),
+            ErrorDetails::RequestValue {
+                field: self.field,
+                asset_id: self.asset_id.clone(),
+                option: self.option,
+            },
+        )
+    }
+}
+
+impl fmt::Display for RequestError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.message)
+    }
+}
+
+impl Error for RequestError {}
+
+/// The single artifact format produced by a render request.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[non_exhaustive]
+#[serde(rename_all = "lowercase")]
+pub enum OutputFormat {
+    /// A semantic SVG document.
+    Svg,
+    /// A canvas-equivalent PNG image.
+    Png,
+    /// A one-page vector-first PDF document.
+    Pdf,
+}
+
+impl OutputFormat {
+    /// Returns the canonical media type for this format.
+    pub const fn media_type(self) -> &'static str {
+        match self {
+            Self::Svg => "image/svg+xml",
+            Self::Png => "image/png",
+            Self::Pdf => "application/pdf",
+        }
+    }
+
+    /// Returns the stable serialized spelling.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Svg => "svg",
+            Self::Png => "png",
+            Self::Pdf => "pdf",
+        }
+    }
+}
+
+/// Output sizing selected for one render.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
+pub enum Sizing {
+    /// Multiplies logical output dimensions by the supplied scale.
+    Scale(f64),
+    /// Downscales output to at most the supplied largest dimension.
+    MaxDimension(f64),
+}
+
+/// Color mode used to interpret scene colors.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum ColorMode {
+    /// Reference light-mode colors.
+    #[default]
+    Light,
+    /// Reference dark-mode colors.
+    Dark,
+}
+
+/// Whole-scene frame rendering controls.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FrameOptions {
+    enabled: bool,
+    clip: bool,
+    name: bool,
+    outline: bool,
+}
+
+impl FrameOptions {
+    /// Creates a complete set of frame controls.
+    pub const fn new(enabled: bool, clip: bool, name: bool, outline: bool) -> Self {
+        Self {
+            enabled,
+            clip,
+            name,
+            outline,
+        }
+    }
+
+    /// Returns whether frames are rendered.
+    pub const fn enabled(&self) -> bool {
+        self.enabled
+    }
+
+    /// Returns whether frame contents are clipped.
+    pub const fn clip(&self) -> bool {
+        self.clip
+    }
+
+    /// Returns whether frame names are rendered.
+    pub const fn name(&self) -> bool {
+        self.name
+    }
+
+    /// Returns whether frame outlines are rendered.
+    pub const fn outline(&self) -> bool {
+        self.outline
+    }
+}
+
+impl Default for FrameOptions {
+    fn default() -> Self {
+        Self::new(true, true, true, true)
+    }
+}
+
+/// Optional artifact metadata controls.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct MetadataOptions {
+    embedded_scene: bool,
+    provenance: bool,
+    diagnostic_summary: bool,
+}
+
+impl MetadataOptions {
+    /// Creates a complete set of optional metadata controls.
+    pub const fn new(embedded_scene: bool, provenance: bool, diagnostic_summary: bool) -> Self {
+        Self {
+            embedded_scene,
+            provenance,
+            diagnostic_summary,
+        }
+    }
+
+    /// Returns whether the canonicalized original scene document is embedded.
+    pub const fn embedded_scene(&self) -> bool {
+        self.embedded_scene
+    }
+
+    /// Returns whether renderer provenance is embedded.
+    pub const fn provenance(&self) -> bool {
+        self.provenance
+    }
+
+    /// Returns whether the pre-metadata diagnostic summary is embedded.
+    pub const fn diagnostic_summary(&self) -> bool {
+        self.diagnostic_summary
+    }
+}
+
+/// Policy for PDF-only isolated raster fallback.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum PdfRasterFallback {
+    /// Rasterize only the isolated closures allowed by the compatibility contract.
+    #[default]
+    AllowIsolated,
+    /// Fail if an isolated raster fallback closure remains after preflight.
+    Forbid,
+}
+
+/// PDF-specific request controls.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct PdfOptions {
+    raster_fallback: PdfRasterFallback,
+}
+
+impl PdfOptions {
+    /// Creates PDF options with the selected raster-fallback policy.
+    pub const fn new(raster_fallback: PdfRasterFallback) -> Self {
+        Self { raster_fallback }
+    }
+
+    /// Returns the isolated raster-fallback policy.
+    pub const fn raster_fallback(&self) -> PdfRasterFallback {
+        self.raster_fallback
+    }
+}
+
+/// One owned caller-supplied asset.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SupplementalAsset {
+    bytes: Vec<u8>,
+    advisory_media_type: Option<String>,
+}
+
+impl SupplementalAsset {
+    /// Returns the owned payload bytes.
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    /// Returns the caller's advisory media type, when supplied.
+    pub fn advisory_media_type(&self) -> Option<&str> {
+        self.advisory_media_type.as_deref()
+    }
+}
+
+/// Owned caller-supplied assets keyed by scene file ID.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct SupplementalAssets {
+    entries: BTreeMap<String, SupplementalAsset>,
+}
+
+impl SupplementalAssets {
+    /// Starts an empty supplemental-assets builder.
+    pub fn builder() -> SupplementalAssetsBuilder {
+        SupplementalAssetsBuilder::default()
+    }
+
+    /// Returns whether the collection contains no supplemental assets.
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
+    /// Returns the number of supplemental scene file IDs.
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    /// Returns the supplemental asset for a scene file ID.
+    pub fn get(&self, file_id: &str) -> Option<&SupplementalAsset> {
+        self.entries.get(file_id)
+    }
+
+    /// Iterates assets in ascending scene file-ID UTF-8 byte order.
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &SupplementalAsset)> {
+        self.entries
+            .iter()
+            .map(|(file_id, asset)| (file_id.as_str(), asset))
+    }
+}
+
+/// Builder for an owned deterministic supplemental-asset mapping.
+#[derive(Clone, Debug, Default)]
+pub struct SupplementalAssetsBuilder {
+    entries: Vec<(String, SupplementalAsset)>,
+}
+
+impl SupplementalAssetsBuilder {
+    /// Adds owned bytes without an advisory media type.
+    pub fn asset(mut self, file_id: impl Into<String>, bytes: impl Into<Vec<u8>>) -> Self {
+        self.entries.push((
+            file_id.into(),
+            SupplementalAsset {
+                bytes: bytes.into(),
+                advisory_media_type: None,
+            },
+        ));
+        self
+    }
+
+    /// Adds owned bytes with an advisory media type.
+    pub fn asset_with_media_type(
+        mut self,
+        file_id: impl Into<String>,
+        bytes: impl Into<Vec<u8>>,
+        media_type: impl Into<String>,
+    ) -> Self {
+        self.entries.push((
+            file_id.into(),
+            SupplementalAsset {
+                bytes: bytes.into(),
+                advisory_media_type: Some(media_type.into()),
+            },
+        ));
+        self
+    }
+
+    /// Validates and constructs the deterministic asset mapping.
+    pub fn build(self) -> Result<SupplementalAssets, RequestError> {
+        let mut entries = BTreeMap::new();
+        for (file_id, asset) in self.entries {
+            if file_id.is_empty() {
+                return Err(RequestError::for_asset(
+                    ErrorCode::REQUEST_EMPTY_ASSET_ID,
+                    "supplemental asset ID must not be empty",
+                    file_id,
+                    None,
+                ));
+            }
+            if entries.contains_key(&file_id) {
+                return Err(RequestError::for_asset(
+                    ErrorCode::REQUEST_DUPLICATE_ASSET_ID,
+                    "supplemental asset ID occurs more than once",
+                    file_id,
+                    None,
+                ));
+            }
+            if asset
+                .advisory_media_type
+                .as_deref()
+                .is_some_and(|media_type| !is_valid_media_type(media_type))
+            {
+                return Err(RequestError::for_asset(
+                    ErrorCode::REQUEST_INVALID_ASSET_MEDIA_TYPE,
+                    "supplemental asset media type is invalid",
+                    file_id,
+                    Some("media_type"),
+                ));
+            }
+            entries.insert(file_id, asset);
+        }
+        Ok(SupplementalAssets { entries })
+    }
+}
+
+/// A validated one-format render request.
+#[derive(Clone, Debug)]
+pub struct RenderRequest {
+    format: OutputFormat,
+    include_background: bool,
+    padding: f64,
+    sizing: Sizing,
+    color_mode: ColorMode,
+    frame_options: FrameOptions,
+    metadata_options: MetadataOptions,
+    supplemental_assets: SupplementalAssets,
+    resource_limits: ResourceLimits,
+    pdf_options: Option<PdfOptions>,
+}
+
+impl RenderRequest {
+    /// Starts a validated request builder for exactly one output format.
+    pub fn builder(format: OutputFormat) -> RenderRequestBuilder {
+        RenderRequestBuilder {
+            request: Self {
+                format,
+                include_background: true,
+                padding: 10.0,
+                sizing: Sizing::Scale(1.0),
+                color_mode: ColorMode::Light,
+                frame_options: FrameOptions::default(),
+                metadata_options: MetadataOptions::default(),
+                supplemental_assets: SupplementalAssets::default(),
+                resource_limits: ResourceLimits::default(),
+                pdf_options: (format == OutputFormat::Pdf).then(PdfOptions::default),
+            },
+            pdf_options_supplied: false,
+        }
+    }
+
+    /// Returns the single selected output format.
+    pub const fn format(&self) -> OutputFormat {
+        self.format
+    }
+
+    /// Returns whether the scene background is included.
+    pub const fn include_background(&self) -> bool {
+        self.include_background
+    }
+
+    /// Returns the logical padding on each side of the scene.
+    pub const fn padding(&self) -> f64 {
+        self.padding
+    }
+
+    /// Returns the selected output sizing behavior.
+    pub const fn sizing(&self) -> Sizing {
+        self.sizing
+    }
+
+    /// Returns the selected color mode.
+    pub const fn color_mode(&self) -> ColorMode {
+        self.color_mode
+    }
+
+    /// Returns the frame controls.
+    pub const fn frame_options(&self) -> &FrameOptions {
+        &self.frame_options
+    }
+
+    /// Returns the optional metadata controls.
+    pub const fn metadata_options(&self) -> &MetadataOptions {
+        &self.metadata_options
+    }
+
+    /// Returns the owned supplemental assets.
+    pub const fn supplemental_assets(&self) -> &SupplementalAssets {
+        &self.supplemental_assets
+    }
+
+    /// Returns the semantic resource ceilings.
+    pub const fn resource_limits(&self) -> &ResourceLimits {
+        &self.resource_limits
+    }
+
+    /// Returns PDF-specific options for a PDF request.
+    pub const fn pdf_options(&self) -> Option<&PdfOptions> {
+        self.pdf_options.as_ref()
+    }
+}
+
+/// Builder for a validated one-format render request.
+#[derive(Clone, Debug)]
+pub struct RenderRequestBuilder {
+    request: RenderRequest,
+    pdf_options_supplied: bool,
+}
+
+impl RenderRequestBuilder {
+    /// Selects whether the scene background is included.
+    pub fn include_background(mut self, include: bool) -> Self {
+        self.request.include_background = include;
+        self
+    }
+
+    /// Selects logical padding on each side of the scene.
+    pub fn padding(mut self, padding: f64) -> Self {
+        self.request.padding = padding;
+        self
+    }
+
+    /// Selects explicit scale or downscale-only maximum-dimension sizing.
+    pub fn sizing(mut self, sizing: Sizing) -> Self {
+        self.request.sizing = sizing;
+        self
+    }
+
+    /// Selects light or dark color interpretation.
+    pub fn color_mode(mut self, color_mode: ColorMode) -> Self {
+        self.request.color_mode = color_mode;
+        self
+    }
+
+    /// Replaces all frame controls.
+    pub fn frame_options(mut self, options: FrameOptions) -> Self {
+        self.request.frame_options = options;
+        self
+    }
+
+    /// Replaces all optional artifact metadata controls.
+    pub fn metadata_options(mut self, options: MetadataOptions) -> Self {
+        self.request.metadata_options = options;
+        self
+    }
+
+    /// Replaces all owned supplemental assets.
+    pub fn supplemental_assets(mut self, assets: SupplementalAssets) -> Self {
+        self.request.supplemental_assets = assets;
+        self
+    }
+
+    /// Replaces the validated semantic resource ceilings.
+    pub fn resource_limits(mut self, limits: ResourceLimits) -> Self {
+        self.request.resource_limits = limits;
+        self
+    }
+
+    /// Replaces PDF-specific controls.
+    pub fn pdf_options(mut self, options: PdfOptions) -> Self {
+        self.request.pdf_options = Some(options);
+        self.pdf_options_supplied = true;
+        self
+    }
+
+    /// Validates and constructs the request.
+    pub fn build(self) -> Result<RenderRequest, RequestError> {
+        if !self.request.padding.is_finite() || self.request.padding < 0.0 {
+            return Err(RequestError::new(
+                ErrorCode::REQUEST_INVALID_PADDING,
+                "padding must be finite and nonnegative",
+                "padding",
+            ));
+        }
+
+        match self.request.sizing {
+            Sizing::Scale(scale) if !scale.is_finite() || scale <= 0.0 => {
+                return Err(RequestError::new(
+                    ErrorCode::REQUEST_INVALID_SCALE,
+                    "scale must be finite and positive",
+                    "scale",
+                ));
+            }
+            Sizing::MaxDimension(dimension) if !dimension.is_finite() || dimension <= 0.0 => {
+                return Err(RequestError::new(
+                    ErrorCode::REQUEST_INVALID_MAX_DIMENSION,
+                    "maximum dimension must be finite and positive",
+                    "max_dimension",
+                ));
+            }
+            Sizing::Scale(_) | Sizing::MaxDimension(_) => {}
+        }
+
+        if self.pdf_options_supplied && self.request.format != OutputFormat::Pdf {
+            return Err(RequestError::for_option(
+                ErrorCode::REQUEST_INCOMPATIBLE_FORMAT_OPTIONS,
+                "PDF options require PDF output",
+                "pdf_options",
+                "raster_fallback",
+            ));
+        }
+
+        Ok(self.request)
+    }
+}
+
+fn is_valid_media_type(value: &str) -> bool {
+    let mut parts = value.split(';');
+    let Some(essence) = parts.next() else {
+        return false;
+    };
+    let Some((type_name, subtype_name)) = essence.split_once('/') else {
+        return false;
+    };
+    if subtype_name.contains('/') || !is_token(type_name) || !is_token(subtype_name) {
+        return false;
+    }
+
+    parts.all(|parameter| {
+        let parameter = parameter.trim_matches([' ', '\t']);
+        let Some((name, value)) = parameter.split_once('=') else {
+            return false;
+        };
+        is_token(name.trim_end_matches([' ', '\t']))
+            && valid_parameter_value(value.trim_start_matches([' ', '\t']))
+    })
+}
+
+fn is_token(value: &str) -> bool {
+    !value.is_empty()
+        && value.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric()
+                || matches!(
+                    byte,
+                    b'!' | b'#'
+                        | b'$'
+                        | b'%'
+                        | b'&'
+                        | b'\''
+                        | b'*'
+                        | b'+'
+                        | b'-'
+                        | b'.'
+                        | b'^'
+                        | b'_'
+                        | b'`'
+                        | b'|'
+                        | b'~'
+                )
+        })
+}
+
+fn valid_parameter_value(value: &str) -> bool {
+    if is_token(value) {
+        return true;
+    }
+    let Some(quoted) = value
+        .strip_prefix('"')
+        .and_then(|value| value.strip_suffix('"'))
+    else {
+        return false;
+    };
+
+    let mut escaped = false;
+    for byte in quoted.bytes() {
+        if escaped {
+            if !(b'\t'..=b'~').contains(&byte) {
+                return false;
+            }
+            escaped = false;
+        } else if byte == b'\\' {
+            escaped = true;
+        } else if byte == b'"' || !(byte == b'\t' || (b' '..=b'~').contains(&byte)) {
+            return false;
+        }
+    }
+    !escaped
+}

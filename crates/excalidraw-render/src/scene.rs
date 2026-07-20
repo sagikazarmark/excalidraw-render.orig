@@ -142,12 +142,12 @@ impl fmt::Debug for SceneDocument {
 }
 
 /// Indicates that scene-document bytes could not be admitted.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SceneParseError {
     code: ErrorCode,
     message: String,
     json_pointer: Option<String>,
-    details: Option<ErrorDetails>,
+    details: Option<Box<ErrorDetails>>,
 }
 
 impl SceneParseError {
@@ -161,7 +161,7 @@ impl SceneParseError {
             code,
             message: message.into(),
             json_pointer,
-            details,
+            details: details.map(Box::new),
         }
     }
 
@@ -208,8 +208,8 @@ impl SceneParseError {
     }
 
     /// Returns typed details required by this failure's stable code.
-    pub const fn details(&self) -> Option<&ErrorDetails> {
-        self.details.as_ref()
+    pub fn details(&self) -> Option<&ErrorDetails> {
+        self.details.as_deref()
     }
 
     /// Returns this failure's stable serializable descriptor.
@@ -218,7 +218,7 @@ impl SceneParseError {
             self.code,
             self.message.clone(),
             self.json_pointer.clone(),
-            self.details.clone(),
+            self.details.as_deref().cloned(),
         )
     }
 }

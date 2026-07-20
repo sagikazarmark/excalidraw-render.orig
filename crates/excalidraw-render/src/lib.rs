@@ -6,14 +6,29 @@
 mod backends;
 mod compatibility;
 mod model;
+mod outcome;
 mod render_svg;
+mod request;
+mod resource_limits;
 mod scene;
 
 pub use compatibility::{
-    CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily, Measurement,
-    ReferenceProfileIdentity, Renderer, UnsupportedRevisionError, ValueKind,
+    AssetChainEntry, CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily,
+    FiniteValue, LogicalBounds, Measurement, MetadataComponent, MetadataOperation, NestedPath,
+    NestedPathSegment, NestedSegmentKind, Recovery, ReferenceProfileIdentity, Renderer,
+    ResourceMeasurement, ResourceValue, UnsupportedRevisionError, ValueKind,
     DEFAULT_COMPATIBILITY_REVISION,
 };
+pub use outcome::{
+    Artifact, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode, DiagnosticEffect,
+    DiagnosticSeverity, RenderError, RenderErrorCategory, RenderOutcome,
+};
+pub use request::{
+    ColorMode, FrameOptions, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback,
+    RenderRequest, RenderRequestBuilder, RequestError, Sizing, SupplementalAsset,
+    SupplementalAssets, SupplementalAssetsBuilder,
+};
+pub use resource_limits::{ResourceLimits, ResourceLimitsBuilder};
 pub use scene::{SceneDocument, SceneParseError};
 
 /// Temporary integration seam for the proof-of-concept CLI.
