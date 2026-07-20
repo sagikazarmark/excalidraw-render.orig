@@ -4,8 +4,14 @@
 //! The current proof-of-concept CLI behavior is not that compatibility contract.
 
 mod backends;
+mod compatibility;
 mod model;
 mod render_svg;
+
+pub use compatibility::{
+    CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily,
+    ReferenceProfileIdentity, Renderer, UnsupportedRevisionError, DEFAULT_COMPATIBILITY_REVISION,
+};
 
 /// Temporary integration seam for the proof-of-concept CLI.
 ///
