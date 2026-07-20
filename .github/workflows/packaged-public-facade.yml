@@ -1,0 +1,72 @@
+name: Packaged public facade
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - runner: macos-15
+            target: aarch64-apple-darwin
+          - runner: windows-2025
+            target: x86_64-pc-windows-msvc
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh "${{ matrix.target }}" "$RUNNER_TEMP/rust"
+      - name: Package library
+        run: cargo package --locked -p excalidraw-render
+      - name: Execute packaged public facade
+        working-directory: tests/package-consumer
+        run: cargo test --locked --release --target ${{ matrix.target }} --test public_facade
+
+  browser-wasm:
+    name: wasm32-unknown-unknown in Chromium
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh wasm32-unknown-unknown "$RUNNER_TEMP/rust"
+      - name: Install pinned Chromium and ChromeDriver
+        shell: bash
+        run: bash tests/package-consumer/install-browser-tools.sh "$RUNNER_TEMP/browser"
+      - name: Verify browser identity
+        shell: bash
+        run: |
+          binary="$(jq -er '.browser.tools.chromium.binary' tests/package-consumer/tool-manifest.json)"
+          version="$(jq -er '.browser.version' tests/package-consumer/tool-manifest.json)"
+          "$RUNNER_TEMP/browser/$binary" --version | grep -F "$version"
+      - name: Install pinned WASM test runner
+        shell: bash
+        run: bash tests/package-consumer/install-wasm-test-runner.sh "$RUNNER_TEMP/wasm-test-runner"
+      - name: Package library
+        run: cargo package --locked -p excalidraw-render
+      - name: Execute packaged public facade in Chromium
+        working-directory: tests/package-consumer
+        env:
+          FONTCONFIG_FILE: ${{ github.workspace }}/tests/package-consumer/fontconfig.xml
+        shell: bash
+        run: |
+          chrome="$(jq -er '.browser.tools.chromium.binary' tool-manifest.json)"
+          driver="$(jq -er '.browser.tools.chromedriver.binary' tool-manifest.json)"
+          PATH="$RUNNER_TEMP/browser/$(dirname "$chrome"):$PATH" \
+            CHROMEDRIVER="$RUNNER_TEMP/browser/$driver" \
+            cargo test --locked --release --target wasm32-unknown-unknown --test public_facade

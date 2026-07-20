@@ -3,11 +3,14 @@
 //! The compatibility-revision public API is being implemented incrementally.
 //! The current proof-of-concept CLI behavior is not that compatibility contract.
 
+#[cfg(not(target_arch = "wasm32"))]
 mod backends;
 mod compatibility;
+#[cfg(not(target_arch = "wasm32"))]
 mod model;
 mod outcome;
 mod render;
+#[cfg(not(target_arch = "wasm32"))]
 mod render_svg;
 mod request;
 mod resource_accounting;
@@ -38,6 +41,7 @@ pub use scene::{SceneDocument, SceneParseError};
 /// This module is deliberately hidden from generated documentation. It will be
 /// removed as the compatibility-revision public facade replaces the MVP.
 #[doc(hidden)]
+#[cfg(not(target_arch = "wasm32"))]
 pub mod __mvp {
     pub use crate::backends::OutputFormat;
     pub use crate::model::ExcalidrawFile as SceneDocument;

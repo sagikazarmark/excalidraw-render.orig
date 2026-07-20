@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <dir>/nonexistent/excalidraw-render-fonts</dir>
+  <cachedir>/tmp/excalidraw-render-font-cache</cachedir>
+</fontconfig>

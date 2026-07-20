@@ -1,0 +1,15 @@
+{
+  "goog:chromeOptions": {
+    "args": [
+      "--disable-background-networking",
+      "--disable-component-update",
+      "--disable-default-apps",
+      "--disable-domain-reliability",
+      "--disable-features=FontAccess,OptimizationGuideModelDownloading,OptimizationHints",
+      "--disable-sync",
+      "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1",
+      "--metrics-recording-only",
+      "--no-first-run"
+    ]
+  }
+}

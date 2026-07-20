@@ -1,0 +1,29 @@
+{
+  "schema": "excalidraw-render/package-consumer-tools/v1",
+  "rust_toolchain": {
+    "version": "1.97.1",
+    "channel_manifest_url": "https://static.rust-lang.org/dist/channel-rust-1.97.1.toml",
+    "channel_manifest_sha256": "03569b1886ceb5c05276b50c8431ab111de944cd6140fe1fa7d821dd8e0f29cf"
+  },
+  "browser": {
+    "version": "149.0.7827.55",
+    "tools": {
+      "chromium": {
+        "url": "https://storage.googleapis.com/chrome-for-testing-public/149.0.7827.55/linux64/chrome-linux64.zip",
+        "sha256": "13113b963ac22fffdad898a677591028e4397c46c1daa9e61811258eed6e35b5",
+        "binary": "chrome-linux64/chrome"
+      },
+      "chromedriver": {
+        "url": "https://storage.googleapis.com/chrome-for-testing-public/149.0.7827.55/linux64/chromedriver-linux64.zip",
+        "sha256": "8684a9cb079391352021e93e6ddb2f2afa66feb327526f7c3ed316b5b1028aaf",
+        "binary": "chromedriver-linux64/chromedriver"
+      }
+    }
+  },
+  "wasm_test_runner": {
+    "crate": "wasm-bindgen-cli",
+    "version": "0.2.126",
+    "url": "https://static.crates.io/crates/wasm-bindgen-cli/wasm-bindgen-cli-0.2.126.crate",
+    "crate_sha256": "8e2ebf6eef87c34e662347f1dddfbea541304bb7294711ed2c2acd8746cc5b50"
+  }
+}

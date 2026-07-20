@@ -43,3 +43,18 @@ The pinned official Excalidraw browser renderer is development-only. Normal Rust
 builds and tests do not need Node, a browser, Docker, or network access. See
 [`tools/reference-oracle/README.md`](tools/reference-oracle/README.md) for the
 opt-in profile verification workflow.
+
+## Artifact byte stability
+
+`tests/package-consumer` depends on Cargo's unpacked package output rather than
+the workspace crate. It renders the approved rectangle through the public Rust
+facade to SVG, PNG, and PDF twice and compares complete artifact and report
+bytes with the checked native expectations.
+
+```sh
+cargo package --locked -p excalidraw-render
+cargo test --locked --release --manifest-path tests/package-consumer/Cargo.toml --test public_facade
+```
+
+The target workflow executes this consumer on all four supported native
+targets and in the pinned browser-hosted `wasm32-unknown-unknown` harness.
