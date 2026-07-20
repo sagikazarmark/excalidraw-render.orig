@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, TryReserveError};
 use std::error::Error;
 use std::fmt;
 use std::sync::Arc;
@@ -123,6 +123,13 @@ impl SceneDocument {
         Ok(Self {
             _root: Arc::new(root),
         })
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn canonicalized_original_bytes(&self) -> Result<Vec<u8>, TryReserveError> {
+        let mut bytes = Vec::new();
+        write_canonical_json(&self._root, &mut bytes)?;
+        Ok(bytes)
     }
 }
 
@@ -877,6 +884,80 @@ fn member_value<'a>(members: &'a [JsonMember], key: &str) -> Option<&'a JsonValu
         .map(|member| &member.value)
 }
 
+fn write_canonical_json(value: &JsonValue, bytes: &mut Vec<u8>) -> Result<(), TryReserveError> {
+    match value {
+        JsonValue::Null => extend_bytes(bytes, b"null")?,
+        JsonValue::Bool(true) => extend_bytes(bytes, b"true")?,
+        JsonValue::Bool(false) => extend_bytes(bytes, b"false")?,
+        JsonValue::Number(number) => extend_bytes(bytes, number.as_bytes())?,
+        JsonValue::String(string) => write_canonical_string(string, bytes)?,
+        JsonValue::Array(values) => {
+            push_byte(bytes, b'[')?;
+            for (index, value) in values.iter().enumerate() {
+                if index != 0 {
+                    push_byte(bytes, b',')?;
+                }
+                write_canonical_json(value, bytes)?;
+            }
+            push_byte(bytes, b']')?;
+        }
+        JsonValue::Object(members) => {
+            push_byte(bytes, b'{')?;
+            for (index, member) in members.iter().enumerate() {
+                if index != 0 {
+                    push_byte(bytes, b',')?;
+                }
+                write_canonical_string(&member.key, bytes)?;
+                push_byte(bytes, b':')?;
+                write_canonical_json(&member.value, bytes)?;
+            }
+            push_byte(bytes, b'}')?;
+        }
+    }
+    Ok(())
+}
+
+fn write_canonical_string(value: &str, bytes: &mut Vec<u8>) -> Result<(), TryReserveError> {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+
+    push_byte(bytes, b'"')?;
+    for character in value.chars() {
+        match character {
+            '"' => extend_bytes(bytes, br#"\""#)?,
+            '\\' => extend_bytes(bytes, br#"\\"#)?,
+            '\u{0008}' => extend_bytes(bytes, br"\b")?,
+            '\t' => extend_bytes(bytes, br"\t")?,
+            '\n' => extend_bytes(bytes, br"\n")?,
+            '\u{000c}' => extend_bytes(bytes, br"\f")?,
+            '\r' => extend_bytes(bytes, br"\r")?,
+            '\u{0000}'..='\u{001f}' => {
+                let control = character as usize;
+                extend_bytes(bytes, br"\u00")?;
+                push_byte(bytes, HEX[control >> 4])?;
+                push_byte(bytes, HEX[control & 0x0f])?;
+            }
+            _ => {
+                let mut encoded = [0; 4];
+                extend_bytes(bytes, character.encode_utf8(&mut encoded).as_bytes())?;
+            }
+        }
+    }
+    push_byte(bytes, b'"')?;
+    Ok(())
+}
+
+fn push_byte(bytes: &mut Vec<u8>, byte: u8) -> Result<(), TryReserveError> {
+    bytes.try_reserve(1)?;
+    bytes.push(byte);
+    Ok(())
+}
+
+fn extend_bytes(bytes: &mut Vec<u8>, value: &[u8]) -> Result<(), TryReserveError> {
+    bytes.try_reserve(value.len())?;
+    bytes.extend_from_slice(value);
+    Ok(())
+}
+
 fn allocated_bytes(bytes: usize) -> u64 {
     if bytes == 0 {
         0
@@ -903,5 +984,112 @@ fn push_pointer_segment(pointer: &mut String, segment: &str) {
             '/' => pointer.push_str("~1"),
             character => pointer.push(character),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SceneDocument;
+
+    #[test]
+    fn canonicalized_original_scene_document_uses_normative_json_spelling() {
+        let source = br#"
+        {
+            "\u0074ype": "excalidraw",
+            "version": 2,
+            "elements": [
+                null,
+                true,
+                false,
+                {
+                    "id": "deleted",
+                    "isDeleted": true,
+                    "unknown": "\/\u00e9\u2028\u2029\uD83D\uDE00",
+                    "controls": "\u0000\b\t\n\f\r\u001F\"\\\/"
+                }
+            ],
+            "appState": {"zoom": {"value": 1E+00}, "opaque": -0},
+            "files": {
+                "unused": {"mimeType": "image/png", "dataURL": "future"},
+                "broken": false
+            },
+            "futureRoot": [3.00, 1e-2]
+        }
+        "#;
+        let expected = concat!(
+            r#"{"type":"excalidraw","version":2,"elements":[null,true,false,{"id":"deleted","isDeleted":true,"unknown":"/"#,
+            "\u{00e9}\u{2028}\u{2029}\u{1f600}",
+            r#"","controls":"\u0000\b\t\n\f\r\u001f\"\\/"}],"appState":{"zoom":{"value":1E+00},"opaque":-0},"files":{"unused":{"mimeType":"image/png","dataURL":"future"},"broken":false},"futureRoot":[3.00,1e-2]}"#,
+        );
+
+        let scene = SceneDocument::parse(source).expect("preservation vector is admitted");
+
+        assert_eq!(
+            scene
+                .canonicalized_original_bytes()
+                .expect("canonical scene serialization succeeds"),
+            expected.as_bytes()
+        );
+    }
+
+    #[test]
+    fn canonicalized_original_scene_document_discards_whitespace_and_escape_spelling() {
+        let escaped = br#" {
+            "\u0074ype": "excalidraw",
+            "version": 2,
+            "elements": [{"label": "\u0061\/\u00e9"}],
+            "appState": {},
+            "files": {}
+        } "#;
+        let direct = concat!(
+            r#"{"type":"excalidraw","version":2,"elements":[{"label":"a/"#,
+            "\u{00e9}",
+            r#""}],"appState":{},"files":{}}"#,
+        );
+
+        let escaped = SceneDocument::parse(escaped).expect("escaped vector is admitted");
+        let direct_scene =
+            SceneDocument::parse(direct.as_bytes()).expect("direct vector is admitted");
+
+        assert_eq!(
+            escaped
+                .canonicalized_original_bytes()
+                .expect("escaped scene serialization succeeds"),
+            direct_scene
+                .canonicalized_original_bytes()
+                .expect("direct scene serialization succeeds")
+        );
+        assert_eq!(
+            escaped
+                .canonicalized_original_bytes()
+                .expect("escaped scene serialization succeeds"),
+            direct.as_bytes()
+        );
+    }
+
+    #[test]
+    fn canonicalized_original_scene_document_preserves_order_and_number_tokens() {
+        let member_order_a = br#"{"type":"excalidraw","version":2,"elements":[],"appState":{"future":{"first":1,"second":2}},"files":{}}"#;
+        let member_order_b = br#"{"type":"excalidraw","version":2,"elements":[],"appState":{"future":{"second":2,"first":1}},"files":{}}"#;
+        let array_order_a =
+            br#"{"type":"excalidraw","version":2,"elements":[1,2],"appState":{},"files":{}}"#;
+        let array_order_b =
+            br#"{"type":"excalidraw","version":2,"elements":[2,1],"appState":{},"files":{}}"#;
+        let number_tokens = br#"{"type":"excalidraw","version":2,"elements":[0,-0,1,1.0,1e0,1E+00,10.00e-01],"appState":{},"files":{}}"#;
+
+        let canonical = |source: &[u8]| {
+            SceneDocument::parse(source)
+                .expect("distinction vector is admitted")
+                .canonicalized_original_bytes()
+                .expect("distinction vector serialization succeeds")
+        };
+
+        assert_ne!(canonical(member_order_a), canonical(member_order_b));
+        assert_eq!(canonical(member_order_a), member_order_a);
+        assert_eq!(canonical(member_order_b), member_order_b);
+        assert_ne!(canonical(array_order_a), canonical(array_order_b));
+        assert_eq!(canonical(array_order_a), array_order_a);
+        assert_eq!(canonical(array_order_b), array_order_b);
+        assert_eq!(canonical(number_tokens), number_tokens);
     }
 }
