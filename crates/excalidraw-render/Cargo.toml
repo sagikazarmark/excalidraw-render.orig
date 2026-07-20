@@ -12,6 +12,7 @@ workspace = true
 excalidraw-render-assets-base.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 tiny-skia.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -25,4 +26,3 @@ usvg.workspace = true
 [dev-dependencies]
 excalidraw-render-compare = { path = "../excalidraw-render-compare" }
 png.workspace = true
-sha2.workspace = true

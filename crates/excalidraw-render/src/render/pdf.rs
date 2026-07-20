@@ -5,13 +5,13 @@ use crate::RenderRequest;
 
 use super::{
     rough::{self, Path, PathOperation},
-    FormatEncodeError, ResolvedElement, ResolvedScene,
+    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene,
 };
 
 pub(super) const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
 const ICC_PROFILE_OBJECT: usize = 5;
 const OUTPUT_INTENT_OBJECT: usize = 6;
-const EXT_GSTATE_OBJECT: usize = 7;
+const FIRST_EXT_GSTATE_OBJECT: usize = 7;
 
 // Exact sRGB device-to-linear values, frozen as profile data rather than
 // recalculated with target-dependent transcendental functions.
@@ -50,8 +50,7 @@ pub(super) struct PdfPlan {
 
 enum PdfElement {
     RoughRectangle {
-        source_id: String,
-        source_pointer: &'static str,
+        source: NormalizedElementSource,
         path: Path,
         transform: super::ResolvedTransform,
         stroke_color: [f64; 3],
@@ -81,15 +80,14 @@ impl PdfPlan {
         for element in scene.elements {
             match element {
                 ResolvedElement::Rectangle(rectangle) => {
-                    if rectangle.source_id.is_empty() {
+                    if rectangle.source.id().is_empty() {
                         return Err(FormatEncodeError::Encoding(format!(
                             "rectangle at {} has no normalized identity",
-                            rectangle.source_pointer
+                            rectangle.source.pointer()
                         )));
                     }
                     elements.push(PdfElement::RoughRectangle {
-                        source_id: rectangle.source_id,
-                        source_pointer: rectangle.source_pointer,
+                        source: rectangle.source,
                         path: rectangle.path,
                         transform: rectangle.transform,
                         stroke_color: parse_srgb(&rectangle.stroke_color)?,
@@ -111,23 +109,46 @@ impl PdfPlan {
     }
 
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
-        let content = self.encode_content()?;
+        let opacity_resources = self.opacity_resources()?;
+        let content = self.encode_content(&opacity_resources)?;
         let srgb_icc_profile = srgb_icc_profile()?;
-        let has_ext_gstate = self.elements.iter().any(|element| match element {
-            PdfElement::RoughRectangle { opacity, .. } => *opacity != 1.0,
-        });
-        let object_count = if has_ext_gstate { 7 } else { 6 };
+        let object_count = 6_usize
+            .checked_add(opacity_resources.len())
+            .ok_or_else(pdf_size_error)?;
         let page_width = format_pdf_number(self.page_width, "PDF page width")?;
         let page_height = format_pdf_number(self.page_height, "PDF page height")?;
 
+        let output_capacity = 2_048_usize
+            .checked_add(content.len())
+            .and_then(|capacity| capacity.checked_add(srgb_icc_profile.len()))
+            .and_then(|capacity| {
+                opacity_resources
+                    .len()
+                    .checked_mul(256)
+                    .and_then(|extra| capacity.checked_add(extra))
+            })
+            .and_then(|capacity| {
+                object_count
+                    .checked_mul(32)
+                    .and_then(|extra| capacity.checked_add(extra))
+            })
+            .ok_or_else(pdf_size_error)?;
         let mut pdf = Vec::new();
-        pdf.try_reserve(2_048 + content.len() + srgb_icc_profile.len())
-            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+        pdf.try_reserve_exact(output_capacity).map_err(|_| {
+            FormatEncodeError::MemoryUnavailable {
                 subject_kind: "artifact",
                 subject: "pdf_output",
-            })?;
+            }
+        })?;
         pdf.extend_from_slice(b"%PDF-1.7\n%\x80\x80\x80\x80\n\n");
-        let mut offsets = [0; 7];
+        let mut offsets = Vec::new();
+        offsets.try_reserve_exact(object_count).map_err(|_| {
+            FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_workspace",
+                subject: "pdf_object_offsets",
+            }
+        })?;
+        offsets.resize(object_count, 0);
 
         begin_object(&mut pdf, &mut offsets, 1)?;
         write!(
@@ -151,8 +172,18 @@ impl PdfPlan {
             page_width, page_height, page_width, page_height,
         )
         .map_err(write_error)?;
-        if has_ext_gstate {
-            pdf.extend_from_slice(b"/ExtGState << /GS1 7 0 R >>\n");
+        if !opacity_resources.is_empty() {
+            pdf.extend_from_slice(b"/ExtGState <<");
+            for index in 0..opacity_resources.len() {
+                write!(
+                    pdf,
+                    " /GS{} {} 0 R",
+                    index + 1,
+                    FIRST_EXT_GSTATE_OBJECT + index
+                )
+                .map_err(write_error)?;
+            }
+            pdf.extend_from_slice(b" >>\n");
         }
         pdf.extend_from_slice(b">>\n/Contents 4 0 R\n>>\nendobj\n");
 
@@ -183,18 +214,9 @@ impl PdfPlan {
         )
         .map_err(write_error)?;
 
-        if has_ext_gstate {
-            let opacity = self.elements.iter().find_map(|element| match element {
-                PdfElement::RoughRectangle { opacity, .. } if *opacity != 1.0 => Some(*opacity),
-                _ => None,
-            });
-            let opacity = format_pdf_number(
-                opacity.ok_or_else(|| {
-                    FormatEncodeError::Encoding("PDF opacity resource has no owner".to_owned())
-                })?,
-                "PDF opacity",
-            )?;
-            begin_object(&mut pdf, &mut offsets, EXT_GSTATE_OBJECT)?;
+        for (index, opacity) in opacity_resources.iter().copied().enumerate() {
+            let opacity = format_pdf_number(opacity, "PDF opacity")?;
+            begin_object(&mut pdf, &mut offsets, FIRST_EXT_GSTATE_OBJECT + index)?;
             write!(
                 pdf,
                 "<<\n/Type /ExtGState\n/CA {opacity}\n/ca {opacity}\n/BM /Normal\n>>\nendobj\n"
@@ -204,7 +226,7 @@ impl PdfPlan {
 
         let xref_offset = pdf.len();
         write!(pdf, "xref\n0 {}\n0000000000 65535 f\r\n", object_count + 1).map_err(write_error)?;
-        for offset in offsets.iter().take(object_count) {
+        for offset in &offsets {
             writeln!(pdf, "{offset:010} 00000 n\r").map_err(write_error)?;
         }
         write!(
@@ -216,20 +238,53 @@ impl PdfPlan {
         Ok(pdf)
     }
 
-    pub(super) fn primary_source(&self) -> Option<(&str, &str)> {
-        self.elements.first().map(|element| match element {
-            PdfElement::RoughRectangle {
-                source_id,
-                source_pointer,
-                ..
-            } => (source_id.as_str(), *source_pointer),
+    pub(super) fn source_count(&self) -> usize {
+        self.elements.len()
+    }
+
+    pub(super) fn source(&self, index: usize) -> Option<(&str, &str)> {
+        self.elements.get(index).map(|element| match element {
+            PdfElement::RoughRectangle { source, .. } => (source.id(), source.pointer()),
         })
     }
 
-    fn encode_content(&self) -> Result<String, FormatEncodeError> {
+    fn opacity_resources(&self) -> Result<Vec<f64>, FormatEncodeError> {
+        let mut resources = Vec::new();
+        resources
+            .try_reserve_exact(self.elements.len())
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_workspace",
+                subject: "pdf_opacity_resources",
+            })?;
+        for opacity in self.elements.iter().filter_map(|element| match element {
+            PdfElement::RoughRectangle { opacity, .. } if *opacity != 1.0 => Some(*opacity),
+            _ => None,
+        }) {
+            if !resources
+                .iter()
+                .any(|retained: &f64| retained.to_bits() == opacity.to_bits())
+            {
+                resources.push(opacity);
+            }
+        }
+        Ok(resources)
+    }
+
+    fn encode_content(&self, opacity_resources: &[f64]) -> Result<String, FormatEncodeError> {
+        let mut capacity = 1_024_usize;
+        for element in &self.elements {
+            let PdfElement::RoughRectangle { path, .. } = element;
+            capacity = path
+                .operations
+                .len()
+                .checked_mul(200)
+                .and_then(|path_bytes| path_bytes.checked_add(512))
+                .and_then(|element_bytes| capacity.checked_add(element_bytes))
+                .ok_or_else(pdf_size_error)?;
+        }
         let mut content = String::new();
         content
-            .try_reserve(32 * 1_024)
+            .try_reserve_exact(capacity)
             .map_err(|_| FormatEncodeError::MemoryUnavailable {
                 subject_kind: "format_workspace",
                 subject: "pdf_content_stream",
@@ -259,15 +314,14 @@ impl PdfPlan {
         for element in &self.elements {
             match element {
                 PdfElement::RoughRectangle {
-                    source_id,
-                    source_pointer,
+                    source,
                     path,
                     transform,
                     stroke_color,
                     stroke_width,
                     opacity,
                 } => {
-                    if source_id.is_empty() || source_pointer.is_empty() {
+                    if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
                             "PDF plan rectangle lost its source identity".to_owned(),
                         ));
@@ -286,7 +340,19 @@ impl PdfPlan {
                     content.push_str("q\n");
                     push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
                     if *opacity != 1.0 {
-                        content.push_str("/GS1 gs\n");
+                        let resource = opacity_resources
+                            .iter()
+                            .position(|candidate| candidate.to_bits() == opacity.to_bits())
+                            .ok_or_else(|| {
+                                FormatEncodeError::Encoding(
+                                    "PDF opacity resource has no owner".to_owned(),
+                                )
+                            })?;
+                        writeln!(content, "/GS{} gs", resource + 1).map_err(|_| {
+                            FormatEncodeError::Encoding(
+                                "failed to write PDF opacity resource".to_owned(),
+                            )
+                        })?;
                     }
                     push_pdf_number(&mut content, *stroke_width, "PDF stroke width")?;
                     content.push_str(" w\n1 J\n/CS1 CS\n");
@@ -570,11 +636,15 @@ fn expand_exponent(
 
 fn begin_object(
     output: &mut Vec<u8>,
-    offsets: &mut [usize; 7],
+    offsets: &mut [usize],
     id: usize,
 ) -> Result<(), FormatEncodeError> {
     offsets[id - 1] = output.len();
     writeln!(output, "{id} 0 obj").map_err(write_error)
+}
+
+fn pdf_size_error() -> FormatEncodeError {
+    FormatEncodeError::Encoding("PDF plan exceeds serializer capacity".to_owned())
 }
 
 fn point_dimension(logical: f64) -> Result<f64, FormatEncodeError> {

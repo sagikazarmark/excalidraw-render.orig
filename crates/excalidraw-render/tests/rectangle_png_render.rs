@@ -112,6 +112,34 @@ fn png_vector_coverage_obeys_the_rectangle_element_work_limit() {
     assert_eq!(descriptor["details"]["recovery"], "omitted");
 }
 
+#[test]
+fn png_vector_coverage_is_charged_and_recovered_per_rectangle() {
+    let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"small","type":"rectangle","x":0,"width":10,"height":10,"seed":1,"updated":1},{"id":"large","type":"rectangle","x":30,"width":80,"height":60,"seed":1,"updated":1}],"appState":{},"files":{}}"##;
+    let scene = SceneDocument::parse(source).expect("multi-rectangle scene is admitted");
+    let limits = ResourceLimits::builder()
+        .max_element_work_units(5_000)
+        .build()
+        .expect("element work limit is valid");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .resource_limits(limits)
+        .build()
+        .expect("resource-limited PNG request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("one local PNG recovery retains the other rectangle");
+    let decoded = decode_png(outcome.artifact().bytes());
+
+    assert!(decoded
+        .rgba()
+        .chunks_exact(4)
+        .any(|pixel| pixel != [255, 255, 255, 255]));
+    let [diagnostic] = outcome.report().diagnostics() else {
+        panic!("only the large rectangle exceeds its local work limit");
+    };
+    assert_eq!(diagnostic.element_id(), Some("large"));
+    assert_eq!(diagnostic.json_pointer(), "/elements/1");
+}
+
 fn pixel_delta_summary(reference: &[u8], candidate: &[u8]) -> std::collections::BTreeMap<i16, u64> {
     let mut summary = std::collections::BTreeMap::new();
     for (reference, candidate) in reference.iter().zip(candidate) {

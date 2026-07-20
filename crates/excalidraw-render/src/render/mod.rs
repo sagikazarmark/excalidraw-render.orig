@@ -5,6 +5,10 @@ mod svg;
 
 use crate::{
     catalog::RevisionCatalog,
+    normalization::{
+        NormalizationError, NormalizationEvent, NormalizedElementSource, NormalizedRectangle,
+    },
+    outcome::DiagnosticOrder,
     resource_accounting::{
         ResourceContext, ResourceCrossing, ResourceDelta, ResourceMeter, ResourcePhase,
         ResourceRecordKind,
@@ -18,11 +22,8 @@ use crate::{
 
 use self::{pdf::PdfPlan, png::PngPlan, svg::SvgPlan};
 
-const RECTANGLE_NORMALIZED_FIELD_COUNT: u64 = 15;
 const RECTANGLE_GEOMETRY_SEGMENTS: u64 = 16;
 const RECTANGLE_GEOMETRY_WORK_UNITS: u64 = RECTANGLE_GEOMETRY_SEGMENTS * 32;
-const RECTANGLE_BASE_ELEMENT_WORK_UNITS: u64 =
-    RECTANGLE_NORMALIZED_FIELD_COUNT * 8 + RECTANGLE_GEOMETRY_WORK_UNITS + 8;
 
 pub(super) enum FormatEncodeError {
     Encoding(String),
@@ -148,113 +149,209 @@ impl RenderSession {
             }
         }
 
-        let semantic_working_bytes;
+        let mut semantic_working = Vec::new();
         let resolved = if scene.has_no_element_occurrences() {
-            semantic_working_bytes = 0;
             ResolvedScene::empty(request)
         } else {
-            let source = scene.single_rectangle().ok_or_else(|| {
+            let normalization = crate::normalization::normalize_rectangles(
+                scene,
+                self.profile.compatibility_revision(),
+                request.format(),
+                |event| match event {
+                    NormalizationEvent::PreflightRecord {
+                        json_pointer,
+                        working_bytes,
+                        work_units,
+                    } => {
+                        let delta = ResourceDelta {
+                            working_bytes,
+                            total_work_units: work_units,
+                            ..ResourceDelta::default()
+                        };
+                        if self.meter.would_cross_fatal(delta) {
+                            let context = ResourceContext::new(
+                                ResourcePhase::JsonTraversalAndNormalization,
+                                "normalized_rectangle",
+                                json_pointer,
+                            );
+                            return match self.transact(request, context, delta) {
+                                Err(error) => Err(error),
+                                Ok(()) => Err(self.internal_failure(
+                                    request.format(),
+                                    "normalization preflight committed unexpectedly",
+                                    "/elements",
+                                )),
+                            };
+                        }
+                        Ok(())
+                    }
+                    NormalizationEvent::CommitRecord {
+                        element_id,
+                        json_pointer,
+                        working_bytes,
+                        work_units,
+                    } => self.transact(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::JsonTraversalAndNormalization,
+                            "normalized_rectangle",
+                            json_pointer,
+                        )
+                        .with_element_id(Some(element_id))
+                        .with_local_owner(Some(element_id)),
+                        ResourceDelta {
+                            working_bytes,
+                            total_work_units: work_units,
+                            ..ResourceDelta::default()
+                        },
+                    ),
+                    NormalizationEvent::Diagnostic(diagnostic) => self.retain_diagnostic(
+                        request,
+                        ResourcePhase::JsonTraversalAndNormalization,
+                        "normalization_repair",
+                        diagnostic,
+                    ),
+                },
+            );
+            let normalization = match normalization {
+                Ok(normalization) => normalization,
+                Err(NormalizationError::Observer(error)) => return Err(error),
+                Err(NormalizationError::MemoryUnavailable { source_index }) => {
+                    let json_pointer = source_index
+                        .and_then(|index| crate::scene::pointer_index("/elements", index).ok())
+                        .unwrap_or_else(|| "/elements".to_owned());
+                    return Err(self.memory_failure_at(
+                        request,
+                        "normalization",
+                        "rectangle",
+                        None,
+                        json_pointer,
+                    ));
+                }
+            }
+            .ok_or_else(|| {
                 self.internal_failure(
                     request.format(),
                     "nonempty scene is outside the implemented rectangle slice",
                     "/elements",
                 )
             })?;
-            let normalized_working_bytes = 256
-                + 10 * 64
-                + owned_field_bytes(source.id)
-                + owned_field_bytes(source.stroke_color)
-                + owned_field_bytes(source.background_color)
-                + owned_field_bytes(source.fill_style)
-                + owned_field_bytes(source.stroke_style)
-                + source.view_background_color.map_or(0, owned_field_bytes);
-            let geometry_working_bytes = 128 + RECTANGLE_GEOMETRY_SEGMENTS * 64;
-            self.transact(
-                request,
-                ResourceContext::new(
-                    ResourcePhase::JsonTraversalAndNormalization,
-                    "normalized_rectangle",
-                    "/elements/0",
-                )
-                .with_element_id(Some(source.id))
-                .with_local_owner(Some(source.id)),
-                ResourceDelta {
-                    working_bytes: normalized_working_bytes,
-                    total_work_units: RECTANGLE_NORMALIZED_FIELD_COUNT * 8,
-                    ..ResourceDelta::default()
-                },
-            )?;
-            let geometry_delta = ResourceDelta {
-                geometry_segments: RECTANGLE_GEOMETRY_SEGMENTS,
-                working_bytes: geometry_working_bytes,
-                total_work_units: RECTANGLE_GEOMETRY_WORK_UNITS,
-                ..ResourceDelta::default()
-            };
-            let geometry_context = ResourceContext::new(
-                ResourcePhase::SharedSemanticResolution,
-                "rough_rectangle_geometry",
-                "/elements/0",
-            )
-            .with_element_id(Some(source.id))
-            .with_local_owner(Some(source.id));
-            if self.meter.would_cross_fatal(geometry_delta) {
-                return match self.transact(request, geometry_context, geometry_delta) {
-                    Err(error) => Err(error),
-                    Ok(()) => Err(self.internal_failure(
-                        request.format(),
-                        "fatal resource preflight committed unexpectedly",
-                        "/elements/0",
-                    )),
+            semantic_working
+                .try_reserve_exact(normalization.rectangles.len())
+                .map_err(|_| self.memory_failure(request, "normalization", "working_records"))?;
+            let mut rectangles = Vec::new();
+            rectangles
+                .try_reserve_exact(normalization.rectangles.len())
+                .map_err(|_| self.memory_failure(request, "normalization", "rectangle_list"))?;
+            for source in normalization.rectangles {
+                let has_outline = source.width != 0.0 && source.height != 0.0;
+                let geometry_segments = if has_outline {
+                    RECTANGLE_GEOMETRY_SEGMENTS
+                } else {
+                    0
                 };
-            }
-            let local_crossing = rectangle_local_crossing(
-                source,
-                request,
-                RECTANGLE_GEOMETRY_SEGMENTS,
-                RECTANGLE_BASE_ELEMENT_WORK_UNITS,
-            );
-            let include_outline = local_crossing.is_none();
-            if let Some(crossing) = local_crossing {
-                let diagnostic =
-                    crossing
-                        .diagnostic(request.format(), source.id)
+                let geometry_work_units = geometry_segments * 32;
+                let geometry_working_bytes = if has_outline {
+                    128 + geometry_segments * 64
+                } else {
+                    0
+                };
+                let geometry_delta = ResourceDelta {
+                    geometry_segments,
+                    working_bytes: geometry_working_bytes,
+                    total_work_units: geometry_work_units,
+                    ..ResourceDelta::default()
+                };
+                let geometry_context = ResourceContext::new(
+                    ResourcePhase::SharedSemanticResolution,
+                    "rough_rectangle_geometry",
+                    source.source.pointer(),
+                )
+                .with_element_id(Some(source.source.id()))
+                .with_local_owner(Some(source.source.id()));
+                if self.meter.would_cross_fatal(geometry_delta) {
+                    return match self.transact(request, geometry_context, geometry_delta) {
+                        Err(error) => Err(error),
+                        Ok(()) => Err(self.internal_failure(
+                            request.format(),
+                            "fatal resource preflight committed unexpectedly",
+                            "/elements",
+                        )),
+                    };
+                }
+                let element_work_units = source.normalization_work_units
+                    + geometry_work_units
+                    + 8
+                    + source.repair_work_units;
+                let local_crossing = rectangle_local_crossing(
+                    &source,
+                    request,
+                    geometry_segments,
+                    element_work_units,
+                );
+                let include_outline = has_outline && local_crossing.is_none();
+                let semantic_working_bytes = if let Some(crossing) = local_crossing {
+                    let diagnostic = crossing
+                        .diagnostic(
+                            request.format(),
+                            source.source.id(),
+                            source.source.pointer(),
+                        )
                         .map_err(|_| {
                             self.memory_failure(request, "compatibility_report", "local_recovery")
                         })?;
-                self.retain_diagnostic(
-                    request,
-                    ResourcePhase::SharedSemanticResolution,
-                    "rectangle_local_resource_recovery",
-                    diagnostic,
-                )?;
-                semantic_working_bytes = normalized_working_bytes;
-            } else {
-                self.transact(request, geometry_context, geometry_delta)?;
-                semantic_working_bytes =
-                    normalized_working_bytes.saturating_add(geometry_working_bytes);
+                    self.retain_diagnostic(
+                        request,
+                        ResourcePhase::SharedSemanticResolution,
+                        "rectangle_local_resource_recovery",
+                        diagnostic,
+                    )?;
+                    source.normalized_working_bytes
+                } else if has_outline {
+                    self.transact(request, geometry_context, geometry_delta)?;
+                    source
+                        .normalized_working_bytes
+                        .saturating_add(geometry_working_bytes)
+                } else {
+                    source.normalized_working_bytes
+                };
+                semantic_working.push(SemanticWorkingRecord {
+                    element_id: try_owned(source.source.id()).map_err(|_| {
+                        self.memory_failure(request, "normalization", "working_record_identity")
+                    })?,
+                    json_pointer: try_owned(source.source.pointer()).map_err(|_| {
+                        self.memory_failure(request, "normalization", "working_record_pointer")
+                    })?,
+                    bytes: semantic_working_bytes,
+                });
+                rectangles.push((source, include_outline));
             }
-            match ResolvedScene::rectangle(source, request, include_outline) {
-                Ok(Some(resolved)) => resolved,
-                Ok(None) => {
-                    return Err(self.internal_failure(
-                        request.format(),
-                        "rectangle semantics are outside the implemented focused case",
-                        "/elements/0",
-                    ));
-                }
-                Err(_) => {
-                    return Err(self.memory_failure(request, "semantic_geometry", "rectangle"));
+            if rectangles.is_empty() {
+                ResolvedScene::empty(request)
+            } else {
+                match ResolvedScene::rectangles(rectangles, request) {
+                    Ok(Some(resolved)) => resolved,
+                    Ok(None) => {
+                        return Err(self.internal_failure(
+                            request.format(),
+                            "rectangle semantics are outside the implemented focused case",
+                            "/elements",
+                        ));
+                    }
+                    Err(_) => {
+                        return Err(self.memory_failure(request, "semantic_geometry", "rectangle"));
+                    }
                 }
             }
         };
-        let bytes = self.encode(resolved, request, semantic_working_bytes)?;
+        let bytes = self.encode(resolved, request, &semantic_working)?;
 
         Ok(RenderOutcome {
             artifact: Artifact {
                 format: request.format(),
                 bytes,
             },
-            report: std::mem::take(&mut self.report),
+            report: self.take_report(),
             profile: self.profile,
         })
     }
@@ -263,7 +360,7 @@ impl RenderSession {
         &mut self,
         resolved: ResolvedScene,
         request: &RenderRequest,
-        semantic_working_bytes: u64,
+        semantic_working: &[SemanticWorkingRecord],
     ) -> Result<Vec<u8>, RenderError> {
         match request.format() {
             OutputFormat::Svg => self.validate_svg_dimensions(&resolved, request)?,
@@ -300,42 +397,37 @@ impl RenderSession {
                 },
             )?;
         }
+        for index in 0..resolved.source_count() {
+            let (element_id, json_pointer) = resolved.source(index).ok_or_else(|| {
+                self.internal_failure(
+                    request.format(),
+                    "resolved source operation is missing",
+                    "/elements",
+                )
+            })?;
+            self.transact(
+                request,
+                ResourceContext::new(
+                    ResourcePhase::FormatPlanning,
+                    "element_operation",
+                    json_pointer,
+                )
+                .with_element_id(Some(element_id))
+                .with_local_owner(Some(element_id))
+                .with_record(ResourceRecordKind::FormatPlanOperation),
+                ResourceDelta {
+                    working_bytes: 128,
+                    total_work_units: 8,
+                    ..ResourceDelta::default()
+                },
+            )?;
+        }
         match request.format() {
             OutputFormat::Svg => {
-                if let Some((element_id, json_pointer)) = resolved.primary_source() {
-                    self.transact(
-                        request,
-                        ResourceContext::new(
-                            ResourcePhase::FormatPlanning,
-                            "element_operation",
-                            json_pointer,
-                        )
-                        .with_element_id(Some(element_id))
-                        .with_local_owner(Some(element_id))
-                        .with_record(ResourceRecordKind::FormatPlanOperation),
-                        ResourceDelta {
-                            working_bytes: 128,
-                            total_work_units: 8,
-                            ..ResourceDelta::default()
-                        },
-                    )?;
-                }
                 let plan = SvgPlan::new(resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_SVG_FAILED, error)
                 })?;
-                if semantic_working_bytes != 0 {
-                    let mut context = ResourceContext::new(
-                        ResourcePhase::FormatPlanning,
-                        "resolved_rectangle",
-                        "/elements/0",
-                    );
-                    if let Some((element_id, _)) = plan.primary_source() {
-                        context = context
-                            .with_element_id(Some(element_id))
-                            .with_local_owner(Some(element_id));
-                    }
-                    self.release_working(request, context, semantic_working_bytes)?;
-                }
+                self.release_semantic_working(request, semantic_working)?;
                 let workspace_bytes = 256 * 1_024;
                 let workspace = ResourceContext::new(
                     ResourcePhase::EncodingAndOutcomeAssembly,
@@ -348,7 +440,14 @@ impl RenderSession {
                     plan.encode()
                 })?;
                 self.release_working(request, workspace, workspace_bytes)?;
-                if let Some((element_id, json_pointer)) = plan.primary_source() {
+                for index in 0..plan.source_count() {
+                    let (element_id, json_pointer) = plan.source(index).ok_or_else(|| {
+                        self.internal_failure(
+                            request.format(),
+                            "SVG source operation is missing",
+                            "/elements",
+                        )
+                    })?;
                     self.release_working(
                         request,
                         ResourceContext::new(
@@ -364,40 +463,10 @@ impl RenderSession {
                 }
             }
             OutputFormat::Png => {
-                if let Some((element_id, json_pointer)) = resolved.primary_source() {
-                    self.transact(
-                        request,
-                        ResourceContext::new(
-                            ResourcePhase::FormatPlanning,
-                            "element_operation",
-                            json_pointer,
-                        )
-                        .with_element_id(Some(element_id))
-                        .with_local_owner(Some(element_id))
-                        .with_record(ResourceRecordKind::FormatPlanOperation),
-                        ResourceDelta {
-                            working_bytes: 128,
-                            total_work_units: 8,
-                            ..ResourceDelta::default()
-                        },
-                    )?;
-                }
                 let mut plan = PngPlan::new(resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error)
                 })?;
-                if semantic_working_bytes != 0 {
-                    let mut context = ResourceContext::new(
-                        ResourcePhase::FormatPlanning,
-                        "resolved_rectangle",
-                        "/elements/0",
-                    );
-                    if let Some((element_id, _)) = plan.primary_source() {
-                        context = context
-                            .with_element_id(Some(element_id))
-                            .with_local_owner(Some(element_id));
-                    }
-                    self.release_working(request, context, semantic_working_bytes)?;
-                }
+                self.release_semantic_working(request, semantic_working)?;
                 let pixels = u64::from(plan.width()).saturating_mul(u64::from(plan.height()));
                 let rgba_bytes = pixels.saturating_mul(4);
                 let surface_bytes = 256_u64.saturating_add(rgba_bytes);
@@ -424,8 +493,24 @@ impl RenderSession {
                     ResourceContext::new(ResourcePhase::ProjectionAndFallback, raster_event, ""),
                     raster_work,
                 )?;
-                if let Some((element_id, json_pointer)) = plan.primary_source() {
-                    let vector_work = plan.vector_coverage_area().saturating_mul(16);
+                for index in 0..plan.source_count() {
+                    let vector_work = plan
+                        .vector_coverage_area(index)
+                        .ok_or_else(|| {
+                            self.internal_failure(
+                                request.format(),
+                                "PNG vector coverage source is missing",
+                                "/elements",
+                            )
+                        })?
+                        .saturating_mul(16);
+                    let (element_id, json_pointer) = plan.source(index).ok_or_else(|| {
+                        self.internal_failure(
+                            request.format(),
+                            "PNG source operation is missing",
+                            "/elements",
+                        )
+                    })?;
                     let context = ResourceContext::new(
                         ResourcePhase::ProjectionAndFallback,
                         "vector_coverage_samples",
@@ -440,8 +525,16 @@ impl RenderSession {
                     if self.meter.would_cross_fatal(delta) {
                         self.charge_work(request, context, vector_work)?;
                     }
-                    let element_work =
-                        RECTANGLE_BASE_ELEMENT_WORK_UNITS.saturating_add(vector_work);
+                    let element_work = plan
+                        .base_element_work_units(index)
+                        .ok_or_else(|| {
+                            self.internal_failure(
+                                request.format(),
+                                "PNG element work source is missing",
+                                "/elements",
+                            )
+                        })?
+                        .saturating_add(vector_work);
                     let element_work_limit = request.resource_limits().max_element_work_units();
                     if element_work > element_work_limit {
                         let diagnostic = RectangleLocalCrossing {
@@ -450,11 +543,11 @@ impl RenderSession {
                             configured: ResourceValue::Integer(element_work_limit),
                             value_kind: ValueKind::WorkUnits,
                             attempted: ResourceValue::Integer(element_work),
-                            json_pointer: "/elements/0",
+                            pointer_field: None,
                             message:
                                 "rectangle omitted because its semantic work exceeds its limit",
                         }
-                        .diagnostic(request.format(), element_id)
+                        .diagnostic(request.format(), element_id, json_pointer)
                         .map_err(|_| {
                             self.memory_failure(request, "compatibility_report", "local_recovery")
                         })?;
@@ -464,7 +557,13 @@ impl RenderSession {
                             "rectangle_local_resource_recovery",
                             diagnostic,
                         )?;
-                        plan.omit_elements();
+                        if !plan.omit_element(index) {
+                            return Err(self.internal_failure(
+                                request.format(),
+                                "PNG omitted source operation is missing",
+                                "/elements",
+                            ));
+                        }
                     } else {
                         self.charge_work(request, context, vector_work)?;
                     }
@@ -497,7 +596,14 @@ impl RenderSession {
                 )?;
                 self.release_working(request, workspace, workspace_bytes)?;
                 self.release_working(request, surface, surface_bytes)?;
-                if let Some((element_id, json_pointer)) = plan.primary_source() {
+                for index in 0..plan.source_count() {
+                    let (element_id, json_pointer) = plan.source(index).ok_or_else(|| {
+                        self.internal_failure(
+                            request.format(),
+                            "PNG source operation is missing",
+                            "/elements",
+                        )
+                    })?;
                     self.release_working(
                         request,
                         ResourceContext::new(
@@ -513,41 +619,11 @@ impl RenderSession {
                 }
             }
             OutputFormat::Pdf => {
-                if let Some((element_id, json_pointer)) = resolved.primary_source() {
-                    self.transact(
-                        request,
-                        ResourceContext::new(
-                            ResourcePhase::FormatPlanning,
-                            "element_operation",
-                            json_pointer,
-                        )
-                        .with_element_id(Some(element_id))
-                        .with_local_owner(Some(element_id))
-                        .with_record(ResourceRecordKind::FormatPlanOperation),
-                        ResourceDelta {
-                            working_bytes: 128,
-                            total_work_units: 8,
-                            ..ResourceDelta::default()
-                        },
-                    )?;
-                }
                 let workspace_bytes = 1_048_576;
                 let plan = PdfPlan::new(resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_PDF_FAILED, error)
                 })?;
-                if semantic_working_bytes != 0 {
-                    let mut context = ResourceContext::new(
-                        ResourcePhase::FormatPlanning,
-                        "resolved_rectangle",
-                        "/elements/0",
-                    );
-                    if let Some((element_id, _)) = plan.primary_source() {
-                        context = context
-                            .with_element_id(Some(element_id))
-                            .with_local_owner(Some(element_id));
-                    }
-                    self.release_working(request, context, semantic_working_bytes)?;
-                }
+                self.release_semantic_working(request, semantic_working)?;
                 let workspace = ResourceContext::new(
                     ResourcePhase::EncodingAndOutcomeAssembly,
                     "pdf_stream_workspace",
@@ -559,7 +635,14 @@ impl RenderSession {
                     plan.encode()
                 })?;
                 self.release_working(request, workspace, workspace_bytes)?;
-                if let Some((element_id, json_pointer)) = plan.primary_source() {
+                for index in 0..plan.source_count() {
+                    let (element_id, json_pointer) = plan.source(index).ok_or_else(|| {
+                        self.internal_failure(
+                            request.format(),
+                            "PDF source operation is missing",
+                            "/elements",
+                        )
+                    })?;
                     self.release_working(
                         request,
                         ResourceContext::new(
@@ -627,7 +710,7 @@ impl RenderSession {
         request: &RenderRequest,
         phase: ResourcePhase,
         event: &'static str,
-        diagnostic: CompatibilityDiagnostic,
+        mut diagnostic: CompatibilityDiagnostic,
     ) -> Result<(), RenderError> {
         let pointer_bytes = u64::try_from(diagnostic.json_pointer.len()).unwrap_or(u64::MAX);
         let element_id_bytes = diagnostic.element_id.as_deref().map_or(0, |element_id| {
@@ -658,8 +741,22 @@ impl RenderSession {
                 diagnostic.json_pointer,
             ));
         }
+        diagnostic.order = DiagnosticOrder {
+            owner_index: element_owner_index(&diagnostic.json_pointer).unwrap_or(u64::MAX),
+            retention_ordinal: u64::try_from(self.report.diagnostics.len()).unwrap_or(u64::MAX),
+        };
         self.report.diagnostics.push(diagnostic);
         Ok(())
+    }
+
+    fn take_report(&mut self) -> CompatibilityReport {
+        self.report.diagnostics.sort_unstable_by(|left, right| {
+            left.order
+                .cmp(&right.order)
+                .then_with(|| left.json_pointer.cmp(&right.json_pointer))
+                .then_with(|| left.code.as_str().cmp(right.code.as_str()))
+        });
+        std::mem::take(&mut self.report)
     }
 
     fn measure_and_emit_output(
@@ -709,6 +806,27 @@ impl RenderSession {
                 ..ResourceDelta::default()
             },
         )?;
+        Ok(())
+    }
+
+    fn release_semantic_working(
+        &mut self,
+        request: &RenderRequest,
+        records: &[SemanticWorkingRecord],
+    ) -> Result<(), RenderError> {
+        for record in records {
+            self.release_working(
+                request,
+                ResourceContext::new(
+                    ResourcePhase::FormatPlanning,
+                    "resolved_rectangle",
+                    &record.json_pointer,
+                )
+                .with_element_id(Some(&record.element_id))
+                .with_local_owner(Some(&record.element_id)),
+                record.bytes,
+            )?;
+        }
         Ok(())
     }
 
@@ -763,7 +881,7 @@ impl RenderSession {
             element_id,
             json_pointer: json_pointer.into_boxed_str(),
             details: Some(Box::new(details)),
-            report: std::mem::take(&mut self.report),
+            report: self.take_report(),
         }
     }
 
@@ -814,7 +932,7 @@ impl RenderSession {
                         },
                         recovery: None,
                     })),
-                    report: std::mem::take(&mut self.report),
+                    report: self.take_report(),
                 });
             }
         }
@@ -868,7 +986,7 @@ impl RenderSession {
                         measurement,
                         recovery: None,
                     })),
-                    report: std::mem::take(&mut self.report),
+                    report: self.take_report(),
                 });
             }
         }
@@ -920,7 +1038,7 @@ impl RenderSession {
                 subject_kind: subject_kind.to_owned(),
                 subject: subject.to_owned(),
             })),
-            report: std::mem::take(&mut self.report),
+            report: self.take_report(),
         }
     }
 
@@ -938,7 +1056,7 @@ impl RenderSession {
             element_id: None,
             json_pointer: Box::from(""),
             details: None,
-            report: std::mem::take(&mut self.report),
+            report: self.take_report(),
         }
     }
 
@@ -956,7 +1074,7 @@ impl RenderSession {
             element_id: None,
             json_pointer: Box::from(json_pointer),
             details: None,
-            report: std::mem::take(&mut self.report),
+            report: self.take_report(),
         }
     }
 }
@@ -981,63 +1099,50 @@ impl ResolvedScene {
         }
     }
 
-    fn rectangle(
-        source: crate::scene::RectangleSource<'_>,
+    fn rectangles(
+        rectangles: Vec<(NormalizedRectangle, bool)>,
         request: &RenderRequest,
-        include_outline: bool,
     ) -> Result<Option<Self>, std::collections::TryReserveError> {
-        if source.background_color != "transparent"
-            || source.fill_style != "solid"
-            || source.stroke_style != "solid"
-            || source.stroke_color != "#1e1e1e"
-            || source.view_background_color.unwrap_or("#ffffff") != "#ffffff"
-            || source.stroke_width < 0.0
-            || source.roughness < 0.0
-            || !(0.0..=100.0).contains(&source.opacity)
-            || source.seed == 0
-        {
+        if rectangles.is_empty() {
             return Ok(None);
         }
 
-        let mut x = source.x;
-        let mut y = source.y;
-        let mut width = source.width;
-        let mut height = source.height;
-        if width < 0.0 {
-            x += width;
-            width = -width;
-        }
-        if height < 0.0 {
-            y += height;
-            height = -height;
-        }
-        if width == 0.0 || height == 0.0 {
-            return Ok(None);
-        }
-
-        let center_x = x + width / 2.0;
-        let center_y = y + height / 2.0;
-        let sin = source.angle.sin();
-        let cos = source.angle.cos();
-        let corners = [
-            (x, y),
-            (x + width, y),
-            (x + width, y + height),
-            (x, y + height),
-        ];
         let mut min_x = f64::INFINITY;
         let mut min_y = f64::INFINITY;
         let mut max_x = f64::NEG_INFINITY;
         let mut max_y = f64::NEG_INFINITY;
-        for (corner_x, corner_y) in corners {
-            let delta_x = corner_x - center_x;
-            let delta_y = corner_y - center_y;
-            let rotated_x = center_x + delta_x * cos - delta_y * sin;
-            let rotated_y = center_y + delta_x * sin + delta_y * cos;
-            min_x = min_x.min(rotated_x);
-            min_y = min_y.min(rotated_y);
-            max_x = max_x.max(rotated_x);
-            max_y = max_y.max(rotated_y);
+        for (source, _) in &rectangles {
+            if source.background_color != "transparent"
+                || source.fill_style != "solid"
+                || source.stroke_style != "solid"
+                || source.stroke_color != "#1e1e1e"
+                || source.view_background_color != "#ffffff"
+                || source.stroke_width < 0.0
+                || source.roughness < 0.0
+                || !(0.0..=100.0).contains(&source.opacity)
+                || source.seed == 0
+            {
+                return Ok(None);
+            }
+            let center_x = source.x + source.width / 2.0;
+            let center_y = source.y + source.height / 2.0;
+            let sin = source.angle.sin();
+            let cos = source.angle.cos();
+            for (corner_x, corner_y) in [
+                (source.x, source.y),
+                (source.x + source.width, source.y),
+                (source.x + source.width, source.y + source.height),
+                (source.x, source.y + source.height),
+            ] {
+                let delta_x = corner_x - center_x;
+                let delta_y = corner_y - center_y;
+                let rotated_x = center_x + delta_x * cos - delta_y * sin;
+                let rotated_y = center_y + delta_x * sin + delta_y * cos;
+                min_x = min_x.min(rotated_x);
+                min_y = min_y.min(rotated_y);
+                max_x = max_x.max(rotated_x);
+                max_y = max_y.max(rotated_y);
+            }
         }
         let logical_width = max_x - min_x + request.padding() * 2.0;
         let logical_height = max_y - min_y + request.padding() * 2.0;
@@ -1045,31 +1150,41 @@ impl ResolvedScene {
             return Ok(None);
         }
 
-        let max_size = width.max(height);
-        let min_size = width.min(height);
-        let adjusted_roughness = if min_size >= 20.0 && max_size >= 50.0 {
-            source.roughness
-        } else {
-            (source.roughness / if max_size < 10.0 { 3.0 } else { 2.0 }).min(2.5)
-        };
-        let translation_x = x - min_x + request.padding();
-        let translation_y = y - min_y + request.padding();
         let mut elements = Vec::new();
-        if include_outline {
-            let path = rough::rectangle(width, height, source.seed, adjusted_roughness)?;
-            elements.try_reserve_exact(1)?;
+        elements.try_reserve_exact(rectangles.len())?;
+        let background_color = rectangles
+            .first()
+            .map(|(source, _)| source.view_background_color.as_str())
+            .unwrap_or("#ffffff");
+        let background_color = try_owned(background_color)?;
+        for (source, include_outline) in rectangles {
+            if !include_outline {
+                continue;
+            }
+            let max_size = source.width.max(source.height);
+            let min_size = source.width.min(source.height);
+            let adjusted_roughness = if min_size >= 20.0 && max_size >= 50.0 {
+                source.roughness
+            } else {
+                (source.roughness / if max_size < 10.0 { 3.0 } else { 2.0 }).min(2.5)
+            };
+            let path =
+                rough::rectangle(source.width, source.height, source.seed, adjusted_roughness)?;
             elements.push(ResolvedElement::Rectangle(ResolvedRectangle {
-                source_id: try_owned(source.id)?,
-                source_pointer: "/elements/0",
+                source: source.source,
+                base_element_work_units: source.normalization_work_units
+                    + RECTANGLE_GEOMETRY_WORK_UNITS
+                    + 8
+                    + source.repair_work_units,
                 path,
                 transform: ResolvedTransform {
-                    translation_x,
-                    translation_y,
+                    translation_x: source.x - min_x + request.padding(),
+                    translation_y: source.y - min_y + request.padding(),
                     angle_radians: source.angle,
-                    center_x: width / 2.0,
-                    center_y: height / 2.0,
+                    center_x: source.width / 2.0,
+                    center_y: source.height / 2.0,
                 },
-                stroke_color: try_owned(source.stroke_color)?,
+                stroke_color: source.stroke_color,
                 stroke_width: source.stroke_width,
                 opacity: source.opacity / 100.0,
             }));
@@ -1079,15 +1194,19 @@ impl ResolvedScene {
             logical_width,
             logical_height,
             include_background: request.include_background(),
-            background_color: try_owned(source.view_background_color.unwrap_or("#ffffff"))?,
+            background_color,
             elements,
         }))
     }
 
-    fn primary_source(&self) -> Option<(&str, &str)> {
-        self.elements.first().map(|element| match element {
+    fn source_count(&self) -> usize {
+        self.elements.len()
+    }
+
+    fn source(&self, index: usize) -> Option<(&str, &str)> {
+        self.elements.get(index).map(|element| match element {
             ResolvedElement::Rectangle(rectangle) => {
-                (rectangle.source_id.as_str(), rectangle.source_pointer)
+                (rectangle.source.id(), rectangle.source.pointer())
             }
         })
     }
@@ -1109,13 +1228,19 @@ enum ResolvedElement {
 }
 
 struct ResolvedRectangle {
-    source_id: String,
-    source_pointer: &'static str,
+    source: NormalizedElementSource,
+    base_element_work_units: u64,
     path: rough::Path,
     transform: ResolvedTransform,
     stroke_color: String,
     stroke_width: f64,
     opacity: f64,
+}
+
+struct SemanticWorkingRecord {
+    element_id: String,
+    json_pointer: String,
+    bytes: u64,
 }
 
 struct ResolvedTransform {
@@ -1132,7 +1257,7 @@ struct RectangleLocalCrossing {
     configured: ResourceValue,
     value_kind: ValueKind,
     attempted: ResourceValue,
-    json_pointer: &'static str,
+    pointer_field: Option<&'static str>,
     message: &'static str,
 }
 
@@ -1141,6 +1266,7 @@ impl RectangleLocalCrossing {
         self,
         format: OutputFormat,
         element_id: &str,
+        element_pointer: &str,
     ) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
         let mut effects = Vec::new();
         effects.try_reserve_exact(1)?;
@@ -1151,7 +1277,10 @@ impl RectangleLocalCrossing {
             format,
             effects,
             element_id: Some(try_owned(element_id)?),
-            json_pointer: try_owned(self.json_pointer)?,
+            json_pointer: self.pointer_field.map_or_else(
+                || try_owned(element_pointer),
+                |field| crate::scene::pointer_child(element_pointer, field),
+            )?,
             message: try_owned(self.message)?,
             details: Some(Box::new(ErrorDetails::ResourceLimit {
                 field: self.field,
@@ -1162,22 +1291,23 @@ impl RectangleLocalCrossing {
                 },
                 recovery: Some(Recovery::Omitted),
             })),
+            order: DiagnosticOrder::default(),
         })
     }
 }
 
 fn rectangle_local_crossing(
-    source: crate::scene::RectangleSource<'_>,
+    source: &NormalizedRectangle,
     request: &RenderRequest,
     geometry_segments: u64,
     element_work_units: u64,
 ) -> Option<RectangleLocalCrossing> {
     let coordinate_limit = request.resource_limits().max_coordinate_magnitude();
-    for (value, pointer) in [
-        (source.x, "/elements/0/x"),
-        (source.y, "/elements/0/y"),
-        (source.width, "/elements/0/width"),
-        (source.height, "/elements/0/height"),
+    for (value, pointer_field) in [
+        (source.x, "x"),
+        (source.y, "y"),
+        (source.width, "width"),
+        (source.height, "height"),
     ] {
         let magnitude = value.abs();
         if magnitude > coordinate_limit {
@@ -1187,7 +1317,7 @@ fn rectangle_local_crossing(
                 configured: ResourceValue::Finite(FiniteValue::new(coordinate_limit)?),
                 value_kind: ValueKind::Coordinate,
                 attempted: ResourceValue::Finite(FiniteValue::new(magnitude)?),
-                json_pointer: pointer,
+                pointer_field: Some(pointer_field),
                 message: "rectangle omitted because a coordinate exceeds its limit",
             });
         }
@@ -1205,7 +1335,7 @@ fn rectangle_local_crossing(
             configured: ResourceValue::Integer(geometry_limit),
             value_kind: ValueKind::Count,
             attempted: ResourceValue::Integer(geometry_segments),
-            json_pointer: "/elements/0",
+            pointer_field: None,
             message: "rectangle omitted because its geometry exceeds its limit",
         });
     }
@@ -1217,7 +1347,7 @@ fn rectangle_local_crossing(
         configured: ResourceValue::Integer(work_limit),
         value_kind: ValueKind::WorkUnits,
         attempted: ResourceValue::Integer(element_work_units),
-        json_pointer: "/elements/0",
+        pointer_field: None,
         message: "rectangle omitted because its semantic work exceeds its limit",
     })
 }
@@ -1226,10 +1356,13 @@ fn logical_aligned_bytes(bytes: u64) -> u64 {
     bytes.saturating_add(63) / 64 * 64
 }
 
-fn owned_field_bytes(value: &str) -> u64 {
-    64_u64.saturating_add(logical_aligned_bytes(
-        u64::try_from(value.len()).unwrap_or(u64::MAX),
-    ))
+fn element_owner_index(json_pointer: &str) -> Option<u64> {
+    json_pointer
+        .strip_prefix("/elements/")?
+        .split('/')
+        .next()?
+        .parse()
+        .ok()
 }
 
 fn try_owned(value: &str) -> Result<String, std::collections::TryReserveError> {
@@ -1551,6 +1684,101 @@ mod tests {
     }
 
     #[test]
+    fn normalization_resource_events_repeat_with_generated_identity_and_source_order() {
+        let source = br#"{"type":"excalidraw","version":2,"elements":[{"type":"rectangle","width":180,"height":100,"seed":0}],"appState":{},"files":{}}"#;
+        let scene = SceneDocument::parse(source).expect("normalization vector is valid");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("request is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+
+        let (first_result, first_trace) = render_with_trace(profile, &scene, &request);
+        let (second_result, second_trace) = render_with_trace(profile, &scene, &request);
+        let first = first_result.expect("normalization vector renders");
+        let second = second_result.expect("repeated normalization vector renders");
+
+        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+        assert_eq!(first.report(), second.report());
+        assert_eq!(first_trace, second_trace);
+
+        let trace: serde_json::Value =
+            serde_json::from_slice(&first_trace).expect("trace is valid JSON");
+        let normalization_entries = trace["entries"]
+            .as_array()
+            .expect("trace entries are an array")
+            .iter()
+            .filter(|entry| {
+                matches!(
+                    entry["event"].as_str(),
+                    Some("normalization_repair" | "normalized_rectangle")
+                )
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(normalization_entries.len(), 4);
+        assert_eq!(
+            normalization_entries
+                .iter()
+                .map(|entry| entry["json_pointer"].as_str().unwrap_or_default())
+                .collect::<Vec<_>>(),
+            vec![
+                "/elements/0",
+                "/elements/0/id",
+                "/elements/0/seed",
+                "/elements/0/updated",
+            ]
+        );
+        assert!(normalization_entries.iter().all(|entry| {
+            entry["element_id"]
+                == "generated-32182208bba6af9fdf6995f59ee6a4097851c4655cf10d9e0681746fc495b792"
+        }));
+        assert!(normalization_entries[1..].iter().all(|entry| {
+            entry["deltas"]["diagnostics"] == 1 && entry["deltas"]["total_work_units"] == 8
+        }));
+        assert_eq!(
+            normalization_entries[0]["deltas"]["total_work_units"],
+            crate::normalization::NORMALIZATION_WORK_UNITS
+        );
+    }
+
+    #[test]
+    fn format_plan_and_semantic_records_keep_each_rectangle_owner() {
+        let source = br#"{"type":"excalidraw","version":2,"elements":[{"id":"first","type":"rectangle","x":0,"width":40,"height":40,"seed":1,"updated":1},{"id":"second","type":"rectangle","x":50,"width":40,"height":40,"seed":1,"updated":1}],"appState":{},"files":{}}"#;
+        let scene = SceneDocument::parse(source).expect("multi-rectangle vector is valid");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("request is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+
+        let (result, trace) = render_with_trace(profile, &scene, &request);
+        result.expect("multi-rectangle vector renders");
+        let trace: serde_json::Value = serde_json::from_slice(&trace).expect("trace is valid JSON");
+        let operations = trace["entries"]
+            .as_array()
+            .expect("trace entries are an array")
+            .iter()
+            .filter(|entry| {
+                entry["event"] == "element_operation" && entry["decision"] == "committed"
+            })
+            .map(|entry| {
+                (
+                    entry["element_id"].as_str().unwrap_or_default(),
+                    entry["json_pointer"].as_str().unwrap_or_default(),
+                    entry["deltas"]["total_work_units"]
+                        .as_u64()
+                        .unwrap_or_default(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            operations,
+            vec![("first", "/elements/0", 8), ("second", "/elements/1", 8),]
+        );
+    }
+
+    #[test]
     fn rejected_trace_entry_is_exact_and_does_not_commit_partial_output() {
         let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
         let limits = ResourceLimits::builder()
@@ -1621,6 +1849,7 @@ mod tests {
             json_pointer: "/elements/0/color".to_owned(),
             message: "invalid color substituted".to_owned(),
             details: None,
+            order: DiagnosticOrder::default(),
         }
     }
 }

@@ -4,7 +4,7 @@ use crate::{RenderRequest, Sizing};
 
 use super::{
     rough::{Path, PathOperation},
-    FormatEncodeError, ResolvedElement, ResolvedScene,
+    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene,
 };
 
 pub(super) struct SvgPlan {
@@ -18,8 +18,7 @@ pub(super) struct SvgPlan {
 
 enum SvgElement {
     RoughRectangle {
-        source_id: String,
-        source_pointer: &'static str,
+        source: NormalizedElementSource,
         path: Path,
         translation_x: f64,
         translation_y: f64,
@@ -51,15 +50,14 @@ impl SvgPlan {
         for element in scene.elements {
             match element {
                 ResolvedElement::Rectangle(rectangle) => {
-                    if rectangle.source_id.is_empty() {
+                    if rectangle.source.id().is_empty() {
                         return Err(FormatEncodeError::Encoding(format!(
                             "rectangle at {} has no normalized identity",
-                            rectangle.source_pointer
+                            rectangle.source.pointer()
                         )));
                     }
                     elements.push(SvgElement::RoughRectangle {
-                        source_id: rectangle.source_id,
-                        source_pointer: rectangle.source_pointer,
+                        source: rectangle.source,
                         path: rectangle.path,
                         translation_x: rectangle.transform.translation_x,
                         translation_y: rectangle.transform.translation_y,
@@ -133,8 +131,7 @@ impl SvgPlan {
         for element in &self.elements {
             match element {
                 SvgElement::RoughRectangle {
-                    source_id,
-                    source_pointer,
+                    source,
                     path,
                     translation_x,
                     translation_y,
@@ -145,7 +142,7 @@ impl SvgPlan {
                     stroke_width,
                     opacity,
                 } => {
-                    if source_id.is_empty() || source_pointer.is_empty() {
+                    if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
                             "SVG plan rectangle lost its source identity".to_owned(),
                         ));
@@ -182,13 +179,13 @@ impl SvgPlan {
         Ok(svg.into_bytes())
     }
 
-    pub(super) fn primary_source(&self) -> Option<(&str, &str)> {
-        self.elements.first().map(|element| match element {
-            SvgElement::RoughRectangle {
-                source_id,
-                source_pointer,
-                ..
-            } => (source_id.as_str(), *source_pointer),
+    pub(super) fn source_count(&self) -> usize {
+        self.elements.len()
+    }
+
+    pub(super) fn source(&self, index: usize) -> Option<(&str, &str)> {
+        self.elements.get(index).map(|element| match element {
+            SvgElement::RoughRectangle { source, .. } => (source.id(), source.pointer()),
         })
     }
 }

@@ -6,7 +6,7 @@ use tiny_skia::{
 
 use super::{
     rough::{Path, PathOperation, Point},
-    FormatEncodeError, ResolvedElement, ResolvedScene,
+    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene,
 };
 
 pub(super) struct PngPlan {
@@ -14,18 +14,18 @@ pub(super) struct PngPlan {
     height: u32,
     background: Option<[u8; 4]>,
     elements: Vec<PngElement>,
-    render_elements: bool,
 }
 
 enum PngElement {
     RoughRectangle {
-        source_id: String,
-        source_pointer: &'static str,
+        source: NormalizedElementSource,
         path: Path,
         transform: PngTransform,
         stroke_color: [u8; 3],
         stroke_width: f64,
         opacity: f64,
+        base_element_work_units: u64,
+        render: bool,
     },
 }
 
@@ -110,20 +110,21 @@ impl PngPlan {
         for element in scene.elements {
             match element {
                 ResolvedElement::Rectangle(rectangle) => {
-                    if rectangle.source_id.is_empty() {
+                    if rectangle.source.id().is_empty() {
                         return Err(FormatEncodeError::Encoding(format!(
                             "rectangle at {} has no normalized identity",
-                            rectangle.source_pointer
+                            rectangle.source.pointer()
                         )));
                     }
                     elements.push(PngElement::RoughRectangle {
-                        source_id: rectangle.source_id,
-                        source_pointer: rectangle.source_pointer,
+                        source: rectangle.source,
                         path: rectangle.path,
                         transform: PngTransform::new(&rectangle.transform, scale),
                         stroke_color: parse_hex_rgb(&rectangle.stroke_color)?,
                         stroke_width: rectangle.stroke_width,
                         opacity: rectangle.opacity,
+                        base_element_work_units: rectangle.base_element_work_units,
+                        render: true,
                     });
                 }
             }
@@ -133,7 +134,6 @@ impl PngPlan {
             height,
             background,
             elements,
-            render_elements: true,
         })
     }
 
@@ -174,18 +174,22 @@ impl PngPlan {
             if let Some([red, green, blue, alpha]) = self.background {
                 surface.fill(Color::from_rgba8(red, green, blue, alpha));
             }
-            for element in self.elements.iter().filter(|_| self.render_elements) {
+            for element in &self.elements {
                 match element {
                     PngElement::RoughRectangle {
-                        source_id,
-                        source_pointer,
+                        source,
                         path,
                         transform,
                         stroke_color,
                         stroke_width,
                         opacity,
+                        render,
+                        ..
                     } => {
-                        if source_id.is_empty() || source_pointer.is_empty() {
+                        if !render {
+                            continue;
+                        }
+                        if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG plan rectangle lost its source identity".to_owned(),
                             ));
@@ -248,38 +252,46 @@ impl PngPlan {
         downsample_rgba(&rgba, raster_width, self.width, self.height, SUBPIXEL_SCALE)
     }
 
-    pub(super) fn vector_coverage_area(&self) -> u64 {
-        self.elements
-            .iter()
-            .map(|element| match element {
-                PngElement::RoughRectangle {
-                    path,
-                    transform,
-                    stroke_width,
-                    ..
-                } => conservative_coverage_area(
-                    path,
-                    *transform,
-                    *stroke_width,
-                    self.width,
-                    self.height,
-                ),
-            })
-            .sum()
-    }
-
-    pub(super) fn primary_source(&self) -> Option<(&str, &str)> {
-        self.elements.first().map(|element| match element {
+    pub(super) fn vector_coverage_area(&self, index: usize) -> Option<u64> {
+        self.elements.get(index).map(|element| match element {
             PngElement::RoughRectangle {
-                source_id,
-                source_pointer,
+                path,
+                transform,
+                stroke_width,
                 ..
-            } => (source_id.as_str(), *source_pointer),
+            } => {
+                conservative_coverage_area(path, *transform, *stroke_width, self.width, self.height)
+            }
         })
     }
 
-    pub(super) fn omit_elements(&mut self) {
-        self.render_elements = false;
+    pub(super) fn base_element_work_units(&self, index: usize) -> Option<u64> {
+        self.elements.get(index).map(|element| match element {
+            PngElement::RoughRectangle {
+                base_element_work_units,
+                ..
+            } => *base_element_work_units,
+        })
+    }
+
+    pub(super) fn source_count(&self) -> usize {
+        self.elements.len()
+    }
+
+    pub(super) fn source(&self, index: usize) -> Option<(&str, &str)> {
+        self.elements.get(index).map(|element| match element {
+            PngElement::RoughRectangle { source, .. } => (source.id(), source.pointer()),
+        })
+    }
+
+    pub(super) fn omit_element(&mut self, index: usize) -> bool {
+        match self.elements.get_mut(index) {
+            Some(PngElement::RoughRectangle { render, .. }) => {
+                *render = false;
+                true
+            }
+            None => false,
+        }
     }
 
     pub(super) const fn includes_background(&self) -> bool {

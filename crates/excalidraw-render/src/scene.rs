@@ -148,27 +148,28 @@ impl SceneDocument {
         )
     }
 
-    pub(crate) fn single_rectangle(&self) -> Option<RectangleSource<'_>> {
+    pub(crate) fn element_occurrence_count(&self) -> usize {
+        let JsonValue::Object(root) = &*self._root else {
+            return 0;
+        };
+        let Some(JsonValue::Array(elements)) = member_value(root, "elements") else {
+            return 0;
+        };
+        elements.len()
+    }
+
+    pub(crate) fn rectangle_at(&self, index: usize) -> Option<RectangleSource<'_>> {
         let JsonValue::Object(root) = &*self._root else {
             return None;
         };
         let JsonValue::Array(elements) = member_value(root, "elements")? else {
             return None;
         };
-        let [JsonValue::Object(element)] = &**elements else {
+        let value = elements.get(index)?;
+        let JsonValue::Object(element) = value else {
             return None;
         };
-        if json_string(member_value(element, "type")?)? != "rectangle"
-            || json_bool(member_value(element, "isDeleted")?)?
-            || !matches!(member_value(element, "roundness"), Some(JsonValue::Null))
-            || !matches!(member_value(element, "frameId"), Some(JsonValue::Null))
-            || !matches!(
-                member_value(element, "boundElements"),
-                Some(JsonValue::Null)
-            )
-            || !matches!(member_value(element, "link"), Some(JsonValue::Null))
-            || !matches!(member_value(element, "groupIds"), Some(JsonValue::Array(ids)) if ids.is_empty())
-        {
+        if json_string(member_value(element, "type")?)? != "rectangle" {
             return None;
         }
         let JsonValue::Object(app_state) = member_value(root, "appState")? else {
@@ -176,23 +177,46 @@ impl SceneDocument {
         };
 
         Some(RectangleSource {
-            id: json_string(member_value(element, "id")?)?,
-            x: finite_json_number(member_value(element, "x")?)?,
-            y: finite_json_number(member_value(element, "y")?)?,
-            width: finite_json_number(member_value(element, "width")?)?,
-            height: finite_json_number(member_value(element, "height")?)?,
-            angle: finite_json_number(member_value(element, "angle")?)?,
-            stroke_color: json_string(member_value(element, "strokeColor")?)?,
-            background_color: json_string(member_value(element, "backgroundColor")?)?,
-            fill_style: json_string(member_value(element, "fillStyle")?)?,
-            stroke_width: finite_json_number(member_value(element, "strokeWidth")?)?,
-            stroke_style: json_string(member_value(element, "strokeStyle")?)?,
-            roughness: finite_json_number(member_value(element, "roughness")?)?,
-            opacity: finite_json_number(member_value(element, "opacity")?)?,
-            seed: json_i32(member_value(element, "seed")?)?,
-            view_background_color: member_value(app_state, "viewBackgroundColor")
-                .and_then(json_string),
+            element: value,
+            id: source_field(element, "id", json_string),
+            x: source_field(element, "x", finite_json_number),
+            y: source_field(element, "y", finite_json_number),
+            width: source_field(element, "width", finite_json_number),
+            height: source_field(element, "height", finite_json_number),
+            angle: source_field(element, "angle", finite_json_number),
+            stroke_color: source_field(element, "strokeColor", json_string),
+            background_color: source_field(element, "backgroundColor", json_string),
+            fill_style: source_field(element, "fillStyle", json_string),
+            stroke_width: source_field(element, "strokeWidth", finite_json_number),
+            stroke_style: source_field(element, "strokeStyle", json_string),
+            roundness: source_null(element, "roundness"),
+            roughness: source_field(element, "roughness", finite_json_number),
+            opacity: source_field(element, "opacity", finite_json_number),
+            seed: source_field(element, "seed", json_i32),
+            is_deleted: source_field(element, "isDeleted", json_bool),
+            group_ids: source_array_len(element, "groupIds", false),
+            frame_id: source_nullable_string(element, "frameId"),
+            bound_elements: source_array_len(element, "boundElements", true),
+            link: source_nullable_string(element, "link"),
+            updated_is_missing: member_value(element, "updated").is_none(),
+            view_background_color: source_field(app_state, "viewBackgroundColor", json_string),
         })
+    }
+
+    pub(crate) fn element_is_silent(&self, index: usize) -> bool {
+        let JsonValue::Object(root) = &*self._root else {
+            return false;
+        };
+        let Some(JsonValue::Array(elements)) = member_value(root, "elements") else {
+            return false;
+        };
+        let Some(JsonValue::Object(element)) = elements.get(index) else {
+            return false;
+        };
+        matches!(
+            member_value(element, "isDeleted"),
+            Some(JsonValue::Bool(true))
+        ) || matches!(member_value(element, "type"), Some(JsonValue::String(kind)) if &**kind == "selection")
     }
 
     pub(crate) const fn source_bytes(&self) -> u64 {
@@ -212,23 +236,52 @@ impl SceneDocument {
     }
 }
 
-#[derive(Clone, Copy)]
 pub(crate) struct RectangleSource<'a> {
-    pub(crate) id: &'a str,
-    pub(crate) x: f64,
-    pub(crate) y: f64,
-    pub(crate) width: f64,
-    pub(crate) height: f64,
-    pub(crate) angle: f64,
-    pub(crate) stroke_color: &'a str,
-    pub(crate) background_color: &'a str,
-    pub(crate) fill_style: &'a str,
-    pub(crate) stroke_width: f64,
-    pub(crate) stroke_style: &'a str,
-    pub(crate) roughness: f64,
-    pub(crate) opacity: f64,
-    pub(crate) seed: i32,
-    pub(crate) view_background_color: Option<&'a str>,
+    element: &'a JsonValue,
+    pub(crate) id: SourceField<&'a str>,
+    pub(crate) x: SourceField<f64>,
+    pub(crate) y: SourceField<f64>,
+    pub(crate) width: SourceField<f64>,
+    pub(crate) height: SourceField<f64>,
+    pub(crate) angle: SourceField<f64>,
+    pub(crate) stroke_color: SourceField<&'a str>,
+    pub(crate) background_color: SourceField<&'a str>,
+    pub(crate) fill_style: SourceField<&'a str>,
+    pub(crate) stroke_width: SourceField<f64>,
+    pub(crate) stroke_style: SourceField<&'a str>,
+    pub(crate) roundness: SourceField<()>,
+    pub(crate) roughness: SourceField<f64>,
+    pub(crate) opacity: SourceField<f64>,
+    pub(crate) seed: SourceField<i32>,
+    pub(crate) is_deleted: SourceField<bool>,
+    pub(crate) group_ids: SourceField<usize>,
+    pub(crate) frame_id: SourceField<Option<&'a str>>,
+    pub(crate) bound_elements: SourceField<usize>,
+    pub(crate) link: SourceField<Option<&'a str>>,
+    pub(crate) updated_is_missing: bool,
+    pub(crate) view_background_color: SourceField<&'a str>,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum SourceField<T> {
+    Missing,
+    Value(T),
+    Invalid,
+}
+
+impl RectangleSource<'_> {
+    pub(crate) fn canonical_element_bytes(&self) -> Result<Vec<u8>, TryReserveError> {
+        let mut bytes = Vec::new();
+        write_canonical_json(self.element, &mut bytes)?;
+        Ok(bytes)
+    }
+
+    pub(crate) fn member_position(&self, key: &str) -> Option<usize> {
+        let JsonValue::Object(members) = self.element else {
+            return None;
+        };
+        members.iter().position(|member| &*member.key == key)
+    }
 }
 
 pub(crate) enum OriginalJsonVisitError<E> {
@@ -1031,6 +1084,42 @@ fn json_i32(value: &JsonValue) -> Option<i32> {
     value.parse().ok()
 }
 
+fn source_field<'a, T>(
+    members: &'a [JsonMember],
+    key: &str,
+    parse: impl FnOnce(&'a JsonValue) -> Option<T>,
+) -> SourceField<T> {
+    match member_value(members, key) {
+        None => SourceField::Missing,
+        Some(value) => parse(value).map_or(SourceField::Invalid, SourceField::Value),
+    }
+}
+
+fn source_null(members: &[JsonMember], key: &str) -> SourceField<()> {
+    source_field(members, key, |value| {
+        matches!(value, JsonValue::Null).then_some(())
+    })
+}
+
+fn source_nullable_string<'a>(
+    members: &'a [JsonMember],
+    key: &str,
+) -> SourceField<Option<&'a str>> {
+    source_field(members, key, |value| match value {
+        JsonValue::Null => Some(None),
+        JsonValue::String(value) => Some(Some(value.as_ref())),
+        _ => None,
+    })
+}
+
+fn source_array_len(members: &[JsonMember], key: &str, accepts_null: bool) -> SourceField<usize> {
+    source_field(members, key, |value| match value {
+        JsonValue::Array(values) => Some(values.len()),
+        JsonValue::Null if accepts_null => Some(0),
+        _ => None,
+    })
+}
+
 fn visit_json_value<E>(
     value: &JsonValue,
     json_pointer: &str,
@@ -1154,7 +1243,7 @@ enum OriginalJsonVisit<'a> {
     },
 }
 
-fn pointer_child(parent: &str, segment: &str) -> Result<String, TryReserveError> {
+pub(crate) fn pointer_child(parent: &str, segment: &str) -> Result<String, TryReserveError> {
     let escaped_bytes = segment.len().saturating_mul(2);
     let capacity = parent
         .len()
@@ -1169,7 +1258,7 @@ fn pointer_child(parent: &str, segment: &str) -> Result<String, TryReserveError>
     Ok(pointer)
 }
 
-fn pointer_index(parent: &str, index: usize) -> Result<String, TryReserveError> {
+pub(crate) fn pointer_index(parent: &str, index: usize) -> Result<String, TryReserveError> {
     let capacity = parent.len().saturating_add(21);
     let mut pointer = String::new();
     pointer.try_reserve(capacity)?;

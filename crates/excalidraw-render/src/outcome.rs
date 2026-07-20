@@ -158,6 +158,14 @@ pub struct CompatibilityDiagnostic {
     pub(crate) json_pointer: String,
     pub(crate) message: String,
     pub(crate) details: Option<Box<ErrorDetails>>,
+    #[serde(skip)]
+    pub(crate) order: DiagnosticOrder,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+pub(crate) struct DiagnosticOrder {
+    pub(crate) owner_index: u64,
+    pub(crate) retention_ordinal: u64,
 }
 
 impl CompatibilityDiagnostic {
@@ -434,6 +442,7 @@ mod tests {
                 recovery: Recovery::Placeholder,
                 recipe_id: Some("renderer.malformed-element.v1".to_owned()),
             })),
+            order: DiagnosticOrder::default(),
         };
         let report = CompatibilityReport {
             schema_version: 1,
@@ -530,6 +539,7 @@ mod tests {
             json_pointer: pointer.to_owned(),
             message: "diagnosed".to_owned(),
             details: None,
+            order: DiagnosticOrder::default(),
         };
         let report = CompatibilityReport {
             schema_version: 1,

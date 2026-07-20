@@ -9,6 +9,7 @@ mod catalog;
 mod compatibility;
 #[cfg(not(target_arch = "wasm32"))]
 mod model;
+mod normalization;
 mod outcome;
 mod render;
 #[cfg(not(target_arch = "wasm32"))]
