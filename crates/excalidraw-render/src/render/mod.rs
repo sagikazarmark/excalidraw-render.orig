@@ -1,5 +1,6 @@
 mod pdf;
 mod png;
+mod rough;
 mod svg;
 
 use crate::{
@@ -8,9 +9,10 @@ use crate::{
         ResourceRecordKind,
     },
     scene::{OriginalJsonEntryKind, OriginalJsonVisitError},
-    Artifact, CompatibilityDiagnostic, CompatibilityReport, ErrorCode, ErrorDetails, FiniteValue,
-    OutputFormat, ReferenceProfileIdentity, RenderError, RenderErrorCategory, RenderOutcome,
-    RenderRequest, SceneDocument, Sizing,
+    Artifact, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode, DiagnosticEffect,
+    DiagnosticSeverity, ErrorCode, ErrorDetails, FiniteValue, Measurement, OutputFormat, Recovery,
+    ReferenceProfileIdentity, RenderError, RenderErrorCategory, RenderOutcome, RenderRequest,
+    ResourceValue, SceneDocument, Sizing, ValueKind,
 };
 
 use self::{pdf::PdfPlan, png::PngPlan, svg::SvgPlan};
@@ -135,16 +137,113 @@ impl RenderSession {
             }
         }
 
-        if !scene.has_no_element_occurrences() {
-            return Err(self.internal_failure(
-                request.format(),
-                "nonempty scene rendering is not implemented",
-                "/elements",
-            ));
-        }
-
-        let resolved = ResolvedScene::empty(request);
-        let bytes = self.encode(&resolved, request)?;
+        let semantic_working_bytes;
+        let resolved = if scene.has_no_element_occurrences() {
+            semantic_working_bytes = 0;
+            ResolvedScene::empty(request)
+        } else {
+            if request.format() != OutputFormat::Svg {
+                return Err(self.internal_failure(
+                    request.format(),
+                    "nonempty rendering is not implemented for the selected format",
+                    "/elements",
+                ));
+            }
+            let source = scene.single_rectangle().ok_or_else(|| {
+                self.internal_failure(
+                    request.format(),
+                    "nonempty scene is outside the implemented rectangle slice",
+                    "/elements",
+                )
+            })?;
+            const NORMALIZED_FIELD_COUNT: u64 = 15;
+            const GEOMETRY_SEGMENTS: u64 = 16;
+            const GEOMETRY_WORK_UNITS: u64 = GEOMETRY_SEGMENTS * 32;
+            const ELEMENT_WORK_UNITS: u64 = NORMALIZED_FIELD_COUNT * 8 + GEOMETRY_WORK_UNITS + 8;
+            let normalized_working_bytes = 256
+                + 10 * 64
+                + owned_field_bytes(source.id)
+                + owned_field_bytes(source.stroke_color)
+                + owned_field_bytes(source.background_color)
+                + owned_field_bytes(source.fill_style)
+                + owned_field_bytes(source.stroke_style)
+                + source.view_background_color.map_or(0, owned_field_bytes);
+            let geometry_working_bytes = 128 + GEOMETRY_SEGMENTS * 64;
+            self.transact(
+                request,
+                ResourceContext::new(
+                    ResourcePhase::JsonTraversalAndNormalization,
+                    "normalized_rectangle",
+                    "/elements/0",
+                )
+                .with_element_id(Some(source.id))
+                .with_local_owner(Some(source.id)),
+                ResourceDelta {
+                    working_bytes: normalized_working_bytes,
+                    total_work_units: NORMALIZED_FIELD_COUNT * 8,
+                    ..ResourceDelta::default()
+                },
+            )?;
+            let geometry_delta = ResourceDelta {
+                geometry_segments: GEOMETRY_SEGMENTS,
+                working_bytes: geometry_working_bytes,
+                total_work_units: GEOMETRY_WORK_UNITS,
+                ..ResourceDelta::default()
+            };
+            let geometry_context = ResourceContext::new(
+                ResourcePhase::SharedSemanticResolution,
+                "rough_rectangle_geometry",
+                "/elements/0",
+            )
+            .with_element_id(Some(source.id))
+            .with_local_owner(Some(source.id));
+            if self.meter.would_cross_fatal(geometry_delta) {
+                return match self.transact(request, geometry_context, geometry_delta) {
+                    Err(error) => Err(error),
+                    Ok(()) => Err(self.internal_failure(
+                        request.format(),
+                        "fatal resource preflight committed unexpectedly",
+                        "/elements/0",
+                    )),
+                };
+            }
+            let local_crossing =
+                rectangle_local_crossing(source, request, GEOMETRY_SEGMENTS, ELEMENT_WORK_UNITS);
+            let include_outline = local_crossing.is_none();
+            if let Some(crossing) = local_crossing {
+                let diagnostic =
+                    crossing
+                        .diagnostic(request.format(), source.id)
+                        .map_err(|_| {
+                            self.memory_failure(request, "compatibility_report", "local_recovery")
+                        })?;
+                self.retain_diagnostic(
+                    request,
+                    ResourcePhase::SharedSemanticResolution,
+                    "rectangle_local_resource_recovery",
+                    diagnostic,
+                )?;
+                semantic_working_bytes = normalized_working_bytes;
+            } else {
+                self.transact(request, geometry_context, geometry_delta)?;
+                semantic_working_bytes =
+                    normalized_working_bytes.saturating_add(geometry_working_bytes);
+            }
+            match ResolvedScene::rectangle(source, request, include_outline) {
+                Ok(Some(resolved)) => resolved,
+                Ok(None) => {
+                    return Err(self.internal_failure(
+                        request.format(),
+                        "rectangle semantics are outside the implemented focused case",
+                        "/elements/0",
+                    ));
+                }
+                Err(_) => {
+                    return Err(self.memory_failure(request, "semantic_geometry", "rectangle"));
+                }
+            }
+        };
+        let bytes = self.encode(resolved, request, semantic_working_bytes)?;
 
         Ok(RenderOutcome {
             artifact: Artifact {
@@ -158,9 +257,13 @@ impl RenderSession {
 
     fn encode(
         &mut self,
-        resolved: &ResolvedScene,
+        resolved: ResolvedScene,
         request: &RenderRequest,
+        semantic_working_bytes: u64,
     ) -> Result<Vec<u8>, RenderError> {
+        if request.format() == OutputFormat::Svg {
+            self.validate_svg_dimensions(&resolved, request)?;
+        }
         let plan_base = ResourceContext::new(ResourcePhase::FormatPlanning, "format_plan_base", "")
             .with_record(ResourceRecordKind::FormatPlanBase);
         self.acquire_working(request, plan_base, 1_024)?;
@@ -179,9 +282,42 @@ impl RenderSession {
                 },
             )?;
         }
-
         match request.format() {
             OutputFormat::Svg => {
+                if let Some((element_id, json_pointer)) = resolved.primary_source() {
+                    self.transact(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::FormatPlanning,
+                            "element_operation",
+                            json_pointer,
+                        )
+                        .with_element_id(Some(element_id))
+                        .with_local_owner(Some(element_id))
+                        .with_record(ResourceRecordKind::FormatPlanOperation),
+                        ResourceDelta {
+                            working_bytes: 128,
+                            total_work_units: 8,
+                            ..ResourceDelta::default()
+                        },
+                    )?;
+                }
+                let plan = SvgPlan::new(resolved, request).map_err(|error| {
+                    self.format_failure(request, ErrorCode::ENCODE_SVG_FAILED, error)
+                })?;
+                if semantic_working_bytes != 0 {
+                    let mut context = ResourceContext::new(
+                        ResourcePhase::FormatPlanning,
+                        "resolved_rectangle",
+                        "/elements/0",
+                    );
+                    if let Some((element_id, _)) = plan.primary_source() {
+                        context = context
+                            .with_element_id(Some(element_id))
+                            .with_local_owner(Some(element_id));
+                    }
+                    self.release_working(request, context, semantic_working_bytes)?;
+                }
                 let workspace_bytes = 256 * 1_024;
                 let workspace = ResourceContext::new(
                     ResourcePhase::EncodingAndOutcomeAssembly,
@@ -190,14 +326,27 @@ impl RenderSession {
                 )
                 .with_record(ResourceRecordKind::SvgSerializerWorkspace);
                 self.acquire_working(request, workspace, workspace_bytes)?;
-                let plan = SvgPlan::new(resolved, request);
                 self.measure_and_emit_output(request, ErrorCode::ENCODE_SVG_FAILED, 0, || {
                     plan.encode()
                 })?;
                 self.release_working(request, workspace, workspace_bytes)?;
+                if let Some((element_id, json_pointer)) = plan.primary_source() {
+                    self.release_working(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::EncodingAndOutcomeAssembly,
+                            "element_operation",
+                            json_pointer,
+                        )
+                        .with_element_id(Some(element_id))
+                        .with_local_owner(Some(element_id))
+                        .with_record(ResourceRecordKind::FormatPlanOperation),
+                        128,
+                    )?;
+                }
             }
             OutputFormat::Png => {
-                let plan = PngPlan::new(resolved, request).map_err(|error| {
+                let plan = PngPlan::new(&resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error)
                 })?;
                 let pixels = u64::from(plan.width()).saturating_mul(u64::from(plan.height()));
@@ -257,7 +406,7 @@ impl RenderSession {
             }
             OutputFormat::Pdf => {
                 let workspace_bytes = 1_048_576;
-                let plan = PdfPlan::new(resolved, request).map_err(|error| {
+                let plan = PdfPlan::new(&resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_PDF_FAILED, error)
                 })?;
                 let workspace = ResourceContext::new(
@@ -462,6 +611,60 @@ impl RenderSession {
         }
     }
 
+    fn validate_svg_dimensions(
+        &mut self,
+        resolved: &ResolvedScene,
+        request: &RenderRequest,
+    ) -> Result<(), RenderError> {
+        let scale = match request.sizing() {
+            Sizing::Scale(scale) => scale,
+            Sizing::MaxDimension(_) => 1.0,
+        };
+        let limit = request.resource_limits().max_svg_dimension();
+        for attempted in [
+            resolved.logical_width,
+            resolved.logical_height,
+            resolved.logical_width * scale,
+            resolved.logical_height * scale,
+        ] {
+            if attempted > limit {
+                let configured = FiniteValue::new(limit).ok_or_else(|| {
+                    self.internal_failure(
+                        request.format(),
+                        "validated SVG dimension limit is not finite",
+                        "",
+                    )
+                })?;
+                let attempted = FiniteValue::new(attempted).ok_or_else(|| {
+                    self.internal_failure(
+                        request.format(),
+                        "attempted SVG dimension is not finite",
+                        "",
+                    )
+                })?;
+                return Err(RenderError {
+                    category: RenderErrorCategory::ResourceLimit,
+                    code: ErrorCode::RESOURCE_SVG_DIMENSIONS_EXCEEDED,
+                    message: Box::from("SVG dimension limit exceeded"),
+                    format: request.format(),
+                    element_id: None,
+                    json_pointer: Box::from(""),
+                    details: Some(Box::new(ErrorDetails::ResourceLimit {
+                        field: "max_svg_dimension",
+                        configured: ResourceValue::Finite(configured),
+                        value_kind: ValueKind::Dimension,
+                        measurement: Measurement::Attempted {
+                            value: ResourceValue::Finite(attempted),
+                        },
+                        recovery: None,
+                    })),
+                    report: std::mem::take(&mut self.report),
+                });
+            }
+        }
+        Ok(())
+    }
+
     fn format_failure(
         &mut self,
         request: &RenderRequest,
@@ -552,6 +755,8 @@ struct ResolvedScene {
     logical_width: f64,
     logical_height: f64,
     include_background: bool,
+    background_color: String,
+    elements: Vec<ResolvedElement>,
 }
 
 impl ResolvedScene {
@@ -561,7 +766,120 @@ impl ResolvedScene {
             logical_width: logical_size,
             logical_height: logical_size,
             include_background: request.include_background(),
+            background_color: "#ffffff".to_owned(),
+            elements: Vec::new(),
         }
+    }
+
+    fn rectangle(
+        source: crate::scene::RectangleSource<'_>,
+        request: &RenderRequest,
+        include_outline: bool,
+    ) -> Result<Option<Self>, std::collections::TryReserveError> {
+        if source.background_color != "transparent"
+            || source.fill_style != "solid"
+            || source.stroke_style != "solid"
+            || source.stroke_color != "#1e1e1e"
+            || source.view_background_color.unwrap_or("#ffffff") != "#ffffff"
+            || source.stroke_width < 0.0
+            || source.roughness < 0.0
+            || !(0.0..=100.0).contains(&source.opacity)
+            || source.seed == 0
+        {
+            return Ok(None);
+        }
+
+        let mut x = source.x;
+        let mut y = source.y;
+        let mut width = source.width;
+        let mut height = source.height;
+        if width < 0.0 {
+            x += width;
+            width = -width;
+        }
+        if height < 0.0 {
+            y += height;
+            height = -height;
+        }
+        if width == 0.0 || height == 0.0 {
+            return Ok(None);
+        }
+
+        let center_x = x + width / 2.0;
+        let center_y = y + height / 2.0;
+        let sin = source.angle.sin();
+        let cos = source.angle.cos();
+        let corners = [
+            (x, y),
+            (x + width, y),
+            (x + width, y + height),
+            (x, y + height),
+        ];
+        let mut min_x = f64::INFINITY;
+        let mut min_y = f64::INFINITY;
+        let mut max_x = f64::NEG_INFINITY;
+        let mut max_y = f64::NEG_INFINITY;
+        for (corner_x, corner_y) in corners {
+            let delta_x = corner_x - center_x;
+            let delta_y = corner_y - center_y;
+            let rotated_x = center_x + delta_x * cos - delta_y * sin;
+            let rotated_y = center_y + delta_x * sin + delta_y * cos;
+            min_x = min_x.min(rotated_x);
+            min_y = min_y.min(rotated_y);
+            max_x = max_x.max(rotated_x);
+            max_y = max_y.max(rotated_y);
+        }
+        let logical_width = max_x - min_x + request.padding() * 2.0;
+        let logical_height = max_y - min_y + request.padding() * 2.0;
+        if !logical_width.is_finite() || !logical_height.is_finite() {
+            return Ok(None);
+        }
+
+        let max_size = width.max(height);
+        let min_size = width.min(height);
+        let adjusted_roughness = if min_size >= 20.0 && max_size >= 50.0 {
+            source.roughness
+        } else {
+            (source.roughness / if max_size < 10.0 { 3.0 } else { 2.0 }).min(2.5)
+        };
+        let translation_x = x - min_x + request.padding();
+        let translation_y = y - min_y + request.padding();
+        let mut elements = Vec::new();
+        if include_outline {
+            let path = rough::rectangle(width, height, source.seed, adjusted_roughness)?;
+            elements.try_reserve_exact(1)?;
+            elements.push(ResolvedElement::Rectangle(ResolvedRectangle {
+                source_id: try_owned(source.id)?,
+                source_pointer: "/elements/0",
+                path,
+                transform: ResolvedTransform {
+                    translation_x,
+                    translation_y,
+                    angle_radians: source.angle,
+                    center_x: width / 2.0,
+                    center_y: height / 2.0,
+                },
+                stroke_color: try_owned(source.stroke_color)?,
+                stroke_width: source.stroke_width,
+                opacity: source.opacity / 100.0,
+            }));
+        }
+
+        Ok(Some(Self {
+            logical_width,
+            logical_height,
+            include_background: request.include_background(),
+            background_color: try_owned(source.view_background_color.unwrap_or("#ffffff"))?,
+            elements,
+        }))
+    }
+
+    fn primary_source(&self) -> Option<(&str, &str)> {
+        self.elements.first().map(|element| match element {
+            ResolvedElement::Rectangle(rectangle) => {
+                (rectangle.source_id.as_str(), rectangle.source_pointer)
+            }
+        })
     }
 
     fn raster_or_pdf_scale(&self, sizing: Sizing) -> f64 {
@@ -576,8 +894,139 @@ impl ResolvedScene {
     }
 }
 
+enum ResolvedElement {
+    Rectangle(ResolvedRectangle),
+}
+
+struct ResolvedRectangle {
+    source_id: String,
+    source_pointer: &'static str,
+    path: rough::Path,
+    transform: ResolvedTransform,
+    stroke_color: String,
+    stroke_width: f64,
+    opacity: f64,
+}
+
+struct ResolvedTransform {
+    translation_x: f64,
+    translation_y: f64,
+    angle_radians: f64,
+    center_x: f64,
+    center_y: f64,
+}
+
+struct RectangleLocalCrossing {
+    code: DiagnosticCode,
+    field: &'static str,
+    configured: ResourceValue,
+    value_kind: ValueKind,
+    attempted: ResourceValue,
+    json_pointer: &'static str,
+    message: &'static str,
+}
+
+impl RectangleLocalCrossing {
+    fn diagnostic(
+        self,
+        format: OutputFormat,
+        element_id: &str,
+    ) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
+        let mut effects = Vec::new();
+        effects.try_reserve_exact(1)?;
+        effects.push(DiagnosticEffect::Visual);
+        Ok(CompatibilityDiagnostic {
+            code: self.code,
+            severity: DiagnosticSeverity::Warning,
+            format,
+            effects,
+            element_id: Some(try_owned(element_id)?),
+            json_pointer: try_owned(self.json_pointer)?,
+            message: try_owned(self.message)?,
+            details: Some(Box::new(ErrorDetails::ResourceLimit {
+                field: self.field,
+                configured: self.configured,
+                value_kind: self.value_kind,
+                measurement: Measurement::Attempted {
+                    value: self.attempted,
+                },
+                recovery: Some(Recovery::Omitted),
+            })),
+        })
+    }
+}
+
+fn rectangle_local_crossing(
+    source: crate::scene::RectangleSource<'_>,
+    request: &RenderRequest,
+    geometry_segments: u64,
+    element_work_units: u64,
+) -> Option<RectangleLocalCrossing> {
+    let coordinate_limit = request.resource_limits().max_coordinate_magnitude();
+    for (value, pointer) in [
+        (source.x, "/elements/0/x"),
+        (source.y, "/elements/0/y"),
+        (source.width, "/elements/0/width"),
+        (source.height, "/elements/0/height"),
+    ] {
+        let magnitude = value.abs();
+        if magnitude > coordinate_limit {
+            return Some(RectangleLocalCrossing {
+                code: DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,
+                field: "max_coordinate_magnitude",
+                configured: ResourceValue::Finite(FiniteValue::new(coordinate_limit)?),
+                value_kind: ValueKind::Coordinate,
+                attempted: ResourceValue::Finite(FiniteValue::new(magnitude)?),
+                json_pointer: pointer,
+                message: "rectangle omitted because a coordinate exceeds its limit",
+            });
+        }
+    }
+
+    let geometry_limit = u64::from(
+        request
+            .resource_limits()
+            .max_geometry_segments_per_element(),
+    );
+    if geometry_segments > geometry_limit {
+        return Some(RectangleLocalCrossing {
+            code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
+            field: "max_geometry_segments_per_element",
+            configured: ResourceValue::Integer(geometry_limit),
+            value_kind: ValueKind::Count,
+            attempted: ResourceValue::Integer(geometry_segments),
+            json_pointer: "/elements/0",
+            message: "rectangle omitted because its geometry exceeds its limit",
+        });
+    }
+
+    let work_limit = request.resource_limits().max_element_work_units();
+    (element_work_units > work_limit).then_some(RectangleLocalCrossing {
+        code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
+        field: "max_element_work_units",
+        configured: ResourceValue::Integer(work_limit),
+        value_kind: ValueKind::WorkUnits,
+        attempted: ResourceValue::Integer(element_work_units),
+        json_pointer: "/elements/0",
+        message: "rectangle omitted because its semantic work exceeds its limit",
+    })
+}
+
 fn logical_aligned_bytes(bytes: u64) -> u64 {
     bytes.saturating_add(63) / 64 * 64
+}
+
+fn owned_field_bytes(value: &str) -> u64 {
+    64_u64.saturating_add(logical_aligned_bytes(
+        u64::try_from(value.len()).unwrap_or(u64::MAX),
+    ))
+}
+
+fn try_owned(value: &str) -> Result<String, std::collections::TryReserveError> {
+    let mut owned = String::new();
+    owned.try_reserve_exact(value.len())?;
+    owned.push_str(value);
+    Ok(owned)
 }
 
 #[cfg(test)]

@@ -148,6 +148,53 @@ impl SceneDocument {
         )
     }
 
+    pub(crate) fn single_rectangle(&self) -> Option<RectangleSource<'_>> {
+        let JsonValue::Object(root) = &*self._root else {
+            return None;
+        };
+        let JsonValue::Array(elements) = member_value(root, "elements")? else {
+            return None;
+        };
+        let [JsonValue::Object(element)] = &**elements else {
+            return None;
+        };
+        if json_string(member_value(element, "type")?)? != "rectangle"
+            || json_bool(member_value(element, "isDeleted")?)?
+            || !matches!(member_value(element, "roundness"), Some(JsonValue::Null))
+            || !matches!(member_value(element, "frameId"), Some(JsonValue::Null))
+            || !matches!(
+                member_value(element, "boundElements"),
+                Some(JsonValue::Null)
+            )
+            || !matches!(member_value(element, "link"), Some(JsonValue::Null))
+            || !matches!(member_value(element, "groupIds"), Some(JsonValue::Array(ids)) if ids.is_empty())
+        {
+            return None;
+        }
+        let JsonValue::Object(app_state) = member_value(root, "appState")? else {
+            return None;
+        };
+
+        Some(RectangleSource {
+            id: json_string(member_value(element, "id")?)?,
+            x: finite_json_number(member_value(element, "x")?)?,
+            y: finite_json_number(member_value(element, "y")?)?,
+            width: finite_json_number(member_value(element, "width")?)?,
+            height: finite_json_number(member_value(element, "height")?)?,
+            angle: finite_json_number(member_value(element, "angle")?)?,
+            stroke_color: json_string(member_value(element, "strokeColor")?)?,
+            background_color: json_string(member_value(element, "backgroundColor")?)?,
+            fill_style: json_string(member_value(element, "fillStyle")?)?,
+            stroke_width: finite_json_number(member_value(element, "strokeWidth")?)?,
+            stroke_style: json_string(member_value(element, "strokeStyle")?)?,
+            roughness: finite_json_number(member_value(element, "roughness")?)?,
+            opacity: finite_json_number(member_value(element, "opacity")?)?,
+            seed: json_i32(member_value(element, "seed")?)?,
+            view_background_color: member_value(app_state, "viewBackgroundColor")
+                .and_then(json_string),
+        })
+    }
+
     pub(crate) const fn source_bytes(&self) -> u64 {
         self.source_bytes
     }
@@ -163,6 +210,25 @@ impl SceneDocument {
     ) -> Result<(), OriginalJsonVisitError<E>> {
         visit_json_value(&self._root, "", false, &mut visit)
     }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct RectangleSource<'a> {
+    pub(crate) id: &'a str,
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) width: f64,
+    pub(crate) height: f64,
+    pub(crate) angle: f64,
+    pub(crate) stroke_color: &'a str,
+    pub(crate) background_color: &'a str,
+    pub(crate) fill_style: &'a str,
+    pub(crate) stroke_width: f64,
+    pub(crate) stroke_style: &'a str,
+    pub(crate) roughness: f64,
+    pub(crate) opacity: f64,
+    pub(crate) seed: i32,
+    pub(crate) view_background_color: Option<&'a str>,
 }
 
 pub(crate) enum OriginalJsonVisitError<E> {
@@ -932,6 +998,37 @@ fn member_value<'a>(members: &'a [JsonMember], key: &str) -> Option<&'a JsonValu
         .iter()
         .find(|member| &*member.key == key)
         .map(|member| &member.value)
+}
+
+fn json_string(value: &JsonValue) -> Option<&str> {
+    let JsonValue::String(value) = value else {
+        return None;
+    };
+    Some(value)
+}
+
+fn json_bool(value: &JsonValue) -> Option<bool> {
+    let JsonValue::Bool(value) = value else {
+        return None;
+    };
+    Some(*value)
+}
+
+fn finite_json_number(value: &JsonValue) -> Option<f64> {
+    let JsonValue::Number(value) = value else {
+        return None;
+    };
+    value
+        .parse::<f64>()
+        .ok()
+        .filter(|number| number.is_finite())
+}
+
+fn json_i32(value: &JsonValue) -> Option<i32> {
+    let JsonValue::Number(value) = value else {
+        return None;
+    };
+    value.parse().ok()
 }
 
 fn visit_json_value<E>(

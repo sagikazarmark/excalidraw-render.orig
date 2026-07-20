@@ -7,10 +7,16 @@ use crate::{ReferenceProfileIdentity, RenderRequest, SceneDocument};
 use serde::Serialize;
 use std::collections::TryReserveError;
 
+const fn is_zero(value: &u64) -> bool {
+    *value == 0
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize)]
 pub(crate) struct ResourceDelta {
     pub(crate) scene_bytes: u64,
     pub(crate) elements: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub(crate) geometry_segments: u64,
     pub(crate) diagnostics: u64,
     pub(crate) working_bytes: u64,
     pub(crate) output_bytes: u64,
@@ -21,6 +27,8 @@ pub(crate) struct ResourceDelta {
 struct ResourceCounters {
     scene_bytes: u64,
     elements: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    geometry_segments: u64,
     diagnostics: u64,
     working_bytes: u64,
     output_bytes: u64,
@@ -94,6 +102,7 @@ pub(crate) struct ResourceFailureLocation {
 pub(crate) enum ResourcePhase {
     Admission,
     JsonTraversalAndNormalization,
+    SharedSemanticResolution,
     FormatPlanning,
     ProjectionAndFallback,
     EncodingAndOutcomeAssembly,
@@ -148,28 +157,9 @@ impl ResourceMeter {
         delta: ResourceDelta,
     ) -> Result<(), ResourceCrossing> {
         let before = self.counters;
-        let attempted = AttemptedCounters {
-            scene_bytes: Attempted::new(self.counters.scene_bytes, delta.scene_bytes),
-            elements: Attempted::new(self.counters.elements, delta.elements),
-            diagnostics: Attempted::new(self.counters.diagnostics, delta.diagnostics),
-            working_bytes: Attempted::new(self.counters.working_bytes, delta.working_bytes),
-            output_bytes: Attempted::new(self.counters.output_bytes, delta.output_bytes),
-            total_work_units: Attempted::new(
-                self.counters.total_work_units,
-                delta.total_work_units,
-            ),
-        };
+        let attempted = self.attempted(delta);
 
-        let crossing = [
-            (LimitKind::SceneBytes, attempted.scene_bytes),
-            (LimitKind::Elements, attempted.elements),
-            (LimitKind::Diagnostics, attempted.diagnostics),
-            (LimitKind::WorkingBytes, attempted.working_bytes),
-            (LimitKind::OutputBytes, attempted.output_bytes),
-            (LimitKind::TotalWork, attempted.total_work_units),
-        ]
-        .into_iter()
-        .find(|(kind, attempted)| attempted.crosses(kind.configured(&self.limits)));
+        let crossing = fatal_crossing(attempted, &self.limits);
 
         if let Some((kind, crossing_attempt)) = crossing {
             let measurement = crossing_attempt.measurement(kind.configured(&self.limits));
@@ -217,6 +207,28 @@ impl ResourceMeter {
                 kind: LimitKind::TotalWork,
                 measurement,
             })
+        }
+    }
+
+    pub(crate) fn would_cross_fatal(&self, delta: ResourceDelta) -> bool {
+        fatal_crossing(self.attempted(delta), &self.limits).is_some()
+    }
+
+    fn attempted(&self, delta: ResourceDelta) -> AttemptedCounters {
+        AttemptedCounters {
+            scene_bytes: Attempted::new(self.counters.scene_bytes, delta.scene_bytes),
+            elements: Attempted::new(self.counters.elements, delta.elements),
+            geometry_segments: Attempted::new(
+                self.counters.geometry_segments,
+                delta.geometry_segments,
+            ),
+            diagnostics: Attempted::new(self.counters.diagnostics, delta.diagnostics),
+            working_bytes: Attempted::new(self.counters.working_bytes, delta.working_bytes),
+            output_bytes: Attempted::new(self.counters.output_bytes, delta.output_bytes),
+            total_work_units: Attempted::new(
+                self.counters.total_work_units,
+                delta.total_work_units,
+            ),
         }
     }
 
@@ -297,6 +309,7 @@ impl ResourceMeter {
 struct AttemptedCounters {
     scene_bytes: Attempted,
     elements: Attempted,
+    geometry_segments: Attempted,
     diagnostics: Attempted,
     working_bytes: Attempted,
     output_bytes: Attempted,
@@ -308,12 +321,30 @@ impl AttemptedCounters {
         Some(ResourceCounters {
             scene_bytes: self.scene_bytes.exact()?,
             elements: self.elements.exact()?,
+            geometry_segments: self.geometry_segments.exact()?,
             diagnostics: self.diagnostics.exact()?,
             working_bytes: self.working_bytes.exact()?,
             output_bytes: self.output_bytes.exact()?,
             total_work_units: self.total_work_units.exact()?,
         })
     }
+}
+
+fn fatal_crossing(
+    attempted: AttemptedCounters,
+    limits: &ResourceLimits,
+) -> Option<(LimitKind, Attempted)> {
+    [
+        (LimitKind::SceneBytes, attempted.scene_bytes),
+        (LimitKind::Elements, attempted.elements),
+        (LimitKind::TotalGeometry, attempted.geometry_segments),
+        (LimitKind::Diagnostics, attempted.diagnostics),
+        (LimitKind::WorkingBytes, attempted.working_bytes),
+        (LimitKind::OutputBytes, attempted.output_bytes),
+        (LimitKind::TotalWork, attempted.total_work_units),
+    ]
+    .into_iter()
+    .find(|(kind, attempted)| attempted.crosses(kind.configured(limits)))
 }
 
 fn attempted_counters_for_trace(
@@ -325,6 +356,9 @@ fn attempted_counters_for_trace(
         elements: attempted
             .elements
             .trace_value(u64::from(limits.max_elements())),
+        geometry_segments: attempted
+            .geometry_segments
+            .trace_value(limits.max_total_geometry_segments()),
         diagnostics: attempted
             .diagnostics
             .trace_value(u64::from(limits.max_diagnostics())),
@@ -400,6 +434,7 @@ impl Attempted {
 enum LimitKind {
     SceneBytes,
     Elements,
+    TotalGeometry,
     Diagnostics,
     WorkingBytes,
     OutputBytes,
@@ -411,6 +446,7 @@ impl LimitKind {
         match self {
             Self::SceneBytes => limits.max_scene_bytes(),
             Self::Elements => u64::from(limits.max_elements()),
+            Self::TotalGeometry => limits.max_total_geometry_segments(),
             Self::Diagnostics => u64::from(limits.max_diagnostics()),
             Self::WorkingBytes => limits.max_working_bytes(),
             Self::OutputBytes => limits.max_output_bytes(),
@@ -447,6 +483,12 @@ impl LimitKind {
                 field: "max_elements",
                 value_kind: ValueKind::Count,
                 message: "element count limit exceeded",
+            },
+            Self::TotalGeometry => LimitMetadata {
+                code: ErrorCode::RESOURCE_TOTAL_GEOMETRY_EXCEEDED,
+                field: "max_total_geometry_segments",
+                value_kind: ValueKind::Count,
+                message: "total geometry segment limit exceeded",
             },
             Self::Diagnostics => LimitMetadata {
                 code: ErrorCode::RESOURCE_DIAGNOSTIC_COUNT_EXCEEDED,

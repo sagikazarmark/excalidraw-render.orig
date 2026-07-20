@@ -59,6 +59,15 @@ CARGO_TARGET_DIR=target/svg-viewer-rust cargo test --locked \
 bash tools/svg-viewer-qualification.sh reproduce
 ```
 
+Run the renderer-owned focused rectangle candidate through both canonical SVG
+viewers with:
+
+```sh
+cargo test --locked -p excalidraw-render --test rectangle_svg_render \
+  approved_rectangle_passes_both_canonical_svg_visual_gates -- \
+  --ignored --exact --nocapture
+```
+
 The first case declares no text faces or image assets. Both viewers fail closed
 on undeclared text and image payloads, local files, network resources, and
 undeclared data URLs. Cases containing text or images supply a closed declaration
