@@ -4,8 +4,8 @@ use std::io::Write as _;
 use crate::{color::CanonicalColor, RenderRequest};
 
 use super::{
-    rough::{self, Path, PathOperation},
-    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene,
+    rough::{self, Drawing, FillKind, Path, PathOperation},
+    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene, StrokeStyle,
 };
 
 pub(super) const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
@@ -54,10 +54,13 @@ pub(super) struct PdfPlan {
 enum PdfElement {
     RoughOutline {
         source: NormalizedElementSource,
-        path: Path,
+        drawing: Drawing,
         transform: super::ResolvedTransform,
         stroke_color: CanonicalColor,
+        fill_color: Option<CanonicalColor>,
         stroke_width: f64,
+        stroke_style: StrokeStyle,
+        source_stroke_width: f64,
         opacity: f64,
     },
     Fallback {
@@ -104,10 +107,13 @@ impl PdfPlan {
                     }
                     elements.push(PdfElement::RoughOutline {
                         source: outline.source,
-                        path: outline.path,
+                        drawing: outline.drawing,
                         transform: outline.transform,
                         stroke_color: outline.stroke_color,
+                        fill_color: outline.fill_color,
                         stroke_width: outline.stroke_width,
+                        stroke_style: outline.stroke_style,
+                        source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
                     });
                 }
@@ -715,20 +721,29 @@ impl PdfPlan {
         if let Some(background) = self.background.filter(|color| color.alpha() != 1.0) {
             resources.push(background.alpha());
         }
-        for opacity in self.elements.iter().filter_map(|element| match element {
-            PdfElement::RoughOutline {
-                opacity,
-                stroke_color,
-                ..
-            } if *opacity * stroke_color.alpha() != 1.0 => Some(*opacity * stroke_color.alpha()),
-            PdfElement::Fallback { opacity, .. } if *opacity != 1.0 => Some(*opacity),
-            _ => None,
-        }) {
-            if !resources
-                .iter()
-                .any(|retained: &f64| retained.to_bits() == opacity.to_bits())
-            {
-                resources.push(opacity);
+        for element in &self.elements {
+            let mut retain = |opacity: f64| {
+                if opacity != 1.0
+                    && !resources
+                        .iter()
+                        .any(|retained: &f64| retained.to_bits() == opacity.to_bits())
+                {
+                    resources.push(opacity);
+                }
+            };
+            match element {
+                PdfElement::RoughOutline {
+                    opacity,
+                    stroke_color,
+                    fill_color,
+                    ..
+                } => {
+                    retain(*opacity * stroke_color.alpha());
+                    if let Some(fill_color) = fill_color {
+                        retain(*opacity * fill_color.alpha());
+                    }
+                }
+                PdfElement::Fallback { opacity, .. } => retain(*opacity),
             }
         }
         Ok(resources)
@@ -794,9 +809,8 @@ impl PdfPlan {
         let mut capacity = 1_024_usize;
         for element in &self.elements {
             let element_bytes = match element {
-                PdfElement::RoughOutline { path, .. } => path
-                    .operations
-                    .len()
+                PdfElement::RoughOutline { drawing, .. } => drawing
+                    .operation_count()
                     .checked_mul(200)
                     .and_then(|path_bytes| path_bytes.checked_add(512))
                     .ok_or_else(pdf_size_error)?,
@@ -855,10 +869,13 @@ impl PdfPlan {
             match element {
                 PdfElement::RoughOutline {
                     source,
-                    path,
+                    drawing,
                     transform,
                     stroke_color,
+                    fill_color,
                     stroke_width,
+                    stroke_style,
+                    source_stroke_width,
                     opacity,
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
@@ -879,14 +896,67 @@ impl PdfPlan {
                         - cos * transform.center_y;
                     content.push_str("q\n");
                     push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
+                        content.push_str("q\n");
+                        let fill_opacity = *opacity * fill_color.alpha();
+                        if fill_opacity != 1.0 {
+                            push_opacity_resource(&mut content, opacity_resources, fill_opacity)?;
+                        }
+                        match fill.kind {
+                            FillKind::Solid => {
+                                content.push_str("/CS1 cs\n");
+                                push_color(&mut content, fill_color.rgb_f64(), "scn")?;
+                                push_rough_path(&mut content, &fill.path)?;
+                                content.push_str(if drawing.shape.canvas_uses_even_odd_fill() {
+                                    "f*\n"
+                                } else {
+                                    "f\n"
+                                });
+                            }
+                            FillKind::Sketch => {
+                                push_pdf_number(
+                                    &mut content,
+                                    *source_stroke_width / 2.0,
+                                    "PDF fill weight",
+                                )?;
+                                content.push_str(" w\n1 J\n/CS1 CS\n");
+                                push_color(&mut content, fill_color.rgb_f64(), "SCN")?;
+                                push_rough_path(&mut content, &fill.path)?;
+                                content.push_str("S\n");
+                            }
+                        }
+                        content.push_str("Q\n");
+                    }
                     let opacity = *opacity * stroke_color.alpha();
                     if opacity != 1.0 {
                         push_opacity_resource(&mut content, opacity_resources, opacity)?;
                     }
                     push_pdf_number(&mut content, *stroke_width, "PDF stroke width")?;
-                    content.push_str(" w\n1 J\n/CS1 CS\n");
+                    content.push_str(" w\n1 J\n");
+                    match stroke_style {
+                        StrokeStyle::Solid => {}
+                        StrokeStyle::Dashed => {
+                            content.push_str("[8 ");
+                            push_pdf_number(
+                                &mut content,
+                                8.0 + source_stroke_width,
+                                "PDF dash gap",
+                            )?;
+                            content.push_str("] 0 d\n");
+                        }
+                        StrokeStyle::Dotted => {
+                            content.push_str("[1.5 ");
+                            push_pdf_number(
+                                &mut content,
+                                6.0 + source_stroke_width,
+                                "PDF dot gap",
+                            )?;
+                            content.push_str("] 0 d\n");
+                        }
+                    }
+                    content.push_str("/CS1 CS\n");
                     push_color(&mut content, stroke_color.rgb_f64(), "SCN")?;
-                    push_rough_path(&mut content, path)?;
+                    push_rough_path(&mut content, &drawing.outline)?;
                     content.push_str("S\nQ\n");
                 }
                 PdfElement::Fallback {
@@ -1126,6 +1196,12 @@ fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeE
                 output.push(' ');
                 rough::push_number(output, point.y)?;
                 output.push_str(" m\n");
+            }
+            PathOperation::Line(point) => {
+                rough::push_number(output, point.x)?;
+                output.push(' ');
+                rough::push_number(output, point.y)?;
+                output.push_str(" l\n");
             }
             PathOperation::Cubic {
                 control_1,

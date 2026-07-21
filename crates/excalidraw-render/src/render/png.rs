@@ -5,8 +5,8 @@ use tiny_skia::{
 };
 
 use super::{
-    rough::{Path, PathOperation, Point},
-    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene,
+    rough::{Drawing, FillKind, Path, PathOperation, Point},
+    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene, StrokeStyle,
 };
 
 pub(super) struct PngPlan {
@@ -20,10 +20,13 @@ pub(super) struct PngPlan {
 enum PngElement {
     RoughOutline {
         source: NormalizedElementSource,
-        path: Path,
+        drawing: Drawing,
         transform: PngTransform,
         stroke_color: CanonicalColor,
+        fill_color: Option<CanonicalColor>,
         stroke_width: f64,
+        stroke_style: StrokeStyle,
+        source_stroke_width: f64,
         opacity: f64,
         base_element_work_units: u64,
         render: bool,
@@ -143,10 +146,13 @@ impl PngPlan {
                     }
                     elements.push(PngElement::RoughOutline {
                         source: outline.source,
-                        path: outline.path,
+                        drawing: outline.drawing,
                         transform: PngTransform::new(&outline.transform, scale),
                         stroke_color: outline.stroke_color,
+                        fill_color: outline.fill_color,
                         stroke_width: outline.stroke_width,
+                        stroke_style: outline.stroke_style,
+                        source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
                         base_element_work_units: outline.base_element_work_units,
                         render: true,
@@ -236,10 +242,13 @@ impl PngPlan {
                 match element {
                     PngElement::RoughOutline {
                         source,
-                        path,
+                        drawing,
                         transform,
                         stroke_color,
+                        fill_color,
                         stroke_width,
+                        stroke_style,
+                        source_stroke_width,
                         opacity,
                         render,
                         ..
@@ -252,31 +261,61 @@ impl PngPlan {
                                 "PNG plan outline lost its source identity".to_owned(),
                             ));
                         }
-                        let path = tiny_skia_path(path)?;
                         let transform = transform.raster_transform(SUBPIXEL_SCALE)?;
-                        let color = Color::from_rgba(
-                            f32::from(stroke_color.rgb8()[0]) / 255.0,
-                            f32::from(stroke_color.rgb8()[1]) / 255.0,
-                            f32::from(stroke_color.rgb8()[2]) / 255.0,
-                            finite_f32(*opacity * stroke_color.alpha(), "PNG stroke opacity")?,
-                        )
-                        .ok_or_else(|| {
-                            FormatEncodeError::Encoding(
-                                "PNG stroke color is outside RGBA range".to_owned(),
-                            )
-                        })?;
-                        let paint = Paint {
-                            shader: Shader::SolidColor(color),
-                            blend_mode: BlendMode::SourceOver,
-                            anti_alias: true,
-                            force_hq_pipeline: true,
-                        };
+                        if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
+                            let path = tiny_skia_path(&fill.path)?;
+                            let paint = solid_paint(*fill_color, *opacity)?;
+                            match fill.kind {
+                                FillKind::Solid => surface.fill_path(
+                                    &path,
+                                    &paint,
+                                    if drawing.shape.canvas_uses_even_odd_fill() {
+                                        FillRule::EvenOdd
+                                    } else {
+                                        FillRule::Winding
+                                    },
+                                    transform,
+                                    None,
+                                ),
+                                FillKind::Sketch => {
+                                    let stroke = Stroke {
+                                        width: finite_f32(
+                                            *source_stroke_width / 2.0,
+                                            "PNG fill weight",
+                                        )?,
+                                        miter_limit: 4.0,
+                                        line_cap: LineCap::Round,
+                                        line_join: LineJoin::Round,
+                                        dash: None,
+                                    };
+                                    surface.stroke_path(&path, &paint, &stroke, transform, None);
+                                }
+                            }
+                        }
+                        let path = tiny_skia_path(&drawing.outline)?;
+                        let paint = solid_paint(*stroke_color, *opacity)?;
                         let stroke = Stroke {
                             width: finite_f32(*stroke_width, "PNG stroke width")?,
                             miter_limit: 4.0,
                             line_cap: LineCap::Round,
-                            line_join: LineJoin::Miter,
-                            dash: None,
+                            line_join: LineJoin::Round,
+                            dash: match stroke_style {
+                                StrokeStyle::Solid => None,
+                                StrokeStyle::Dashed => StrokeDash::new(
+                                    vec![
+                                        8.0,
+                                        finite_f32(8.0 + source_stroke_width, "PNG dash gap")?,
+                                    ],
+                                    0.0,
+                                ),
+                                StrokeStyle::Dotted => StrokeDash::new(
+                                    vec![
+                                        1.5,
+                                        finite_f32(6.0 + source_stroke_width, "PNG dot gap")?,
+                                    ],
+                                    0.0,
+                                ),
+                            },
                         };
                         let resolution_scale = PathStroker::compute_resolution_scale(&transform);
                         let path = path.stroke(&stroke, resolution_scale).ok_or_else(|| {
@@ -473,13 +512,17 @@ impl PngPlan {
     pub(super) fn vector_coverage_area(&self, index: usize) -> Option<u64> {
         self.elements.get(index).map(|element| match element {
             PngElement::RoughOutline {
-                path,
+                drawing,
                 transform,
                 stroke_width,
                 ..
-            } => {
-                conservative_coverage_area(path, *transform, *stroke_width, self.width, self.height)
-            }
+            } => conservative_coverage_area(
+                drawing,
+                *transform,
+                *stroke_width,
+                self.width,
+                self.height,
+            ),
             PngElement::Fallback {
                 width,
                 height,
@@ -739,6 +782,10 @@ fn tiny_skia_path(path: &Path) -> Result<tiny_skia::Path, FormatEncodeError> {
                 finite_f32(point.x, "PNG path x")?,
                 finite_f32(point.y, "PNG path y")?,
             ),
+            PathOperation::Line(point) => builder.line_to(
+                finite_f32(point.x, "PNG path x")?,
+                finite_f32(point.y, "PNG path y")?,
+            ),
             PathOperation::Cubic {
                 control_1,
                 control_2,
@@ -853,7 +900,7 @@ fn solid_paint(color: CanonicalColor, opacity: f64) -> Result<Paint<'static>, Fo
 }
 
 fn conservative_coverage_area(
-    path: &Path,
+    drawing: &Drawing,
     transform: PngTransform,
     stroke_width: f64,
     surface_width: u32,
@@ -870,9 +917,15 @@ fn conservative_coverage_area(
         max_x = max_x.max(point.x);
         max_y = max_y.max(point.y);
     };
-    for operation in &path.operations {
+    for operation in drawing
+        .fill
+        .iter()
+        .flat_map(|fill| &fill.path.operations)
+        .chain(&drawing.outline.operations)
+    {
         match operation {
             PathOperation::Move(point) => include(*point),
+            PathOperation::Line(point) => include(*point),
             PathOperation::Cubic {
                 control_1,
                 control_2,

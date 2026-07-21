@@ -3,8 +3,8 @@ use std::fmt::Write as _;
 use crate::{color::CanonicalColor, RenderRequest, Sizing};
 
 use super::{
-    rough::{Path, PathOperation},
-    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene,
+    rough::{Drawing, FillKind, Path, PathOperation},
+    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene, StrokeStyle,
 };
 
 pub(super) struct SvgPlan {
@@ -22,14 +22,17 @@ pub(super) struct SvgPlan {
 enum SvgElement {
     RoughOutline {
         source: NormalizedElementSource,
-        path: Path,
+        drawing: Drawing,
         translation_x: f64,
         translation_y: f64,
         rotation_degrees: f64,
         center_x: f64,
         center_y: f64,
         stroke_color: CanonicalColor,
+        fill_color: Option<CanonicalColor>,
         stroke_width: f64,
+        stroke_style: StrokeStyle,
+        source_stroke_width: f64,
         opacity: f64,
     },
     Fallback {
@@ -79,7 +82,7 @@ impl SvgPlan {
                     }
                     elements.push(SvgElement::RoughOutline {
                         source: outline.source,
-                        path: outline.path,
+                        drawing: outline.drawing,
                         translation_x: outline.transform.translation_x,
                         translation_y: outline.transform.translation_y,
                         rotation_degrees: 180.0 * outline.transform.angle_radians
@@ -87,7 +90,10 @@ impl SvgPlan {
                         center_x: outline.transform.center_x,
                         center_y: outline.transform.center_y,
                         stroke_color: outline.stroke_color,
+                        fill_color: outline.fill_color,
                         stroke_width: outline.stroke_width,
+                        stroke_style: outline.stroke_style,
+                        source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
                     });
                 }
@@ -145,11 +151,11 @@ impl SvgPlan {
         capacity = checked_capacity_add(capacity, usize::from(self.background.is_some()) * 32)?;
         for element in &self.elements {
             match element {
-                SvgElement::RoughOutline { path, .. } => {
+                SvgElement::RoughOutline { drawing, .. } => {
                     capacity = checked_capacity_add(
                         capacity,
-                        path.operations
-                            .len()
+                        drawing
+                            .operation_count()
                             .checked_mul(200)
                             .ok_or_else(svg_size_error)?,
                     )?;
@@ -217,14 +223,17 @@ impl SvgPlan {
             match element {
                 SvgElement::RoughOutline {
                     source,
-                    path,
+                    drawing,
                     translation_x,
                     translation_y,
                     rotation_degrees,
                     center_x,
                     center_y,
                     stroke_color,
+                    fill_color,
                     stroke_width,
+                    stroke_style,
+                    source_stroke_width,
                     opacity,
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
@@ -232,7 +241,8 @@ impl SvgPlan {
                             "SVG plan outline lost its source identity".to_owned(),
                         ));
                     }
-                    svg.push_str("<g stroke-linecap=\"round\" transform=\"translate(");
+                    svg.push_str("<g stroke-linecap=\"round\"");
+                    svg.push_str(" transform=\"translate(");
                     push_svg_number(&mut svg, *translation_x, "SVG translation x")?;
                     svg.push(' ');
                     push_svg_number(&mut svg, *translation_y, "SVG translation y")?;
@@ -243,15 +253,61 @@ impl SvgPlan {
                     svg.push(' ');
                     push_svg_number(&mut svg, *center_y, "SVG rotation center y")?;
                     svg.push_str(")\"");
-                    if *opacity != 1.0 {
-                        svg.push_str(" stroke-opacity=\"");
-                        push_svg_number(&mut svg, *opacity, "SVG stroke opacity")?;
-                        svg.push_str("\" fill-opacity=\"");
-                        push_svg_number(&mut svg, *opacity, "SVG fill opacity")?;
-                        svg.push('"');
+                    svg.push('>');
+                    if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
+                        svg.push_str("<path d=\"");
+                        push_rough_path(&mut svg, &fill.path)?;
+                        match fill.kind {
+                            FillKind::Solid => {
+                                svg.push_str("\" stroke=\"none\" fill=\"");
+                                fill_color.write_hex(&mut svg).map_err(|_| {
+                                    FormatEncodeError::Encoding(
+                                        "failed to write SVG fill color".to_owned(),
+                                    )
+                                })?;
+                                svg.push('"');
+                                if drawing.shape.svg_uses_even_odd_fill() {
+                                    svg.push_str(" fill-rule=\"evenodd\"");
+                                }
+                                if fill_color.alpha() * opacity != 1.0 {
+                                    svg.push_str(" fill-opacity=\"");
+                                    push_svg_number(
+                                        &mut svg,
+                                        fill_color.alpha() * opacity,
+                                        "SVG effective fill alpha",
+                                    )?;
+                                    svg.push('"');
+                                }
+                            }
+                            FillKind::Sketch => {
+                                svg.push_str("\" stroke=\"");
+                                fill_color.write_hex(&mut svg).map_err(|_| {
+                                    FormatEncodeError::Encoding(
+                                        "failed to write SVG sketch color".to_owned(),
+                                    )
+                                })?;
+                                svg.push_str("\" stroke-width=\"");
+                                push_svg_number(
+                                    &mut svg,
+                                    *source_stroke_width / 2.0,
+                                    "SVG fill weight",
+                                )?;
+                                svg.push_str("\" fill=\"none\"");
+                                if fill_color.alpha() * opacity != 1.0 {
+                                    svg.push_str(" stroke-opacity=\"");
+                                    push_svg_number(
+                                        &mut svg,
+                                        fill_color.alpha() * opacity,
+                                        "SVG effective fill alpha",
+                                    )?;
+                                    svg.push('"');
+                                }
+                            }
+                        }
+                        svg.push_str("/> ");
                     }
-                    svg.push_str("><path d=\"");
-                    push_rough_path(&mut svg, path)?;
+                    svg.push_str("<path d=\"");
+                    push_rough_path(&mut svg, &drawing.outline)?;
                     svg.push_str("\" stroke=\"");
                     stroke_color.write_hex(&mut svg).map_err(|_| {
                         FormatEncodeError::Encoding("failed to write SVG stroke color".to_owned())
@@ -259,7 +315,20 @@ impl SvgPlan {
                     svg.push_str("\" stroke-width=\"");
                     push_svg_number(&mut svg, *stroke_width, "SVG stroke width")?;
                     svg.push_str("\" fill=\"none\"");
-                    if stroke_color.alpha() != 1.0 {
+                    match stroke_style {
+                        StrokeStyle::Solid => {}
+                        StrokeStyle::Dashed => {
+                            svg.push_str(" stroke-dasharray=\"8 ");
+                            push_svg_number(&mut svg, 8.0 + source_stroke_width, "SVG dash gap")?;
+                            svg.push('"');
+                        }
+                        StrokeStyle::Dotted => {
+                            svg.push_str(" stroke-dasharray=\"1.5 ");
+                            push_svg_number(&mut svg, 6.0 + source_stroke_width, "SVG dot gap")?;
+                            svg.push('"');
+                        }
+                    }
+                    if stroke_color.alpha() * opacity != 1.0 {
                         svg.push_str(" stroke-opacity=\"");
                         push_svg_number(
                             &mut svg,
@@ -479,6 +548,12 @@ fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeE
         match operation {
             PathOperation::Move(point) => {
                 output.push('M');
+                super::rough::push_number(output, point.x)?;
+                output.push(' ');
+                super::rough::push_number(output, point.y)?;
+            }
+            PathOperation::Line(point) => {
+                output.push('L');
                 super::rough::push_number(output, point.x)?;
                 output.push(' ');
                 super::rough::push_number(output, point.y)?;

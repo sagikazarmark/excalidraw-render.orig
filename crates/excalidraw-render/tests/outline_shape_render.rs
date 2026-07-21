@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
 use excalidraw_render::{
-    ErrorCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
+    DiagnosticCode, ErrorCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
 use png::{ColorType, Decoder, Transformations};
 use sha2::{Digest, Sha256};
@@ -127,6 +127,25 @@ fn outline_geometry_accounting_uses_each_generated_operation_count() {
         .expect_err("the first operation beyond the aggregate limit is rejected");
     assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_GEOMETRY_EXCEEDED);
     assert_eq!(error.element_id(), Some("rounded-line"));
+
+    let local_limits = ResourceLimits::builder()
+        .max_geometry_segments_per_element(31)
+        .build()
+        .unwrap();
+    let local_request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(local_limits)
+        .build()
+        .unwrap();
+    let local = Renderer::new().render(&scene, &local_request).unwrap();
+    let diagnostic = local
+        .report()
+        .diagnostics()
+        .iter()
+        .find(|diagnostic| diagnostic.element_id() == Some("rounded-rectangle"))
+        .expect("the first local operation crossing is diagnosed");
+    let descriptor = serde_json::to_value(diagnostic).unwrap();
+    assert_eq!(descriptor["details"]["configured"], 31);
+    assert_eq!(descriptor["details"]["measurement"]["value"], 32);
 }
 
 #[test]
@@ -246,5 +265,106 @@ fn ellipse_ignores_inapplicable_roundness_without_consuming_randomness() {
         let rounded = Renderer::new().render(&rounded, &request).unwrap();
         assert_eq!(plain.artifact().bytes(), rounded.artifact().bytes());
         assert_eq!(plain.report(), rounded.report());
+    }
+}
+
+#[test]
+fn huge_finite_pattern_generation_recovers_locally_in_every_format() {
+    let scene = SceneDocument::parse(
+        br##"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"tall-hachure","type":"rectangle","x":0,"y":0,
+            "width":100,"height":2000,"backgroundColor":"#e03131",
+            "fillStyle":"hachure","strokeWidth":0.025,"seed":71,"updated":1}],
+        "appState":{},"files":{}
+    }"##,
+    )
+    .unwrap();
+    let limits = ResourceLimits::builder()
+        .max_element_work_units(1_000)
+        .build()
+        .unwrap();
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .resource_limits(limits.clone())
+            .build()
+            .unwrap();
+        let outcome = Renderer::new().render(&scene, &request).unwrap();
+        let diagnostics = outcome.report().diagnostics();
+        assert_eq!(diagnostics.len(), 1, "unexpected {format:?} report");
+        assert_eq!(
+            diagnostics[0].code(),
+            DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
+        );
+        assert_eq!(diagnostics[0].element_id(), Some("tall-hachure"));
+    }
+}
+
+#[test]
+fn patterned_coordinate_crossing_recovers_before_generation_in_every_format() {
+    let scene = SceneDocument::parse(
+        br##"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"wide-hachure","type":"rectangle","x":0,"y":0,
+            "width":100,"height":50,"backgroundColor":"#e03131",
+            "fillStyle":"hachure","seed":73,"updated":1}],
+        "appState":{},"files":{}
+    }"##,
+    )
+    .unwrap();
+    let limits = ResourceLimits::builder()
+        .max_coordinate_magnitude(99.0)
+        .build()
+        .unwrap();
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .resource_limits(limits.clone())
+            .build()
+            .unwrap();
+        let outcome = Renderer::new().render(&scene, &request).unwrap();
+        let diagnostics = outcome.report().diagnostics();
+        assert_eq!(diagnostics.len(), 1, "unexpected {format:?} report");
+        assert_eq!(
+            diagnostics[0].code(),
+            DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED
+        );
+        assert_eq!(diagnostics[0].json_pointer(), "/elements/0/width");
+    }
+}
+
+#[test]
+fn pathological_curve_subdivision_recovers_locally_in_every_format() {
+    let scene = SceneDocument::parse(
+        br##"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"subdivision","type":"line","x":0,"y":0,
+            "width":100,"height":100,"points":[[0,0],[200,200],[-200,200],
+            [200,-200],[0,0]],"roundness":{"type":2},
+            "backgroundColor":"#e03131","fillStyle":"hachure","seed":72,"updated":1}],
+        "appState":{},"files":{}
+    }"##,
+    )
+    .unwrap();
+    let limits = ResourceLimits::builder()
+        .max_coordinate_magnitude(400.0)
+        .max_element_work_units(1_000)
+        .build()
+        .unwrap();
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .resource_limits(limits.clone())
+            .build()
+            .unwrap();
+        let outcome = Renderer::new().render(&scene, &request).unwrap();
+        let diagnostics = outcome.report().diagnostics();
+        assert_eq!(diagnostics.len(), 1, "unexpected {format:?} report");
+        assert_eq!(
+            diagnostics[0].code(),
+            DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
+        );
+        assert_eq!(diagnostics[0].element_id(), Some("subdivision"));
     }
 }

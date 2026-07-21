@@ -3,7 +3,113 @@ use std::fmt::Write as _;
 
 use super::FormatEncodeError;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum GenerationLimit {
+    GeometrySegments,
+    WorkUnits,
+}
+
+pub(super) enum GenerationError {
+    Limit {
+        kind: GenerationLimit,
+        attempted: u64,
+    },
+    Memory,
+}
+
+impl From<TryReserveError> for GenerationError {
+    fn from(_error: TryReserveError) -> Self {
+        Self::Memory
+    }
+}
+
+pub(super) struct GenerationBudget {
+    operation_limit: u64,
+    operation_limit_kind: GenerationLimit,
+    base_work_units: u64,
+    operations: u64,
+    work_limit: u64,
+    work: u64,
+    discard_next_move: bool,
+}
+
+impl GenerationBudget {
+    pub(super) const fn new(
+        geometry_limit: u64,
+        element_work_limit: u64,
+        base_work_units: u64,
+    ) -> Self {
+        // Generate the first crossing command so aggregate-fatal precedence can
+        // be decided before element-local recovery.
+        let geometry_generation_limit = geometry_limit.saturating_add(1);
+        let work_operation_limit = element_work_limit
+            .saturating_sub(base_work_units)
+            .saturating_div(32)
+            .saturating_add(1);
+        let (operation_limit, operation_limit_kind) =
+            if geometry_generation_limit <= work_operation_limit {
+                (geometry_generation_limit, GenerationLimit::GeometrySegments)
+            } else {
+                (work_operation_limit, GenerationLimit::WorkUnits)
+            };
+        Self {
+            operation_limit,
+            operation_limit_kind,
+            base_work_units,
+            operations: 0,
+            work_limit: element_work_limit,
+            work: 0,
+            discard_next_move: false,
+        }
+    }
+
+    pub(super) fn work(&mut self, amount: u64) -> Result<(), GenerationError> {
+        let work = self.work.saturating_add(amount);
+        let attempted = self.base_work_units.saturating_add(work);
+        if attempted > self.work_limit {
+            return Err(GenerationError::Limit {
+                kind: GenerationLimit::WorkUnits,
+                attempted,
+            });
+        }
+        self.work = work;
+        Ok(())
+    }
+
+    fn push_operation(
+        &mut self,
+        operations: &mut Vec<PathOperation>,
+        operation: PathOperation,
+    ) -> Result<(), GenerationError> {
+        if self.discard_next_move && matches!(operation, PathOperation::Move(_)) {
+            self.discard_next_move = false;
+            self.work(1)?;
+            return Ok(());
+        }
+        let attempted = self.operations.saturating_add(1);
+        if attempted > self.operation_limit {
+            return Err(GenerationError::Limit {
+                kind: self.operation_limit_kind,
+                attempted: if self.operation_limit_kind == GenerationLimit::WorkUnits {
+                    self.base_work_units
+                        .saturating_add(attempted.saturating_mul(32))
+                } else {
+                    attempted
+                },
+            });
+        }
+        operations.try_reserve(1)?;
+        operations.push(operation);
+        self.operations = attempted;
+        Ok(())
+    }
+
+    fn discard_next_move(&mut self) {
+        self.discard_next_move = true;
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
 pub(super) struct Point {
     pub(super) x: f64,
     pub(super) y: f64,
@@ -11,6 +117,7 @@ pub(super) struct Point {
 
 pub(super) enum PathOperation {
     Move(Point),
+    Line(Point),
     Cubic {
         control_1: Point,
         control_2: Point,
@@ -20,6 +127,59 @@ pub(super) enum PathOperation {
 
 pub(super) struct Path {
     pub(super) operations: Vec<PathOperation>,
+}
+
+pub(super) enum FillKind {
+    Solid,
+    Sketch,
+}
+
+pub(super) struct Fill {
+    pub(super) path: Path,
+    pub(super) kind: FillKind,
+}
+
+pub(super) struct Drawing {
+    pub(super) outline: Path,
+    pub(super) fill: Option<Fill>,
+    pub(super) shape: DrawableShape,
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum DrawableShape {
+    Curve,
+    Ellipse,
+    Path,
+    Polygon,
+    Rectangle,
+}
+
+impl DrawableShape {
+    pub(super) const fn svg_uses_even_odd_fill(self) -> bool {
+        matches!(self, Self::Curve | Self::Polygon)
+    }
+
+    pub(super) const fn canvas_uses_even_odd_fill(self) -> bool {
+        matches!(self, Self::Curve | Self::Path | Self::Polygon)
+    }
+}
+
+impl Drawing {
+    pub(super) fn operation_count(&self) -> usize {
+        self.outline.operations.len()
+            + self
+                .fill
+                .as_ref()
+                .map_or(0, |fill| fill.path.operations.len())
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum FillStyle {
+    Solid,
+    Hachure,
+    CrossHatch,
+    Zigzag,
 }
 
 pub(super) fn push_number(output: &mut String, value: f64) -> Result<(), FormatEncodeError> {
@@ -89,13 +249,18 @@ fn number_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("Rough path number exceeds serializer capacity".to_owned())
 }
 
-pub(super) fn rectangle(
+#[allow(clippy::too_many_arguments)]
+pub(super) fn rectangle_drawing(
     width: f64,
     height: f64,
     seed: i32,
     roughness: f64,
     preserve_vertices: bool,
-) -> Result<Path, TryReserveError> {
+    disable_multi_stroke: bool,
+    fill_style: Option<FillStyle>,
+    source_stroke_width: f64,
+    budget: &mut GenerationBudget,
+) -> Result<Drawing, GenerationError> {
     let top_left = Point { x: 0.0, y: 0.0 };
     let top_right = Point { x: width, y: 0.0 };
     let bottom_right = Point {
@@ -111,85 +276,259 @@ pub(super) fn rectangle(
     ];
     let mut random = Random::new(seed);
     let mut operations = Vec::new();
-    operations.try_reserve_exact(16)?;
     for (start, end) in segments {
-        double_line(
+        double_line_mode(
             start,
             end,
             roughness,
             preserve_vertices,
+            disable_multi_stroke,
+            false,
             &mut random,
             &mut operations,
-        );
+            budget,
+        )?;
     }
-    Ok(Path { operations })
+    let fill = fill_style
+        .map(|style| {
+            fill_polygon(
+                &[top_left, top_right, bottom_right, bottom_left],
+                style,
+                source_stroke_width,
+                roughness,
+                preserve_vertices,
+                &mut random,
+                budget,
+            )
+        })
+        .transpose()?;
+    Ok(Drawing {
+        outline: Path { operations },
+        fill,
+        shape: DrawableShape::Rectangle,
+    })
 }
 
-pub(super) fn polygon(
+#[allow(clippy::too_many_arguments)]
+pub(super) fn polygon_drawing(
     points: &[Point],
     seed: i32,
     roughness: f64,
     preserve_vertices: bool,
-) -> Result<Path, TryReserveError> {
-    linear_path(points, true, seed, roughness, preserve_vertices)
-}
-
-pub(super) fn linear_path(
-    points: &[Point],
-    close: bool,
-    seed: i32,
-    roughness: f64,
-    preserve_vertices: bool,
-) -> Result<Path, TryReserveError> {
-    let segment_count = points.len().saturating_sub(1) + usize::from(close && points.len() > 2);
+    disable_multi_stroke: bool,
+    fill_style: Option<FillStyle>,
+    source_stroke_width: f64,
+    budget: &mut GenerationBudget,
+) -> Result<Drawing, GenerationError> {
     let mut operations = Vec::new();
-    operations.try_reserve_exact(segment_count.saturating_mul(4))?;
     let mut random = Random::new(seed);
-    for points in points.windows(2) {
-        double_line(
-            points[0],
-            points[1],
+    for pair in points.windows(2) {
+        double_line_mode(
+            pair[0],
+            pair[1],
             roughness,
             preserve_vertices,
+            disable_multi_stroke,
+            false,
             &mut random,
             &mut operations,
-        );
+            budget,
+        )?;
     }
-    if close && points.len() > 2 {
-        double_line(
-            *points.last().expect("a closed path has points"),
+    if points.len() > 2 {
+        double_line_mode(
+            *points.last().expect("a polygon has points"),
             points[0],
             roughness,
             preserve_vertices,
+            disable_multi_stroke,
+            false,
             &mut random,
             &mut operations,
-        );
+            budget,
+        )?;
     }
-    Ok(Path { operations })
+    let fill = fill_style
+        .map(|style| {
+            fill_polygon(
+                points,
+                style,
+                source_stroke_width,
+                roughness,
+                preserve_vertices,
+                &mut random,
+                budget,
+            )
+        })
+        .transpose()?;
+    Ok(Drawing {
+        outline: Path { operations },
+        fill,
+        shape: DrawableShape::Polygon,
+    })
 }
 
-pub(super) fn rounded_path(
+#[allow(clippy::too_many_arguments)]
+pub(super) fn linear_drawing(
+    points: &[Point],
+    closed: bool,
+    seed: i32,
+    roughness: f64,
+    preserve_vertices: bool,
+    disable_multi_stroke: bool,
+    fill_style: Option<FillStyle>,
+    source_stroke_width: f64,
+    budget: &mut GenerationBudget,
+) -> Result<Drawing, GenerationError> {
+    let mut operations = Vec::new();
+    let mut random = Random::new(seed);
+    for pair in points.windows(2) {
+        double_line_mode(
+            pair[0],
+            pair[1],
+            roughness,
+            preserve_vertices,
+            disable_multi_stroke,
+            false,
+            &mut random,
+            &mut operations,
+            budget,
+        )?;
+    }
+    let fill = if closed {
+        fill_style
+            .map(|style| {
+                fill_polygon(
+                    points,
+                    style,
+                    source_stroke_width,
+                    roughness,
+                    preserve_vertices,
+                    &mut random,
+                    budget,
+                )
+            })
+            .transpose()?
+    } else {
+        None
+    };
+    Ok(Drawing {
+        outline: Path { operations },
+        fill,
+        shape: DrawableShape::Polygon,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn rounded_drawing(
     start: Point,
     segments: &[RoundedSegment],
+    fill_points: &[Point],
     seed: i32,
     roughness: f64,
     preserve_vertices: bool,
-) -> Result<Path, TryReserveError> {
+    disable_multi_stroke: bool,
+    fill_style: Option<FillStyle>,
+    source_stroke_width: f64,
+    budget: &mut GenerationBudget,
+) -> Result<Drawing, GenerationError> {
     let mut operations = Vec::new();
-    operations.try_reserve_exact(segments.len().saturating_mul(4))?;
     let mut random = Random::new(seed);
+    rounded_operations(
+        start,
+        segments,
+        roughness,
+        preserve_vertices,
+        disable_multi_stroke,
+        &mut random,
+        &mut operations,
+        budget,
+        false,
+    )?;
+    let fill = match fill_style {
+        Some(FillStyle::Solid) => {
+            let mut fill_operations = Vec::new();
+            rounded_operations(
+                start,
+                segments,
+                if roughness == 0.0 {
+                    0.0
+                } else {
+                    roughness + 0.8
+                },
+                preserve_vertices,
+                true,
+                &mut random,
+                &mut fill_operations,
+                budget,
+                true,
+            )?;
+            let mut first = true;
+            fill_operations.retain(|operation| {
+                if matches!(operation, PathOperation::Move(_)) {
+                    let retain = first;
+                    first = false;
+                    retain
+                } else {
+                    true
+                }
+            });
+            Some(Fill {
+                path: Path {
+                    operations: fill_operations,
+                },
+                kind: FillKind::Solid,
+            })
+        }
+        Some(style) => Some(fill_polygon(
+            fill_points,
+            style,
+            source_stroke_width,
+            roughness,
+            preserve_vertices,
+            &mut random,
+            budget,
+        )?),
+        None => None,
+    };
+    Ok(Drawing {
+        outline: Path { operations },
+        fill,
+        shape: DrawableShape::Path,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn rounded_operations(
+    start: Point,
+    segments: &[RoundedSegment],
+    roughness: f64,
+    preserve_vertices: bool,
+    disable_multi_stroke: bool,
+    random: &mut Random,
+    operations: &mut Vec<PathOperation>,
+    budget: &mut GenerationBudget,
+    discard_repeated_moves: bool,
+) -> Result<(), GenerationError> {
     let mut current = start;
+    let mut first_segment = true;
     for segment in segments {
+        if discard_repeated_moves && !first_segment {
+            budget.discard_next_move();
+        }
         match *segment {
             RoundedSegment::Line(end) => {
-                double_line(
+                double_line_mode(
                     current,
                     end,
                     roughness,
                     preserve_vertices,
-                    &mut random,
-                    &mut operations,
-                );
+                    disable_multi_stroke,
+                    false,
+                    random,
+                    operations,
+                    budget,
+                )?;
                 current = end;
             }
             RoundedSegment::Quadratic { control, end } => {
@@ -201,16 +540,18 @@ pub(super) fn rounded_path(
                     x: end.x + (control.x - end.x) * (2.0 / 3.0),
                     y: end.y + (control.y - end.y) * (2.0 / 3.0),
                 };
-                double_bezier(
+                double_bezier_mode(
                     current,
                     control_1,
                     control_2,
                     end,
                     roughness,
                     preserve_vertices,
-                    &mut random,
-                    &mut operations,
-                );
+                    disable_multi_stroke,
+                    random,
+                    operations,
+                    budget,
+                )?;
                 current = end;
             }
             RoundedSegment::Cubic {
@@ -218,21 +559,24 @@ pub(super) fn rounded_path(
                 control_2,
                 end,
             } => {
-                double_bezier(
+                double_bezier_mode(
                     current,
                     control_1,
                     control_2,
                     end,
                     roughness,
                     preserve_vertices,
-                    &mut random,
-                    &mut operations,
-                );
+                    disable_multi_stroke,
+                    random,
+                    operations,
+                    budget,
+                )?;
                 current = end;
             }
         }
+        first_segment = false;
     }
-    Ok(Path { operations })
+    Ok(())
 }
 
 #[derive(Clone, Copy)]
@@ -249,42 +593,375 @@ pub(super) enum RoundedSegment {
     },
 }
 
-pub(super) fn curve(points: &[Point], seed: i32, roughness: f64) -> Result<Path, TryReserveError> {
+#[allow(clippy::too_many_arguments)]
+pub(super) fn curve_drawing(
+    points: &[Point],
+    closed: bool,
+    seed: i32,
+    roughness: f64,
+    disable_multi_stroke: bool,
+    fill_style: Option<FillStyle>,
+    source_stroke_width: f64,
+    budget: &mut GenerationBudget,
+) -> Result<Drawing, GenerationError> {
     let mut operations = Vec::new();
-    operations.try_reserve_exact(points.len().saturating_mul(4))?;
+    let mut random = Random::new(seed);
     curve_stroke(
         points,
         1.0 * (1.0 + roughness * 0.2),
-        seed,
         roughness,
+        &mut random,
         &mut operations,
+        budget,
     )?;
-    curve_stroke(
-        points,
-        1.5 * (1.0 + roughness * 0.22),
-        seed.wrapping_add(1),
-        roughness,
-        &mut operations,
+    if !disable_multi_stroke {
+        let mut overlay_random = Random::new(seed.wrapping_add(1));
+        curve_stroke(
+            points,
+            1.5 * (1.0 + roughness * 0.22),
+            roughness,
+            &mut overlay_random,
+            &mut operations,
+            budget,
+        )?;
+    }
+    let fill = if closed {
+        match fill_style {
+            Some(FillStyle::Solid) => {
+                let fill_roughness = if roughness == 0.0 {
+                    0.0
+                } else {
+                    roughness + 0.8
+                };
+                let mut fill_operations = Vec::new();
+                curve_stroke(
+                    points,
+                    1.0 * (1.0 + fill_roughness * 0.2),
+                    fill_roughness,
+                    &mut random,
+                    &mut fill_operations,
+                    budget,
+                )?;
+                Some(Fill {
+                    path: Path {
+                        operations: fill_operations,
+                    },
+                    kind: FillKind::Solid,
+                })
+            }
+            Some(style) => {
+                let bezier = curve_to_bezier(points, budget)?;
+                let fill_points =
+                    points_on_bezier_curves(&bezier, 10.0, Some((1.0 + roughness) / 2.0), budget)?;
+                Some(fill_polygon(
+                    &fill_points,
+                    style,
+                    source_stroke_width,
+                    roughness,
+                    true,
+                    &mut random,
+                    budget,
+                )?)
+            }
+            None => None,
+        }
+    } else {
+        None
+    };
+    Ok(Drawing {
+        outline: Path { operations },
+        fill,
+        shape: DrawableShape::Curve,
+    })
+}
+
+pub(super) fn rounded_fill_points(
+    start: Point,
+    segments: &[RoundedSegment],
+    roughness: f64,
+    budget: &mut GenerationBudget,
+) -> Result<Vec<Point>, GenerationError> {
+    let mut current_points = Vec::new();
+    budget.work(1)?;
+    current_points.try_reserve(1)?;
+    current_points.push(start);
+    let mut pending_curve = Vec::new();
+
+    for segment in segments {
+        match *segment {
+            RoundedSegment::Line(end) => {
+                append_pending_curve(&mut current_points, &mut pending_curve, 1.0, budget)?;
+                budget.work(1)?;
+                current_points.try_reserve(1)?;
+                current_points.push(end);
+            }
+            RoundedSegment::Quadratic { control, end } => {
+                let current = pending_curve
+                    .last()
+                    .copied()
+                    .or_else(|| current_points.last().copied())
+                    .unwrap_or(start);
+                let control_1 = Point {
+                    x: current.x + 2.0 * (control.x - current.x) / 3.0,
+                    y: current.y + 2.0 * (control.y - current.y) / 3.0,
+                };
+                let control_2 = Point {
+                    x: end.x + 2.0 * (control.x - end.x) / 3.0,
+                    y: end.y + 2.0 * (control.y - end.y) / 3.0,
+                };
+                if pending_curve.is_empty() {
+                    budget.work(1)?;
+                    pending_curve.try_reserve(1)?;
+                    pending_curve.push(current);
+                }
+                budget.work(3)?;
+                pending_curve.try_reserve(3)?;
+                pending_curve.extend([control_1, control_2, end]);
+            }
+            RoundedSegment::Cubic {
+                control_1,
+                control_2,
+                end,
+            } => {
+                if pending_curve.is_empty() {
+                    budget.work(1)?;
+                    pending_curve.try_reserve(1)?;
+                    pending_curve.push(*current_points.last().unwrap_or(&start));
+                }
+                budget.work(3)?;
+                pending_curve.try_reserve(3)?;
+                pending_curve.extend([control_1, control_2, end]);
+            }
+        }
+    }
+    append_pending_curve(&mut current_points, &mut pending_curve, 1.0, budget)?;
+    simplify(&current_points, (1.0 + roughness) / 2.0, budget)
+}
+
+fn append_pending_curve(
+    points: &mut Vec<Point>,
+    pending: &mut Vec<Point>,
+    tolerance: f64,
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
+    if pending.len() >= 4 {
+        let sampled = points_on_bezier_curves(pending, tolerance, None, budget)?;
+        budget.work(u64::try_from(sampled.len()).unwrap_or(u64::MAX))?;
+        points.try_reserve(sampled.len())?;
+        points.extend(sampled);
+    }
+    pending.clear();
+    Ok(())
+}
+
+fn curve_to_bezier(
+    points: &[Point],
+    budget: &mut GenerationBudget,
+) -> Result<Vec<Point>, GenerationError> {
+    let mut output = Vec::new();
+    if points.len() == 3 {
+        budget.work(4)?;
+        output.try_reserve_exact(4)?;
+        output.extend([points[0], points[1], points[2], points[2]]);
+        return Ok(output);
+    }
+
+    let mut expanded = Vec::new();
+    budget.work(
+        u64::try_from(points.len())
+            .unwrap_or(u64::MAX)
+            .saturating_add(2),
     )?;
-    Ok(Path { operations })
+    expanded.try_reserve_exact(points.len().saturating_add(2))?;
+    expanded.push(points[0]);
+    expanded.push(points[0]);
+    for (index, point) in points.iter().copied().enumerate().skip(1) {
+        expanded.push(point);
+        if index == points.len() - 1 {
+            expanded.push(point);
+        }
+    }
+    let output_len = 1 + expanded.len().saturating_sub(3).saturating_mul(3);
+    budget.work(u64::try_from(output_len).unwrap_or(u64::MAX))?;
+    output.try_reserve_exact(output_len)?;
+    output.push(expanded[0]);
+    for index in 1..expanded.len() - 2 {
+        let current = expanded[index];
+        let next = expanded[index + 1];
+        output.extend([
+            Point {
+                x: current.x + (next.x - expanded[index - 1].x) / 6.0,
+                y: current.y + (next.y - expanded[index - 1].y) / 6.0,
+            },
+            Point {
+                x: next.x + (current.x - expanded[index + 2].x) / 6.0,
+                y: next.y + (current.y - expanded[index + 2].y) / 6.0,
+            },
+            next,
+        ]);
+    }
+    Ok(output)
+}
+
+fn points_on_bezier_curves(
+    points: &[Point],
+    tolerance: f64,
+    distance: Option<f64>,
+    budget: &mut GenerationBudget,
+) -> Result<Vec<Point>, GenerationError> {
+    let mut sampled = Vec::new();
+    for offset in (0..points.len().saturating_sub(1)).step_by(3) {
+        if offset + 3 < points.len() {
+            sample_bezier(&points[offset..offset + 4], tolerance, &mut sampled, budget)?;
+        }
+    }
+    match distance {
+        Some(distance) if distance > 0.0 => simplify(&sampled, distance, budget),
+        _ => Ok(sampled),
+    }
+}
+
+fn sample_bezier(
+    points: &[Point],
+    tolerance: f64,
+    output: &mut Vec<Point>,
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
+    budget.work(1)?;
+    let mut ux = 3.0 * points[1].x - 2.0 * points[0].x - points[3].x;
+    ux *= ux;
+    let mut uy = 3.0 * points[1].y - 2.0 * points[0].y - points[3].y;
+    uy *= uy;
+    let mut vx = 3.0 * points[2].x - 2.0 * points[3].x - points[0].x;
+    vx *= vx;
+    let mut vy = 3.0 * points[2].y - 2.0 * points[3].y - points[0].y;
+    vy *= vy;
+    ux = ux.max(vx);
+    uy = uy.max(vy);
+
+    if ux + uy < tolerance {
+        budget.work(2)?;
+        output.try_reserve(2)?;
+        if output.is_empty()
+            || output
+                .last()
+                .is_some_and(|last| point_distance(*last, points[0]) > 1.0)
+        {
+            output.push(points[0]);
+        }
+        output.push(points[3]);
+        return Ok(());
+    }
+
+    let q1 = midpoint(points[0], points[1]);
+    let q2 = midpoint(points[1], points[2]);
+    let q3 = midpoint(points[2], points[3]);
+    let r1 = midpoint(q1, q2);
+    let r2 = midpoint(q2, q3);
+    let center = midpoint(r1, r2);
+    if center == points[0] || center == points[3] {
+        return Err(GenerationError::Limit {
+            kind: GenerationLimit::WorkUnits,
+            attempted: budget.work_limit.saturating_add(1),
+        });
+    }
+    sample_bezier(&[points[0], q1, r1, center], tolerance, output, budget)?;
+    sample_bezier(&[center, r2, q3, points[3]], tolerance, output, budget)
+}
+
+fn simplify(
+    points: &[Point],
+    distance: f64,
+    budget: &mut GenerationBudget,
+) -> Result<Vec<Point>, GenerationError> {
+    let mut output = Vec::new();
+    simplify_points(points, 0, points.len(), distance, &mut output, budget)?;
+    Ok(output)
+}
+
+fn simplify_points(
+    points: &[Point],
+    start: usize,
+    end: usize,
+    epsilon: f64,
+    output: &mut Vec<Point>,
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
+    budget.work(1)?;
+    let first = points[start];
+    let last = points[end - 1];
+    let mut maximum_distance_squared = 0.0;
+    let mut maximum_index = 1;
+    for (index, point) in points.iter().enumerate().take(end - 1).skip(start + 1) {
+        budget.work(1)?;
+        let distance_squared = distance_to_segment_squared(*point, first, last);
+        if distance_squared > maximum_distance_squared {
+            maximum_distance_squared = distance_squared;
+            maximum_index = index;
+        }
+    }
+    if maximum_distance_squared.sqrt() > epsilon {
+        simplify_points(points, start, maximum_index + 1, epsilon, output, budget)?;
+        simplify_points(points, maximum_index, end, epsilon, output, budget)
+    } else {
+        budget.work(2)?;
+        output.try_reserve(2)?;
+        if output.is_empty() {
+            output.push(first);
+        }
+        output.push(last);
+        Ok(())
+    }
+}
+
+fn distance_to_segment_squared(point: Point, start: Point, end: Point) -> f64 {
+    let length_squared = (start.x - end.x).powi(2) + (start.y - end.y).powi(2);
+    if length_squared == 0.0 {
+        return (point.x - start.x).powi(2) + (point.y - start.y).powi(2);
+    }
+    let interpolation = (((point.x - start.x) * (end.x - start.x)
+        + (point.y - start.y) * (end.y - start.y))
+        / length_squared)
+        .clamp(0.0, 1.0);
+    let projected = Point {
+        x: start.x + (end.x - start.x) * interpolation,
+        y: start.y + (end.y - start.y) * interpolation,
+    };
+    (point.x - projected.x).powi(2) + (point.y - projected.y).powi(2)
+}
+
+fn point_distance(first: Point, second: Point) -> f64 {
+    ((first.x - second.x).powi(2) + (first.y - second.y).powi(2)).sqrt()
+}
+
+fn midpoint(first: Point, second: Point) -> Point {
+    Point {
+        x: first.x + (second.x - first.x) * 0.5,
+        y: first.y + (second.y - first.y) * 0.5,
+    }
 }
 
 fn curve_stroke(
     points: &[Point],
     offset: f64,
-    seed: i32,
     roughness: f64,
+    random: &mut Random,
     operations: &mut Vec<PathOperation>,
-) -> Result<(), TryReserveError> {
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
     if points.is_empty() {
         return Ok(());
     }
-    let mut random = Random::new(seed);
     let mut perturbed = Vec::new();
+    budget.work(
+        u64::try_from(points.len())
+            .unwrap_or(u64::MAX)
+            .saturating_add(2),
+    )?;
     perturbed.try_reserve_exact(points.len().saturating_add(2))?;
     let mut perturb = |point: Point| Point {
-        x: point.x + random_offset(offset, roughness, 1.0, &mut random),
-        y: point.y + random_offset(offset, roughness, 1.0, &mut random),
+        x: point.x + random_offset(offset, roughness, 1.0, random),
+        y: point.y + random_offset(offset, roughness, 1.0, random),
     };
     perturbed.push(perturb(points[0]));
     perturbed.push(perturb(points[0]));
@@ -294,47 +971,63 @@ fn curve_stroke(
             perturbed.push(perturb(point));
         }
     }
-    smooth_curve(&perturbed, operations);
-    Ok(())
+    smooth_curve(&perturbed, operations, budget)
 }
 
-fn smooth_curve(points: &[Point], operations: &mut Vec<PathOperation>) {
+fn smooth_curve(
+    points: &[Point],
+    operations: &mut Vec<PathOperation>,
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
     if points.len() == 3 {
-        operations.push(PathOperation::Move(points[1]));
-        operations.push(PathOperation::Cubic {
-            control_1: points[1],
-            control_2: points[2],
-            end: points[2],
-        });
-        return;
+        budget.push_operation(operations, PathOperation::Move(points[1]))?;
+        budget.push_operation(
+            operations,
+            PathOperation::Cubic {
+                control_1: points[1],
+                control_2: points[2],
+                end: points[2],
+            },
+        )?;
+        return Ok(());
     }
     if points.len() <= 3 {
-        return;
+        return Ok(());
     }
-    operations.push(PathOperation::Move(points[1]));
+    budget.push_operation(operations, PathOperation::Move(points[1]))?;
     for index in 1..points.len() - 2 {
         let current = points[index];
         let next = points[index + 1];
-        operations.push(PathOperation::Cubic {
-            control_1: Point {
-                x: current.x + (next.x - points[index - 1].x) / 6.0,
-                y: current.y + (next.y - points[index - 1].y) / 6.0,
+        budget.push_operation(
+            operations,
+            PathOperation::Cubic {
+                control_1: Point {
+                    x: current.x + (next.x - points[index - 1].x) / 6.0,
+                    y: current.y + (next.y - points[index - 1].y) / 6.0,
+                },
+                control_2: Point {
+                    x: next.x + (current.x - points[index + 2].x) / 6.0,
+                    y: next.y + (current.y - points[index + 2].y) / 6.0,
+                },
+                end: next,
             },
-            control_2: Point {
-                x: next.x + (current.x - points[index + 2].x) / 6.0,
-                y: next.y + (current.y - points[index + 2].y) / 6.0,
-            },
-            end: next,
-        });
+        )?;
     }
+    Ok(())
 }
 
-pub(super) fn ellipse(
+#[allow(clippy::too_many_arguments)]
+pub(super) fn ellipse_drawing(
     width: f64,
     height: f64,
     seed: i32,
     roughness: f64,
-) -> Result<Path, TryReserveError> {
+    preserve_vertices: bool,
+    disable_multi_stroke: bool,
+    fill_style: Option<FillStyle>,
+    source_stroke_width: f64,
+    budget: &mut GenerationBudget,
+) -> Result<Drawing, GenerationError> {
     let perimeter = (std::f64::consts::PI
         * 2.0
         * (((width / 2.0).powi(2) + (height / 2.0).powi(2)) / 2.0).sqrt())
@@ -349,14 +1042,60 @@ pub(super) fn ellipse(
     // curveFitting is one for Excalidraw ellipses. Rough.js still consumes both zero offsets.
     let radius_x = width.abs() / 2.0 + random_offset(0.0, roughness, 1.0, &mut random);
     let radius_y = height.abs() / 2.0 + random_offset(0.0, roughness, 1.0, &mut random);
-    let overlap_extent = random_range(0.4, 1.0, roughness, &mut random);
-    let overlap = increment * random_range(0.1, overlap_extent, roughness, &mut random);
+    let overlap = ellipse_overlap(increment, roughness, &mut random);
     let mut operations = Vec::new();
-    operations.try_reserve_exact((step_count as usize).saturating_mul(4))?;
     if roughness == 0.0 {
-        core_ellipse_stroke(center, radius_x, radius_y, increment / 4.0, &mut operations)?;
-        return Ok(Path { operations });
+        core_ellipse_stroke(
+            center,
+            radius_x,
+            radius_y,
+            increment / 4.0,
+            &mut operations,
+            budget,
+        )?;
+        let fill = match fill_style {
+            Some(FillStyle::Solid) => {
+                // Rough.js invokes ellipseWithParams again for the solid fill, including
+                // both nested overlap random calls even though roughness makes them zero.
+                let _overlap = ellipse_overlap(increment, roughness, &mut random);
+                let mut fill_operations = Vec::new();
+                core_ellipse_stroke(
+                    center,
+                    radius_x,
+                    radius_y,
+                    increment / 4.0,
+                    &mut fill_operations,
+                    budget,
+                )?;
+                Some(Fill {
+                    path: Path {
+                        operations: fill_operations,
+                    },
+                    kind: FillKind::Solid,
+                })
+            }
+            Some(style) => {
+                let points =
+                    core_ellipse_points(center, radius_x, radius_y, increment / 4.0, budget)?;
+                Some(fill_polygon(
+                    &points,
+                    style,
+                    source_stroke_width,
+                    roughness,
+                    preserve_vertices,
+                    &mut random,
+                    budget,
+                )?)
+            }
+            None => None,
+        };
+        return Ok(Drawing {
+            outline: Path { operations },
+            fill,
+            shape: DrawableShape::Ellipse,
+        });
     }
+    let mut estimated_points = Vec::new();
     ellipse_stroke(
         center,
         radius_x,
@@ -367,19 +1106,107 @@ pub(super) fn ellipse(
         roughness,
         &mut random,
         &mut operations,
+        Some(&mut estimated_points),
+        budget,
     )?;
-    ellipse_stroke(
-        center,
-        radius_x,
-        radius_y,
-        increment,
-        1.5,
-        0.0,
-        roughness,
-        &mut random,
-        &mut operations,
-    )?;
-    Ok(Path { operations })
+    if !disable_multi_stroke {
+        ellipse_stroke(
+            center,
+            radius_x,
+            radius_y,
+            increment,
+            1.5,
+            0.0,
+            roughness,
+            &mut random,
+            &mut operations,
+            None,
+            budget,
+        )?;
+    }
+    let fill = match fill_style {
+        Some(FillStyle::Solid) => {
+            let overlap = ellipse_overlap(increment, roughness, &mut random);
+            let mut fill_operations = Vec::new();
+            ellipse_stroke(
+                center,
+                radius_x,
+                radius_y,
+                increment,
+                1.0,
+                overlap,
+                roughness,
+                &mut random,
+                &mut fill_operations,
+                None,
+                budget,
+            )?;
+            if !disable_multi_stroke {
+                ellipse_stroke(
+                    center,
+                    radius_x,
+                    radius_y,
+                    increment,
+                    1.5,
+                    0.0,
+                    roughness,
+                    &mut random,
+                    &mut fill_operations,
+                    None,
+                    budget,
+                )?;
+            }
+            Some(Fill {
+                path: Path {
+                    operations: fill_operations,
+                },
+                kind: FillKind::Solid,
+            })
+        }
+        Some(style) => Some(fill_polygon(
+            &estimated_points,
+            style,
+            source_stroke_width,
+            roughness,
+            preserve_vertices,
+            &mut random,
+            budget,
+        )?),
+        None => None,
+    };
+    Ok(Drawing {
+        outline: Path { operations },
+        fill,
+        shape: DrawableShape::Ellipse,
+    })
+}
+
+fn core_ellipse_points(
+    center: Point,
+    radius_x: f64,
+    radius_y: f64,
+    increment: f64,
+    budget: &mut GenerationBudget,
+) -> Result<Vec<Point>, GenerationError> {
+    let mut points = Vec::new();
+    let mut angle = 0.0;
+    while angle <= std::f64::consts::TAU {
+        budget.work(1)?;
+        points.try_reserve(1)?;
+        points.push(Point {
+            x: center.x + radius_x * angle.cos(),
+            y: center.y + radius_y * angle.sin(),
+        });
+        let next = angle + increment;
+        if next <= angle {
+            return Err(GenerationError::Limit {
+                kind: GenerationLimit::WorkUnits,
+                attempted: budget.work_limit.saturating_add(1),
+            });
+        }
+        angle = next;
+    }
+    Ok(points)
 }
 
 fn core_ellipse_stroke(
@@ -388,23 +1215,35 @@ fn core_ellipse_stroke(
     radius_y: f64,
     increment: f64,
     operations: &mut Vec<PathOperation>,
-) -> Result<(), TryReserveError> {
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
     let point = |angle: f64| Point {
         x: center.x + radius_x * angle.cos(),
         y: center.y + radius_y * angle.sin(),
     };
     let mut points = Vec::new();
-    points.try_reserve_exact((std::f64::consts::TAU / increment).ceil() as usize + 4)?;
+    budget.work(1)?;
+    points.try_reserve(1)?;
     points.push(point(-increment));
     let mut angle = 0.0;
     while angle <= std::f64::consts::TAU {
+        budget.work(1)?;
+        points.try_reserve(1)?;
         points.push(point(angle));
-        angle += increment;
+        let next = angle + increment;
+        if next <= angle {
+            return Err(GenerationError::Limit {
+                kind: GenerationLimit::WorkUnits,
+                attempted: budget.work_limit.saturating_add(1),
+            });
+        }
+        angle = next;
     }
+    budget.work(2)?;
+    points.try_reserve(2)?;
     points.push(point(0.0));
     points.push(point(increment));
-    smooth_curve(&points, operations);
-    Ok(())
+    smooth_curve(&points, operations, budget)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -418,10 +1257,11 @@ fn ellipse_stroke(
     roughness: f64,
     random: &mut Random,
     operations: &mut Vec<PathOperation>,
-) -> Result<(), TryReserveError> {
+    mut estimated_points: Option<&mut Vec<Point>>,
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
     let angle_offset = random_offset(0.5, roughness, 1.0, random) - std::f64::consts::FRAC_PI_2;
     let mut points = Vec::new();
-    points.try_reserve_exact((std::f64::consts::TAU / increment).ceil() as usize + 5)?;
     let point = |angle: f64, scale: f64, random: &mut Random| Point {
         x: random_offset(offset, roughness, 1.0, random)
             + center.x
@@ -430,13 +1270,32 @@ fn ellipse_stroke(
             + center.y
             + scale * radius_y * angle.sin(),
     };
+    budget.work(1)?;
+    points.try_reserve(1)?;
     points.push(point(angle_offset - increment, 0.9, random));
     let end_angle = std::f64::consts::TAU + angle_offset - 0.01;
     let mut angle = angle_offset;
     while angle < end_angle {
-        points.push(point(angle, 1.0, random));
-        angle += increment;
+        budget.work(1)?;
+        let point = point(angle, 1.0, random);
+        points.try_reserve(1)?;
+        points.push(point);
+        if let Some(estimated_points) = estimated_points.as_deref_mut() {
+            budget.work(1)?;
+            estimated_points.try_reserve(1)?;
+            estimated_points.push(point);
+        }
+        let next = angle + increment;
+        if next <= angle {
+            return Err(GenerationError::Limit {
+                kind: GenerationLimit::WorkUnits,
+                attempted: budget.work_limit.saturating_add(1),
+            });
+        }
+        angle = next;
     }
+    budget.work(3)?;
+    points.try_reserve(3)?;
     points.push(point(
         angle_offset + std::f64::consts::TAU + overlap * 0.5,
         1.0,
@@ -444,22 +1303,24 @@ fn ellipse_stroke(
     ));
     points.push(point(angle_offset + overlap, 0.98, random));
     points.push(point(angle_offset + overlap * 0.5, 0.9, random));
-    smooth_curve(&points, operations);
-    Ok(())
+    smooth_curve(&points, operations, budget)
 }
 
 #[allow(clippy::too_many_arguments)]
-fn double_bezier(
+fn double_bezier_mode(
     start: Point,
     control_1: Point,
     control_2: Point,
     end: Point,
     roughness: f64,
     preserve_vertices: bool,
+    disable_multi_stroke: bool,
     random: &mut Random,
     operations: &mut Vec<PathOperation>,
-) {
-    for (index, extent) in [2.0, 2.3].into_iter().enumerate() {
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
+    let iterations = if disable_multi_stroke { 1 } else { 2 };
+    for (index, extent) in [2.0, 2.3].into_iter().take(iterations).enumerate() {
         let move_point = if index == 0 || preserve_vertices {
             start
         } else {
@@ -468,7 +1329,7 @@ fn double_bezier(
                 y: start.y + random_offset(2.0, roughness, 1.0, random),
             }
         };
-        operations.push(PathOperation::Move(move_point));
+        budget.push_operation(operations, PathOperation::Move(move_point))?;
         let endpoint = if preserve_vertices {
             end
         } else {
@@ -477,32 +1338,45 @@ fn double_bezier(
                 y: end.y + random_offset(extent, roughness, 1.0, random),
             }
         };
-        operations.push(PathOperation::Cubic {
-            control_1: Point {
-                x: control_1.x + random_offset(extent, roughness, 1.0, random),
-                y: control_1.y + random_offset(extent, roughness, 1.0, random),
+        budget.push_operation(
+            operations,
+            PathOperation::Cubic {
+                control_1: Point {
+                    x: control_1.x + random_offset(extent, roughness, 1.0, random),
+                    y: control_1.y + random_offset(extent, roughness, 1.0, random),
+                },
+                control_2: Point {
+                    x: control_2.x + random_offset(extent, roughness, 1.0, random),
+                    y: control_2.y + random_offset(extent, roughness, 1.0, random),
+                },
+                end: endpoint,
             },
-            control_2: Point {
-                x: control_2.x + random_offset(extent, roughness, 1.0, random),
-                y: control_2.y + random_offset(extent, roughness, 1.0, random),
-            },
-            end: endpoint,
-        });
+        )?;
     }
+    Ok(())
 }
 
 fn random_range(minimum: f64, maximum: f64, roughness: f64, random: &mut Random) -> f64 {
     roughness * (random.next() * (maximum - minimum) + minimum)
 }
 
-fn double_line(
+fn ellipse_overlap(increment: f64, roughness: f64, random: &mut Random) -> f64 {
+    let extent = random_range(0.4, 1.0, roughness, random);
+    increment * random_range(0.1, extent, roughness, random)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn double_line_mode(
     start: Point,
     end: Point,
     roughness: f64,
     preserve_vertices: bool,
+    disable_multi_stroke: bool,
+    filling: bool,
     random: &mut Random,
     operations: &mut Vec<PathOperation>,
-) {
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
     line(
         start,
         end,
@@ -511,18 +1385,295 @@ fn double_line(
         false,
         random,
         operations,
-    );
-    line(
-        start,
-        end,
-        roughness,
-        preserve_vertices,
-        true,
-        random,
-        operations,
-    );
+        budget,
+    )?;
+    if !disable_multi_stroke || filling {
+        line(
+            start,
+            end,
+            roughness,
+            preserve_vertices,
+            true,
+            random,
+            operations,
+            budget,
+        )?;
+    }
+    Ok(())
 }
 
+fn fill_polygon(
+    points: &[Point],
+    style: FillStyle,
+    stroke_width: f64,
+    roughness: f64,
+    preserve_vertices: bool,
+    random: &mut Random,
+    budget: &mut GenerationBudget,
+) -> Result<Fill, GenerationError> {
+    if matches!(style, FillStyle::Solid) {
+        let mut operations = Vec::new();
+        if points.len() > 2 {
+            let perturb = |point: Point, random: &mut Random| Point {
+                x: point.x + random_offset(2.0, roughness, 1.0, random),
+                y: point.y + random_offset(2.0, roughness, 1.0, random),
+            };
+            budget.push_operation(
+                &mut operations,
+                PathOperation::Move(perturb(points[0], random)),
+            )?;
+            for point in points.iter().copied().skip(1) {
+                budget
+                    .push_operation(&mut operations, PathOperation::Line(perturb(point, random)))?;
+            }
+        }
+        return Ok(Fill {
+            path: Path { operations },
+            kind: FillKind::Solid,
+        });
+    }
+
+    let gap = (stroke_width * 4.0).max(0.1);
+    let mut polygon = Vec::new();
+    budget.work(u64::try_from(points.len()).unwrap_or(u64::MAX))?;
+    polygon.try_reserve_exact(points.len())?;
+    polygon.extend_from_slice(points);
+    let mut lines = hachure_lines(&mut polygon, gap, 49.0, roughness, random, budget)?;
+    if matches!(style, FillStyle::CrossHatch) {
+        let mut operations = Vec::new();
+        render_fill_lines(
+            lines,
+            roughness,
+            preserve_vertices,
+            random,
+            &mut operations,
+            budget,
+        )?;
+        let second_lines = hachure_lines(&mut polygon, gap, 139.0, roughness, random, budget)?;
+        render_fill_lines(
+            second_lines,
+            roughness,
+            preserve_vertices,
+            random,
+            &mut operations,
+            budget,
+        )?;
+        return Ok(Fill {
+            path: Path { operations },
+            kind: FillKind::Sketch,
+        });
+    } else if matches!(style, FillStyle::Zigzag) {
+        let angle = -41.0_f64.to_radians();
+        let delta_x = gap * 0.5 * angle.cos();
+        let delta_y = gap * 0.5 * angle.sin();
+        let mut zigzags = Vec::new();
+        for (start, end) in lines {
+            if (end.x - start.x).hypot(end.y - start.y) != 0.0 {
+                budget.work(2)?;
+                zigzags.try_reserve(2)?;
+                zigzags.push((
+                    Point {
+                        x: start.x - delta_x,
+                        y: start.y + delta_y,
+                    },
+                    end,
+                ));
+                zigzags.push((
+                    Point {
+                        x: start.x + delta_x,
+                        y: start.y - delta_y,
+                    },
+                    end,
+                ));
+            }
+        }
+        lines = zigzags;
+    }
+
+    let mut operations = Vec::new();
+    render_fill_lines(
+        lines,
+        roughness,
+        preserve_vertices,
+        random,
+        &mut operations,
+        budget,
+    )?;
+    Ok(Fill {
+        path: Path { operations },
+        kind: FillKind::Sketch,
+    })
+}
+
+fn render_fill_lines(
+    lines: Vec<(Point, Point)>,
+    roughness: f64,
+    preserve_vertices: bool,
+    random: &mut Random,
+    operations: &mut Vec<PathOperation>,
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
+    for (start, end) in lines {
+        double_line_mode(
+            start,
+            end,
+            roughness,
+            preserve_vertices,
+            false,
+            true,
+            random,
+            operations,
+            budget,
+        )?;
+    }
+    Ok(())
+}
+
+#[derive(Clone, Copy)]
+struct Edge {
+    minimum_y: f64,
+    maximum_y: f64,
+    x: f64,
+    inverse_slope: f64,
+}
+
+fn hachure_lines(
+    points: &mut [Point],
+    gap: f64,
+    angle: f64,
+    roughness: f64,
+    random: &mut Random,
+    budget: &mut GenerationBudget,
+) -> Result<Vec<(Point, Point)>, GenerationError> {
+    let radians = angle.to_radians();
+    let cos = radians.cos();
+    let sin = radians.sin();
+    for point in &mut *points {
+        *point = Point {
+            x: point.x * cos - point.y * sin,
+            y: point.x * sin + point.y * cos,
+        };
+    }
+    let mut rotated = Vec::new();
+    budget.work(
+        u64::try_from(points.len())
+            .unwrap_or(u64::MAX)
+            .saturating_add(1),
+    )?;
+    rotated.try_reserve_exact(points.len().saturating_add(1))?;
+    rotated.extend_from_slice(points);
+    if let (Some(first), Some(last)) = (rotated.first().copied(), rotated.last().copied()) {
+        if first.x != last.x || first.y != last.y {
+            rotated.push(first);
+        }
+    }
+
+    let mut edges = Vec::new();
+    budget.work(u64::try_from(rotated.len()).unwrap_or(u64::MAX))?;
+    edges.try_reserve_exact(rotated.len().saturating_sub(1))?;
+    for pair in rotated.windows(2) {
+        let first = pair[0];
+        let second = pair[1];
+        if first.y != second.y {
+            let minimum_y = first.y.min(second.y);
+            edges.push(Edge {
+                minimum_y,
+                maximum_y: first.y.max(second.y),
+                x: if minimum_y == first.y {
+                    first.x
+                } else {
+                    second.x
+                },
+                inverse_slope: (second.x - first.x) / (second.y - first.y),
+            });
+        }
+    }
+    edges.sort_by(|first, second| {
+        first
+            .minimum_y
+            .total_cmp(&second.minimum_y)
+            .then(first.x.total_cmp(&second.x))
+            .then(first.maximum_y.total_cmp(&second.maximum_y))
+    });
+    let mut lines = Vec::new();
+    let Some(first_edge) = edges.first() else {
+        rotate_points(points, -angle);
+        return Ok(lines);
+    };
+    let mut y = first_edge.minimum_y;
+    let step = if roughness >= 1.0 && random.next() > 0.7 {
+        gap
+    } else {
+        1.0
+    };
+    let mut active: Vec<Edge> = Vec::new();
+    let mut iteration = 0_u64;
+    while !active.is_empty() || !edges.is_empty() {
+        budget.work(1)?;
+        let count = edges.partition_point(|edge| edge.minimum_y <= y);
+        budget.work(u64::try_from(count).unwrap_or(u64::MAX))?;
+        active.try_reserve(count)?;
+        active.extend(edges.drain(..count));
+        active.retain(|edge| edge.maximum_y > y);
+        budget.work(u64::try_from(active.len()).unwrap_or(u64::MAX))?;
+        active.sort_by(|first, second| first.x.total_cmp(&second.x));
+        if step != 1.0 || iteration as f64 % gap == 0.0 {
+            for pair in active.chunks_exact(2) {
+                let start = rotate_point(
+                    Point {
+                        x: ecmascript_round(pair[0].x),
+                        y,
+                    },
+                    -angle,
+                );
+                let end = rotate_point(
+                    Point {
+                        x: ecmascript_round(pair[1].x),
+                        y,
+                    },
+                    -angle,
+                );
+                budget.work(1)?;
+                lines.try_reserve(1)?;
+                lines.push((start, end));
+            }
+        }
+        let next_y = y + step;
+        if next_y <= y {
+            return Err(GenerationError::Limit {
+                kind: GenerationLimit::WorkUnits,
+                attempted: budget.work_limit.saturating_add(1),
+            });
+        }
+        y = next_y;
+        for edge in &mut active {
+            edge.x += step * edge.inverse_slope;
+        }
+        iteration = iteration.saturating_add(1);
+    }
+    rotate_points(points, -angle);
+    Ok(lines)
+}
+
+fn rotate_points(points: &mut [Point], degrees: f64) {
+    let radians = degrees.to_radians();
+    for point in points {
+        *point = Point {
+            x: point.x * radians.cos() - point.y * radians.sin(),
+            y: point.x * radians.sin() + point.y * radians.cos(),
+        };
+    }
+}
+
+fn rotate_point(point: Point, degrees: f64) -> Point {
+    let radians = degrees.to_radians();
+    Point {
+        x: point.x * radians.cos() - point.y * radians.sin(),
+        y: point.x * radians.sin() + point.y * radians.cos(),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn line(
     start: Point,
     end: Point,
@@ -531,7 +1682,8 @@ fn line(
     overlay: bool,
     random: &mut Random,
     operations: &mut Vec<PathOperation>,
-) {
+    budget: &mut GenerationBudget,
+) -> Result<(), GenerationError> {
     const MAX_RANDOMNESS_OFFSET: f64 = 2.0;
     const BOWING: f64 = 1.0;
 
@@ -577,7 +1729,7 @@ fn line(
             y: start.y + random_offset(offset, roughness, roughness_gain, random),
         }
     };
-    operations.push(PathOperation::Move(moved_start));
+    budget.push_operation(operations, PathOperation::Move(moved_start))?;
     let control_1 = Point {
         x: control_coordinate(
             mid_displacement_x,
@@ -632,11 +1784,24 @@ fn line(
             y: end.y + random_offset(offset, roughness, roughness_gain, random),
         }
     };
-    operations.push(PathOperation::Cubic {
-        control_1,
-        control_2,
-        end: endpoint,
-    });
+    budget.push_operation(
+        operations,
+        PathOperation::Cubic {
+            control_1,
+            control_2,
+            end: endpoint,
+        },
+    )?;
+    Ok(())
+}
+
+fn ecmascript_round(value: f64) -> f64 {
+    let rounded = (value + 0.5).floor();
+    if rounded == 0.0 {
+        0.0
+    } else {
+        rounded
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -678,6 +1843,26 @@ impl Random {
         f64::from((self.seed as u32) & 0x7fff_ffff) / 2_147_483_648.0
     }
 }
-// Focused port of Rough.js 4.6.4 rectangle/line generation.
-// Copyright (c) 2019 Preet Shihn, licensed under MIT. See
-// `crates/excalidraw-render/LICENSES/roughjs-MIT.txt`.
+// Focused ports of Rough.js 4.6.4 and its points-on-curve/path dependencies.
+// Copyright (c) 2019-2020 Preet Shihn, licensed under MIT. See the bundled
+// Rough.js and points-on-curve license notices.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hachure_intersections_use_ecmascript_negative_half_rounding() {
+        assert_eq!(ecmascript_round(-1.5), -1.0);
+        assert_eq!(ecmascript_round(-2.5), -2.0);
+        assert_eq!(ecmascript_round(-0.5).to_bits(), 0.0_f64.to_bits());
+    }
+
+    #[test]
+    fn architect_solid_ellipse_consumes_both_overlap_pairs() {
+        let mut random = Random::new(43);
+        assert_eq!(ellipse_overlap(0.25, 0.0, &mut random), 0.0);
+        assert_eq!(ellipse_overlap(0.25, 0.0, &mut random), 0.0);
+        assert_eq!(random.seed, -610_782_869);
+    }
+}

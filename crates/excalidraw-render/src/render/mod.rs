@@ -395,7 +395,14 @@ impl RenderSession {
                         .any(|points| points[0] != points[1]),
                     _ => source.width != 0.0 && source.height != 0.0,
                 };
-                let path = if has_outline {
+                let base_element_work_units = source
+                    .normalization_work_units
+                    .saturating_add(8)
+                    .saturating_add(source.repair_work_units);
+                // Coordinate and already-spent work admission must precede any Rough allocation.
+                let mut local_crossing =
+                    outline_local_crossing(&source, request, 0, base_element_work_units);
+                let drawing = if has_outline && local_crossing.is_none() {
                     let max_size = source.width.max(source.height);
                     let min_size = source.width.min(source.height);
                     let adjusted_roughness = if min_size >= 20.0 && max_size >= 50.0
@@ -407,17 +414,38 @@ impl RenderSession {
                     } else {
                         (source.roughness / if max_size < 10.0 { 3.0 } else { 2.0 }).min(2.5)
                     };
-                    Some(outline_path(&source, adjusted_roughness).map_err(|_| {
-                        self.memory_failure(request, "semantic_geometry", "rough_outline")
-                    })?)
+                    let mut budget = rough::GenerationBudget::new(
+                        u64::from(
+                            request
+                                .resource_limits()
+                                .max_geometry_segments_per_element(),
+                        ),
+                        request.resource_limits().max_element_work_units(),
+                        base_element_work_units,
+                    );
+                    match rough_drawing(&source, adjusted_roughness, &mut budget) {
+                        Ok(drawing) => Some(drawing),
+                        Err(rough::GenerationError::Memory) => {
+                            return Err(self.memory_failure(
+                                request,
+                                "semantic_geometry",
+                                "rough_outline",
+                            ));
+                        }
+                        Err(rough::GenerationError::Limit { kind, attempted }) => {
+                            local_crossing =
+                                Some(generation_local_crossing(kind, attempted, request));
+                            None
+                        }
+                    }
                 } else {
                     None
                 };
-                let geometry_segments = path.as_ref().map_or(0, |path| {
-                    u64::try_from(path.operations.len()).unwrap_or(u64::MAX)
+                let geometry_segments = drawing.as_ref().map_or(0, |drawing| {
+                    u64::try_from(drawing.operation_count()).unwrap_or(u64::MAX)
                 });
                 let geometry_work_units = geometry_segments * 32;
-                let geometry_working_bytes = if has_outline {
+                let geometry_working_bytes = if drawing.is_some() {
                     128 + geometry_segments * 64
                 } else {
                     0
@@ -457,12 +485,16 @@ impl RenderSession {
                         )),
                     };
                 }
-                let element_work_units = source.normalization_work_units
-                    + geometry_work_units
-                    + 8
-                    + source.repair_work_units;
-                let local_crossing =
-                    outline_local_crossing(&source, request, geometry_segments, element_work_units);
+                let element_work_units =
+                    base_element_work_units.saturating_add(geometry_work_units);
+                if local_crossing.is_none() {
+                    local_crossing = outline_local_crossing(
+                        &source,
+                        request,
+                        geometry_segments,
+                        element_work_units,
+                    );
+                }
                 let include_outline = has_outline && local_crossing.is_none();
                 let semantic_working_bytes = if let Some(crossing) = local_crossing {
                     let source_position = crossing
@@ -511,7 +543,7 @@ impl RenderSession {
                     })?,
                     bytes: semantic_working_bytes,
                 });
-                outlines.push((source, include_outline.then_some(path).flatten()));
+                outlines.push((source, include_outline.then_some(drawing).flatten()));
             }
             semantic_working.push(SemanticWorkingRecord {
                 source_order: scene.source_owner_order("appState", 0),
@@ -1916,7 +1948,7 @@ impl ResolvedScene {
     }
 
     fn elements(
-        outlines: Vec<(NormalizedElement, Option<rough::Path>)>,
+        outlines: Vec<(NormalizedElement, Option<rough::Drawing>)>,
         fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
         clip_fallbacks_to_frames: bool,
         background_color: &str,
@@ -1931,10 +1963,7 @@ impl ResolvedScene {
         let mut max_x = f64::NEG_INFINITY;
         let mut max_y = f64::NEG_INFINITY;
         for (source, _) in &outlines {
-            if source.background_color != "transparent"
-                || source.fill_style != "solid"
-                || source.stroke_style != "solid"
-                || source.stroke_width < 0.0
+            if source.stroke_width < 0.0
                 || source.roughness < 0.0
                 || !(0.0..=100.0).contains(&source.opacity)
                 || source.seed == 0
@@ -2003,11 +2032,11 @@ impl ResolvedScene {
                 });
             }
         }
-        for (source, path) in outlines {
-            let Some(path) = path else {
+        for (source, drawing) in outlines {
+            let Some(drawing) = drawing else {
                 continue;
             };
-            let geometry_work_units = u64::try_from(path.operations.len())
+            let geometry_work_units = u64::try_from(drawing.operation_count())
                 .unwrap_or(u64::MAX)
                 .saturating_mul(32);
             let (local_min_x, local_min_y, local_max_x, local_max_y) =
@@ -2019,7 +2048,7 @@ impl ResolvedScene {
                     + geometry_work_units
                     + 8
                     + source.repair_work_units,
-                path,
+                drawing,
                 transform: ResolvedTransform {
                     translation_x: source.x - min_x + request.padding(),
                     translation_y: source.y - min_y + request.padding(),
@@ -2030,7 +2059,21 @@ impl ResolvedScene {
                 stroke_color: color::parse_css(&source.stroke_color)
                     .ok_or(ResolveSceneError::InvalidColor)?
                     .for_mode(request.color_mode()),
-                stroke_width: source.stroke_width,
+                fill_color: (source.background_color != "transparent")
+                    .then(|| color::parse_css(&source.background_color))
+                    .flatten()
+                    .map(|color| color.for_mode(request.color_mode())),
+                stroke_width: if source.stroke_style == "solid" {
+                    source.stroke_width
+                } else {
+                    source.stroke_width + 0.5
+                },
+                stroke_style: match source.stroke_style.as_str() {
+                    "dashed" => StrokeStyle::Dashed,
+                    "dotted" => StrokeStyle::Dotted,
+                    _ => StrokeStyle::Solid,
+                },
+                source_stroke_width: source.stroke_width,
                 opacity: source.opacity / 100.0,
             }));
         }
@@ -2173,11 +2216,21 @@ struct ResolvedOutline {
     source_order: u64,
     source: NormalizedElementSource,
     base_element_work_units: u64,
-    path: rough::Path,
+    drawing: rough::Drawing,
     transform: ResolvedTransform,
     stroke_color: CanonicalColor,
+    fill_color: Option<CanonicalColor>,
     stroke_width: f64,
+    stroke_style: StrokeStyle,
+    source_stroke_width: f64,
     opacity: f64,
+}
+
+#[derive(Clone, Copy)]
+enum StrokeStyle {
+    Solid,
+    Dashed,
+    Dotted,
 }
 
 #[derive(Clone, Copy)]
@@ -2416,69 +2469,96 @@ fn include_transformed_bounds(
     }
 }
 
-fn outline_path(
+fn rough_drawing(
     source: &NormalizedElement,
     roughness: f64,
-) -> Result<rough::Path, std::collections::TryReserveError> {
+    budget: &mut rough::GenerationBudget,
+) -> Result<rough::Drawing, rough::GenerationError> {
     use rough::{Point, RoundedSegment};
 
     let width = source.width;
     let height = source.height;
     let preserve_vertices = source.roundness.is_some() || source.roughness < 2.0;
+    let fill_style =
+        (source.background_color != "transparent").then_some(match source.fill_style.as_str() {
+            "hachure" => rough::FillStyle::Hachure,
+            "cross-hatch" => rough::FillStyle::CrossHatch,
+            "zigzag" => rough::FillStyle::Zigzag,
+            _ => rough::FillStyle::Solid,
+        });
+    let disable_multi_stroke = source.stroke_style != "solid";
     match &source.kind {
         NormalizedElementKind::Rectangle => {
             let Some(roundness) = source.roundness else {
-                return rough::rectangle(width, height, source.seed, roughness, preserve_vertices);
+                return rough::rectangle_drawing(
+                    width,
+                    height,
+                    source.seed,
+                    roughness,
+                    preserve_vertices,
+                    disable_multi_stroke,
+                    fill_style,
+                    source.stroke_width,
+                    budget,
+                );
             };
             let radius = corner_radius(width.min(height), roundness);
-            rough::rounded_path(
-                Point { x: radius, y: 0.0 },
-                &[
-                    RoundedSegment::Line(Point {
-                        x: width - radius,
-                        y: 0.0,
-                    }),
-                    RoundedSegment::Quadratic {
-                        control: Point { x: width, y: 0.0 },
-                        end: Point {
-                            x: width,
-                            y: radius,
-                        },
-                    },
-                    RoundedSegment::Line(Point {
+            let start = Point { x: radius, y: 0.0 };
+            let segments = [
+                RoundedSegment::Line(Point {
+                    x: width - radius,
+                    y: 0.0,
+                }),
+                RoundedSegment::Quadratic {
+                    control: Point { x: width, y: 0.0 },
+                    end: Point {
                         x: width,
-                        y: height - radius,
-                    }),
-                    RoundedSegment::Quadratic {
-                        control: Point {
-                            x: width,
-                            y: height,
-                        },
-                        end: Point {
-                            x: width - radius,
-                            y: height,
-                        },
+                        y: radius,
                     },
-                    RoundedSegment::Line(Point {
-                        x: radius,
+                },
+                RoundedSegment::Line(Point {
+                    x: width,
+                    y: height - radius,
+                }),
+                RoundedSegment::Quadratic {
+                    control: Point {
+                        x: width,
                         y: height,
-                    }),
-                    RoundedSegment::Quadratic {
-                        control: Point { x: 0.0, y: height },
-                        end: Point {
-                            x: 0.0,
-                            y: height - radius,
-                        },
                     },
-                    RoundedSegment::Line(Point { x: 0.0, y: radius }),
-                    RoundedSegment::Quadratic {
-                        control: Point { x: 0.0, y: 0.0 },
-                        end: Point { x: radius, y: 0.0 },
+                    end: Point {
+                        x: width - radius,
+                        y: height,
                     },
-                ],
+                },
+                RoundedSegment::Line(Point {
+                    x: radius,
+                    y: height,
+                }),
+                RoundedSegment::Quadratic {
+                    control: Point { x: 0.0, y: height },
+                    end: Point {
+                        x: 0.0,
+                        y: height - radius,
+                    },
+                },
+                RoundedSegment::Line(Point { x: 0.0, y: radius }),
+                RoundedSegment::Quadratic {
+                    control: Point { x: 0.0, y: 0.0 },
+                    end: Point { x: radius, y: 0.0 },
+                },
+            ];
+            let fill_points = rough::rounded_fill_points(start, &segments, roughness, budget)?;
+            rough::rounded_drawing(
+                start,
+                &segments,
+                &fill_points,
                 source.seed,
                 roughness,
                 preserve_vertices,
+                disable_multi_stroke,
+                fill_style,
+                source.stroke_width,
+                budget,
             )
         }
         NormalizedElementKind::Diamond => {
@@ -2501,83 +2581,151 @@ fn outline_path(
                 },
             ];
             let Some(roundness) = source.roundness else {
-                return rough::polygon(&points, source.seed, roughness, preserve_vertices);
+                return rough::polygon_drawing(
+                    &points,
+                    source.seed,
+                    roughness,
+                    preserve_vertices,
+                    disable_multi_stroke,
+                    fill_style,
+                    source.stroke_width,
+                    budget,
+                );
             };
             let vertical_radius = corner_radius(width / 2.0, roundness);
             let horizontal_radius = corner_radius(height / 2.0, roundness);
             let [top, right, bottom, left] = points;
-            rough::rounded_path(
-                Point {
-                    x: top.x + vertical_radius,
-                    y: top.y + horizontal_radius,
-                },
-                &[
-                    RoundedSegment::Line(Point {
+            let start = Point {
+                x: top.x + vertical_radius,
+                y: top.y + horizontal_radius,
+            };
+            let segments = [
+                RoundedSegment::Line(Point {
+                    x: right.x - vertical_radius,
+                    y: right.y - horizontal_radius,
+                }),
+                RoundedSegment::Cubic {
+                    control_1: right,
+                    control_2: right,
+                    end: Point {
                         x: right.x - vertical_radius,
-                        y: right.y - horizontal_radius,
-                    }),
-                    RoundedSegment::Cubic {
-                        control_1: right,
-                        control_2: right,
-                        end: Point {
-                            x: right.x - vertical_radius,
-                            y: right.y + horizontal_radius,
-                        },
+                        y: right.y + horizontal_radius,
                     },
-                    RoundedSegment::Line(Point {
-                        x: bottom.x + vertical_radius,
+                },
+                RoundedSegment::Line(Point {
+                    x: bottom.x + vertical_radius,
+                    y: bottom.y - horizontal_radius,
+                }),
+                RoundedSegment::Cubic {
+                    control_1: bottom,
+                    control_2: bottom,
+                    end: Point {
+                        x: bottom.x - vertical_radius,
                         y: bottom.y - horizontal_radius,
-                    }),
-                    RoundedSegment::Cubic {
-                        control_1: bottom,
-                        control_2: bottom,
-                        end: Point {
-                            x: bottom.x - vertical_radius,
-                            y: bottom.y - horizontal_radius,
-                        },
                     },
-                    RoundedSegment::Line(Point {
+                },
+                RoundedSegment::Line(Point {
+                    x: left.x + vertical_radius,
+                    y: left.y + horizontal_radius,
+                }),
+                RoundedSegment::Cubic {
+                    control_1: left,
+                    control_2: left,
+                    end: Point {
                         x: left.x + vertical_radius,
-                        y: left.y + horizontal_radius,
-                    }),
-                    RoundedSegment::Cubic {
-                        control_1: left,
-                        control_2: left,
-                        end: Point {
-                            x: left.x + vertical_radius,
-                            y: left.y - horizontal_radius,
-                        },
+                        y: left.y - horizontal_radius,
                     },
-                    RoundedSegment::Line(Point {
-                        x: top.x - vertical_radius,
+                },
+                RoundedSegment::Line(Point {
+                    x: top.x - vertical_radius,
+                    y: top.y + horizontal_radius,
+                }),
+                RoundedSegment::Cubic {
+                    control_1: top,
+                    control_2: top,
+                    end: Point {
+                        x: top.x + vertical_radius,
                         y: top.y + horizontal_radius,
-                    }),
-                    RoundedSegment::Cubic {
-                        control_1: top,
-                        control_2: top,
-                        end: Point {
-                            x: top.x + vertical_radius,
-                            y: top.y + horizontal_radius,
-                        },
                     },
-                ],
+                },
+            ];
+            let fill_points = rough::rounded_fill_points(start, &segments, roughness, budget)?;
+            rough::rounded_drawing(
+                start,
+                &segments,
+                &fill_points,
                 source.seed,
                 roughness,
                 preserve_vertices,
+                disable_multi_stroke,
+                fill_style,
+                source.stroke_width,
+                budget,
             )
         }
-        NormalizedElementKind::Ellipse => rough::ellipse(width, height, source.seed, roughness),
+        NormalizedElementKind::Ellipse => rough::ellipse_drawing(
+            width,
+            height,
+            source.seed,
+            roughness,
+            preserve_vertices,
+            disable_multi_stroke,
+            fill_style,
+            source.stroke_width,
+            budget,
+        ),
         NormalizedElementKind::Linear(linear) => {
             let mut points = Vec::new();
+            budget.work(u64::try_from(linear.points.len()).unwrap_or(u64::MAX))?;
             points.try_reserve_exact(linear.points.len())?;
             points.extend(linear.points.iter().map(|point| Point {
                 x: point[0],
                 y: point[1],
             }));
+            const LINE_CONFIRM_THRESHOLD: f64 = 8.0;
+            let closed = points.len() >= 3
+                && points
+                    .first()
+                    .zip(points.last())
+                    .is_some_and(|(first, last)| {
+                        (first.x - last.x).hypot(first.y - last.y) <= LINE_CONFIRM_THRESHOLD
+                    });
             if source.roundness.is_some() {
-                rough::curve(&points, source.seed, roughness)
+                rough::curve_drawing(
+                    &points,
+                    closed,
+                    source.seed,
+                    roughness,
+                    disable_multi_stroke,
+                    closed.then_some(fill_style).flatten(),
+                    source.stroke_width,
+                    budget,
+                )
             } else {
-                rough::linear_path(&points, false, source.seed, roughness, preserve_vertices)
+                if closed && fill_style.is_some() {
+                    rough::polygon_drawing(
+                        &points,
+                        source.seed,
+                        roughness,
+                        preserve_vertices,
+                        disable_multi_stroke,
+                        fill_style,
+                        source.stroke_width,
+                        budget,
+                    )
+                } else {
+                    rough::linear_drawing(
+                        &points,
+                        closed,
+                        source.seed,
+                        roughness,
+                        preserve_vertices,
+                        disable_multi_stroke,
+                        None,
+                        source.stroke_width,
+                        budget,
+                    )
+                }
             }
         }
         NormalizedElementKind::Freedraw(_)
@@ -2710,6 +2858,24 @@ fn outline_local_crossing(
             });
         }
     }
+    if let NormalizedElementKind::Linear(linear) = &source.kind {
+        for point in &linear.points {
+            for value in point {
+                let magnitude = value.abs();
+                if magnitude > coordinate_limit {
+                    return Some(ElementLocalCrossing {
+                        code: DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,
+                        field: "max_coordinate_magnitude",
+                        configured: ResourceValue::Finite(FiniteValue::new(coordinate_limit)?),
+                        value_kind: ValueKind::Coordinate,
+                        attempted: ResourceValue::Finite(FiniteValue::new(magnitude)?),
+                        pointer_field: Some("points"),
+                        message: "outline omitted because a coordinate exceeds its limit",
+                    });
+                }
+            }
+        }
+    }
 
     let geometry_limit = u64::from(
         request
@@ -2738,6 +2904,37 @@ fn outline_local_crossing(
         pointer_field: None,
         message: "outline omitted because its semantic work exceeds its limit",
     })
+}
+
+fn generation_local_crossing(
+    kind: rough::GenerationLimit,
+    attempted: u64,
+    request: &RenderRequest,
+) -> ElementLocalCrossing {
+    match kind {
+        rough::GenerationLimit::GeometrySegments => ElementLocalCrossing {
+            code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
+            field: "max_geometry_segments_per_element",
+            configured: ResourceValue::Integer(u64::from(
+                request
+                    .resource_limits()
+                    .max_geometry_segments_per_element(),
+            )),
+            value_kind: ValueKind::Count,
+            attempted: ResourceValue::Integer(attempted),
+            pointer_field: None,
+            message: "outline omitted because its geometry exceeds its limit",
+        },
+        rough::GenerationLimit::WorkUnits => ElementLocalCrossing {
+            code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
+            field: "max_element_work_units",
+            configured: ResourceValue::Integer(request.resource_limits().max_element_work_units()),
+            value_kind: ValueKind::WorkUnits,
+            attempted: ResourceValue::Integer(attempted),
+            pointer_field: None,
+            message: "outline omitted because its semantic work exceeds its limit",
+        },
+    }
 }
 
 fn logical_aligned_bytes(bytes: u64) -> u64 {
@@ -3013,15 +3210,15 @@ mod tests {
         let expected_digests = [
             (
                 OutputFormat::Svg,
-                "ddc0f9068fe3c0b0842b89a3e3d7ee210bb805e6f328360523b915061e82a38a",
+                "6c53083b5df3852ac5f6d566047d76e36cc53da008efe0eaed427915b461b5e5",
             ),
             (
                 OutputFormat::Png,
-                "ff9cdcb688df3961b394ea83fb99f8a8a8beb7b583adde89769e930930db6fd1",
+                "3f96fd0444186a0419c2a785f4ec851b969c0fa029a7d918997ccf58394a3190",
             ),
             (
                 OutputFormat::Pdf,
-                "8c0c169ecbc7ec629021dcf0a15b517970f243fed6f33ad64306dbf18fac1342",
+                "9f2c32bbb479856363721973d7e60b0cfac1688952cdb2eebdf46f245ee31089",
             ),
         ];
 
