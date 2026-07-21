@@ -76,12 +76,11 @@ fn revision_1_element_policy_uses_exact_kind_and_record_boundaries() {
         .build()
         .expect("default request is valid");
 
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("visual fallback is implemented by the following ticket");
+        .expect("bounded fallback and diagnosed omission retain an artifact");
 
-    assert_eq!(error.code(), ErrorCode::RENDER_INTERNAL_FAILURE);
-    let diagnostics = error.report().diagnostics();
+    let diagnostics = outcome.report().diagnostics();
     assert_eq!(diagnostics.len(), 3);
     assert_eq!(
         diagnostics
@@ -150,11 +149,12 @@ fn revision_1_element_policy_applies_kind_specific_inherited_participation() {
         .build()
         .expect("default request is valid");
 
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("image rendering is implemented by a later slice");
+        .expect("known unavailable image uses its compatibility fallback");
 
-    let [diagnostic] = error.report().diagnostics() else {
+    let diagnostics = non_replacement_diagnostics(&outcome);
+    let [diagnostic] = diagnostics.as_slice() else {
         panic!("only the unmatched image property participates");
     };
     assert_eq!(
@@ -227,11 +227,11 @@ fn revision_1_referenced_file_classifies_known_and_unknown_children() {
         .build()
         .expect("default request is valid");
 
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("image rendering is implemented by a later slice");
+        .expect("known unavailable image uses its compatibility fallback");
 
-    let diagnostics = error.report().diagnostics();
+    let diagnostics = non_replacement_diagnostics(&outcome);
     assert_eq!(
         diagnostics
             .iter()
@@ -270,11 +270,12 @@ fn revision_1_wholly_malformed_referenced_file_suppresses_descendants() {
         .build()
         .expect("default request is valid");
 
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("image rendering is implemented by a later slice");
+        .expect("diagnosed malformed asset retains an artifact");
 
-    let [diagnostic] = error.report().diagnostics() else {
+    let diagnostics = non_replacement_diagnostics(&outcome);
+    let [diagnostic] = diagnostics.as_slice() else {
         panic!("the malformed authoritative record is one occurrence");
     };
     assert_eq!(
@@ -303,10 +304,11 @@ fn revision_1_empty_referenced_file_key_is_malformed() {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("default request is valid");
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("image rendering is implemented by a later slice");
-    let [diagnostic] = error.report().diagnostics() else {
+        .expect("diagnosed malformed asset retains an artifact");
+    let diagnostics = non_replacement_diagnostics(&outcome);
+    let [diagnostic] = diagnostics.as_slice() else {
         panic!("the empty authoritative key is one malformed record");
     };
     assert_eq!(
@@ -327,10 +329,11 @@ fn revision_1_malformed_error_image_selects_the_error_recipe_in_png() {
     let request = RenderRequest::builder(OutputFormat::Png)
         .build()
         .expect("default request is valid");
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("image rendering is implemented by a later slice");
-    let [diagnostic] = error.report().diagnostics() else {
+        .expect("diagnosed malformed image retains an artifact");
+    let diagnostics = non_replacement_diagnostics(&outcome);
+    let [diagnostic] = diagnostics.as_slice() else {
         panic!("the malformed authoritative record is one occurrence");
     };
     assert!(matches!(
@@ -360,10 +363,11 @@ fn revision_1_scene_file_remains_authoritative_over_supplement() {
         .supplemental_assets(assets)
         .build()
         .expect("default request is valid");
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("image rendering is implemented by a later slice");
-    let [diagnostic] = error.report().diagnostics() else {
+        .expect("known unavailable image retains an artifact");
+    let diagnostics = non_replacement_diagnostics(&outcome);
+    let [diagnostic] = diagnostics.as_slice() else {
         panic!("the participating asset conflict is one occurrence");
     };
     assert_eq!(diagnostic.code(), DiagnosticCode::ASSET_SUPPLEMENT_CONFLICT);
@@ -382,13 +386,11 @@ fn revision_1_file_values_use_asset_specific_manifest_recoveries() {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("default request is valid");
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("image rendering is implemented by a later slice");
+        .expect("known unavailable image retains an artifact");
     assert_eq!(
-        error
-            .report()
-            .diagnostics()
+        non_replacement_diagnostics(&outcome)
             .iter()
             .map(|diagnostic| (diagnostic.code(), diagnostic.json_pointer()))
             .collect::<Vec<_>>(),
@@ -403,12 +405,14 @@ fn revision_1_file_values_use_asset_specific_manifest_recoveries() {
             ),
         ]
     );
-    assert!(error.report().diagnostics().iter().all(|diagnostic| {
-        matches!(
-            diagnostic.details(),
-            Some(excalidraw_render::ErrorDetails::Asset { asset_id, .. }) if asset_id == "asset"
-        )
-    }));
+    assert!(non_replacement_diagnostics(&outcome)
+        .iter()
+        .all(|diagnostic| {
+            matches!(
+                diagnostic.details(),
+                Some(excalidraw_render::ErrorDetails::Asset { asset_id, .. }) if asset_id == "asset"
+            )
+        }));
 }
 
 #[test]
@@ -447,14 +451,12 @@ fn revision_1_recognized_nested_record_keeps_unknown_children_separate() {
         .build()
         .expect("default request is valid");
 
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("image rendering is implemented by a later slice");
+        .expect("known unavailable image retains an artifact");
 
     assert_eq!(
-        error
-            .report()
-            .diagnostics()
+        non_replacement_diagnostics(&outcome)
             .iter()
             .map(|diagnostic| (diagnostic.code(), diagnostic.json_pointer()))
             .collect::<Vec<_>>(),
@@ -555,14 +557,12 @@ fn revision_1_linear_nested_records_classify_the_narrowest_unknown_child() {
         .build()
         .expect("default request is valid");
 
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("linear rendering is implemented by a later slice");
+        .expect("known unavailable line retains an artifact");
 
     assert_eq!(
-        error
-            .report()
-            .diagnostics()
+        non_replacement_diagnostics(&outcome)
             .iter()
             .map(|diagnostic| (diagnostic.code(), diagnostic.json_pointer()))
             .collect::<Vec<_>>(),
@@ -593,10 +593,11 @@ fn revision_1_participating_bound_record_classifies_unknown_children() {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("default request is valid");
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("bound text rendering is implemented by a later slice");
-    let [diagnostic] = error.report().diagnostics() else {
+        .expect("known unavailable bound text retains an artifact");
+    let diagnostics = non_replacement_diagnostics(&outcome);
+    let [diagnostic] = diagnostics.as_slice() else {
         panic!("the bound record has one unmatched child");
     };
     assert_eq!(
@@ -672,10 +673,11 @@ fn revision_1_known_unavailable_kind_still_applies_exact_field_policy() {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("default request is valid");
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("text rendering is implemented by a later slice");
-    let [diagnostic] = error.report().diagnostics() else {
+        .expect("known unavailable text retains an artifact");
+    let diagnostics = non_replacement_diagnostics(&outcome);
+    let [diagnostic] = diagnostics.as_slice() else {
         panic!("the malformed text value has one field recovery");
     };
     assert_eq!(
@@ -709,19 +711,30 @@ fn revision_1_value_rules_are_format_and_kind_aware() {
         let request = RenderRequest::builder(format)
             .build()
             .expect("default request is valid");
-        let error = Renderer::new()
+        let outcome = Renderer::new()
             .render(&scene, &request)
-            .expect_err("diamond rendering is implemented by a later slice");
+            .expect("known unavailable diamond retains an artifact");
         assert_eq!(
-            error
-                .report()
-                .diagnostics()
+            non_replacement_diagnostics(&outcome)
                 .iter()
                 .map(|diagnostic| diagnostic.code())
                 .collect::<Vec<_>>(),
             expected_codes
         );
     }
+}
+
+fn non_replacement_diagnostics(
+    outcome: &excalidraw_render::RenderOutcome,
+) -> Vec<&excalidraw_render::CompatibilityDiagnostic> {
+    outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .filter(|diagnostic| {
+            diagnostic.code() != DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
+        })
+        .collect()
 }
 
 fn render_svg(source: &[u8]) -> excalidraw_render::RenderOutcome {

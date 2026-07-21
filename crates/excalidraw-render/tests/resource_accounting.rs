@@ -92,12 +92,11 @@ fn element_count_equality_and_spare_capacity_reach_the_next_rendering_phase() {
             .build()
             .expect("element boundary is valid");
         let request = request_with_limits(OutputFormat::Svg, limits);
-        let error = Renderer::new()
+        let outcome = Renderer::new()
             .render(&scene, &request)
-            .expect_err("element projection is implemented by a later ticket");
+            .expect("diagnosed malformed occurrences retain a meaningful artifact");
 
-        assert_eq!(error.code(), ErrorCode::RENDER_INTERNAL_FAILURE);
-        assert_eq!(error.json_pointer(), "/elements");
+        assert!(!outcome.report().is_empty());
     }
 }
 

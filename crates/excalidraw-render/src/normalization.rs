@@ -37,11 +37,14 @@ pub(crate) struct NormalizedElement {
     pub(crate) stroke_style: String,
     pub(crate) roughness: f64,
     pub(crate) opacity: f64,
+    pub(crate) link: Option<String>,
+    pub(crate) frame_id: Option<String>,
     pub(crate) seed: i32,
     pub(crate) view_background_color: String,
     pub(crate) normalized_working_bytes: u64,
     pub(crate) normalization_work_units: u64,
     pub(crate) repair_work_units: u64,
+    pub(crate) kind_name: &'static str,
     pub(crate) kind: NormalizedElementKind,
     pub(crate) focused_rectangle_compatible: bool,
 }
@@ -170,9 +173,9 @@ impl NormalizedElementSource {
 
 pub(crate) struct NormalizationOutcome {
     pub(crate) elements: Vec<NormalizedElement>,
+    pub(crate) fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
     pub(crate) frame_rendering: NormalizedFrameRendering,
     pub(crate) files: Vec<NormalizedFileRecord>,
-    pub(crate) has_unrendered_content: bool,
 }
 
 pub(crate) enum NormalizationEvent<'a> {
@@ -975,11 +978,28 @@ fn normalize_scene_impl<E>(
             stroke_style: memory_at_source!(try_owned(fields.stroke_style)),
             roughness: fields.roughness,
             opacity: fields.opacity,
+            link: match source.link {
+                SourceField::Value(Some(link)) if crate::scene_surface::safe_link(link) => {
+                    Some(memory_at_source!(try_owned(link)))
+                }
+                SourceField::Missing
+                | SourceField::Invalid
+                | SourceField::Value(None | Some(_)) => None,
+            },
+            frame_id: match source.frame_id {
+                SourceField::Value(Some(frame_id)) if !frame_id.is_empty() => {
+                    Some(memory_at_source!(try_owned(frame_id)))
+                }
+                SourceField::Missing
+                | SourceField::Invalid
+                | SourceField::Value(None | Some(_)) => None,
+            },
             seed,
             view_background_color: memory_at_source!(try_owned(fields.view_background_color)),
             normalized_working_bytes: planned_working_bytes,
             normalization_work_units,
             repair_work_units,
+            kind_name: source.kind.scene_surface_kind(),
             kind,
             focused_rectangle_compatible: pending.focused_rectangle_compatible,
         });
@@ -1055,9 +1075,9 @@ fn normalize_scene_impl<E>(
 
     Ok(Some(NormalizationOutcome {
         elements,
+        fallbacks: surface.fallbacks,
         frame_rendering,
         files,
-        has_unrendered_content: surface.has_unrendered_content,
     }))
 }
 

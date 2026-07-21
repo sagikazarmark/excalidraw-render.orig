@@ -189,15 +189,12 @@ fn assigned_element_repairs_are_reported_before_later_rendering_slices() {
         .build()
         .expect("default render request is valid");
 
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("later linear/image rendering slices are not implemented yet");
+        .expect("known unavailable elements retain a compatibility artifact");
 
-    assert_eq!(error.code(), ErrorCode::RENDER_INTERNAL_FAILURE);
     assert_eq!(
-        error
-            .report()
-            .diagnostics()
+        non_replacement_diagnostics(&outcome)
             .iter()
             .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
@@ -222,14 +219,13 @@ fn supplemental_authority_participates_in_image_crop_normalization() {
         .build()
         .expect("render request is valid");
 
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("later image rendering remains outside this slice");
+        .expect("known unavailable image retains a compatibility artifact");
 
-    assert_eq!(error.code(), ErrorCode::RENDER_INTERNAL_FAILURE);
-    assert_eq!(error.report().diagnostics().len(), 1);
+    assert_eq!(non_replacement_diagnostics(&outcome).len(), 1);
     assert_eq!(
-        error.report().diagnostics()[0].json_pointer(),
+        non_replacement_diagnostics(&outcome)[0].json_pointer(),
         "/elements/0/crop/naturalHeight"
     );
 }
@@ -247,12 +243,11 @@ fn disabled_frame_names_suppress_name_value_diagnostics() {
             .build()
             .expect("render request is valid");
 
-        let error = Renderer::new()
+        let outcome = Renderer::new()
             .render(&scene, &request)
-            .expect_err("later frame rendering remains outside this slice");
+            .expect("known unavailable frame retains a compatibility artifact");
 
-        assert_eq!(error.code(), ErrorCode::RENDER_INTERNAL_FAILURE);
-        assert!(error.report().is_empty());
+        assert!(non_replacement_diagnostics(&outcome).is_empty());
     }
 }
 
@@ -264,13 +259,13 @@ fn request_frame_names_override_disabled_scene_frame_names() {
         .build()
         .expect("render request is valid");
 
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("later frame rendering remains outside this slice");
+        .expect("known unavailable frame retains a compatibility artifact");
 
-    assert_eq!(error.report().diagnostics().len(), 1);
+    assert_eq!(non_replacement_diagnostics(&outcome).len(), 1);
     assert_eq!(
-        error.report().diagnostics()[0].json_pointer(),
+        non_replacement_diagnostics(&outcome)[0].json_pointer(),
         "/elements/0/name"
     );
 }
@@ -283,14 +278,12 @@ fn normalization_reports_follow_preserved_root_owner_order() {
         .build()
         .expect("render request is valid");
 
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("later image rendering remains outside this slice");
+        .expect("known unavailable image retains a compatibility artifact");
 
     assert_eq!(
-        error
-            .report()
-            .diagnostics()
+        non_replacement_diagnostics(&outcome)
             .iter()
             .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
@@ -582,6 +575,19 @@ fn multiple_pdf_rectangles_keep_independent_opacity_resources() {
     assert!(pdf.contains("/ExtGState << /GS1 7 0 R /GS2 8 0 R >>"));
     assert_eq!(pdf.matches("/GS1 gs").count(), 1);
     assert_eq!(pdf.matches("/GS2 gs").count(), 1);
+}
+
+fn non_replacement_diagnostics(
+    outcome: &excalidraw_render::RenderOutcome,
+) -> Vec<&excalidraw_render::CompatibilityDiagnostic> {
+    outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .filter(|diagnostic| {
+            diagnostic.code() != DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
+        })
+        .collect()
 }
 
 fn render_svg(source: &[u8]) -> excalidraw_render::RenderOutcome {

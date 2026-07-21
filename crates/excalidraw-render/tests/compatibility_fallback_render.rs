@@ -1,0 +1,650 @@
+use excalidraw_render::{
+    DiagnosticCode, DiagnosticEffect, ErrorCode, ErrorDetails, OutputFormat, Recovery,
+    RenderRequest, Renderer, ResourceLimits, SceneDocument,
+};
+
+use std::io::Cursor;
+
+#[test]
+fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
+    let scene = SceneDocument::parse(
+        br##"{
+        "type":"excalidraw",
+        "version":2,
+        "elements":[{
+            "id":"unknown",
+            "type":"future<&",
+            "x":20,
+            "y":30,
+            "width":240,
+            "height":100,
+            "angle":0.25,
+            "opacity":40,
+            "updated":1
+        }],
+        "appState":{},
+        "files":{}
+    }"##,
+    )
+    .expect("unknown element remains admitted scene content");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("default SVG request is valid");
+
+    let first = Renderer::new()
+        .render(&scene, &request)
+        .expect("bounded unknown content produces a meaningful placeholder");
+    let second = Renderer::new()
+        .render(&scene, &request)
+        .expect("the same placeholder renders again");
+
+    assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+    assert_eq!(first.report(), second.report());
+    let diagnostics = boundary_diagnostics(&first);
+    let [diagnostic] = diagnostics.as_slice() else {
+        panic!("the unknown element produces one boundary diagnostic");
+    };
+    assert_eq!(
+        diagnostic.code(),
+        DiagnosticCode::COMPATIBILITY_UNSUPPORTED_ELEMENT_TYPE
+    );
+    assert_eq!(
+        diagnostic.effects(),
+        [DiagnosticEffect::Visual, DiagnosticEffect::Semantic]
+    );
+    assert_eq!(diagnostic.element_id(), Some("unknown"));
+    assert_eq!(diagnostic.json_pointer(), "/elements/0");
+    assert!(matches!(
+        diagnostic.details(),
+        Some(ErrorDetails::Compatibility {
+            recovery: Recovery::Placeholder,
+            recipe_id: Some(recipe),
+        }) if recipe == "renderer.unknown-element.v1"
+    ));
+
+    let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.starts_with(concat!(
+        "<svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" ",
+        "viewBox=\"0 0 277.27937713600704 176.26819239215\""
+    )));
+    assert!(svg.contains(concat!(
+        "<g transform=\"translate(18.639688568003514 38.13409619607499)",
+        " rotate(14.32394487827058 120 50)\" opacity=\"0.4\">"
+    )));
+    assert!(svg.contains(concat!(
+        "<clipPath id=\"fallback-0\"><rect x=\"0\" y=\"0\" width=\"240\" ",
+        "height=\"100\"/></clipPath>"
+    )));
+    assert!(svg.contains(concat!(
+        "<g clip-path=\"url(#fallback-0)\">",
+        "<rect x=\"0\" y=\"0\" width=\"240\" height=\"100\" fill=\"#f1f3f5\"/>",
+        "<rect x=\"0\" y=\"0\" width=\"240\" height=\"100\" fill=\"none\" ",
+        "stroke=\"#868e96\" stroke-width=\"2\" stroke-dasharray=\"6 4\" stroke-dashoffset=\"0\"/>",
+        "<path d=\"M0 0 L240 100 M240 0 L0 100\" fill=\"none\" stroke=\"#868e96\" ",
+        "stroke-width=\"2\"/>"
+    )));
+    assert!(svg.contains(concat!(
+        "<text x=\"120\" y=\"50\" fill=\"#495057\" font-family=\"Liberation Sans\" ",
+        "font-size=\"14\" text-anchor=\"middle\" dominant-baseline=\"central\">",
+        "Unsupported: future&lt;&amp;</text>"
+    )));
+}
+
+#[test]
+fn bounded_fallback_and_unbounded_omission_succeed_in_every_format() {
+    let scene = SceneDocument::parse(
+        br#"{
+        "type":"excalidraw",
+        "version":2,
+        "elements":[
+            {"id":"unknown","type":"future","x":0,"y":0,"width":200,"height":80,"updated":1},
+            null
+        ],
+        "appState":{},
+        "files":{}
+    }"#,
+    )
+    .expect("fallback and omission occurrences are admitted");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("default request is valid");
+        let first = Renderer::new()
+            .render(&scene, &request)
+            .expect("diagnosed local loss retains a meaningful artifact");
+        let second = Renderer::new()
+            .render(&scene, &request)
+            .expect("the same diagnosed local loss renders again");
+
+        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+        assert_eq!(first.report(), second.report());
+        assert_eq!(first.artifact().format(), format);
+        assert_eq!(
+            boundary_diagnostics(&first)
+                .iter()
+                .map(|diagnostic| (diagnostic.code(), diagnostic.json_pointer()))
+                .collect::<Vec<_>>(),
+            [
+                (
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_ELEMENT_TYPE,
+                    "/elements/0"
+                ),
+                (
+                    DiagnosticCode::COMPATIBILITY_MALFORMED_ELEMENT,
+                    "/elements/1"
+                ),
+            ]
+        );
+        assert!(matches!(
+            boundary_diagnostics(&first)[1].details(),
+            Some(ErrorDetails::Compatibility {
+                recovery: Recovery::Omitted,
+                recipe_id: None,
+            })
+        ));
+
+        match format {
+            OutputFormat::Svg => {
+                let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
+                assert!(svg.contains("Unsupported: future</text>"));
+            }
+            OutputFormat::Png => {
+                let decoder = png::Decoder::new(Cursor::new(first.artifact().bytes()));
+                let reader = decoder.read_info().expect("PNG structure is valid");
+                assert_eq!((reader.info().width, reader.info().height), (220, 100));
+            }
+            OutputFormat::Pdf => {
+                let pdf = first.artifact().bytes();
+                assert!(pdf.starts_with(b"%PDF-1.7"));
+                assert!(pdf.windows(10).any(|bytes| bytes == b"[6 4] 0 d\n"));
+            }
+            _ => panic!("the test covers the revision-1 format set"),
+        }
+    }
+}
+
+#[test]
+fn compatibility_labels_use_full_ellipsis_or_omitted_fit_behavior() {
+    let scene = SceneDocument::parse(
+        br#"{
+        "type":"excalidraw",
+        "version":2,
+        "elements":[
+            {"id":"wide","type":"future","x":0,"y":0,"width":200,"height":60,"updated":1},
+            {"id":"narrow","type":"","x":220,"y":0,"width":20,"height":30,"updated":1},
+            {"id":"tiny","type":"future","x":260,"y":0,"width":8,"height":8,"updated":1}
+        ],
+        "appState":{},
+        "files":{}
+    }"#,
+    )
+    .expect("fit vectors are admitted");
+
+    let svg = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
+    assert_eq!(svg.matches("<text ").count(), 2);
+    assert!(svg.contains(">Unsupported: future</text>"));
+    assert!(svg.contains(">…</text>"));
+    assert!(svg.contains("<excalidraw-render:manifest xmlns:excalidraw-render=\"urn:excalidraw-render:artifact-manifest:1\">"));
+    assert!(svg.contains("Digitized data copyright (c) 2010 Google Corporation\\n"));
+
+    let png = render(&scene, OutputFormat::Png);
+    let (_, _, rgba) = decode_png(png.artifact().bytes());
+    assert!(rgba
+        .chunks_exact(4)
+        .any(|pixel| pixel == [0x49, 0x50, 0x57, 0xff]));
+    assert!(!png
+        .artifact()
+        .bytes()
+        .windows("liberation-sans.ofl-full".len())
+        .any(|window| window == b"liberation-sans.ofl-full"));
+
+    let pdf = render(&scene, OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    assert!(pdf.contains("/ActualText <FEFF0055006E0073007500700070006F0072007400650064003A0020006600750074007500720065>"));
+    assert!(pdf.contains("/ActualText <FEFF2026>"));
+    assert!(pdf.contains("/Subtype /Type0"));
+    assert!(pdf.contains("/ToUnicode "));
+    assert!(pdf.contains("BT\n/F1 14 Tf\n"));
+    assert!(pdf.contains("/Type /Metadata\n/Subtype /XML"));
+    assert!(pdf.contains("<er:manifest>{\"schema_version\":1,"));
+    assert!(pdf.contains("Digitized data copyright (c) 2010 Google Corporation\\n"));
+}
+
+#[test]
+fn known_but_unavailable_elements_use_the_known_placeholder_without_generic_noise() {
+    let scene = SceneDocument::parse(
+        br##"{
+        "type":"excalidraw",
+        "version":2,
+        "elements":[
+            {
+                "id":"line",
+                "type":"line",
+                "x":0,
+                "y":0,
+                "width":180,
+                "height":60,
+                "points":[[0,0],[180,60]],
+                "strokeColor":"#1e1e1e",
+                "backgroundColor":"transparent",
+                "fillStyle":"solid",
+                "strokeWidth":2,
+                "strokeStyle":"solid",
+                "roughness":1,
+                "opacity":100,
+                "seed":1,
+                "updated":1
+            },
+            {"id":"diamond","type":"diamond","x":210,"y":0,"width":180,"height":60,"updated":1}
+        ],
+        "appState":{},
+        "files":{}
+    }"##,
+    )
+    .expect("known element vectors are admitted");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let outcome = render(&scene, format);
+        let diagnostics = boundary_diagnostics(&outcome);
+        assert_eq!(diagnostics.len(), 2);
+        for (diagnostic, expected_id) in diagnostics.iter().zip(["line", "diamond"]) {
+            assert_eq!(
+                diagnostic.code(),
+                DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
+            );
+            assert_eq!(diagnostic.element_id(), Some(expected_id));
+            assert!(matches!(
+                diagnostic.details(),
+                Some(ErrorDetails::Compatibility {
+                    recovery: Recovery::Placeholder,
+                    recipe_id: Some(recipe),
+                }) if recipe == "renderer.known-element-unavailable.v1"
+            ));
+        }
+        if format == OutputFormat::Svg {
+            let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+            assert!(svg.contains(">Unavailable: line</text>"));
+            assert!(svg.contains(">Unavailable: diamond</text>"));
+        }
+    }
+}
+
+#[test]
+fn compatibility_placeholder_preserves_safe_links_only_in_semantic_formats() {
+    let link = "https://example.com/path?x=1&y=2";
+    let source = format!(
+        r#"{{"type":"excalidraw","version":2,"elements":[{{"id":"linked","type":"future","x":0,"y":0,"width":200,"height":60,"angle":0.2,"link":"{link}","updated":1}}],"appState":{{}},"files":{{}}}}"#
+    );
+    let scene = SceneDocument::parse(source.as_bytes()).expect("safe linked fallback is admitted");
+
+    let svg = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("<a href=\"https://example.com/path?x=1&amp;y=2\">"));
+    assert!(svg.contains("</g></a>"));
+
+    let png = render(&scene, OutputFormat::Png);
+    assert!(!png
+        .artifact()
+        .bytes()
+        .windows(link.len())
+        .any(|window| window == link.as_bytes()));
+
+    let pdf = render(&scene, OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    assert!(pdf.contains("/Subtype /Link"));
+    assert!(pdf.contains("/S /URI\n/URI (https://example.com/path?x=1&y=2)"));
+    assert!(pdf.contains("/QuadPoints ["));
+    let page = pdf
+        .split_once("/Type /Page\n")
+        .map(|(_, page)| page)
+        .expect("PDF has one page dictionary");
+    assert!(page.contains("/Resources <<\n/ColorSpace"));
+    assert!(page.contains(">>\n/Annots ["));
+}
+
+#[test]
+fn compatibility_placeholder_omits_components_that_do_not_fit_source_bounds() {
+    let scene = SceneDocument::parse(
+        br#"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"tiny","type":"future","x":0,"y":0,"width":1,"height":1,"updated":1}],
+        "appState":{},"files":{}
+    }"#,
+    )
+    .expect("tiny positive bounds are recoverable");
+
+    let svg = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("width=\"1\" height=\"1\" fill=\"#f1f3f5\""));
+    assert!(!svg.contains("stroke=\"#868e96\""));
+    assert!(!svg.contains("<path "));
+    assert!(!svg.contains("<text "));
+
+    let png = render(&scene, OutputFormat::Png);
+    let (_, _, rgba) = decode_png(png.artifact().bytes());
+    assert!(!rgba
+        .chunks_exact(4)
+        .any(|pixel| pixel[..3] == [0x86, 0x8e, 0x96]));
+
+    let pdf = render(&scene, OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    assert!(!pdf.contains("[6 4] 0 d"));
+    assert!(!pdf.contains("/ActualText"));
+}
+
+#[test]
+fn fallback_geometry_is_admitted_as_its_own_semantic_transaction() {
+    let scene = SceneDocument::parse(
+        br#"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"tiny","type":"future","x":0,"y":0,"width":1,"height":1,"updated":1}],
+        "appState":{},"files":{}
+    }"#,
+    )
+    .expect("tiny fallback is admitted");
+
+    let accepted = ResourceLimits::builder()
+        .max_geometry_segments_per_element(5)
+        .max_total_geometry_segments(5)
+        .build()
+        .expect("fallback geometry equality limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(accepted)
+        .build()
+        .expect("resource-limited SVG request is valid");
+    Renderer::new()
+        .render(&scene, &request)
+        .expect("the exact five-command fallback fits");
+
+    let rejected = ResourceLimits::builder()
+        .max_geometry_segments_per_element(4)
+        .max_total_geometry_segments(4)
+        .build()
+        .expect("fallback geometry crossing limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(rejected)
+        .build()
+        .expect("resource-limited SVG request is valid");
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("the fifth fallback command crosses atomically");
+
+    assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_GEOMETRY_EXCEEDED);
+    assert_eq!(error.element_id(), Some("tiny"));
+    assert_eq!(error.json_pointer(), "/elements/0");
+}
+
+#[test]
+fn compatibility_placeholder_preserves_frame_clipping_in_every_format() {
+    let scene = SceneDocument::parse(br#"{
+        "type":"excalidraw","version":2,
+        "elements":[
+            {"id":"frame","type":"frame","x":0,"y":0,"width":100,"height":60,"updated":1},
+            {"id":"child","type":"future","x":80,"y":10,"width":80,"height":40,"frameId":"frame","updated":1}
+        ],
+        "appState":{},"files":{}
+    }"#)
+    .expect("framed fallback is admitted");
+
+    let svg = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("<clipPath id=\"frame-fallback-1\">"));
+    assert!(svg.contains("<g clip-path=\"url(#frame-fallback-1)\">"));
+
+    let png = render(&scene, OutputFormat::Png);
+    let (width, _, rgba) = decode_png(png.artifact().bytes());
+    let pixel = |x: u32, y: u32| {
+        let offset = usize::try_from((u64::from(y) * u64::from(width) + u64::from(x)) * 4)
+            .expect("fixture pixel offset fits usize");
+        &rgba[offset..offset + 4]
+    };
+    assert_ne!(pixel(95, 40), [255, 255, 255, 255]);
+    assert_eq!(pixel(140, 40), [255, 255, 255, 255]);
+
+    let pdf = render(&scene, OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    assert!(pdf.matches("W\nn\n").count() >= 3);
+}
+
+#[test]
+fn fallback_label_text_is_preflighted_at_aggregate_and_local_boundaries() {
+    let scene = SceneDocument::parse(br#"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"unknown","type":"future","x":0,"y":0,"width":200,"height":60,"updated":1}],
+        "appState":{},"files":{}
+    }"#)
+    .expect("fallback text vector is admitted");
+
+    let accepted = ResourceLimits::builder()
+        .max_text_scalars_per_element(19)
+        .max_total_text_scalars(19)
+        .build()
+        .expect("fallback text equality limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(accepted)
+        .build()
+        .expect("resource-limited SVG request is valid");
+    Renderer::new()
+        .render(&scene, &request)
+        .expect("all nineteen generated scalars fit at equality");
+
+    let aggregate = ResourceLimits::builder()
+        .max_text_scalars_per_element(18)
+        .max_total_text_scalars(18)
+        .build()
+        .expect("aggregate text crossing limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(aggregate)
+        .build()
+        .expect("resource-limited SVG request is valid");
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("the nineteenth generated scalar crosses atomically");
+    assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_TEXT_EXCEEDED);
+    assert_eq!(error.element_id(), Some("unknown"));
+
+    let competing = ResourceLimits::builder()
+        .max_geometry_segments_per_element(4)
+        .max_total_geometry_segments(4)
+        .max_text_scalars_per_element(18)
+        .max_total_text_scalars(18)
+        .build()
+        .expect("competing fallback limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(competing)
+        .build()
+        .expect("resource-limited SVG request is valid");
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("geometry wins at a shared fallback source point");
+    assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_GEOMETRY_EXCEEDED);
+
+    let local = ResourceLimits::builder()
+        .max_text_scalars_per_element(18)
+        .max_total_text_scalars(19)
+        .build()
+        .expect("local text crossing limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(local)
+        .build()
+        .expect("resource-limited SVG request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("local fallback exhaustion retains source-sized artifact bounds");
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("viewBox=\"0 0 220 80\""));
+    assert!(!svg.contains("fill=\"#f1f3f5\""));
+    assert!(outcome.report().diagnostics().iter().any(|diagnostic| {
+        diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
+    }));
+}
+
+#[test]
+fn png_fallback_surface_obeys_aggregate_precedence_and_local_recovery() {
+    let scene = SceneDocument::parse(br#"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"unknown","type":"future","x":0,"y":0,"width":200,"height":60,"updated":1}],
+        "appState":{},"files":{}
+    }"#)
+    .expect("fallback raster vector is admitted");
+
+    let aggregate = ResourceLimits::builder()
+        .max_raster_surface_pixels(10_000)
+        .max_total_rasterized_pixels(10_000)
+        .build()
+        .expect("aggregate fallback raster limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .resource_limits(aggregate)
+        .build()
+        .expect("resource-limited PNG request is valid");
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("aggregate fallback pixels beat local recovery");
+    assert_eq!(
+        error.code(),
+        ErrorCode::RESOURCE_TOTAL_RASTERIZED_PIXELS_EXCEEDED
+    );
+
+    let local = ResourceLimits::builder()
+        .max_raster_surface_pixels(10_000)
+        .max_total_rasterized_pixels(20_000)
+        .build()
+        .expect("local fallback raster limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .resource_limits(local)
+        .build()
+        .expect("resource-limited PNG request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("local fallback surface exhaustion retains the background");
+    let (_, _, rgba) = decode_png(outcome.artifact().bytes());
+    assert!(rgba
+        .chunks_exact(4)
+        .all(|pixel| pixel == [255, 255, 255, 255]));
+    assert!(outcome.report().diagnostics().iter().any(|diagnostic| {
+        diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
+    }));
+}
+
+#[test]
+fn compatibility_placeholder_opacity_is_applied_to_the_composited_group() {
+    let scene = SceneDocument::parse(br#"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"unknown","type":"future","x":0,"y":0,"width":200,"height":60,"opacity":40,"updated":1}],
+        "appState":{},"files":{}
+    }"#)
+    .expect("translucent fallback is admitted");
+
+    let png = render(&scene, OutputFormat::Png);
+    let (width, _, rgba) = decode_png(png.artifact().bytes());
+    let pixel = |x: u32, y: u32| {
+        let offset = usize::try_from((u64::from(y) * u64::from(width) + u64::from(x)) * 4)
+            .expect("fixture pixel offset fits usize");
+        &rgba[offset..offset + 4]
+    };
+    assert_eq!(pixel(30, 20), [249, 250, 251, 255]);
+
+    let pdf = render(&scene, OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    assert!(pdf.contains("/Group << /S /Transparency /I true /CS /DeviceRGB >>"));
+    assert!(pdf.contains("/FB1 Do"));
+}
+
+#[test]
+fn generated_labels_report_controlled_font_substitution_and_missing_glyphs() {
+    let scene = SceneDocument::parse(r#"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"unknown","type":"future😀","x":0,"y":0,"width":240,"height":60,"updated":1}],
+        "appState":{},"files":{}
+    }"#.as_bytes())
+    .expect("Unicode fallback label is admitted");
+
+    let outcome = render(&scene, OutputFormat::Svg);
+    assert!(outcome.report().diagnostics().iter().any(|diagnostic| {
+        diagnostic.code() == DiagnosticCode::FONT_LIBERATION_SANS_SUBSTITUTED
+    }));
+    let missing = outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .find(|diagnostic| diagnostic.code() == DiagnosticCode::FONT_MISSING_GLYPH)
+        .expect("unsupported emoji uses the controlled replacement glyph");
+    assert!(matches!(
+        missing.details(),
+        Some(ErrorDetails::MissingGlyph {
+            codepoint: 0x1f600,
+            recovery: Recovery::Substituted,
+        })
+    ));
+}
+
+#[test]
+fn resource_specific_omission_never_uses_the_generic_known_element_box() {
+    let scene = SceneDocument::parse(br#"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"image","type":"image","x":0,"y":0,"width":200,"height":60,"fileId":"missing","status":"saved","updated":1}],
+        "appState":{},"files":{}
+    }"#)
+    .expect("missing image vector is admitted");
+
+    for format in [OutputFormat::Svg, OutputFormat::Pdf] {
+        let outcome = render(&scene, format);
+        assert!(outcome.report().diagnostics().iter().any(|diagnostic| {
+            diagnostic.code() == DiagnosticCode::IMAGE_MISSING_FILE
+                && matches!(
+                    diagnostic.details(),
+                    Some(ErrorDetails::Asset {
+                        recovery: Recovery::Omitted,
+                        ..
+                    })
+                )
+        }));
+        assert!(!outcome.report().diagnostics().iter().any(|diagnostic| {
+            diagnostic.code() == DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
+        }));
+        assert!(!outcome
+            .artifact()
+            .bytes()
+            .windows("Unavailable: image".len())
+            .any(|window| window == b"Unavailable: image"));
+    }
+}
+
+fn render(scene: &SceneDocument, format: OutputFormat) -> excalidraw_render::RenderOutcome {
+    let request = RenderRequest::builder(format)
+        .build()
+        .expect("default request is valid");
+    Renderer::new()
+        .render(scene, &request)
+        .expect("compatibility content renders")
+}
+
+fn boundary_diagnostics(
+    outcome: &excalidraw_render::RenderOutcome,
+) -> Vec<&excalidraw_render::CompatibilityDiagnostic> {
+    outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .filter(|diagnostic| {
+            matches!(
+                diagnostic.code(),
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_ELEMENT_TYPE
+                    | DiagnosticCode::COMPATIBILITY_MALFORMED_ELEMENT
+                    | DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
+            )
+        })
+        .collect()
+}
+
+fn decode_png(bytes: &[u8]) -> (u32, u32, Vec<u8>) {
+    let mut decoder = png::Decoder::new(Cursor::new(bytes));
+    decoder.set_transformations(png::Transformations::IDENTITY);
+    let mut reader = decoder.read_info().expect("PNG structure is valid");
+    let mut rgba = vec![0; reader.output_buffer_size()];
+    let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
+    rgba.truncate(frame.buffer_size());
+    (frame.width, frame.height, rgba)
+}

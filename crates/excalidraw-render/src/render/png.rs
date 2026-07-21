@@ -1,7 +1,7 @@
 use crate::RenderRequest;
 use tiny_skia::{
-    BlendMode, Color, FillRule, LineCap, LineJoin, Paint, PathBuilder, PathStroker, PixmapMut,
-    Shader, Stroke, Transform,
+    BlendMode, Color, FillRule, IntSize, LineCap, LineJoin, Mask, Paint, PathBuilder, PathStroker,
+    PixmapMut, PixmapPaint, Shader, Stroke, StrokeDash, Transform,
 };
 
 use super::{
@@ -27,6 +27,24 @@ enum PngElement {
         base_element_work_units: u64,
         render: bool,
     },
+    Fallback {
+        source: super::FallbackSource,
+        label: Option<super::text::ResolvedLabel>,
+        frame_clip: Option<PngFrameClip>,
+        width: f64,
+        height: f64,
+        transform: PngTransform,
+        opacity: f64,
+        base_element_work_units: u64,
+        render: bool,
+    },
+}
+
+#[derive(Clone, Copy)]
+struct PngFrameClip {
+    width: f64,
+    height: f64,
+    transform: PngTransform,
 }
 
 #[derive(Clone, Copy)]
@@ -61,14 +79,23 @@ impl PngTransform {
     }
 
     fn raster_transform(self, multiplier: u32) -> Result<Transform, FormatEncodeError> {
+        self.raster_transform_with_origin(multiplier, 0, 0)
+    }
+
+    fn raster_transform_with_origin(
+        self,
+        multiplier: u32,
+        origin_x: u32,
+        origin_y: u32,
+    ) -> Result<Transform, FormatEncodeError> {
         let multiplier = f64::from(multiplier);
         let transform = Transform::from_row(
             finite_f32(self.a * multiplier, "PNG transform a")?,
             finite_f32(self.b * multiplier, "PNG transform b")?,
             finite_f32(self.c * multiplier, "PNG transform c")?,
             finite_f32(self.d * multiplier, "PNG transform d")?,
-            finite_f32(self.e * multiplier, "PNG transform e")?,
-            finite_f32(self.f * multiplier, "PNG transform f")?,
+            finite_f32(self.e * multiplier - f64::from(origin_x), "PNG transform e")?,
+            finite_f32(self.f * multiplier - f64::from(origin_y), "PNG transform f")?,
         );
         if !transform.is_valid() {
             return Err(FormatEncodeError::Encoding(
@@ -124,6 +151,38 @@ impl PngPlan {
                         stroke_width: rectangle.stroke_width,
                         opacity: rectangle.opacity,
                         base_element_work_units: rectangle.base_element_work_units,
+                        render: true,
+                    });
+                }
+                ResolvedElement::Fallback(fallback) => {
+                    let visual_commands: u64 = if fallback.width >= 2.0 && fallback.height >= 2.0 {
+                        9
+                    } else {
+                        5
+                    };
+                    let label_work = fallback.label.as_ref().map_or(0, |label| {
+                        u64::try_from(label.text.chars().count())
+                            .unwrap_or(u64::MAX)
+                            .saturating_mul(32)
+                            .saturating_add(
+                                u64::try_from(label.path.operations.len())
+                                    .unwrap_or(u64::MAX)
+                                    .saturating_mul(32),
+                            )
+                    });
+                    elements.push(PngElement::Fallback {
+                        source: fallback.source,
+                        label: fallback.label,
+                        frame_clip: fallback.frame_clip.map(|clip| PngFrameClip {
+                            width: clip.width,
+                            height: clip.height,
+                            transform: PngTransform::new(&clip.transform, scale),
+                        }),
+                        width: fallback.width,
+                        height: fallback.height,
+                        transform: PngTransform::new(&fallback.transform, scale),
+                        opacity: fallback.opacity,
+                        base_element_work_units: visual_commands * 32 + 8 + label_work,
                         render: true,
                     });
                 }
@@ -246,6 +305,166 @@ impl PngPlan {
                             None,
                         );
                     }
+                    PngElement::Fallback {
+                        source,
+                        label,
+                        frame_clip,
+                        width,
+                        height,
+                        transform,
+                        opacity,
+                        render,
+                        ..
+                    } => {
+                        if !render {
+                            continue;
+                        }
+                        if source.pointer.is_empty() {
+                            return Err(FormatEncodeError::Encoding(
+                                "PNG fallback lost its source location".to_owned(),
+                            ));
+                        }
+                        let (left, top, right, bottom) = fallback_coverage_bounds(
+                            *width,
+                            *height,
+                            *transform,
+                            self.width,
+                            self.height,
+                        );
+                        let layer_width = right
+                            .saturating_sub(left)
+                            .checked_mul(SUBPIXEL_SCALE)
+                            .ok_or_else(png_size_error)?;
+                        let layer_height = bottom
+                            .saturating_sub(top)
+                            .checked_mul(SUBPIXEL_SCALE)
+                            .ok_or_else(png_size_error)?;
+                        if layer_width == 0 || layer_height == 0 {
+                            continue;
+                        }
+                        let layer_x = left
+                            .checked_mul(SUBPIXEL_SCALE)
+                            .ok_or_else(png_size_error)?;
+                        let layer_y = top.checked_mul(SUBPIXEL_SCALE).ok_or_else(png_size_error)?;
+                        let transform = transform.raster_transform_with_origin(
+                            SUBPIXEL_SCALE,
+                            layer_x,
+                            layer_y,
+                        )?;
+                        let (bounds, cross) = fallback_paths(*width, *height)?;
+                        let mask_bytes = usize::try_from(layer_width)
+                            .ok()
+                            .and_then(|width| {
+                                width.checked_mul(usize::try_from(layer_height).ok()?)
+                            })
+                            .ok_or_else(png_size_error)?;
+                        let mut mask_data = Vec::new();
+                        mask_data.try_reserve_exact(mask_bytes).map_err(|_| {
+                            FormatEncodeError::MemoryUnavailable {
+                                subject_kind: "raster_surface",
+                                subject: "png_fallback_clip",
+                            }
+                        })?;
+                        mask_data.resize(mask_bytes, 0);
+                        let mask_size = IntSize::from_wh(layer_width, layer_height)
+                            .ok_or_else(png_size_error)?;
+                        let mut clip = Mask::from_vec(mask_data, mask_size).ok_or_else(|| {
+                            FormatEncodeError::Encoding(
+                                "PNG fallback clip dimensions are invalid".to_owned(),
+                            )
+                        })?;
+                        clip.fill_path(&bounds, FillRule::Winding, true, transform);
+                        if let Some(frame_clip) = frame_clip {
+                            let (frame_bounds, _) =
+                                fallback_paths(frame_clip.width, frame_clip.height)?;
+                            clip.intersect_path(
+                                &frame_bounds,
+                                FillRule::Winding,
+                                true,
+                                frame_clip.transform.raster_transform_with_origin(
+                                    SUBPIXEL_SCALE,
+                                    layer_x,
+                                    layer_y,
+                                )?,
+                            );
+                        }
+
+                        let layer_rgba_bytes = usize::try_from(layer_width)
+                            .ok()
+                            .and_then(|width| {
+                                width.checked_mul(usize::try_from(layer_height).ok()?)
+                            })
+                            .and_then(|pixels| pixels.checked_mul(4))
+                            .ok_or_else(png_size_error)?;
+                        let mut layer_bytes = Vec::new();
+                        layer_bytes
+                            .try_reserve_exact(layer_rgba_bytes)
+                            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                                subject_kind: "raster_surface",
+                                subject: "png_fallback_layer",
+                            })?;
+                        layer_bytes.resize(layer_rgba_bytes, 0);
+                        let mut layer =
+                            PixmapMut::from_bytes(&mut layer_bytes, layer_width, layer_height)
+                                .ok_or_else(png_size_error)?;
+
+                        let fill = solid_paint([0xf1, 0xf3, 0xf5], 1.0)?;
+                        layer.fill_path(&bounds, &fill, FillRule::Winding, transform, Some(&clip));
+                        if *width >= 2.0 && *height >= 2.0 {
+                            let stroke_paint = solid_paint([0x86, 0x8e, 0x96], 1.0)?;
+                            let dashed_stroke = Stroke {
+                                width: 2.0,
+                                miter_limit: 4.0,
+                                line_cap: LineCap::Butt,
+                                line_join: LineJoin::Miter,
+                                dash: StrokeDash::new(vec![6.0, 4.0], 0.0),
+                            };
+                            layer.stroke_path(
+                                &bounds,
+                                &stroke_paint,
+                                &dashed_stroke,
+                                transform,
+                                Some(&clip),
+                            );
+                            let cross_stroke = Stroke {
+                                width: 2.0,
+                                miter_limit: 4.0,
+                                line_cap: LineCap::Butt,
+                                line_join: LineJoin::Miter,
+                                dash: None,
+                            };
+                            layer.stroke_path(
+                                &cross,
+                                &stroke_paint,
+                                &cross_stroke,
+                                transform,
+                                Some(&clip),
+                            );
+                        }
+                        if let Some(label) = label {
+                            let label_path = label_path(&label.path)?;
+                            let label_paint = solid_paint([0x49, 0x50, 0x57], 1.0)?;
+                            layer.fill_path(
+                                &label_path,
+                                &label_paint,
+                                FillRule::Winding,
+                                transform,
+                                Some(&clip),
+                            );
+                        }
+                        let layer_paint = PixmapPaint {
+                            opacity: finite_f32(*opacity, "PNG fallback opacity")?,
+                            ..PixmapPaint::default()
+                        };
+                        surface.draw_pixmap(
+                            i32::try_from(layer_x).map_err(|_| png_size_error())?,
+                            i32::try_from(layer_y).map_err(|_| png_size_error())?,
+                            layer.as_ref(),
+                            &layer_paint,
+                            Transform::identity(),
+                            None,
+                        );
+                    }
                 }
             }
         }
@@ -262,6 +481,18 @@ impl PngPlan {
             } => {
                 conservative_coverage_area(path, *transform, *stroke_width, self.width, self.height)
             }
+            PngElement::Fallback {
+                width,
+                height,
+                transform,
+                ..
+            } => conservative_fallback_coverage_area(
+                *width,
+                *height,
+                *transform,
+                self.width,
+                self.height,
+            ),
         })
     }
 
@@ -271,6 +502,28 @@ impl PngPlan {
                 base_element_work_units,
                 ..
             } => *base_element_work_units,
+            PngElement::Fallback {
+                base_element_work_units,
+                ..
+            } => *base_element_work_units,
+        })
+    }
+
+    pub(super) fn fallback_surface_area(&self, index: usize) -> Option<Option<u64>> {
+        self.elements.get(index).map(|element| match element {
+            PngElement::RoughRectangle { .. } => None,
+            PngElement::Fallback {
+                width,
+                height,
+                transform,
+                ..
+            } => Some(conservative_fallback_coverage_area(
+                *width,
+                *height,
+                *transform,
+                self.width,
+                self.height,
+            )),
         })
     }
 
@@ -278,15 +531,20 @@ impl PngPlan {
         self.elements.len()
     }
 
-    pub(super) fn source(&self, index: usize) -> Option<(&str, &str)> {
+    pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
         self.elements.get(index).map(|element| match element {
-            PngElement::RoughRectangle { source, .. } => (source.id(), source.pointer()),
+            PngElement::RoughRectangle { source, .. } => (Some(source.id()), source.pointer()),
+            PngElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
 
     pub(super) fn omit_element(&mut self, index: usize) -> bool {
         match self.elements.get_mut(index) {
             Some(PngElement::RoughRectangle { render, .. }) => {
+                *render = false;
+                true
+            }
+            Some(PngElement::Fallback { render, .. }) => {
                 *render = false;
                 true
             }
@@ -501,6 +759,99 @@ fn tiny_skia_path(path: &Path) -> Result<tiny_skia::Path, FormatEncodeError> {
     })
 }
 
+fn fallback_paths(
+    width: f64,
+    height: f64,
+) -> Result<(tiny_skia::Path, tiny_skia::Path), FormatEncodeError> {
+    let width = finite_f32(width, "PNG fallback width")?;
+    let height = finite_f32(height, "PNG fallback height")?;
+    let mut bounds = PathBuilder::new();
+    bounds.move_to(0.0, 0.0);
+    bounds.line_to(width, 0.0);
+    bounds.line_to(width, height);
+    bounds.line_to(0.0, height);
+    bounds.close();
+    let bounds = bounds
+        .finish()
+        .ok_or_else(|| FormatEncodeError::Encoding("PNG fallback bounds are empty".to_owned()))?;
+    let mut cross = PathBuilder::new();
+    cross.move_to(0.0, 0.0);
+    cross.line_to(width, height);
+    cross.move_to(width, 0.0);
+    cross.line_to(0.0, height);
+    let cross = cross
+        .finish()
+        .ok_or_else(|| FormatEncodeError::Encoding("PNG fallback cross is empty".to_owned()))?;
+    Ok((bounds, cross))
+}
+
+fn label_path(path: &super::text::LabelPath) -> Result<tiny_skia::Path, FormatEncodeError> {
+    let point_capacity = path
+        .operations
+        .len()
+        .checked_mul(3)
+        .ok_or_else(png_size_error)?;
+    let mut builder = PathBuilder::with_capacity(path.operations.len(), point_capacity);
+    for operation in &path.operations {
+        match operation {
+            super::text::LabelPathOperation::Move { x, y } => builder.move_to(
+                finite_f32(*x, "PNG fallback label x")?,
+                finite_f32(*y, "PNG fallback label y")?,
+            ),
+            super::text::LabelPathOperation::Line { x, y } => builder.line_to(
+                finite_f32(*x, "PNG fallback label x")?,
+                finite_f32(*y, "PNG fallback label y")?,
+            ),
+            super::text::LabelPathOperation::Quadratic {
+                control_x,
+                control_y,
+                x,
+                y,
+            } => builder.quad_to(
+                finite_f32(*control_x, "PNG fallback label control x")?,
+                finite_f32(*control_y, "PNG fallback label control y")?,
+                finite_f32(*x, "PNG fallback label x")?,
+                finite_f32(*y, "PNG fallback label y")?,
+            ),
+            super::text::LabelPathOperation::Cubic {
+                control_1_x,
+                control_1_y,
+                control_2_x,
+                control_2_y,
+                x,
+                y,
+            } => builder.cubic_to(
+                finite_f32(*control_1_x, "PNG fallback label control x")?,
+                finite_f32(*control_1_y, "PNG fallback label control y")?,
+                finite_f32(*control_2_x, "PNG fallback label control x")?,
+                finite_f32(*control_2_y, "PNG fallback label control y")?,
+                finite_f32(*x, "PNG fallback label x")?,
+                finite_f32(*y, "PNG fallback label y")?,
+            ),
+            super::text::LabelPathOperation::Close => builder.close(),
+        }
+    }
+    builder
+        .finish()
+        .ok_or_else(|| FormatEncodeError::Encoding("PNG fallback label has no outline".to_owned()))
+}
+
+fn solid_paint(rgb: [u8; 3], opacity: f64) -> Result<Paint<'static>, FormatEncodeError> {
+    let color = Color::from_rgba(
+        f32::from(rgb[0]) / 255.0,
+        f32::from(rgb[1]) / 255.0,
+        f32::from(rgb[2]) / 255.0,
+        finite_f32(opacity, "PNG paint opacity")?,
+    )
+    .ok_or_else(|| FormatEncodeError::Encoding("PNG paint is outside RGBA range".to_owned()))?;
+    Ok(Paint {
+        shader: Shader::SolidColor(color),
+        blend_mode: BlendMode::SourceOver,
+        anti_alias: true,
+        force_hq_pipeline: true,
+    })
+}
+
 fn conservative_coverage_area(
     path: &Path,
     transform: PngTransform,
@@ -548,6 +899,58 @@ fn conservative_coverage_area(
         .ceil()
         .clamp(0.0, f64::from(surface_height));
     ((right - left) as u64).saturating_mul((bottom - top) as u64)
+}
+
+fn conservative_fallback_coverage_area(
+    width: f64,
+    height: f64,
+    transform: PngTransform,
+    surface_width: u32,
+    surface_height: u32,
+) -> u64 {
+    let (left, top, right, bottom) =
+        fallback_coverage_bounds(width, height, transform, surface_width, surface_height);
+    u64::from(right.saturating_sub(left)).saturating_mul(u64::from(bottom.saturating_sub(top)))
+}
+
+fn fallback_coverage_bounds(
+    width: f64,
+    height: f64,
+    transform: PngTransform,
+    surface_width: u32,
+    surface_height: u32,
+) -> (u32, u32, u32, u32) {
+    let points = [
+        Point { x: 0.0, y: 0.0 },
+        Point { x: width, y: 0.0 },
+        Point {
+            x: width,
+            y: height,
+        },
+        Point { x: 0.0, y: height },
+    ]
+    .map(|point| transform.map_point(point));
+    let min_x = points
+        .iter()
+        .map(|point| point.x)
+        .fold(f64::INFINITY, f64::min);
+    let min_y = points
+        .iter()
+        .map(|point| point.y)
+        .fold(f64::INFINITY, f64::min);
+    let max_x = points
+        .iter()
+        .map(|point| point.x)
+        .fold(f64::NEG_INFINITY, f64::max);
+    let max_y = points
+        .iter()
+        .map(|point| point.y)
+        .fold(f64::NEG_INFINITY, f64::max);
+    let left = min_x.floor().clamp(0.0, f64::from(surface_width));
+    let top = min_y.floor().clamp(0.0, f64::from(surface_height));
+    let right = max_x.ceil().clamp(0.0, f64::from(surface_width));
+    let bottom = max_y.ceil().clamp(0.0, f64::from(surface_height));
+    (left as u32, top as u32, right as u32, bottom as u32)
 }
 
 fn canonicalize_straight_alpha(rgba: &mut [u8]) -> Result<(), FormatEncodeError> {

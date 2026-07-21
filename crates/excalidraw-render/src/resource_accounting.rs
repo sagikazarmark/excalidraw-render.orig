@@ -17,6 +17,10 @@ pub(crate) struct ResourceDelta {
     pub(crate) elements: u64,
     #[serde(skip_serializing_if = "is_zero")]
     pub(crate) geometry_segments: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub(crate) text_scalars: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub(crate) rasterized_pixels: u64,
     pub(crate) diagnostics: u64,
     pub(crate) working_bytes: u64,
     pub(crate) output_bytes: u64,
@@ -29,6 +33,10 @@ struct ResourceCounters {
     elements: u64,
     #[serde(skip_serializing_if = "is_zero")]
     geometry_segments: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    text_scalars: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    rasterized_pixels: u64,
     diagnostics: u64,
     working_bytes: u64,
     output_bytes: u64,
@@ -223,6 +231,11 @@ impl ResourceMeter {
                 self.counters.geometry_segments,
                 delta.geometry_segments,
             ),
+            text_scalars: Attempted::new(self.counters.text_scalars, delta.text_scalars),
+            rasterized_pixels: Attempted::new(
+                self.counters.rasterized_pixels,
+                delta.rasterized_pixels,
+            ),
             diagnostics: Attempted::new(self.counters.diagnostics, delta.diagnostics),
             working_bytes: Attempted::new(self.counters.working_bytes, delta.working_bytes),
             output_bytes: Attempted::new(self.counters.output_bytes, delta.output_bytes),
@@ -311,6 +324,8 @@ struct AttemptedCounters {
     scene_bytes: Attempted,
     elements: Attempted,
     geometry_segments: Attempted,
+    text_scalars: Attempted,
+    rasterized_pixels: Attempted,
     diagnostics: Attempted,
     working_bytes: Attempted,
     output_bytes: Attempted,
@@ -323,6 +338,8 @@ impl AttemptedCounters {
             scene_bytes: self.scene_bytes.exact()?,
             elements: self.elements.exact()?,
             geometry_segments: self.geometry_segments.exact()?,
+            text_scalars: self.text_scalars.exact()?,
+            rasterized_pixels: self.rasterized_pixels.exact()?,
             diagnostics: self.diagnostics.exact()?,
             working_bytes: self.working_bytes.exact()?,
             output_bytes: self.output_bytes.exact()?,
@@ -339,6 +356,11 @@ fn fatal_crossing(
         (LimitKind::SceneBytes, attempted.scene_bytes),
         (LimitKind::Elements, attempted.elements),
         (LimitKind::TotalGeometry, attempted.geometry_segments),
+        (LimitKind::TotalText, attempted.text_scalars),
+        (
+            LimitKind::TotalRasterizedPixels,
+            attempted.rasterized_pixels,
+        ),
         (LimitKind::Diagnostics, attempted.diagnostics),
         (LimitKind::WorkingBytes, attempted.working_bytes),
         (LimitKind::OutputBytes, attempted.output_bytes),
@@ -360,6 +382,12 @@ fn attempted_counters_for_trace(
         geometry_segments: attempted
             .geometry_segments
             .trace_value(limits.max_total_geometry_segments()),
+        text_scalars: attempted
+            .text_scalars
+            .trace_value(limits.max_total_text_scalars()),
+        rasterized_pixels: attempted
+            .rasterized_pixels
+            .trace_value(limits.max_total_rasterized_pixels()),
         diagnostics: attempted
             .diagnostics
             .trace_value(u64::from(limits.max_diagnostics())),
@@ -436,6 +464,8 @@ enum LimitKind {
     SceneBytes,
     Elements,
     TotalGeometry,
+    TotalText,
+    TotalRasterizedPixels,
     Diagnostics,
     WorkingBytes,
     OutputBytes,
@@ -448,6 +478,8 @@ impl LimitKind {
             Self::SceneBytes => limits.max_scene_bytes(),
             Self::Elements => u64::from(limits.max_elements()),
             Self::TotalGeometry => limits.max_total_geometry_segments(),
+            Self::TotalText => limits.max_total_text_scalars(),
+            Self::TotalRasterizedPixels => limits.max_total_rasterized_pixels(),
             Self::Diagnostics => u64::from(limits.max_diagnostics()),
             Self::WorkingBytes => limits.max_working_bytes(),
             Self::OutputBytes => limits.max_output_bytes(),
@@ -490,6 +522,18 @@ impl LimitKind {
                 field: "max_total_geometry_segments",
                 value_kind: ValueKind::Count,
                 message: "total geometry segment limit exceeded",
+            },
+            Self::TotalText => LimitMetadata {
+                code: ErrorCode::RESOURCE_TOTAL_TEXT_EXCEEDED,
+                field: "max_total_text_scalars",
+                value_kind: ValueKind::Count,
+                message: "total text scalar limit exceeded",
+            },
+            Self::TotalRasterizedPixels => LimitMetadata {
+                code: ErrorCode::RESOURCE_TOTAL_RASTERIZED_PIXELS_EXCEEDED,
+                field: "max_total_rasterized_pixels",
+                value_kind: ValueKind::Pixels,
+                message: "total rasterized pixel limit exceeded",
             },
             Self::Diagnostics => LimitMetadata {
                 code: ErrorCode::RESOURCE_DIAGNOSTIC_COUNT_EXCEEDED,

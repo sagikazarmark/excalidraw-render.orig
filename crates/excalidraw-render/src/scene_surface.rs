@@ -96,7 +96,24 @@ pub(crate) struct SurfaceDiagnostic {
 
 pub(crate) struct SurfaceClassification {
     pub(crate) diagnostics: Vec<SurfaceDiagnostic>,
-    pub(crate) has_unrendered_content: bool,
+    pub(crate) fallbacks: Vec<SurfaceFallback>,
+}
+
+pub(crate) struct SurfaceFallback {
+    pub(crate) source_order: u64,
+    pub(crate) element_id: Option<String>,
+    pub(crate) json_pointer: String,
+    pub(crate) label: String,
+    pub(crate) link: Option<String>,
+    pub(crate) frame_id: Option<String>,
+    pub(crate) is_frame: bool,
+    pub(crate) x: f64,
+    pub(crate) y: f64,
+    pub(crate) width: f64,
+    pub(crate) height: f64,
+    pub(crate) angle: f64,
+    pub(crate) opacity: f64,
+    pub(crate) paint: bool,
 }
 
 pub(crate) fn classify(
@@ -107,6 +124,7 @@ pub(crate) fn classify(
     diagnostic_limit: usize,
 ) -> Result<SurfaceClassification, TryReserveError> {
     let mut diagnostics = Vec::new();
+    let mut fallbacks = Vec::new();
     classify_record(
         scene,
         policy,
@@ -129,7 +147,6 @@ pub(crate) fn classify(
         diagnostic_limit,
         &mut diagnostics,
     )?;
-    let mut has_unrendered_content = false;
     for index in 0..scene.element_occurrence_count() {
         if diagnostics.len() >= diagnostic_limit {
             break;
@@ -159,7 +176,6 @@ pub(crate) fn classify(
                     "malformed element was omitted by the revision-1 scene-surface policy",
                 )?,
             });
-            has_unrendered_content = true;
             continue;
         };
         let kind = match member_value(members, "type") {
@@ -181,6 +197,45 @@ pub(crate) fn classify(
                 continue;
             }
             let has_unrendered_element = scene.element_at(index).is_none();
+            if has_unrendered_element {
+                let bounds = recoverable_bounds(members);
+                diagnostics.try_reserve(1)?;
+                diagnostics.push(SurfaceDiagnostic {
+                    source_order,
+                    source_position: 0,
+                    local_owner: element_id.map(try_owned).transpose()?,
+                    diagnostic: element_boundary_diagnostic(
+                        DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED,
+                        format,
+                        &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic],
+                        element_id,
+                        &pointer,
+                        if bounds.is_some() {
+                            Recovery::Placeholder
+                        } else {
+                            Recovery::Omitted
+                        },
+                        bounds
+                            .is_some()
+                            .then_some("renderer.known-element-unavailable.v1"),
+                        "known element unavailable to this renderer used the revision-1 fallback",
+                    )?,
+                });
+                if let Some(bounds) = bounds {
+                    let label = fallback_label("Unavailable: ", element_policy.kind)?;
+                    fallbacks.try_reserve(1)?;
+                    fallbacks.push(surface_fallback(
+                        source_order,
+                        element_id,
+                        &pointer,
+                        &label,
+                        fallback_link(members),
+                        fallback_frame_id(members),
+                        matches!(element_policy.kind, "frame" | "magicframe"),
+                        bounds,
+                    )?);
+                }
+            }
             classify_element_record(
                 scene,
                 policy,
@@ -195,7 +250,6 @@ pub(crate) fn classify(
                 diagnostic_limit,
                 &mut diagnostics,
             )?;
-            has_unrendered_content |= has_unrendered_element;
             continue;
         }
         if kind == Some("draw") {
@@ -221,13 +275,14 @@ pub(crate) fn classify(
             continue;
         }
 
-        let safe_bounds = recoverable_bounds(members);
-        let (code, effects, recipe, message) = if kind.is_some() {
+        let bounds = recoverable_bounds(members);
+        let (code, effects, recipe, message, label) = if let Some(kind) = kind {
             (
                 DiagnosticCode::COMPATIBILITY_UNSUPPORTED_ELEMENT_TYPE,
                 &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic][..],
                 "renderer.unknown-element.v1",
                 "unsupported element type used the revision-1 element fallback",
+                fallback_label("Unsupported: ", kind)?,
             )
         } else {
             (
@@ -235,6 +290,7 @@ pub(crate) fn classify(
                 &[DiagnosticEffect::Visual][..],
                 "renderer.malformed-element.v1",
                 "malformed element used the revision-1 element fallback",
+                try_owned("Malformed element")?,
             )
         };
         diagnostics.try_reserve(1)?;
@@ -248,20 +304,32 @@ pub(crate) fn classify(
                 effects,
                 element_id,
                 &pointer,
-                if safe_bounds {
+                if bounds.is_some() {
                     Recovery::Placeholder
                 } else {
                     Recovery::Omitted
                 },
-                safe_bounds.then_some(recipe),
+                bounds.is_some().then_some(recipe),
                 message,
             )?,
         });
-        has_unrendered_content = true;
+        if let Some(bounds) = bounds {
+            fallbacks.try_reserve(1)?;
+            fallbacks.push(surface_fallback(
+                source_order,
+                element_id,
+                &pointer,
+                &label,
+                fallback_link(members),
+                fallback_frame_id(members),
+                false,
+                bounds,
+            )?);
+        }
     }
     Ok(SurfaceClassification {
         diagnostics,
-        has_unrendered_content,
+        fallbacks,
     })
 }
 
@@ -932,7 +1000,7 @@ fn field_participates(field: &SceneFieldPolicy, format: OutputFormat, frame_name
             || frame_names)
 }
 
-fn safe_link(link: &str) -> bool {
+pub(crate) fn safe_link(link: &str) -> bool {
     if link.is_empty() || link.chars().any(char::is_control) {
         return false;
     }
@@ -1423,17 +1491,108 @@ fn asset_media_type_diagnostic(
     })
 }
 
-fn recoverable_bounds(members: &[JsonMember]) -> bool {
-    ["x", "y", "width", "height"]
-        .into_iter()
-        .filter_map(|field| member_value(members, field))
-        .map(finite_json_number)
-        .all(|value| value.is_some())
-        && ["width", "height"].into_iter().all(|field| {
-            member_value(members, field)
-                .and_then(finite_json_number)
-                .is_some_and(|value| value != 0.0)
-        })
+#[derive(Clone, Copy)]
+struct RecoverableBounds {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    angle: f64,
+    opacity: f64,
+}
+
+fn recoverable_bounds(members: &[JsonMember]) -> Option<RecoverableBounds> {
+    let optional_coordinate = |field| match member_value(members, field) {
+        Some(value) => finite_json_number(value),
+        None => Some(0.0),
+    };
+    let mut x = optional_coordinate("x")?;
+    let mut y = optional_coordinate("y")?;
+    let source_width = member_value(members, "width").and_then(finite_json_number)?;
+    let source_height = member_value(members, "height").and_then(finite_json_number)?;
+    if source_width == 0.0 || source_height == 0.0 {
+        return None;
+    }
+    if source_width < 0.0 {
+        x += source_width;
+    }
+    if source_height < 0.0 {
+        y += source_height;
+    }
+    let angle = member_value(members, "angle")
+        .and_then(finite_json_number)
+        .unwrap_or(0.0);
+    let opacity = member_value(members, "opacity")
+        .and_then(finite_json_number)
+        .filter(|opacity| (0.0..=100.0).contains(opacity))
+        .unwrap_or(100.0);
+    Some(RecoverableBounds {
+        x: canonical_zero(x),
+        y: canonical_zero(y),
+        width: canonical_zero(source_width.abs()),
+        height: canonical_zero(source_height.abs()),
+        angle: canonical_zero(angle),
+        opacity: canonical_zero(opacity),
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn surface_fallback(
+    source_order: u64,
+    element_id: Option<&str>,
+    json_pointer: &str,
+    label: &str,
+    link: Option<&str>,
+    frame_id: Option<&str>,
+    is_frame: bool,
+    bounds: RecoverableBounds,
+) -> Result<SurfaceFallback, TryReserveError> {
+    Ok(SurfaceFallback {
+        source_order,
+        element_id: element_id.map(try_owned).transpose()?,
+        json_pointer: try_owned(json_pointer)?,
+        label: try_owned(label)?,
+        link: link.map(try_owned).transpose()?,
+        frame_id: frame_id.map(try_owned).transpose()?,
+        is_frame,
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+        angle: bounds.angle,
+        opacity: bounds.opacity,
+        paint: true,
+    })
+}
+
+fn fallback_link(members: &[JsonMember]) -> Option<&str> {
+    match member_value(members, "link") {
+        Some(JsonValue::String(link)) if safe_link(link) => Some(link),
+        _ => None,
+    }
+}
+
+fn fallback_frame_id(members: &[JsonMember]) -> Option<&str> {
+    match member_value(members, "frameId") {
+        Some(JsonValue::String(frame_id)) if !frame_id.is_empty() => Some(frame_id),
+        _ => None,
+    }
+}
+
+fn fallback_label(prefix: &str, kind: &str) -> Result<String, TryReserveError> {
+    let mut label = String::new();
+    label.try_reserve_exact(prefix.len().saturating_add(kind.len()))?;
+    label.push_str(prefix);
+    label.push_str(kind);
+    Ok(label)
+}
+
+fn canonical_zero(value: f64) -> f64 {
+    if value == 0.0 {
+        0.0
+    } else {
+        value
+    }
 }
 
 #[allow(clippy::too_many_arguments)]

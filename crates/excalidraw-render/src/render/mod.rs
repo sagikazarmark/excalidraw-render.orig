@@ -2,6 +2,7 @@ mod pdf;
 mod png;
 mod rough;
 mod svg;
+mod text;
 
 use crate::{
     catalog::RevisionCatalog,
@@ -189,7 +190,7 @@ impl RenderSession {
         }
 
         let mut semantic_working = Vec::new();
-        let resolved = {
+        let mut resolved = {
             let normalization = crate::normalization::normalize_scene_with_assets(
                 scene,
                 self.profile.compatibility_revision(),
@@ -290,23 +291,22 @@ impl RenderSession {
                     "/elements",
                 )
             })?;
-            if normalization.has_unrendered_content {
-                return Err(self.internal_failure(
-                    request.format(),
-                    "scene content awaits the compatibility fallback rendering slice",
-                    "/elements",
-                ));
-            }
             let semantic_record_count = normalization
                 .elements
                 .len()
+                .saturating_add(normalization.fallbacks.len())
                 .saturating_add(normalization.files.len())
                 .saturating_add(1);
             semantic_working
                 .try_reserve_exact(semantic_record_count)
                 .map_err(|_| self.memory_failure(request, "normalization", "working_records"))?;
-            let _frame_rendering = normalization.frame_rendering;
+            let frame_rendering = normalization.frame_rendering;
+            let clip_fallbacks_to_frames = frame_rendering.enabled
+                && frame_rendering.clip
+                && request.frame_options().enabled()
+                && request.frame_options().clip();
             let normalized_files = normalization.files;
+            let mut fallbacks = normalization.fallbacks;
             let mut rectangles = Vec::new();
             rectangles
                 .try_reserve_exact(normalization.elements.len())
@@ -316,11 +316,68 @@ impl RenderSession {
                 if !matches!(source.kind, NormalizedElementKind::Rectangle)
                     || !source.focused_rectangle_compatible
                 {
-                    return Err(self.internal_failure(
-                        request.format(),
-                        "nonempty scene is outside the implemented rectangle rendering slice",
-                        "/elements",
-                    ));
+                    let uses_non_generic_recovery =
+                        self.report.diagnostics.iter().any(|diagnostic| {
+                            diagnostic_uses_non_generic_recovery(&source, diagnostic)
+                        });
+                    if !self.report.diagnostics.iter().any(|diagnostic| {
+                        diagnostic.element_id() == Some(source.source.id())
+                            && diagnostic_replaces_element(diagnostic)
+                    }) {
+                        let diagnostic = known_element_replaced_diagnostic(
+                            request.format(),
+                            source.source.id(),
+                            source.source.pointer(),
+                            source.width > 0.0 && source.height > 0.0,
+                        )
+                        .map_err(|_| {
+                            self.memory_failure(
+                                request,
+                                "compatibility_report",
+                                "known_element_replacement",
+                            )
+                        })?;
+                        self.retain_diagnostic_with_owner(
+                            request,
+                            ResourcePhase::SharedSemanticResolution,
+                            "known_element_replacement",
+                            diagnostic,
+                            DiagnosticOwnership {
+                                local_owner: Some(source.source.id()),
+                                source_order: Some(source.source_order),
+                                source_position: Some(0),
+                            },
+                        )?;
+                    }
+                    semantic_working.push(SemanticWorkingRecord {
+                        source_order: source.source_order,
+                        event: "resolved_known_element_fallback",
+                        element_id: Some(try_owned(source.source.id()).map_err(|_| {
+                            self.memory_failure(request, "normalization", "working_record_identity")
+                        })?),
+                        local_owner: Some(try_owned(source.source.id()).map_err(|_| {
+                            self.memory_failure(request, "normalization", "working_record_owner")
+                        })?),
+                        json_pointer: try_owned(source.source.pointer()).map_err(|_| {
+                            self.memory_failure(request, "normalization", "working_record_pointer")
+                        })?,
+                        bytes: source.normalized_working_bytes,
+                    });
+                    if source.width > 0.0 && source.height > 0.0 {
+                        fallbacks.try_reserve(1).map_err(|_| {
+                            self.memory_failure(request, "semantic_geometry", "fallback_list")
+                        })?;
+                        let mut fallback = known_element_fallback(&source).map_err(|_| {
+                            self.memory_failure(
+                                request,
+                                "semantic_geometry",
+                                "known_element_fallback",
+                            )
+                        })?;
+                        fallback.paint = !uses_non_generic_recovery;
+                        fallbacks.push(fallback);
+                    }
+                    continue;
                 }
                 let has_outline = source.width != 0.0 && source.height != 0.0;
                 let geometry_segments = if has_outline {
@@ -375,7 +432,7 @@ impl RenderSession {
                     let diagnostic = crossing
                         .diagnostic(
                             request.format(),
-                            source.source.id(),
+                            Some(source.source.id()),
                             source.source.pointer(),
                         )
                         .map_err(|_| {
@@ -435,11 +492,18 @@ impl RenderSession {
                     bytes: file.normalized_working_bytes,
                 });
             }
+            self.account_compatibility_omissions(request)?;
+            self.preflight_fallback_text(&mut fallbacks, request, &mut semantic_working)?;
             semantic_working.sort_unstable_by_key(|record| record.source_order);
-            if rectangles.is_empty() {
+            if rectangles.is_empty() && fallbacks.is_empty() {
                 ResolvedScene::empty(request)
             } else {
-                match ResolvedScene::rectangles(rectangles, request) {
+                match ResolvedScene::elements(
+                    rectangles,
+                    fallbacks,
+                    clip_fallbacks_to_frames,
+                    request,
+                ) {
                     Ok(Some(resolved)) => resolved,
                     Ok(None) => {
                         return Err(self.internal_failure(
@@ -448,12 +512,20 @@ impl RenderSession {
                             "/elements",
                         ));
                     }
-                    Err(_) => {
+                    Err(ResolveSceneError::Memory) => {
                         return Err(self.memory_failure(request, "semantic_geometry", "rectangle"));
+                    }
+                    Err(ResolveSceneError::InvalidFallbackFont) => {
+                        return Err(self.internal_failure(
+                            request.format(),
+                            "the sealed fallback font could not be resolved",
+                            "/elements",
+                        ));
                     }
                 }
             }
         };
+        self.account_fallback_semantics(&mut resolved, request, &mut semantic_working)?;
         let bytes = self.encode(resolved, request, &semantic_working)?;
 
         Ok(RenderOutcome {
@@ -522,8 +594,8 @@ impl RenderSession {
                     "element_operation",
                     json_pointer,
                 )
-                .with_element_id(Some(element_id))
-                .with_local_owner(Some(element_id))
+                .with_element_id(element_id)
+                .with_local_owner(element_id)
                 .with_record(ResourceRecordKind::FormatPlanOperation),
                 ResourceDelta {
                     working_bytes: 128,
@@ -565,8 +637,8 @@ impl RenderSession {
                             "element_operation",
                             json_pointer,
                         )
-                        .with_element_id(Some(element_id))
-                        .with_local_owner(Some(element_id))
+                        .with_element_id(element_id)
+                        .with_local_owner(element_id)
                         .with_record(ResourceRecordKind::FormatPlanOperation),
                         128,
                     )?;
@@ -604,6 +676,88 @@ impl RenderSession {
                     raster_work,
                 )?;
                 for index in 0..plan.source_count() {
+                    let (element_id, json_pointer) = plan.source(index).ok_or_else(|| {
+                        self.internal_failure(
+                            request.format(),
+                            "PNG source operation is missing",
+                            "/elements",
+                        )
+                    })?;
+                    if let Some(fallback_pixels) =
+                        plan.fallback_surface_area(index).ok_or_else(|| {
+                            self.internal_failure(
+                                request.format(),
+                                "PNG fallback surface source is missing",
+                                "/elements",
+                            )
+                        })?
+                    {
+                        let surface_limit = request.resource_limits().max_raster_surface_pixels();
+                        let raster_delta = ResourceDelta {
+                            rasterized_pixels: fallback_pixels,
+                            ..ResourceDelta::default()
+                        };
+                        let raster_context = ResourceContext::new(
+                            ResourcePhase::ProjectionAndFallback,
+                            "fallback_raster_surface",
+                            json_pointer,
+                        )
+                        .with_element_id(element_id)
+                        .with_local_owner(element_id);
+                        if self.meter.would_cross_fatal(raster_delta) {
+                            self.transact(request, raster_context, raster_delta)?;
+                            return Err(self.internal_failure(
+                                request.format(),
+                                "fatal fallback raster preflight committed unexpectedly",
+                                "/elements",
+                            ));
+                        }
+                        if fallback_pixels > surface_limit {
+                            let diagnostic = RectangleLocalCrossing {
+                                code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
+                                field: "max_raster_surface_pixels",
+                                configured: ResourceValue::Integer(surface_limit),
+                                value_kind: ValueKind::Pixels,
+                                attempted: ResourceValue::Integer(fallback_pixels),
+                                pointer_field: None,
+                                message: "compatibility fallback omitted because its raster surface exceeds its limit",
+                            }
+                            .diagnostic(request.format(), element_id, json_pointer)
+                            .map_err(|_| {
+                                self.memory_failure(
+                                    request,
+                                    "compatibility_report",
+                                    "fallback_surface_recovery",
+                                )
+                            })?;
+                            self.retain_diagnostic(
+                                request,
+                                ResourcePhase::ProjectionAndFallback,
+                                "fallback_surface_local_recovery",
+                                diagnostic,
+                            )?;
+                            self.charge_work(
+                                request,
+                                ResourceContext::new(
+                                    ResourcePhase::ProjectionAndFallback,
+                                    "fallback_surface_local_omission",
+                                    json_pointer,
+                                )
+                                .with_element_id(element_id)
+                                .with_local_owner(element_id),
+                                8,
+                            )?;
+                            if !plan.omit_element(index) {
+                                return Err(self.internal_failure(
+                                    request.format(),
+                                    "PNG omitted fallback operation is missing",
+                                    "/elements",
+                                ));
+                            }
+                            continue;
+                        }
+                        self.transact(request, raster_context, raster_delta)?;
+                    }
                     let vector_work = plan
                         .vector_coverage_area(index)
                         .ok_or_else(|| {
@@ -614,20 +768,13 @@ impl RenderSession {
                             )
                         })?
                         .saturating_mul(16);
-                    let (element_id, json_pointer) = plan.source(index).ok_or_else(|| {
-                        self.internal_failure(
-                            request.format(),
-                            "PNG source operation is missing",
-                            "/elements",
-                        )
-                    })?;
                     let context = ResourceContext::new(
                         ResourcePhase::ProjectionAndFallback,
                         "vector_coverage_samples",
                         json_pointer,
                     )
-                    .with_element_id(Some(element_id))
-                    .with_local_owner(Some(element_id));
+                    .with_element_id(element_id)
+                    .with_local_owner(element_id);
                     let delta = ResourceDelta {
                         total_work_units: vector_work,
                         ..ResourceDelta::default()
@@ -666,6 +813,17 @@ impl RenderSession {
                             ResourcePhase::ProjectionAndFallback,
                             "rectangle_local_resource_recovery",
                             diagnostic,
+                        )?;
+                        self.charge_work(
+                            request,
+                            ResourceContext::new(
+                                ResourcePhase::ProjectionAndFallback,
+                                "png_element_local_omission",
+                                json_pointer,
+                            )
+                            .with_element_id(element_id)
+                            .with_local_owner(element_id),
+                            8,
                         )?;
                         if !plan.omit_element(index) {
                             return Err(self.internal_failure(
@@ -721,8 +879,8 @@ impl RenderSession {
                             "element_operation",
                             json_pointer,
                         )
-                        .with_element_id(Some(element_id))
-                        .with_local_owner(Some(element_id))
+                        .with_element_id(element_id)
+                        .with_local_owner(element_id)
                         .with_record(ResourceRecordKind::FormatPlanOperation),
                         128,
                     )?;
@@ -760,8 +918,8 @@ impl RenderSession {
                             "element_operation",
                             json_pointer,
                         )
-                        .with_element_id(Some(element_id))
-                        .with_local_owner(Some(element_id))
+                        .with_element_id(element_id)
+                        .with_local_owner(element_id)
                         .with_record(ResourceRecordKind::FormatPlanOperation),
                         128,
                     )?;
@@ -780,6 +938,416 @@ impl RenderSession {
         self.staged_output.take().ok_or_else(|| {
             self.internal_failure(request.format(), "accepted output bytes are missing", "")
         })
+    }
+
+    fn account_fallback_semantics(
+        &mut self,
+        resolved: &mut ResolvedScene,
+        request: &RenderRequest,
+        semantic_working: &mut Vec<SemanticWorkingRecord>,
+    ) -> Result<(), RenderError> {
+        for element in &mut resolved.elements {
+            let ResolvedElement::Fallback(fallback) = element else {
+                continue;
+            };
+            let geometry_segments = fallback.geometry_command_count();
+            let glyphs = fallback.label.as_ref().map_or(0, |label| label.glyph_count);
+            let working_bytes = 128_u64.saturating_add(geometry_segments.saturating_mul(64));
+            let total_work_units = geometry_segments
+                .saturating_mul(32)
+                .saturating_add(glyphs.saturating_mul(32));
+            let delta = ResourceDelta {
+                geometry_segments,
+                working_bytes,
+                total_work_units,
+                ..ResourceDelta::default()
+            };
+            let context = ResourceContext::new(
+                ResourcePhase::SharedSemanticResolution,
+                "compatibility_fallback_geometry",
+                &fallback.source.pointer,
+            )
+            .with_element_id(fallback.source.id.as_deref())
+            .with_local_owner(fallback.source.id.as_deref());
+            if self.meter.would_cross_fatal(delta) {
+                self.transact(request, context, delta)?;
+                return Err(self.internal_failure(
+                    request.format(),
+                    "fatal fallback resource preflight committed unexpectedly",
+                    "/elements",
+                ));
+            }
+            let local_crossing = if geometry_segments
+                > u64::from(
+                    request
+                        .resource_limits()
+                        .max_geometry_segments_per_element(),
+                ) {
+                Some(RectangleLocalCrossing {
+                    code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
+                    field: "max_geometry_segments_per_element",
+                    configured: ResourceValue::Integer(u64::from(
+                        request
+                            .resource_limits()
+                            .max_geometry_segments_per_element(),
+                    )),
+                    value_kind: ValueKind::Count,
+                    attempted: ResourceValue::Integer(geometry_segments),
+                    pointer_field: None,
+                    message:
+                        "compatibility fallback omitted because its geometry exceeds its limit",
+                })
+            } else if total_work_units > request.resource_limits().max_element_work_units() {
+                Some(RectangleLocalCrossing {
+                    code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
+                    field: "max_element_work_units",
+                    configured: ResourceValue::Integer(
+                        request.resource_limits().max_element_work_units(),
+                    ),
+                    value_kind: ValueKind::WorkUnits,
+                    attempted: ResourceValue::Integer(total_work_units),
+                    pointer_field: None,
+                    message:
+                        "compatibility fallback omitted because its semantic work exceeds its limit",
+                })
+            } else {
+                None
+            };
+            if let Some(crossing) = local_crossing {
+                let diagnostic = crossing
+                    .diagnostic(
+                        request.format(),
+                        fallback.source.id.as_deref(),
+                        &fallback.source.pointer,
+                    )
+                    .map_err(|_| {
+                        self.memory_failure(
+                            request,
+                            "compatibility_report",
+                            "fallback_local_recovery",
+                        )
+                    })?;
+                self.retain_diagnostic_with_owner(
+                    request,
+                    ResourcePhase::SharedSemanticResolution,
+                    "fallback_local_resource_recovery",
+                    diagnostic,
+                    DiagnosticOwnership {
+                        local_owner: fallback.source.id.as_deref(),
+                        source_order: Some(fallback.source_order),
+                        source_position: Some(0),
+                    },
+                )?;
+                self.charge_local_omission(
+                    request,
+                    fallback.source.id.as_deref(),
+                    &fallback.source.pointer,
+                    "fallback_local_omission",
+                )?;
+                fallback.render = false;
+                continue;
+            }
+            self.retain_fallback_font_diagnostics(request, fallback)?;
+            self.transact(request, context, delta)?;
+            semantic_working.try_reserve(1).map_err(|_| {
+                self.memory_failure(request, "semantic_geometry", "fallback_working_record")
+            })?;
+            semantic_working.push(SemanticWorkingRecord {
+                source_order: fallback.source_order,
+                event: "resolved_compatibility_fallback",
+                element_id: fallback
+                    .source
+                    .id
+                    .as_deref()
+                    .map(try_owned)
+                    .transpose()
+                    .map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "fallback_identity")
+                    })?,
+                local_owner: fallback
+                    .source
+                    .id
+                    .as_deref()
+                    .map(try_owned)
+                    .transpose()
+                    .map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "fallback_owner")
+                    })?,
+                json_pointer: try_owned(&fallback.source.pointer).map_err(|_| {
+                    self.memory_failure(request, "semantic_geometry", "fallback_pointer")
+                })?,
+                bytes: working_bytes,
+            });
+        }
+        resolved.elements.retain(
+            |element| !matches!(element, ResolvedElement::Fallback(fallback) if !fallback.render),
+        );
+        if !resolved.elements.iter().any(|element| {
+            matches!(element, ResolvedElement::Fallback(fallback) if fallback.label.is_some())
+        }) {
+            resolved.fallback_font_woff2 = None;
+            resolved.fallback_font_sfnt = None;
+            resolved.mandatory_manifest = None;
+        }
+        semantic_working.sort_unstable_by_key(|record| record.source_order);
+        Ok(())
+    }
+
+    fn retain_fallback_font_diagnostics(
+        &mut self,
+        request: &RenderRequest,
+        fallback: &ResolvedFallback,
+    ) -> Result<(), RenderError> {
+        let Some(label) = &fallback.label else {
+            return Ok(());
+        };
+        let substitution = fallback_font_diagnostic(
+            DiagnosticCode::FONT_LIBERATION_SANS_SUBSTITUTED,
+            DiagnosticSeverity::Info,
+            request.format(),
+            fallback.source.id.as_deref(),
+            &fallback.source.pointer,
+            None,
+        )
+        .map_err(|_| {
+            self.memory_failure(
+                request,
+                "compatibility_report",
+                "fallback_font_substitution",
+            )
+        })?;
+        self.retain_diagnostic_with_owner(
+            request,
+            ResourcePhase::SharedSemanticResolution,
+            "fallback_font_substitution",
+            substitution,
+            DiagnosticOwnership {
+                local_owner: fallback.source.id.as_deref(),
+                source_order: Some(fallback.source_order),
+                source_position: Some(u64::MAX - 1),
+            },
+        )?;
+        for codepoint in &label.missing_codepoints {
+            let diagnostic = fallback_font_diagnostic(
+                DiagnosticCode::FONT_MISSING_GLYPH,
+                DiagnosticSeverity::Warning,
+                request.format(),
+                fallback.source.id.as_deref(),
+                &fallback.source.pointer,
+                Some(*codepoint),
+            )
+            .map_err(|_| {
+                self.memory_failure(request, "compatibility_report", "fallback_missing_glyph")
+            })?;
+            self.retain_diagnostic_with_owner(
+                request,
+                ResourcePhase::SharedSemanticResolution,
+                "fallback_missing_glyph",
+                diagnostic,
+                DiagnosticOwnership {
+                    local_owner: fallback.source.id.as_deref(),
+                    source_order: Some(fallback.source_order),
+                    source_position: Some(u64::MAX),
+                },
+            )?;
+        }
+        Ok(())
+    }
+
+    fn preflight_fallback_text(
+        &mut self,
+        fallbacks: &mut [crate::scene_surface::SurfaceFallback],
+        request: &RenderRequest,
+        semantic_working: &mut Vec<SemanticWorkingRecord>,
+    ) -> Result<(), RenderError> {
+        let mut index = 0_usize;
+        while index < fallbacks.len() {
+            let fallback = &fallbacks[index];
+            let text_scalars = u64::try_from(fallback.label.chars().count()).unwrap_or(u64::MAX);
+            let working_bytes = 256_u64.saturating_add(logical_aligned_bytes(
+                u64::try_from(fallback.label.len()).unwrap_or(u64::MAX),
+            ));
+            let work_units = text_scalars.saturating_mul(32);
+            let base_geometry_segments = if fallback.width >= 2.0 && fallback.height >= 2.0 {
+                9
+            } else {
+                5
+            };
+            let geometry_preflight = ResourceDelta {
+                geometry_segments: base_geometry_segments,
+                ..ResourceDelta::default()
+            };
+            let geometry_context = ResourceContext::new(
+                ResourcePhase::SharedSemanticResolution,
+                "compatibility_fallback_geometry_preflight",
+                &fallback.json_pointer,
+            )
+            .with_element_id(fallback.element_id.as_deref())
+            .with_local_owner(fallback.element_id.as_deref());
+            if self.meter.would_cross_fatal(geometry_preflight) {
+                self.transact(request, geometry_context, geometry_preflight)?;
+                return Err(self.internal_failure(
+                    request.format(),
+                    "fatal fallback geometry preflight committed unexpectedly",
+                    "/elements",
+                ));
+            }
+            let delta = ResourceDelta {
+                text_scalars,
+                working_bytes,
+                total_work_units: work_units,
+                ..ResourceDelta::default()
+            };
+            let context = ResourceContext::new(
+                ResourcePhase::SharedSemanticResolution,
+                "compatibility_fallback_text",
+                &fallback.json_pointer,
+            )
+            .with_element_id(fallback.element_id.as_deref())
+            .with_local_owner(fallback.element_id.as_deref());
+            if self.meter.would_cross_fatal(delta) {
+                self.transact(request, context, delta)?;
+                return Err(self.internal_failure(
+                    request.format(),
+                    "fatal fallback text preflight committed unexpectedly",
+                    "/elements",
+                ));
+            }
+            if text_scalars > u64::from(request.resource_limits().max_text_scalars_per_element()) {
+                let diagnostic = RectangleLocalCrossing {
+                    code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
+                    field: "max_text_scalars_per_element",
+                    configured: ResourceValue::Integer(u64::from(
+                        request.resource_limits().max_text_scalars_per_element(),
+                    )),
+                    value_kind: ValueKind::Count,
+                    attempted: ResourceValue::Integer(text_scalars),
+                    pointer_field: None,
+                    message:
+                        "compatibility fallback omitted because its label exceeds the text limit",
+                }
+                .diagnostic(
+                    request.format(),
+                    fallback.element_id.as_deref(),
+                    &fallback.json_pointer,
+                )
+                .map_err(|_| {
+                    self.memory_failure(request, "compatibility_report", "fallback_text_recovery")
+                })?;
+                self.retain_diagnostic_with_owner(
+                    request,
+                    ResourcePhase::SharedSemanticResolution,
+                    "fallback_text_local_resource_recovery",
+                    diagnostic,
+                    DiagnosticOwnership {
+                        local_owner: fallback.element_id.as_deref(),
+                        source_order: Some(fallback.source_order),
+                        source_position: Some(0),
+                    },
+                )?;
+                self.charge_local_omission(
+                    request,
+                    fallback.element_id.as_deref(),
+                    &fallback.json_pointer,
+                    "fallback_text_local_omission",
+                )?;
+                fallbacks[index].paint = false;
+                index = index.saturating_add(1);
+                continue;
+            }
+            self.transact(request, context, delta)?;
+            semantic_working.try_reserve(1).map_err(|_| {
+                self.memory_failure(request, "semantic_text", "fallback_text_working_record")
+            })?;
+            semantic_working.push(SemanticWorkingRecord {
+                source_order: fallback.source_order,
+                event: "resolved_compatibility_fallback_text",
+                element_id: fallback
+                    .element_id
+                    .as_deref()
+                    .map(try_owned)
+                    .transpose()
+                    .map_err(|_| {
+                        self.memory_failure(request, "semantic_text", "fallback_text_identity")
+                    })?,
+                local_owner: fallback
+                    .element_id
+                    .as_deref()
+                    .map(try_owned)
+                    .transpose()
+                    .map_err(|_| {
+                        self.memory_failure(request, "semantic_text", "fallback_text_owner")
+                    })?,
+                json_pointer: try_owned(&fallback.json_pointer).map_err(|_| {
+                    self.memory_failure(request, "semantic_text", "fallback_text_pointer")
+                })?,
+                bytes: working_bytes,
+            });
+            index = index.saturating_add(1);
+        }
+        Ok(())
+    }
+
+    fn account_compatibility_omissions(
+        &mut self,
+        request: &RenderRequest,
+    ) -> Result<(), RenderError> {
+        let omissions = (|| -> Result<_, std::collections::TryReserveError> {
+            let mut omissions = Vec::new();
+            for diagnostic in &self.report.diagnostics {
+                if !matches!(
+                    diagnostic.code(),
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_ELEMENT_TYPE
+                        | DiagnosticCode::COMPATIBILITY_MALFORMED_ELEMENT
+                        | DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
+                ) || !matches!(
+                    diagnostic.details(),
+                    Some(ErrorDetails::Compatibility {
+                        recovery: Recovery::Omitted,
+                        ..
+                    })
+                ) {
+                    continue;
+                }
+                omissions.try_reserve(1)?;
+                omissions.push((
+                    diagnostic.element_id().map(try_owned).transpose()?,
+                    try_owned(diagnostic.json_pointer())?,
+                ));
+            }
+            Ok(omissions)
+        })()
+        .map_err(|_| self.memory_failure(request, "semantic_omission", "omission_list"))?;
+        for (element_id, pointer) in &omissions {
+            self.charge_work(
+                request,
+                ResourceContext::new(
+                    ResourcePhase::SharedSemanticResolution,
+                    "compatibility_omission",
+                    pointer,
+                )
+                .with_element_id(element_id.as_deref())
+                .with_local_owner(element_id.as_deref()),
+                8,
+            )?;
+        }
+        Ok(())
+    }
+
+    fn charge_local_omission(
+        &mut self,
+        request: &RenderRequest,
+        element_id: Option<&str>,
+        json_pointer: &str,
+        event: &'static str,
+    ) -> Result<(), RenderError> {
+        self.charge_work(
+            request,
+            ResourceContext::new(ResourcePhase::SharedSemanticResolution, event, json_pointer)
+                .with_element_id(element_id)
+                .with_local_owner(element_id),
+            8,
+        )
     }
 
     fn acquire_working(
@@ -1226,6 +1794,20 @@ struct ResolvedScene {
     include_background: bool,
     background_color: String,
     elements: Vec<ResolvedElement>,
+    fallback_font_woff2: Option<Vec<u8>>,
+    fallback_font_sfnt: Option<Vec<u8>>,
+    mandatory_manifest: Option<String>,
+}
+
+enum ResolveSceneError {
+    Memory,
+    InvalidFallbackFont,
+}
+
+impl From<std::collections::TryReserveError> for ResolveSceneError {
+    fn from(_: std::collections::TryReserveError) -> Self {
+        Self::Memory
+    }
 }
 
 impl ResolvedScene {
@@ -1237,14 +1819,19 @@ impl ResolvedScene {
             include_background: request.include_background(),
             background_color: "#ffffff".to_owned(),
             elements: Vec::new(),
+            fallback_font_woff2: None,
+            fallback_font_sfnt: None,
+            mandatory_manifest: None,
         }
     }
 
-    fn rectangles(
+    fn elements(
         rectangles: Vec<(NormalizedElement, bool)>,
+        fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
+        clip_fallbacks_to_frames: bool,
         request: &RenderRequest,
-    ) -> Result<Option<Self>, std::collections::TryReserveError> {
-        if rectangles.is_empty() {
+    ) -> Result<Option<Self>, ResolveSceneError> {
+        if rectangles.is_empty() && fallbacks.is_empty() {
             return Ok(None);
         }
 
@@ -1285,6 +1872,19 @@ impl ResolvedScene {
                 max_y = max_y.max(rotated_y);
             }
         }
+        for fallback in &fallbacks {
+            include_transformed_bounds(
+                fallback.x,
+                fallback.y,
+                fallback.width,
+                fallback.height,
+                fallback.angle,
+                &mut min_x,
+                &mut min_y,
+                &mut max_x,
+                &mut max_y,
+            );
+        }
         let logical_width = max_x - min_x + request.padding() * 2.0;
         let logical_height = max_y - min_y + request.padding() * 2.0;
         if !logical_width.is_finite() || !logical_height.is_finite() {
@@ -1292,12 +1892,29 @@ impl ResolvedScene {
         }
 
         let mut elements = Vec::new();
-        elements.try_reserve_exact(rectangles.len())?;
+        elements.try_reserve_exact(rectangles.len().saturating_add(fallbacks.len()))?;
         let background_color = rectangles
             .first()
             .map(|(source, _)| source.view_background_color.as_str())
             .unwrap_or("#ffffff");
         let background_color = try_owned(background_color)?;
+        let mut frame_clips = Vec::new();
+        if clip_fallbacks_to_frames {
+            frame_clips.try_reserve(fallbacks.len())?;
+            for fallback in &fallbacks {
+                let Some(id) = fallback.element_id.as_deref().filter(|_| fallback.is_frame) else {
+                    continue;
+                };
+                frame_clips.push(FallbackFrameClipSource {
+                    id: try_owned(id)?,
+                    x: fallback.x,
+                    y: fallback.y,
+                    width: fallback.width,
+                    height: fallback.height,
+                    angle: fallback.angle,
+                });
+            }
+        }
         for (source, include_outline) in rectangles {
             if !include_outline {
                 continue;
@@ -1312,6 +1929,7 @@ impl ResolvedScene {
             let path =
                 rough::rectangle(source.width, source.height, source.seed, adjusted_roughness)?;
             elements.push(ResolvedElement::Rectangle(ResolvedRectangle {
+                source_order: source.source_order,
                 source: source.source,
                 base_element_work_units: source.normalization_work_units
                     + RECTANGLE_GEOMETRY_WORK_UNITS
@@ -1330,6 +1948,85 @@ impl ResolvedScene {
                 opacity: source.opacity / 100.0,
             }));
         }
+        let fallback_font = if !fallbacks.iter().any(|fallback| fallback.paint) {
+            None
+        } else {
+            Some(text::FallbackFont::load().map_err(|error| match error {
+                text::LabelError::Memory => ResolveSceneError::Memory,
+                text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+            })?)
+        };
+        let mut has_label = false;
+        for fallback in fallbacks {
+            if !fallback.paint {
+                continue;
+            }
+            let Some(font) = fallback_font.as_ref() else {
+                return Err(ResolveSceneError::InvalidFallbackFont);
+            };
+            let label = font
+                .resolve(&fallback.label, fallback.width, fallback.height)
+                .map_err(|error| match error {
+                    text::LabelError::Memory => ResolveSceneError::Memory,
+                    text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+                })?;
+            has_label |= label.is_some();
+            let frame_clip = fallback.frame_id.as_deref().and_then(|frame_id| {
+                frame_clips
+                    .iter()
+                    .find(|frame| frame.id == frame_id)
+                    .map(|frame| ResolvedClip {
+                        width: frame.width,
+                        height: frame.height,
+                        transform: ResolvedTransform {
+                            translation_x: frame.x - min_x + request.padding(),
+                            translation_y: frame.y - min_y + request.padding(),
+                            angle_radians: frame.angle,
+                            center_x: frame.width / 2.0,
+                            center_y: frame.height / 2.0,
+                        },
+                    })
+            });
+            elements.push(ResolvedElement::Fallback(ResolvedFallback {
+                source_order: fallback.source_order,
+                source: FallbackSource {
+                    id: fallback.element_id,
+                    pointer: fallback.json_pointer,
+                },
+                label,
+                link: fallback.link,
+                frame_clip,
+                width: fallback.width,
+                height: fallback.height,
+                transform: ResolvedTransform {
+                    translation_x: fallback.x - min_x + request.padding(),
+                    translation_y: fallback.y - min_y + request.padding(),
+                    angle_radians: fallback.angle,
+                    center_x: fallback.width / 2.0,
+                    center_y: fallback.height / 2.0,
+                },
+                opacity: fallback.opacity / 100.0,
+                render: true,
+            }));
+        }
+        elements.sort_by_key(ResolvedElement::source_order);
+        let (fallback_font_woff2, fallback_font_sfnt) = if has_label {
+            fallback_font
+                .map(text::FallbackFont::into_parts)
+                .map_or((None, None), |(woff2, sfnt)| (Some(woff2), Some(sfnt)))
+        } else {
+            (None, None)
+        };
+        let mandatory_manifest = if has_label {
+            Some(
+                text::mandatory_notice_manifest().map_err(|error| match error {
+                    text::LabelError::Memory => ResolveSceneError::Memory,
+                    text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+                })?,
+            )
+        } else {
+            None
+        };
 
         Ok(Some(Self {
             logical_width,
@@ -1337,6 +2034,9 @@ impl ResolvedScene {
             include_background: request.include_background(),
             background_color,
             elements,
+            fallback_font_woff2,
+            fallback_font_sfnt,
+            mandatory_manifest,
         }))
     }
 
@@ -1344,11 +2044,15 @@ impl ResolvedScene {
         self.elements.len()
     }
 
-    fn source(&self, index: usize) -> Option<(&str, &str)> {
+    fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
         self.elements.get(index).map(|element| match element {
             ResolvedElement::Rectangle(rectangle) => {
-                (rectangle.source.id(), rectangle.source.pointer())
+                (Some(rectangle.source.id()), rectangle.source.pointer())
             }
+            ResolvedElement::Fallback(fallback) => (
+                fallback.source.id.as_deref(),
+                fallback.source.pointer.as_str(),
+            ),
         })
     }
 
@@ -1366,9 +2070,20 @@ impl ResolvedScene {
 
 enum ResolvedElement {
     Rectangle(ResolvedRectangle),
+    Fallback(ResolvedFallback),
+}
+
+impl ResolvedElement {
+    fn source_order(&self) -> u64 {
+        match self {
+            Self::Rectangle(rectangle) => rectangle.source_order,
+            Self::Fallback(fallback) => fallback.source_order,
+        }
+    }
 }
 
 struct ResolvedRectangle {
+    source_order: u64,
     source: NormalizedElementSource,
     base_element_work_units: u64,
     path: rough::Path,
@@ -1376,6 +2091,225 @@ struct ResolvedRectangle {
     stroke_color: String,
     stroke_width: f64,
     opacity: f64,
+}
+
+struct ResolvedFallback {
+    source_order: u64,
+    source: FallbackSource,
+    label: Option<text::ResolvedLabel>,
+    link: Option<String>,
+    frame_clip: Option<ResolvedClip>,
+    width: f64,
+    height: f64,
+    transform: ResolvedTransform,
+    opacity: f64,
+    render: bool,
+}
+
+struct FallbackFrameClipSource {
+    id: String,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    angle: f64,
+}
+
+#[derive(Clone, Copy)]
+struct ResolvedClip {
+    width: f64,
+    height: f64,
+    transform: ResolvedTransform,
+}
+
+impl ResolvedFallback {
+    fn geometry_command_count(&self) -> u64 {
+        let visual_commands: u64 = if self.width >= 2.0 && self.height >= 2.0 {
+            9
+        } else {
+            5
+        };
+        visual_commands.saturating_add(self.label.as_ref().map_or(0, |label| {
+            u64::try_from(label.path.operations.len()).unwrap_or(u64::MAX)
+        }))
+    }
+}
+
+struct FallbackSource {
+    id: Option<String>,
+    pointer: String,
+}
+
+fn diagnostic_replaces_element(diagnostic: &CompatibilityDiagnostic) -> bool {
+    if !diagnostic.effects().contains(&DiagnosticEffect::Visual) {
+        return false;
+    }
+    let recovery = match diagnostic.details() {
+        Some(ErrorDetails::Compatibility { recovery, .. })
+        | Some(ErrorDetails::Asset { recovery, .. })
+        | Some(ErrorDetails::MissingGlyph { recovery, .. })
+        | Some(ErrorDetails::Metadata { recovery, .. })
+        | Some(ErrorDetails::NestedSource { recovery, .. }) => Some(*recovery),
+        Some(ErrorDetails::ResourceLimit { recovery, .. }) => *recovery,
+        Some(ErrorDetails::PdfRasterFallback { recovery, .. }) => *recovery,
+        _ => None,
+    };
+    matches!(recovery, Some(Recovery::Placeholder | Recovery::Omitted))
+}
+
+fn diagnostic_uses_non_generic_recovery(
+    source: &NormalizedElement,
+    diagnostic: &CompatibilityDiagnostic,
+) -> bool {
+    if !diagnostic_replaces_element(diagnostic) {
+        return false;
+    }
+    let applies = diagnostic.element_id() == Some(source.source.id())
+        || matches!(
+            (&source.kind, diagnostic.details()),
+            (
+                NormalizedElementKind::Image(image),
+                Some(ErrorDetails::Asset { asset_id, .. })
+            ) if image.file_id.as_deref() == Some(asset_id.as_str())
+        );
+    if !applies {
+        return false;
+    }
+    let recipe = match diagnostic.details() {
+        Some(ErrorDetails::Compatibility { recipe_id, .. })
+        | Some(ErrorDetails::Asset { recipe_id, .. }) => recipe_id.as_deref(),
+        _ => None,
+    };
+    recipe != Some("renderer.known-element-unavailable.v1")
+}
+
+fn known_element_replaced_diagnostic(
+    format: OutputFormat,
+    element_id: &str,
+    json_pointer: &str,
+    has_bounds: bool,
+) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
+    let mut effects = Vec::new();
+    effects.try_reserve_exact(2)?;
+    effects.extend_from_slice(&[DiagnosticEffect::Visual, DiagnosticEffect::Semantic]);
+    Ok(CompatibilityDiagnostic {
+        code: DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED,
+        severity: DiagnosticSeverity::Warning,
+        format,
+        effects,
+        element_id: Some(try_owned(element_id)?),
+        json_pointer: try_owned(json_pointer)?,
+        message: try_owned(
+            "known element unavailable to this renderer used the revision-1 fallback",
+        )?,
+        details: Some(Box::new(ErrorDetails::Compatibility {
+            recovery: if has_bounds {
+                Recovery::Placeholder
+            } else {
+                Recovery::Omitted
+            },
+            recipe_id: has_bounds
+                .then(|| try_owned("renderer.known-element-unavailable.v1"))
+                .transpose()?,
+        })),
+        order: DiagnosticOrder::default(),
+    })
+}
+
+fn fallback_font_diagnostic(
+    code: DiagnosticCode,
+    severity: DiagnosticSeverity,
+    format: OutputFormat,
+    element_id: Option<&str>,
+    json_pointer: &str,
+    missing_codepoint: Option<u32>,
+) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
+    let mut effects = Vec::new();
+    effects.try_reserve_exact(1)?;
+    effects.push(DiagnosticEffect::Visual);
+    Ok(CompatibilityDiagnostic {
+        code,
+        severity,
+        format,
+        effects,
+        element_id: element_id.map(try_owned).transpose()?,
+        json_pointer: try_owned(json_pointer)?,
+        message: try_owned(if missing_codepoint.is_some() {
+            "generated fallback label used the deterministic missing-glyph replacement"
+        } else {
+            "generated fallback label used bundled Liberation Sans"
+        })?,
+        details: Some(Box::new(match missing_codepoint {
+            Some(codepoint) => ErrorDetails::MissingGlyph {
+                codepoint,
+                recovery: Recovery::Substituted,
+            },
+            None => ErrorDetails::Compatibility {
+                recovery: Recovery::Substituted,
+                recipe_id: None,
+            },
+        })),
+        order: DiagnosticOrder::default(),
+    })
+}
+
+fn known_element_fallback(
+    source: &NormalizedElement,
+) -> Result<crate::scene_surface::SurfaceFallback, std::collections::TryReserveError> {
+    let prefix = "Unavailable: ";
+    let mut label = String::new();
+    label.try_reserve_exact(prefix.len().saturating_add(source.kind_name.len()))?;
+    label.push_str(prefix);
+    label.push_str(source.kind_name);
+    Ok(crate::scene_surface::SurfaceFallback {
+        source_order: source.source_order,
+        element_id: Some(try_owned(source.source.id())?),
+        json_pointer: try_owned(source.source.pointer())?,
+        label,
+        link: source.link.as_deref().map(try_owned).transpose()?,
+        frame_id: source.frame_id.as_deref().map(try_owned).transpose()?,
+        is_frame: matches!(source.kind_name, "frame" | "magicframe"),
+        x: source.x,
+        y: source.y,
+        width: source.width,
+        height: source.height,
+        angle: source.angle,
+        opacity: source.opacity,
+        paint: true,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn include_transformed_bounds(
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    angle: f64,
+    min_x: &mut f64,
+    min_y: &mut f64,
+    max_x: &mut f64,
+    max_y: &mut f64,
+) {
+    let center_x = x + width / 2.0;
+    let center_y = y + height / 2.0;
+    let sin = angle.sin();
+    let cos = angle.cos();
+    for (corner_x, corner_y) in [
+        (x, y),
+        (x + width, y),
+        (x + width, y + height),
+        (x, y + height),
+    ] {
+        let delta_x = corner_x - center_x;
+        let delta_y = corner_y - center_y;
+        let rotated_x = center_x + delta_x * cos - delta_y * sin;
+        let rotated_y = center_y + delta_x * sin + delta_y * cos;
+        *min_x = min_x.min(rotated_x);
+        *min_y = min_y.min(rotated_y);
+        *max_x = max_x.max(rotated_x);
+        *max_y = max_y.max(rotated_y);
+    }
 }
 
 struct SemanticWorkingRecord {
@@ -1387,6 +2321,7 @@ struct SemanticWorkingRecord {
     bytes: u64,
 }
 
+#[derive(Clone, Copy)]
 struct ResolvedTransform {
     translation_x: f64,
     translation_y: f64,
@@ -1409,7 +2344,7 @@ impl RectangleLocalCrossing {
     fn diagnostic(
         self,
         format: OutputFormat,
-        element_id: &str,
+        element_id: Option<&str>,
         element_pointer: &str,
     ) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
         let mut effects = Vec::new();
@@ -1420,7 +2355,7 @@ impl RectangleLocalCrossing {
             severity: DiagnosticSeverity::Warning,
             format,
             effects,
-            element_id: Some(try_owned(element_id)?),
+            element_id: element_id.map(try_owned).transpose()?,
             json_pointer: self.pointer_field.map_or_else(
                 || try_owned(element_pointer),
                 |field| crate::scene::pointer_child(element_pointer, field),
@@ -1562,10 +2497,10 @@ mod tests {
             .remove("approval")
             .expect("PDF expectation manifest is approved");
         assert_eq!(approval["approved_by"], "sagikazarmark");
-        assert_eq!(approval["approved_at"], "2026-07-20");
+        assert_eq!(approval["approved_at"], "2026-07-21");
         assert_eq!(
             approval["approval_url"],
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5027454753"
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5032305510"
         );
         let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
         canonical.push(b'\n');
@@ -2009,6 +2944,34 @@ mod tests {
         assert_eq!(error.code(), ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED);
         assert_eq!(passes, 1, "rejected output is measured but never emitted");
         assert!(session.staged_output.is_none());
+    }
+
+    #[test]
+    fn diagnosed_unbounded_omission_has_its_own_semantic_transaction() {
+        let scene = SceneDocument::parse(
+            br#"{"type":"excalidraw","version":2,"elements":[null],"appState":{},"files":{}}"#,
+        )
+        .expect("omission vector is valid");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("request is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+
+        let (result, trace) = render_with_trace(profile, &scene, &request);
+        result.expect("diagnosed omission retains a meaningful artifact");
+        let trace: serde_json::Value = serde_json::from_slice(&trace).expect("trace is valid JSON");
+        let omissions = trace["entries"]
+            .as_array()
+            .expect("trace entries are an array")
+            .iter()
+            .filter(|entry| entry["event"] == "compatibility_omission")
+            .collect::<Vec<_>>();
+        let [omission] = omissions.as_slice() else {
+            panic!("one omission transaction is retained");
+        };
+        assert_eq!(omission["json_pointer"], "/elements/0");
+        assert_eq!(omission["deltas"]["total_work_units"], 8);
     }
 
     fn test_diagnostic() -> CompatibilityDiagnostic {

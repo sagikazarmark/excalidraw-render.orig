@@ -15,6 +15,24 @@ const EXPECTED_REPORT: &[u8] =
     include_bytes!("../../conformance/cases/focused/rectangle-outline/expected-report.json");
 const LICENSE_BUNDLE_SHA256: &str =
     "a3236318603e4035951ad166ad827ef9fd3a98d9eeae9996e804aa6048d20077";
+const FALLBACK_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"future","type":"future","x":0,"y":0,"width":200,"height":60,"angle":0.2,"opacity":40,"updated":1},null],"appState":{},"files":{}}"#;
+const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
+    (
+        OutputFormat::Svg,
+        "796a5cd9d9089e8f12bf53292e928559f7dd97ea91c4cbc7dccdab09de2ffb88",
+        "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
+    ),
+    (
+        OutputFormat::Png,
+        "2a118b5686dd514fc2b709716d7b0661de971c63ca910cb88852e392ff662068",
+        "2557fb95fd4972c5ceaea2b0b1b8a3a73f157c2fe147bd5d348be0f639186922",
+    ),
+    (
+        OutputFormat::Pdf,
+        "42a499315a51de73083be0ce4dc6d9c95009d9d501e15920c27b29211558cc52",
+        "737130c9efaa38327d3fe31ecdeddc35ad72a01ea8dc7c11e3a57942c4867247",
+    ),
+];
 
 struct ArtifactExpectation {
     format: OutputFormat,
@@ -86,6 +104,34 @@ fn packaged_public_facade_enforces_the_frozen_scene_surface() {
         DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY
     );
     assert_eq!(diagnostic.json_pointer(), "/unknown");
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn packaged_public_facade_renders_fallbacks_with_cross_target_stable_bytes() {
+    let scene = SceneDocument::parse(FALLBACK_SCENE).expect("the fallback scene is admitted");
+    for (format, artifact_sha256, report_sha256) in FALLBACK_HASHES {
+        let request = RenderRequest::builder(*format)
+            .build()
+            .expect("the fallback request is valid");
+        let outcome = Renderer::new()
+            .render(&scene, &request)
+            .expect("fallback and omission retain a meaningful artifact");
+        let report = serde_json::to_vec(outcome.report()).expect("the report serializes");
+
+        assert_eq!(
+            format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
+            *artifact_sha256,
+            "{} fallback artifact changed",
+            format.as_str()
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&report)),
+            *report_sha256,
+            "{} fallback report changed",
+            format.as_str()
+        );
+    }
 }
 
 fn render_round<'a>(
