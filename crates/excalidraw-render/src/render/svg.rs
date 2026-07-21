@@ -1,6 +1,6 @@
 use std::fmt::Write as _;
 
-use crate::{RenderRequest, Sizing};
+use crate::{color::CanonicalColor, RenderRequest, Sizing};
 
 use super::{
     rough::{Path, PathOperation},
@@ -12,7 +12,8 @@ pub(super) struct SvgPlan {
     logical_height: f64,
     output_width: f64,
     output_height: f64,
-    background: Option<String>,
+    background: Option<CanonicalColor>,
+    fallback_colors: super::FallbackColors,
     fallback_font_woff2: Option<Vec<u8>>,
     mandatory_manifest: Option<String>,
     elements: Vec<SvgElement>,
@@ -27,7 +28,7 @@ enum SvgElement {
         rotation_degrees: f64,
         center_x: f64,
         center_y: f64,
-        stroke_color: String,
+        stroke_color: CanonicalColor,
         stroke_width: f64,
         opacity: f64,
     },
@@ -117,6 +118,7 @@ impl SvgPlan {
             output_width: scene.logical_width * scale,
             output_height: scene.logical_height * scale,
             background: scene.include_background.then_some(scene.background_color),
+            fallback_colors: scene.fallback_colors,
             fallback_font_woff2,
             mandatory_manifest,
             elements,
@@ -140,15 +142,10 @@ impl SvgPlan {
             capacity = checked_capacity_add(capacity, escaped_capacity(manifest)?)?;
             capacity = checked_capacity_add(capacity, 256)?;
         }
-        if let Some(background) = &self.background {
-            capacity = checked_capacity_add(capacity, escaped_capacity(background)?)?;
-        }
+        capacity = checked_capacity_add(capacity, usize::from(self.background.is_some()) * 32)?;
         for element in &self.elements {
             match element {
-                SvgElement::RoughRectangle {
-                    path, stroke_color, ..
-                } => {
-                    capacity = checked_capacity_add(capacity, escaped_capacity(stroke_color)?)?;
+                SvgElement::RoughRectangle { path, .. } => {
                     capacity = checked_capacity_add(
                         capacity,
                         path.operations
@@ -207,7 +204,13 @@ impl SvgPlan {
             svg.push_str("\" height=\"");
             push_svg_number(&mut svg, self.logical_height, "SVG background height")?;
             svg.push_str("\" fill=\"");
-            push_escaped_attribute(&mut svg, background);
+            background.write_hex(&mut svg).map_err(|_| {
+                FormatEncodeError::Encoding("failed to write SVG background color".to_owned())
+            })?;
+            if background.alpha() != 1.0 {
+                svg.push_str("\" fill-opacity=\"");
+                push_svg_number(&mut svg, background.alpha(), "SVG background alpha")?;
+            }
             svg.push_str("\"/>");
         }
         for element in &self.elements {
@@ -250,10 +253,22 @@ impl SvgPlan {
                     svg.push_str("><path d=\"");
                     push_rough_path(&mut svg, path)?;
                     svg.push_str("\" stroke=\"");
-                    push_escaped_attribute(&mut svg, stroke_color);
+                    stroke_color.write_hex(&mut svg).map_err(|_| {
+                        FormatEncodeError::Encoding("failed to write SVG stroke color".to_owned())
+                    })?;
                     svg.push_str("\" stroke-width=\"");
                     push_svg_number(&mut svg, *stroke_width, "SVG stroke width")?;
-                    svg.push_str("\" fill=\"none\"/></g>");
+                    svg.push_str("\" fill=\"none\"");
+                    if stroke_color.alpha() != 1.0 {
+                        svg.push_str(" stroke-opacity=\"");
+                        push_svg_number(
+                            &mut svg,
+                            stroke_color.alpha() * opacity,
+                            "SVG effective stroke alpha",
+                        )?;
+                        svg.push('"');
+                    }
+                    svg.push_str("/></g>");
                 }
                 SvgElement::Fallback {
                     source,
@@ -368,16 +383,28 @@ impl SvgPlan {
                     push_svg_number(&mut svg, *width, "SVG fallback fill width")?;
                     svg.push_str("\" height=\"");
                     push_svg_number(&mut svg, *height, "SVG fallback fill height")?;
-                    svg.push_str("\" fill=\"#f1f3f5\"/>");
+                    svg.push_str("\" fill=\"");
+                    self.fallback_colors.fill.write_hex(&mut svg).map_err(|_| {
+                        FormatEncodeError::Encoding("failed to write SVG fallback fill".to_owned())
+                    })?;
+                    svg.push_str("\"/>");
                     if *width >= 2.0 && *height >= 2.0 {
                         svg.push_str("<rect x=\"0\" y=\"0\" width=\"");
                         push_svg_number(&mut svg, *width, "SVG fallback stroke width extent")?;
                         svg.push_str("\" height=\"");
                         push_svg_number(&mut svg, *height, "SVG fallback stroke height extent")?;
+                        svg.push_str("\" fill=\"none\" stroke=\"");
+                        self.fallback_colors
+                            .stroke
+                            .write_hex(&mut svg)
+                            .map_err(|_| {
+                                FormatEncodeError::Encoding(
+                                    "failed to write SVG fallback stroke".to_owned(),
+                                )
+                            })?;
                         svg.push_str(concat!(
-                            "\" fill=\"none\" stroke=\"#868e96\" stroke-width=\"2\" ",
-                            "stroke-dasharray=\"6 4\" stroke-dashoffset=\"0\"/>",
-                            "<path d=\"M0 0 L"
+                            "\" stroke-width=\"2\" stroke-dasharray=\"6 4\" ",
+                            "stroke-dashoffset=\"0\"/><path d=\"M0 0 L"
                         ));
                         push_svg_number(&mut svg, *width, "SVG fallback cross width")?;
                         svg.push(' ');
@@ -386,15 +413,33 @@ impl SvgPlan {
                         push_svg_number(&mut svg, *width, "SVG fallback reverse cross width")?;
                         svg.push_str(" 0 L0 ");
                         push_svg_number(&mut svg, *height, "SVG fallback reverse cross height")?;
-                        svg.push_str("\" fill=\"none\" stroke=\"#868e96\" stroke-width=\"2\"/>");
+                        svg.push_str("\" fill=\"none\" stroke=\"");
+                        self.fallback_colors
+                            .stroke
+                            .write_hex(&mut svg)
+                            .map_err(|_| {
+                                FormatEncodeError::Encoding(
+                                    "failed to write SVG fallback cross".to_owned(),
+                                )
+                            })?;
+                        svg.push_str("\" stroke-width=\"2\"/>");
                     }
                     if let Some(label) = label {
                         svg.push_str("<text x=\"");
                         push_svg_number(&mut svg, *width / 2.0, "SVG fallback label x")?;
                         svg.push_str("\" y=\"");
                         push_svg_number(&mut svg, *height / 2.0, "SVG fallback label y")?;
+                        svg.push_str("\" fill=\"");
+                        self.fallback_colors
+                            .label
+                            .write_hex(&mut svg)
+                            .map_err(|_| {
+                                FormatEncodeError::Encoding(
+                                    "failed to write SVG fallback label color".to_owned(),
+                                )
+                            })?;
                         svg.push_str(concat!(
-                            "\" fill=\"#495057\" font-family=\"Liberation Sans\" font-size=\"14\" ",
+                            "\" font-family=\"Liberation Sans\" font-size=\"14\" ",
                             "text-anchor=\"middle\" dominant-baseline=\"central\">"
                         ));
                         push_escaped_text(&mut svg, label);

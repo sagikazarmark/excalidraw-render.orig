@@ -1,4 +1,4 @@
-use crate::RenderRequest;
+use crate::{color::CanonicalColor, RenderRequest};
 use tiny_skia::{
     BlendMode, Color, FillRule, IntSize, LineCap, LineJoin, Mask, Paint, PathBuilder, PathStroker,
     PixmapMut, PixmapPaint, Shader, Stroke, StrokeDash, Transform,
@@ -13,6 +13,7 @@ pub(super) struct PngPlan {
     width: u32,
     height: u32,
     background: Option<[u8; 4]>,
+    fallback_colors: super::FallbackColors,
     elements: Vec<PngElement>,
 }
 
@@ -21,7 +22,7 @@ enum PngElement {
         source: NormalizedElementSource,
         path: Path,
         transform: PngTransform,
-        stroke_color: [u8; 3],
+        stroke_color: CanonicalColor,
         stroke_width: f64,
         opacity: f64,
         base_element_work_units: u64,
@@ -123,10 +124,7 @@ impl PngPlan {
         let height = pixel_dimension(scene.logical_height * scale)?;
         let background = scene
             .include_background
-            .then(|| {
-                parse_hex_rgb(&scene.background_color).map(|rgb| [rgb[0], rgb[1], rgb[2], 255])
-            })
-            .transpose()?;
+            .then(|| scene.background_color.rgba8());
         let mut elements = Vec::new();
         elements
             .try_reserve_exact(scene.elements.len())
@@ -147,7 +145,7 @@ impl PngPlan {
                         source: rectangle.source,
                         path: rectangle.path,
                         transform: PngTransform::new(&rectangle.transform, scale),
-                        stroke_color: parse_hex_rgb(&rectangle.stroke_color)?,
+                        stroke_color: rectangle.stroke_color,
                         stroke_width: rectangle.stroke_width,
                         opacity: rectangle.opacity,
                         base_element_work_units: rectangle.base_element_work_units,
@@ -192,6 +190,7 @@ impl PngPlan {
             width,
             height,
             background,
+            fallback_colors: scene.fallback_colors,
             elements,
         })
     }
@@ -256,10 +255,10 @@ impl PngPlan {
                         let path = tiny_skia_path(path)?;
                         let transform = transform.raster_transform(SUBPIXEL_SCALE)?;
                         let color = Color::from_rgba(
-                            f32::from(stroke_color[0]) / 255.0,
-                            f32::from(stroke_color[1]) / 255.0,
-                            f32::from(stroke_color[2]) / 255.0,
-                            finite_f32(*opacity, "PNG stroke opacity")?,
+                            f32::from(stroke_color.rgb8()[0]) / 255.0,
+                            f32::from(stroke_color.rgb8()[1]) / 255.0,
+                            f32::from(stroke_color.rgb8()[2]) / 255.0,
+                            finite_f32(*opacity * stroke_color.alpha(), "PNG stroke opacity")?,
                         )
                         .ok_or_else(|| {
                             FormatEncodeError::Encoding(
@@ -408,10 +407,10 @@ impl PngPlan {
                             PixmapMut::from_bytes(&mut layer_bytes, layer_width, layer_height)
                                 .ok_or_else(png_size_error)?;
 
-                        let fill = solid_paint([0xf1, 0xf3, 0xf5], 1.0)?;
+                        let fill = solid_paint(self.fallback_colors.fill, 1.0)?;
                         layer.fill_path(&bounds, &fill, FillRule::Winding, transform, Some(&clip));
                         if *width >= 2.0 && *height >= 2.0 {
-                            let stroke_paint = solid_paint([0x86, 0x8e, 0x96], 1.0)?;
+                            let stroke_paint = solid_paint(self.fallback_colors.stroke, 1.0)?;
                             let dashed_stroke = Stroke {
                                 width: 2.0,
                                 miter_limit: 4.0,
@@ -443,7 +442,7 @@ impl PngPlan {
                         }
                         if let Some(label) = label {
                             let label_path = label_path(&label.path)?;
-                            let label_paint = solid_paint([0x49, 0x50, 0x57], 1.0)?;
+                            let label_paint = solid_paint(self.fallback_colors.label, 1.0)?;
                             layer.fill_path(
                                 &label_path,
                                 &label_paint,
@@ -836,12 +835,13 @@ fn label_path(path: &super::text::LabelPath) -> Result<tiny_skia::Path, FormatEn
         .ok_or_else(|| FormatEncodeError::Encoding("PNG fallback label has no outline".to_owned()))
 }
 
-fn solid_paint(rgb: [u8; 3], opacity: f64) -> Result<Paint<'static>, FormatEncodeError> {
+fn solid_paint(color: CanonicalColor, opacity: f64) -> Result<Paint<'static>, FormatEncodeError> {
+    let rgb = color.rgb8();
     let color = Color::from_rgba(
         f32::from(rgb[0]) / 255.0,
         f32::from(rgb[1]) / 255.0,
         f32::from(rgb[2]) / 255.0,
-        finite_f32(opacity, "PNG paint opacity")?,
+        finite_f32(opacity * color.alpha(), "PNG paint opacity")?,
     )
     .ok_or_else(|| FormatEncodeError::Encoding("PNG paint is outside RGBA range".to_owned()))?;
     Ok(Paint {
@@ -974,38 +974,6 @@ fn canonicalize_straight_alpha(rgba: &mut [u8]) -> Result<(), FormatEncodeError>
         }
     }
     Ok(())
-}
-
-fn parse_hex_rgb(value: &str) -> Result<[u8; 3], FormatEncodeError> {
-    let [b'#', red_high, red_low, green_high, green_low, blue_high, blue_low] = value.as_bytes()
-    else {
-        return Err(FormatEncodeError::Encoding(
-            "PNG plan color is not canonical six-digit sRGB".to_owned(),
-        ));
-    };
-    Ok([
-        parse_hex_byte(*red_high, *red_low)?,
-        parse_hex_byte(*green_high, *green_low)?,
-        parse_hex_byte(*blue_high, *blue_low)?,
-    ])
-}
-
-fn parse_hex_byte(high: u8, low: u8) -> Result<u8, FormatEncodeError> {
-    let high = hex_nibble(high).ok_or_else(invalid_png_color)?;
-    let low = hex_nibble(low).ok_or_else(invalid_png_color)?;
-    Ok((high << 4) | low)
-}
-
-const fn hex_nibble(value: u8) -> Option<u8> {
-    match value {
-        b'0'..=b'9' => Some(value - b'0'),
-        b'a'..=b'f' => Some(value - b'a' + 10),
-        _ => None,
-    }
-}
-
-fn invalid_png_color() -> FormatEncodeError {
-    FormatEncodeError::Encoding("PNG plan color is not canonical six-digit sRGB".to_owned())
 }
 
 fn finite_f32(value: f64, subject: &str) -> Result<f32, FormatEncodeError> {

@@ -10,6 +10,9 @@ workspace = true
 
 [dependencies]
 excalidraw-render-assets-base.workspace = true
+csscolorparser.workspace = true
+cssparser.workspace = true
+cssparser-color.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

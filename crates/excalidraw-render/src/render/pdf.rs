@@ -1,7 +1,7 @@
 use std::fmt::Write as _;
 use std::io::Write as _;
 
-use crate::RenderRequest;
+use crate::{color::CanonicalColor, RenderRequest};
 
 use super::{
     rough::{self, Path, PathOperation},
@@ -44,7 +44,8 @@ pub(super) struct PdfPlan {
     scale: f64,
     page_width: f64,
     page_height: f64,
-    background: Option<[f64; 3]>,
+    background: Option<CanonicalColor>,
+    fallback_colors: super::FallbackColors,
     mandatory_manifest: Option<String>,
     fallback_font_sfnt: Option<Vec<u8>>,
     elements: Vec<PdfElement>,
@@ -55,7 +56,7 @@ enum PdfElement {
         source: NormalizedElementSource,
         path: Path,
         transform: super::ResolvedTransform,
-        stroke_color: [f64; 3],
+        stroke_color: CanonicalColor,
         stroke_width: f64,
         opacity: f64,
     },
@@ -84,10 +85,7 @@ impl PdfPlan {
     ) -> Result<Self, FormatEncodeError> {
         let scale = scene.raster_or_pdf_scale(request.sizing());
         let (page_width, page_height) = page_dimensions(&scene, request)?;
-        let background = scene
-            .include_background
-            .then(|| parse_srgb(&scene.background_color))
-            .transpose()?;
+        let background = scene.include_background.then_some(scene.background_color);
         let mut elements = Vec::new();
         elements
             .try_reserve_exact(scene.elements.len())
@@ -108,7 +106,7 @@ impl PdfPlan {
                         source: rectangle.source,
                         path: rectangle.path,
                         transform: rectangle.transform,
-                        stroke_color: parse_srgb(&rectangle.stroke_color)?,
+                        stroke_color: rectangle.stroke_color,
                         stroke_width: rectangle.stroke_width,
                         opacity: rectangle.opacity,
                     });
@@ -134,6 +132,7 @@ impl PdfPlan {
             page_width,
             page_height,
             background,
+            fallback_colors: scene.fallback_colors,
             mandatory_manifest: scene.mandatory_manifest,
             fallback_font_sfnt: scene.fallback_font_sfnt,
             elements,
@@ -708,13 +707,20 @@ impl PdfPlan {
     fn opacity_resources(&self) -> Result<Vec<f64>, FormatEncodeError> {
         let mut resources = Vec::new();
         resources
-            .try_reserve_exact(self.elements.len())
+            .try_reserve_exact(self.elements.len().saturating_add(1))
             .map_err(|_| FormatEncodeError::MemoryUnavailable {
                 subject_kind: "format_workspace",
                 subject: "pdf_opacity_resources",
             })?;
+        if let Some(background) = self.background.filter(|color| color.alpha() != 1.0) {
+            resources.push(background.alpha());
+        }
         for opacity in self.elements.iter().filter_map(|element| match element {
-            PdfElement::RoughRectangle { opacity, .. } if *opacity != 1.0 => Some(*opacity),
+            PdfElement::RoughRectangle {
+                opacity,
+                stroke_color,
+                ..
+            } if *opacity * stroke_color.alpha() != 1.0 => Some(*opacity * stroke_color.alpha()),
             PdfElement::Fallback { opacity, .. } if *opacity != 1.0 => Some(*opacity),
             _ => None,
         }) {
@@ -772,7 +778,13 @@ impl PdfPlan {
                     subject_kind: "format_workspace",
                     subject: "pdf_fallback_form_stream",
                 })?;
-            push_fallback_body(&mut form, *width, *height, label.as_ref())?;
+            push_fallback_body(
+                &mut form,
+                *width,
+                *height,
+                label.as_ref(),
+                self.fallback_colors,
+            )?;
             forms.push(form);
         }
         Ok(forms)
@@ -820,8 +832,12 @@ impl PdfPlan {
             self.page_height,
         )?;
         if let Some(background) = self.background {
+            if background.alpha() != 1.0 {
+                content.push_str("q\n");
+                push_opacity_resource(&mut content, opacity_resources, background.alpha())?;
+            }
             content.push_str("/CS1 cs\n");
-            push_color(&mut content, background, "scn")?;
+            push_color(&mut content, background.rgb_f64(), "scn")?;
             push_pdf_number(&mut content, 0.0, "PDF background x")?;
             content.push(' ');
             push_pdf_number(&mut content, 0.0, "PDF background y")?;
@@ -830,6 +846,9 @@ impl PdfPlan {
             content.push(' ');
             push_pdf_number(&mut content, self.logical_height, "PDF background height")?;
             content.push_str(" re\nf\n");
+            if background.alpha() != 1.0 {
+                content.push_str("Q\n");
+            }
         }
         let mut fallback_form_index = 0_usize;
         for element in &self.elements {
@@ -860,24 +879,13 @@ impl PdfPlan {
                         - cos * transform.center_y;
                     content.push_str("q\n");
                     push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
-                    if *opacity != 1.0 {
-                        let resource = opacity_resources
-                            .iter()
-                            .position(|candidate| candidate.to_bits() == opacity.to_bits())
-                            .ok_or_else(|| {
-                                FormatEncodeError::Encoding(
-                                    "PDF opacity resource has no owner".to_owned(),
-                                )
-                            })?;
-                        writeln!(content, "/GS{} gs", resource + 1).map_err(|_| {
-                            FormatEncodeError::Encoding(
-                                "failed to write PDF opacity resource".to_owned(),
-                            )
-                        })?;
+                    let opacity = *opacity * stroke_color.alpha();
+                    if opacity != 1.0 {
+                        push_opacity_resource(&mut content, opacity_resources, opacity)?;
                     }
                     push_pdf_number(&mut content, *stroke_width, "PDF stroke width")?;
                     content.push_str(" w\n1 J\n/CS1 CS\n");
-                    push_color(&mut content, *stroke_color, "SCN")?;
+                    push_color(&mut content, stroke_color.rgb_f64(), "SCN")?;
                     push_rough_path(&mut content, path)?;
                     content.push_str("S\nQ\n");
                 }
@@ -935,7 +943,13 @@ impl PdfPlan {
                         content.push_str("Q\n");
                         continue;
                     }
-                    push_fallback_body(&mut content, *width, *height, label.as_ref())?;
+                    push_fallback_body(
+                        &mut content,
+                        *width,
+                        *height,
+                        label.as_ref(),
+                        self.fallback_colors,
+                    )?;
                     content.push_str("Q\n");
                 }
             }
@@ -1178,15 +1192,16 @@ fn push_fallback_body(
     width: f64,
     height: f64,
     label: Option<&super::text::ResolvedLabel>,
+    colors: super::FallbackColors,
 ) -> Result<(), FormatEncodeError> {
     push_pdf_rectangle(output, width, height)?;
     output.push_str("W\nn\n/CS1 cs\n");
-    push_color(output, parse_srgb("#f1f3f5")?, "scn")?;
+    push_color(output, colors.fill.rgb_f64(), "scn")?;
     push_pdf_rectangle(output, width, height)?;
     output.push_str("f\n");
     if width >= 2.0 && height >= 2.0 {
         output.push_str("/CS1 CS\n");
-        push_color(output, parse_srgb("#868e96")?, "SCN")?;
+        push_color(output, colors.stroke.rgb_f64(), "SCN")?;
         output.push_str("2 w\n0 J\n0 j\n[6 4] 0 d\n");
         push_pdf_rectangle(output, width, height)?;
         output.push_str("S\n[] 0 d\n0 0 m\n");
@@ -1203,7 +1218,7 @@ fn push_fallback_body(
         output.push_str("/Span << /ActualText <FEFF");
         push_utf16be_hex(output, &label.text)?;
         output.push_str("> >> BDC\n");
-        push_pdf_label_text(output, label)?;
+        push_pdf_label_text(output, label, colors.label)?;
         output.push_str("EMC\n");
     }
     Ok(())
@@ -1212,9 +1227,10 @@ fn push_fallback_body(
 fn push_pdf_label_text(
     output: &mut String,
     label: &super::text::ResolvedLabel,
+    color: CanonicalColor,
 ) -> Result<(), FormatEncodeError> {
     output.push_str("/CS1 cs\n");
-    push_color(output, parse_srgb("#495057")?, "scn")?;
+    push_color(output, color.rgb_f64(), "scn")?;
     output.push_str("BT\n/F1 14 Tf\n");
     for glyph in &label.glyphs {
         output.push_str("1 0 0 -1 ");
@@ -1394,6 +1410,21 @@ fn push_pdf_link(output: &mut Vec<u8>, link: &str) {
     push_pdf_literal_string(output, link);
 }
 
+fn push_opacity_resource(
+    output: &mut String,
+    resources: &[f64],
+    opacity: f64,
+) -> Result<(), FormatEncodeError> {
+    let resource = resources
+        .iter()
+        .position(|candidate| candidate.to_bits() == opacity.to_bits())
+        .ok_or_else(|| {
+            FormatEncodeError::Encoding("PDF opacity resource has no owner".to_owned())
+        })?;
+    writeln!(output, "/GS{} gs", resource + 1)
+        .map_err(|_| FormatEncodeError::Encoding("failed to write PDF opacity resource".to_owned()))
+}
+
 fn push_color(
     output: &mut String,
     color: [f64; 3],
@@ -1407,35 +1438,6 @@ fn push_color(
     }
     writeln!(output, " {operator}")
         .map_err(|_| FormatEncodeError::Encoding("failed to write PDF color".to_owned()))
-}
-
-fn parse_srgb(color: &str) -> Result<[f64; 3], FormatEncodeError> {
-    let bytes = color.as_bytes();
-    if bytes.len() != 7 || bytes[0] != b'#' {
-        return Err(FormatEncodeError::Encoding(format!(
-            "PDF solid color is not canonical sRGB: {color}"
-        )));
-    }
-    Ok([
-        f64::from(parse_hex_byte(bytes[1], bytes[2])?) / 255.0,
-        f64::from(parse_hex_byte(bytes[3], bytes[4])?) / 255.0,
-        f64::from(parse_hex_byte(bytes[5], bytes[6])?) / 255.0,
-    ])
-}
-
-fn parse_hex_byte(high: u8, low: u8) -> Result<u8, FormatEncodeError> {
-    let digit = |value| match value {
-        b'0'..=b'9' => Some(value - b'0'),
-        b'a'..=b'f' => Some(value - b'a' + 10),
-        _ => None,
-    };
-    let high = digit(high).ok_or_else(|| {
-        FormatEncodeError::Encoding("PDF solid color contains an invalid digit".to_owned())
-    })?;
-    let low = digit(low).ok_or_else(|| {
-        FormatEncodeError::Encoding("PDF solid color contains an invalid digit".to_owned())
-    })?;
-    Ok(high * 16 + low)
 }
 
 fn push_pdf_number(

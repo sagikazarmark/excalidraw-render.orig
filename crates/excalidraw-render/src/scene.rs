@@ -178,6 +178,10 @@ impl SceneDocument {
             .position(|member| &*member.key == key)
     }
 
+    pub(crate) fn view_background_color(&self) -> SourceField<&str> {
+        source_field(self.app_state_members(), "viewBackgroundColor", json_string)
+    }
+
     pub(crate) fn source_owner_order(&self, root_member: &str, child_index: usize) -> u64 {
         let root_position = match &*self._root {
             JsonValue::Object(members) => members
@@ -214,10 +218,6 @@ impl SceneDocument {
             "magicframe" => ElementKind::MagicFrame,
             _ => return None,
         };
-        let JsonValue::Object(app_state) = member_value(root, "appState")? else {
-            return None;
-        };
-
         Some(ElementSource {
             element: value,
             kind,
@@ -243,7 +243,6 @@ impl SceneDocument {
             bound_elements: source_array_len(element, "boundElements", true),
             link: source_nullable_string(element, "link"),
             updated_is_missing: member_value(element, "updated").is_none(),
-            view_background_color: source_field(app_state, "viewBackgroundColor", json_string),
             points: source_point_array(element, "points"),
             pressures: source_number_array(element, "pressures"),
             simulate_pressure: source_field(element, "simulatePressure", json_bool),
@@ -384,7 +383,6 @@ pub(crate) struct ElementSource<'a> {
     pub(crate) bound_elements: SourceField<usize>,
     pub(crate) link: SourceField<Option<&'a str>>,
     pub(crate) updated_is_missing: bool,
-    pub(crate) view_background_color: SourceField<&'a str>,
     pub(crate) points: SourceField<PointArraySource<'a>>,
     pub(crate) pressures: SourceField<NumberArraySource<'a>>,
     pub(crate) simulate_pressure: SourceField<bool>,

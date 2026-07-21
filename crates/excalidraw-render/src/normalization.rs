@@ -16,7 +16,7 @@ const MISSING_ID_DOMAIN: &[u8] = b"excalidraw-render:missing-element-id:v1\0";
 const DUPLICATE_ID_DOMAIN: &[u8] = b"excalidraw-render:duplicate-element-id:v1\0";
 const ID_COLLISION_DOMAIN: &[u8] = b"excalidraw-render:element-id-collision:v1\0";
 const ROUGH_SEED_DOMAIN: &[u8] = b"excalidraw-render:rough-seed:v1\0";
-const NORMALIZED_FIELD_COUNT: u64 = 15;
+const NORMALIZED_FIELD_COUNT: u64 = 14;
 const SCALAR_REFERENCE_FIELD_COUNT: u64 = 10;
 const GENERATED_ID_BYTES: usize = "generated-".len() + 64;
 pub(crate) const NORMALIZATION_WORK_UNITS: u64 = NORMALIZED_FIELD_COUNT * 8;
@@ -40,7 +40,6 @@ pub(crate) struct NormalizedElement {
     pub(crate) link: Option<String>,
     pub(crate) frame_id: Option<String>,
     pub(crate) seed: i32,
-    pub(crate) view_background_color: String,
     pub(crate) normalized_working_bytes: u64,
     pub(crate) normalization_work_units: u64,
     pub(crate) repair_work_units: u64,
@@ -174,6 +173,8 @@ impl NormalizedElementSource {
 pub(crate) struct NormalizationOutcome {
     pub(crate) elements: Vec<NormalizedElement>,
     pub(crate) fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
+    pub(crate) view_background_color: String,
+    pub(crate) view_background_working_bytes: u64,
     pub(crate) frame_rendering: NormalizedFrameRendering,
     pub(crate) files: Vec<NormalizedFileRecord>,
 }
@@ -250,7 +251,6 @@ struct CommonFields<'a> {
     roughness: f64,
     opacity: f64,
     source_seed: i32,
-    view_background_color: &'a str,
 }
 
 enum IdentityPlan<'a> {
@@ -582,6 +582,12 @@ fn normalize_scene_impl<E>(
     mut observe: impl FnMut(NormalizationEvent<'_>) -> Result<(), E>,
 ) -> Result<Option<NormalizationOutcome>, NormalizationError<E>> {
     let frame_names = requested_frame_names;
+    let view_background_color = manifested_value(
+        scene.view_background_color(),
+        "#ffffff",
+        crate::scene_surface::css_color_is_admitted,
+    );
+    let view_background_working_bytes = owned_field_bytes(view_background_color.len());
     let element_count = scene.element_occurrence_count();
     let mut pending_events = Vec::new();
     pending_events.try_reserve(element_count.saturating_add(2))?;
@@ -995,7 +1001,6 @@ fn normalize_scene_impl<E>(
                 | SourceField::Value(None | Some(_)) => None,
             },
             seed,
-            view_background_color: memory_at_source!(try_owned(fields.view_background_color)),
             normalized_working_bytes: planned_working_bytes,
             normalization_work_units,
             repair_work_units,
@@ -1023,8 +1028,8 @@ fn normalize_scene_impl<E>(
             element_id: None,
             local_owner: None,
             json_pointer: try_owned("/appState/frameRendering")?,
-            working_bytes: 4 * 64,
-            work_units: 4 * 8,
+            working_bytes: 4 * 64 + view_background_working_bytes,
+            work_units: 5 * 8,
         },
     )?;
     for (position, diagnostic) in frame_diagnostics {
@@ -1076,6 +1081,8 @@ fn normalize_scene_impl<E>(
     Ok(Some(NormalizationOutcome {
         elements,
         fallbacks: surface.fallbacks,
+        view_background_color: try_owned(view_background_color)?,
+        view_background_working_bytes,
         frame_rendering,
         files,
     }))
@@ -1480,9 +1487,6 @@ fn element_fields<'a>(
         } else {
             manifested_value(source.seed, 1, |_| true)
         },
-        view_background_color: manifested_value(source.view_background_color, "#ffffff", |value| {
-            crate::scene_surface::css_color_is_admitted(value)
-        }),
     })
 }
 
@@ -2954,7 +2958,6 @@ fn normalized_working_bytes(id_bytes: usize, fields: &CommonFields<'_>) -> u64 {
         + owned_field_bytes(fields.background_color.len())
         + owned_field_bytes(fields.fill_style.len())
         + owned_field_bytes(fields.stroke_style.len())
-        + owned_field_bytes(fields.view_background_color.len())
 }
 
 fn owned_field_bytes(bytes: usize) -> u64 {
@@ -3968,14 +3971,14 @@ mod tests {
                     Some("image".to_owned()),
                     Some("image".to_owned()),
                     "/elements/0".to_owned(),
-                    20 * 8,
+                    19 * 8,
                 ),
                 (
                     "normalized_frame_rendering",
                     None,
                     None,
                     "/appState/frameRendering".to_owned(),
-                    4 * 8,
+                    5 * 8,
                 ),
                 (
                     "normalized_file_record",

@@ -6,6 +6,7 @@ mod text;
 
 use crate::{
     catalog::RevisionCatalog,
+    color::{self, CanonicalColor},
     normalization::{
         NormalizationError, NormalizationEvent, NormalizedElement, NormalizedElementKind,
         NormalizedElementSource,
@@ -301,6 +302,8 @@ impl RenderSession {
                 .try_reserve_exact(semantic_record_count)
                 .map_err(|_| self.memory_failure(request, "normalization", "working_records"))?;
             let frame_rendering = normalization.frame_rendering;
+            let view_background_color = normalization.view_background_color;
+            let view_background_working_bytes = normalization.view_background_working_bytes;
             let clip_fallbacks_to_frames = frame_rendering.enabled
                 && frame_rendering.clip
                 && request.frame_options().enabled()
@@ -480,7 +483,7 @@ impl RenderSession {
                 element_id: None,
                 local_owner: None,
                 json_pointer: "/appState/frameRendering".to_owned(),
-                bytes: 4 * 64,
+                bytes: 4 * 64 + view_background_working_bytes,
             });
             for file in normalized_files {
                 semantic_working.push(SemanticWorkingRecord {
@@ -496,12 +499,32 @@ impl RenderSession {
             self.preflight_fallback_text(&mut fallbacks, request, &mut semantic_working)?;
             semantic_working.sort_unstable_by_key(|record| record.source_order);
             if rectangles.is_empty() && fallbacks.is_empty() {
-                ResolvedScene::empty(request)
+                match ResolvedScene::empty(&view_background_color, request) {
+                    Ok(resolved) => resolved,
+                    Err(ResolveSceneError::UnboundedGeometry) => {
+                        return Err(self.unbounded_geometry_failure(request.format()));
+                    }
+                    Err(ResolveSceneError::InvalidColor) => {
+                        return Err(self.internal_failure(
+                            request.format(),
+                            "normalized scene background color is invalid",
+                            "/appState/viewBackgroundColor",
+                        ));
+                    }
+                    Err(ResolveSceneError::Memory | ResolveSceneError::InvalidFallbackFont) => {
+                        return Err(self.internal_failure(
+                            request.format(),
+                            "empty scene resolution reached an impossible failure",
+                            "",
+                        ));
+                    }
+                }
             } else {
                 match ResolvedScene::elements(
                     rectangles,
                     fallbacks,
                     clip_fallbacks_to_frames,
+                    &view_background_color,
                     request,
                 ) {
                     Ok(Some(resolved)) => resolved,
@@ -521,6 +544,16 @@ impl RenderSession {
                             "the sealed fallback font could not be resolved",
                             "/elements",
                         ));
+                    }
+                    Err(ResolveSceneError::InvalidColor) => {
+                        return Err(self.internal_failure(
+                            request.format(),
+                            "normalized scene color is invalid",
+                            "/elements",
+                        ));
+                    }
+                    Err(ResolveSceneError::UnboundedGeometry) => {
+                        return Err(self.unbounded_geometry_failure(request.format()));
                     }
                 }
             }
@@ -1786,13 +1819,27 @@ impl RenderSession {
             report: self.take_report(),
         }
     }
+
+    fn unbounded_geometry_failure(&mut self, format: OutputFormat) -> RenderError {
+        RenderError {
+            category: RenderErrorCategory::Input,
+            code: ErrorCode::SCENE_UNBOUNDED_GEOMETRY,
+            message: Box::from("finite whole-scene bounds could not be established"),
+            format,
+            element_id: None,
+            json_pointer: Box::from(""),
+            details: None,
+            report: self.take_report(),
+        }
+    }
 }
 
 struct ResolvedScene {
     logical_width: f64,
     logical_height: f64,
     include_background: bool,
-    background_color: String,
+    background_color: CanonicalColor,
+    fallback_colors: FallbackColors,
     elements: Vec<ResolvedElement>,
     fallback_font_woff2: Option<Vec<u8>>,
     fallback_font_sfnt: Option<Vec<u8>>,
@@ -1802,6 +1849,8 @@ struct ResolvedScene {
 enum ResolveSceneError {
     Memory,
     InvalidFallbackFont,
+    InvalidColor,
+    UnboundedGeometry,
 }
 
 impl From<std::collections::TryReserveError> for ResolveSceneError {
@@ -1811,24 +1860,31 @@ impl From<std::collections::TryReserveError> for ResolveSceneError {
 }
 
 impl ResolvedScene {
-    fn empty(request: &RenderRequest) -> Self {
+    fn empty(background_color: &str, request: &RenderRequest) -> Result<Self, ResolveSceneError> {
         let logical_size = request.padding() * 2.0;
-        Self {
-            logical_width: logical_size,
-            logical_height: logical_size,
+        if !logical_size.is_finite() {
+            return Err(ResolveSceneError::UnboundedGeometry);
+        }
+        Ok(Self {
+            logical_width: logical_size.max(1.0),
+            logical_height: logical_size.max(1.0),
             include_background: request.include_background(),
-            background_color: "#ffffff".to_owned(),
+            background_color: color::parse_css(background_color)
+                .ok_or(ResolveSceneError::InvalidColor)?
+                .for_mode(request.color_mode()),
+            fallback_colors: FallbackColors::for_mode(request.color_mode()),
             elements: Vec::new(),
             fallback_font_woff2: None,
             fallback_font_sfnt: None,
             mandatory_manifest: None,
-        }
+        })
     }
 
     fn elements(
         rectangles: Vec<(NormalizedElement, bool)>,
         fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
         clip_fallbacks_to_frames: bool,
+        background_color: &str,
         request: &RenderRequest,
     ) -> Result<Option<Self>, ResolveSceneError> {
         if rectangles.is_empty() && fallbacks.is_empty() {
@@ -1843,8 +1899,6 @@ impl ResolvedScene {
             if source.background_color != "transparent"
                 || source.fill_style != "solid"
                 || source.stroke_style != "solid"
-                || source.stroke_color != "#1e1e1e"
-                || source.view_background_color != "#ffffff"
                 || source.stroke_width < 0.0
                 || source.roughness < 0.0
                 || !(0.0..=100.0).contains(&source.opacity)
@@ -1888,16 +1942,14 @@ impl ResolvedScene {
         let logical_width = max_x - min_x + request.padding() * 2.0;
         let logical_height = max_y - min_y + request.padding() * 2.0;
         if !logical_width.is_finite() || !logical_height.is_finite() {
-            return Ok(None);
+            return Err(ResolveSceneError::UnboundedGeometry);
         }
 
         let mut elements = Vec::new();
         elements.try_reserve_exact(rectangles.len().saturating_add(fallbacks.len()))?;
-        let background_color = rectangles
-            .first()
-            .map(|(source, _)| source.view_background_color.as_str())
-            .unwrap_or("#ffffff");
-        let background_color = try_owned(background_color)?;
+        let background_color = color::parse_css(background_color)
+            .ok_or(ResolveSceneError::InvalidColor)?
+            .for_mode(request.color_mode());
         let mut frame_clips = Vec::new();
         if clip_fallbacks_to_frames {
             frame_clips.try_reserve(fallbacks.len())?;
@@ -1943,7 +1995,9 @@ impl ResolvedScene {
                     center_x: source.width / 2.0,
                     center_y: source.height / 2.0,
                 },
-                stroke_color: source.stroke_color,
+                stroke_color: color::parse_css(&source.stroke_color)
+                    .ok_or(ResolveSceneError::InvalidColor)?
+                    .for_mode(request.color_mode()),
                 stroke_width: source.stroke_width,
                 opacity: source.opacity / 100.0,
             }));
@@ -2033,6 +2087,7 @@ impl ResolvedScene {
             logical_height,
             include_background: request.include_background(),
             background_color,
+            fallback_colors: FallbackColors::for_mode(request.color_mode()),
             elements,
             fallback_font_woff2,
             fallback_font_sfnt,
@@ -2088,9 +2143,26 @@ struct ResolvedRectangle {
     base_element_work_units: u64,
     path: rough::Path,
     transform: ResolvedTransform,
-    stroke_color: String,
+    stroke_color: CanonicalColor,
     stroke_width: f64,
     opacity: f64,
+}
+
+#[derive(Clone, Copy)]
+struct FallbackColors {
+    fill: CanonicalColor,
+    stroke: CanonicalColor,
+    label: CanonicalColor,
+}
+
+impl FallbackColors {
+    fn for_mode(mode: crate::ColorMode) -> Self {
+        Self {
+            fill: CanonicalColor::from_rgb8(0xf1, 0xf3, 0xf5).for_mode(mode),
+            stroke: CanonicalColor::from_rgb8(0x86, 0x8e, 0x96).for_mode(mode),
+            label: CanonicalColor::from_rgb8(0x49, 0x50, 0x57).for_mode(mode),
+        }
+    }
 }
 
 struct ResolvedFallback {
@@ -2500,7 +2572,7 @@ mod tests {
         assert_eq!(approval["approved_at"], "2026-07-21");
         assert_eq!(
             approval["approval_url"],
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5032305510"
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5033087465"
         );
         let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
         canonical.push(b'\n');

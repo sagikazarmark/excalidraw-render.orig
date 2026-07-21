@@ -1,0 +1,940 @@
+use std::fmt;
+
+use cssparser::{color::PredefinedColorSpace, Parser, ParserInput};
+use cssparser_color::Color as ParsedColor;
+
+use crate::ColorMode;
+
+const MAX_COLOR_NESTING_DEPTH: u32 = 128;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct CanonicalColor {
+    red: u8,
+    green: u8,
+    blue: u8,
+    alpha: f64,
+}
+
+impl CanonicalColor {
+    pub(crate) const fn from_rgb8(red: u8, green: u8, blue: u8) -> Self {
+        Self {
+            red,
+            green,
+            blue,
+            alpha: 1.0,
+        }
+    }
+
+    const fn from_rgba(red: u8, green: u8, blue: u8, alpha: f64) -> Self {
+        Self {
+            red,
+            green,
+            blue,
+            alpha,
+        }
+    }
+
+    fn from_unit(red: f64, green: f64, blue: f64, alpha: f64) -> Self {
+        Self::from_rgba(
+            unit_channel(red),
+            unit_channel(green),
+            unit_channel(blue),
+            f64::from(unit_channel(alpha)) / 255.0,
+        )
+    }
+
+    pub(crate) fn for_mode(self, mode: ColorMode) -> Self {
+        match mode {
+            ColorMode::Light => self,
+            ColorMode::Dark => self.darkened(),
+        }
+    }
+
+    pub(crate) const fn alpha(self) -> f64 {
+        self.alpha
+    }
+
+    pub(crate) const fn rgb8(self) -> [u8; 3] {
+        [self.red, self.green, self.blue]
+    }
+
+    pub(crate) fn rgba8(self) -> [u8; 4] {
+        [
+            self.red,
+            self.green,
+            self.blue,
+            (self.alpha * 255.0).round() as u8,
+        ]
+    }
+
+    pub(crate) fn rgb_f64(self) -> [f64; 3] {
+        [
+            f64::from(self.red) / 255.0,
+            f64::from(self.green) / 255.0,
+            f64::from(self.blue) / 255.0,
+        ]
+    }
+
+    pub(crate) fn write_hex(self, output: &mut String) -> fmt::Result {
+        use std::fmt::Write as _;
+        write!(
+            output,
+            "#{:02x}{:02x}{:02x}",
+            self.red, self.green, self.blue
+        )
+    }
+
+    fn darkened(self) -> Self {
+        let invert = |channel: u8| 0.93 * (255.0 - f64::from(channel)) + 0.07 * f64::from(channel);
+        let red = invert(self.red);
+        let green = invert(self.green);
+        let blue = invert(self.blue);
+        let lower = |value: f64| value.clamp(0.0, 255.0).floor() as u8;
+
+        Self {
+            red: lower(-0.574 * red + 1.430 * green + 0.144 * blue),
+            green: lower(0.426 * red + 0.430 * green + 0.144 * blue),
+            blue: lower(0.426 * red + 1.430 * green - 0.856 * blue),
+            alpha: self.alpha,
+        }
+    }
+}
+
+pub(crate) fn parse_css(value: &str) -> Option<CanonicalColor> {
+    parse_css_at_depth(value, 0)
+}
+
+fn parse_css_at_depth(value: &str, depth: u32) -> Option<CanonicalColor> {
+    if depth > MAX_COLOR_NESTING_DEPTH {
+        return None;
+    }
+    let value = value.trim();
+    if let Some(color) = system_color(value) {
+        return Some(color);
+    }
+    if let Some((name, _)) = value.split_once('(') {
+        if name.eq_ignore_ascii_case("color-mix") {
+            return parse_color_mix(value, depth);
+        }
+    }
+
+    let mut input = ParserInput::new(value);
+    let mut parser = Parser::new(&mut input);
+    let parsed = ParsedColor::parse(&mut parser).ok()?;
+    parser.expect_exhausted().ok()?;
+    if let ParsedColor::CurrentColor = parsed {
+        return Some(CanonicalColor::from_rgb8(0, 0, 0));
+    }
+    if let ParsedColor::Lab(color) = parsed {
+        return Some(canonical_lab_color(
+            f64::from(color.lightness.unwrap_or(0.0)),
+            f64::from(color.a.unwrap_or(0.0)),
+            f64::from(color.b.unwrap_or(0.0)),
+            f64::from(color.alpha.unwrap_or(0.0)),
+        ));
+    }
+    if let ParsedColor::Lch(color) = parsed {
+        let hue = f64::from(color.hue.unwrap_or(0.0)).to_radians();
+        let chroma = f64::from(color.chroma.unwrap_or(0.0));
+        return Some(canonical_lab_color(
+            f64::from(color.lightness.unwrap_or(0.0)),
+            chroma * hue.cos(),
+            chroma * hue.sin(),
+            f64::from(color.alpha.unwrap_or(0.0)),
+        ));
+    }
+    if let ParsedColor::ColorFunction(color) = parsed {
+        return color_function(
+            color.color_space,
+            color.c1.map_or(0.0, f64::from),
+            color.c2.map_or(0.0, f64::from),
+            color.c3.map_or(0.0, f64::from),
+            color.alpha.map_or(0.0, f64::from),
+        );
+    }
+    let color = csscolorparser::parse(value).ok()?;
+    Some(canonical_css_color(color))
+}
+
+fn color_function(
+    space: PredefinedColorSpace,
+    first: f64,
+    second: f64,
+    third: f64,
+    alpha: f64,
+) -> Option<CanonicalColor> {
+    let linear = match space {
+        PredefinedColorSpace::Srgb => {
+            return Some(CanonicalColor::from_unit(first, second, third, alpha));
+        }
+        PredefinedColorSpace::SrgbLinear => {
+            return Some(CanonicalColor::from_unit(
+                encode_srgb(first),
+                encode_srgb(second),
+                encode_srgb(third),
+                alpha,
+            ));
+        }
+        PredefinedColorSpace::DisplayP3 => multiply(
+            [
+                [0.486_570_95, 0.265_667_69, 0.198_217_29],
+                [0.228_974_56, 0.691_738_52, 0.079_286_91],
+                [0.0, 0.045_113_38, 1.043_944_37],
+            ],
+            [decode_srgb(first), decode_srgb(second), decode_srgb(third)],
+        ),
+        PredefinedColorSpace::DisplayP3Linear => multiply(
+            [
+                [0.486_570_95, 0.265_667_69, 0.198_217_29],
+                [0.228_974_56, 0.691_738_52, 0.079_286_91],
+                [0.0, 0.045_113_38, 1.043_944_37],
+            ],
+            [first, second, third],
+        ),
+        PredefinedColorSpace::A98Rgb => multiply(
+            [
+                [0.576_730_9, 0.185_554_0, 0.188_185_2],
+                [0.297_376_9, 0.627_349_1, 0.075_274_1],
+                [0.027_034_3, 0.070_687_2, 0.991_108_5],
+            ],
+            [
+                first.signum() * first.abs().powf(563.0 / 256.0),
+                second.signum() * second.abs().powf(563.0 / 256.0),
+                third.signum() * third.abs().powf(563.0 / 256.0),
+            ],
+        ),
+        PredefinedColorSpace::ProphotoRgb => {
+            let decode = |component: f64| {
+                if component.abs() <= 16.0 / 512.0 {
+                    component / 16.0
+                } else {
+                    component.signum() * component.abs().powf(1.8)
+                }
+            };
+            let d50 = multiply(
+                [
+                    [0.797_760_49, 0.135_185_84, 0.031_349_35],
+                    [0.288_071_13, 0.711_843_22, 0.000_085_65],
+                    [0.0, 0.0, 0.825_104_60],
+                ],
+                [decode(first), decode(second), decode(third)],
+            );
+            adapt_d50_to_d65(d50)
+        }
+        PredefinedColorSpace::Rec2020 => {
+            let decode = |component: f64| {
+                const ALPHA: f64 = 1.099_296_826_809_44;
+                const BETA: f64 = 0.018_053_968_510_807;
+                if component.abs() < BETA * 4.5 {
+                    component / 4.5
+                } else {
+                    component.signum() * ((component.abs() + ALPHA - 1.0) / ALPHA).powf(1.0 / 0.45)
+                }
+            };
+            multiply(
+                [
+                    [0.636_958_05, 0.144_616_90, 0.168_880_98],
+                    [0.262_700_21, 0.677_998_07, 0.059_301_72],
+                    [0.0, 0.028_072_69, 1.060_985_06],
+                ],
+                [decode(first), decode(second), decode(third)],
+            )
+        }
+        PredefinedColorSpace::XyzD65 => [first, second, third],
+        PredefinedColorSpace::XyzD50 => adapt_d50_to_d65([first, second, third]),
+    };
+    let srgb_linear = multiply(
+        [
+            [3.240_969_94, -1.537_383_18, -0.498_610_76],
+            [-0.969_243_64, 1.875_967_50, 0.041_555_06],
+            [0.055_630_08, -0.203_976_96, 1.056_971_51],
+        ],
+        linear,
+    );
+    Some(CanonicalColor::from_unit(
+        encode_srgb(srgb_linear[0]),
+        encode_srgb(srgb_linear[1]),
+        encode_srgb(srgb_linear[2]),
+        alpha,
+    ))
+}
+
+#[derive(Clone, Copy)]
+enum ColorMixSpace {
+    Srgb,
+    SrgbLinear,
+    DisplayP3,
+    A98Rgb,
+    ProphotoRgb,
+    Rec2020,
+    Lab,
+    Oklab,
+    XyzD50,
+    XyzD65,
+    Hsl,
+    Hwb,
+    Lch,
+    Oklch,
+}
+
+impl ColorMixSpace {
+    const fn is_polar(self) -> bool {
+        matches!(self, Self::Hsl | Self::Hwb | Self::Lch | Self::Oklch)
+    }
+
+    const fn hue_index(self) -> usize {
+        match self {
+            Self::Hsl | Self::Hwb => 0,
+            Self::Lch | Self::Oklch => 2,
+            _ => 0,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+enum HueInterpolation {
+    #[default]
+    Shorter,
+    Longer,
+    Increasing,
+    Decreasing,
+}
+
+fn parse_color_mix(value: &str, depth: u32) -> Option<CanonicalColor> {
+    let body = function_body(value, "color-mix")?;
+    let [interpolation, first, second] = split_color_mix_body(body)?;
+    let mut interpolation = interpolation.split_ascii_whitespace();
+    if !interpolation.next()?.eq_ignore_ascii_case("in") {
+        return None;
+    }
+    let space = match interpolation.next()? {
+        value if value.eq_ignore_ascii_case("srgb") => ColorMixSpace::Srgb,
+        value if value.eq_ignore_ascii_case("srgb-linear") => ColorMixSpace::SrgbLinear,
+        value if value.eq_ignore_ascii_case("display-p3") => ColorMixSpace::DisplayP3,
+        value if value.eq_ignore_ascii_case("a98-rgb") => ColorMixSpace::A98Rgb,
+        value if value.eq_ignore_ascii_case("prophoto-rgb") => ColorMixSpace::ProphotoRgb,
+        value if value.eq_ignore_ascii_case("rec2020") => ColorMixSpace::Rec2020,
+        value if value.eq_ignore_ascii_case("lab") => ColorMixSpace::Lab,
+        value if value.eq_ignore_ascii_case("oklab") => ColorMixSpace::Oklab,
+        value if value.eq_ignore_ascii_case("xyz") || value.eq_ignore_ascii_case("xyz-d65") => {
+            ColorMixSpace::XyzD65
+        }
+        value if value.eq_ignore_ascii_case("xyz-d50") => ColorMixSpace::XyzD50,
+        value if value.eq_ignore_ascii_case("hsl") => ColorMixSpace::Hsl,
+        value if value.eq_ignore_ascii_case("hwb") => ColorMixSpace::Hwb,
+        value if value.eq_ignore_ascii_case("lch") => ColorMixSpace::Lch,
+        value if value.eq_ignore_ascii_case("oklch") => ColorMixSpace::Oklch,
+        _ => return None,
+    };
+    let hue_interpolation = if space.is_polar() {
+        match interpolation.next() {
+            None => HueInterpolation::Shorter,
+            Some(value) => {
+                let method = match value {
+                    value if value.eq_ignore_ascii_case("shorter") => HueInterpolation::Shorter,
+                    value if value.eq_ignore_ascii_case("longer") => HueInterpolation::Longer,
+                    value if value.eq_ignore_ascii_case("increasing") => {
+                        HueInterpolation::Increasing
+                    }
+                    value if value.eq_ignore_ascii_case("decreasing") => {
+                        HueInterpolation::Decreasing
+                    }
+                    _ => return None,
+                };
+                if !interpolation.next()?.eq_ignore_ascii_case("hue") {
+                    return None;
+                }
+                method
+            }
+        }
+    } else {
+        HueInterpolation::Shorter
+    };
+    if interpolation.next().is_some() {
+        return None;
+    }
+    let (first, first_weight) = color_mix_stop(first, depth)?;
+    let (second, second_weight) = color_mix_stop(second, depth)?;
+    let (first_weight, second_weight) = match (first_weight, second_weight) {
+        (None, None) => (0.5, 0.5),
+        (Some(first), None) => (first, 1.0 - first),
+        (None, Some(second)) => (1.0 - second, second),
+        (Some(first), Some(second)) => (first, second),
+    };
+    if first_weight < 0.0 || second_weight < 0.0 {
+        return None;
+    }
+    let total = first_weight + second_weight;
+    if total == 0.0 {
+        return None;
+    }
+    let alpha_multiplier = total.min(1.0);
+    let first_weight = first_weight / total;
+    let second_weight = second_weight / total;
+    let first_alpha = first.alpha * first_weight;
+    let second_alpha = second.alpha * second_weight;
+    let alpha = first_alpha + second_alpha;
+    let mix = |first: f64, second: f64| {
+        if alpha == 0.0 {
+            0.0
+        } else {
+            (first * first_alpha + second * second_alpha) / alpha
+        }
+    };
+    let mixed_alpha = alpha * alpha_multiplier;
+    let mut first = color_mix_components(space, first);
+    let mut second = color_mix_components(space, second);
+    if space.is_polar() {
+        let hue = space.hue_index();
+        [first[hue], second[hue]] = adjusted_hues(first[hue], second[hue], hue_interpolation);
+    }
+    color_from_mix_components(
+        space,
+        [
+            mix(first[0], second[0]),
+            mix(first[1], second[1]),
+            mix(first[2], second[2]),
+        ],
+        mixed_alpha,
+    )
+}
+
+fn color_mix_stop(value: &str, depth: u32) -> Option<(CanonicalColor, Option<f64>)> {
+    let value = value.trim();
+    let split = last_top_level_whitespace(value);
+    if let Some(split) = split {
+        if let Some(weight) = value[split..].trim().strip_suffix('%') {
+            let weight = weight.parse::<f64>().ok()? / 100.0;
+            if !(0.0..=1.0).contains(&weight) {
+                return None;
+            }
+            return Some((
+                parse_css_at_depth(value[..split].trim(), depth.checked_add(1)?)?,
+                Some(weight),
+            ));
+        }
+    }
+    Some((parse_css_at_depth(value, depth.checked_add(1)?)?, None))
+}
+
+fn function_body<'a>(value: &'a str, expected: &str) -> Option<&'a str> {
+    let open = value.find('(')?;
+    if !value[..open].trim().eq_ignore_ascii_case(expected) || !value.ends_with(')') {
+        return None;
+    }
+    Some(&value[open + 1..value.len() - 1])
+}
+
+fn split_color_mix_body(value: &str) -> Option<[&str; 3]> {
+    let mut depth = 0_u32;
+    let mut start = 0;
+    let mut first = None;
+    let mut second = None;
+    for (index, character) in value.char_indices() {
+        match character {
+            '(' => depth = depth.checked_add(1)?,
+            ')' => depth = depth.checked_sub(1)?,
+            ',' if depth == 0 => {
+                if first.is_none() {
+                    first = Some(&value[start..index]);
+                } else if second.is_none() {
+                    second = Some(&value[start..index]);
+                } else {
+                    return None;
+                }
+                start = index + character.len_utf8();
+            }
+            _ => {}
+        }
+    }
+    if depth != 0 {
+        return None;
+    }
+    Some([first?, second?, &value[start..]])
+}
+
+fn css_color(color: CanonicalColor) -> csscolorparser::Color {
+    csscolorparser::Color::from_rgba8(
+        color.red,
+        color.green,
+        color.blue,
+        (color.alpha * 255.0).round() as u8,
+    )
+}
+
+fn color_mix_components(space: ColorMixSpace, color: CanonicalColor) -> [f64; 3] {
+    let css = css_color(color);
+    let rgb = color.rgb_f64();
+    match space {
+        ColorMixSpace::Srgb => rgb,
+        ColorMixSpace::SrgbLinear => rgb.map(decode_srgb),
+        ColorMixSpace::DisplayP3 => {
+            let linear = multiply(
+                [
+                    [2.493_496_91, -0.931_383_62, -0.402_710_78],
+                    [-0.829_488_97, 1.762_664_06, 0.023_624_69],
+                    [0.035_845_83, -0.076_172_39, 0.956_884_52],
+                ],
+                srgb_to_xyz_d65(color),
+            );
+            linear.map(encode_srgb)
+        }
+        ColorMixSpace::A98Rgb => multiply(
+            [
+                [2.041_587_90, -0.565_006_97, -0.344_731_35],
+                [-0.969_243_64, 1.875_967_50, 0.041_555_06],
+                [0.013_444_28, -0.118_362_39, 1.015_174_99],
+            ],
+            srgb_to_xyz_d65(color),
+        )
+        .map(|component| component.signum() * component.abs().powf(256.0 / 563.0)),
+        ColorMixSpace::ProphotoRgb => multiply(
+            [
+                [1.345_798_97, -0.255_580_10, -0.051_106_29],
+                [-0.544_622_49, 1.508_232_74, 0.020_536_03],
+                [0.0, 0.0, 1.211_967_55],
+            ],
+            adapt_d65_to_d50(srgb_to_xyz_d65(color)),
+        )
+        .map(|component| {
+            if component.abs() <= 1.0 / 512.0 {
+                component * 16.0
+            } else {
+                component.signum() * component.abs().powf(1.0 / 1.8)
+            }
+        }),
+        ColorMixSpace::Rec2020 => multiply(
+            [
+                [1.716_651_19, -0.355_670_78, -0.253_366_28],
+                [-0.666_684_35, 1.616_481_24, 0.015_768_55],
+                [0.017_639_86, -0.042_770_61, 0.942_103_12],
+            ],
+            srgb_to_xyz_d65(color),
+        )
+        .map(encode_rec2020),
+        ColorMixSpace::Lab => srgb_to_lab(color),
+        ColorMixSpace::Oklab => {
+            let value = css.to_oklaba();
+            [
+                f64::from(value[0]),
+                f64::from(value[1]),
+                f64::from(value[2]),
+            ]
+        }
+        ColorMixSpace::XyzD50 => adapt_d65_to_d50(srgb_to_xyz_d65(color)),
+        ColorMixSpace::XyzD65 => srgb_to_xyz_d65(color),
+        ColorMixSpace::Hsl => {
+            let value = css.to_hsla();
+            [
+                f64::from(value[0]),
+                f64::from(value[1]),
+                f64::from(value[2]),
+            ]
+        }
+        ColorMixSpace::Hwb => {
+            let value = css.to_hwba();
+            [
+                f64::from(value[0]),
+                f64::from(value[1]),
+                f64::from(value[2]),
+            ]
+        }
+        ColorMixSpace::Lch => {
+            let [lightness, a, b] = srgb_to_lab(color);
+            [lightness, a.hypot(b), b.atan2(a).to_degrees()]
+        }
+        ColorMixSpace::Oklch => {
+            let value = css.to_oklcha();
+            [
+                f64::from(value[0]),
+                f64::from(value[1]),
+                f64::from(value[2]).to_degrees(),
+            ]
+        }
+    }
+}
+
+fn color_from_mix_components(
+    space: ColorMixSpace,
+    components: [f64; 3],
+    alpha: f64,
+) -> Option<CanonicalColor> {
+    match space {
+        ColorMixSpace::Srgb => Some(CanonicalColor::from_unit(
+            components[0],
+            components[1],
+            components[2],
+            alpha,
+        )),
+        ColorMixSpace::SrgbLinear => Some(CanonicalColor::from_unit(
+            encode_srgb(components[0]),
+            encode_srgb(components[1]),
+            encode_srgb(components[2]),
+            alpha,
+        )),
+        ColorMixSpace::DisplayP3 => color_function(
+            PredefinedColorSpace::DisplayP3,
+            components[0],
+            components[1],
+            components[2],
+            alpha,
+        ),
+        ColorMixSpace::A98Rgb => color_function(
+            PredefinedColorSpace::A98Rgb,
+            components[0],
+            components[1],
+            components[2],
+            alpha,
+        ),
+        ColorMixSpace::ProphotoRgb => color_function(
+            PredefinedColorSpace::ProphotoRgb,
+            components[0],
+            components[1],
+            components[2],
+            alpha,
+        ),
+        ColorMixSpace::Rec2020 => color_function(
+            PredefinedColorSpace::Rec2020,
+            components[0],
+            components[1],
+            components[2],
+            alpha,
+        ),
+        ColorMixSpace::Lab => Some(canonical_lab_color(
+            components[0],
+            components[1],
+            components[2],
+            alpha,
+        )),
+        ColorMixSpace::Oklab => Some(canonical_css_color(csscolorparser::Color::from_oklaba(
+            components[0] as f32,
+            components[1] as f32,
+            components[2] as f32,
+            alpha as f32,
+        ))),
+        ColorMixSpace::XyzD50 => color_function(
+            PredefinedColorSpace::XyzD50,
+            components[0],
+            components[1],
+            components[2],
+            alpha,
+        ),
+        ColorMixSpace::XyzD65 => color_function(
+            PredefinedColorSpace::XyzD65,
+            components[0],
+            components[1],
+            components[2],
+            alpha,
+        ),
+        ColorMixSpace::Hsl => Some(canonical_css_color(csscolorparser::Color::from_hsla(
+            components[0] as f32,
+            components[1] as f32,
+            components[2] as f32,
+            alpha as f32,
+        ))),
+        ColorMixSpace::Hwb => Some(canonical_css_color(csscolorparser::Color::from_hwba(
+            components[0] as f32,
+            components[1] as f32,
+            components[2] as f32,
+            alpha as f32,
+        ))),
+        ColorMixSpace::Lch => {
+            let hue = components[2].to_radians();
+            Some(canonical_lab_color(
+                components[0],
+                components[1] * hue.cos(),
+                components[1] * hue.sin(),
+                alpha,
+            ))
+        }
+        ColorMixSpace::Oklch => Some(canonical_css_color(csscolorparser::Color::from_oklcha(
+            components[0] as f32,
+            components[1] as f32,
+            components[2].to_radians() as f32,
+            alpha as f32,
+        ))),
+    }
+}
+
+fn adjusted_hues(first: f64, second: f64, method: HueInterpolation) -> [f64; 2] {
+    let first = first.rem_euclid(360.0);
+    let mut second = second.rem_euclid(360.0);
+    let difference = second - first;
+    match method {
+        HueInterpolation::Shorter if difference > 180.0 => second -= 360.0,
+        HueInterpolation::Shorter if difference < -180.0 => second += 360.0,
+        HueInterpolation::Longer if (0.0..180.0).contains(&difference) => second -= 360.0,
+        HueInterpolation::Longer if (-180.0..=0.0).contains(&difference) => second += 360.0,
+        HueInterpolation::Increasing if second < first => second += 360.0,
+        HueInterpolation::Decreasing if first < second => second -= 360.0,
+        HueInterpolation::Shorter
+        | HueInterpolation::Longer
+        | HueInterpolation::Increasing
+        | HueInterpolation::Decreasing => {}
+    }
+    [first, second]
+}
+
+fn srgb_to_xyz_d65(color: CanonicalColor) -> [f64; 3] {
+    multiply(
+        [
+            [0.412_390_8, 0.357_584_34, 0.180_480_79],
+            [0.212_639_01, 0.715_168_68, 0.072_192_32],
+            [0.019_330_82, 0.119_194_78, 0.950_532_15],
+        ],
+        color.rgb_f64().map(decode_srgb),
+    )
+}
+
+fn encode_rec2020(component: f64) -> f64 {
+    const ALPHA: f64 = 1.099_296_826_809_44;
+    const BETA: f64 = 0.018_053_968_510_807;
+    if component.abs() < BETA {
+        component * 4.5
+    } else {
+        component.signum() * (ALPHA * component.abs().powf(0.45) - (ALPHA - 1.0))
+    }
+}
+
+fn srgb_to_lab(color: CanonicalColor) -> [f64; 3] {
+    let xyz = adapt_d65_to_d50(srgb_to_xyz_d65(color));
+    let f = |value: f64| {
+        const EPSILON: f64 = 216.0 / 24_389.0;
+        const KAPPA: f64 = 24_389.0 / 27.0;
+        if value > EPSILON {
+            value.cbrt()
+        } else {
+            (KAPPA * value + 16.0) / 116.0
+        }
+    };
+    let x = f(xyz[0] / 0.964_22);
+    let y = f(xyz[1]);
+    let z = f(xyz[2] / 0.825_21);
+    [116.0 * y - 16.0, 500.0 * (x - y), 200.0 * (y - z)]
+}
+
+fn canonical_lab_color(lightness: f64, a: f64, b: f64, alpha: f64) -> CanonicalColor {
+    let f1 = (lightness + 16.0) / 116.0;
+    let f0 = a / 500.0 + f1;
+    let f2 = f1 - b / 200.0;
+    let inverse = |value: f64| {
+        const EPSILON: f64 = 216.0 / 24_389.0;
+        const KAPPA: f64 = 24_389.0 / 27.0;
+        let cube = value * value * value;
+        if cube > EPSILON {
+            cube
+        } else {
+            (116.0 * value - 16.0) / KAPPA
+        }
+    };
+    let xyz_d50 = [inverse(f0) * 0.964_22, inverse(f1), inverse(f2) * 0.825_21];
+    let xyz = adapt_d50_to_d65(xyz_d50);
+    let linear = multiply(
+        [
+            [3.240_969_94, -1.537_383_18, -0.498_610_76],
+            [-0.969_243_64, 1.875_967_50, 0.041_555_06],
+            [0.055_630_08, -0.203_976_96, 1.056_971_51],
+        ],
+        xyz,
+    );
+    canonical_css_color(csscolorparser::Color::new(
+        encode_srgb(linear[0]) as f32,
+        encode_srgb(linear[1]) as f32,
+        encode_srgb(linear[2]) as f32,
+        alpha as f32,
+    ))
+}
+
+fn canonical_css_color(color: csscolorparser::Color) -> CanonicalColor {
+    let color = map_srgb_gamut(color);
+    CanonicalColor::from_unit(
+        f64::from(color.r),
+        f64::from(color.g),
+        f64::from(color.b),
+        f64::from(color.a),
+    )
+}
+
+fn map_srgb_gamut(color: csscolorparser::Color) -> csscolorparser::Color {
+    const JND: f32 = 0.02;
+    const EPSILON: f32 = 0.000_01;
+
+    if [color.r, color.g, color.b]
+        .into_iter()
+        .all(|component| (0.0..=1.0).contains(&component))
+    {
+        return color;
+    }
+    let [lightness, mut chroma, hue, alpha] = color.to_oklcha();
+    if lightness >= 1.0 - EPSILON {
+        return csscolorparser::Color::new(1.0, 1.0, 1.0, alpha);
+    }
+    if lightness < EPSILON {
+        return csscolorparser::Color::new(0.0, 0.0, 0.0, alpha);
+    }
+
+    let mut minimum = 0.0;
+    let mut maximum = chroma;
+    while maximum - minimum > EPSILON {
+        chroma = (minimum + maximum) / 2.0;
+        let current = csscolorparser::Color::from_oklcha(lightness, chroma, hue, alpha);
+        if [current.r, current.g, current.b]
+            .into_iter()
+            .all(|component| (0.0..=1.0).contains(&component))
+        {
+            minimum = chroma;
+            continue;
+        }
+        let clipped = csscolorparser::Color::new(
+            current.r.clamp(0.0, 1.0),
+            current.g.clamp(0.0, 1.0),
+            current.b.clamp(0.0, 1.0),
+            alpha,
+        );
+        let clipped_oklab = clipped.to_oklaba();
+        let current_oklab = current.to_oklaba();
+        let delta = ((clipped_oklab[0] - current_oklab[0]).powi(2)
+            + (clipped_oklab[1] - current_oklab[1]).powi(2)
+            + (clipped_oklab[2] - current_oklab[2]).powi(2))
+        .sqrt();
+        if delta < JND {
+            return clipped;
+        }
+        maximum = chroma;
+    }
+    csscolorparser::Color::from_oklcha(lightness, chroma, hue, alpha)
+}
+
+fn last_top_level_whitespace(value: &str) -> Option<usize> {
+    let mut depth = 0_u32;
+    let mut split = None;
+    for (index, character) in value.char_indices() {
+        match character {
+            '(' => depth = depth.checked_add(1)?,
+            ')' => depth = depth.checked_sub(1)?,
+            _ if character.is_ascii_whitespace() && depth == 0 => split = Some(index),
+            _ => {}
+        }
+    }
+    (depth == 0).then_some(split).flatten()
+}
+
+fn decode_srgb(component: f64) -> f64 {
+    if component.abs() <= 0.040_45 {
+        component / 12.92
+    } else {
+        component.signum() * ((component.abs() + 0.055) / 1.055).powf(2.4)
+    }
+}
+
+fn encode_srgb(component: f64) -> f64 {
+    if component.abs() > 0.003_130_8 {
+        component.signum() * (1.055 * component.abs().powf(1.0 / 2.4) - 0.055)
+    } else {
+        12.92 * component
+    }
+}
+
+fn multiply(matrix: [[f64; 3]; 3], vector: [f64; 3]) -> [f64; 3] {
+    matrix.map(|row| row[0] * vector[0] + row[1] * vector[1] + row[2] * vector[2])
+}
+
+fn adapt_d50_to_d65(xyz: [f64; 3]) -> [f64; 3] {
+    multiply(
+        [
+            [0.955_473_4, -0.023_098_5, 0.063_259_3],
+            [-0.028_369_7, 1.009_995_5, 0.021_041_4],
+            [0.012_314_0, -0.020_507_7, 1.330_365_9],
+        ],
+        xyz,
+    )
+}
+
+fn adapt_d65_to_d50(xyz: [f64; 3]) -> [f64; 3] {
+    multiply(
+        [
+            [1.047_929_8, 0.022_946_8, -0.050_192_2],
+            [0.029_627_8, 0.990_434_5, -0.017_073_8],
+            [-0.009_243_0, 0.015_055_2, 0.751_874_3],
+        ],
+        xyz,
+    )
+}
+
+fn unit_channel(value: f64) -> u8 {
+    (value.clamp(0.0, 1.0) * 255.0).round() as u8
+}
+
+fn system_color(value: &str) -> Option<CanonicalColor> {
+    let color = if value.eq_ignore_ascii_case("ActiveText") {
+        CanonicalColor::from_rgb8(255, 0, 0)
+    } else if [
+        "ButtonFace",
+        "ButtonHighlight",
+        "ButtonShadow",
+        "ThreeDFace",
+    ]
+    .iter()
+    .any(|name| value.eq_ignore_ascii_case(name))
+    {
+        CanonicalColor::from_rgb8(239, 239, 239)
+    } else if [
+        "Canvas",
+        "Field",
+        "HighlightText",
+        "MarkText",
+        "SelectedItemText",
+        "ActiveCaption",
+        "AppWorkspace",
+        "Background",
+        "InactiveCaption",
+        "InfoBackground",
+        "Menu",
+        "Scrollbar",
+        "Window",
+    ]
+    .iter()
+    .any(|name| value.eq_ignore_ascii_case(name))
+    {
+        CanonicalColor::from_rgb8(255, 255, 255)
+    } else if ["GrayText", "InactiveCaptionText"]
+        .iter()
+        .any(|name| value.eq_ignore_ascii_case(name))
+    {
+        CanonicalColor::from_rgb8(128, 128, 128)
+    } else if value.eq_ignore_ascii_case("Highlight") {
+        CanonicalColor::from_rgba(0, 65, 198, 0.8)
+    } else if value.eq_ignore_ascii_case("LinkText") {
+        CanonicalColor::from_rgb8(0, 0, 238)
+    } else if value.eq_ignore_ascii_case("Mark") {
+        CanonicalColor::from_rgb8(255, 255, 0)
+    } else if value.eq_ignore_ascii_case("SelectedItem") {
+        CanonicalColor::from_rgb8(25, 103, 210)
+    } else if value.eq_ignore_ascii_case("VisitedText") {
+        CanonicalColor::from_rgb8(85, 26, 139)
+    } else if [
+        "ButtonBorder",
+        "ButtonText",
+        "CanvasText",
+        "FieldText",
+        "ActiveBorder",
+        "CaptionText",
+        "InactiveBorder",
+        "InfoText",
+        "MenuText",
+        "ThreeDDarkShadow",
+        "ThreeDHighlight",
+        "ThreeDLightShadow",
+        "ThreeDShadow",
+        "WindowFrame",
+        "WindowText",
+    ]
+    .iter()
+    .any(|name| value.eq_ignore_ascii_case(name))
+    {
+        CanonicalColor::from_rgb8(0, 0, 0)
+    } else {
+        return None;
+    };
+    Some(color)
+}

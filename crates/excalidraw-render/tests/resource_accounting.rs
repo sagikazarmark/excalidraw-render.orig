@@ -377,7 +377,7 @@ fn canonical_empty_working_byte_peak(format: OutputFormat, output_bytes: u64) ->
 }
 
 fn canonical_empty_total_work(format: OutputFormat, output_bytes: u64) -> u64 {
-    let source_and_json_normalization_and_plan = 72 + 11 * 8 + 4 * 8 + 8;
+    let source_and_json_normalization_and_plan = 72 + 11 * 8 + 5 * 8 + 8;
     let format_work = match format {
         OutputFormat::Svg | OutputFormat::Pdf => 0,
         OutputFormat::Png => {

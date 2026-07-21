@@ -6,6 +6,7 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod backends;
 mod catalog;
+mod color;
 mod compatibility;
 #[cfg(not(target_arch = "wasm32"))]
 mod model;
