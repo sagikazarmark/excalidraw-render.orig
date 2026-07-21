@@ -25,9 +25,6 @@ use crate::{
 
 use self::{pdf::PdfPlan, png::PngPlan, svg::SvgPlan};
 
-const RECTANGLE_GEOMETRY_SEGMENTS: u64 = 16;
-const RECTANGLE_GEOMETRY_WORK_UNITS: u64 = RECTANGLE_GEOMETRY_SEGMENTS * 32;
-
 fn surface_diagnostic_preflight_limit(request: &RenderRequest) -> usize {
     let limits = request.resource_limits();
     let diagnostic_limit = u64::from(limits.max_diagnostics()).saturating_add(1);
@@ -288,7 +285,7 @@ impl RenderSession {
             .ok_or_else(|| {
                 self.internal_failure(
                     request.format(),
-                    "nonempty scene is outside the implemented rectangle slice",
+                    "nonempty scene is outside the implemented outline slice",
                     "/elements",
                 )
             })?;
@@ -310,15 +307,24 @@ impl RenderSession {
                 && request.frame_options().clip();
             let normalized_files = normalization.files;
             let mut fallbacks = normalization.fallbacks;
-            let mut rectangles = Vec::new();
-            rectangles
+            let mut outlines = Vec::new();
+            outlines
                 .try_reserve_exact(normalization.elements.len())
-                .map_err(|_| self.memory_failure(request, "normalization", "rectangle_list"))?;
+                .map_err(|_| self.memory_failure(request, "normalization", "outline_list"))?;
             for source in normalization.elements {
                 debug_assert!(!source.index.is_empty());
-                if !matches!(source.kind, NormalizedElementKind::Rectangle)
-                    || !source.focused_rectangle_compatible
-                {
+                let is_outline = matches!(
+                    &source.kind,
+                    NormalizedElementKind::Rectangle
+                        | NormalizedElementKind::Diamond
+                        | NormalizedElementKind::Ellipse
+                        | NormalizedElementKind::Linear(crate::normalization::NormalizedLinear {
+                            kind: crate::normalization::NormalizedLinearKind::Line,
+                            geometry_available: true,
+                            ..
+                        })
+                );
+                if !is_outline || !source.direct_outline_compatible {
                     let uses_non_generic_recovery =
                         self.report.diagnostics.iter().any(|diagnostic| {
                             diagnostic_uses_non_generic_recovery(&source, diagnostic)
@@ -382,12 +388,34 @@ impl RenderSession {
                     }
                     continue;
                 }
-                let has_outline = source.width != 0.0 && source.height != 0.0;
-                let geometry_segments = if has_outline {
-                    RECTANGLE_GEOMETRY_SEGMENTS
-                } else {
-                    0
+                let has_outline = match &source.kind {
+                    NormalizedElementKind::Linear(linear) => linear
+                        .points
+                        .windows(2)
+                        .any(|points| points[0] != points[1]),
+                    _ => source.width != 0.0 && source.height != 0.0,
                 };
+                let path = if has_outline {
+                    let max_size = source.width.max(source.height);
+                    let min_size = source.width.min(source.height);
+                    let adjusted_roughness = if min_size >= 20.0 && max_size >= 50.0
+                        || min_size >= 15.0 && source.roundness.is_some()
+                        || matches!(source.kind, NormalizedElementKind::Linear(_))
+                            && max_size >= 50.0
+                    {
+                        source.roughness
+                    } else {
+                        (source.roughness / if max_size < 10.0 { 3.0 } else { 2.0 }).min(2.5)
+                    };
+                    Some(outline_path(&source, adjusted_roughness).map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "rough_outline")
+                    })?)
+                } else {
+                    None
+                };
+                let geometry_segments = path.as_ref().map_or(0, |path| {
+                    u64::try_from(path.operations.len()).unwrap_or(u64::MAX)
+                });
                 let geometry_work_units = geometry_segments * 32;
                 let geometry_working_bytes = if has_outline {
                     128 + geometry_segments * 64
@@ -400,9 +428,21 @@ impl RenderSession {
                     total_work_units: geometry_work_units,
                     ..ResourceDelta::default()
                 };
+                let geometry_event = match source.kind {
+                    NormalizedElementKind::Rectangle => "rough_rectangle_geometry",
+                    NormalizedElementKind::Diamond => "rough_diamond_geometry",
+                    NormalizedElementKind::Ellipse => "rough_ellipse_geometry",
+                    NormalizedElementKind::Linear(_) => "rough_linear_geometry",
+                    NormalizedElementKind::Freedraw(_)
+                    | NormalizedElementKind::Image(_)
+                    | NormalizedElementKind::Frame(_)
+                    | NormalizedElementKind::MagicFrame(_) => {
+                        unreachable!("only direct outlines reach geometry accounting")
+                    }
+                };
                 let geometry_context = ResourceContext::new(
                     ResourcePhase::SharedSemanticResolution,
-                    "rough_rectangle_geometry",
+                    geometry_event,
                     source.source.pointer(),
                 )
                 .with_element_id(Some(source.source.id()))
@@ -421,12 +461,8 @@ impl RenderSession {
                     + geometry_work_units
                     + 8
                     + source.repair_work_units;
-                let local_crossing = rectangle_local_crossing(
-                    &source,
-                    request,
-                    geometry_segments,
-                    element_work_units,
-                );
+                let local_crossing =
+                    outline_local_crossing(&source, request, geometry_segments, element_work_units);
                 let include_outline = has_outline && local_crossing.is_none();
                 let semantic_working_bytes = if let Some(crossing) = local_crossing {
                     let source_position = crossing
@@ -444,7 +480,7 @@ impl RenderSession {
                     self.retain_diagnostic_with_owner(
                         request,
                         ResourcePhase::SharedSemanticResolution,
-                        "rectangle_local_resource_recovery",
+                        "outline_local_resource_recovery",
                         diagnostic,
                         DiagnosticOwnership {
                             local_owner: Some(source.source.id()),
@@ -463,7 +499,7 @@ impl RenderSession {
                 };
                 semantic_working.push(SemanticWorkingRecord {
                     source_order: source.source_order,
-                    event: "resolved_rectangle",
+                    event: "resolved_outline",
                     element_id: Some(try_owned(source.source.id()).map_err(|_| {
                         self.memory_failure(request, "normalization", "working_record_identity")
                     })?),
@@ -475,7 +511,7 @@ impl RenderSession {
                     })?,
                     bytes: semantic_working_bytes,
                 });
-                rectangles.push((source, include_outline));
+                outlines.push((source, include_outline.then_some(path).flatten()));
             }
             semantic_working.push(SemanticWorkingRecord {
                 source_order: scene.source_owner_order("appState", 0),
@@ -498,7 +534,7 @@ impl RenderSession {
             self.account_compatibility_omissions(request)?;
             self.preflight_fallback_text(&mut fallbacks, request, &mut semantic_working)?;
             semantic_working.sort_unstable_by_key(|record| record.source_order);
-            if rectangles.is_empty() && fallbacks.is_empty() {
+            if outlines.is_empty() && fallbacks.is_empty() {
                 match ResolvedScene::empty(&view_background_color, request) {
                     Ok(resolved) => resolved,
                     Err(ResolveSceneError::UnboundedGeometry) => {
@@ -521,7 +557,7 @@ impl RenderSession {
                 }
             } else {
                 match ResolvedScene::elements(
-                    rectangles,
+                    outlines,
                     fallbacks,
                     clip_fallbacks_to_frames,
                     &view_background_color,
@@ -531,12 +567,12 @@ impl RenderSession {
                     Ok(None) => {
                         return Err(self.internal_failure(
                             request.format(),
-                            "rectangle semantics are outside the implemented focused case",
+                            "outline semantics are outside the implemented focused case",
                             "/elements",
                         ));
                     }
                     Err(ResolveSceneError::Memory) => {
-                        return Err(self.memory_failure(request, "semantic_geometry", "rectangle"));
+                        return Err(self.memory_failure(request, "semantic_geometry", "outline"));
                     }
                     Err(ResolveSceneError::InvalidFallbackFont) => {
                         return Err(self.internal_failure(
@@ -746,7 +782,7 @@ impl RenderSession {
                             ));
                         }
                         if fallback_pixels > surface_limit {
-                            let diagnostic = RectangleLocalCrossing {
+                            let diagnostic = ElementLocalCrossing {
                                 code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
                                 field: "max_raster_surface_pixels",
                                 configured: ResourceValue::Integer(surface_limit),
@@ -827,15 +863,14 @@ impl RenderSession {
                         .saturating_add(vector_work);
                     let element_work_limit = request.resource_limits().max_element_work_units();
                     if element_work > element_work_limit {
-                        let diagnostic = RectangleLocalCrossing {
+                        let diagnostic = ElementLocalCrossing {
                             code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
                             field: "max_element_work_units",
                             configured: ResourceValue::Integer(element_work_limit),
                             value_kind: ValueKind::WorkUnits,
                             attempted: ResourceValue::Integer(element_work),
                             pointer_field: None,
-                            message:
-                                "rectangle omitted because its semantic work exceeds its limit",
+                            message: "outline omitted because its semantic work exceeds its limit",
                         }
                         .diagnostic(request.format(), element_id, json_pointer)
                         .map_err(|_| {
@@ -844,7 +879,7 @@ impl RenderSession {
                         self.retain_diagnostic(
                             request,
                             ResourcePhase::ProjectionAndFallback,
-                            "rectangle_local_resource_recovery",
+                            "outline_local_resource_recovery",
                             diagnostic,
                         )?;
                         self.charge_work(
@@ -1016,7 +1051,7 @@ impl RenderSession {
                         .resource_limits()
                         .max_geometry_segments_per_element(),
                 ) {
-                Some(RectangleLocalCrossing {
+                Some(ElementLocalCrossing {
                     code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
                     field: "max_geometry_segments_per_element",
                     configured: ResourceValue::Integer(u64::from(
@@ -1031,7 +1066,7 @@ impl RenderSession {
                         "compatibility fallback omitted because its geometry exceeds its limit",
                 })
             } else if total_work_units > request.resource_limits().max_element_work_units() {
-                Some(RectangleLocalCrossing {
+                Some(ElementLocalCrossing {
                     code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
                     field: "max_element_work_units",
                     configured: ResourceValue::Integer(
@@ -1247,7 +1282,7 @@ impl RenderSession {
                 ));
             }
             if text_scalars > u64::from(request.resource_limits().max_text_scalars_per_element()) {
-                let diagnostic = RectangleLocalCrossing {
+                let diagnostic = ElementLocalCrossing {
                     code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
                     field: "max_text_scalars_per_element",
                     configured: ResourceValue::Integer(u64::from(
@@ -1881,13 +1916,13 @@ impl ResolvedScene {
     }
 
     fn elements(
-        rectangles: Vec<(NormalizedElement, bool)>,
+        outlines: Vec<(NormalizedElement, Option<rough::Path>)>,
         fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
         clip_fallbacks_to_frames: bool,
         background_color: &str,
         request: &RenderRequest,
     ) -> Result<Option<Self>, ResolveSceneError> {
-        if rectangles.is_empty() && fallbacks.is_empty() {
+        if outlines.is_empty() && fallbacks.is_empty() {
             return Ok(None);
         }
 
@@ -1895,7 +1930,7 @@ impl ResolvedScene {
         let mut min_y = f64::INFINITY;
         let mut max_x = f64::NEG_INFINITY;
         let mut max_y = f64::NEG_INFINITY;
-        for (source, _) in &rectangles {
+        for (source, _) in &outlines {
             if source.background_color != "transparent"
                 || source.fill_style != "solid"
                 || source.stroke_style != "solid"
@@ -1906,15 +1941,16 @@ impl ResolvedScene {
             {
                 return Ok(None);
             }
-            let center_x = source.x + source.width / 2.0;
-            let center_y = source.y + source.height / 2.0;
+            let (local_min_x, local_min_y, local_max_x, local_max_y) = local_outline_bounds(source);
+            let center_x = source.x + (local_min_x + local_max_x) / 2.0;
+            let center_y = source.y + (local_min_y + local_max_y) / 2.0;
             let sin = source.angle.sin();
             let cos = source.angle.cos();
             for (corner_x, corner_y) in [
-                (source.x, source.y),
-                (source.x + source.width, source.y),
-                (source.x + source.width, source.y + source.height),
-                (source.x, source.y + source.height),
+                (source.x + local_min_x, source.y + local_min_y),
+                (source.x + local_max_x, source.y + local_min_y),
+                (source.x + local_max_x, source.y + local_max_y),
+                (source.x + local_min_x, source.y + local_max_y),
             ] {
                 let delta_x = corner_x - center_x;
                 let delta_y = corner_y - center_y;
@@ -1946,7 +1982,7 @@ impl ResolvedScene {
         }
 
         let mut elements = Vec::new();
-        elements.try_reserve_exact(rectangles.len().saturating_add(fallbacks.len()))?;
+        elements.try_reserve_exact(outlines.len().saturating_add(fallbacks.len()))?;
         let background_color = color::parse_css(background_color)
             .ok_or(ResolveSceneError::InvalidColor)?
             .for_mode(request.color_mode());
@@ -1967,24 +2003,20 @@ impl ResolvedScene {
                 });
             }
         }
-        for (source, include_outline) in rectangles {
-            if !include_outline {
+        for (source, path) in outlines {
+            let Some(path) = path else {
                 continue;
-            }
-            let max_size = source.width.max(source.height);
-            let min_size = source.width.min(source.height);
-            let adjusted_roughness = if min_size >= 20.0 && max_size >= 50.0 {
-                source.roughness
-            } else {
-                (source.roughness / if max_size < 10.0 { 3.0 } else { 2.0 }).min(2.5)
             };
-            let path =
-                rough::rectangle(source.width, source.height, source.seed, adjusted_roughness)?;
-            elements.push(ResolvedElement::Rectangle(ResolvedRectangle {
+            let geometry_work_units = u64::try_from(path.operations.len())
+                .unwrap_or(u64::MAX)
+                .saturating_mul(32);
+            let (local_min_x, local_min_y, local_max_x, local_max_y) =
+                local_outline_bounds(&source);
+            elements.push(ResolvedElement::Outline(ResolvedOutline {
                 source_order: source.source_order,
                 source: source.source,
                 base_element_work_units: source.normalization_work_units
-                    + RECTANGLE_GEOMETRY_WORK_UNITS
+                    + geometry_work_units
                     + 8
                     + source.repair_work_units,
                 path,
@@ -1992,8 +2024,8 @@ impl ResolvedScene {
                     translation_x: source.x - min_x + request.padding(),
                     translation_y: source.y - min_y + request.padding(),
                     angle_radians: source.angle,
-                    center_x: source.width / 2.0,
-                    center_y: source.height / 2.0,
+                    center_x: (local_min_x + local_max_x) / 2.0,
+                    center_y: (local_min_y + local_max_y) / 2.0,
                 },
                 stroke_color: color::parse_css(&source.stroke_color)
                     .ok_or(ResolveSceneError::InvalidColor)?
@@ -2101,8 +2133,8 @@ impl ResolvedScene {
 
     fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
         self.elements.get(index).map(|element| match element {
-            ResolvedElement::Rectangle(rectangle) => {
-                (Some(rectangle.source.id()), rectangle.source.pointer())
+            ResolvedElement::Outline(outline) => {
+                (Some(outline.source.id()), outline.source.pointer())
             }
             ResolvedElement::Fallback(fallback) => (
                 fallback.source.id.as_deref(),
@@ -2124,20 +2156,20 @@ impl ResolvedScene {
 }
 
 enum ResolvedElement {
-    Rectangle(ResolvedRectangle),
+    Outline(ResolvedOutline),
     Fallback(ResolvedFallback),
 }
 
 impl ResolvedElement {
     fn source_order(&self) -> u64 {
         match self {
-            Self::Rectangle(rectangle) => rectangle.source_order,
+            Self::Outline(outline) => outline.source_order,
             Self::Fallback(fallback) => fallback.source_order,
         }
     }
 }
 
-struct ResolvedRectangle {
+struct ResolvedOutline {
     source_order: u64,
     source: NormalizedElementSource,
     base_element_work_units: u64,
@@ -2384,6 +2416,211 @@ fn include_transformed_bounds(
     }
 }
 
+fn outline_path(
+    source: &NormalizedElement,
+    roughness: f64,
+) -> Result<rough::Path, std::collections::TryReserveError> {
+    use rough::{Point, RoundedSegment};
+
+    let width = source.width;
+    let height = source.height;
+    let preserve_vertices = source.roundness.is_some() || source.roughness < 2.0;
+    match &source.kind {
+        NormalizedElementKind::Rectangle => {
+            let Some(roundness) = source.roundness else {
+                return rough::rectangle(width, height, source.seed, roughness, preserve_vertices);
+            };
+            let radius = corner_radius(width.min(height), roundness);
+            rough::rounded_path(
+                Point { x: radius, y: 0.0 },
+                &[
+                    RoundedSegment::Line(Point {
+                        x: width - radius,
+                        y: 0.0,
+                    }),
+                    RoundedSegment::Quadratic {
+                        control: Point { x: width, y: 0.0 },
+                        end: Point {
+                            x: width,
+                            y: radius,
+                        },
+                    },
+                    RoundedSegment::Line(Point {
+                        x: width,
+                        y: height - radius,
+                    }),
+                    RoundedSegment::Quadratic {
+                        control: Point {
+                            x: width,
+                            y: height,
+                        },
+                        end: Point {
+                            x: width - radius,
+                            y: height,
+                        },
+                    },
+                    RoundedSegment::Line(Point {
+                        x: radius,
+                        y: height,
+                    }),
+                    RoundedSegment::Quadratic {
+                        control: Point { x: 0.0, y: height },
+                        end: Point {
+                            x: 0.0,
+                            y: height - radius,
+                        },
+                    },
+                    RoundedSegment::Line(Point { x: 0.0, y: radius }),
+                    RoundedSegment::Quadratic {
+                        control: Point { x: 0.0, y: 0.0 },
+                        end: Point { x: radius, y: 0.0 },
+                    },
+                ],
+                source.seed,
+                roughness,
+                preserve_vertices,
+            )
+        }
+        NormalizedElementKind::Diamond => {
+            let points = [
+                Point {
+                    x: width / 2.0,
+                    y: 0.0,
+                },
+                Point {
+                    x: width,
+                    y: height / 2.0,
+                },
+                Point {
+                    x: width / 2.0,
+                    y: height,
+                },
+                Point {
+                    x: 0.0,
+                    y: height / 2.0,
+                },
+            ];
+            let Some(roundness) = source.roundness else {
+                return rough::polygon(&points, source.seed, roughness, preserve_vertices);
+            };
+            let vertical_radius = corner_radius(width / 2.0, roundness);
+            let horizontal_radius = corner_radius(height / 2.0, roundness);
+            let [top, right, bottom, left] = points;
+            rough::rounded_path(
+                Point {
+                    x: top.x + vertical_radius,
+                    y: top.y + horizontal_radius,
+                },
+                &[
+                    RoundedSegment::Line(Point {
+                        x: right.x - vertical_radius,
+                        y: right.y - horizontal_radius,
+                    }),
+                    RoundedSegment::Cubic {
+                        control_1: right,
+                        control_2: right,
+                        end: Point {
+                            x: right.x - vertical_radius,
+                            y: right.y + horizontal_radius,
+                        },
+                    },
+                    RoundedSegment::Line(Point {
+                        x: bottom.x + vertical_radius,
+                        y: bottom.y - horizontal_radius,
+                    }),
+                    RoundedSegment::Cubic {
+                        control_1: bottom,
+                        control_2: bottom,
+                        end: Point {
+                            x: bottom.x - vertical_radius,
+                            y: bottom.y - horizontal_radius,
+                        },
+                    },
+                    RoundedSegment::Line(Point {
+                        x: left.x + vertical_radius,
+                        y: left.y + horizontal_radius,
+                    }),
+                    RoundedSegment::Cubic {
+                        control_1: left,
+                        control_2: left,
+                        end: Point {
+                            x: left.x + vertical_radius,
+                            y: left.y - horizontal_radius,
+                        },
+                    },
+                    RoundedSegment::Line(Point {
+                        x: top.x - vertical_radius,
+                        y: top.y + horizontal_radius,
+                    }),
+                    RoundedSegment::Cubic {
+                        control_1: top,
+                        control_2: top,
+                        end: Point {
+                            x: top.x + vertical_radius,
+                            y: top.y + horizontal_radius,
+                        },
+                    },
+                ],
+                source.seed,
+                roughness,
+                preserve_vertices,
+            )
+        }
+        NormalizedElementKind::Ellipse => rough::ellipse(width, height, source.seed, roughness),
+        NormalizedElementKind::Linear(linear) => {
+            let mut points = Vec::new();
+            points.try_reserve_exact(linear.points.len())?;
+            points.extend(linear.points.iter().map(|point| Point {
+                x: point[0],
+                y: point[1],
+            }));
+            if source.roundness.is_some() {
+                rough::curve(&points, source.seed, roughness)
+            } else {
+                rough::linear_path(&points, false, source.seed, roughness, preserve_vertices)
+            }
+        }
+        NormalizedElementKind::Freedraw(_)
+        | NormalizedElementKind::Image(_)
+        | NormalizedElementKind::Frame(_)
+        | NormalizedElementKind::MagicFrame(_) => {
+            unreachable!("only outlines reach Rough geometry")
+        }
+    }
+}
+
+fn local_outline_bounds(source: &NormalizedElement) -> (f64, f64, f64, f64) {
+    let NormalizedElementKind::Linear(linear) = &source.kind else {
+        return (0.0, 0.0, source.width, source.height);
+    };
+    linear.points.iter().fold(
+        (
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        ),
+        |(min_x, min_y, max_x, max_y), point| {
+            (
+                min_x.min(point[0]),
+                min_y.min(point[1]),
+                max_x.max(point[0]),
+                max_y.max(point[1]),
+            )
+        },
+    )
+}
+
+fn corner_radius(size: f64, roundness: crate::normalization::NormalizedRoundness) -> f64 {
+    const PROPORTIONAL_RADIUS: f64 = 0.25;
+    match roundness {
+        crate::normalization::NormalizedRoundness::Proportional => size * PROPORTIONAL_RADIUS,
+        crate::normalization::NormalizedRoundness::Adaptive { radius } => {
+            radius.min(size * PROPORTIONAL_RADIUS)
+        }
+    }
+}
+
 struct SemanticWorkingRecord {
     source_order: u64,
     event: &'static str,
@@ -2402,7 +2639,7 @@ struct ResolvedTransform {
     center_y: f64,
 }
 
-struct RectangleLocalCrossing {
+struct ElementLocalCrossing {
     code: DiagnosticCode,
     field: &'static str,
     configured: ResourceValue,
@@ -2412,7 +2649,7 @@ struct RectangleLocalCrossing {
     message: &'static str,
 }
 
-impl RectangleLocalCrossing {
+impl ElementLocalCrossing {
     fn diagnostic(
         self,
         format: OutputFormat,
@@ -2447,12 +2684,12 @@ impl RectangleLocalCrossing {
     }
 }
 
-fn rectangle_local_crossing(
+fn outline_local_crossing(
     source: &NormalizedElement,
     request: &RenderRequest,
     geometry_segments: u64,
     element_work_units: u64,
-) -> Option<RectangleLocalCrossing> {
+) -> Option<ElementLocalCrossing> {
     let coordinate_limit = request.resource_limits().max_coordinate_magnitude();
     for (value, pointer_field) in [
         (source.x, "x"),
@@ -2462,14 +2699,14 @@ fn rectangle_local_crossing(
     ] {
         let magnitude = value.abs();
         if magnitude > coordinate_limit {
-            return Some(RectangleLocalCrossing {
+            return Some(ElementLocalCrossing {
                 code: DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,
                 field: "max_coordinate_magnitude",
                 configured: ResourceValue::Finite(FiniteValue::new(coordinate_limit)?),
                 value_kind: ValueKind::Coordinate,
                 attempted: ResourceValue::Finite(FiniteValue::new(magnitude)?),
                 pointer_field: Some(pointer_field),
-                message: "rectangle omitted because a coordinate exceeds its limit",
+                message: "outline omitted because a coordinate exceeds its limit",
             });
         }
     }
@@ -2480,26 +2717,26 @@ fn rectangle_local_crossing(
             .max_geometry_segments_per_element(),
     );
     if geometry_segments > geometry_limit {
-        return Some(RectangleLocalCrossing {
+        return Some(ElementLocalCrossing {
             code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
             field: "max_geometry_segments_per_element",
             configured: ResourceValue::Integer(geometry_limit),
             value_kind: ValueKind::Count,
             attempted: ResourceValue::Integer(geometry_segments),
             pointer_field: None,
-            message: "rectangle omitted because its geometry exceeds its limit",
+            message: "outline omitted because its geometry exceeds its limit",
         });
     }
 
     let work_limit = request.resource_limits().max_element_work_units();
-    (element_work_units > work_limit).then_some(RectangleLocalCrossing {
+    (element_work_units > work_limit).then_some(ElementLocalCrossing {
         code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
         field: "max_element_work_units",
         configured: ResourceValue::Integer(work_limit),
         value_kind: ValueKind::WorkUnits,
         attempted: ResourceValue::Integer(element_work_units),
         pointer_field: None,
-        message: "rectangle omitted because its semantic work exceeds its limit",
+        message: "outline omitted because its semantic work exceeds its limit",
     })
 }
 

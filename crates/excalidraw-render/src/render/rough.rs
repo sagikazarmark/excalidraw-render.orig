@@ -94,6 +94,7 @@ pub(super) fn rectangle(
     height: f64,
     seed: i32,
     roughness: f64,
+    preserve_vertices: bool,
 ) -> Result<Path, TryReserveError> {
     let top_left = Point { x: 0.0, y: 0.0 };
     let top_right = Point { x: width, y: 0.0 };
@@ -112,26 +113,421 @@ pub(super) fn rectangle(
     let mut operations = Vec::new();
     operations.try_reserve_exact(16)?;
     for (start, end) in segments {
-        double_line(start, end, roughness, &mut random, &mut operations);
+        double_line(
+            start,
+            end,
+            roughness,
+            preserve_vertices,
+            &mut random,
+            &mut operations,
+        );
     }
     Ok(Path { operations })
+}
+
+pub(super) fn polygon(
+    points: &[Point],
+    seed: i32,
+    roughness: f64,
+    preserve_vertices: bool,
+) -> Result<Path, TryReserveError> {
+    linear_path(points, true, seed, roughness, preserve_vertices)
+}
+
+pub(super) fn linear_path(
+    points: &[Point],
+    close: bool,
+    seed: i32,
+    roughness: f64,
+    preserve_vertices: bool,
+) -> Result<Path, TryReserveError> {
+    let segment_count = points.len().saturating_sub(1) + usize::from(close && points.len() > 2);
+    let mut operations = Vec::new();
+    operations.try_reserve_exact(segment_count.saturating_mul(4))?;
+    let mut random = Random::new(seed);
+    for points in points.windows(2) {
+        double_line(
+            points[0],
+            points[1],
+            roughness,
+            preserve_vertices,
+            &mut random,
+            &mut operations,
+        );
+    }
+    if close && points.len() > 2 {
+        double_line(
+            *points.last().expect("a closed path has points"),
+            points[0],
+            roughness,
+            preserve_vertices,
+            &mut random,
+            &mut operations,
+        );
+    }
+    Ok(Path { operations })
+}
+
+pub(super) fn rounded_path(
+    start: Point,
+    segments: &[RoundedSegment],
+    seed: i32,
+    roughness: f64,
+    preserve_vertices: bool,
+) -> Result<Path, TryReserveError> {
+    let mut operations = Vec::new();
+    operations.try_reserve_exact(segments.len().saturating_mul(4))?;
+    let mut random = Random::new(seed);
+    let mut current = start;
+    for segment in segments {
+        match *segment {
+            RoundedSegment::Line(end) => {
+                double_line(
+                    current,
+                    end,
+                    roughness,
+                    preserve_vertices,
+                    &mut random,
+                    &mut operations,
+                );
+                current = end;
+            }
+            RoundedSegment::Quadratic { control, end } => {
+                let control_1 = Point {
+                    x: current.x + (control.x - current.x) * (2.0 / 3.0),
+                    y: current.y + (control.y - current.y) * (2.0 / 3.0),
+                };
+                let control_2 = Point {
+                    x: end.x + (control.x - end.x) * (2.0 / 3.0),
+                    y: end.y + (control.y - end.y) * (2.0 / 3.0),
+                };
+                double_bezier(
+                    current,
+                    control_1,
+                    control_2,
+                    end,
+                    roughness,
+                    preserve_vertices,
+                    &mut random,
+                    &mut operations,
+                );
+                current = end;
+            }
+            RoundedSegment::Cubic {
+                control_1,
+                control_2,
+                end,
+            } => {
+                double_bezier(
+                    current,
+                    control_1,
+                    control_2,
+                    end,
+                    roughness,
+                    preserve_vertices,
+                    &mut random,
+                    &mut operations,
+                );
+                current = end;
+            }
+        }
+    }
+    Ok(Path { operations })
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum RoundedSegment {
+    Line(Point),
+    Quadratic {
+        control: Point,
+        end: Point,
+    },
+    Cubic {
+        control_1: Point,
+        control_2: Point,
+        end: Point,
+    },
+}
+
+pub(super) fn curve(points: &[Point], seed: i32, roughness: f64) -> Result<Path, TryReserveError> {
+    let mut operations = Vec::new();
+    operations.try_reserve_exact(points.len().saturating_mul(4))?;
+    curve_stroke(
+        points,
+        1.0 * (1.0 + roughness * 0.2),
+        seed,
+        roughness,
+        &mut operations,
+    )?;
+    curve_stroke(
+        points,
+        1.5 * (1.0 + roughness * 0.22),
+        seed.wrapping_add(1),
+        roughness,
+        &mut operations,
+    )?;
+    Ok(Path { operations })
+}
+
+fn curve_stroke(
+    points: &[Point],
+    offset: f64,
+    seed: i32,
+    roughness: f64,
+    operations: &mut Vec<PathOperation>,
+) -> Result<(), TryReserveError> {
+    if points.is_empty() {
+        return Ok(());
+    }
+    let mut random = Random::new(seed);
+    let mut perturbed = Vec::new();
+    perturbed.try_reserve_exact(points.len().saturating_add(2))?;
+    let mut perturb = |point: Point| Point {
+        x: point.x + random_offset(offset, roughness, 1.0, &mut random),
+        y: point.y + random_offset(offset, roughness, 1.0, &mut random),
+    };
+    perturbed.push(perturb(points[0]));
+    perturbed.push(perturb(points[0]));
+    for (index, point) in points.iter().copied().enumerate().skip(1) {
+        perturbed.push(perturb(point));
+        if index == points.len() - 1 {
+            perturbed.push(perturb(point));
+        }
+    }
+    smooth_curve(&perturbed, operations);
+    Ok(())
+}
+
+fn smooth_curve(points: &[Point], operations: &mut Vec<PathOperation>) {
+    if points.len() == 3 {
+        operations.push(PathOperation::Move(points[1]));
+        operations.push(PathOperation::Cubic {
+            control_1: points[1],
+            control_2: points[2],
+            end: points[2],
+        });
+        return;
+    }
+    if points.len() <= 3 {
+        return;
+    }
+    operations.push(PathOperation::Move(points[1]));
+    for index in 1..points.len() - 2 {
+        let current = points[index];
+        let next = points[index + 1];
+        operations.push(PathOperation::Cubic {
+            control_1: Point {
+                x: current.x + (next.x - points[index - 1].x) / 6.0,
+                y: current.y + (next.y - points[index - 1].y) / 6.0,
+            },
+            control_2: Point {
+                x: next.x + (current.x - points[index + 2].x) / 6.0,
+                y: next.y + (current.y - points[index + 2].y) / 6.0,
+            },
+            end: next,
+        });
+    }
+}
+
+pub(super) fn ellipse(
+    width: f64,
+    height: f64,
+    seed: i32,
+    roughness: f64,
+) -> Result<Path, TryReserveError> {
+    let perimeter = (std::f64::consts::PI
+        * 2.0
+        * (((width / 2.0).powi(2) + (height / 2.0).powi(2)) / 2.0).sqrt())
+    .sqrt();
+    let step_count = 9.0_f64.max((9.0 / 200.0_f64.sqrt()) * perimeter).ceil();
+    let increment = std::f64::consts::TAU / step_count;
+    let center = Point {
+        x: width / 2.0,
+        y: height / 2.0,
+    };
+    let mut random = Random::new(seed);
+    // curveFitting is one for Excalidraw ellipses. Rough.js still consumes both zero offsets.
+    let radius_x = width.abs() / 2.0 + random_offset(0.0, roughness, 1.0, &mut random);
+    let radius_y = height.abs() / 2.0 + random_offset(0.0, roughness, 1.0, &mut random);
+    let overlap_extent = random_range(0.4, 1.0, roughness, &mut random);
+    let overlap = increment * random_range(0.1, overlap_extent, roughness, &mut random);
+    let mut operations = Vec::new();
+    operations.try_reserve_exact((step_count as usize).saturating_mul(4))?;
+    if roughness == 0.0 {
+        core_ellipse_stroke(center, radius_x, radius_y, increment / 4.0, &mut operations)?;
+        return Ok(Path { operations });
+    }
+    ellipse_stroke(
+        center,
+        radius_x,
+        radius_y,
+        increment,
+        1.0,
+        overlap,
+        roughness,
+        &mut random,
+        &mut operations,
+    )?;
+    ellipse_stroke(
+        center,
+        radius_x,
+        radius_y,
+        increment,
+        1.5,
+        0.0,
+        roughness,
+        &mut random,
+        &mut operations,
+    )?;
+    Ok(Path { operations })
+}
+
+fn core_ellipse_stroke(
+    center: Point,
+    radius_x: f64,
+    radius_y: f64,
+    increment: f64,
+    operations: &mut Vec<PathOperation>,
+) -> Result<(), TryReserveError> {
+    let point = |angle: f64| Point {
+        x: center.x + radius_x * angle.cos(),
+        y: center.y + radius_y * angle.sin(),
+    };
+    let mut points = Vec::new();
+    points.try_reserve_exact((std::f64::consts::TAU / increment).ceil() as usize + 4)?;
+    points.push(point(-increment));
+    let mut angle = 0.0;
+    while angle <= std::f64::consts::TAU {
+        points.push(point(angle));
+        angle += increment;
+    }
+    points.push(point(0.0));
+    points.push(point(increment));
+    smooth_curve(&points, operations);
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn ellipse_stroke(
+    center: Point,
+    radius_x: f64,
+    radius_y: f64,
+    increment: f64,
+    offset: f64,
+    overlap: f64,
+    roughness: f64,
+    random: &mut Random,
+    operations: &mut Vec<PathOperation>,
+) -> Result<(), TryReserveError> {
+    let angle_offset = random_offset(0.5, roughness, 1.0, random) - std::f64::consts::FRAC_PI_2;
+    let mut points = Vec::new();
+    points.try_reserve_exact((std::f64::consts::TAU / increment).ceil() as usize + 5)?;
+    let point = |angle: f64, scale: f64, random: &mut Random| Point {
+        x: random_offset(offset, roughness, 1.0, random)
+            + center.x
+            + scale * radius_x * angle.cos(),
+        y: random_offset(offset, roughness, 1.0, random)
+            + center.y
+            + scale * radius_y * angle.sin(),
+    };
+    points.push(point(angle_offset - increment, 0.9, random));
+    let end_angle = std::f64::consts::TAU + angle_offset - 0.01;
+    let mut angle = angle_offset;
+    while angle < end_angle {
+        points.push(point(angle, 1.0, random));
+        angle += increment;
+    }
+    points.push(point(
+        angle_offset + std::f64::consts::TAU + overlap * 0.5,
+        1.0,
+        random,
+    ));
+    points.push(point(angle_offset + overlap, 0.98, random));
+    points.push(point(angle_offset + overlap * 0.5, 0.9, random));
+    smooth_curve(&points, operations);
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn double_bezier(
+    start: Point,
+    control_1: Point,
+    control_2: Point,
+    end: Point,
+    roughness: f64,
+    preserve_vertices: bool,
+    random: &mut Random,
+    operations: &mut Vec<PathOperation>,
+) {
+    for (index, extent) in [2.0, 2.3].into_iter().enumerate() {
+        let move_point = if index == 0 || preserve_vertices {
+            start
+        } else {
+            Point {
+                x: start.x + random_offset(2.0, roughness, 1.0, random),
+                y: start.y + random_offset(2.0, roughness, 1.0, random),
+            }
+        };
+        operations.push(PathOperation::Move(move_point));
+        let endpoint = if preserve_vertices {
+            end
+        } else {
+            Point {
+                x: end.x + random_offset(extent, roughness, 1.0, random),
+                y: end.y + random_offset(extent, roughness, 1.0, random),
+            }
+        };
+        operations.push(PathOperation::Cubic {
+            control_1: Point {
+                x: control_1.x + random_offset(extent, roughness, 1.0, random),
+                y: control_1.y + random_offset(extent, roughness, 1.0, random),
+            },
+            control_2: Point {
+                x: control_2.x + random_offset(extent, roughness, 1.0, random),
+                y: control_2.y + random_offset(extent, roughness, 1.0, random),
+            },
+            end: endpoint,
+        });
+    }
+}
+
+fn random_range(minimum: f64, maximum: f64, roughness: f64, random: &mut Random) -> f64 {
+    roughness * (random.next() * (maximum - minimum) + minimum)
 }
 
 fn double_line(
     start: Point,
     end: Point,
     roughness: f64,
+    preserve_vertices: bool,
     random: &mut Random,
     operations: &mut Vec<PathOperation>,
 ) {
-    line(start, end, roughness, false, random, operations);
-    line(start, end, roughness, true, random, operations);
+    line(
+        start,
+        end,
+        roughness,
+        preserve_vertices,
+        false,
+        random,
+        operations,
+    );
+    line(
+        start,
+        end,
+        roughness,
+        preserve_vertices,
+        true,
+        random,
+        operations,
+    );
 }
 
 fn line(
     start: Point,
     end: Point,
     roughness: f64,
+    preserve_vertices: bool,
     overlay: bool,
     random: &mut Random,
     operations: &mut Vec<PathOperation>,
@@ -168,12 +564,20 @@ fn line(
     mid_displacement_x = random_offset(mid_displacement_x, roughness, roughness_gain, random);
     mid_displacement_y = random_offset(mid_displacement_y, roughness, roughness_gain, random);
 
-    operations.push(PathOperation::Move(start));
     let offset = if overlay {
         half_offset
     } else {
         randomness_offset
     };
+    let moved_start = if preserve_vertices {
+        start
+    } else {
+        Point {
+            x: start.x + random_offset(offset, roughness, roughness_gain, random),
+            y: start.y + random_offset(offset, roughness, roughness_gain, random),
+        }
+    };
+    operations.push(PathOperation::Move(moved_start));
     let control_1 = Point {
         x: control_coordinate(
             mid_displacement_x,
@@ -220,10 +624,18 @@ fn line(
             random,
         ),
     };
+    let endpoint = if preserve_vertices {
+        end
+    } else {
+        Point {
+            x: end.x + random_offset(offset, roughness, roughness_gain, random),
+            y: end.y + random_offset(offset, roughness, roughness_gain, random),
+        }
+    };
     operations.push(PathOperation::Cubic {
         control_1,
         control_2,
-        end,
+        end: endpoint,
     });
 }
 

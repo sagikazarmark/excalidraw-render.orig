@@ -209,6 +209,8 @@ impl SceneDocument {
         };
         let kind = match json_string(member_value(element, "type")?)? {
             "rectangle" => ElementKind::Rectangle,
+            "diamond" => ElementKind::Diamond,
+            "ellipse" => ElementKind::Ellipse,
             "line" => ElementKind::Line,
             "draw" => ElementKind::LegacyDraw,
             "arrow" => ElementKind::Arrow,
@@ -334,6 +336,8 @@ impl SceneDocument {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ElementKind {
     Rectangle,
+    Diamond,
+    Ellipse,
     Line,
     LegacyDraw,
     Arrow,
@@ -347,6 +351,8 @@ impl ElementKind {
     pub(crate) const fn scene_surface_kind(self) -> &'static str {
         match self {
             Self::Rectangle => "rectangle",
+            Self::Diamond => "diamond",
+            Self::Ellipse => "ellipse",
             Self::Line => "line",
             Self::LegacyDraw => "draw",
             Self::Arrow => "arrow",

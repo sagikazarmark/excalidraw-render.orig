@@ -18,7 +18,7 @@ pub(super) struct PngPlan {
 }
 
 enum PngElement {
-    RoughRectangle {
+    RoughOutline {
         source: NormalizedElementSource,
         path: Path,
         transform: PngTransform,
@@ -134,21 +134,21 @@ impl PngPlan {
             })?;
         for element in scene.elements {
             match element {
-                ResolvedElement::Rectangle(rectangle) => {
-                    if rectangle.source.id().is_empty() {
+                ResolvedElement::Outline(outline) => {
+                    if outline.source.id().is_empty() {
                         return Err(FormatEncodeError::Encoding(format!(
-                            "rectangle at {} has no normalized identity",
-                            rectangle.source.pointer()
+                            "outline at {} has no normalized identity",
+                            outline.source.pointer()
                         )));
                     }
-                    elements.push(PngElement::RoughRectangle {
-                        source: rectangle.source,
-                        path: rectangle.path,
-                        transform: PngTransform::new(&rectangle.transform, scale),
-                        stroke_color: rectangle.stroke_color,
-                        stroke_width: rectangle.stroke_width,
-                        opacity: rectangle.opacity,
-                        base_element_work_units: rectangle.base_element_work_units,
+                    elements.push(PngElement::RoughOutline {
+                        source: outline.source,
+                        path: outline.path,
+                        transform: PngTransform::new(&outline.transform, scale),
+                        stroke_color: outline.stroke_color,
+                        stroke_width: outline.stroke_width,
+                        opacity: outline.opacity,
+                        base_element_work_units: outline.base_element_work_units,
                         render: true,
                     });
                 }
@@ -234,7 +234,7 @@ impl PngPlan {
             }
             for element in &self.elements {
                 match element {
-                    PngElement::RoughRectangle {
+                    PngElement::RoughOutline {
                         source,
                         path,
                         transform,
@@ -249,7 +249,7 @@ impl PngPlan {
                         }
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
-                                "PNG plan rectangle lost its source identity".to_owned(),
+                                "PNG plan outline lost its source identity".to_owned(),
                             ));
                         }
                         let path = tiny_skia_path(path)?;
@@ -472,7 +472,7 @@ impl PngPlan {
 
     pub(super) fn vector_coverage_area(&self, index: usize) -> Option<u64> {
         self.elements.get(index).map(|element| match element {
-            PngElement::RoughRectangle {
+            PngElement::RoughOutline {
                 path,
                 transform,
                 stroke_width,
@@ -497,7 +497,7 @@ impl PngPlan {
 
     pub(super) fn base_element_work_units(&self, index: usize) -> Option<u64> {
         self.elements.get(index).map(|element| match element {
-            PngElement::RoughRectangle {
+            PngElement::RoughOutline {
                 base_element_work_units,
                 ..
             } => *base_element_work_units,
@@ -510,7 +510,7 @@ impl PngPlan {
 
     pub(super) fn fallback_surface_area(&self, index: usize) -> Option<Option<u64>> {
         self.elements.get(index).map(|element| match element {
-            PngElement::RoughRectangle { .. } => None,
+            PngElement::RoughOutline { .. } => None,
             PngElement::Fallback {
                 width,
                 height,
@@ -532,14 +532,14 @@ impl PngPlan {
 
     pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
         self.elements.get(index).map(|element| match element {
-            PngElement::RoughRectangle { source, .. } => (Some(source.id()), source.pointer()),
+            PngElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
             PngElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
 
     pub(super) fn omit_element(&mut self, index: usize) -> bool {
         match self.elements.get_mut(index) {
-            Some(PngElement::RoughRectangle { render, .. }) => {
+            Some(PngElement::RoughOutline { render, .. }) => {
                 *render = false;
                 true
             }

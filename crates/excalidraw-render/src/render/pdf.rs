@@ -37,7 +37,7 @@ const SRGB_TRC: [u16; 256] = [
 ];
 
 // This focused direct serializer is the controlled backend approved for #44;
-// broader PDF operation qualification remains outside this rectangle slice.
+// broader PDF operation qualification remains outside this outline slice.
 pub(super) struct PdfPlan {
     logical_width: f64,
     logical_height: f64,
@@ -52,7 +52,7 @@ pub(super) struct PdfPlan {
 }
 
 enum PdfElement {
-    RoughRectangle {
+    RoughOutline {
         source: NormalizedElementSource,
         path: Path,
         transform: super::ResolvedTransform,
@@ -95,20 +95,20 @@ impl PdfPlan {
             })?;
         for element in scene.elements {
             match element {
-                ResolvedElement::Rectangle(rectangle) => {
-                    if rectangle.source.id().is_empty() {
+                ResolvedElement::Outline(outline) => {
+                    if outline.source.id().is_empty() {
                         return Err(FormatEncodeError::Encoding(format!(
-                            "rectangle at {} has no normalized identity",
-                            rectangle.source.pointer()
+                            "outline at {} has no normalized identity",
+                            outline.source.pointer()
                         )));
                     }
-                    elements.push(PdfElement::RoughRectangle {
-                        source: rectangle.source,
-                        path: rectangle.path,
-                        transform: rectangle.transform,
-                        stroke_color: rectangle.stroke_color,
-                        stroke_width: rectangle.stroke_width,
-                        opacity: rectangle.opacity,
+                    elements.push(PdfElement::RoughOutline {
+                        source: outline.source,
+                        path: outline.path,
+                        transform: outline.transform,
+                        stroke_color: outline.stroke_color,
+                        stroke_width: outline.stroke_width,
+                        opacity: outline.opacity,
                     });
                 }
                 ResolvedElement::Fallback(fallback) => {
@@ -467,7 +467,7 @@ impl PdfPlan {
 
     pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
         self.elements.get(index).map(|element| match element {
-            PdfElement::RoughRectangle { source, .. } => (Some(source.id()), source.pointer()),
+            PdfElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
             PdfElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -716,7 +716,7 @@ impl PdfPlan {
             resources.push(background.alpha());
         }
         for opacity in self.elements.iter().filter_map(|element| match element {
-            PdfElement::RoughRectangle {
+            PdfElement::RoughOutline {
                 opacity,
                 stroke_color,
                 ..
@@ -794,7 +794,7 @@ impl PdfPlan {
         let mut capacity = 1_024_usize;
         for element in &self.elements {
             let element_bytes = match element {
-                PdfElement::RoughRectangle { path, .. } => path
+                PdfElement::RoughOutline { path, .. } => path
                     .operations
                     .len()
                     .checked_mul(200)
@@ -853,7 +853,7 @@ impl PdfPlan {
         let mut fallback_form_index = 0_usize;
         for element in &self.elements {
             match element {
-                PdfElement::RoughRectangle {
+                PdfElement::RoughOutline {
                     source,
                     path,
                     transform,
@@ -863,7 +863,7 @@ impl PdfPlan {
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
-                            "PDF plan rectangle lost its source identity".to_owned(),
+                            "PDF plan outline lost its source identity".to_owned(),
                         ));
                     }
                     let (sin, cos) = if transform.angle_radians == 0.0 {

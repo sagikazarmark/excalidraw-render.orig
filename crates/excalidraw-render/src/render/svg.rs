@@ -20,7 +20,7 @@ pub(super) struct SvgPlan {
 }
 
 enum SvgElement {
-    RoughRectangle {
+    RoughOutline {
         source: NormalizedElementSource,
         path: Path,
         translation_x: f64,
@@ -70,25 +70,25 @@ impl SvgPlan {
         let mut fallback_index = 0_usize;
         for element in scene.elements {
             match element {
-                ResolvedElement::Rectangle(rectangle) => {
-                    if rectangle.source.id().is_empty() {
+                ResolvedElement::Outline(outline) => {
+                    if outline.source.id().is_empty() {
                         return Err(FormatEncodeError::Encoding(format!(
-                            "rectangle at {} has no normalized identity",
-                            rectangle.source.pointer()
+                            "outline at {} has no normalized identity",
+                            outline.source.pointer()
                         )));
                     }
-                    elements.push(SvgElement::RoughRectangle {
-                        source: rectangle.source,
-                        path: rectangle.path,
-                        translation_x: rectangle.transform.translation_x,
-                        translation_y: rectangle.transform.translation_y,
-                        rotation_degrees: 180.0 * rectangle.transform.angle_radians
+                    elements.push(SvgElement::RoughOutline {
+                        source: outline.source,
+                        path: outline.path,
+                        translation_x: outline.transform.translation_x,
+                        translation_y: outline.transform.translation_y,
+                        rotation_degrees: 180.0 * outline.transform.angle_radians
                             / std::f64::consts::PI,
-                        center_x: rectangle.transform.center_x,
-                        center_y: rectangle.transform.center_y,
-                        stroke_color: rectangle.stroke_color,
-                        stroke_width: rectangle.stroke_width,
-                        opacity: rectangle.opacity,
+                        center_x: outline.transform.center_x,
+                        center_y: outline.transform.center_y,
+                        stroke_color: outline.stroke_color,
+                        stroke_width: outline.stroke_width,
+                        opacity: outline.opacity,
                     });
                 }
                 ResolvedElement::Fallback(fallback) => {
@@ -145,7 +145,7 @@ impl SvgPlan {
         capacity = checked_capacity_add(capacity, usize::from(self.background.is_some()) * 32)?;
         for element in &self.elements {
             match element {
-                SvgElement::RoughRectangle { path, .. } => {
+                SvgElement::RoughOutline { path, .. } => {
                     capacity = checked_capacity_add(
                         capacity,
                         path.operations
@@ -215,7 +215,7 @@ impl SvgPlan {
         }
         for element in &self.elements {
             match element {
-                SvgElement::RoughRectangle {
+                SvgElement::RoughOutline {
                     source,
                     path,
                     translation_x,
@@ -229,7 +229,7 @@ impl SvgPlan {
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
-                            "SVG plan rectangle lost its source identity".to_owned(),
+                            "SVG plan outline lost its source identity".to_owned(),
                         ));
                     }
                     svg.push_str("<g stroke-linecap=\"round\" transform=\"translate(");
@@ -465,7 +465,7 @@ impl SvgPlan {
 
     pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
         self.elements.get(index).map(|element| match element {
-            SvgElement::RoughRectangle { source, .. } => (Some(source.id()), source.pointer()),
+            SvgElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }

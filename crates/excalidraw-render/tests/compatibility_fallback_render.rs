@@ -220,8 +220,8 @@ fn known_but_unavailable_elements_use_the_known_placeholder_without_generic_nois
         "version":2,
         "elements":[
             {
-                "id":"line",
-                "type":"line",
+                "id":"arrow",
+                "type":"arrow",
                 "x":0,
                 "y":0,
                 "width":180,
@@ -237,7 +237,8 @@ fn known_but_unavailable_elements_use_the_known_placeholder_without_generic_nois
                 "seed":1,
                 "updated":1
             },
-            {"id":"diamond","type":"diamond","x":210,"y":0,"width":180,"height":60,"updated":1}
+            {"id":"freedraw","type":"freedraw","x":210,"y":0,"width":180,"height":60,
+                "points":[[0,0],[180,60]],"pressures":[],"simulatePressure":true,"updated":1}
         ],
         "appState":{},
         "files":{}
@@ -249,7 +250,7 @@ fn known_but_unavailable_elements_use_the_known_placeholder_without_generic_nois
         let outcome = render(&scene, format);
         let diagnostics = boundary_diagnostics(&outcome);
         assert_eq!(diagnostics.len(), 2);
-        for (diagnostic, expected_id) in diagnostics.iter().zip(["line", "diamond"]) {
+        for (diagnostic, expected_id) in diagnostics.iter().zip(["arrow", "freedraw"]) {
             assert_eq!(
                 diagnostic.code(),
                 DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
@@ -265,8 +266,8 @@ fn known_but_unavailable_elements_use_the_known_placeholder_without_generic_nois
         }
         if format == OutputFormat::Svg {
             let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-            assert!(svg.contains(">Unavailable: line</text>"));
-            assert!(svg.contains(">Unavailable: diamond</text>"));
+            assert!(svg.contains(">Unavailable: arrow</text>"));
+            assert!(svg.contains(">Unavailable: freedraw</text>"));
         }
     }
 }

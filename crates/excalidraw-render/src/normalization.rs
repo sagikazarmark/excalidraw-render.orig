@@ -40,22 +40,31 @@ pub(crate) struct NormalizedElement {
     pub(crate) link: Option<String>,
     pub(crate) frame_id: Option<String>,
     pub(crate) seed: i32,
+    pub(crate) roundness: Option<NormalizedRoundness>,
     pub(crate) normalized_working_bytes: u64,
     pub(crate) normalization_work_units: u64,
     pub(crate) repair_work_units: u64,
     pub(crate) kind_name: &'static str,
     pub(crate) kind: NormalizedElementKind,
-    pub(crate) focused_rectangle_compatible: bool,
+    pub(crate) direct_outline_compatible: bool,
 }
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum NormalizedElementKind {
     Rectangle,
+    Diamond,
+    Ellipse,
     Linear(NormalizedLinear),
     Freedraw(NormalizedFreedraw),
     Image(NormalizedImage),
     Frame(NormalizedFrame),
     MagicFrame(NormalizedFrame),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum NormalizedRoundness {
+    Proportional,
+    Adaptive { radius: f64 },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -264,7 +273,7 @@ struct PendingElement<'a> {
     source_index: usize,
     source: ElementSource<'a>,
     fields: CommonFields<'a>,
-    focused_rectangle_compatible: bool,
+    direct_outline_compatible: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -630,8 +639,14 @@ fn normalize_scene_impl<E>(
         let Some(fields) = element_fields(&source, policy) else {
             return Ok(None);
         };
-        let focused_rectangle_compatible = matches!(source.kind, ElementKind::Rectangle)
-            && matches!(defaulted(source.group_ids, 0), Some(0))
+        let direct_outline_compatible = matches!(
+            source.kind,
+            ElementKind::Rectangle
+                | ElementKind::Diamond
+                | ElementKind::Ellipse
+                | ElementKind::Line
+                | ElementKind::LegacyDraw
+        ) && matches!(defaulted(source.group_ids, 0), Some(0))
             && matches!(defaulted(source.frame_id, None), Some(None))
             && matches!(defaulted(source.bound_elements, 0), Some(0))
             && matches!(defaulted(source.link, None), Some(None));
@@ -639,7 +654,7 @@ fn normalize_scene_impl<E>(
             source_index: index,
             source,
             fields,
-            focused_rectangle_compatible,
+            direct_outline_compatible,
         });
     }
 
@@ -1001,12 +1016,13 @@ fn normalize_scene_impl<E>(
                 | SourceField::Value(None | Some(_)) => None,
             },
             seed,
+            roundness: normalized_roundness(&source, policy),
             normalized_working_bytes: planned_working_bytes,
             normalization_work_units,
             repair_work_units,
             kind_name: source.kind.scene_surface_kind(),
             kind,
-            focused_rectangle_compatible: pending.focused_rectangle_compatible,
+            direct_outline_compatible: pending.direct_outline_compatible,
         });
     }
 
@@ -1200,6 +1216,8 @@ impl ElementKind {
     const fn normalization_event_name(self) -> &'static str {
         match self {
             Self::Rectangle => "normalized_rectangle",
+            Self::Diamond => "normalized_diamond",
+            Self::Ellipse => "normalized_ellipse",
             Self::Line | Self::LegacyDraw | Self::Arrow => "normalized_linear",
             Self::Freedraw => "normalized_freedraw",
             Self::Image => "normalized_image",
@@ -1209,7 +1227,7 @@ impl ElementKind {
 
     fn normalized_field_count(self, participation: NormalizationParticipation) -> u64 {
         match self {
-            Self::Rectangle => 0,
+            Self::Rectangle | Self::Diamond | Self::Ellipse => 0,
             Self::Line | Self::LegacyDraw => 6,
             Self::Arrow => 7,
             Self::Freedraw => 4,
@@ -1226,7 +1244,7 @@ fn planned_kind_working_bytes(
     let optional_owned_bytes =
         |value: Option<&str>| value.map_or(64, |value| owned_field_bytes(value.len()));
     match source.kind {
-        ElementKind::Rectangle => 0,
+        ElementKind::Rectangle | ElementKind::Diamond | ElementKind::Ellipse => 0,
         ElementKind::Line | ElementKind::LegacyDraw | ElementKind::Arrow => {
             let point_count = match source.points {
                 SourceField::Value(points)
@@ -1374,7 +1392,9 @@ fn kind_working_bytes(
         })
     };
     match kind {
-        NormalizedElementKind::Rectangle => 0,
+        NormalizedElementKind::Rectangle
+        | NormalizedElementKind::Diamond
+        | NormalizedElementKind::Ellipse => 0,
         NormalizedElementKind::Linear(linear) => u64::try_from(linear.points.len())
             .unwrap_or(u64::MAX)
             .saturating_mul(2 * 64)
@@ -1644,6 +1664,20 @@ fn normalize_element_kind(
     match source.kind {
         ElementKind::Rectangle => Ok((
             NormalizedElementKind::Rectangle,
+            fields.x,
+            fields.y,
+            fields.width,
+            fields.height,
+        )),
+        ElementKind::Diamond => Ok((
+            NormalizedElementKind::Diamond,
+            fields.x,
+            fields.y,
+            fields.width,
+            fields.height,
+        )),
+        ElementKind::Ellipse => Ok((
+            NormalizedElementKind::Ellipse,
             fields.x,
             fields.y,
             fields.width,
@@ -3061,6 +3095,37 @@ fn defaulted<T: Copy>(field: SourceField<T>, default: T) -> Option<T> {
         SourceField::Missing => Some(default),
         SourceField::Value(value) => Some(value),
         SourceField::Invalid => None,
+    }
+}
+
+fn normalized_roundness(
+    source: &ElementSource<'_>,
+    policy: &'static crate::scene_surface::SceneSurfacePolicy,
+) -> Option<NormalizedRoundness> {
+    if crate::scene_surface::element_ignores_inherited_path(
+        policy,
+        source.kind.scene_surface_kind(),
+        "/roundness",
+    ) {
+        return None;
+    }
+    let SourceField::Value(Some(roundness)) = source.roundness else {
+        return None;
+    };
+    let SourceField::Value(kind @ 1..=3) = roundness.kind() else {
+        return None;
+    };
+    let value = match roundness.value() {
+        SourceField::Value(value) if value >= 0.0 => Some(value),
+        SourceField::Missing => None,
+        SourceField::Value(_) | SourceField::Invalid => return None,
+    };
+    match kind {
+        1 | 2 => Some(NormalizedRoundness::Proportional),
+        3 => Some(NormalizedRoundness::Adaptive {
+            radius: value.unwrap_or(32.0),
+        }),
+        _ => None,
     }
 }
 
