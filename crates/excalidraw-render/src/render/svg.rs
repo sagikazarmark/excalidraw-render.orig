@@ -34,6 +34,7 @@ enum SvgElement {
         stroke_style: StrokeStyle,
         source_stroke_width: f64,
         opacity: f64,
+        background_color: CanonicalColor,
     },
     Fallback {
         source: super::FallbackSource,
@@ -95,6 +96,7 @@ impl SvgPlan {
                         stroke_style: outline.stroke_style,
                         source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
+                        background_color: outline.background_color,
                     });
                 }
                 ResolvedElement::Fallback(fallback) => {
@@ -235,6 +237,7 @@ impl SvgPlan {
                     stroke_style,
                     source_stroke_width,
                     opacity,
+                    background_color,
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -254,90 +257,36 @@ impl SvgPlan {
                     push_svg_number(&mut svg, *center_y, "SVG rotation center y")?;
                     svg.push_str(")\"");
                     svg.push('>');
-                    if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
-                        svg.push_str("<path d=\"");
-                        push_rough_path(&mut svg, &fill.path)?;
-                        match fill.kind {
-                            FillKind::Solid => {
-                                svg.push_str("\" stroke=\"none\" fill=\"");
-                                fill_color.write_hex(&mut svg).map_err(|_| {
-                                    FormatEncodeError::Encoding(
-                                        "failed to write SVG fill color".to_owned(),
-                                    )
-                                })?;
-                                svg.push('"');
-                                if drawing.shape.svg_uses_even_odd_fill() {
-                                    svg.push_str(" fill-rule=\"evenodd\"");
-                                }
-                                if fill_color.alpha() * opacity != 1.0 {
-                                    svg.push_str(" fill-opacity=\"");
-                                    push_svg_number(
-                                        &mut svg,
-                                        fill_color.alpha() * opacity,
-                                        "SVG effective fill alpha",
-                                    )?;
-                                    svg.push('"');
-                                }
-                            }
-                            FillKind::Sketch => {
-                                svg.push_str("\" stroke=\"");
-                                fill_color.write_hex(&mut svg).map_err(|_| {
-                                    FormatEncodeError::Encoding(
-                                        "failed to write SVG sketch color".to_owned(),
-                                    )
-                                })?;
-                                svg.push_str("\" stroke-width=\"");
-                                push_svg_number(
-                                    &mut svg,
-                                    *source_stroke_width / 2.0,
-                                    "SVG fill weight",
-                                )?;
-                                svg.push_str("\" fill=\"none\"");
-                                if fill_color.alpha() * opacity != 1.0 {
-                                    svg.push_str(" stroke-opacity=\"");
-                                    push_svg_number(
-                                        &mut svg,
-                                        fill_color.alpha() * opacity,
-                                        "SVG effective fill alpha",
-                                    )?;
-                                    svg.push('"');
-                                }
-                            }
-                        }
-                        svg.push_str("/> ");
-                    }
-                    svg.push_str("<path d=\"");
-                    push_rough_path(&mut svg, &drawing.outline)?;
-                    svg.push_str("\" stroke=\"");
-                    stroke_color.write_hex(&mut svg).map_err(|_| {
-                        FormatEncodeError::Encoding("failed to write SVG stroke color".to_owned())
-                    })?;
-                    svg.push_str("\" stroke-width=\"");
-                    push_svg_number(&mut svg, *stroke_width, "SVG stroke width")?;
-                    svg.push_str("\" fill=\"none\"");
-                    match stroke_style {
-                        StrokeStyle::Solid => {}
-                        StrokeStyle::Dashed => {
-                            svg.push_str(" stroke-dasharray=\"8 ");
-                            push_svg_number(&mut svg, 8.0 + source_stroke_width, "SVG dash gap")?;
-                            svg.push('"');
-                        }
-                        StrokeStyle::Dotted => {
-                            svg.push_str(" stroke-dasharray=\"1.5 ");
-                            push_svg_number(&mut svg, 6.0 + source_stroke_width, "SVG dot gap")?;
-                            svg.push('"');
-                        }
-                    }
-                    if stroke_color.alpha() * opacity != 1.0 {
-                        svg.push_str(" stroke-opacity=\"");
-                        push_svg_number(
+                    push_svg_drawing(
+                        &mut svg,
+                        drawing,
+                        *stroke_color,
+                        *fill_color,
+                        *stroke_width,
+                        *stroke_style,
+                        *source_stroke_width,
+                        *opacity,
+                    )?;
+                    for decoration in &drawing.decorations {
+                        let decoration_fill = super::decoration_fill_color(
+                            decoration,
+                            *stroke_color,
+                            *background_color,
+                        );
+                        let (decoration_style, decoration_stroke_width) =
+                            super::decoration_stroke_style(decoration, *source_stroke_width);
+                        push_svg_drawing(
                             &mut svg,
-                            stroke_color.alpha() * opacity,
-                            "SVG effective stroke alpha",
+                            &decoration.drawing,
+                            *stroke_color,
+                            Some(decoration_fill),
+                            *stroke_width,
+                            decoration_style,
+                            decoration_stroke_width,
+                            *opacity,
                         )?;
-                        svg.push('"');
                     }
-                    svg.push_str("/></g>");
+                    svg.push_str("</g>");
                 }
                 SvgElement::Fallback {
                     source,
@@ -538,6 +487,96 @@ impl SvgPlan {
             SvgElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn push_svg_drawing(
+    output: &mut String,
+    drawing: &Drawing,
+    stroke_color: CanonicalColor,
+    fill_color: Option<CanonicalColor>,
+    stroke_width: f64,
+    stroke_style: StrokeStyle,
+    source_stroke_width: f64,
+    opacity: f64,
+) -> Result<(), FormatEncodeError> {
+    if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
+        output.push_str("<path d=\"");
+        push_rough_path(output, &fill.path)?;
+        match fill.kind {
+            FillKind::Solid => {
+                output.push_str("\" stroke=\"none\" fill=\"");
+                fill_color.write_hex(output).map_err(|_| {
+                    FormatEncodeError::Encoding("failed to write SVG fill color".to_owned())
+                })?;
+                output.push('"');
+                if drawing.shape.svg_uses_even_odd_fill() {
+                    output.push_str(" fill-rule=\"evenodd\"");
+                }
+                if fill_color.alpha() * opacity != 1.0 {
+                    output.push_str(" fill-opacity=\"");
+                    push_svg_number(
+                        output,
+                        fill_color.alpha() * opacity,
+                        "SVG effective fill alpha",
+                    )?;
+                    output.push('"');
+                }
+            }
+            FillKind::Sketch => {
+                output.push_str("\" stroke=\"");
+                fill_color.write_hex(output).map_err(|_| {
+                    FormatEncodeError::Encoding("failed to write SVG sketch color".to_owned())
+                })?;
+                output.push_str("\" stroke-width=\"");
+                push_svg_number(output, source_stroke_width / 2.0, "SVG fill weight")?;
+                output.push_str("\" fill=\"none\"");
+                if fill_color.alpha() * opacity != 1.0 {
+                    output.push_str(" stroke-opacity=\"");
+                    push_svg_number(
+                        output,
+                        fill_color.alpha() * opacity,
+                        "SVG effective fill alpha",
+                    )?;
+                    output.push('"');
+                }
+            }
+        }
+        output.push_str("/> ");
+    }
+    output.push_str("<path d=\"");
+    push_rough_path(output, &drawing.outline)?;
+    output.push_str("\" stroke=\"");
+    stroke_color
+        .write_hex(output)
+        .map_err(|_| FormatEncodeError::Encoding("failed to write SVG stroke color".to_owned()))?;
+    output.push_str("\" stroke-width=\"");
+    push_svg_number(output, stroke_width, "SVG stroke width")?;
+    output.push_str("\" fill=\"none\"");
+    match stroke_style {
+        StrokeStyle::Solid => {}
+        StrokeStyle::Dashed => {
+            output.push_str(" stroke-dasharray=\"8 ");
+            push_svg_number(output, 8.0 + source_stroke_width, "SVG dash gap")?;
+            output.push('"');
+        }
+        StrokeStyle::Dotted => {
+            output.push_str(" stroke-dasharray=\"1.5 ");
+            push_svg_number(output, 6.0 + source_stroke_width, "SVG dot gap")?;
+            output.push('"');
+        }
+    }
+    if stroke_color.alpha() * opacity != 1.0 {
+        output.push_str(" stroke-opacity=\"");
+        push_svg_number(
+            output,
+            stroke_color.alpha() * opacity,
+            "SVG effective stroke alpha",
+        )?;
+        output.push('"');
+    }
+    output.push_str("/>");
+    Ok(())
 }
 
 fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeError> {

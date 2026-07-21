@@ -32,9 +32,9 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
             .render(&scene, &request)
             .expect("all outline families render");
         let expected_digest = match format {
-            OutputFormat::Svg => "541c9f3ffc1b4363e24a8bb243302bee8a9e2939572ab0e8e19ecb334561afdf",
-            OutputFormat::Png => "05f6ffb03045d532fd1450443603ee9ddf62691cfc1310f3061d0ed5cef1e1a8",
-            OutputFormat::Pdf => "a2eb805c63e670500764fd8658d73553afa07d1e06c41b7dafc17d6f363ab186",
+            OutputFormat::Svg => "dff68760289f783ee5321840b20198155b9296cf9ae09fc2aef39291485f0ccc",
+            OutputFormat::Png => "2876cfd36669b422fdf36d58adda69541e57ffa8f086c4d069868d65f578c556",
+            OutputFormat::Pdf => "60f2c503b164bdbcc24d16301465ccad8abc5bc9a4b366b8cced6887815f5c75",
             _ => unreachable!("the test enumerates every revision-1 output format"),
         };
         assert_eq!(

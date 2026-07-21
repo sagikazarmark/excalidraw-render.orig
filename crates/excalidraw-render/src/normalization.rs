@@ -646,9 +646,10 @@ fn normalize_scene_impl<E>(
                 | ElementKind::Ellipse
                 | ElementKind::Line
                 | ElementKind::LegacyDraw
+                | ElementKind::Arrow
         ) && matches!(defaulted(source.group_ids, 0), Some(0))
             && matches!(defaulted(source.frame_id, None), Some(None))
-            && matches!(defaulted(source.bound_elements, 0), Some(0))
+            && !matches!(source.bound_elements, SourceField::Invalid)
             && matches!(defaulted(source.link, None), Some(None));
         pending.push(PendingElement {
             source_index: index,

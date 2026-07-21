@@ -319,7 +319,6 @@ impl RenderSession {
                         | NormalizedElementKind::Diamond
                         | NormalizedElementKind::Ellipse
                         | NormalizedElementKind::Linear(crate::normalization::NormalizedLinear {
-                            kind: crate::normalization::NormalizedLinearKind::Line,
                             geometry_available: true,
                             ..
                         })
@@ -1962,7 +1961,7 @@ impl ResolvedScene {
         let mut min_y = f64::INFINITY;
         let mut max_x = f64::NEG_INFINITY;
         let mut max_y = f64::NEG_INFINITY;
-        for (source, _) in &outlines {
+        for (source, drawing) in &outlines {
             if source.stroke_width < 0.0
                 || source.roughness < 0.0
                 || !(0.0..=100.0).contains(&source.opacity)
@@ -1970,7 +1969,8 @@ impl ResolvedScene {
             {
                 return Ok(None);
             }
-            let (local_min_x, local_min_y, local_max_x, local_max_y) = local_outline_bounds(source);
+            let (local_min_x, local_min_y, local_max_x, local_max_y) =
+                local_outline_bounds(source, drawing.as_ref());
             let center_x = source.x + (local_min_x + local_max_x) / 2.0;
             let center_y = source.y + (local_min_y + local_max_y) / 2.0;
             let sin = source.angle.sin();
@@ -2040,7 +2040,7 @@ impl ResolvedScene {
                 .unwrap_or(u64::MAX)
                 .saturating_mul(32);
             let (local_min_x, local_min_y, local_max_x, local_max_y) =
-                local_outline_bounds(&source);
+                local_outline_bounds(&source, Some(&drawing));
             elements.push(ResolvedElement::Outline(ResolvedOutline {
                 source_order: source.source_order,
                 source: source.source,
@@ -2075,6 +2075,7 @@ impl ResolvedScene {
                 },
                 source_stroke_width: source.stroke_width,
                 opacity: source.opacity / 100.0,
+                background_color,
             }));
         }
         let fallback_font = if !fallbacks.iter().any(|fallback| fallback.paint) {
@@ -2224,6 +2225,7 @@ struct ResolvedOutline {
     stroke_style: StrokeStyle,
     source_stroke_width: f64,
     opacity: f64,
+    background_color: CanonicalColor,
 }
 
 #[derive(Clone, Copy)]
@@ -2231,6 +2233,28 @@ enum StrokeStyle {
     Solid,
     Dashed,
     Dotted,
+}
+
+fn decoration_fill_color(
+    decoration: &rough::Decoration,
+    stroke: CanonicalColor,
+    background: CanonicalColor,
+) -> CanonicalColor {
+    match decoration.fill_paint {
+        rough::DecorationFillPaint::Stroke => stroke,
+        rough::DecorationFillPaint::Background => background,
+    }
+}
+
+fn decoration_stroke_style(
+    decoration: &rough::Decoration,
+    source_stroke_width: f64,
+) -> (StrokeStyle, f64) {
+    if decoration.dotted {
+        (StrokeStyle::Dotted, source_stroke_width - 2.0)
+    } else {
+        (StrokeStyle::Solid, source_stroke_width)
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -2690,7 +2714,15 @@ fn rough_drawing(
                     .is_some_and(|(first, last)| {
                         (first.x - last.x).hypot(first.y - last.y) <= LINE_CONFIRM_THRESHOLD
                     });
-            if source.roundness.is_some() {
+            let mut drawing = if linear.elbowed {
+                elbow_drawing(
+                    &points,
+                    source.seed,
+                    roughness,
+                    disable_multi_stroke,
+                    budget,
+                )?
+            } else if source.roundness.is_some() {
                 rough::curve_drawing(
                     &points,
                     closed,
@@ -2700,7 +2732,7 @@ fn rough_drawing(
                     closed.then_some(fill_style).flatten(),
                     source.stroke_width,
                     budget,
-                )
+                )?
             } else {
                 if closed && fill_style.is_some() {
                     rough::polygon_drawing(
@@ -2712,7 +2744,7 @@ fn rough_drawing(
                         fill_style,
                         source.stroke_width,
                         budget,
-                    )
+                    )?
                 } else {
                     rough::linear_drawing(
                         &points,
@@ -2724,9 +2756,16 @@ fn rough_drawing(
                         None,
                         source.stroke_width,
                         budget,
-                    )
+                    )?
                 }
+            };
+            if matches!(
+                linear.kind,
+                crate::normalization::NormalizedLinearKind::Arrow
+            ) {
+                add_arrowheads(&mut drawing, linear, source, roughness, budget)?;
             }
+            Ok(drawing)
         }
         NormalizedElementKind::Freedraw(_)
         | NormalizedElementKind::Image(_)
@@ -2737,10 +2776,452 @@ fn rough_drawing(
     }
 }
 
-fn local_outline_bounds(source: &NormalizedElement) -> (f64, f64, f64, f64) {
+fn elbow_drawing(
+    points: &[rough::Point],
+    seed: i32,
+    roughness: f64,
+    disable_multi_stroke: bool,
+    budget: &mut rough::GenerationBudget,
+) -> Result<rough::Drawing, rough::GenerationError> {
+    use rough::{Point, RoundedSegment};
+
+    let start = points[0];
+    let mut segments = Vec::new();
+    segments.try_reserve_exact(points.len().saturating_mul(2))?;
+    for index in 1..points.len().saturating_sub(1) {
+        let previous = points[index - 1];
+        let corner = points[index];
+        let next = points[index + 1];
+        let radius = 16.0_f64
+            .min((corner.x - previous.x).hypot(corner.y - previous.y) / 2.0)
+            .min((next.x - corner.x).hypot(next.y - corner.y) / 2.0);
+        let previous_is_horizontal = (previous.x - corner.x).abs() >= (previous.y - corner.y).abs();
+        let next_is_horizontal = (next.x - corner.x).abs() >= (next.y - corner.y).abs();
+        let approach = if previous_is_horizontal {
+            rough::Point {
+                x: corner.x
+                    + if previous.x < corner.x {
+                        -radius
+                    } else {
+                        radius
+                    },
+                y: corner.y,
+            }
+        } else {
+            rough::Point {
+                x: corner.x,
+                y: corner.y
+                    + if previous.y < corner.y {
+                        -radius
+                    } else {
+                        radius
+                    },
+            }
+        };
+        let departure = if next_is_horizontal {
+            rough::Point {
+                x: corner.x + if next.x < corner.x { -radius } else { radius },
+                y: corner.y,
+            }
+        } else {
+            rough::Point {
+                x: corner.x,
+                y: corner.y + if next.y < corner.y { -radius } else { radius },
+            }
+        };
+        segments.push(RoundedSegment::Line(approach));
+        segments.push(RoundedSegment::Quadratic {
+            control: corner,
+            end: departure,
+        });
+    }
+    segments.push(RoundedSegment::Line(
+        *points.last().unwrap_or(&Point { x: 0.0, y: 0.0 }),
+    ));
+    rough::rounded_drawing(
+        start,
+        &segments,
+        points,
+        seed,
+        roughness,
+        true,
+        disable_multi_stroke,
+        None,
+        1.0,
+        budget,
+    )
+}
+
+fn add_arrowheads(
+    drawing: &mut rough::Drawing,
+    linear: &crate::normalization::NormalizedLinear,
+    source: &NormalizedElement,
+    roughness: f64,
+    budget: &mut rough::GenerationBudget,
+) -> Result<(), rough::GenerationError> {
+    let mut arrowhead_roughness = roughness;
+    for (start, arrowhead) in [
+        (true, linear.start_arrowhead.as_deref()),
+        (false, linear.end_arrowhead.as_deref()),
+    ] {
+        let Some(arrowhead) = arrowhead else { continue };
+        let Some(points) = arrowhead_points(drawing, linear, start, arrowhead, source.stroke_width)
+        else {
+            continue;
+        };
+        arrowhead_roughness = arrowhead_roughness.min(
+            if matches!(arrowhead, "dot" | "circle" | "circle_outline") {
+                0.5
+            } else {
+                1.0
+            },
+        );
+        let head_roughness = arrowhead_roughness;
+        let preserve_vertices = source.roughness < 2.0;
+        match arrowhead {
+            "dot" | "circle" | "circle_outline" => {
+                let [center_x, center_y, diameter, ..] = points;
+                let mut head = rough::circle_drawing(
+                    diameter,
+                    source.seed,
+                    head_roughness,
+                    preserve_vertices,
+                    source.stroke_style != "solid",
+                    Some(rough::FillStyle::Solid),
+                    source.stroke_width,
+                    budget,
+                )?;
+                translate_drawing(
+                    &mut head,
+                    center_x - diameter / 2.0,
+                    center_y - diameter / 2.0,
+                );
+                drawing.decorations.push(rough::Decoration {
+                    drawing: head,
+                    fill_paint: if arrowhead == "circle_outline" {
+                        rough::DecorationFillPaint::Background
+                    } else {
+                        rough::DecorationFillPaint::Stroke
+                    },
+                    dotted: false,
+                });
+            }
+            "triangle" | "triangle_outline" => {
+                let [tip_x, tip_y, left_x, left_y, right_x, right_y, ..] = points;
+                let head_points = [
+                    rough::Point { x: tip_x, y: tip_y },
+                    rough::Point {
+                        x: left_x,
+                        y: left_y,
+                    },
+                    rough::Point {
+                        x: right_x,
+                        y: right_y,
+                    },
+                    rough::Point { x: tip_x, y: tip_y },
+                ];
+                let head = rough::polygon_drawing(
+                    &head_points,
+                    source.seed,
+                    head_roughness,
+                    preserve_vertices,
+                    source.stroke_style != "solid",
+                    Some(rough::FillStyle::Solid),
+                    source.stroke_width,
+                    budget,
+                )?;
+                drawing.decorations.push(rough::Decoration {
+                    drawing: head,
+                    fill_paint: if arrowhead == "triangle_outline" {
+                        rough::DecorationFillPaint::Background
+                    } else {
+                        rough::DecorationFillPaint::Stroke
+                    },
+                    dotted: false,
+                });
+            }
+            "diamond" | "diamond_outline" => {
+                let head_points = [
+                    rough::Point {
+                        x: points[0],
+                        y: points[1],
+                    },
+                    rough::Point {
+                        x: points[2],
+                        y: points[3],
+                    },
+                    rough::Point {
+                        x: points[4],
+                        y: points[5],
+                    },
+                    rough::Point {
+                        x: points[6],
+                        y: points[7],
+                    },
+                    rough::Point {
+                        x: points[0],
+                        y: points[1],
+                    },
+                ];
+                let head = rough::polygon_drawing(
+                    &head_points,
+                    source.seed,
+                    head_roughness,
+                    preserve_vertices,
+                    source.stroke_style != "solid",
+                    Some(rough::FillStyle::Solid),
+                    source.stroke_width,
+                    budget,
+                )?;
+                drawing.decorations.push(rough::Decoration {
+                    drawing: head,
+                    fill_paint: if arrowhead == "diamond_outline" {
+                        rough::DecorationFillPaint::Background
+                    } else {
+                        rough::DecorationFillPaint::Stroke
+                    },
+                    dotted: false,
+                });
+            }
+            _ => {
+                let crossbar = (arrowhead == "crowfoot_one_or_many")
+                    .then(|| {
+                        arrowhead_points(
+                            drawing,
+                            linear,
+                            start,
+                            "crowfoot_one",
+                            source.stroke_width,
+                        )
+                    })
+                    .flatten();
+                add_open_arrowhead(drawing, source, arrowhead, points, head_roughness, budget)?;
+                if let Some(crossbar) = crossbar {
+                    add_open_arrowhead(
+                        drawing,
+                        source,
+                        "crowfoot_one",
+                        crossbar,
+                        head_roughness,
+                        budget,
+                    )?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn add_open_arrowhead(
+    drawing: &mut rough::Drawing,
+    source: &NormalizedElement,
+    arrowhead: &str,
+    points: [f64; 8],
+    roughness: f64,
+    budget: &mut rough::GenerationBudget,
+) -> Result<(), rough::GenerationError> {
+    let tip = rough::Point {
+        x: points[0],
+        y: points[1],
+    };
+    let first = rough::Point {
+        x: points[2],
+        y: points[3],
+    };
+    let second = rough::Point {
+        x: points[4],
+        y: points[5],
+    };
+    let mut push_line = |start, end| -> Result<(), rough::GenerationError> {
+        let head = rough::linear_drawing(
+            &[start, end],
+            false,
+            source.seed,
+            roughness,
+            source.roughness < 2.0,
+            source.stroke_style != "solid",
+            None,
+            source.stroke_width,
+            budget,
+        )?;
+        drawing.decorations.push(rough::Decoration {
+            drawing: head,
+            fill_paint: rough::DecorationFillPaint::Stroke,
+            dotted: source.stroke_style == "dotted",
+        });
+        Ok(())
+    };
+    if arrowhead == "crowfoot_one" {
+        push_line(first, second)?;
+    } else {
+        push_line(first, tip)?;
+        push_line(second, tip)?;
+    }
+    Ok(())
+}
+
+fn arrowhead_points(
+    drawing: &rough::Drawing,
+    linear: &crate::normalization::NormalizedLinear,
+    start: bool,
+    arrowhead: &str,
+    stroke_width: f64,
+) -> Option<[f64; 8]> {
+    use rough::PathOperation;
+    let operations = &drawing.outline.operations;
+    let index = if start {
+        1
+    } else {
+        operations.len().checked_sub(1)?
+    };
+    let PathOperation::Cubic {
+        control_1,
+        control_2,
+        end,
+    } = operations.get(index)?
+    else {
+        return None;
+    };
+    let p0 = match operations.get(index.checked_sub(1)?)? {
+        PathOperation::Move(point) => *point,
+        PathOperation::Cubic { end, .. } => *end,
+        PathOperation::Line(point) => *point,
+    };
+    let p3 = *end;
+    let equation = |coordinate: fn(rough::Point) -> f64| {
+        let t = 0.3_f64;
+        (1.0 - t).powi(3) * coordinate(p3)
+            + 3.0 * t * (1.0 - t).powi(2) * coordinate(*control_2)
+            + 3.0 * t.powi(2) * (1.0 - t) * coordinate(*control_1)
+            + t.powi(3) * coordinate(p0)
+    };
+    let near = rough::Point {
+        x: equation(|p| p.x),
+        y: equation(|p| p.y),
+    };
+    let tip = if start { p0 } else { p3 };
+    let distance = (tip.x - near.x).hypot(tip.y - near.y);
+    if distance == 0.0 {
+        return None;
+    }
+    let normal = rough::Point {
+        x: (tip.x - near.x) / distance,
+        y: (tip.y - near.y) / distance,
+    };
+    let size: f64 = match arrowhead {
+        "arrow" => 25.0,
+        "diamond" | "diamond_outline" => 12.0,
+        "crowfoot_many" | "crowfoot_one" | "crowfoot_one_or_many" => 20.0,
+        _ => 15.0,
+    };
+    let endpoint_index = if start { 0 } else { linear.points.len() - 1 };
+    let adjacent_index = if start { 1 } else { linear.points.len() - 2 };
+    let segment_length = (linear.points[endpoint_index][0] - linear.points[adjacent_index][0])
+        .hypot(linear.points[endpoint_index][1] - linear.points[adjacent_index][1]);
+    let minimum = size.min(
+        segment_length
+            * if arrowhead.starts_with("diamond") {
+                0.25
+            } else {
+                0.5
+            },
+    );
+    let base = rough::Point {
+        x: tip.x - normal.x * minimum,
+        y: tip.y - normal.y * minimum,
+    };
+    if matches!(arrowhead, "dot" | "circle" | "circle_outline") {
+        return Some([
+            tip.x,
+            tip.y,
+            minimum + stroke_width - 2.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ]);
+    }
+    let angle = if arrowhead == "bar" {
+        90.0
+    } else if arrowhead == "arrow" {
+        20.0
+    } else {
+        25.0
+    };
+    let rotate = |point: rough::Point, center: rough::Point, degrees: f64| {
+        let radians = degrees.to_radians();
+        let dx = point.x - center.x;
+        let dy = point.y - center.y;
+        rough::Point {
+            x: center.x + dx * radians.cos() - dy * radians.sin(),
+            y: center.y + dx * radians.sin() + dy * radians.cos(),
+        }
+    };
+    if matches!(arrowhead, "crowfoot_many" | "crowfoot_one_or_many") {
+        let first = rotate(tip, base, -angle);
+        let second = rotate(tip, base, angle);
+        return Some([
+            base.x, base.y, first.x, first.y, second.x, second.y, 0.0, 0.0,
+        ]);
+    }
+    let first = rotate(base, tip, -angle);
+    let second = rotate(base, tip, angle);
+    if matches!(arrowhead, "diamond" | "diamond_outline") {
+        let adjacent = linear.points[adjacent_index];
+        let direction = if start {
+            (adjacent[1] - tip.y).atan2(adjacent[0] - tip.x)
+        } else {
+            (tip.y - adjacent[1]).atan2(tip.x - adjacent[0])
+        };
+        let opposite = rough::Point {
+            x: tip.x + if start { minimum * 2.0 } else { -minimum * 2.0 } * direction.cos(),
+            y: tip.y + if start { minimum * 2.0 } else { -minimum * 2.0 } * direction.sin(),
+        };
+        return Some([
+            tip.x, tip.y, first.x, first.y, opposite.x, opposite.y, second.x, second.y,
+        ]);
+    }
+    Some([tip.x, tip.y, first.x, first.y, second.x, second.y, 0.0, 0.0])
+}
+
+fn translate_drawing(drawing: &mut rough::Drawing, x: f64, y: f64) {
+    fn translate(path: &mut rough::Path, x: f64, y: f64) {
+        for operation in &mut path.operations {
+            match operation {
+                rough::PathOperation::Move(point) | rough::PathOperation::Line(point) => {
+                    point.x += x;
+                    point.y += y;
+                }
+                rough::PathOperation::Cubic {
+                    control_1,
+                    control_2,
+                    end,
+                } => {
+                    for point in [control_1, control_2, end] {
+                        point.x += x;
+                        point.y += y;
+                    }
+                }
+            }
+        }
+    }
+    translate(&mut drawing.outline, x, y);
+    if let Some(fill) = &mut drawing.fill {
+        translate(&mut fill.path, x, y);
+    }
+}
+
+fn local_outline_bounds(
+    source: &NormalizedElement,
+    drawing: Option<&rough::Drawing>,
+) -> (f64, f64, f64, f64) {
     let NormalizedElementKind::Linear(linear) = &source.kind else {
         return (0.0, 0.0, source.width, source.height);
     };
+    if let Some(bounds) = drawing.and_then(|drawing| drawing.outline.cubic_bounds()) {
+        return bounds;
+    }
     linear.points.iter().fold(
         (
             f64::INFINITY,

@@ -28,6 +28,7 @@ enum PngElement {
         stroke_style: StrokeStyle,
         source_stroke_width: f64,
         opacity: f64,
+        background_color: CanonicalColor,
         base_element_work_units: u64,
         render: bool,
     },
@@ -154,6 +155,7 @@ impl PngPlan {
                         stroke_style: outline.stroke_style,
                         source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
+                        background_color: outline.background_color,
                         base_element_work_units: outline.base_element_work_units,
                         render: true,
                     });
@@ -250,6 +252,7 @@ impl PngPlan {
                         stroke_style,
                         source_stroke_width,
                         opacity,
+                        background_color,
                         render,
                         ..
                     } => {
@@ -262,86 +265,37 @@ impl PngPlan {
                             ));
                         }
                         let transform = transform.raster_transform(SUBPIXEL_SCALE)?;
-                        if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
-                            let path = tiny_skia_path(&fill.path)?;
-                            let paint = solid_paint(*fill_color, *opacity)?;
-                            match fill.kind {
-                                FillKind::Solid => surface.fill_path(
-                                    &path,
-                                    &paint,
-                                    if drawing.shape.canvas_uses_even_odd_fill() {
-                                        FillRule::EvenOdd
-                                    } else {
-                                        FillRule::Winding
-                                    },
-                                    transform,
-                                    None,
-                                ),
-                                FillKind::Sketch => {
-                                    let stroke = Stroke {
-                                        width: finite_f32(
-                                            *source_stroke_width / 2.0,
-                                            "PNG fill weight",
-                                        )?,
-                                        miter_limit: 4.0,
-                                        line_cap: LineCap::Round,
-                                        line_join: LineJoin::Round,
-                                        dash: None,
-                                    };
-                                    surface.stroke_path(&path, &paint, &stroke, transform, None);
-                                }
-                            }
+                        paint_rough_drawing(
+                            &mut surface,
+                            drawing,
+                            transform,
+                            *stroke_color,
+                            *fill_color,
+                            *stroke_width,
+                            *stroke_style,
+                            *source_stroke_width,
+                            *opacity,
+                        )?;
+                        for decoration in &drawing.decorations {
+                            let fill = super::decoration_fill_color(
+                                decoration,
+                                *stroke_color,
+                                *background_color,
+                            );
+                            let (decoration_style, decoration_stroke_width) =
+                                super::decoration_stroke_style(decoration, *source_stroke_width);
+                            paint_rough_drawing(
+                                &mut surface,
+                                &decoration.drawing,
+                                transform,
+                                *stroke_color,
+                                Some(fill),
+                                *stroke_width,
+                                decoration_style,
+                                decoration_stroke_width,
+                                *opacity,
+                            )?;
                         }
-                        let path = tiny_skia_path(&drawing.outline)?;
-                        let paint = solid_paint(*stroke_color, *opacity)?;
-                        let stroke = Stroke {
-                            width: finite_f32(*stroke_width, "PNG stroke width")?,
-                            miter_limit: 4.0,
-                            line_cap: LineCap::Round,
-                            line_join: LineJoin::Round,
-                            dash: match stroke_style {
-                                StrokeStyle::Solid => None,
-                                StrokeStyle::Dashed => StrokeDash::new(
-                                    vec![
-                                        8.0,
-                                        finite_f32(8.0 + source_stroke_width, "PNG dash gap")?,
-                                    ],
-                                    0.0,
-                                ),
-                                StrokeStyle::Dotted => StrokeDash::new(
-                                    vec![
-                                        1.5,
-                                        finite_f32(6.0 + source_stroke_width, "PNG dot gap")?,
-                                    ],
-                                    0.0,
-                                ),
-                            },
-                        };
-                        let resolution_scale = PathStroker::compute_resolution_scale(&transform);
-                        let path = path.stroke(&stroke, resolution_scale).ok_or_else(|| {
-                            FormatEncodeError::Encoding(
-                                "PNG raster adapter could not stroke the Rough path".to_owned(),
-                            )
-                        })?;
-                        let path = path.transform(transform).ok_or_else(|| {
-                            FormatEncodeError::Encoding(
-                                "PNG raster adapter could not transform the stroked path"
-                                    .to_owned(),
-                            )
-                        })?;
-                        let bounds = path.bounds();
-                        if !(bounds.width() > 0.0 && bounds.height() > 0.0) {
-                            return Err(FormatEncodeError::Encoding(
-                                "PNG raster adapter produced empty stroked bounds".to_owned(),
-                            ));
-                        }
-                        surface.fill_path(
-                            &path,
-                            &paint,
-                            FillRule::Winding,
-                            Transform::identity(),
-                            None,
-                        );
                     }
                     PngElement::Fallback {
                         source,
@@ -882,6 +836,89 @@ fn label_path(path: &super::text::LabelPath) -> Result<tiny_skia::Path, FormatEn
         .ok_or_else(|| FormatEncodeError::Encoding("PNG fallback label has no outline".to_owned()))
 }
 
+#[allow(clippy::too_many_arguments)]
+fn paint_rough_drawing(
+    surface: &mut PixmapMut<'_>,
+    drawing: &Drawing,
+    transform: Transform,
+    stroke_color: CanonicalColor,
+    fill_color: Option<CanonicalColor>,
+    stroke_width: f64,
+    stroke_style: StrokeStyle,
+    source_stroke_width: f64,
+    opacity: f64,
+) -> Result<(), FormatEncodeError> {
+    if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
+        let path = tiny_skia_path(&fill.path)?;
+        let paint = solid_paint(fill_color, opacity)?;
+        match fill.kind {
+            FillKind::Solid => surface.fill_path(
+                &path,
+                &paint,
+                if drawing.shape.canvas_uses_even_odd_fill() {
+                    FillRule::EvenOdd
+                } else {
+                    FillRule::Winding
+                },
+                transform,
+                None,
+            ),
+            FillKind::Sketch => {
+                let stroke = Stroke {
+                    width: finite_f32(source_stroke_width / 2.0, "PNG fill weight")?,
+                    miter_limit: 4.0,
+                    line_cap: LineCap::Round,
+                    line_join: LineJoin::Round,
+                    dash: None,
+                };
+                surface.stroke_path(&path, &paint, &stroke, transform, None);
+            }
+        }
+    }
+    let path = tiny_skia_path(&drawing.outline)?;
+    let paint = solid_paint(stroke_color, opacity)?;
+    let stroke = Stroke {
+        width: finite_f32(stroke_width, "PNG stroke width")?,
+        miter_limit: 4.0,
+        line_cap: LineCap::Round,
+        line_join: LineJoin::Round,
+        dash: match stroke_style {
+            StrokeStyle::Solid => None,
+            StrokeStyle::Dashed => StrokeDash::new(
+                vec![8.0, finite_f32(8.0 + source_stroke_width, "PNG dash gap")?],
+                0.0,
+            ),
+            StrokeStyle::Dotted => StrokeDash::new(
+                vec![1.5, finite_f32(6.0 + source_stroke_width, "PNG dot gap")?],
+                0.0,
+            ),
+        },
+    };
+    let resolution_scale = PathStroker::compute_resolution_scale(&transform);
+    let path = path.stroke(&stroke, resolution_scale).ok_or_else(|| {
+        FormatEncodeError::Encoding("PNG raster adapter could not stroke the Rough path".to_owned())
+    })?;
+    let path = path.transform(transform).ok_or_else(|| {
+        FormatEncodeError::Encoding(
+            "PNG raster adapter could not transform the stroked path".to_owned(),
+        )
+    })?;
+    let bounds = path.bounds();
+    if !(bounds.width() > 0.0 && bounds.height() > 0.0) {
+        return Err(FormatEncodeError::Encoding(
+            "PNG raster adapter produced empty stroked bounds".to_owned(),
+        ));
+    }
+    surface.fill_path(
+        &path,
+        &paint,
+        FillRule::Winding,
+        Transform::identity(),
+        None,
+    );
+    Ok(())
+}
+
 fn solid_paint(color: CanonicalColor, opacity: f64) -> Result<Paint<'static>, FormatEncodeError> {
     let rgb = color.rgb8();
     let color = Color::from_rgba(
@@ -933,6 +970,28 @@ fn conservative_coverage_area(
             } => {
                 for point in [*control_1, *control_2, *end] {
                     include(point);
+                }
+            }
+        }
+    }
+    for decoration in &drawing.decorations {
+        for operation in decoration
+            .drawing
+            .fill
+            .iter()
+            .flat_map(|fill| &fill.path.operations)
+            .chain(&decoration.drawing.outline.operations)
+        {
+            match operation {
+                PathOperation::Move(point) | PathOperation::Line(point) => include(*point),
+                PathOperation::Cubic {
+                    control_1,
+                    control_2,
+                    end,
+                } => {
+                    for point in [*control_1, *control_2, *end] {
+                        include(point);
+                    }
                 }
             }
         }

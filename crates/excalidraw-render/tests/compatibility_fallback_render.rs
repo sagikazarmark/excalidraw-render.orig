@@ -213,7 +213,7 @@ fn compatibility_labels_use_full_ellipsis_or_omitted_fit_behavior() {
 }
 
 #[test]
-fn known_but_unavailable_elements_use_the_known_placeholder_without_generic_noise() {
+fn newly_supported_arrows_render_beside_known_unavailable_elements() {
     let scene = SceneDocument::parse(
         br##"{
         "type":"excalidraw",
@@ -249,24 +249,24 @@ fn known_but_unavailable_elements_use_the_known_placeholder_without_generic_nois
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let outcome = render(&scene, format);
         let diagnostics = boundary_diagnostics(&outcome);
-        assert_eq!(diagnostics.len(), 2);
-        for (diagnostic, expected_id) in diagnostics.iter().zip(["arrow", "freedraw"]) {
-            assert_eq!(
-                diagnostic.code(),
-                DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
-            );
-            assert_eq!(diagnostic.element_id(), Some(expected_id));
-            assert!(matches!(
-                diagnostic.details(),
-                Some(ErrorDetails::Compatibility {
-                    recovery: Recovery::Placeholder,
-                    recipe_id: Some(recipe),
-                }) if recipe == "renderer.known-element-unavailable.v1"
-            ));
-        }
+        let [diagnostic] = diagnostics.as_slice() else {
+            panic!("only freedraw remains unavailable: {diagnostics:?}");
+        };
+        assert_eq!(
+            diagnostic.code(),
+            DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
+        );
+        assert_eq!(diagnostic.element_id(), Some("freedraw"));
+        assert!(matches!(
+            diagnostic.details(),
+            Some(ErrorDetails::Compatibility {
+                recovery: Recovery::Placeholder,
+                recipe_id: Some(recipe),
+            }) if recipe == "renderer.known-element-unavailable.v1"
+        ));
         if format == OutputFormat::Svg {
             let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-            assert!(svg.contains(">Unavailable: arrow</text>"));
+            assert!(!svg.contains(">Unavailable: arrow</text>"));
             assert!(svg.contains(">Unavailable: freedraw</text>"));
         }
     }

@@ -62,6 +62,7 @@ enum PdfElement {
         stroke_style: StrokeStyle,
         source_stroke_width: f64,
         opacity: f64,
+        background_color: CanonicalColor,
     },
     Fallback {
         source: super::FallbackSource,
@@ -115,6 +116,7 @@ impl PdfPlan {
                         stroke_style: outline.stroke_style,
                         source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
+                        background_color: outline.background_color,
                     });
                 }
                 ResolvedElement::Fallback(fallback) => {
@@ -736,11 +738,23 @@ impl PdfPlan {
                     opacity,
                     stroke_color,
                     fill_color,
+                    drawing,
+                    background_color,
                     ..
                 } => {
                     retain(*opacity * stroke_color.alpha());
                     if let Some(fill_color) = fill_color {
                         retain(*opacity * fill_color.alpha());
+                    }
+                    for decoration in &drawing.decorations {
+                        if decoration.drawing.fill.is_some() {
+                            let color = super::decoration_fill_color(
+                                decoration,
+                                *stroke_color,
+                                *background_color,
+                            );
+                            retain(*opacity * color.alpha());
+                        }
                     }
                 }
                 PdfElement::Fallback { opacity, .. } => retain(*opacity),
@@ -877,6 +891,7 @@ impl PdfPlan {
                     stroke_style,
                     source_stroke_width,
                     opacity,
+                    background_color,
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -927,9 +942,9 @@ impl PdfPlan {
                         }
                         content.push_str("Q\n");
                     }
-                    let opacity = *opacity * stroke_color.alpha();
-                    if opacity != 1.0 {
-                        push_opacity_resource(&mut content, opacity_resources, opacity)?;
+                    let stroke_opacity = *opacity * stroke_color.alpha();
+                    if stroke_opacity != 1.0 {
+                        push_opacity_resource(&mut content, opacity_resources, stroke_opacity)?;
                     }
                     push_pdf_number(&mut content, *stroke_width, "PDF stroke width")?;
                     content.push_str(" w\n1 J\n");
@@ -957,7 +972,28 @@ impl PdfPlan {
                     content.push_str("/CS1 CS\n");
                     push_color(&mut content, stroke_color.rgb_f64(), "SCN")?;
                     push_rough_path(&mut content, &drawing.outline)?;
-                    content.push_str("S\nQ\n");
+                    content.push_str("S\n");
+                    for decoration in &drawing.decorations {
+                        let fill = super::decoration_fill_color(
+                            decoration,
+                            *stroke_color,
+                            *background_color,
+                        );
+                        let (decoration_style, decoration_stroke_width) =
+                            super::decoration_stroke_style(decoration, *source_stroke_width);
+                        push_pdf_drawing(
+                            &mut content,
+                            &decoration.drawing,
+                            *stroke_color,
+                            Some(fill),
+                            *stroke_width,
+                            decoration_style,
+                            decoration_stroke_width,
+                            *opacity,
+                            opacity_resources,
+                        )?;
+                    }
+                    content.push_str("Q\n");
                 }
                 PdfElement::Fallback {
                     source,
@@ -1186,6 +1222,71 @@ fn append_xyz(profile: &mut Vec<u8>, coordinates: [i32; 3]) {
     for coordinate in coordinates {
         profile.extend_from_slice(&coordinate.to_be_bytes());
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn push_pdf_drawing(
+    output: &mut String,
+    drawing: &Drawing,
+    stroke_color: CanonicalColor,
+    fill_color: Option<CanonicalColor>,
+    stroke_width: f64,
+    stroke_style: StrokeStyle,
+    source_stroke_width: f64,
+    opacity: f64,
+    opacity_resources: &[f64],
+) -> Result<(), FormatEncodeError> {
+    output.push_str("q\n");
+    if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
+        output.push_str("q\n");
+        let fill_opacity = opacity * fill_color.alpha();
+        if fill_opacity != 1.0 {
+            push_opacity_resource(output, opacity_resources, fill_opacity)?;
+        }
+        match fill.kind {
+            FillKind::Solid => {
+                output.push_str("/CS1 cs\n");
+                push_color(output, fill_color.rgb_f64(), "scn")?;
+                push_rough_path(output, &fill.path)?;
+                output.push_str(if drawing.shape.canvas_uses_even_odd_fill() {
+                    "f*\n"
+                } else {
+                    "f\n"
+                });
+            }
+            FillKind::Sketch => {
+                push_pdf_number(output, source_stroke_width / 2.0, "PDF fill weight")?;
+                output.push_str(" w\n1 J\n/CS1 CS\n");
+                push_color(output, fill_color.rgb_f64(), "SCN")?;
+                push_rough_path(output, &fill.path)?;
+                output.push_str("S\n");
+            }
+        }
+        output.push_str("Q\n");
+    }
+    let stroke_opacity = opacity * stroke_color.alpha();
+    if stroke_opacity != 1.0 {
+        push_opacity_resource(output, opacity_resources, stroke_opacity)?;
+    }
+    push_pdf_number(output, stroke_width, "PDF stroke width")?;
+    output.push_str(" w\n1 J\n/CS1 CS\n");
+    match stroke_style {
+        StrokeStyle::Solid => output.push_str("[] 0 d\n"),
+        StrokeStyle::Dashed => {
+            output.push_str("[8 ");
+            push_pdf_number(output, 8.0 + source_stroke_width, "PDF dash gap")?;
+            output.push_str("] 0 d\n");
+        }
+        StrokeStyle::Dotted => {
+            output.push_str("[1.5 ");
+            push_pdf_number(output, 6.0 + source_stroke_width, "PDF dot gap")?;
+            output.push_str("] 0 d\n");
+        }
+    }
+    push_color(output, stroke_color.rgb_f64(), "SCN")?;
+    push_rough_path(output, &drawing.outline)?;
+    output.push_str("S\nQ\n");
+    Ok(())
 }
 
 fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeError> {
