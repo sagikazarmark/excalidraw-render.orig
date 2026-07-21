@@ -1,6 +1,6 @@
 use excalidraw_render::{
-    DiagnosticCode, DiagnosticEffect, ErrorCode, OutputFormat, RenderRequest, Renderer,
-    ResourceLimits, SceneDocument,
+    DiagnosticCode, DiagnosticEffect, ErrorCode, FrameOptions, OutputFormat, RenderRequest,
+    Renderer, ResourceLimits, SceneDocument, SupplementalAssets,
 };
 
 #[test]
@@ -146,6 +146,156 @@ fn revision_1_rekeys_each_later_duplicate_identity_in_source_order() {
 
     let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
     assert_eq!(svg.matches("<path ").count(), 2);
+}
+
+#[test]
+fn fractional_index_repair_preserves_source_paint_order_silently() {
+    let ordered = br##"{"type":"excalidraw","version":2,"elements":[{"id":"first","index":"a0","type":"rectangle","x":0,"y":0,"width":80,"height":60,"seed":1,"updated":1},{"id":"second","index":"a1","type":"rectangle","x":20,"y":20,"width":80,"height":60,"seed":1,"updated":1}],"appState":{},"files":{}}"##;
+    let descending = br##"{"type":"excalidraw","version":2,"elements":[{"id":"first","index":"a1","type":"rectangle","x":0,"y":0,"width":80,"height":60,"seed":1,"updated":1},{"id":"second","index":"a0","type":"rectangle","x":20,"y":20,"width":80,"height":60,"seed":1,"updated":1}],"appState":{},"files":{}}"##;
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let ordered = render(ordered, format);
+        let repaired = render(descending, format);
+        assert_eq!(ordered.artifact().bytes(), repaired.artifact().bytes());
+        assert!(repaired.report().is_empty());
+    }
+}
+
+#[test]
+fn invalid_frame_rendering_controls_are_repaired_for_empty_scenes() {
+    let outcome = render_svg(
+        br##"{"type":"excalidraw","version":2,"elements":[],"appState":{"frameRendering":{"enabled":false,"clip":"yes"}},"files":{}}"##,
+    );
+
+    let [diagnostic] = outcome.report().diagnostics() else {
+        panic!("the invalid frame control produces one diagnostic");
+    };
+    assert_eq!(
+        diagnostic.code(),
+        DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE
+    );
+    assert_eq!(diagnostic.json_pointer(), "/appState/frameRendering/clip");
+    assert_eq!(
+        diagnostic.effects(),
+        &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual]
+    );
+}
+
+#[test]
+fn assigned_element_repairs_are_reported_before_later_rendering_slices() {
+    let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"line","type":"line","width":10,"height":10,"points":"invalid","seed":1,"updated":1},{"id":"image","type":"image","width":10,"height":10,"status":"future","seed":1,"updated":1}],"appState":{},"files":{}}"##;
+    let scene = SceneDocument::parse(source).expect("assigned normalization vector is admitted");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("default render request is valid");
+
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("later linear/image rendering slices are not implemented yet");
+
+    assert_eq!(error.code(), ErrorCode::RENDER_INTERNAL_FAILURE);
+    assert_eq!(
+        error
+            .report()
+            .diagnostics()
+            .iter()
+            .map(|diagnostic| diagnostic.json_pointer())
+            .collect::<Vec<_>>(),
+        ["/elements/0/points", "/elements/1/status"]
+    );
+}
+
+#[test]
+fn supplemental_authority_participates_in_image_crop_normalization() {
+    let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":10,"height":10,"fileId":"asset","crop":{"x":0,"y":0,"width":10,"height":10,"naturalWidth":10},"seed":1,"updated":1}],"appState":{},"files":{}}"##;
+    let scene = SceneDocument::parse(source).expect("supplemental crop vector is admitted");
+    let assets = SupplementalAssets::builder()
+        .asset("asset", [0])
+        .build()
+        .expect("supplemental assets are valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .supplemental_assets(assets)
+        .build()
+        .expect("render request is valid");
+
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("later image rendering remains outside this slice");
+
+    assert_eq!(error.code(), ErrorCode::RENDER_INTERNAL_FAILURE);
+    assert_eq!(error.report().diagnostics().len(), 1);
+    assert_eq!(
+        error.report().diagnostics()[0].json_pointer(),
+        "/elements/0/crop/naturalHeight"
+    );
+}
+
+#[test]
+fn disabled_frame_names_suppress_name_value_diagnostics() {
+    let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"frame","type":"frame","width":10,"height":10,"name":3,"seed":1,"updated":1}],"appState":{},"files":{}}"##;
+    let scene = SceneDocument::parse(source).expect("disabled frame-name vector is admitted");
+    for frame_options in [
+        FrameOptions::new(true, true, false, true),
+        FrameOptions::new(false, true, true, true),
+    ] {
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .frame_options(frame_options)
+            .build()
+            .expect("render request is valid");
+
+        let error = Renderer::new()
+            .render(&scene, &request)
+            .expect_err("later frame rendering remains outside this slice");
+
+        assert_eq!(error.code(), ErrorCode::RENDER_INTERNAL_FAILURE);
+        assert!(error.report().is_empty());
+    }
+}
+
+#[test]
+fn request_frame_names_override_disabled_scene_frame_names() {
+    let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"frame","type":"frame","width":10,"height":10,"name":3,"seed":1,"updated":1}],"appState":{"frameRendering":{"name":false}},"files":{}}"##;
+    let scene = SceneDocument::parse(source).expect("frame-name override vector is admitted");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("render request is valid");
+
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("later frame rendering remains outside this slice");
+
+    assert_eq!(error.report().diagnostics().len(), 1);
+    assert_eq!(
+        error.report().diagnostics()[0].json_pointer(),
+        "/elements/0/name"
+    );
+}
+
+#[test]
+fn normalization_reports_follow_preserved_root_owner_order() {
+    let source = br##"{"type":"excalidraw","version":2,"files":{"asset":{}},"elements":[{"id":"image","type":"image","width":10,"height":10,"fileId":"asset","status":"future","seed":1,"updated":1}],"appState":{}}"##;
+    let scene = SceneDocument::parse(source).expect("root-order vector is admitted");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("render request is valid");
+
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("later image rendering remains outside this slice");
+
+    assert_eq!(
+        error
+            .report()
+            .diagnostics()
+            .iter()
+            .map(|diagnostic| diagnostic.json_pointer())
+            .collect::<Vec<_>>(),
+        [
+            "/files/asset/id",
+            "/files/asset/created",
+            "/elements/0/status",
+        ]
+    );
 }
 
 #[test]
@@ -385,6 +535,34 @@ fn final_diagnostic_order_is_by_source_owner_not_execution_phase() {
             .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
         vec!["/elements/0/x", "/elements/1/updated"]
+    );
+}
+
+#[test]
+fn diagnostic_member_order_is_stable_across_normalization_and_semantics() {
+    let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"same","type":"rectangle","x":100,"width":40,"height":40,"seed":1}],"appState":{},"files":{}}"##;
+    let scene = SceneDocument::parse(source).expect("cross-phase ordering vector is admitted");
+    let limits = ResourceLimits::builder()
+        .max_coordinate_magnitude(99.0)
+        .build()
+        .expect("coordinate boundary is valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(limits)
+        .build()
+        .expect("resource-limited request is valid");
+
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("ordered local losses retain a meaningful artifact");
+
+    assert_eq!(
+        outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .map(|diagnostic| diagnostic.json_pointer())
+            .collect::<Vec<_>>(),
+        ["/elements/0/x", "/elements/0/updated"]
     );
 }
 

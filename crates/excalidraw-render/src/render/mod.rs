@@ -6,7 +6,8 @@ mod svg;
 use crate::{
     catalog::RevisionCatalog,
     normalization::{
-        NormalizationError, NormalizationEvent, NormalizedElementSource, NormalizedRectangle,
+        NormalizationError, NormalizationEvent, NormalizedElement, NormalizedElementKind,
+        NormalizedElementSource,
     },
     outcome::DiagnosticOrder,
     resource_accounting::{
@@ -47,7 +48,7 @@ pub(crate) fn render(
         catalog.asset_catalog().reference_profile_digest,
         profile.profile_digest()
     );
-    let mut session = RenderSession::new(profile, request);
+    let mut session = RenderSession::new(profile, scene, request);
     session.render(scene, request)
 }
 
@@ -67,15 +68,28 @@ struct RenderSession {
     report: CompatibilityReport,
     meter: ResourceMeter,
     staged_output: Option<Vec<u8>>,
+    element_source_order_base: u64,
+}
+
+#[derive(Clone, Copy, Default)]
+struct DiagnosticOwnership<'a> {
+    local_owner: Option<&'a str>,
+    source_order: Option<u64>,
+    source_position: Option<u64>,
 }
 
 impl RenderSession {
-    fn new(profile: &'static ReferenceProfileIdentity, request: &RenderRequest) -> Self {
+    fn new(
+        profile: &'static ReferenceProfileIdentity,
+        scene: &SceneDocument,
+        request: &RenderRequest,
+    ) -> Self {
         Self {
             profile,
             report: CompatibilityReport::empty(),
             meter: ResourceMeter::new(request.resource_limits()),
             staged_output: None,
+            element_source_order_base: scene.source_owner_order("elements", 0),
         }
     }
 
@@ -90,6 +104,7 @@ impl RenderSession {
             report: CompatibilityReport::empty(),
             meter: ResourceMeter::with_trace(profile, scene, request),
             staged_output: None,
+            element_source_order_base: scene.source_owner_order("elements", 0),
         }
     }
 
@@ -150,15 +165,16 @@ impl RenderSession {
         }
 
         let mut semantic_working = Vec::new();
-        let resolved = if scene.has_no_element_occurrences() {
-            ResolvedScene::empty(request)
-        } else {
-            let normalization = crate::normalization::normalize_rectangles(
+        let resolved = {
+            let normalization = crate::normalization::normalize_scene_with_assets(
                 scene,
                 self.profile.compatibility_revision(),
                 request.format(),
+                request.supplemental_assets(),
+                request.frame_options().enabled() && request.frame_options().name(),
                 |event| match event {
                     NormalizationEvent::PreflightRecord {
+                        event,
                         json_pointer,
                         working_bytes,
                         work_units,
@@ -171,7 +187,7 @@ impl RenderSession {
                         if self.meter.would_cross_fatal(delta) {
                             let context = ResourceContext::new(
                                 ResourcePhase::JsonTraversalAndNormalization,
-                                "normalized_rectangle",
+                                event,
                                 json_pointer,
                             );
                             return match self.transact(request, context, delta) {
@@ -186,7 +202,9 @@ impl RenderSession {
                         Ok(())
                     }
                     NormalizationEvent::CommitRecord {
+                        event,
                         element_id,
+                        local_owner,
                         json_pointer,
                         working_bytes,
                         work_units,
@@ -194,22 +212,32 @@ impl RenderSession {
                         request,
                         ResourceContext::new(
                             ResourcePhase::JsonTraversalAndNormalization,
-                            "normalized_rectangle",
+                            event,
                             json_pointer,
                         )
-                        .with_element_id(Some(element_id))
-                        .with_local_owner(Some(element_id)),
+                        .with_element_id(element_id)
+                        .with_local_owner(local_owner),
                         ResourceDelta {
                             working_bytes,
                             total_work_units: work_units,
                             ..ResourceDelta::default()
                         },
                     ),
-                    NormalizationEvent::Diagnostic(diagnostic) => self.retain_diagnostic(
+                    NormalizationEvent::Diagnostic {
+                        diagnostic,
+                        local_owner,
+                        source_order,
+                        source_position,
+                    } => self.retain_diagnostic_with_owner(
                         request,
                         ResourcePhase::JsonTraversalAndNormalization,
                         "normalization_repair",
                         diagnostic,
+                        DiagnosticOwnership {
+                            local_owner,
+                            source_order: Some(source_order),
+                            source_position: Some(source_position),
+                        },
                     ),
                 },
             );
@@ -219,11 +247,11 @@ impl RenderSession {
                 Err(NormalizationError::MemoryUnavailable { source_index }) => {
                     let json_pointer = source_index
                         .and_then(|index| crate::scene::pointer_index("/elements", index).ok())
-                        .unwrap_or_else(|| "/elements".to_owned());
+                        .unwrap_or_default();
                     return Err(self.memory_failure_at(
                         request,
                         "normalization",
-                        "rectangle",
+                        "record",
                         None,
                         json_pointer,
                     ));
@@ -236,14 +264,31 @@ impl RenderSession {
                     "/elements",
                 )
             })?;
+            let semantic_record_count = normalization
+                .elements
+                .len()
+                .saturating_add(normalization.files.len())
+                .saturating_add(1);
             semantic_working
-                .try_reserve_exact(normalization.rectangles.len())
+                .try_reserve_exact(semantic_record_count)
                 .map_err(|_| self.memory_failure(request, "normalization", "working_records"))?;
+            let _frame_rendering = normalization.frame_rendering;
+            let normalized_files = normalization.files;
             let mut rectangles = Vec::new();
             rectangles
-                .try_reserve_exact(normalization.rectangles.len())
+                .try_reserve_exact(normalization.elements.len())
                 .map_err(|_| self.memory_failure(request, "normalization", "rectangle_list"))?;
-            for source in normalization.rectangles {
+            for source in normalization.elements {
+                debug_assert!(!source.index.is_empty());
+                if !matches!(source.kind, NormalizedElementKind::Rectangle)
+                    || !source.focused_rectangle_compatible
+                {
+                    return Err(self.internal_failure(
+                        request.format(),
+                        "nonempty scene is outside the implemented rectangle rendering slice",
+                        "/elements",
+                    ));
+                }
                 let has_outline = source.width != 0.0 && source.height != 0.0;
                 let geometry_segments = if has_outline {
                     RECTANGLE_GEOMETRY_SEGMENTS
@@ -291,6 +336,9 @@ impl RenderSession {
                 );
                 let include_outline = has_outline && local_crossing.is_none();
                 let semantic_working_bytes = if let Some(crossing) = local_crossing {
+                    let source_position = crossing
+                        .pointer_field
+                        .map_or(u64::MAX, |field| source.source.coordinate_position(field));
                     let diagnostic = crossing
                         .diagnostic(
                             request.format(),
@@ -300,11 +348,16 @@ impl RenderSession {
                         .map_err(|_| {
                             self.memory_failure(request, "compatibility_report", "local_recovery")
                         })?;
-                    self.retain_diagnostic(
+                    self.retain_diagnostic_with_owner(
                         request,
                         ResourcePhase::SharedSemanticResolution,
                         "rectangle_local_resource_recovery",
                         diagnostic,
+                        DiagnosticOwnership {
+                            local_owner: Some(source.source.id()),
+                            source_order: Some(source.source_order),
+                            source_position: Some(source_position),
+                        },
                     )?;
                     source.normalized_working_bytes
                 } else if has_outline {
@@ -316,9 +369,14 @@ impl RenderSession {
                     source.normalized_working_bytes
                 };
                 semantic_working.push(SemanticWorkingRecord {
-                    element_id: try_owned(source.source.id()).map_err(|_| {
+                    source_order: source.source_order,
+                    event: "resolved_rectangle",
+                    element_id: Some(try_owned(source.source.id()).map_err(|_| {
                         self.memory_failure(request, "normalization", "working_record_identity")
-                    })?,
+                    })?),
+                    local_owner: Some(try_owned(source.source.id()).map_err(|_| {
+                        self.memory_failure(request, "normalization", "working_record_owner")
+                    })?),
                     json_pointer: try_owned(source.source.pointer()).map_err(|_| {
                         self.memory_failure(request, "normalization", "working_record_pointer")
                     })?,
@@ -326,6 +384,25 @@ impl RenderSession {
                 });
                 rectangles.push((source, include_outline));
             }
+            semantic_working.push(SemanticWorkingRecord {
+                source_order: scene.source_owner_order("appState", 0),
+                event: "normalized_frame_rendering",
+                element_id: None,
+                local_owner: None,
+                json_pointer: "/appState/frameRendering".to_owned(),
+                bytes: 4 * 64,
+            });
+            for file in normalized_files {
+                semantic_working.push(SemanticWorkingRecord {
+                    source_order: file.source_order,
+                    event: "normalized_file_record",
+                    element_id: None,
+                    local_owner: Some(file.key),
+                    json_pointer: file.source_pointer,
+                    bytes: file.normalized_working_bytes,
+                });
+            }
+            semantic_working.sort_unstable_by_key(|record| record.source_order);
             if rectangles.is_empty() {
                 ResolvedScene::empty(request)
             } else {
@@ -710,7 +787,24 @@ impl RenderSession {
         request: &RenderRequest,
         phase: ResourcePhase,
         event: &'static str,
+        diagnostic: CompatibilityDiagnostic,
+    ) -> Result<(), RenderError> {
+        self.retain_diagnostic_with_owner(
+            request,
+            phase,
+            event,
+            diagnostic,
+            DiagnosticOwnership::default(),
+        )
+    }
+
+    fn retain_diagnostic_with_owner(
+        &mut self,
+        request: &RenderRequest,
+        phase: ResourcePhase,
+        event: &'static str,
         mut diagnostic: CompatibilityDiagnostic,
+        ownership: DiagnosticOwnership<'_>,
     ) -> Result<(), RenderError> {
         let pointer_bytes = u64::try_from(diagnostic.json_pointer.len()).unwrap_or(u64::MAX);
         let element_id_bytes = diagnostic.element_id.as_deref().map_or(0, |element_id| {
@@ -723,7 +817,7 @@ impl RenderSession {
             request,
             ResourceContext::new(phase, event, &diagnostic.json_pointer)
                 .with_element_id(diagnostic.element_id.as_deref())
-                .with_local_owner(diagnostic.element_id.as_deref())
+                .with_local_owner(ownership.local_owner.or(diagnostic.element_id.as_deref()))
                 .with_record(ResourceRecordKind::Diagnostic),
             ResourceDelta {
                 diagnostics: 1,
@@ -742,7 +836,14 @@ impl RenderSession {
             ));
         }
         diagnostic.order = DiagnosticOrder {
-            owner_index: element_owner_index(&diagnostic.json_pointer).unwrap_or(u64::MAX),
+            owner_index: ownership
+                .source_order
+                .or_else(|| {
+                    element_owner_index(&diagnostic.json_pointer)
+                        .map(|index| self.element_source_order_base.saturating_add(index))
+                })
+                .unwrap_or(u64::MAX),
+            source_position: ownership.source_position.unwrap_or(u64::MAX),
             retention_ordinal: u64::try_from(self.report.diagnostics.len()).unwrap_or(u64::MAX),
         };
         self.report.diagnostics.push(diagnostic);
@@ -819,11 +920,11 @@ impl RenderSession {
                 request,
                 ResourceContext::new(
                     ResourcePhase::FormatPlanning,
-                    "resolved_rectangle",
+                    record.event,
                     &record.json_pointer,
                 )
-                .with_element_id(Some(&record.element_id))
-                .with_local_owner(Some(&record.element_id)),
+                .with_element_id(record.element_id.as_deref())
+                .with_local_owner(record.local_owner.as_deref()),
                 record.bytes,
             )?;
         }
@@ -1100,7 +1201,7 @@ impl ResolvedScene {
     }
 
     fn rectangles(
-        rectangles: Vec<(NormalizedRectangle, bool)>,
+        rectangles: Vec<(NormalizedElement, bool)>,
         request: &RenderRequest,
     ) -> Result<Option<Self>, std::collections::TryReserveError> {
         if rectangles.is_empty() {
@@ -1238,7 +1339,10 @@ struct ResolvedRectangle {
 }
 
 struct SemanticWorkingRecord {
-    element_id: String,
+    source_order: u64,
+    event: &'static str,
+    element_id: Option<String>,
+    local_owner: Option<String>,
     json_pointer: String,
     bytes: u64,
 }
@@ -1297,7 +1401,7 @@ impl RectangleLocalCrossing {
 }
 
 fn rectangle_local_crossing(
-    source: &NormalizedRectangle,
+    source: &NormalizedElement,
     request: &RenderRequest,
     geometry_segments: u64,
     element_work_units: u64,
@@ -1513,7 +1617,8 @@ mod tests {
                 .expect("diagnostic request is valid");
             let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
                 .expect("revision 1 exists");
-            let mut session = RenderSession::new(profile, &request);
+            let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
+            let mut session = RenderSession::new(profile, &scene, &request);
             let diagnostic = test_diagnostic();
 
             session
@@ -1534,7 +1639,10 @@ mod tests {
                 .expect_err("the second diagnostic crosses an aggregate limit");
 
             assert_eq!(error.code(), expected_code);
-            assert_eq!(error.report().diagnostics(), &[diagnostic]);
+            let mut retained = diagnostic;
+            retained.order.owner_index = scene.source_owner_order("elements", 0);
+            retained.order.retention_ordinal = 0;
+            assert_eq!(error.report().diagnostics(), &[retained]);
         }
     }
 
@@ -1551,7 +1659,7 @@ mod tests {
         let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
         let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
             .expect("revision 1 exists");
-        let mut session = RenderSession::new(profile, &request);
+        let mut session = RenderSession::new(profile, &scene, &request);
         let diagnostic = test_diagnostic();
         session
             .retain_diagnostic(
@@ -1567,7 +1675,10 @@ mod tests {
             .expect_err("output exhaustion is fatal");
 
         assert_eq!(error.code(), ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED);
-        assert_eq!(error.report().diagnostics(), &[diagnostic]);
+        let mut retained = diagnostic;
+        retained.order.owner_index = scene.source_owner_order("elements", 0);
+        retained.order.retention_ordinal = 0;
+        assert_eq!(error.report().diagnostics(), &[retained]);
     }
 
     #[test]
@@ -1603,15 +1714,15 @@ mod tests {
         let expected_digests = [
             (
                 OutputFormat::Svg,
-                "82d3cd30e8fbcb015fd0124c95d17652425093c97ea91cd199ff57bbccbfd72f",
+                "ddc0f9068fe3c0b0842b89a3e3d7ee210bb805e6f328360523b915061e82a38a",
             ),
             (
                 OutputFormat::Png,
-                "b1fba20f0164fb87923913f43df945630c18e93f168fc32d2552b68793c46aaf",
+                "ff9cdcb688df3961b394ea83fb99f8a8a8beb7b583adde89769e930930db6fd1",
             ),
             (
                 OutputFormat::Pdf,
-                "29fdab71a03d23839b02fc361575610d541fa7d84169946b7eb0f59b4798fa15",
+                "8c0c169ecbc7ec629021dcf0a15b517970f243fed6f33ad64306dbf18fac1342",
             ),
         ];
 
@@ -1737,7 +1848,7 @@ mod tests {
         }));
         assert_eq!(
             normalization_entries[0]["deltas"]["total_work_units"],
-            crate::normalization::NORMALIZATION_WORK_UNITS
+            crate::normalization::NORMALIZATION_WORK_UNITS + 8
         );
     }
 
@@ -1824,7 +1935,8 @@ mod tests {
             .expect("request is valid");
         let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
             .expect("revision 1 exists");
-        let mut session = RenderSession::new(profile, &request);
+        let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
+        let mut session = RenderSession::new(profile, &scene, &request);
         let mut passes = 0;
 
         let error = session

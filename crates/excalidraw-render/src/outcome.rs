@@ -162,10 +162,21 @@ pub struct CompatibilityDiagnostic {
     pub(crate) order: DiagnosticOrder,
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) struct DiagnosticOrder {
     pub(crate) owner_index: u64,
+    pub(crate) source_position: u64,
     pub(crate) retention_ordinal: u64,
+}
+
+impl Default for DiagnosticOrder {
+    fn default() -> Self {
+        Self {
+            owner_index: u64::MAX,
+            source_position: u64::MAX,
+            retention_ordinal: u64::MAX,
+        }
+    }
 }
 
 impl CompatibilityDiagnostic {

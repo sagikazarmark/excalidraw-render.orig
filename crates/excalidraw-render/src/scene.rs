@@ -138,16 +138,6 @@ impl SceneDocument {
         Ok(bytes)
     }
 
-    pub(crate) fn has_no_element_occurrences(&self) -> bool {
-        let JsonValue::Object(members) = &*self._root else {
-            return false;
-        };
-        matches!(
-            member_value(members, "elements"),
-            Some(JsonValue::Array(elements)) if elements.is_empty()
-        )
-    }
-
     pub(crate) fn element_occurrence_count(&self) -> usize {
         let JsonValue::Object(root) = &*self._root else {
             return 0;
@@ -158,7 +148,21 @@ impl SceneDocument {
         elements.len()
     }
 
-    pub(crate) fn rectangle_at(&self, index: usize) -> Option<RectangleSource<'_>> {
+    pub(crate) fn source_owner_order(&self, root_member: &str, child_index: usize) -> u64 {
+        let root_position = match &*self._root {
+            JsonValue::Object(members) => members
+                .iter()
+                .position(|member| &*member.key == root_member)
+                .unwrap_or(usize::MAX),
+            _ => usize::MAX,
+        };
+        u64::try_from(root_position)
+            .unwrap_or(u64::MAX)
+            .saturating_mul(u64::from(u32::MAX) + 1)
+            .saturating_add(u64::try_from(child_index).unwrap_or(u64::MAX))
+    }
+
+    pub(crate) fn element_at(&self, index: usize) -> Option<ElementSource<'_>> {
         let JsonValue::Object(root) = &*self._root else {
             return None;
         };
@@ -169,16 +173,26 @@ impl SceneDocument {
         let JsonValue::Object(element) = value else {
             return None;
         };
-        if json_string(member_value(element, "type")?)? != "rectangle" {
-            return None;
-        }
+        let kind = match json_string(member_value(element, "type")?)? {
+            "rectangle" => ElementKind::Rectangle,
+            "line" => ElementKind::Line,
+            "draw" => ElementKind::LegacyDraw,
+            "arrow" => ElementKind::Arrow,
+            "freedraw" => ElementKind::Freedraw,
+            "image" => ElementKind::Image,
+            "frame" => ElementKind::Frame,
+            "magicframe" => ElementKind::MagicFrame,
+            _ => return None,
+        };
         let JsonValue::Object(app_state) = member_value(root, "appState")? else {
             return None;
         };
 
-        Some(RectangleSource {
+        Some(ElementSource {
             element: value,
+            kind,
             id: source_field(element, "id", json_string),
+            index: source_nullable_string(element, "index"),
             x: source_field(element, "x", finite_json_number),
             y: source_field(element, "y", finite_json_number),
             width: source_field(element, "width", finite_json_number),
@@ -200,6 +214,58 @@ impl SceneDocument {
             link: source_nullable_string(element, "link"),
             updated_is_missing: member_value(element, "updated").is_none(),
             view_background_color: source_field(app_state, "viewBackgroundColor", json_string),
+            points: source_point_array(element, "points"),
+            pressures: source_number_array(element, "pressures"),
+            simulate_pressure: source_field(element, "simulatePressure", json_bool),
+            start_binding: source_binding(element, "startBinding"),
+            end_binding: source_binding(element, "endBinding"),
+            start_arrowhead: source_nullable_string(element, "startArrowhead"),
+            end_arrowhead: source_nullable_string(element, "endArrowhead"),
+            elbowed: source_field(element, "elbowed", json_bool),
+            file_id: source_nullable_string(element, "fileId"),
+            image_status: source_field(element, "status", json_string),
+            image_scale: source_number_array(element, "scale"),
+            image_crop: source_image_crop(element, "crop"),
+            name: source_nullable_string(element, "name"),
+        })
+    }
+
+    pub(crate) fn frame_rendering(&self) -> SourceField<FrameRenderingSource<'_>> {
+        let JsonValue::Object(root) = &*self._root else {
+            return SourceField::Invalid;
+        };
+        let Some(JsonValue::Object(app_state)) = member_value(root, "appState") else {
+            return SourceField::Invalid;
+        };
+        source_field(app_state, "frameRendering", |value| {
+            let JsonValue::Object(members) = value else {
+                return None;
+            };
+            Some(FrameRenderingSource { members })
+        })
+    }
+
+    pub(crate) fn file_record_count(&self) -> usize {
+        let JsonValue::Object(root) = &*self._root else {
+            return 0;
+        };
+        let Some(JsonValue::Object(files)) = member_value(root, "files") else {
+            return 0;
+        };
+        files.len()
+    }
+
+    pub(crate) fn file_record_at(&self, index: usize) -> Option<FileRecordSource<'_>> {
+        let JsonValue::Object(root) = &*self._root else {
+            return None;
+        };
+        let JsonValue::Object(files) = member_value(root, "files")? else {
+            return None;
+        };
+        let member = files.get(index)?;
+        Some(FileRecordSource {
+            key: &member.key,
+            value: &member.value,
         })
     }
 
@@ -236,9 +302,23 @@ impl SceneDocument {
     }
 }
 
-pub(crate) struct RectangleSource<'a> {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ElementKind {
+    Rectangle,
+    Line,
+    LegacyDraw,
+    Arrow,
+    Freedraw,
+    Image,
+    Frame,
+    MagicFrame,
+}
+
+pub(crate) struct ElementSource<'a> {
     element: &'a JsonValue,
+    pub(crate) kind: ElementKind,
     pub(crate) id: SourceField<&'a str>,
+    pub(crate) index: SourceField<Option<&'a str>>,
     pub(crate) x: SourceField<f64>,
     pub(crate) y: SourceField<f64>,
     pub(crate) width: SourceField<f64>,
@@ -260,16 +340,22 @@ pub(crate) struct RectangleSource<'a> {
     pub(crate) link: SourceField<Option<&'a str>>,
     pub(crate) updated_is_missing: bool,
     pub(crate) view_background_color: SourceField<&'a str>,
+    pub(crate) points: SourceField<PointArraySource<'a>>,
+    pub(crate) pressures: SourceField<NumberArraySource<'a>>,
+    pub(crate) simulate_pressure: SourceField<bool>,
+    pub(crate) start_binding: SourceField<Option<BindingSource<'a>>>,
+    pub(crate) end_binding: SourceField<Option<BindingSource<'a>>>,
+    pub(crate) start_arrowhead: SourceField<Option<&'a str>>,
+    pub(crate) end_arrowhead: SourceField<Option<&'a str>>,
+    pub(crate) elbowed: SourceField<bool>,
+    pub(crate) file_id: SourceField<Option<&'a str>>,
+    pub(crate) image_status: SourceField<&'a str>,
+    pub(crate) image_scale: SourceField<NumberArraySource<'a>>,
+    pub(crate) image_crop: SourceField<Option<ImageCropSource<'a>>>,
+    pub(crate) name: SourceField<Option<&'a str>>,
 }
 
-#[derive(Clone, Copy)]
-pub(crate) enum SourceField<T> {
-    Missing,
-    Value(T),
-    Invalid,
-}
-
-impl RectangleSource<'_> {
+impl ElementSource<'_> {
     pub(crate) fn canonical_element_bytes(&self) -> Result<Vec<u8>, TryReserveError> {
         let mut bytes = Vec::new();
         write_canonical_json(self.element, &mut bytes)?;
@@ -282,6 +368,182 @@ impl RectangleSource<'_> {
         };
         members.iter().position(|member| &*member.key == key)
     }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct PointArraySource<'a> {
+    values: &'a [JsonValue],
+}
+
+impl PointArraySource<'_> {
+    pub(crate) fn len(&self) -> usize {
+        self.values.len()
+    }
+
+    pub(crate) fn point(&self, index: usize) -> SourceField<[f64; 2]> {
+        let Some(value) = self.values.get(index) else {
+            return SourceField::Missing;
+        };
+        parse_point(value).map_or(SourceField::Invalid, SourceField::Value)
+    }
+
+    pub(crate) fn invalid_component(&self, index: usize) -> Option<usize> {
+        let JsonValue::Array(values) = self.values.get(index)? else {
+            return None;
+        };
+        if values.len() < 2 {
+            return Some(values.len());
+        }
+        (0..2).find(|component| finite_json_number(&values[*component]).is_none())
+    }
+
+    pub(crate) fn first_invalid_point(&self) -> Option<(usize, Option<usize>)> {
+        (0..self.values.len()).find_map(|index| {
+            matches!(self.point(index), SourceField::Invalid)
+                .then(|| (index, self.invalid_component(index)))
+        })
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct NumberArraySource<'a> {
+    values: &'a [JsonValue],
+}
+
+impl NumberArraySource<'_> {
+    pub(crate) fn len(&self) -> usize {
+        self.values.len()
+    }
+
+    pub(crate) fn number(&self, index: usize) -> SourceField<f64> {
+        let Some(value) = self.values.get(index) else {
+            return SourceField::Missing;
+        };
+        finite_json_number(value).map_or(SourceField::Invalid, SourceField::Value)
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct BindingSource<'a> {
+    members: &'a [JsonMember],
+}
+
+impl BindingSource<'_> {
+    pub(crate) fn element_id(&self) -> SourceField<&str> {
+        source_field(self.members, "elementId", json_string)
+    }
+
+    pub(crate) fn focus(&self) -> SourceField<f64> {
+        match member_value(self.members, "focus") {
+            None | Some(JsonValue::Null | JsonValue::Bool(false)) => SourceField::Missing,
+            Some(JsonValue::String(value)) if value.is_empty() => SourceField::Missing,
+            Some(value) => {
+                finite_json_number(value).map_or(SourceField::Invalid, SourceField::Value)
+            }
+        }
+    }
+
+    pub(crate) fn gap(&self) -> SourceField<f64> {
+        source_field(self.members, "gap", finite_json_number)
+    }
+
+    pub(crate) fn fixed_point(&self) -> SourceField<[f64; 2]> {
+        match member_value(self.members, "fixedPoint") {
+            None | Some(JsonValue::Null) => SourceField::Missing,
+            Some(value) => parse_point(value).map_or(SourceField::Invalid, SourceField::Value),
+        }
+    }
+
+    pub(crate) fn fixed_point_invalid_component(&self) -> Option<usize> {
+        let JsonValue::Array(values) = member_value(self.members, "fixedPoint")? else {
+            return None;
+        };
+        if values.len() < 2 {
+            return Some(values.len());
+        }
+        (0..2).find(|component| finite_json_number(&values[*component]).is_none())
+    }
+
+    pub(crate) fn member_position(&self, key: &str) -> Option<usize> {
+        self.members.iter().position(|member| &*member.key == key)
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct ImageCropSource<'a> {
+    members: &'a [JsonMember],
+}
+
+impl ImageCropSource<'_> {
+    pub(crate) fn len(&self) -> usize {
+        self.members.len()
+    }
+
+    pub(crate) fn number(&self, key: &str) -> SourceField<f64> {
+        source_field(self.members, key, finite_json_number)
+    }
+
+    pub(crate) fn member_position(&self, key: &str) -> Option<usize> {
+        self.members.iter().position(|member| &*member.key == key)
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct FrameRenderingSource<'a> {
+    members: &'a [JsonMember],
+}
+
+impl FrameRenderingSource<'_> {
+    pub(crate) fn boolean(&self, key: &str) -> SourceField<bool> {
+        source_field(self.members, key, json_bool)
+    }
+
+    pub(crate) fn member_position(&self, key: &str) -> Option<usize> {
+        self.members.iter().position(|member| &*member.key == key)
+    }
+}
+
+pub(crate) struct FileRecordSource<'a> {
+    key: &'a str,
+    value: &'a JsonValue,
+}
+
+impl<'a> FileRecordSource<'a> {
+    pub(crate) fn key(&self) -> &'a str {
+        self.key
+    }
+
+    pub(crate) fn is_record(&self) -> bool {
+        matches!(self.value, JsonValue::Object(_))
+    }
+
+    pub(crate) fn id(&self) -> SourceField<&str> {
+        let JsonValue::Object(members) = self.value else {
+            return SourceField::Invalid;
+        };
+        source_field(members, "id", json_string)
+    }
+
+    pub(crate) fn created(&self) -> SourceField<u64> {
+        let JsonValue::Object(members) = self.value else {
+            return SourceField::Invalid;
+        };
+        source_field(members, "created", json_u64)
+    }
+
+    pub(crate) fn member_position(&self, key: &str) -> Option<usize> {
+        let JsonValue::Object(members) = self.value else {
+            return None;
+        };
+        members.iter().position(|member| &*member.key == key)
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum SourceField<T> {
+    Missing,
+    Value(T),
+    Invalid,
 }
 
 pub(crate) enum OriginalJsonVisitError<E> {
@@ -1084,6 +1346,13 @@ fn json_i32(value: &JsonValue) -> Option<i32> {
     value.parse().ok()
 }
 
+fn json_u64(value: &JsonValue) -> Option<u64> {
+    let JsonValue::Number(value) = value else {
+        return None;
+    };
+    value.parse().ok()
+}
+
 fn source_field<'a, T>(
     members: &'a [JsonMember],
     key: &str,
@@ -1118,6 +1387,65 @@ fn source_array_len(members: &[JsonMember], key: &str, accepts_null: bool) -> So
         JsonValue::Null if accepts_null => Some(0),
         _ => None,
     })
+}
+
+fn source_point_array<'a>(
+    members: &'a [JsonMember],
+    key: &str,
+) -> SourceField<PointArraySource<'a>> {
+    source_field(members, key, |value| {
+        let JsonValue::Array(values) = value else {
+            return None;
+        };
+        Some(PointArraySource { values })
+    })
+}
+
+fn source_number_array<'a>(
+    members: &'a [JsonMember],
+    key: &str,
+) -> SourceField<NumberArraySource<'a>> {
+    source_field(members, key, |value| {
+        let JsonValue::Array(values) = value else {
+            return None;
+        };
+        Some(NumberArraySource { values })
+    })
+}
+
+fn source_binding<'a>(
+    members: &'a [JsonMember],
+    key: &str,
+) -> SourceField<Option<BindingSource<'a>>> {
+    source_field(members, key, |value| match value {
+        JsonValue::Null => Some(None),
+        JsonValue::Object(members) => Some(Some(BindingSource { members })),
+        _ => None,
+    })
+}
+
+fn source_image_crop<'a>(
+    members: &'a [JsonMember],
+    key: &str,
+) -> SourceField<Option<ImageCropSource<'a>>> {
+    source_field(members, key, |value| match value {
+        JsonValue::Null => Some(None),
+        JsonValue::Object(members) => Some(Some(ImageCropSource { members })),
+        _ => None,
+    })
+}
+
+fn parse_point(value: &JsonValue) -> Option<[f64; 2]> {
+    let JsonValue::Array(values) = value else {
+        return None;
+    };
+    if values.len() != 2 {
+        return None;
+    }
+    Some([
+        finite_json_number(&values[0])?,
+        finite_json_number(&values[1])?,
+    ])
 }
 
 fn visit_json_value<E>(
