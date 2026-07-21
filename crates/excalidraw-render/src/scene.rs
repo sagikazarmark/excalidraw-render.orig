@@ -148,6 +148,36 @@ impl SceneDocument {
         elements.len()
     }
 
+    pub(crate) fn element_value(&self, index: usize) -> Option<&JsonValue> {
+        let JsonValue::Object(root) = &*self._root else {
+            return None;
+        };
+        let Some(JsonValue::Array(elements)) = member_value(root, "elements") else {
+            return None;
+        };
+        elements.get(index)
+    }
+
+    pub(crate) fn root_members(&self) -> &[JsonMember] {
+        match &*self._root {
+            JsonValue::Object(members) => members,
+            _ => &[],
+        }
+    }
+
+    pub(crate) fn app_state_members(&self) -> &[JsonMember] {
+        let Some(JsonValue::Object(members)) = member_value(self.root_members(), "appState") else {
+            return &[];
+        };
+        members
+    }
+
+    pub(crate) fn app_state_member_position(&self, key: &str) -> Option<usize> {
+        self.app_state_members()
+            .iter()
+            .position(|member| &*member.key == key)
+    }
+
     pub(crate) fn source_owner_order(&self, root_member: &str, child_index: usize) -> u64 {
         let root_position = match &*self._root {
             JsonValue::Object(members) => members
@@ -203,7 +233,7 @@ impl SceneDocument {
             fill_style: source_field(element, "fillStyle", json_string),
             stroke_width: source_field(element, "strokeWidth", finite_json_number),
             stroke_style: source_field(element, "strokeStyle", json_string),
-            roundness: source_null(element, "roundness"),
+            roundness: source_roundness(element, "roundness"),
             roughness: source_field(element, "roughness", finite_json_number),
             opacity: source_field(element, "opacity", finite_json_number),
             seed: source_field(element, "seed", json_i32),
@@ -282,7 +312,7 @@ impl SceneDocument {
         matches!(
             member_value(element, "isDeleted"),
             Some(JsonValue::Bool(true))
-        ) || matches!(member_value(element, "type"), Some(JsonValue::String(kind)) if &**kind == "selection")
+        )
     }
 
     pub(crate) const fn source_bytes(&self) -> u64 {
@@ -314,6 +344,21 @@ pub(crate) enum ElementKind {
     MagicFrame,
 }
 
+impl ElementKind {
+    pub(crate) const fn scene_surface_kind(self) -> &'static str {
+        match self {
+            Self::Rectangle => "rectangle",
+            Self::Line => "line",
+            Self::LegacyDraw => "draw",
+            Self::Arrow => "arrow",
+            Self::Freedraw => "freedraw",
+            Self::Image => "image",
+            Self::Frame => "frame",
+            Self::MagicFrame => "magicframe",
+        }
+    }
+}
+
 pub(crate) struct ElementSource<'a> {
     element: &'a JsonValue,
     pub(crate) kind: ElementKind,
@@ -329,7 +374,7 @@ pub(crate) struct ElementSource<'a> {
     pub(crate) fill_style: SourceField<&'a str>,
     pub(crate) stroke_width: SourceField<f64>,
     pub(crate) stroke_style: SourceField<&'a str>,
-    pub(crate) roundness: SourceField<()>,
+    pub(crate) roundness: SourceField<Option<RoundnessSource<'a>>>,
     pub(crate) roughness: SourceField<f64>,
     pub(crate) opacity: SourceField<f64>,
     pub(crate) seed: SourceField<i32>,
@@ -403,6 +448,13 @@ impl PointArraySource<'_> {
                 .then(|| (index, self.invalid_component(index)))
         })
     }
+
+    pub(crate) fn component_count(&self, index: usize) -> Option<usize> {
+        let JsonValue::Array(values) = self.values.get(index)? else {
+            return None;
+        };
+        Some(values.len())
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -467,11 +519,38 @@ impl BindingSource<'_> {
     pub(crate) fn member_position(&self, key: &str) -> Option<usize> {
         self.members.iter().position(|member| &*member.key == key)
     }
+
+    pub(crate) fn members(&self) -> &[JsonMember] {
+        self.members
+    }
 }
 
 #[derive(Clone, Copy)]
 pub(crate) struct ImageCropSource<'a> {
     members: &'a [JsonMember],
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct RoundnessSource<'a> {
+    members: &'a [JsonMember],
+}
+
+impl RoundnessSource<'_> {
+    pub(crate) fn kind(&self) -> SourceField<i32> {
+        source_field(self.members, "type", json_i32)
+    }
+
+    pub(crate) fn value(&self) -> SourceField<f64> {
+        source_field(self.members, "value", finite_json_number)
+    }
+
+    pub(crate) fn member_position(&self, key: &str) -> Option<usize> {
+        self.members.iter().position(|member| &*member.key == key)
+    }
+
+    pub(crate) fn members(&self) -> &[JsonMember] {
+        self.members
+    }
 }
 
 impl ImageCropSource<'_> {
@@ -485,6 +564,10 @@ impl ImageCropSource<'_> {
 
     pub(crate) fn member_position(&self, key: &str) -> Option<usize> {
         self.members.iter().position(|member| &*member.key == key)
+    }
+
+    pub(crate) fn members(&self) -> &[JsonMember] {
+        self.members
     }
 }
 
@@ -501,6 +584,10 @@ impl FrameRenderingSource<'_> {
     pub(crate) fn member_position(&self, key: &str) -> Option<usize> {
         self.members.iter().position(|member| &*member.key == key)
     }
+
+    pub(crate) fn members(&self) -> &[JsonMember] {
+        self.members
+    }
 }
 
 pub(crate) struct FileRecordSource<'a> {
@@ -515,6 +602,13 @@ impl<'a> FileRecordSource<'a> {
 
     pub(crate) fn is_record(&self) -> bool {
         matches!(self.value, JsonValue::Object(_))
+    }
+
+    pub(crate) fn members(&self) -> Option<&[JsonMember]> {
+        let JsonValue::Object(members) = self.value else {
+            return None;
+        };
+        Some(members)
     }
 
     pub(crate) fn id(&self) -> SourceField<&str> {
@@ -663,7 +757,7 @@ impl fmt::Display for SceneParseError {
 impl Error for SceneParseError {}
 
 #[allow(dead_code)]
-enum JsonValue {
+pub(crate) enum JsonValue {
     Null,
     Bool(bool),
     Number(Box<str>),
@@ -673,9 +767,9 @@ enum JsonValue {
 }
 
 #[allow(dead_code)]
-struct JsonMember {
-    key: Arc<str>,
-    value: JsonValue,
+pub(crate) struct JsonMember {
+    pub(crate) key: Arc<str>,
+    pub(crate) value: JsonValue,
 }
 
 struct ParsedString {
@@ -1308,7 +1402,7 @@ fn validate_envelope(root: &JsonValue) -> Result<(), SceneParseError> {
     Ok(())
 }
 
-fn member_value<'a>(members: &'a [JsonMember], key: &str) -> Option<&'a JsonValue> {
+pub(crate) fn member_value<'a>(members: &'a [JsonMember], key: &str) -> Option<&'a JsonValue> {
     members
         .iter()
         .find(|member| &*member.key == key)
@@ -1329,7 +1423,7 @@ fn json_bool(value: &JsonValue) -> Option<bool> {
     Some(*value)
 }
 
-fn finite_json_number(value: &JsonValue) -> Option<f64> {
+pub(crate) fn finite_json_number(value: &JsonValue) -> Option<f64> {
     let JsonValue::Number(value) = value else {
         return None;
     };
@@ -1364,9 +1458,14 @@ fn source_field<'a, T>(
     }
 }
 
-fn source_null(members: &[JsonMember], key: &str) -> SourceField<()> {
-    source_field(members, key, |value| {
-        matches!(value, JsonValue::Null).then_some(())
+fn source_roundness<'a>(
+    members: &'a [JsonMember],
+    key: &str,
+) -> SourceField<Option<RoundnessSource<'a>>> {
+    source_field(members, key, |value| match value {
+        JsonValue::Null => Some(None),
+        JsonValue::Object(members) => Some(Some(RoundnessSource { members })),
+        _ => None,
     })
 }
 
@@ -1439,7 +1538,7 @@ fn parse_point(value: &JsonValue) -> Option<[f64; 2]> {
     let JsonValue::Array(values) = value else {
         return None;
     };
-    if values.len() != 2 {
+    if values.len() < 2 {
         return None;
     }
     Some([

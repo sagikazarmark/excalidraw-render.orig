@@ -18,6 +18,7 @@ mod request;
 mod resource_accounting;
 mod resource_limits;
 mod scene;
+mod scene_surface;
 
 pub use compatibility::{
     AssetChainEntry, CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily,

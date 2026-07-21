@@ -4,6 +4,7 @@ use crate::compatibility::{CompatibilityRevision, ReferenceProfileIdentity};
 pub(crate) struct RevisionCatalog {
     profile: ReferenceProfileIdentity,
     assets: &'static excalidraw_render_assets_base::RevisionCatalog,
+    scene_surface: &'static crate::scene_surface::SceneSurfacePolicy,
 }
 
 impl RevisionCatalog {
@@ -16,6 +17,12 @@ impl RevisionCatalog {
     ) -> &'static excalidraw_render_assets_base::RevisionCatalog {
         self.assets
     }
+
+    pub(crate) const fn scene_surface(
+        &'static self,
+    ) -> &'static crate::scene_surface::SceneSurfacePolicy {
+        self.scene_surface
+    }
 }
 
 pub(crate) static REVISION_1: RevisionCatalog = RevisionCatalog {
@@ -25,6 +32,7 @@ pub(crate) static REVISION_1: RevisionCatalog = RevisionCatalog {
         excalidraw_render_assets_base::revision_1().reference_profile_digest,
     ),
     assets: excalidraw_render_assets_base::revision_1(),
+    scene_surface: &crate::scene_surface::SCENE_SURFACE_POLICY,
 };
 
 pub(crate) const SUPPORTED_REVISIONS: &[CompatibilityRevision] =

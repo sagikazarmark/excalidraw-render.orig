@@ -201,7 +201,11 @@ fn assigned_element_repairs_are_reported_before_later_rendering_slices() {
             .iter()
             .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
-        ["/elements/0/points", "/elements/1/status"]
+        [
+            "/elements/0/points",
+            "/elements/1/status",
+            "/elements/1/fileId",
+        ]
     );
 }
 
@@ -292,6 +296,7 @@ fn normalization_reports_follow_preserved_root_owner_order() {
             .collect::<Vec<_>>(),
         [
             "/files/asset/id",
+            "/files/asset/dataURL",
             "/files/asset/created",
             "/elements/0/status",
         ]

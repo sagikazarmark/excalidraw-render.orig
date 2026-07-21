@@ -122,6 +122,107 @@ const SOURCE_COUNT: usize = 34;
 const FIELD_DISPOSITION_COUNT: usize = 202;
 const ELEMENT_KIND_COUNT: usize = 13;
 const REGISTRY_MAPPING_COUNT: usize = 42;
+const IMPLEMENTED_DIAGNOSTIC_CODES: &[&str] = &[
+    "normalization.missing-element-id",
+    "normalization.duplicate-element-id",
+    "normalization.missing-timestamp",
+    "normalization.zero-rough-seed",
+    "normalization.relationship-cycle",
+    "compatibility.unsupported-element-type",
+    "compatibility.malformed-element",
+    "compatibility.unsupported-property",
+    "compatibility.unsupported-property-value",
+    "compatibility.known-element-replaced",
+    "asset.supplement-conflict",
+    "asset.media-type-mismatch",
+    "asset.malformed-file-record",
+    "image.missing-file",
+    "image.forbidden-resource",
+    "image.animation-flattened",
+    "image.unsupported-format",
+    "image.decode-failed",
+    "image.unsafe-svg-content-removed",
+    "link.unsafe-omitted",
+    "color.invalid",
+    "font.liberation-sans-substituted",
+    "font.noto-emoji-substituted",
+    "font.missing-glyph",
+    "resource.element-complexity-replaced",
+    "resource.element-work-exceeded",
+    "resource.asset-bytes-exceeded",
+    "resource.asset-work-exceeded",
+    "resource.image-dimensions-exceeded",
+    "resource.image-pixels-exceeded",
+    "resource.nested-svg-complexity-exceeded",
+    "resource.nested-asset-depth-exceeded",
+    "resource.coordinate-range-exceeded",
+    "resource.optional-metadata-omitted",
+    "metadata.provenance-serialization-failed",
+    "metadata.diagnostic-summary-serialization-failed",
+    "metadata.scene-serialization-failed",
+    "metadata.scene-compression-failed",
+    "metadata.scene-embedding-failed",
+    "metadata.manifest-serialization-failed",
+    "metadata.manifest-embedding-failed",
+    "pdf.raster-fallback",
+];
+const IMPLEMENTED_DOMAIN_IDS: &[&str] = &[
+    "any_json",
+    "arrow_type",
+    "arrowhead",
+    "boolean",
+    "bound_element_array",
+    "bound_element_type",
+    "chart_type",
+    "css_color",
+    "cursor_button",
+    "data_url",
+    "element_type",
+    "fill_style",
+    "finite_number",
+    "finite_number_array",
+    "fixed_segment_array",
+    "font_family",
+    "frame_rendering",
+    "freedraw_points",
+    "hyperlink_popup",
+    "image_crop",
+    "image_mime",
+    "image_scale",
+    "image_status",
+    "integer",
+    "literal_excalidraw",
+    "literal_v2",
+    "nonempty_string",
+    "nonnegative_integer",
+    "nonnegative_number",
+    "nonzero_integer",
+    "nullable_boolean",
+    "nullable_font_family",
+    "nullable_point",
+    "nullable_record",
+    "nullable_string",
+    "object",
+    "opacity",
+    "open_menu",
+    "open_popup",
+    "point",
+    "point_array",
+    "point_binding",
+    "pointer_type",
+    "positive_number",
+    "pressure_array",
+    "roundness",
+    "roundness_type",
+    "scene_elements",
+    "string",
+    "string_array",
+    "stroke_roundness",
+    "stroke_style",
+    "text_align",
+    "theme",
+    "vertical_align",
+];
 
 struct ImportedAsset {
     path: String,
@@ -286,6 +387,14 @@ pub fn import(source_root: &str) -> Result<(), String> {
             .map_err(|error| format!("failed to create {}: {error}", parent.display()))?;
     }
     write_if_changed(&generated_path, generated.as_bytes())?;
+    let scene_policy = generated_scene_surface(&scene_surface)?;
+    let scene_policy_path =
+        root.join("crates/excalidraw-render/src/generated/scene_surface_revision_1.rs");
+    if let Some(parent) = scene_policy_path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| format!("failed to create {}: {error}", parent.display()))?;
+    }
+    write_if_changed(&scene_policy_path, scene_policy.as_bytes())?;
 
     verify()
 }
@@ -343,6 +452,13 @@ pub fn verify() -> Result<(), String> {
     let expected_generated = generate_rust(&catalog, &scene_surface, &catalog_bytes)?;
     if generated != expected_generated {
         return Err("generated Rust catalog is stale".to_owned());
+    }
+    let scene_policy_path =
+        root.join("crates/excalidraw-render/src/generated/scene_surface_revision_1.rs");
+    let scene_policy = fs::read_to_string(&scene_policy_path)
+        .map_err(|error| format!("failed to read {}: {error}", scene_policy_path.display()))?;
+    if scene_policy != generated_scene_surface(&scene_surface)? {
+        return Err("generated scene-surface policy is stale".to_owned());
     }
 
     let bundle_path = base.join("LICENSE-BUNDLE.txt");
@@ -671,8 +787,228 @@ fn generate_rust(
     output.push_str("    provenance_identities: PROVENANCE_IDENTITIES,\n");
     output.push_str("    transformation_identities: TRANSFORMATION_IDENTITIES,\n");
     output.push_str("    license_identities: LICENSE_IDENTITIES,\n");
-    output.push_str("    assets: &ASSETS,\n};\n");
+    output.push_str("    assets: &ASSETS,\n");
+    output.push_str("};\n");
     Ok(output)
+}
+
+fn generated_scene_surface(scene_surface: &Value) -> Result<String, String> {
+    let mut output = String::from(
+        "// Generated by `cargo run --locked -p xtask -- catalog import`; do not edit.\n\n",
+    );
+    generate_scene_surface_rust(&mut output, scene_surface)?;
+    Ok(output)
+}
+
+fn generate_scene_surface_rust(output: &mut String, scene_surface: &Value) -> Result<(), String> {
+    output.push_str("#[rustfmt::skip]\nstatic SCENE_RECORD_POLICIES: &[SceneRecordPolicy] = &[\n");
+    for record in scene_surface["recordKinds"]
+        .as_array()
+        .ok_or_else(|| "scene-surface recordKinds must be an array".to_owned())?
+    {
+        output.push_str("    SceneRecordPolicy {\n");
+        rust_field(
+            output,
+            "identity",
+            string(record, "id", "scene record kind")?,
+        );
+        rust_string_values(
+            output,
+            "field_paths",
+            &record["fieldPaths"],
+            "scene record fieldPaths",
+        )?;
+        rust_string_values(
+            output,
+            "inherits",
+            &record["inherits"],
+            "scene record inherits",
+        )?;
+        output.push_str("    },\n");
+    }
+    output.push_str("];\n\n");
+
+    output.push_str("#[rustfmt::skip]\nstatic SCENE_FIELD_POLICIES: &[SceneFieldPolicy] = &[\n");
+    for (ordinal, field) in scene_surface["fieldDispositions"]
+        .as_array()
+        .ok_or_else(|| "scene-surface fieldDispositions must be an array".to_owned())?
+        .iter()
+        .enumerate()
+    {
+        let disposition = match string(field, "disposition", "scene field disposition")? {
+            "supported" => "SceneFieldDisposition::Supported",
+            "static-export-irrelevant" => "SceneFieldDisposition::StaticExportIrrelevant",
+            "opaque-metadata" => "SceneFieldDisposition::OpaqueMetadata",
+            other => return Err(format!("unknown scene field disposition {other}")),
+        };
+        output.push_str("    SceneFieldPolicy {\n");
+        for (rust_name, json_name) in [
+            ("record_kind", "recordKind"),
+            ("path", "path"),
+            ("accepted_domain", "acceptedDomain"),
+        ] {
+            rust_field(
+                output,
+                rust_name,
+                string(field, json_name, "scene field disposition")?,
+            );
+        }
+        output.push_str(&format!("        disposition: {disposition},\n"));
+        output.push_str(&format!(
+            "        required: {},\n",
+            field["required"]
+                .as_bool()
+                .ok_or_else(|| "scene field required must be a boolean".to_owned())?
+        ));
+        rust_field(
+            output,
+            "normalization",
+            string(field, "normalization", "scene field disposition")?,
+        );
+        rust_field(
+            output,
+            "participation",
+            string(&field["scope"], "participation", "scene field scope")?,
+        );
+        for name in ["formats", "options", "states"] {
+            rust_string_values(output, name, &field["scope"][name], "scene field scope")?;
+        }
+        generate_scene_field_fallback(output, "missing", &field["missing"])?;
+        generate_scene_field_fallback(output, "invalid", &field["invalid"])?;
+        output.push_str("        value_rules: &[\n");
+        for rule in field["valueRules"]
+            .as_array()
+            .ok_or_else(|| "scene field valueRules must be an array".to_owned())?
+        {
+            output.push_str("            SceneFieldValueRule {\n");
+            generate_optional_rust_string(output, "code", &rule["code"], 16)?;
+            generate_optional_rust_string(output, "recovery", &rule["recovery"], 16)?;
+            rust_json_field(output, "value_json", &rule["value"], 16)?;
+            rust_json_field(output, "format_rules_json", &rule["formatRules"], 16)?;
+            rust_field_indented(
+                output,
+                "when",
+                string(rule, "when", "scene field value rule")?,
+                16,
+            );
+            output.push_str("            },\n");
+        }
+        output.push_str("        ],\n");
+        output.push_str(&format!("        ordinal: {ordinal},\n"));
+        output.push_str("    },\n");
+    }
+    output.push_str("];\n\n");
+
+    output
+        .push_str("#[rustfmt::skip]\nstatic SCENE_ELEMENT_POLICIES: &[SceneElementPolicy] = &[\n");
+    for element in scene_surface["elementKinds"]
+        .as_array()
+        .ok_or_else(|| "scene-surface elementKinds must be an array".to_owned())?
+    {
+        output.push_str("    SceneElementPolicy {\n");
+        for (rust_name, json_name) in [
+            ("kind", "kind"),
+            ("record_kind", "recordKind"),
+            ("status", "status"),
+        ] {
+            rust_field(
+                output,
+                rust_name,
+                string(element, json_name, "scene element kind")?,
+            );
+        }
+        rust_string_values(
+            output,
+            "ignored_inherited_paths",
+            &element["ignoredInheritedPaths"],
+            "scene element ignoredInheritedPaths",
+        )?;
+        output.push_str("    },\n");
+    }
+    output.push_str("];\n\n");
+
+    rust_str_array(
+        output,
+        "SCENE_DIAGNOSTIC_CODES",
+        &ids(scene_surface, "registryMappings", "code")?,
+    );
+    output.push_str(
+        "pub(crate) static SCENE_SURFACE_POLICY: SceneSurfacePolicy = SceneSurfacePolicy {\n",
+    );
+    output.push_str("    record_kinds: SCENE_RECORD_POLICIES,\n");
+    output.push_str("    fields: SCENE_FIELD_POLICIES,\n");
+    output.push_str("    element_kinds: SCENE_ELEMENT_POLICIES,\n");
+    output.push_str("    diagnostic_codes: SCENE_DIAGNOSTIC_CODES,\n");
+    output.push_str("};\n\n");
+    Ok(())
+}
+
+fn generate_scene_field_fallback(
+    output: &mut String,
+    name: &str,
+    fallback: &Value,
+) -> Result<(), String> {
+    output.push_str(&format!("        {name}: SceneFieldFallback {{\n"));
+    rust_field_indented(
+        output,
+        "action",
+        string(fallback, "action", "scene field fallback")?,
+        12,
+    );
+    for field in ["code", "recovery", "recipe"] {
+        generate_optional_rust_string(output, field, &fallback[field], 12)?;
+    }
+    rust_string_values(
+        output,
+        "effects",
+        &fallback["effects"],
+        "scene field fallback effects",
+    )?;
+    rust_json_field(output, "value_json", &fallback["value"], 12)?;
+    rust_json_field(output, "format_rules_json", &fallback["formatRules"], 12)?;
+    output.push_str("            format_recoveries: [");
+    for format in ["svg", "png", "pdf"] {
+        match fallback["formatRules"][format]["recovery"].as_str() {
+            Some(recovery) => output.push_str(&format!("Some({recovery:?}),")),
+            None => output.push_str("None,"),
+        }
+    }
+    output.push_str("],\n");
+    rust_field_indented(
+        output,
+        "when",
+        string(fallback, "when", "scene field fallback")?,
+        12,
+    );
+    output.push_str("        },\n");
+    Ok(())
+}
+
+fn generate_optional_rust_string(
+    output: &mut String,
+    name: &str,
+    value: &Value,
+    indent: usize,
+) -> Result<(), String> {
+    output.push_str(&format!("{:indent$}{name}: ", ""));
+    match value.as_str() {
+        Some(value) => output.push_str(&format!("Some({value:?}),\n")),
+        None if value.is_null() => output.push_str("None,\n"),
+        None => return Err(format!("scene policy {name} must be string or null")),
+    }
+    Ok(())
+}
+
+fn rust_json_field(
+    output: &mut String,
+    name: &str,
+    value: &Value,
+    indent: usize,
+) -> Result<(), String> {
+    let value = serde_json::to_string(value)
+        .map_err(|error| format!("failed to serialize scene policy {name}: {error}"))?;
+    rust_field_indented(output, name, &value, indent);
+    Ok(())
 }
 
 fn verify_catalog_schema(base: &Path, catalog: &Value) -> Result<(), String> {
@@ -873,9 +1209,17 @@ fn verify_scene_surface(root: &Path, manifest: &Value) -> Result<(), String> {
     let notices = unique_ids(manifest, "noticeCatalog", "id")?;
     let recipes = unique_ids(manifest, "fallbackRecipes", "recipeId")?;
     let registry_codes = unique_ids(manifest, "registryMappings", "code")?;
-    unique_composite_ids(manifest, "fieldDispositions", "recordKind", "path")?;
-    unique_ids(manifest, "recordKinds", "id")?;
-    unique_ids(manifest, "elementKinds", "kind")?;
+    let field_identities =
+        unique_composite_ids(manifest, "fieldDispositions", "recordKind", "path")?;
+    let record_kinds = unique_ids(manifest, "recordKinds", "id")?;
+    let element_kinds = unique_ids(manifest, "elementKinds", "kind")?;
+    verify_scene_surface_coverage(
+        manifest,
+        &field_identities,
+        &record_kinds,
+        &element_kinds,
+        &registry_codes,
+    )?;
     let renderer_recipes = manifest["rendererOwnedRecipeReferences"]
         .as_array()
         .ok_or_else(|| "renderer-owned recipe references must be an array".to_owned())?
@@ -897,6 +1241,16 @@ fn verify_scene_surface(root: &Path, manifest: &Value) -> Result<(), String> {
         .keys()
         .map(String::as_str)
         .collect::<BTreeSet<_>>();
+    let implemented_domains = IMPLEMENTED_DOMAIN_IDS
+        .iter()
+        .copied()
+        .collect::<BTreeSet<_>>();
+    if implemented_domains.len() != IMPLEMENTED_DOMAIN_IDS.len() || implemented_domains != domains {
+        return Err(
+            "scene-surface domains have missing, unknown, or duplicate implementation ownership"
+                .to_owned(),
+        );
+    }
     for source in manifest["sourceCatalog"].as_array().unwrap() {
         let id = string(source, "id", "source")?;
         let url = string(source, "url", "source")?;
@@ -1041,6 +1395,156 @@ fn verify_scene_surface(root: &Path, manifest: &Value) -> Result<(), String> {
             .is_none_or(|snapshots| snapshots.len() != 5)
     {
         return Err("scene-surface focused evidence inventory is incomplete".to_owned());
+    }
+    Ok(())
+}
+
+fn verify_scene_surface_coverage(
+    manifest: &Value,
+    field_identities: &BTreeSet<String>,
+    record_kinds: &BTreeSet<&str>,
+    element_kinds: &BTreeSet<&str>,
+    registry_codes: &BTreeSet<&str>,
+) -> Result<(), String> {
+    let coverage_records = strings(&manifest["coverage"]["recordKinds"], "coverage.recordKinds")?
+        .into_iter()
+        .collect::<BTreeSet<_>>();
+    if coverage_records != *record_kinds {
+        return Err(
+            "scene-surface record-kind coverage has missing or unknown identities".to_owned(),
+        );
+    }
+    let coverage_elements = strings(
+        &manifest["coverage"]["elementKinds"],
+        "coverage.elementKinds",
+    )?
+    .into_iter()
+    .collect::<BTreeSet<_>>();
+    if coverage_elements != *element_kinds {
+        return Err(
+            "scene-surface element-kind coverage has missing or unknown identities".to_owned(),
+        );
+    }
+    if manifest["coverage"]["fieldDispositionCount"].as_u64()
+        != Some(u64::try_from(field_identities.len()).unwrap_or(u64::MAX))
+    {
+        return Err("scene-surface field-disposition coverage count is stale".to_owned());
+    }
+
+    let records = manifest["recordKinds"]
+        .as_array()
+        .ok_or_else(|| "recordKinds must be an array".to_owned())?;
+    let record_index = records
+        .iter()
+        .map(|record| Ok((string(record, "id", "record kind")?, record)))
+        .collect::<Result<BTreeMap<_, _>, String>>()?;
+    fn visit_record<'a>(
+        identity: &'a str,
+        records: &BTreeMap<&'a str, &'a Value>,
+        visiting: &mut BTreeSet<&'a str>,
+        visited: &mut BTreeSet<&'a str>,
+    ) -> Result<(), String> {
+        if visited.contains(identity) {
+            return Ok(());
+        }
+        if !visiting.insert(identity) {
+            return Err(format!(
+                "scene-surface record inheritance contains a cycle at {identity}"
+            ));
+        }
+        let record = records
+            .get(identity)
+            .ok_or_else(|| format!("unknown inherited record kind {identity}"))?;
+        for inherited in strings(&record["inherits"], "record kind inherits")? {
+            visit_record(inherited, records, visiting, visited)?;
+        }
+        visiting.remove(identity);
+        visited.insert(identity);
+        Ok(())
+    }
+    let mut visited_records = BTreeSet::new();
+    for identity in record_index.keys().copied() {
+        visit_record(
+            identity,
+            &record_index,
+            &mut BTreeSet::new(),
+            &mut visited_records,
+        )?;
+    }
+    let mut declared_fields = BTreeSet::new();
+    for record in records {
+        let identity = string(record, "id", "record kind")?;
+        for inherited in strings(&record["inherits"], "record kind inherits")? {
+            if !record_index.contains_key(inherited) {
+                return Err(format!(
+                    "record kind {identity} inherits unknown record {inherited}"
+                ));
+            }
+        }
+        let mut direct_paths = BTreeSet::new();
+        for path in strings(&record["fieldPaths"], "record kind fieldPaths")? {
+            if !direct_paths.insert(path) {
+                return Err(format!(
+                    "record kind {identity} owns field path {path} twice"
+                ));
+            }
+            declared_fields.insert(format!("{identity}:{path}"));
+        }
+    }
+    if declared_fields != *field_identities {
+        return Err(
+            "scene-surface fields have a missing disposition, unknown identity, or duplicate owner"
+                .to_owned(),
+        );
+    }
+
+    for element in manifest["elementKinds"].as_array().unwrap() {
+        let kind = string(element, "kind", "element kind")?;
+        let record_kind = string(element, "recordKind", "element kind")?;
+        if !record_index.contains_key(record_kind) {
+            return Err(format!(
+                "element kind {kind} references unknown record kind {record_kind}"
+            ));
+        }
+        let mut inherited_paths = BTreeSet::new();
+        let mut pending = strings(
+            &record_index[record_kind]["inherits"],
+            "record kind inherits",
+        )?;
+        let mut visited = BTreeSet::new();
+        while let Some(inherited) = pending.pop() {
+            if !visited.insert(inherited) {
+                continue;
+            }
+            let record = record_index[inherited];
+            inherited_paths.extend(strings(
+                &record["fieldPaths"],
+                "inherited record fieldPaths",
+            )?);
+            pending.extend(strings(&record["inherits"], "record kind inherits")?);
+        }
+        let mut ignored = BTreeSet::new();
+        for path in strings(
+            &element["ignoredInheritedPaths"],
+            "element kind ignoredInheritedPaths",
+        )? {
+            if !ignored.insert(path) || !inherited_paths.contains(path) {
+                return Err(format!(
+                    "element kind {kind} ignores duplicate or unknown inherited path {path}"
+                ));
+            }
+        }
+    }
+
+    let implemented = IMPLEMENTED_DIAGNOSTIC_CODES
+        .iter()
+        .copied()
+        .collect::<BTreeSet<_>>();
+    if implemented.len() != IMPLEMENTED_DIAGNOSTIC_CODES.len() || implemented != *registry_codes {
+        return Err(
+            "scene-surface diagnostic registry has missing, unknown, or duplicate implementation ownership"
+                .to_owned(),
+        );
     }
     Ok(())
 }
@@ -1410,7 +1914,7 @@ fn unique_composite_ids(
     array: &str,
     first: &str,
     second: &str,
-) -> Result<(), String> {
+) -> Result<BTreeSet<String>, String> {
     let values = value[array]
         .as_array()
         .ok_or_else(|| format!("{array} must be an array"))?;
@@ -1429,7 +1933,7 @@ fn unique_composite_ids(
             "{array} contains duplicate {first}/{second} identities"
         ));
     }
-    Ok(())
+    Ok(identities)
 }
 
 fn strings<'a>(value: &'a Value, name: &str) -> Result<Vec<&'a str>, String> {
@@ -1469,10 +1973,92 @@ fn rust_field_indented(output: &mut String, name: &str, value: &str, indent: usi
     output.push_str(&format!("{:indent$}{name}: {value:?},\n", ""));
 }
 
+fn rust_string_values(
+    output: &mut String,
+    field: &str,
+    values: &Value,
+    subject: &str,
+) -> Result<(), String> {
+    let values = values
+        .as_array()
+        .ok_or_else(|| format!("{subject} must be an array"))?;
+    output.push_str(&format!("        {field}: &["));
+    for value in values {
+        let value = value
+            .as_str()
+            .ok_or_else(|| format!("{subject} values must be strings"))?;
+        output.push_str(&format!("{value:?},"));
+    }
+    output.push_str("],\n");
+    Ok(())
+}
+
 fn rust_str_array(output: &mut String, name: &str, values: &[String]) {
     output.push_str(&format!("#[rustfmt::skip]\nstatic {name}: &[&str] = &[\n"));
     for value in values {
         output.push_str(&format!("    {value:?},\n"));
     }
     output.push_str("];\n\n");
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{json, Value};
+
+    use super::verify_scene_surface;
+
+    fn manifest() -> Value {
+        serde_json::from_slice(include_bytes!(
+            "../../tests/oracle/scene-surfaces/revision-1.json"
+        ))
+        .expect("approved scene-surface manifest is valid JSON")
+    }
+
+    fn assert_rejected(mut manifest: Value, mutate: impl FnOnce(&mut Value)) {
+        mutate(&mut manifest);
+        let error = verify_scene_surface(&crate::conformance::repo_root(), &manifest)
+            .expect_err("mutated coverage must fail closed");
+        assert!(!error.is_empty());
+    }
+
+    #[test]
+    fn scene_surface_rejects_unknown_field_identity() {
+        assert_rejected(manifest(), |manifest| {
+            manifest["fieldDispositions"][0]["path"] = json!("/unknown");
+        });
+    }
+
+    #[test]
+    fn scene_surface_rejects_missing_disposition() {
+        assert_rejected(manifest(), |manifest| {
+            manifest["fieldDispositions"]
+                .as_array_mut()
+                .expect("field dispositions are an array")
+                .pop();
+        });
+    }
+
+    #[test]
+    fn scene_surface_rejects_duplicate_ownership() {
+        assert_rejected(manifest(), |manifest| {
+            let first_record = manifest["fieldDispositions"][0]["recordKind"].clone();
+            let first_path = manifest["fieldDispositions"][0]["path"].clone();
+            manifest["fieldDispositions"][1]["recordKind"] = first_record;
+            manifest["fieldDispositions"][1]["path"] = first_path;
+        });
+    }
+
+    #[test]
+    fn scene_surface_rejects_unresolved_coverage() {
+        assert_rejected(manifest(), |manifest| {
+            manifest["coverage"]["unresolved"] = json!(["future field"]);
+        });
+    }
+
+    #[test]
+    fn scene_surface_rejects_record_inheritance_cycles() {
+        assert_rejected(manifest(), |manifest| {
+            manifest["recordKinds"][0]["inherits"] = json!(["scene"]);
+        });
+    }
 }

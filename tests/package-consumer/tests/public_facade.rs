@@ -1,4 +1,6 @@
-use excalidraw_render::{license_bundle, OutputFormat, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{
+    license_bundle, DiagnosticCode, OutputFormat, RenderRequest, Renderer, SceneDocument,
+};
 use sha2::{Digest, Sha256};
 
 #[cfg(target_arch = "wasm32")]
@@ -59,6 +61,31 @@ fn packaged_public_facade_exposes_the_exact_license_bundle() {
         format!("{:x}", Sha256::digest(bundle.as_bytes())),
         LICENSE_BUNDLE_SHA256
     );
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn packaged_public_facade_enforces_the_frozen_scene_surface() {
+    let scene = SceneDocument::parse(
+        br#"{"type":"excalidraw","version":2,"libraryItems":{"deep":{"future":true}},"unknown":{"deep":{"future":true}},"elements":[],"appState":{},"files":{}}"#,
+    )
+    .expect("the forward-compatibility scene is admitted");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("the default request is valid");
+
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("an ignored property retains a meaningful empty artifact");
+
+    let [diagnostic] = outcome.report().diagnostics() else {
+        panic!("the unknown subtree is one policy occurrence");
+    };
+    assert_eq!(
+        diagnostic.code(),
+        DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY
+    );
+    assert_eq!(diagnostic.json_pointer(), "/unknown");
 }
 
 fn render_round<'a>(

@@ -26,6 +26,20 @@ use self::{pdf::PdfPlan, png::PngPlan, svg::SvgPlan};
 const RECTANGLE_GEOMETRY_SEGMENTS: u64 = 16;
 const RECTANGLE_GEOMETRY_WORK_UNITS: u64 = RECTANGLE_GEOMETRY_SEGMENTS * 32;
 
+fn surface_diagnostic_preflight_limit(request: &RenderRequest) -> usize {
+    let limits = request.resource_limits();
+    let diagnostic_limit = u64::from(limits.max_diagnostics()).saturating_add(1);
+    let working_limit = limits
+        .max_working_bytes()
+        .saturating_div(512)
+        .saturating_add(1);
+    let work_limit = limits
+        .max_total_work_units()
+        .saturating_div(8)
+        .saturating_add(1);
+    usize::try_from(diagnostic_limit.min(working_limit).min(work_limit)).unwrap_or(usize::MAX)
+}
+
 pub(super) enum FormatEncodeError {
     Encoding(String),
     MemoryUnavailable {
@@ -48,7 +62,7 @@ pub(crate) fn render(
         catalog.asset_catalog().reference_profile_digest,
         profile.profile_digest()
     );
-    let mut session = RenderSession::new(profile, scene, request);
+    let mut session = RenderSession::new(profile, catalog.scene_surface(), scene, request);
     session.render(scene, request)
 }
 
@@ -58,13 +72,19 @@ fn render_with_trace(
     scene: &SceneDocument,
     request: &RenderRequest,
 ) -> (Result<RenderOutcome, RenderError>, Vec<u8>) {
-    let mut session = RenderSession::new_with_trace(profile, scene, request);
+    let mut session = RenderSession::new_with_trace(
+        profile,
+        crate::catalog::REVISION_1.scene_surface(),
+        scene,
+        request,
+    );
     let result = session.render(scene, request);
     (result, session.meter.trace_bytes())
 }
 
 struct RenderSession {
     profile: &'static ReferenceProfileIdentity,
+    scene_surface: &'static crate::scene_surface::SceneSurfacePolicy,
     report: CompatibilityReport,
     meter: ResourceMeter,
     staged_output: Option<Vec<u8>>,
@@ -81,11 +101,13 @@ struct DiagnosticOwnership<'a> {
 impl RenderSession {
     fn new(
         profile: &'static ReferenceProfileIdentity,
+        scene_surface: &'static crate::scene_surface::SceneSurfacePolicy,
         scene: &SceneDocument,
         request: &RenderRequest,
     ) -> Self {
         Self {
             profile,
+            scene_surface,
             report: CompatibilityReport::empty(),
             meter: ResourceMeter::new(request.resource_limits()),
             staged_output: None,
@@ -96,11 +118,13 @@ impl RenderSession {
     #[cfg(test)]
     fn new_with_trace(
         profile: &'static ReferenceProfileIdentity,
+        scene_surface: &'static crate::scene_surface::SceneSurfacePolicy,
         scene: &SceneDocument,
         request: &RenderRequest,
     ) -> Self {
         Self {
             profile,
+            scene_surface,
             report: CompatibilityReport::empty(),
             meter: ResourceMeter::with_trace(profile, scene, request),
             staged_output: None,
@@ -169,9 +193,11 @@ impl RenderSession {
             let normalization = crate::normalization::normalize_scene_with_assets(
                 scene,
                 self.profile.compatibility_revision(),
+                self.scene_surface,
                 request.format(),
                 request.supplemental_assets(),
                 request.frame_options().enabled() && request.frame_options().name(),
+                surface_diagnostic_preflight_limit(request),
                 |event| match event {
                     NormalizationEvent::PreflightRecord {
                         event,
@@ -264,6 +290,13 @@ impl RenderSession {
                     "/elements",
                 )
             })?;
+            if normalization.has_unrendered_content {
+                return Err(self.internal_failure(
+                    request.format(),
+                    "scene content awaits the compatibility fallback rendering slice",
+                    "/elements",
+                ));
+            }
             let semantic_record_count = normalization
                 .elements
                 .len()
@@ -853,9 +886,16 @@ impl RenderSession {
     fn take_report(&mut self) -> CompatibilityReport {
         self.report.diagnostics.sort_unstable_by(|left, right| {
             left.order
-                .cmp(&right.order)
+                .owner_index
+                .cmp(&right.order.owner_index)
+                .then_with(|| left.order.source_position.cmp(&right.order.source_position))
                 .then_with(|| left.json_pointer.cmp(&right.json_pointer))
                 .then_with(|| left.code.as_str().cmp(right.code.as_str()))
+                .then_with(|| {
+                    left.order
+                        .retention_ordinal
+                        .cmp(&right.order.retention_ordinal)
+                })
         });
         std::mem::take(&mut self.report)
     }
@@ -1618,7 +1658,12 @@ mod tests {
             let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
                 .expect("revision 1 exists");
             let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
-            let mut session = RenderSession::new(profile, &scene, &request);
+            let mut session = RenderSession::new(
+                profile,
+                crate::catalog::REVISION_1.scene_surface(),
+                &scene,
+                &request,
+            );
             let diagnostic = test_diagnostic();
 
             session
@@ -1659,7 +1704,12 @@ mod tests {
         let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
         let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
             .expect("revision 1 exists");
-        let mut session = RenderSession::new(profile, &scene, &request);
+        let mut session = RenderSession::new(
+            profile,
+            crate::catalog::REVISION_1.scene_surface(),
+            &scene,
+            &request,
+        );
         let diagnostic = test_diagnostic();
         session
             .retain_diagnostic(
@@ -1689,7 +1739,12 @@ mod tests {
         let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
         let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
             .expect("revision 1 exists");
-        let mut session = RenderSession::new_with_trace(profile, &scene, &request);
+        let mut session = RenderSession::new_with_trace(
+            profile,
+            crate::catalog::REVISION_1.scene_surface(),
+            &scene,
+            &request,
+        );
 
         session
             .retain_diagnostic(
@@ -1936,7 +1991,12 @@ mod tests {
         let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
             .expect("revision 1 exists");
         let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
-        let mut session = RenderSession::new(profile, &scene, &request);
+        let mut session = RenderSession::new(
+            profile,
+            crate::catalog::REVISION_1.scene_surface(),
+            &scene,
+            &request,
+        );
         let mut passes = 0;
 
         let error = session

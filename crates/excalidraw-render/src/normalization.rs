@@ -172,6 +172,7 @@ pub(crate) struct NormalizationOutcome {
     pub(crate) elements: Vec<NormalizedElement>,
     pub(crate) frame_rendering: NormalizedFrameRendering,
     pub(crate) files: Vec<NormalizedFileRecord>,
+    pub(crate) has_unrendered_content: bool,
 }
 
 pub(crate) enum NormalizationEvent<'a> {
@@ -253,6 +254,7 @@ enum IdentityPlan<'a> {
     Retained(&'a str),
     Duplicate(&'a str),
     Missing,
+    Invalid,
 }
 
 struct PendingElement<'a> {
@@ -288,6 +290,13 @@ impl SourceDiagnosticPosition {
     }
 }
 
+fn nested_path_ordinal(first: usize, second: usize) -> usize {
+    first
+        .saturating_add(1)
+        .saturating_mul(usize::from(u16::MAX) + 1)
+        .saturating_add(second.saturating_add(1))
+}
+
 type ElementDiagnostic = (SourceDiagnosticPosition, CompatibilityDiagnostic);
 
 struct ElementDiagnosticContext<'a, 'scene> {
@@ -296,6 +305,8 @@ struct ElementDiagnosticContext<'a, 'scene> {
     element_pointer: &'a str,
     element_id: &'a str,
     format: OutputFormat,
+    policy: &'static crate::scene_surface::SceneSurfacePolicy,
+    diagnostic_limit: usize,
 }
 
 #[derive(Clone, Copy)]
@@ -305,6 +316,10 @@ struct NormalizationParticipation {
 }
 
 impl ElementDiagnosticContext<'_, '_> {
+    fn can_retain(&self) -> bool {
+        self.diagnostics.len() < self.diagnostic_limit
+    }
+
     fn unsupported(
         &mut self,
         field: &str,
@@ -312,11 +327,34 @@ impl ElementDiagnosticContext<'_, '_> {
         recovery: Recovery,
         recipe_id: Option<&str>,
     ) -> Result<(), TryReserveError> {
+        if !self.can_retain() {
+            return Ok(());
+        }
         let pointer = pointer_child(self.element_pointer, field)?;
+        let semantic_path = pointer_child("", field)?;
+        let manifested = crate::scene_surface::manifested_element_field(
+            self.policy,
+            self.source.kind.scene_surface_kind(),
+            &semantic_path,
+        );
+        let manifested_effects = manifested
+            .map(|field| manifested_effects(field.invalid.effects))
+            .transpose()?;
+        let code = manifested
+            .and_then(|field| field.invalid.code)
+            .map(DiagnosticCode::manifested)
+            .unwrap_or(DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE);
+        let recovery = manifested
+            .and_then(|field| field.invalid.recovery)
+            .and_then(manifested_recovery)
+            .unwrap_or(recovery);
+        let recipe_id = manifested
+            .and_then(|field| field.invalid.recipe)
+            .or(recipe_id);
         let diagnostic = compatibility_diagnostic(
-            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+            code,
             self.format,
-            effects,
+            manifested_effects.as_deref().unwrap_or(effects),
             Some(self.element_id),
             &pointer,
             "unsupported property value used its revision-1 recovery",
@@ -339,6 +377,9 @@ impl ElementDiagnosticContext<'_, '_> {
         effects: &[DiagnosticEffect],
         recovery: Recovery,
     ) -> Result<(), TryReserveError> {
+        if !self.can_retain() {
+            return Ok(());
+        }
         let mut pointer =
             pointer_child(&pointer_child(self.element_pointer, field)?, nested_field)?;
         if let Some(component) = component {
@@ -363,6 +404,120 @@ impl ElementDiagnosticContext<'_, '_> {
         ));
         Ok(())
     }
+
+    fn unsupported_property_nested(
+        &mut self,
+        field: &str,
+        nested_field: &str,
+        nested_position: usize,
+    ) -> Result<(), TryReserveError> {
+        if !self.can_retain() {
+            return Ok(());
+        }
+        let pointer = pointer_child(&pointer_child(self.element_pointer, field)?, nested_field)?;
+        let diagnostic = compatibility_diagnostic(
+            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+            self.format,
+            &[
+                DiagnosticEffect::Visual,
+                DiagnosticEffect::Semantic,
+                DiagnosticEffect::Metadata,
+            ],
+            Some(self.element_id),
+            &pointer,
+            "unmatched nested property was ignored by the revision-1 scene-surface policy",
+            DiagnosticRecovery::new(Recovery::Ignored, None),
+        )?;
+        self.diagnostics.try_reserve(1)?;
+        self.diagnostics.push((
+            SourceDiagnosticPosition::nested(
+                self.source.member_position(field).unwrap_or(usize::MAX),
+                nested_position,
+            ),
+            diagnostic,
+        ));
+        Ok(())
+    }
+
+    fn unsupported_property_at(
+        &mut self,
+        field: &str,
+        nested_position: usize,
+        pointer: &str,
+    ) -> Result<(), TryReserveError> {
+        if !self.can_retain() {
+            return Ok(());
+        }
+        let diagnostic = compatibility_diagnostic(
+            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+            self.format,
+            &[
+                DiagnosticEffect::Visual,
+                DiagnosticEffect::Semantic,
+                DiagnosticEffect::Metadata,
+            ],
+            Some(self.element_id),
+            pointer,
+            "unmatched nested property was ignored by the revision-1 scene-surface policy",
+            DiagnosticRecovery::new(Recovery::Ignored, None),
+        )?;
+        self.diagnostics.try_reserve(1)?;
+        self.diagnostics.push((
+            SourceDiagnosticPosition::nested(
+                self.source.member_position(field).unwrap_or(usize::MAX),
+                nested_position,
+            ),
+            diagnostic,
+        ));
+        Ok(())
+    }
+
+    fn missing_image_file(
+        &mut self,
+        file_id: Option<&str>,
+        status: NormalizedImageStatus,
+    ) -> Result<(), TryReserveError> {
+        if !self.can_retain() {
+            return Ok(());
+        }
+        let pointer = pointer_child(self.element_pointer, "fileId")?;
+        let (recovery, recipe_id) = match self.format {
+            OutputFormat::Png => (
+                Recovery::Placeholder,
+                Some(match status {
+                    NormalizedImageStatus::Error => "official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9",
+                    NormalizedImageStatus::Pending | NormalizedImageStatus::Saved => "official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d",
+                }),
+            ),
+            OutputFormat::Svg | OutputFormat::Pdf => (Recovery::Omitted, None),
+        };
+        let asset_id = file_id.unwrap_or("");
+        let diagnostic = CompatibilityDiagnostic {
+            code: DiagnosticCode::IMAGE_MISSING_FILE,
+            severity: DiagnosticSeverity::Warning,
+            format: self.format,
+            effects: manifested_effects(&["visual"])?,
+            element_id: Some(try_owned(self.element_id)?),
+            json_pointer: pointer,
+            message: try_owned("image reference had no authoritative file payload")?,
+            details: Some(Box::new(ErrorDetails::Asset {
+                asset_id: try_owned(asset_id)?,
+                claimed_media_type: None,
+                validated_media_type: None,
+                recovery,
+                recipe_id: recipe_id.map(try_owned).transpose()?,
+            })),
+            order: DiagnosticOrder::default(),
+        };
+        self.diagnostics.try_reserve(1)?;
+        self.diagnostics.push((
+            SourceDiagnosticPosition::top(
+                self.source.member_position("fileId").unwrap_or(usize::MAX),
+            ),
+            diagnostic,
+        ));
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -372,41 +527,80 @@ pub(crate) fn normalize_scene<E>(
     format: OutputFormat,
     observe: impl FnMut(NormalizationEvent<'_>) -> Result<(), E>,
 ) -> Result<Option<NormalizationOutcome>, NormalizationError<E>> {
-    normalize_scene_impl(scene, revision, format, true, |_| false, observe)
+    let Some(policy) =
+        crate::catalog::for_revision(revision).map(|catalog| catalog.scene_surface())
+    else {
+        return Ok(None);
+    };
+    normalize_scene_impl(
+        scene,
+        revision,
+        policy,
+        format,
+        true,
+        usize::MAX,
+        |_| false,
+        observe,
+    )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn normalize_scene_with_assets<E>(
     scene: &SceneDocument,
     revision: CompatibilityRevision,
+    policy: &'static crate::scene_surface::SceneSurfacePolicy,
     format: OutputFormat,
     supplemental_assets: &SupplementalAssets,
     frame_names: bool,
+    surface_diagnostic_limit: usize,
     observe: impl FnMut(NormalizationEvent<'_>) -> Result<(), E>,
 ) -> Result<Option<NormalizationOutcome>, NormalizationError<E>> {
     normalize_scene_impl(
         scene,
         revision,
+        policy,
         format,
         frame_names,
+        surface_diagnostic_limit,
         |file_id| supplemental_assets.get(file_id).is_some(),
         observe,
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn normalize_scene_impl<E>(
     scene: &SceneDocument,
     revision: CompatibilityRevision,
+    policy: &'static crate::scene_surface::SceneSurfacePolicy,
     format: OutputFormat,
     requested_frame_names: bool,
+    surface_diagnostic_limit: usize,
     has_supplemental_file: impl Fn(&str) -> bool,
     mut observe: impl FnMut(NormalizationEvent<'_>) -> Result<(), E>,
 ) -> Result<Option<NormalizationOutcome>, NormalizationError<E>> {
-    let (frame_rendering, frame_diagnostics) =
-        normalize_frame_rendering(scene.frame_rendering(), format)?;
     let frame_names = requested_frame_names;
     let element_count = scene.element_occurrence_count();
     let mut pending_events = Vec::new();
     pending_events.try_reserve(element_count.saturating_add(2))?;
+    let surface = crate::scene_surface::classify(
+        scene,
+        policy,
+        format,
+        requested_frame_names,
+        surface_diagnostic_limit,
+    )?;
+    let mut planned_diagnostic_count = surface.diagnostics.len();
+    for surface_diagnostic in surface.diagnostics {
+        push_pending_event(
+            &mut pending_events,
+            surface_diagnostic.source_order,
+            PendingNormalizationEventKind::Diagnostic {
+                diagnostic: surface_diagnostic.diagnostic,
+                local_owner: surface_diagnostic.local_owner,
+                source_position: surface_diagnostic.source_position,
+            },
+        )?;
+    }
     let mut pending = Vec::new();
     pending.try_reserve_exact(element_count)?;
 
@@ -415,15 +609,16 @@ fn normalize_scene_impl<E>(
             continue;
         }
         let Some(source) = scene.element_at(index) else {
-            return Ok(None);
+            continue;
         };
-        let Some(is_deleted) = defaulted(source.is_deleted, false) else {
-            return Ok(None);
+        let is_deleted = match source.is_deleted {
+            SourceField::Value(value) => value,
+            SourceField::Missing | SourceField::Invalid => false,
         };
         if is_deleted {
             continue;
         }
-        let Some(fields) = element_fields(&source) else {
+        let Some(fields) = element_fields(&source, policy) else {
             return Ok(None);
         };
         let focused_rectangle_compatible = matches!(source.kind, ElementKind::Rectangle)
@@ -442,12 +637,34 @@ fn normalize_scene_impl<E>(
     let mut referenced_file_ids = Vec::new();
     referenced_file_ids.try_reserve_exact(pending.len())?;
     for element in &pending {
-        if let SourceField::Value(Some(file_id)) = element.source.file_id {
-            referenced_file_ids.push(file_id);
+        if matches!(element.source.kind, ElementKind::Image) {
+            if let SourceField::Value(Some(file_id)) = element.source.file_id {
+                referenced_file_ids.push(file_id);
+            }
         }
     }
     referenced_file_ids.sort_unstable();
     referenced_file_ids.dedup();
+    let file_surface_diagnostics = crate::scene_surface::classify_referenced_files(
+        scene,
+        policy,
+        &referenced_file_ids,
+        format,
+        surface_diagnostic_limit.saturating_sub(planned_diagnostic_count),
+    )?;
+    planned_diagnostic_count =
+        planned_diagnostic_count.saturating_add(file_surface_diagnostics.len());
+    for surface_diagnostic in file_surface_diagnostics {
+        push_pending_event(
+            &mut pending_events,
+            surface_diagnostic.source_order,
+            PendingNormalizationEventKind::Diagnostic {
+                diagnostic: surface_diagnostic.diagnostic,
+                local_owner: surface_diagnostic.local_owner,
+                source_position: surface_diagnostic.source_position,
+            },
+        )?;
+    }
 
     let mut scene_file_ids = Vec::new();
     scene_file_ids.try_reserve_exact(scene.file_record_count())?;
@@ -457,6 +674,27 @@ fn normalize_scene_impl<E>(
         }
     }
     scene_file_ids.sort_unstable();
+    for file_id in &referenced_file_ids {
+        if planned_diagnostic_count >= surface_diagnostic_limit {
+            break;
+        }
+        if scene_file_ids.binary_search(file_id).is_ok() && has_supplemental_file(file_id) {
+            if let Some(surface_diagnostic) =
+                crate::scene_surface::supplement_conflict(scene, file_id, format)?
+            {
+                push_pending_event(
+                    &mut pending_events,
+                    surface_diagnostic.source_order,
+                    PendingNormalizationEventKind::Diagnostic {
+                        diagnostic: surface_diagnostic.diagnostic,
+                        local_owner: surface_diagnostic.local_owner,
+                        source_position: surface_diagnostic.source_position,
+                    },
+                )?;
+                planned_diagnostic_count = planned_diagnostic_count.saturating_add(1);
+            }
+        }
+    }
 
     let mut source_indices = Vec::new();
     source_indices.try_reserve_exact(pending.len())?;
@@ -504,7 +742,7 @@ fn normalize_scene_impl<E>(
         };
 
         let identity_plan = match source.id {
-            SourceField::Value("") | SourceField::Invalid => return Ok(None),
+            SourceField::Value("") | SourceField::Invalid => IdentityPlan::Invalid,
             SourceField::Value(id) if used_ids.iter().any(|used| used == id) => {
                 IdentityPlan::Duplicate(id)
             }
@@ -513,7 +751,9 @@ fn normalize_scene_impl<E>(
         };
         let normalized_id_bytes = match identity_plan {
             IdentityPlan::Retained(id) => id.len(),
-            IdentityPlan::Duplicate(_) | IdentityPlan::Missing => GENERATED_ID_BYTES,
+            IdentityPlan::Duplicate(_) | IdentityPlan::Missing | IdentityPlan::Invalid => {
+                GENERATED_ID_BYTES
+            }
         };
         let normalization_work_units = NORMALIZATION_WORK_UNITS.saturating_add(8).saturating_add(
             source
@@ -575,48 +815,73 @@ fn normalize_scene_impl<E>(
                 ));
                 id
             }
+            IdentityPlan::Invalid => {
+                let canonical_element = memory_at_source!(source.canonical_element_bytes());
+                let id = memory_at_source!(generated_element_id(
+                    revision,
+                    u64::try_from(index).unwrap_or(u64::MAX),
+                    &canonical_element,
+                ));
+                let id = memory_at_source!(unique_generated_id(
+                    id,
+                    revision,
+                    u64::try_from(index).unwrap_or(u64::MAX),
+                    &used_ids,
+                ));
+                id_diagnostic = Some((
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                    "invalid element identity was repaired deterministically",
+                ));
+                id
+            }
         };
+        let element_diagnostic_limit =
+            surface_diagnostic_limit.saturating_sub(planned_diagnostic_count);
         let mut element_diagnostics = Vec::new();
         memory_at_source!(element_diagnostics.try_reserve_exact(16));
-        if let Some((code, message)) = id_diagnostic {
-            let pointer = memory_at_source!(pointer_child(&element_pointer, "id"));
-            let diagnostic = memory_at_source!(repair_diagnostic(
-                code,
-                format,
-                &[DiagnosticEffect::InputRepair],
-                &id,
-                &pointer,
-                message,
-            ));
-            element_diagnostics.push((
-                SourceDiagnosticPosition::top(source.member_position("id").unwrap_or(0)),
-                diagnostic,
-            ));
+        if element_diagnostics.len() < element_diagnostic_limit {
+            if let Some((code, message)) = id_diagnostic {
+                let pointer = memory_at_source!(pointer_child(&element_pointer, "id"));
+                let diagnostic = memory_at_source!(repair_diagnostic(
+                    code,
+                    format,
+                    &[DiagnosticEffect::InputRepair],
+                    &id,
+                    &pointer,
+                    message,
+                ));
+                element_diagnostics.push((
+                    SourceDiagnosticPosition::top(source.member_position("id").unwrap_or(0)),
+                    diagnostic,
+                ));
+            }
         }
 
         let seed = if fields.source_seed == 0 {
             let seed = generated_rough_seed(revision, &id);
-            let pointer = memory_at_source!(pointer_child(&element_pointer, "seed"));
-            let diagnostic = memory_at_source!(repair_diagnostic(
-                DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
-                format,
-                &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
-                &id,
-                &pointer,
-                "zero Rough seed was repaired deterministically",
-            ));
-            element_diagnostics.push((
-                SourceDiagnosticPosition::top(
-                    source.member_position("seed").unwrap_or(usize::MAX - 1),
-                ),
-                diagnostic,
-            ));
+            if element_diagnostics.len() < element_diagnostic_limit {
+                let pointer = memory_at_source!(pointer_child(&element_pointer, "seed"));
+                let diagnostic = memory_at_source!(repair_diagnostic(
+                    DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
+                    format,
+                    &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+                    &id,
+                    &pointer,
+                    "zero Rough seed was repaired deterministically",
+                ));
+                element_diagnostics.push((
+                    SourceDiagnosticPosition::top(
+                        source.member_position("seed").unwrap_or(usize::MAX - 1),
+                    ),
+                    diagnostic,
+                ));
+            }
             seed
         } else {
             fields.source_seed
         };
 
-        if source.updated_is_missing {
+        if source.updated_is_missing && element_diagnostics.len() < element_diagnostic_limit {
             let pointer = memory_at_source!(pointer_child(&element_pointer, "updated"));
             let diagnostic = memory_at_source!(repair_diagnostic(
                 DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
@@ -632,12 +897,16 @@ fn normalize_scene_impl<E>(
         let (kind, x, y, width, height) = memory_at_source!(normalize_element_kind(
             &source,
             &fields,
+            policy,
             &element_pointer,
             &id,
             format,
             participation,
+            element_diagnostic_limit,
             &mut element_diagnostics,
         ));
+        planned_diagnostic_count =
+            planned_diagnostic_count.saturating_add(element_diagnostics.len());
 
         let actual_working_bytes = normalized_working_bytes(id.len(), &fields)
             .saturating_add(owned_field_bytes(normalized_index.len()))
@@ -716,6 +985,14 @@ fn normalize_scene_impl<E>(
         });
     }
 
+    let (frame_rendering, frame_diagnostics) = normalize_frame_rendering(
+        scene.frame_rendering(),
+        scene.app_state_member_position("frameRendering"),
+        policy,
+        format,
+        surface_diagnostic_limit.saturating_sub(planned_diagnostic_count),
+    )?;
+    planned_diagnostic_count = planned_diagnostic_count.saturating_add(frame_diagnostics.len());
     let frame_source_order = scene.source_owner_order("appState", 0);
     push_pending_event(
         &mut pending_events,
@@ -737,12 +1014,16 @@ fn normalize_scene_impl<E>(
             PendingNormalizationEventKind::Diagnostic {
                 diagnostic,
                 local_owner: None,
-                source_position: u64::try_from(position).unwrap_or(u64::MAX),
+                source_position: position,
             },
         )?;
     }
-    let (files, file_diagnostics) =
-        normalize_referenced_file_records(scene, &referenced_file_ids, format)?;
+    let (files, file_diagnostics) = normalize_referenced_file_records(
+        scene,
+        &referenced_file_ids,
+        format,
+        surface_diagnostic_limit.saturating_sub(planned_diagnostic_count),
+    )?;
     for file in &files {
         push_pending_event(
             &mut pending_events,
@@ -776,6 +1057,7 @@ fn normalize_scene_impl<E>(
         elements,
         frame_rendering,
         files,
+        has_unrendered_content: surface.has_unrendered_content,
     }))
 }
 
@@ -798,7 +1080,49 @@ fn replay_normalization_events<E>(
     events: &mut Vec<PendingNormalizationEvent>,
     observe: &mut impl FnMut(NormalizationEvent<'_>) -> Result<(), E>,
 ) -> Result<(), NormalizationError<E>> {
-    events.sort_unstable_by_key(|event| (event.source_order, event.ordinal));
+    events.sort_unstable_by(|left, right| {
+        left.source_order
+            .cmp(&right.source_order)
+            .then_with(|| match (&left.kind, &right.kind) {
+                (
+                    PendingNormalizationEventKind::Record { .. },
+                    PendingNormalizationEventKind::Diagnostic { .. },
+                ) => std::cmp::Ordering::Less,
+                (
+                    PendingNormalizationEventKind::Diagnostic { .. },
+                    PendingNormalizationEventKind::Record { .. },
+                ) => std::cmp::Ordering::Greater,
+                (
+                    PendingNormalizationEventKind::Diagnostic {
+                        diagnostic: left_diagnostic,
+                        source_position: left_position,
+                        ..
+                    },
+                    PendingNormalizationEventKind::Diagnostic {
+                        diagnostic: right_diagnostic,
+                        source_position: right_position,
+                        ..
+                    },
+                ) => left_position
+                    .cmp(right_position)
+                    .then_with(|| {
+                        left_diagnostic
+                            .json_pointer
+                            .cmp(&right_diagnostic.json_pointer)
+                    })
+                    .then_with(|| {
+                        left_diagnostic
+                            .code
+                            .as_str()
+                            .cmp(right_diagnostic.code.as_str())
+                    })
+                    .then_with(|| left.ordinal.cmp(&right.ordinal)),
+                (
+                    PendingNormalizationEventKind::Record { .. },
+                    PendingNormalizationEventKind::Record { .. },
+                ) => left.ordinal.cmp(&right.ordinal),
+            })
+    });
     for event in events.drain(..) {
         match event.kind {
             PendingNormalizationEventKind::Record {
@@ -1056,17 +1380,21 @@ fn kind_working_bytes(
     }
 }
 
-fn element_fields<'a>(source: &ElementSource<'a>) -> Option<CommonFields<'a>> {
-    if !matches!(
-        source.roundness,
-        SourceField::Missing | SourceField::Value(())
-    ) {
-        return None;
-    }
-    let mut x = defaulted(source.x, 0.0)?;
-    let mut y = defaulted(source.y, 0.0)?;
-    let mut width = defaulted(source.width, 0.0)?;
-    let mut height = defaulted(source.height, 0.0)?;
+fn element_fields<'a>(
+    source: &ElementSource<'a>,
+    policy: &'static crate::scene_surface::SceneSurfacePolicy,
+) -> Option<CommonFields<'a>> {
+    let ignored = |path| {
+        crate::scene_surface::element_ignores_inherited_path(
+            policy,
+            source.kind.scene_surface_kind(),
+            path,
+        )
+    };
+    let mut x = manifested_value(source.x, 0.0, |_| true);
+    let mut y = manifested_value(source.y, 0.0, |_| true);
+    let mut width = manifested_value(source.width, 0.0, |_| true);
+    let mut height = manifested_value(source.height, 0.0, |_| true);
     if !matches!(
         source.kind,
         ElementKind::Line | ElementKind::LegacyDraw | ElementKind::Arrow
@@ -1085,26 +1413,88 @@ fn element_fields<'a>(source: &ElementSource<'a>) -> Option<CommonFields<'a>> {
         y: canonical_zero(y),
         width: canonical_zero(width),
         height: canonical_zero(height),
-        angle: canonical_zero(defaulted(source.angle, 0.0)?),
-        stroke_color: defaulted(source.stroke_color, "#1e1e1e")?,
-        background_color: defaulted(source.background_color, "transparent")?,
-        fill_style: defaulted(source.fill_style, "solid")?,
-        stroke_width: defaulted(source.stroke_width, 2.0)?,
-        stroke_style: defaulted(source.stroke_style, "solid")?,
-        roughness: defaulted(source.roughness, 1.0)?,
-        opacity: defaulted(source.opacity, 100.0)?,
-        source_seed: defaulted(source.seed, 1)?,
-        view_background_color: defaulted(source.view_background_color, "#ffffff")?,
+        angle: canonical_zero(manifested_value(source.angle, 0.0, |_| true)),
+        stroke_color: if ignored("/strokeColor") {
+            "#1e1e1e"
+        } else {
+            manifested_value(source.stroke_color, "#1e1e1e", |value| {
+                crate::scene_surface::css_color_is_admitted(value)
+            })
+        },
+        background_color: if ignored("/backgroundColor") {
+            "transparent"
+        } else {
+            manifested_value(source.background_color, "transparent", |value| {
+                crate::scene_surface::css_color_is_admitted(value)
+            })
+        },
+        fill_style: if ignored("/fillStyle") {
+            "solid"
+        } else {
+            manifested_value(source.fill_style, "solid", |value| {
+                matches!(value, "hachure" | "cross-hatch" | "solid" | "zigzag")
+            })
+        },
+        stroke_width: if ignored("/strokeWidth") {
+            2.0
+        } else {
+            manifested_value(source.stroke_width, 2.0, |value| value > 0.0)
+        },
+        stroke_style: if ignored("/strokeStyle") {
+            "solid"
+        } else {
+            manifested_value(source.stroke_style, "solid", |value| {
+                matches!(value, "solid" | "dashed" | "dotted")
+            })
+        },
+        roughness: if ignored("/roughness") {
+            1.0
+        } else {
+            manifested_value(source.roughness, 1.0, |value| value >= 0.0)
+        },
+        opacity: manifested_value(source.opacity, 100.0, |value| {
+            (0.0..=100.0).contains(&value)
+        }),
+        source_seed: if ignored("/seed") {
+            1
+        } else {
+            manifested_value(source.seed, 1, |_| true)
+        },
+        view_background_color: manifested_value(source.view_background_color, "#ffffff", |value| {
+            crate::scene_surface::css_color_is_admitted(value)
+        }),
     })
 }
 
+fn manifested_value<T: Copy>(
+    source: SourceField<T>,
+    default: T,
+    accepts: impl FnOnce(T) -> bool,
+) -> T {
+    match source {
+        SourceField::Value(value) if accepts(value) => value,
+        SourceField::Missing | SourceField::Invalid | SourceField::Value(_) => default,
+    }
+}
+
+fn source_accepts<T>(source: SourceField<T>, accepts: impl FnOnce(T) -> bool) -> bool {
+    match source {
+        SourceField::Missing => true,
+        SourceField::Value(value) => accepts(value),
+        SourceField::Invalid => false,
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn normalize_element_kind(
     source: &ElementSource<'_>,
     fields: &CommonFields<'_>,
+    policy: &'static crate::scene_surface::SceneSurfacePolicy,
     element_pointer: &str,
     element_id: &str,
     format: OutputFormat,
     participation: NormalizationParticipation,
+    diagnostic_limit: usize,
     diagnostics: &mut Vec<ElementDiagnostic>,
 ) -> Result<(NormalizedElementKind, f64, f64, f64, f64), TryReserveError> {
     let mut diagnostic_context = ElementDiagnosticContext {
@@ -1113,7 +1503,120 @@ fn normalize_element_kind(
         element_pointer,
         element_id,
         format,
+        policy,
+        diagnostic_limit,
     };
+    macro_rules! diagnose_common {
+        ($field:literal, $invalid:expr) => {
+            if $invalid
+                && !crate::scene_surface::element_ignores_inherited_path(
+                    policy,
+                    source.kind.scene_surface_kind(),
+                    concat!("/", $field),
+                )
+            {
+                diagnostic_context.unsupported($field, &[], Recovery::Substituted, None)?;
+            }
+        };
+    }
+    diagnose_common!("x", matches!(source.x, SourceField::Invalid));
+    diagnose_common!("y", matches!(source.y, SourceField::Invalid));
+    diagnose_common!("width", matches!(source.width, SourceField::Invalid));
+    diagnose_common!("height", matches!(source.height, SourceField::Invalid));
+    diagnose_common!("angle", matches!(source.angle, SourceField::Invalid));
+    diagnose_common!(
+        "fillStyle",
+        !matches!(
+            source.fill_style,
+            SourceField::Missing
+                | SourceField::Value("hachure" | "cross-hatch" | "solid" | "zigzag")
+        )
+    );
+    diagnose_common!(
+        "strokeWidth",
+        !source_accepts(source.stroke_width, |value| value > 0.0)
+    );
+    diagnose_common!(
+        "strokeStyle",
+        !matches!(
+            source.stroke_style,
+            SourceField::Missing | SourceField::Value("solid" | "dashed" | "dotted")
+        )
+    );
+    diagnose_common!(
+        "roughness",
+        !source_accepts(source.roughness, |value| value >= 0.0)
+    );
+    diagnose_common!(
+        "opacity",
+        !source_accepts(source.opacity, |value| (0.0..=100.0).contains(&value))
+    );
+    diagnose_common!("seed", matches!(source.seed, SourceField::Invalid));
+    diagnose_common!(
+        "isDeleted",
+        matches!(source.is_deleted, SourceField::Invalid)
+    );
+    diagnose_common!("frameId", matches!(source.frame_id, SourceField::Invalid));
+    let roundness_ignored = crate::scene_surface::element_ignores_inherited_path(
+        policy,
+        source.kind.scene_surface_kind(),
+        "/roundness",
+    );
+    if !roundness_ignored {
+        match source.roundness {
+            SourceField::Invalid => diagnostic_context.unsupported(
+                "roundness",
+                &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+                Recovery::Substituted,
+                None,
+            )?,
+            SourceField::Value(Some(roundness)) => {
+                for (position, member) in roundness.members().iter().enumerate() {
+                    let semantic_path = pointer_child("", &member.key)?;
+                    if !crate::scene_surface::is_manifested_path(
+                        policy,
+                        "nested.roundness",
+                        &semantic_path,
+                    ) {
+                        diagnostic_context.unsupported_property_nested(
+                            "roundness",
+                            &member.key,
+                            position,
+                        )?;
+                    }
+                }
+                if !matches!(
+                    roundness.kind(),
+                    SourceField::Missing | SourceField::Value(1..=3)
+                ) {
+                    diagnostic_context.unsupported_nested(
+                        "roundness",
+                        "type",
+                        roundness.member_position("type"),
+                        None,
+                        &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+                        Recovery::Substituted,
+                    )?;
+                }
+                let value_is_valid = match roundness.value() {
+                    SourceField::Missing => true,
+                    SourceField::Value(value) => value >= 0.0,
+                    SourceField::Invalid => false,
+                };
+                if !value_is_valid {
+                    diagnostic_context.unsupported_nested(
+                        "roundness",
+                        "value",
+                        roundness.member_position("value"),
+                        None,
+                        &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+                        Recovery::Substituted,
+                    )?;
+                }
+            }
+            SourceField::Missing | SourceField::Value(None) => {}
+        }
+    }
     match source.kind {
         ElementKind::Rectangle => Ok((
             NormalizedElementKind::Rectangle,
@@ -1142,7 +1645,23 @@ fn normalize_element_kind(
             if let Some(source_points) = source_points {
                 for index in 0..source_points.len() {
                     match source_points.point(index) {
-                        SourceField::Value(point) => points.push(point),
+                        SourceField::Value(point) => {
+                            points.push(point);
+                            for component in 2..source_points.component_count(index).unwrap_or(2) {
+                                let pointer = pointer_index(
+                                    &pointer_index(
+                                        &pointer_child(element_pointer, "points")?,
+                                        index,
+                                    )?,
+                                    component,
+                                )?;
+                                diagnostic_context.unsupported_property_at(
+                                    "points",
+                                    nested_path_ordinal(index, component),
+                                    &pointer,
+                                )?;
+                            }
+                        }
                         SourceField::Missing | SourceField::Invalid => {
                             geometry_available = false;
                             let mut pointer =
@@ -1150,25 +1669,30 @@ fn normalize_element_kind(
                             if let Some(component) = source_points.invalid_component(index) {
                                 pointer = pointer_index(&pointer, component)?;
                             }
-                            diagnostic_context.diagnostics.try_reserve(1)?;
-                            diagnostic_context.diagnostics.push((
-                                SourceDiagnosticPosition::nested(
-                                    source.member_position("points").unwrap_or(usize::MAX),
-                                    index,
-                                ),
-                                compatibility_diagnostic(
-                                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
-                                    format,
-                                    &[DiagnosticEffect::Visual],
-                                    Some(element_id),
-                                    &pointer,
-                                    "malformed linear point used the known-element fallback",
-                                    DiagnosticRecovery::new(
-                                        Recovery::Placeholder,
-                                        Some("renderer.known-element-unavailable.v1"),
+                            if diagnostic_context.can_retain() {
+                                diagnostic_context.diagnostics.try_reserve(1)?;
+                                diagnostic_context.diagnostics.push((
+                                    SourceDiagnosticPosition::nested(
+                                        source.member_position("points").unwrap_or(usize::MAX),
+                                        nested_path_ordinal(
+                                            index,
+                                            source_points.invalid_component(index).unwrap_or(0),
+                                        ),
                                     ),
-                                )?,
-                            ));
+                                    compatibility_diagnostic(
+                                        DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                                        format,
+                                        &[DiagnosticEffect::Visual],
+                                        Some(element_id),
+                                        &pointer,
+                                        "malformed linear point used the known-element fallback",
+                                        DiagnosticRecovery::new(
+                                            Recovery::Placeholder,
+                                            Some("renderer.known-element-unavailable.v1"),
+                                        ),
+                                    )?,
+                                ));
+                            }
                             points.clear();
                             points.push([0.0, 0.0]);
                             points.push([fields.width, fields.height]);
@@ -1238,12 +1762,14 @@ fn normalize_element_kind(
                 source.start_binding,
                 elbowed,
                 "startBinding",
+                policy,
                 &mut diagnostic_context,
             )?;
             let end_binding = normalize_binding(
                 source.end_binding,
                 elbowed,
                 "endBinding",
+                policy,
                 &mut diagnostic_context,
             )?;
             let start_arrowhead = normalized_arrowhead(source.start_arrowhead, None)?;
@@ -1287,6 +1813,24 @@ fn normalize_element_kind(
                 )?;
             }
             let (points, geometry_available) = normalized_freedraw_points(source.points)?;
+            if let SourceField::Value(source_points) = source.points {
+                for index in 0..source_points.len() {
+                    if !matches!(source_points.point(index), SourceField::Value(_)) {
+                        continue;
+                    }
+                    for component in 2..source_points.component_count(index).unwrap_or(2) {
+                        let pointer = pointer_index(
+                            &pointer_index(&pointer_child(element_pointer, "points")?, index)?,
+                            component,
+                        )?;
+                        diagnostic_context.unsupported_property_at(
+                            "points",
+                            nested_path_ordinal(index, component),
+                            &pointer,
+                        )?;
+                    }
+                }
+            }
             if !geometry_available {
                 if let SourceField::Value(source_points) = source.points {
                     if let Some((index, component)) = source_points.first_invalid_point() {
@@ -1295,25 +1839,27 @@ fn normalize_element_kind(
                         if let Some(component) = component {
                             pointer = pointer_index(&pointer, component)?;
                         }
-                        diagnostic_context.diagnostics.try_reserve(1)?;
-                        diagnostic_context.diagnostics.push((
-                            SourceDiagnosticPosition::nested(
-                                source.member_position("points").unwrap_or(usize::MAX),
-                                index,
-                            ),
-                            compatibility_diagnostic(
-                                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
-                                format,
-                                &[DiagnosticEffect::Visual],
-                                Some(element_id),
-                                &pointer,
-                                "malformed freedraw point used the known-element fallback",
-                                DiagnosticRecovery::new(
-                                    Recovery::Placeholder,
-                                    Some("renderer.known-element-unavailable.v1"),
+                        if diagnostic_context.can_retain() {
+                            diagnostic_context.diagnostics.try_reserve(1)?;
+                            diagnostic_context.diagnostics.push((
+                                SourceDiagnosticPosition::nested(
+                                    source.member_position("points").unwrap_or(usize::MAX),
+                                    nested_path_ordinal(index, component.unwrap_or(0)),
                                 ),
-                            )?,
-                        ));
+                                compatibility_diagnostic(
+                                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                                    format,
+                                    &[DiagnosticEffect::Visual],
+                                    Some(element_id),
+                                    &pointer,
+                                    "malformed freedraw point used the known-element fallback",
+                                    DiagnosticRecovery::new(
+                                        Recovery::Placeholder,
+                                        Some("renderer.known-element-unavailable.v1"),
+                                    ),
+                                )?,
+                            ));
+                        }
                     }
                 }
             }
@@ -1384,24 +1930,43 @@ fn normalize_element_kind(
             } else if participation.authoritative_file {
                 if let SourceField::Value(Some(crop)) = source.image_crop {
                     diagnose_invalid_crop_members(&mut diagnostic_context, crop)?;
+                    for (position, member) in crop.members().iter().enumerate() {
+                        let semantic_path = pointer_child("", &member.key)?;
+                        if !crate::scene_surface::is_manifested_path(
+                            policy,
+                            "nested.image_crop",
+                            &semantic_path,
+                        ) {
+                            diagnostic_context.unsupported_property_nested(
+                                "crop",
+                                &member.key,
+                                position,
+                            )?;
+                        }
+                    }
                 }
+            }
+            let status = match source.image_status {
+                SourceField::Value("saved") => NormalizedImageStatus::Saved,
+                SourceField::Value("error") => NormalizedImageStatus::Error,
+                SourceField::Missing
+                | SourceField::Invalid
+                | SourceField::Value("pending")
+                | SourceField::Value(_) => NormalizedImageStatus::Pending,
+            };
+            let file_id = match source.file_id {
+                SourceField::Value(Some(file_id)) => Some(file_id),
+                SourceField::Missing | SourceField::Invalid | SourceField::Value(None) => None,
+            };
+            if !matches!(source.file_id, SourceField::Invalid)
+                && (!participation.authoritative_file || file_id.is_none())
+            {
+                diagnostic_context.missing_image_file(file_id, status)?;
             }
             Ok((
                 NormalizedElementKind::Image(NormalizedImage {
-                    file_id: match source.file_id {
-                        SourceField::Value(Some(file_id)) => Some(try_owned(file_id)?),
-                        SourceField::Missing | SourceField::Invalid | SourceField::Value(None) => {
-                            None
-                        }
-                    },
-                    status: match source.image_status {
-                        SourceField::Value("saved") => NormalizedImageStatus::Saved,
-                        SourceField::Value("error") => NormalizedImageStatus::Error,
-                        SourceField::Missing
-                        | SourceField::Invalid
-                        | SourceField::Value("pending")
-                        | SourceField::Value(_) => NormalizedImageStatus::Pending,
-                    },
+                    file_id: file_id.map(try_owned).transpose()?,
+                    status,
                     scale: normalized_image_scale(source.image_scale),
                     crop: participation
                         .authoritative_file
@@ -1470,6 +2035,7 @@ fn normalize_referenced_file_records(
     scene: &SceneDocument,
     referenced_file_ids: &[&str],
     format: OutputFormat,
+    diagnostic_limit: usize,
 ) -> Result<NormalizedFileRecords, TryReserveError> {
     let mut files = Vec::new();
     let mut diagnostics = Vec::new();
@@ -1488,22 +2054,25 @@ fn normalize_referenced_file_records(
         let id = match source.id() {
             SourceField::Value(id) if !id.is_empty() => try_owned(id)?,
             SourceField::Missing | SourceField::Invalid | SourceField::Value(_) => {
-                let pointer = pointer_child(&source_pointer, "id")?;
-                diagnostics.try_reserve(1)?;
-                diagnostics.push((
-                    try_owned(source.key())?,
-                    scene.source_owner_order("files", source_index),
-                    u64::try_from(source.member_position("id").unwrap_or(0)).unwrap_or(u64::MAX),
-                    compatibility_diagnostic(
-                        DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
-                        format,
-                        &[DiagnosticEffect::InputRepair],
-                        None,
-                        &pointer,
-                        "missing or invalid file identity was repaired to its map key",
-                        DiagnosticRecovery::new(Recovery::Repaired, None),
-                    )?,
-                ));
+                if diagnostics.len() < diagnostic_limit {
+                    let pointer = pointer_child(&source_pointer, "id")?;
+                    diagnostics.try_reserve(1)?;
+                    diagnostics.push((
+                        try_owned(source.key())?,
+                        scene.source_owner_order("files", source_index),
+                        u64::try_from(source.member_position("id").unwrap_or(0))
+                            .unwrap_or(u64::MAX),
+                        compatibility_diagnostic(
+                            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                            format,
+                            &[DiagnosticEffect::InputRepair],
+                            None,
+                            &pointer,
+                            "missing or invalid file identity was repaired to its map key",
+                            DiagnosticRecovery::new(Recovery::Repaired, None),
+                        )?,
+                    ));
+                }
                 try_owned(source.key())?
             }
         };
@@ -1511,23 +2080,25 @@ fn normalize_referenced_file_records(
             SourceField::Value(created) => Some(created),
             SourceField::Invalid => None,
             SourceField::Missing => {
-                let pointer = pointer_child(&source_pointer, "created")?;
-                diagnostics.try_reserve(1)?;
-                diagnostics.push((
-                    try_owned(source.key())?,
-                    scene.source_owner_order("files", source_index),
-                    u64::try_from(source.member_position("created").unwrap_or(usize::MAX))
-                        .unwrap_or(u64::MAX),
-                    compatibility_diagnostic(
-                        DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
-                        format,
-                        &[DiagnosticEffect::InputRepair],
-                        None,
-                        &pointer,
-                        "missing required file timestamp was repaired to canonical zero",
-                        DiagnosticRecovery::new(Recovery::Repaired, None),
-                    )?,
-                ));
+                if diagnostics.len() < diagnostic_limit {
+                    let pointer = pointer_child(&source_pointer, "created")?;
+                    diagnostics.try_reserve(1)?;
+                    diagnostics.push((
+                        try_owned(source.key())?,
+                        scene.source_owner_order("files", source_index),
+                        u64::try_from(source.member_position("created").unwrap_or(usize::MAX))
+                            .unwrap_or(u64::MAX),
+                        compatibility_diagnostic(
+                            DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                            format,
+                            &[DiagnosticEffect::InputRepair],
+                            None,
+                            &pointer,
+                            "missing required file timestamp was repaired to canonical zero",
+                            DiagnosticRecovery::new(Recovery::Repaired, None),
+                        )?,
+                    ));
+                }
                 Some(0)
             }
         };
@@ -1569,6 +2140,9 @@ fn diagnose_invalid_crop_members(
     .into_iter()
     .enumerate()
     {
+        if !context.can_retain() {
+            break;
+        }
         let value = crop.number(field);
         let valid = matches!(value, SourceField::Value(value) if value > 0.0 || (accepts_zero && value == 0.0));
         if valid {
@@ -1727,31 +2301,19 @@ fn normalized_image_crop(
 
 fn normalize_frame_rendering(
     source: SourceField<FrameRenderingSource<'_>>,
+    app_state_position: Option<usize>,
+    policy: &crate::scene_surface::SceneSurfacePolicy,
     format: OutputFormat,
+    diagnostic_limit: usize,
 ) -> Result<
     (
         NormalizedFrameRendering,
-        Vec<(usize, CompatibilityDiagnostic)>,
+        Vec<(u64, CompatibilityDiagnostic)>,
     ),
     TryReserveError,
 > {
     let mut diagnostics = Vec::new();
     let SourceField::Value(source) = source else {
-        if matches!(source, SourceField::Invalid) {
-            diagnostics.try_reserve(1)?;
-            diagnostics.push((
-                usize::MAX,
-                compatibility_diagnostic(
-                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
-                    format,
-                    &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
-                    None,
-                    "/appState/frameRendering",
-                    "unsupported frame rendering state used revision-1 defaults",
-                    DiagnosticRecovery::new(Recovery::Substituted, None),
-                )?,
-            ));
-        }
         return Ok((
             NormalizedFrameRendering {
                 enabled: true,
@@ -1767,10 +2329,17 @@ fn normalize_frame_rendering(
             SourceField::Missing => Ok(true),
             SourceField::Value(value) => Ok(value),
             SourceField::Invalid => {
+                if diagnostics.len() >= diagnostic_limit {
+                    return Ok(true);
+                }
                 let pointer = pointer_child("/appState/frameRendering", key)?;
                 diagnostics.try_reserve(1)?;
                 diagnostics.push((
-                    source.member_position(key).unwrap_or(usize::MAX),
+                    SourceDiagnosticPosition::nested(
+                        app_state_position.unwrap_or(usize::MAX),
+                        source.member_position(key).unwrap_or(usize::MAX),
+                    )
+                    .as_u64(),
                     compatibility_diagnostic(
                         DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
                         format,
@@ -1791,6 +2360,36 @@ fn normalize_frame_rendering(
         name: value("name")?,
         outline: value("outline")?,
     };
+    for (position, member) in source.members().iter().enumerate() {
+        if diagnostics.len() >= diagnostic_limit {
+            break;
+        }
+        let semantic_path = pointer_child("", &member.key)?;
+        if crate::scene_surface::is_manifested_path(policy, "frame_rendering", &semantic_path) {
+            continue;
+        }
+        diagnostics.try_reserve(1)?;
+        diagnostics.push((
+            SourceDiagnosticPosition::nested(
+                app_state_position.unwrap_or(usize::MAX),
+                position,
+            )
+            .as_u64(),
+            compatibility_diagnostic(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                format,
+                &[
+                    DiagnosticEffect::Visual,
+                    DiagnosticEffect::Semantic,
+                    DiagnosticEffect::Metadata,
+                ],
+                None,
+                &pointer_child("/appState/frameRendering", &member.key)?,
+                "unmatched frame-rendering property was ignored by the revision-1 scene-surface policy",
+                DiagnosticRecovery::new(Recovery::Ignored, None),
+            )?,
+        ));
+    }
     diagnostics.sort_by(|(left_position, left), (right_position, right)| {
         left_position
             .cmp(right_position)
@@ -1803,6 +2402,7 @@ fn normalize_binding(
     binding_field: SourceField<Option<BindingSource<'_>>>,
     elbowed: bool,
     field: &str,
+    policy: &crate::scene_surface::SceneSurfacePolicy,
     context: &mut ElementDiagnosticContext<'_, '_>,
 ) -> Result<Option<NormalizedBinding>, TryReserveError> {
     let source = match binding_field {
@@ -1818,6 +2418,17 @@ fn normalize_binding(
         }
         SourceField::Value(Some(source)) => source,
     };
+    let record_kind = if elbowed {
+        "nested.fixed_point_binding"
+    } else {
+        "nested.point_binding"
+    };
+    for (position, member) in source.members().iter().enumerate() {
+        let semantic_path = pointer_child("", &member.key)?;
+        if !crate::scene_surface::is_manifested_path(policy, record_kind, &semantic_path) {
+            context.unsupported_property_nested(field, &member.key, position)?;
+        }
+    }
     let fixed_point = match (elbowed, source.fixed_point()) {
         (true, SourceField::Missing) => return Ok(None),
         (true, SourceField::Value(mut point)) => {
@@ -2500,6 +3111,37 @@ fn compatibility_diagnostic(
     })
 }
 
+fn manifested_effects(effects: &[&str]) -> Result<Vec<DiagnosticEffect>, TryReserveError> {
+    let mut manifested = Vec::new();
+    manifested.try_reserve_exact(effects.len())?;
+    for effect in effects {
+        let effect = match *effect {
+            "input_repair" => DiagnosticEffect::InputRepair,
+            "visual" => DiagnosticEffect::Visual,
+            "semantic" => DiagnosticEffect::Semantic,
+            "metadata" => DiagnosticEffect::Metadata,
+            _ => continue,
+        };
+        manifested.push(effect);
+    }
+    Ok(manifested)
+}
+
+const fn manifested_recovery(recovery: &str) -> Option<Recovery> {
+    match recovery.as_bytes() {
+        b"repaired" => Some(Recovery::Repaired),
+        b"ignored" => Some(Recovery::Ignored),
+        b"placeholder" => Some(Recovery::Placeholder),
+        b"omitted" => Some(Recovery::Omitted),
+        b"removed" => Some(Recovery::Removed),
+        b"substituted" => Some(Recovery::Substituted),
+        b"flattened" => Some(Recovery::Flattened),
+        b"rasterized" => Some(Recovery::Rasterized),
+        b"metadata_omitted" => Some(Recovery::MetadataOmitted),
+        _ => None,
+    }
+}
+
 fn try_owned(value: &str) -> Result<String, TryReserveError> {
     let mut owned = String::new();
     owned.try_reserve_exact(value.len())?;
@@ -2849,6 +3491,7 @@ mod tests {
                     DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
                     "/elements/1/crop",
                 ),
+                (DiagnosticCode::IMAGE_MISSING_FILE, "/elements/1/fileId",),
                 (
                     DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
                     "/elements/2/name",
@@ -2859,10 +3502,24 @@ mod tests {
                 ),
             ]
         );
-        assert!(diagnostics.iter().all(|diagnostic| {
-            serde_json::to_value(diagnostic).expect("diagnostic serializes")["details"]["recovery"]
-                == "substituted"
-        }));
+        assert!(diagnostics
+            .iter()
+            .filter(|diagnostic| diagnostic.code != DiagnosticCode::IMAGE_MISSING_FILE)
+            .all(|diagnostic| {
+                serde_json::to_value(diagnostic).expect("diagnostic serializes")["details"]
+                    ["recovery"]
+                    == "substituted"
+            }));
+        assert_eq!(
+            serde_json::to_value(
+                diagnostics
+                    .iter()
+                    .find(|diagnostic| diagnostic.code == DiagnosticCode::IMAGE_MISSING_FILE)
+                    .expect("missing image diagnostic is retained"),
+            )
+            .expect("diagnostic serializes")["details"]["recovery"],
+            "omitted"
+        );
     }
 
     #[test]
@@ -2916,7 +3573,7 @@ mod tests {
     #[test]
     fn invalid_file_created_values_remain_ignored() {
         let scene = SceneDocument::parse(
-            br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":10,"height":10,"fileId":"asset","seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","created":"invalid"}}}"##,
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":10,"height":10,"fileId":"asset","seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","created":"invalid","dataURL":"data:image/png;base64,AA=="}}}"##,
         )
         .expect("invalid file timestamp vector is admitted");
         let mut diagnostics = Vec::new();
@@ -3040,7 +3697,7 @@ mod tests {
     #[test]
     fn invalid_crop_members_disable_crop_and_report_each_member() {
         let scene = SceneDocument::parse(
-            br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":10,"height":10,"fileId":"asset","crop":{"x":-1},"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","created":1}}}"##,
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":10,"height":10,"fileId":"asset","crop":{"x":-1},"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","created":1,"dataURL":"data:image/png;base64,AA=="}}}"##,
         )
         .expect("crop recovery vector is admitted");
         let mut diagnostics = Vec::new();
@@ -3313,6 +3970,7 @@ mod tests {
             diagnostic_owners,
             [
                 ("/files/asset/id".to_owned(), Some("asset".to_owned()),),
+                ("/files/asset/dataURL".to_owned(), Some("asset".to_owned()),),
                 ("/files/asset/created".to_owned(), Some("asset".to_owned()),),
             ]
         );

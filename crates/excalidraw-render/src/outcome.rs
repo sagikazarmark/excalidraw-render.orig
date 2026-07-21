@@ -14,6 +14,10 @@ use crate::{
 pub struct DiagnosticCode(&'static str);
 
 impl DiagnosticCode {
+    pub(crate) const fn manifested(code: &'static str) -> Self {
+        Self(code)
+    }
+
     /// A missing source element ID was repaired.
     pub const NORMALIZATION_MISSING_ELEMENT_ID: Self = Self("normalization.missing-element-id");
     /// A later duplicate source element ID was repaired.

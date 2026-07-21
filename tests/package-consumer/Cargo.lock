@@ -268,6 +268,7 @@ dependencies = [
  "roughr",
  "serde",
  "serde_json",
+ "sha2",
  "svg2pdf",
  "tiny-skia",
  "usvg",
