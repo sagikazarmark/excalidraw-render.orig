@@ -12,6 +12,7 @@ mod compatibility;
 mod model;
 mod normalization;
 mod outcome;
+mod relationships;
 mod render;
 #[cfg(not(target_arch = "wasm32"))]
 mod render_svg;

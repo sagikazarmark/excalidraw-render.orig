@@ -16,6 +16,9 @@ pub(crate) struct ResourceDelta {
     pub(crate) scene_bytes: u64,
     pub(crate) elements: u64,
     #[serde(skip_serializing_if = "is_zero")]
+    #[serde(rename = "relationship_depth")]
+    pub(crate) observed_relationship_depth: u64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub(crate) geometry_segments: u64,
     #[serde(skip_serializing_if = "is_zero")]
     pub(crate) text_scalars: u64,
@@ -31,6 +34,8 @@ pub(crate) struct ResourceDelta {
 struct ResourceCounters {
     scene_bytes: u64,
     elements: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    relationship_depth: u64,
     #[serde(skip_serializing_if = "is_zero")]
     geometry_segments: u64,
     #[serde(skip_serializing_if = "is_zero")]
@@ -227,6 +232,7 @@ impl ResourceMeter {
         AttemptedCounters {
             scene_bytes: Attempted::new(self.counters.scene_bytes, delta.scene_bytes),
             elements: Attempted::new(self.counters.elements, delta.elements),
+            relationship_depth: Attempted::observed(delta.observed_relationship_depth),
             geometry_segments: Attempted::new(
                 self.counters.geometry_segments,
                 delta.geometry_segments,
@@ -323,6 +329,7 @@ impl ResourceMeter {
 struct AttemptedCounters {
     scene_bytes: Attempted,
     elements: Attempted,
+    relationship_depth: Attempted,
     geometry_segments: Attempted,
     text_scalars: Attempted,
     rasterized_pixels: Attempted,
@@ -337,6 +344,7 @@ impl AttemptedCounters {
         Some(ResourceCounters {
             scene_bytes: self.scene_bytes.exact()?,
             elements: self.elements.exact()?,
+            relationship_depth: self.relationship_depth.exact()?,
             geometry_segments: self.geometry_segments.exact()?,
             text_scalars: self.text_scalars.exact()?,
             rasterized_pixels: self.rasterized_pixels.exact()?,
@@ -355,6 +363,7 @@ fn fatal_crossing(
     [
         (LimitKind::SceneBytes, attempted.scene_bytes),
         (LimitKind::Elements, attempted.elements),
+        (LimitKind::RelationshipDepth, attempted.relationship_depth),
         (LimitKind::TotalGeometry, attempted.geometry_segments),
         (LimitKind::TotalText, attempted.text_scalars),
         (
@@ -379,6 +388,9 @@ fn attempted_counters_for_trace(
         elements: attempted
             .elements
             .trace_value(u64::from(limits.max_elements())),
+        relationship_depth: attempted
+            .relationship_depth
+            .trace_value(u64::from(limits.max_relationship_depth())),
         geometry_segments: attempted
             .geometry_segments
             .trace_value(limits.max_total_geometry_segments()),
@@ -428,6 +440,10 @@ impl Attempted {
             .map_or(Self::Overflow, Self::Exact)
     }
 
+    const fn observed(value: u64) -> Self {
+        Self::Exact(value)
+    }
+
     fn crosses(self, configured: u64) -> bool {
         match self {
             Self::Exact(value) => value > configured,
@@ -463,6 +479,7 @@ impl Attempted {
 enum LimitKind {
     SceneBytes,
     Elements,
+    RelationshipDepth,
     TotalGeometry,
     TotalText,
     TotalRasterizedPixels,
@@ -477,6 +494,7 @@ impl LimitKind {
         match self {
             Self::SceneBytes => limits.max_scene_bytes(),
             Self::Elements => u64::from(limits.max_elements()),
+            Self::RelationshipDepth => u64::from(limits.max_relationship_depth()),
             Self::TotalGeometry => limits.max_total_geometry_segments(),
             Self::TotalText => limits.max_total_text_scalars(),
             Self::TotalRasterizedPixels => limits.max_total_rasterized_pixels(),
@@ -516,6 +534,12 @@ impl LimitKind {
                 field: "max_elements",
                 value_kind: ValueKind::Count,
                 message: "element count limit exceeded",
+            },
+            Self::RelationshipDepth => LimitMetadata {
+                code: ErrorCode::RESOURCE_RELATIONSHIP_DEPTH_EXCEEDED,
+                field: "max_relationship_depth",
+                value_kind: ValueKind::Depth,
+                message: "relationship traversal depth limit exceeded",
             },
             Self::TotalGeometry => LimitMetadata {
                 code: ErrorCode::RESOURCE_TOTAL_GEOMETRY_EXCEEDED,

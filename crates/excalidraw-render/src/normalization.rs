@@ -153,12 +153,17 @@ pub(crate) struct NormalizedFileRecord {
 }
 
 pub(crate) struct NormalizedElementSource {
+    source_index: usize,
     id: String,
     pointer: String,
     coordinate_positions: [usize; 4],
 }
 
 impl NormalizedElementSource {
+    pub(crate) const fn source_index(&self) -> usize {
+        self.source_index
+    }
+
     pub(crate) fn id(&self) -> &str {
         &self.id
     }
@@ -978,6 +983,7 @@ fn normalize_scene_impl<E>(
 
         elements.push(NormalizedElement {
             source: NormalizedElementSource {
+                source_index: index,
                 id,
                 pointer: element_pointer,
                 coordinate_positions: [

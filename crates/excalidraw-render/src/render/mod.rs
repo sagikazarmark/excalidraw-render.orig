@@ -290,11 +290,91 @@ impl RenderSession {
                     "/elements",
                 )
             })?;
+            let relationships = crate::relationships::resolve(
+                scene,
+                &normalization.elements,
+                &normalization.files,
+                request.supplemental_assets(),
+                |event| match event {
+                    crate::relationships::RelationshipEvent::SearchStep {
+                        element_id,
+                        json_pointer,
+                        attempted_depth,
+                    } => {
+                        let context = ResourceContext::new(
+                            ResourcePhase::SharedSemanticResolution,
+                            "relationship_search_step",
+                            json_pointer,
+                        )
+                        .with_element_id(Some(element_id))
+                        .with_local_owner(Some(element_id));
+                        let delta = ResourceDelta {
+                            observed_relationship_depth: u64::from(attempted_depth),
+                            total_work_units: crate::relationships::traversal_delta(false).0,
+                            ..ResourceDelta::default()
+                        };
+                        self.transact(request, context, delta)
+                    }
+                    crate::relationships::RelationshipEvent::Traversal(traversal) => {
+                        let (total_work_units, working_bytes) =
+                            crate::relationships::traversal_delta(traversal.retained);
+                        self.transact(
+                            request,
+                            ResourceContext::new(
+                                ResourcePhase::SharedSemanticResolution,
+                                "relationship_traversal",
+                                traversal.json_pointer,
+                            )
+                            .with_element_id(Some(traversal.element_id))
+                            .with_local_owner(Some(traversal.local_owner)),
+                            ResourceDelta {
+                                observed_relationship_depth: u64::from(traversal.attempted_depth),
+                                working_bytes,
+                                total_work_units,
+                                ..ResourceDelta::default()
+                            },
+                        )
+                    }
+                },
+            );
+            let relationships = match relationships {
+                Ok(relationships) => relationships,
+                Err(crate::relationships::RelationshipError::Observer(error)) => return Err(error),
+                Err(crate::relationships::RelationshipError::MemoryUnavailable) => {
+                    return Err(self.memory_failure(
+                        request,
+                        "relationship_resolution",
+                        "relationship_graph",
+                    ));
+                }
+            };
+            for cycle in &relationships.removed_cycles {
+                let diagnostic = relationship_cycle_diagnostic(
+                    request.format(),
+                    &cycle.element_id,
+                    &cycle.json_pointer,
+                )
+                .map_err(|_| {
+                    self.memory_failure(request, "compatibility_report", "relationship_cycle")
+                })?;
+                self.retain_diagnostic_with_owner(
+                    request,
+                    ResourcePhase::SharedSemanticResolution,
+                    "relationship_cycle_removal",
+                    diagnostic,
+                    DiagnosticOwnership {
+                        local_owner: Some(&cycle.element_id),
+                        source_order: Some(cycle.source_order),
+                        source_position: Some(cycle.source_position),
+                    },
+                )?;
+            }
             let semantic_record_count = normalization
                 .elements
                 .len()
                 .saturating_add(normalization.fallbacks.len())
                 .saturating_add(normalization.files.len())
+                .saturating_add(relationships.graph.edges.len())
                 .saturating_add(1);
             semantic_working
                 .try_reserve_exact(semantic_record_count)
@@ -307,6 +387,29 @@ impl RenderSession {
                 && request.frame_options().enabled()
                 && request.frame_options().clip();
             let normalized_files = normalization.files;
+            for edge in &relationships.graph.edges {
+                let owner = relationships.graph.nodes.get(edge.source).ok_or_else(|| {
+                    self.internal_failure(
+                        request.format(),
+                        "relationship edge owner is missing",
+                        "/elements",
+                    )
+                })?;
+                semantic_working.push(SemanticWorkingRecord {
+                    source_order: owner.source_order,
+                    event: "relationship_edge",
+                    element_id: Some(try_owned(&owner.id).map_err(|_| {
+                        self.memory_failure(request, "relationship_resolution", "edge_identity")
+                    })?),
+                    local_owner: Some(try_owned(&owner.id).map_err(|_| {
+                        self.memory_failure(request, "relationship_resolution", "edge_owner")
+                    })?),
+                    json_pointer: try_owned(&edge.json_pointer).map_err(|_| {
+                        self.memory_failure(request, "relationship_resolution", "edge_pointer")
+                    })?,
+                    bytes: crate::relationships::edge_working_bytes(),
+                });
+            }
             let mut fallbacks = normalization.fallbacks;
             let mut outlines = Vec::new();
             outlines
@@ -609,7 +712,7 @@ impl RenderSession {
             self.preflight_fallback_text(&mut fallbacks, request, &mut semantic_working)?;
             semantic_working.sort_unstable_by_key(|record| record.source_order);
             if outlines.is_empty() && fallbacks.is_empty() {
-                match ResolvedScene::empty(&view_background_color, request) {
+                match ResolvedScene::empty(relationships.graph, &view_background_color, request) {
                     Ok(resolved) => resolved,
                     Err(ResolveSceneError::UnboundedGeometry) => {
                         return Err(self.unbounded_geometry_failure(request.format()));
@@ -633,6 +736,7 @@ impl RenderSession {
                 match ResolvedScene::elements(
                     outlines,
                     fallbacks,
+                    relationships.graph,
                     clip_fallbacks_to_frames,
                     &view_background_color,
                     request,
@@ -1953,6 +2057,7 @@ struct ResolvedScene {
     fallback_font_woff2: Option<Vec<u8>>,
     fallback_font_sfnt: Option<Vec<u8>>,
     mandatory_manifest: Option<String>,
+    _relationships: crate::relationships::ResolvedRelationshipGraph,
 }
 
 enum GeneratedGeometry {
@@ -2025,7 +2130,11 @@ impl From<std::collections::TryReserveError> for ResolveSceneError {
 }
 
 impl ResolvedScene {
-    fn empty(background_color: &str, request: &RenderRequest) -> Result<Self, ResolveSceneError> {
+    fn empty(
+        relationships: crate::relationships::ResolvedRelationshipGraph,
+        background_color: &str,
+        request: &RenderRequest,
+    ) -> Result<Self, ResolveSceneError> {
         let logical_size = request.padding() * 2.0;
         if !logical_size.is_finite() {
             return Err(ResolveSceneError::UnboundedGeometry);
@@ -2042,12 +2151,14 @@ impl ResolvedScene {
             fallback_font_woff2: None,
             fallback_font_sfnt: None,
             mandatory_manifest: None,
+            _relationships: relationships,
         })
     }
 
     fn elements(
         outlines: Vec<(NormalizedElement, Option<GeneratedGeometry>)>,
         fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
+        relationships: crate::relationships::ResolvedRelationshipGraph,
         clip_fallbacks_to_frames: bool,
         background_color: &str,
         request: &RenderRequest,
@@ -2310,6 +2421,7 @@ impl ResolvedScene {
             fallback_font_woff2,
             fallback_font_sfnt,
             mandatory_manifest,
+            _relationships: relationships,
         }))
     }
 
@@ -2552,6 +2664,30 @@ fn known_element_replaced_diagnostic(
             recipe_id: has_bounds
                 .then(|| try_owned("renderer.known-element-unavailable.v1"))
                 .transpose()?,
+        })),
+        order: DiagnosticOrder::default(),
+    })
+}
+
+fn relationship_cycle_diagnostic(
+    format: OutputFormat,
+    element_id: &str,
+    json_pointer: &str,
+) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
+    let mut effects = Vec::new();
+    effects.try_reserve_exact(2)?;
+    effects.extend_from_slice(&[DiagnosticEffect::InputRepair, DiagnosticEffect::Semantic]);
+    Ok(CompatibilityDiagnostic {
+        code: DiagnosticCode::NORMALIZATION_RELATIONSHIP_CYCLE,
+        severity: DiagnosticSeverity::Warning,
+        format,
+        effects,
+        element_id: Some(try_owned(element_id)?),
+        json_pointer: try_owned(json_pointer)?,
+        message: try_owned("relationship cycle-closing edge was removed deterministically")?,
+        details: Some(Box::new(ErrorDetails::Compatibility {
+            recovery: Recovery::Removed,
+            recipe_id: None,
         })),
         order: DiagnosticOrder::default(),
     })
