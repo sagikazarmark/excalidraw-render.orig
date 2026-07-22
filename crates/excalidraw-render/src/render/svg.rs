@@ -15,7 +15,7 @@ pub(super) struct SvgPlan {
     background: Option<CanonicalColor>,
     fallback_colors: super::FallbackColors,
     fallback_font_woff2: Option<Vec<u8>>,
-    official_font_woff2: Option<Vec<u8>>,
+    official_fonts: Vec<super::ResolvedFont>,
     mandatory_manifest: Option<String>,
     elements: Vec<SvgElement>,
 }
@@ -179,7 +179,7 @@ impl SvgPlan {
             Sizing::MaxDimension(_) => 1.0,
         };
         let fallback_font_woff2 = scene.fallback_font_woff2;
-        let official_font_woff2 = scene.official_font_woff2;
+        let official_fonts = scene.official_fonts;
         let mandatory_manifest = scene.mandatory_manifest;
         let mut elements = Vec::new();
         elements
@@ -291,7 +291,7 @@ impl SvgPlan {
             background: scene.include_background.then_some(scene.background_color),
             fallback_colors: scene.fallback_colors,
             fallback_font_woff2,
-            official_font_woff2,
+            official_fonts,
             mandatory_manifest,
             elements,
         })
@@ -310,10 +310,11 @@ impl SvgPlan {
                     .ok_or_else(svg_size_error)?,
             )?;
         }
-        if let Some(font) = &self.official_font_woff2 {
+        for font in &self.official_fonts {
             capacity = checked_capacity_add(
                 capacity,
-                font.len()
+                font.woff2
+                    .len()
                     .checked_add(2)
                     .and_then(|length| length.checked_div(3))
                     .and_then(|groups| groups.checked_mul(4))
@@ -412,12 +413,11 @@ impl SvgPlan {
             push_base64(&mut svg, font)?;
             svg.push_str(") format('woff2')}</style></defs>");
         }
-        if let Some(font) = &self.official_font_woff2 {
-            svg.push_str(concat!(
-                "<defs><style>@font-face{font-family:'Excalifont';font-style:normal;",
-                "font-weight:400;src:url(data:font/woff2;base64,"
-            ));
-            push_base64(&mut svg, font)?;
+        for font in &self.official_fonts {
+            svg.push_str("<defs><style>@font-face{font-family:'");
+            svg.push_str(font.family);
+            svg.push_str("';font-style:normal;font-weight:400;src:url(data:font/woff2;base64,");
+            push_base64(&mut svg, &font.woff2)?;
             svg.push_str(") format('woff2')}</style></defs>");
         }
         if let Some(background) = &self.background {
@@ -706,7 +706,9 @@ impl SvgPlan {
                     color.write_hex(&mut svg).map_err(|_| {
                         FormatEncodeError::Encoding("failed to write SVG text color".to_owned())
                     })?;
-                    svg.push_str("\" font-family=\"Excalifont\" font-size=\"");
+                    svg.push_str("\" font-family=\"");
+                    push_escaped_attribute(&mut svg, text.font_family);
+                    svg.push_str("\" font-size=\"");
                     push_svg_number(&mut svg, text.font_size, "SVG text font size")?;
                     svg.push_str("\">");
                     for line in &text.lines {

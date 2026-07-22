@@ -468,10 +468,7 @@ impl RenderSession {
                     outlines.push((source, None));
                     continue;
                 }
-                if matches!(
-                    &source.kind,
-                    NormalizedElementKind::Text(text) if text.font_family == 5
-                ) {
+                if matches!(&source.kind, NormalizedElementKind::Text(_)) {
                     if self.preflight_official_text(&source, request, &mut semantic_working)? {
                         outlines.push((source, None));
                     }
@@ -1801,13 +1798,12 @@ impl RenderSession {
             resolved.fallback_font_sfnt = None;
         }
         if !has_official_text {
-            resolved.official_font_woff2 = None;
-            resolved.official_font_sfnt = None;
+            resolved.official_fonts.clear();
         }
         resolved.mandatory_manifest = if has_fallback_label || has_official_text {
             Some(
-                text::mandatory_notice_manifest(has_fallback_label, has_official_text).map_err(
-                    |error| match error {
+                text::mandatory_notice_manifest(has_fallback_label, &resolved.official_fonts)
+                    .map_err(|error| match error {
                         text::LabelError::Memory => self.memory_failure(
                             request,
                             "artifact_manifest",
@@ -1818,8 +1814,7 @@ impl RenderSession {
                             "the mandatory font notice could not be resolved",
                             "/elements",
                         ),
-                    },
-                )?,
+                    })?,
             )
         } else {
             None
@@ -1988,6 +1983,30 @@ impl RenderSession {
                 },
             )?;
             self.excalifont_range_selected = true;
+        }
+        if text.font_family == 2 && !text.text.is_empty() {
+            let diagnostic = fallback_font_diagnostic(
+                DiagnosticCode::FONT_LIBERATION_SANS_SUBSTITUTED,
+                DiagnosticSeverity::Info,
+                request.format(),
+                Some(source.source.id()),
+                source.source.pointer(),
+                None,
+            )
+            .map_err(|_| {
+                self.memory_failure(request, "compatibility_report", "text_font_substitution")
+            })?;
+            self.retain_diagnostic_with_owner(
+                request,
+                ResourcePhase::SharedSemanticResolution,
+                "text_font_substitution",
+                diagnostic,
+                DiagnosticOwnership {
+                    local_owner: Some(source.source.id()),
+                    source_order: Some(source.source_order),
+                    source_position: Some(0),
+                },
+            )?;
         }
         Ok(true)
     }
@@ -2709,10 +2728,17 @@ struct ResolvedScene {
     elements: Vec<ResolvedElement>,
     fallback_font_woff2: Option<Vec<u8>>,
     fallback_font_sfnt: Option<Vec<u8>>,
-    official_font_woff2: Option<Vec<u8>>,
-    official_font_sfnt: Option<Vec<u8>>,
+    official_fonts: Vec<ResolvedFont>,
     mandatory_manifest: Option<String>,
     _relationships: crate::relationships::ResolvedRelationshipGraph,
+}
+
+struct ResolvedFont {
+    family: &'static str,
+    pdf_name: &'static str,
+    identity: &'static str,
+    woff2: Vec<u8>,
+    sfnt: Vec<u8>,
 }
 
 #[derive(Clone, Copy)]
@@ -2888,8 +2914,7 @@ impl ResolvedScene {
             elements: Vec::new(),
             fallback_font_woff2: None,
             fallback_font_sfnt: None,
-            official_font_woff2: None,
-            official_font_sfnt: None,
+            official_fonts: Vec::new(),
             mandatory_manifest: None,
             _relationships: relationships,
         })
@@ -3077,16 +3102,7 @@ impl ResolvedScene {
         } else {
             None
         };
-        let official_font = if outlines.iter().any(|(source, _)| {
-            matches!(&source.kind, NormalizedElementKind::Text(text) if text.font_family == 5 && !text.text.is_empty())
-        }) {
-            Some(text::OfficialFont::load_excalifont().map_err(|error| match error {
-                text::LabelError::Memory => ResolveSceneError::Memory,
-                text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
-            })?)
-        } else {
-            None
-        };
+        let mut official_fonts = Vec::<text::OfficialFont>::new();
         let mut has_label = false;
         for (source, geometry) in outlines {
             let frame_clips = resolve_frame_clips(
@@ -3157,10 +3173,25 @@ impl ResolvedScene {
                 if text_source.text.is_empty() {
                     continue;
                 }
-                let font = official_font
-                    .as_ref()
-                    .ok_or(ResolveSceneError::InvalidFallbackFont)?;
-                let laid_out = font
+                let font_index = if let Some(index) = official_fonts
+                    .iter()
+                    .position(|font| font.matches_family(text_source.font_family))
+                {
+                    index
+                } else {
+                    official_fonts.try_reserve(1)?;
+                    official_fonts.push(
+                        text::OfficialFont::load(text_source.font_family, &text_source.text)
+                            .map_err(|error| match error {
+                                text::LabelError::Memory => ResolveSceneError::Memory,
+                                text::LabelError::InvalidFont => {
+                                    ResolveSceneError::InvalidFallbackFont
+                                }
+                            })?,
+                    );
+                    official_fonts.len() - 1
+                };
+                let mut laid_out = official_fonts[font_index]
                     .layout(
                         &text_source.text,
                         text::TextLayout {
@@ -3174,6 +3205,7 @@ impl ResolvedScene {
                         text::LabelError::Memory => ResolveSceneError::Memory,
                         text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
                     })?;
+                laid_out.font_index = font_index;
                 elements.push(ResolvedElement::Text(ResolvedTextElement {
                     source_order: source.source_order,
                     source: source.source,
@@ -3361,9 +3393,21 @@ impl ResolvedScene {
         let has_official_text = elements
             .iter()
             .any(|element| matches!(element, ResolvedElement::Text(_)));
+        let mut resolved_fonts = Vec::new();
+        resolved_fonts.try_reserve_exact(official_fonts.len())?;
+        for font in official_fonts {
+            let (family, pdf_name, identity, woff2, sfnt) = font.into_parts();
+            resolved_fonts.push(ResolvedFont {
+                family,
+                pdf_name,
+                identity,
+                woff2,
+                sfnt,
+            });
+        }
         let mandatory_manifest = if has_label || has_official_text {
             Some(
-                text::mandatory_notice_manifest(has_label, has_official_text).map_err(|error| {
+                text::mandatory_notice_manifest(has_label, &resolved_fonts).map_err(|error| {
                     match error {
                         text::LabelError::Memory => ResolveSceneError::Memory,
                         text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
@@ -3373,10 +3417,6 @@ impl ResolvedScene {
         } else {
             None
         };
-        let (official_font_woff2, official_font_sfnt) = official_font
-            .map(text::OfficialFont::into_parts)
-            .map_or((None, None), |(woff2, sfnt)| (Some(woff2), Some(sfnt)));
-
         Ok(Some(Self {
             logical_width,
             logical_height,
@@ -3386,8 +3426,7 @@ impl ResolvedScene {
             elements,
             fallback_font_woff2,
             fallback_font_sfnt,
-            official_font_woff2,
-            official_font_sfnt,
+            official_fonts: resolved_fonts,
             mandatory_manifest,
             _relationships: relationships,
         }))

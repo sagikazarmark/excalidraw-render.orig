@@ -5,10 +5,6 @@ use rustybuzz::ttf_parser::{GlyphId, OutlineBuilder, Tag};
 const LIBERATION_SANS_PATH: &str = "fonts/Liberation/LiberationSans-Regular.woff2";
 const EXCALIFONT_LATIN_PATH: &str =
     "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2";
-const EXCALIFONT_LATIN_IDENTITY: &str = concat!(
-    "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2@sha256:",
-    "e4423b318e11432aff2e6e865e300b7ca270f92321a3f56632268fede01c1b48"
-);
 const LIBERATION_SANS_IDENTITY: &str = concat!(
     "fonts/Liberation/LiberationSans-Regular.woff2@sha256:",
     "006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8"
@@ -21,11 +17,17 @@ pub(super) struct FallbackFont {
 }
 
 pub(super) struct OfficialFont {
+    source_family: i32,
+    family: &'static str,
+    pdf_name: &'static str,
+    identity: &'static str,
     woff2: Vec<u8>,
     sfnt: Vec<u8>,
 }
 
 pub(super) struct ResolvedText {
+    pub(super) font_index: usize,
+    pub(super) font_family: &'static str,
     pub(super) font_size: f64,
     pub(super) lines: Vec<ResolvedLabel>,
     pub(super) scalar_count: u64,
@@ -230,20 +232,68 @@ impl FallbackFont {
 }
 
 impl OfficialFont {
-    pub(super) fn load_excalifont() -> Result<Self, LabelError> {
-        let asset = excalidraw_render_assets_base::load_asset(EXCALIFONT_LATIN_PATH)
-            .map_err(|_| LabelError::InvalidFont)?
+    pub(super) fn load(font_family: i32, text: &str) -> Result<Self, LabelError> {
+        let (catalog_family, family, pdf_name) = match font_family {
+            1 => ("Virgil", "Virgil", "Virgil"),
+            2 | 9 => ("Liberation", "Liberation Sans", "LiberationSans"),
+            3 => ("Cascadia", "Cascadia Code", "CascadiaCode"),
+            5 => ("Excalifont", "Excalifont", "Excalifont"),
+            6 => ("Nunito", "Nunito", "Nunito"),
+            7 => ("Lilita", "Lilita One", "LilitaOne"),
+            8 => ("ComicShanns", "Comic Shanns", "ComicShanns"),
+            _ => return Err(LabelError::InvalidFont),
+        };
+        let mut selected = None;
+        let mut replacement_face = None;
+        for record in excalidraw_render_assets_base::revision_1()
+            .assets
+            .iter()
+            .filter(|record| record.family == catalog_family)
+        {
+            let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+                .map_err(|_| LabelError::InvalidFont)?
+                .ok_or(LabelError::InvalidFont)?;
+            let sfnt = if record.upstream_path == EXCALIFONT_LATIN_PATH {
+                let predecoded = excalidraw_render_assets_base::load_excalifont_basic_latin_sfnt()
+                    .map_err(|_| LabelError::InvalidFont)?;
+                let mut sfnt = Vec::new();
+                sfnt.try_reserve_exact(predecoded.bytes().len())?;
+                sfnt.extend_from_slice(predecoded.bytes());
+                sfnt
+            } else {
+                wuff::decompress_woff2(asset.bytes()).map_err(|_| LabelError::InvalidFont)?
+            };
+            let face = rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
+            if text
+                .chars()
+                .filter(|character| *character != '\n')
+                .all(|character| face.glyph_index(character).is_some())
+            {
+                selected = Some((record, asset, sfnt));
+                break;
+            }
+            if face.glyph_index('?').is_some()
+                && face.glyph_index('A').is_some()
+                && (replacement_face.is_none() || record.upstream_path == EXCALIFONT_LATIN_PATH)
+            {
+                replacement_face = Some((record, asset, sfnt));
+            }
+        }
+        let (record, asset, sfnt) = selected
+            .or(replacement_face)
             .ok_or(LabelError::InvalidFont)?;
         let mut woff2 = Vec::new();
         woff2.try_reserve_exact(asset.bytes().len())?;
         woff2.extend_from_slice(asset.bytes());
-        let predecoded = excalidraw_render_assets_base::load_excalifont_basic_latin_sfnt()
-            .map_err(|_| LabelError::InvalidFont)?;
-        let mut sfnt = Vec::new();
-        sfnt.try_reserve_exact(predecoded.bytes().len())?;
-        sfnt.extend_from_slice(predecoded.bytes());
         rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
-        Ok(Self { woff2, sfnt })
+        Ok(Self {
+            source_family: font_family,
+            family,
+            pdf_name,
+            identity: record.identity,
+            woff2,
+            sfnt,
+        })
     }
 
     pub(super) fn layout(
@@ -316,6 +366,8 @@ impl OfficialFont {
             )?);
         }
         Ok(ResolvedText {
+            font_index: 0,
+            font_family: self.family,
             font_size: layout.font_size,
             lines,
             scalar_count: u64::try_from(text.chars().count()).unwrap_or(u64::MAX),
@@ -329,8 +381,19 @@ impl OfficialFont {
         })
     }
 
-    pub(super) fn into_parts(self) -> (Vec<u8>, Vec<u8>) {
-        (self.woff2, self.sfnt)
+    pub(super) fn into_parts(self) -> (&'static str, &'static str, &'static str, Vec<u8>, Vec<u8>) {
+        (
+            self.family,
+            self.pdf_name,
+            self.identity,
+            self.woff2,
+            self.sfnt,
+        )
+    }
+
+    pub(super) fn matches_family(&self, font_family: i32) -> bool {
+        self.source_family == font_family
+            || matches!((self.source_family, font_family), (2, 9) | (9, 2))
     }
 }
 
@@ -487,63 +550,95 @@ fn glyph_cluster_text<'a>(
 
 pub(super) fn mandatory_notice_manifest(
     liberation: bool,
-    excalifont: bool,
+    official: &[super::ResolvedFont],
 ) -> Result<String, LabelError> {
     let full_ofl_notice = liberation_sans_notice().ok_or(LabelError::InvalidFont)?;
-    let liberation_notice = if liberation { full_ofl_notice } else { "" };
     let excalifont_attribution = "Copyright (c) 2024 by Excalidraw. Excalifont is derived from Virgil by Your Own Font Foundry, with modifications by Jan Filipek / DizajnDesign. Excalifont and Virgil provenance is retained together.";
     let ofl_start = full_ofl_notice
         .find("This Font Software is licensed")
         .map(|index| &full_ofl_notice[index..])
         .ok_or(LabelError::InvalidFont)?;
-    let mut excalifont_notice = String::new();
-    excalifont_notice.try_reserve_exact(
-        excalifont_attribution
-            .len()
-            .saturating_add(2)
-            .saturating_add(ofl_start.len()),
-    )?;
-    excalifont_notice.push_str(excalifont_attribution);
-    excalifont_notice.push_str("\n\n");
-    excalifont_notice.push_str(ofl_start);
     let prefix = concat!(
         "{\"schema_version\":1,\"provenance\":null,\"diagnostic_summary\":null,",
         "\"notices\":["
     );
     let suffix = "],\"embedded_scene\":null}";
     let mut manifest = String::new();
-    let capacity = prefix
-        .len()
-        .saturating_add(LIBERATION_SANS_IDENTITY.len())
-        .saturating_add(EXCALIFONT_LATIN_IDENTITY.len())
-        .saturating_add(liberation_notice.len().saturating_mul(2))
-        .saturating_add(excalifont_notice.len().saturating_mul(2))
-        .saturating_add(128)
-        .saturating_add(suffix.len());
-    manifest.try_reserve_exact(capacity)?;
+    manifest.try_reserve_exact(
+        prefix
+            .len()
+            .saturating_add(suffix.len())
+            .saturating_add(256),
+    )?;
     manifest.push_str(prefix);
     let mut separator = "";
-    for (include, identity, notice) in [
-        (liberation, LIBERATION_SANS_IDENTITY, liberation_notice),
-        (
-            excalifont,
-            EXCALIFONT_LATIN_IDENTITY,
-            excalifont_notice.as_str(),
-        ),
-    ] {
-        if !include {
+    if liberation {
+        push_manifest_notice(
+            &mut manifest,
+            &mut separator,
+            LIBERATION_SANS_IDENTITY,
+            full_ofl_notice,
+        );
+    }
+    for font in official {
+        if liberation && font.identity == LIBERATION_SANS_IDENTITY {
             continue;
         }
-        manifest.push_str(separator);
-        manifest.push_str("{\"asset_identity\":\"");
-        manifest.push_str(identity);
-        manifest.push_str("\",\"text\":\"");
-        push_json_string_content(&mut manifest, notice);
-        manifest.push_str("\"}");
-        separator = ",";
+        let attribution = match font.family {
+            "Cascadia Code" => "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code.",
+            "Comic Shanns" => comic_shanns_notice().ok_or(LabelError::InvalidFont)?,
+            "Excalifont" => excalifont_attribution,
+            "Liberation Sans" => "Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine. Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.",
+            "Lilita One" => "Copyright (c) 2011 Juan Montoreano (juan@remolacha.biz), with Reserved Font Name Lilita.",
+            "Nunito" => "Copyright 2014 The Nunito Project Authors (https://github.com/googlefonts/nunito).",
+            "Virgil" => "Virgil by Your Own Font Foundry, with Reserved Font Name Virgil.",
+            _ => return Err(LabelError::InvalidFont),
+        };
+        let mut official_notice = String::new();
+        official_notice.try_reserve_exact(
+            attribution
+                .len()
+                .saturating_add(2)
+                .saturating_add(ofl_start.len()),
+        )?;
+        official_notice.push_str(attribution);
+        if font.family != "Comic Shanns" {
+            official_notice.push_str("\n\n");
+            official_notice.push_str(ofl_start);
+        }
+        push_manifest_notice(
+            &mut manifest,
+            &mut separator,
+            font.identity,
+            &official_notice,
+        );
     }
     manifest.push_str(suffix);
     Ok(manifest)
+}
+
+fn push_manifest_notice(
+    manifest: &mut String,
+    separator: &mut &'static str,
+    identity: &str,
+    notice: &str,
+) {
+    manifest.push_str(separator);
+    manifest.push_str("{\"asset_identity\":\"");
+    manifest.push_str(identity);
+    manifest.push_str("\",\"text\":\"");
+    push_json_string_content(manifest, notice);
+    manifest.push_str("\"}");
+    *separator = ",";
+}
+
+fn comic_shanns_notice() -> Option<&'static str> {
+    const START: &str = "Comic Shanns MIT license\n==============================================================================\n\n";
+    const END: &str = "\n\n==============================================================================\nSIL Open Font License 1.1";
+    let bundle = excalidraw_render_assets_base::license_bundle();
+    let start = bundle.find(START)?.checked_add(START.len())?;
+    let tail = bundle.get(start..)?;
+    tail.get(..tail.find(END)?)
 }
 
 fn liberation_sans_notice() -> Option<&'static str> {

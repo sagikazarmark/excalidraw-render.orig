@@ -48,7 +48,7 @@ pub(super) struct PdfPlan {
     fallback_colors: super::FallbackColors,
     mandatory_manifest: Option<String>,
     fallback_font_sfnt: Option<Vec<u8>>,
-    official_font_sfnt: Option<Vec<u8>>,
+    official_fonts: Vec<super::ResolvedFont>,
     elements: Vec<PdfElement>,
 }
 
@@ -209,7 +209,7 @@ impl PdfPlan {
             fallback_colors: scene.fallback_colors,
             mandatory_manifest: scene.mandatory_manifest,
             fallback_font_sfnt: scene.fallback_font_sfnt,
-            official_font_sfnt: scene.official_font_sfnt,
+            official_fonts: scene.official_fonts,
             elements,
         })
     }
@@ -272,10 +272,14 @@ impl PdfPlan {
             .as_ref()
             .map(|_| first_fallback_form_object + fallback_forms.len());
         let fallback_font_object_count = usize::from(fallback_font_object.is_some()) * 6;
-        let official_font_object = self.official_font_sfnt.as_ref().map(|_| {
-            first_fallback_form_object + fallback_forms.len() + fallback_font_object_count
-        });
-        let official_font_object_count = usize::from(official_font_object.is_some()) * 6;
+        let official_font_object = (!self.official_fonts.is_empty()).then_some(
+            first_fallback_form_object + fallback_forms.len() + fallback_font_object_count,
+        );
+        let official_font_object_count = self
+            .official_fonts
+            .len()
+            .checked_mul(6)
+            .ok_or_else(pdf_size_error)?;
         let object_count = object_count
             .checked_add(fallback_font_object_count)
             .and_then(|count| count.checked_add(official_font_object_count))
@@ -314,10 +318,10 @@ impl PdfPlan {
                     })
             })
             .and_then(|capacity| {
-                self.official_font_sfnt
-                    .as_ref()
-                    .map_or(Some(capacity), |font| {
-                        capacity.checked_add(font.len().saturating_add(16_384))
+                self.official_fonts
+                    .iter()
+                    .try_fold(capacity, |capacity, font| {
+                        capacity.checked_add(font.sfnt.len().saturating_add(16_384))
                     })
             })
             .and_then(|capacity| {
@@ -398,11 +402,29 @@ impl PdfPlan {
         if let Some(fallback_font_object) = fallback_font_object {
             write!(pdf, "/Font << /F1 {fallback_font_object} 0 R").map_err(write_error)?;
             if let Some(official_font_object) = official_font_object {
-                write!(pdf, " /F2 {official_font_object} 0 R").map_err(write_error)?;
+                for index in 0..self.official_fonts.len() {
+                    write!(
+                        pdf,
+                        " /F{} {} 0 R",
+                        index + 2,
+                        official_font_object + index * 6
+                    )
+                    .map_err(write_error)?;
+                }
             }
             pdf.extend_from_slice(b" >>\n");
         } else if let Some(official_font_object) = official_font_object {
-            writeln!(pdf, "/Font << /F2 {official_font_object} 0 R >>").map_err(write_error)?;
+            pdf.extend_from_slice(b"/Font <<");
+            for index in 0..self.official_fonts.len() {
+                write!(
+                    pdf,
+                    " /F{} {} 0 R",
+                    index + 2,
+                    official_font_object + index * 6
+                )
+                .map_err(write_error)?;
+            }
+            pdf.extend_from_slice(b" >>\n");
         }
         pdf.extend_from_slice(b">>\n");
         if link_count != 0 {
@@ -543,17 +565,17 @@ impl PdfPlan {
                 &fallback_mappings,
             )?;
         }
-        if let (Some(font_object), Some(font)) =
-            (official_font_object, self.official_font_sfnt.as_deref())
-        {
-            self.write_font_objects(
-                &mut pdf,
-                &mut offsets,
-                font_object,
-                font,
-                "Excalifont",
-                &official_mappings,
-            )?;
+        if let Some(first_object) = official_font_object {
+            for (index, font) in self.official_fonts.iter().enumerate() {
+                self.write_font_objects(
+                    &mut pdf,
+                    &mut offsets,
+                    first_object + index * 6,
+                    &font.sfnt,
+                    font.pdf_name,
+                    &official_mappings[index],
+                )?;
+            }
         }
 
         let xref_offset = pdf.len();
@@ -784,14 +806,26 @@ impl PdfPlan {
         )
     }
 
-    fn official_glyph_mappings(&self) -> Result<Vec<PdfGlyphMapping>, FormatEncodeError> {
-        glyph_mappings(
-            self.elements.iter().flat_map(|element| match element {
-                PdfElement::Text { text, .. } => text.lines.as_slice(),
-                _ => &[],
-            }),
-            "pdf_text_glyph_mappings",
-        )
+    fn official_glyph_mappings(&self) -> Result<Vec<Vec<PdfGlyphMapping>>, FormatEncodeError> {
+        let mut all_mappings = Vec::new();
+        all_mappings
+            .try_reserve_exact(self.official_fonts.len())
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_workspace",
+                subject: "pdf_text_font_mappings",
+            })?;
+        for font_index in 0..self.official_fonts.len() {
+            all_mappings.push(glyph_mappings(
+                self.elements.iter().flat_map(|element| match element {
+                    PdfElement::Text { text, .. } if text.font_index == font_index => {
+                        text.lines.as_slice()
+                    }
+                    _ => &[],
+                }),
+                "pdf_text_glyph_mappings",
+            )?);
+        }
+        Ok(all_mappings)
     }
 
     fn opacity_resources(&self) -> Result<Vec<f64>, FormatEncodeError> {
@@ -922,7 +956,7 @@ impl PdfPlan {
         &self,
         opacity_resources: &[f64],
         fallback_mappings: &[PdfGlyphMapping],
-        official_mappings: &[PdfGlyphMapping],
+        official_mappings: &[Vec<PdfGlyphMapping>],
     ) -> Result<String, FormatEncodeError> {
         let mut capacity = 1_024_usize;
         for element in &self.elements {
@@ -1288,7 +1322,12 @@ impl PdfPlan {
                     for line in &text.lines {
                         content.push_str("/Span << /ActualText <FEFF");
                         push_utf16be_hex(&mut content, &line.text)?;
-                        content.push_str("> >> BDC\nBT\n/F2 ");
+                        content.push_str("> >> BDC\nBT\n/F");
+                        write!(content, "{} ", text.font_index + 2).map_err(|_| {
+                            FormatEncodeError::Encoding(
+                                "failed to write PDF text font resource".to_owned(),
+                            )
+                        })?;
                         push_pdf_number(&mut content, text.font_size, "PDF text font size")?;
                         content.push_str(" Tf\n");
                         for glyph in &line.glyphs {
@@ -1297,7 +1336,13 @@ impl PdfPlan {
                             content.push(' ');
                             push_pdf_number(&mut content, glyph.y, "PDF text glyph y")?;
                             content.push_str(" Tm\n<");
-                            let code = glyph_mapping_code(official_mappings, glyph)?;
+                            let mappings =
+                                official_mappings.get(text.font_index).ok_or_else(|| {
+                                    FormatEncodeError::Encoding(
+                                        "PDF text references an unknown font resource".to_owned(),
+                                    )
+                                })?;
+                            let code = glyph_mapping_code(mappings, glyph)?;
                             write!(content, "{code:04X}").map_err(|_| {
                                 FormatEncodeError::Encoding(
                                     "failed to write PDF text glyph ID".to_owned(),
