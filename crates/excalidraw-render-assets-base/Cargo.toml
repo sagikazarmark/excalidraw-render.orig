@@ -20,3 +20,7 @@ workspace = true
 excalidraw-render-assets-data-000.workspace = true
 excalidraw-render-assets-data-001.workspace = true
 sha2.workspace = true
+
+[dev-dependencies]
+rustybuzz.workspace = true
+wuff.workspace = true

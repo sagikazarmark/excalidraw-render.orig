@@ -21,6 +21,14 @@ const SCENE_SURFACE_EVIDENCE_DIGEST: &str =
     "29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb";
 const RAW_SHARD_LIMIT: usize = 8 * 1024 * 1024;
 const CATALOG_SCHEMA: &str = "excalidraw-render/revision-catalog/v1";
+const EXCALIFONT_BASIC_LATIN_PATH: &str =
+    "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2";
+const EXCALIFONT_BASIC_LATIN_SHA256: &str =
+    "e4423b318e11432aff2e6e865e300b7ca270f92321a3f56632268fede01c1b48";
+const EXCALIFONT_BASIC_LATIN_LENGTH: usize = 24_956;
+const EXCALIFONT_BASIC_LATIN_SFNT_SHA256: &str =
+    "a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb";
+const EXCALIFONT_BASIC_LATIN_SFNT_LENGTH: usize = 61_948;
 
 const ARTIFACTS: &[(&str, &str, &str)] = &[
     (
@@ -315,6 +323,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
             assets.len()
         ));
     }
+    materialize_predecoded_excalifont(&root, &assets)?;
 
     let shards = partition(&mut assets)?;
     if shards.len() != 2 {
@@ -444,7 +453,8 @@ pub fn verify() -> Result<(), String> {
     }
     verify_catalog_schema(&base, &catalog)?;
     verify_catalog_identity(&catalog, &scene_surface)?;
-    verify_assets(&root, &catalog)?;
+    let excalifont_source = verify_assets(&root, &catalog)?;
+    verify_predecoded_excalifont(&root, &excalifont_source)?;
 
     let generated_path = base.join("src/generated/revision_1.rs");
     let generated = fs::read_to_string(&generated_path)
@@ -476,6 +486,99 @@ pub fn verify() -> Result<(), String> {
         if bytes != bundle {
             return Err(format!("license bundle copy is stale: {}", copy.display()));
         }
+    }
+    Ok(())
+}
+
+fn materialize_predecoded_excalifont(root: &Path, assets: &[ImportedAsset]) -> Result<(), String> {
+    let source = assets
+        .iter()
+        .find(|asset| asset.path == EXCALIFONT_BASIC_LATIN_PATH)
+        .ok_or_else(|| "manifested Excalifont basic-Latin source is missing".to_owned())?;
+    let sfnt = wuff::decompress_woff2(&source.bytes)
+        .map_err(|error| format!("failed to predecode Excalifont basic Latin: {error}"))?;
+    if sfnt.len() != EXCALIFONT_BASIC_LATIN_SFNT_LENGTH
+        || sha256(&sfnt) != EXCALIFONT_BASIC_LATIN_SFNT_SHA256
+    {
+        return Err(
+            "predecoded Excalifont basic-Latin bytes do not match the sealed identity".to_owned(),
+        );
+    }
+    rustybuzz::Face::from_slice(&sfnt, 0)
+        .ok_or_else(|| "predecoded Excalifont basic Latin is not a valid sfnt".to_owned())?;
+    let destination = root.join(
+        "crates/excalidraw-render-assets-base/catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt",
+    );
+    write_if_changed(&destination, &sfnt)
+}
+
+fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String> {
+    let path = root.join(
+        "crates/excalidraw-render-assets-base/catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt",
+    );
+    let sfnt =
+        fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    if sfnt.len() != EXCALIFONT_BASIC_LATIN_SFNT_LENGTH
+        || sha256(&sfnt) != EXCALIFONT_BASIC_LATIN_SFNT_SHA256
+    {
+        return Err("checked-in Excalifont basic-Latin sfnt digest is invalid".to_owned());
+    }
+    rustybuzz::Face::from_slice(&sfnt, 0)
+        .ok_or_else(|| "checked-in Excalifont basic Latin is not a valid sfnt".to_owned())?;
+    let metadata_path = path.with_extension("sfnt.json");
+    let metadata: Value = serde_json::from_slice(
+        &fs::read(&metadata_path)
+            .map_err(|error| format!("failed to read {}: {error}", metadata_path.display()))?,
+    )
+    .map_err(|error| format!("invalid Excalifont transformation record: {error}"))?;
+    let expected = json!({
+        "approval": {
+            "date": "2026-07-22",
+            "exact_output_bytes_reviewed": true,
+            "issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/58#issuecomment-5051018482",
+            "limitation": "Approval applies only to output SHA-256 a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb; any byte change requires fresh review.",
+            "policy_approved_by": "sagikazarmark",
+            "policy_approval_date": "2026-07-18",
+            "reviewer": "OpenAI gpt-5.6-sol",
+            "scope": "independent automated byte-level and SFNT structural review"
+        },
+        "comparison": {
+            "container_decode": "wuff 0.2.8 output and checked SFNT are byte-identical",
+            "glyphs": "217 glyphs; complete glyf, loca, bounds, outlines, and horizontal metrics are identical",
+            "license_metadata": "embedded copyright and legal name records are identical; catalog OFL identity and combined Excalifont/Virgil package notice verified",
+            "metrics": "units-per-em, global bounds, ascender, descender, line gap, weight, width, advances, and side bearings are identical",
+            "names": "all seven name records are identical; no renaming occurred",
+            "tables": "all 14 SFNT tables and declared checksums are identical"
+        },
+        "output": {
+            "length": EXCALIFONT_BASIC_LATIN_SFNT_LENGTH,
+            "path": "catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt",
+            "sha256": EXCALIFONT_BASIC_LATIN_SFNT_SHA256
+        },
+        "schema_version": 1,
+        "source": {
+            "length": EXCALIFONT_BASIC_LATIN_LENGTH,
+            "path": EXCALIFONT_BASIC_LATIN_PATH,
+            "sha256": EXCALIFONT_BASIC_LATIN_SHA256
+        },
+        "tool": {
+            "invocation": "wuff::decompress_woff2(source_bytes)",
+            "name": "wuff",
+            "version": "0.2.8"
+        }
+    });
+    if metadata != expected {
+        return Err("Excalifont predecoded transformation record is stale".to_owned());
+    }
+    if source.len() != EXCALIFONT_BASIC_LATIN_LENGTH
+        || sha256(source) != EXCALIFONT_BASIC_LATIN_SHA256
+    {
+        return Err("Excalifont predecoded transformation source is invalid".to_owned());
+    }
+    let decoded = wuff::decompress_woff2(source)
+        .map_err(|error| format!("failed to verify Excalifont transformation: {error}"))?;
+    if decoded != sfnt {
+        return Err("checked-in Excalifont sfnt differs from the recorded decode".to_owned());
     }
     Ok(())
 }
@@ -1052,7 +1155,7 @@ fn verify_catalog_identity(catalog: &Value, scene_surface: &Value) -> Result<(),
     Ok(())
 }
 
-fn verify_assets(root: &Path, catalog: &Value) -> Result<(), String> {
+fn verify_assets(root: &Path, catalog: &Value) -> Result<Vec<u8>, String> {
     let reference = read_canonical_json(
         &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
         "reference asset manifest",
@@ -1094,6 +1197,7 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<(), String> {
     let mut paths = BTreeSet::new();
     let mut shard_cache = BTreeMap::<String, Vec<u8>>::new();
     let mut covered_ends = BTreeMap::<String, usize>::new();
+    let mut excalifont_source = None;
     for asset in assets {
         let path = string(asset, "upstreamPath", "catalog asset")?;
         if !paths.insert(path) || path.starts_with("fonts/Assistant/") {
@@ -1160,6 +1264,9 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<(), String> {
         if complete.len() != *expected_length || sha256(&complete) != *expected_digest {
             return Err(format!("reassembled asset digest mismatch for {path}"));
         }
+        if path == EXCALIFONT_BASIC_LATIN_PATH {
+            excalifont_source = Some(complete);
+        }
     }
     if paths != expected.keys().map(String::as_str).collect() {
         return Err("revision catalog asset inventory is incomplete".to_owned());
@@ -1171,7 +1278,7 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<(), String> {
             ));
         }
     }
-    Ok(())
+    excalifont_source.ok_or_else(|| "manifested Excalifont source is missing".to_owned())
 }
 
 fn verify_scene_surface(root: &Path, manifest: &Value) -> Result<(), String> {

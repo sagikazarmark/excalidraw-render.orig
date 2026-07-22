@@ -211,6 +211,7 @@ impl SceneDocument {
             "rectangle" => ElementKind::Rectangle,
             "diamond" => ElementKind::Diamond,
             "ellipse" => ElementKind::Ellipse,
+            "text" => ElementKind::Text,
             "line" => ElementKind::Line,
             "draw" => ElementKind::LegacyDraw,
             "arrow" => ElementKind::Arrow,
@@ -258,6 +259,12 @@ impl SceneDocument {
             image_scale: source_number_array(element, "scale"),
             image_crop: source_image_crop(element, "crop"),
             name: source_nullable_string(element, "name"),
+            font_size: source_field(element, "fontSize", finite_json_number),
+            font_family: source_field(element, "fontFamily", json_i32),
+            text: source_field(element, "text", json_string),
+            text_align: source_field(element, "textAlign", json_string),
+            vertical_align: source_field(element, "verticalAlign", json_string),
+            line_height: source_field(element, "lineHeight", finite_json_number),
         })
     }
 
@@ -338,6 +345,7 @@ pub(crate) enum ElementKind {
     Rectangle,
     Diamond,
     Ellipse,
+    Text,
     Line,
     LegacyDraw,
     Arrow,
@@ -353,6 +361,7 @@ impl ElementKind {
             Self::Rectangle => "rectangle",
             Self::Diamond => "diamond",
             Self::Ellipse => "ellipse",
+            Self::Text => "text",
             Self::Line => "line",
             Self::LegacyDraw => "draw",
             Self::Arrow => "arrow",
@@ -402,6 +411,12 @@ pub(crate) struct ElementSource<'a> {
     pub(crate) image_scale: SourceField<NumberArraySource<'a>>,
     pub(crate) image_crop: SourceField<Option<ImageCropSource<'a>>>,
     pub(crate) name: SourceField<Option<&'a str>>,
+    pub(crate) font_size: SourceField<f64>,
+    pub(crate) font_family: SourceField<i32>,
+    pub(crate) text: SourceField<&'a str>,
+    pub(crate) text_align: SourceField<&'a str>,
+    pub(crate) vertical_align: SourceField<&'a str>,
+    pub(crate) line_height: SourceField<f64>,
 }
 
 impl ElementSource<'_> {

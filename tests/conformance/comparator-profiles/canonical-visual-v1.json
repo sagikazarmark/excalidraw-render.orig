@@ -19,7 +19,7 @@
   },
   "lockfile": {
     "path": "Cargo.lock",
-    "sha256": "211e1ec80f158c7fa501ba8da431aba4669d8299f7631315ca6a6009dd2e5962"
+    "sha256": "8110e276b6d18c1da090860291088dedd9b8a0f79c71595fbdfb82cd76a7de25"
   },
   "features": [],
   "pixelmatch": {

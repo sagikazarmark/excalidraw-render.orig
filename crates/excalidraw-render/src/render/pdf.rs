@@ -48,6 +48,7 @@ pub(super) struct PdfPlan {
     fallback_colors: super::FallbackColors,
     mandatory_manifest: Option<String>,
     fallback_font_sfnt: Option<Vec<u8>>,
+    official_font_sfnt: Option<Vec<u8>>,
     elements: Vec<PdfElement>,
 }
 
@@ -85,6 +86,14 @@ enum PdfElement {
         transform: super::ResolvedTransform,
         opacity: f64,
     },
+    Text {
+        source: NormalizedElementSource,
+        text: super::text::ResolvedText,
+        frame_clips: Vec<super::ResolvedClip>,
+        transform: super::ResolvedTransform,
+        color: CanonicalColor,
+        opacity: f64,
+    },
     Fallback {
         source: super::FallbackSource,
         label: Option<super::text::ResolvedLabel>,
@@ -98,6 +107,7 @@ enum PdfElement {
 }
 
 struct PdfGlyphMapping {
+    code: u16,
     glyph_id: u16,
     advance_1000: u16,
     unicode: Vec<u16>,
@@ -165,6 +175,16 @@ impl PdfPlan {
                         opacity: frame.opacity,
                     });
                 }
+                ResolvedElement::Text(text) => {
+                    elements.push(PdfElement::Text {
+                        source: text.source,
+                        text: text.text,
+                        frame_clips: text.frame_clips,
+                        transform: text.transform,
+                        color: text.color,
+                        opacity: text.opacity,
+                    });
+                }
                 ResolvedElement::Fallback(fallback) => {
                     elements.push(PdfElement::Fallback {
                         source: fallback.source,
@@ -189,14 +209,18 @@ impl PdfPlan {
             fallback_colors: scene.fallback_colors,
             mandatory_manifest: scene.mandatory_manifest,
             fallback_font_sfnt: scene.fallback_font_sfnt,
+            official_font_sfnt: scene.official_font_sfnt,
             elements,
         })
     }
 
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
         let opacity_resources = self.opacity_resources()?;
-        let content = self.encode_content(&opacity_resources)?;
-        let fallback_forms = self.encode_fallback_forms()?;
+        let fallback_mappings = self.fallback_glyph_mappings()?;
+        let official_mappings = self.official_glyph_mappings()?;
+        let content =
+            self.encode_content(&opacity_resources, &fallback_mappings, &official_mappings)?;
+        let fallback_forms = self.encode_fallback_forms(&fallback_mappings)?;
         let xmp = self
             .mandatory_manifest
             .as_deref()
@@ -247,9 +271,14 @@ impl PdfPlan {
             .fallback_font_sfnt
             .as_ref()
             .map(|_| first_fallback_form_object + fallback_forms.len());
-        let fallback_font_object_count = usize::from(fallback_font_object.is_some()) * 5;
+        let fallback_font_object_count = usize::from(fallback_font_object.is_some()) * 6;
+        let official_font_object = self.official_font_sfnt.as_ref().map(|_| {
+            first_fallback_form_object + fallback_forms.len() + fallback_font_object_count
+        });
+        let official_font_object_count = usize::from(official_font_object.is_some()) * 6;
         let object_count = object_count
             .checked_add(fallback_font_object_count)
+            .and_then(|count| count.checked_add(official_font_object_count))
             .ok_or_else(pdf_size_error)?;
         let page_width = format_pdf_number(self.page_width, "PDF page width")?;
         let page_height = format_pdf_number(self.page_height, "PDF page height")?;
@@ -279,6 +308,13 @@ impl PdfPlan {
             })
             .and_then(|capacity| {
                 self.fallback_font_sfnt
+                    .as_ref()
+                    .map_or(Some(capacity), |font| {
+                        capacity.checked_add(font.len().saturating_add(16_384))
+                    })
+            })
+            .and_then(|capacity| {
+                self.official_font_sfnt
                     .as_ref()
                     .map_or(Some(capacity), |font| {
                         capacity.checked_add(font.len().saturating_add(16_384))
@@ -360,7 +396,13 @@ impl PdfPlan {
             pdf.extend_from_slice(b" >>\n");
         }
         if let Some(fallback_font_object) = fallback_font_object {
-            writeln!(pdf, "/Font << /F1 {fallback_font_object} 0 R >>").map_err(write_error)?;
+            write!(pdf, "/Font << /F1 {fallback_font_object} 0 R").map_err(write_error)?;
+            if let Some(official_font_object) = official_font_object {
+                write!(pdf, " /F2 {official_font_object} 0 R").map_err(write_error)?;
+            }
+            pdf.extend_from_slice(b" >>\n");
+        } else if let Some(official_font_object) = official_font_object {
+            writeln!(pdf, "/Font << /F2 {official_font_object} 0 R >>").map_err(write_error)?;
         }
         pdf.extend_from_slice(b">>\n");
         if link_count != 0 {
@@ -492,7 +534,26 @@ impl PdfPlan {
         if let (Some(font_object), Some(font)) =
             (fallback_font_object, self.fallback_font_sfnt.as_deref())
         {
-            self.write_fallback_font_objects(&mut pdf, &mut offsets, font_object, font)?;
+            self.write_font_objects(
+                &mut pdf,
+                &mut offsets,
+                font_object,
+                font,
+                "LiberationSans",
+                &fallback_mappings,
+            )?;
+        }
+        if let (Some(font_object), Some(font)) =
+            (official_font_object, self.official_font_sfnt.as_deref())
+        {
+            self.write_font_objects(
+                &mut pdf,
+                &mut offsets,
+                font_object,
+                font,
+                "Excalifont",
+                &official_mappings,
+            )?;
         }
 
         let xref_offset = pdf.len();
@@ -518,6 +579,7 @@ impl PdfPlan {
             PdfElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
             PdfElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
             PdfElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
+            PdfElement::Text { source, .. } => (Some(source.id()), source.pointer()),
             PdfElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -595,18 +657,20 @@ impl PdfPlan {
         Ok(())
     }
 
-    fn write_fallback_font_objects(
+    fn write_font_objects(
         &self,
         pdf: &mut Vec<u8>,
         offsets: &mut [usize],
         font_object: usize,
         font: &[u8],
+        base_font: &str,
+        mappings: &[PdfGlyphMapping],
     ) -> Result<(), FormatEncodeError> {
         let cid_font_object = font_object + 1;
         let descriptor_object = font_object + 2;
         let font_file_object = font_object + 3;
         let to_unicode_object = font_object + 4;
-        let mappings = self.fallback_glyph_mappings()?;
+        let cid_to_gid_object = font_object + 5;
         let face = rustybuzz::ttf_parser::Face::parse(font, 0).map_err(|_| {
             FormatEncodeError::Encoding("PDF fallback font is not a valid sfnt".to_owned())
         })?;
@@ -618,11 +682,11 @@ impl PdfPlan {
         write!(
             pdf,
             concat!(
-                "<<\n/Type /Font\n/Subtype /Type0\n/BaseFont /LiberationSans\n",
+                "<<\n/Type /Font\n/Subtype /Type0\n/BaseFont /{}\n",
                 "/Encoding /Identity-H\n/DescendantFonts [{} 0 R]\n",
                 "/ToUnicode {} 0 R\n>>\nendobj\n"
             ),
-            cid_font_object, to_unicode_object,
+            base_font, cid_font_object, to_unicode_object,
         )
         .map_err(write_error)?;
 
@@ -630,15 +694,15 @@ impl PdfPlan {
         write!(
             pdf,
             concat!(
-                "<<\n/Type /Font\n/Subtype /CIDFontType2\n/BaseFont /LiberationSans\n",
+                "<<\n/Type /Font\n/Subtype /CIDFontType2\n/BaseFont /{}\n",
                 "/CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >>\n",
-                "/FontDescriptor {} 0 R\n/CIDToGIDMap /Identity\n/DW 1000\n/W ["
+                "/FontDescriptor {} 0 R\n/CIDToGIDMap {} 0 R\n/DW 1000\n/W ["
             ),
-            descriptor_object,
+            base_font, descriptor_object, cid_to_gid_object,
         )
         .map_err(write_error)?;
-        for mapping in &mappings {
-            write!(pdf, " {} [{}]", mapping.glyph_id, mapping.advance_1000).map_err(write_error)?;
+        for mapping in mappings {
+            write!(pdf, " {} [{}]", mapping.code, mapping.advance_1000).map_err(write_error)?;
         }
         pdf.extend_from_slice(b" ]\n>>\nendobj\n");
 
@@ -646,10 +710,11 @@ impl PdfPlan {
         write!(
             pdf,
             concat!(
-                "<<\n/Type /FontDescriptor\n/FontName /LiberationSans\n/Flags 32\n",
+                "<<\n/Type /FontDescriptor\n/FontName /{}\n/Flags 32\n",
                 "/FontBBox [{} {} {} {}]\n/ItalicAngle 0\n/Ascent {}\n/Descent {}\n",
                 "/CapHeight {}\n/StemV 80\n/FontFile2 {} 0 R\n>>\nendobj\n"
             ),
+            base_font,
             i64::from(bbox.x_min) * 1_000 / units_per_em,
             i64::from(bbox.y_min) * 1_000 / units_per_em,
             i64::from(bbox.x_max) * 1_000 / units_per_em,
@@ -672,55 +737,61 @@ impl PdfPlan {
         pdf.extend_from_slice(font);
         pdf.extend_from_slice(b"\nendstream\nendobj\n");
 
-        let cmap = fallback_to_unicode_cmap(&mappings)?;
+        let cmap = to_unicode_cmap(mappings, base_font)?;
         begin_object(pdf, offsets, to_unicode_object)?;
         write!(pdf, "<<\n/Length {}\n>>\nstream\n", cmap.len()).map_err(write_error)?;
         pdf.extend_from_slice(cmap.as_bytes());
+        pdf.extend_from_slice(b"\nendstream\nendobj\n");
+
+        let map_length = mappings.last().map_or(2_usize, |mapping| {
+            usize::from(mapping.code)
+                .saturating_add(1)
+                .saturating_mul(2)
+        });
+        let mut cid_to_gid = Vec::new();
+        cid_to_gid.try_reserve_exact(map_length).map_err(|_| {
+            FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_workspace",
+                subject: "pdf_cid_to_gid_map",
+            }
+        })?;
+        cid_to_gid.resize(map_length, 0);
+        for mapping in mappings {
+            let offset = usize::from(mapping.code).saturating_mul(2);
+            let [high, low] = mapping.glyph_id.to_be_bytes();
+            cid_to_gid[offset] = high;
+            cid_to_gid[offset + 1] = low;
+        }
+        begin_object(pdf, offsets, cid_to_gid_object)?;
+        write!(pdf, "<<\n/Length {}\n>>\nstream\n", cid_to_gid.len()).map_err(write_error)?;
+        pdf.extend_from_slice(&cid_to_gid);
         pdf.extend_from_slice(b"\nendstream\nendobj\n");
         Ok(())
     }
 
     fn fallback_glyph_mappings(&self) -> Result<Vec<PdfGlyphMapping>, FormatEncodeError> {
-        let mut mappings = Vec::new();
-        for label in self.elements.iter().filter_map(|element| match element {
-            PdfElement::Fallback {
-                label: Some(label), ..
-            } => Some(label),
-            PdfElement::Frame {
-                name: Some(label), ..
-            } => Some(label),
-            _ => None,
-        }) {
-            for glyph in &label.glyphs {
-                if mappings
-                    .iter()
-                    .any(|mapping: &PdfGlyphMapping| mapping.glyph_id == glyph.id)
-                {
-                    continue;
-                }
-                let mut unicode = Vec::new();
-                unicode
-                    .try_reserve_exact(glyph.unicode.len())
-                    .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                        subject_kind: "format_workspace",
-                        subject: "pdf_fallback_to_unicode",
-                    })?;
-                unicode.extend_from_slice(&glyph.unicode);
-                mappings
-                    .try_reserve(1)
-                    .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                        subject_kind: "format_workspace",
-                        subject: "pdf_fallback_glyph_mappings",
-                    })?;
-                mappings.push(PdfGlyphMapping {
-                    glyph_id: glyph.id,
-                    advance_1000: glyph.advance_1000,
-                    unicode,
-                });
-            }
-        }
-        mappings.sort_unstable_by_key(|mapping| mapping.glyph_id);
-        Ok(mappings)
+        glyph_mappings(
+            self.elements.iter().filter_map(|element| match element {
+                PdfElement::Fallback {
+                    label: Some(label), ..
+                } => Some(label),
+                PdfElement::Frame {
+                    name: Some(label), ..
+                } => Some(label),
+                _ => None,
+            }),
+            "pdf_fallback_glyph_mappings",
+        )
+    }
+
+    fn official_glyph_mappings(&self) -> Result<Vec<PdfGlyphMapping>, FormatEncodeError> {
+        glyph_mappings(
+            self.elements.iter().flat_map(|element| match element {
+                PdfElement::Text { text, .. } => text.lines.as_slice(),
+                _ => &[],
+            }),
+            "pdf_text_glyph_mappings",
+        )
     }
 
     fn opacity_resources(&self) -> Result<Vec<f64>, FormatEncodeError> {
@@ -780,13 +851,17 @@ impl PdfPlan {
                     }
                 }
                 PdfElement::Frame { opacity, .. } => retain(*opacity),
+                PdfElement::Text { color, opacity, .. } => retain(*opacity * color.alpha()),
                 PdfElement::Fallback { opacity, .. } => retain(*opacity),
             }
         }
         Ok(resources)
     }
 
-    fn encode_fallback_forms(&self) -> Result<Vec<String>, FormatEncodeError> {
+    fn encode_fallback_forms(
+        &self,
+        fallback_mappings: &[PdfGlyphMapping],
+    ) -> Result<Vec<String>, FormatEncodeError> {
         let form_count = self
             .elements
             .iter()
@@ -836,13 +911,19 @@ impl PdfPlan {
                 *height,
                 label.as_ref(),
                 self.fallback_colors,
+                fallback_mappings,
             )?;
             forms.push(form);
         }
         Ok(forms)
     }
 
-    fn encode_content(&self, opacity_resources: &[f64]) -> Result<String, FormatEncodeError> {
+    fn encode_content(
+        &self,
+        opacity_resources: &[f64],
+        fallback_mappings: &[PdfGlyphMapping],
+        official_mappings: &[PdfGlyphMapping],
+    ) -> Result<String, FormatEncodeError> {
         let mut capacity = 1_024_usize;
         for element in &self.elements {
             let element_bytes = match element {
@@ -868,6 +949,10 @@ impl PdfPlan {
                 PdfElement::Frame { name, .. } => name
                     .as_ref()
                     .map_or(512, |name| name.text.len().saturating_add(1_024)),
+                PdfElement::Text { text, .. } => text.lines.iter().fold(512_usize, |size, line| {
+                    size.saturating_add(line.text.len().saturating_mul(4))
+                        .saturating_add(line.glyphs.len().saturating_mul(96))
+                }),
                 PdfElement::Fallback { label, .. } => label.as_ref().map_or(1_024, |label| {
                     label
                         .path
@@ -1160,8 +1245,67 @@ impl PdfPlan {
                         } else {
                             CanonicalColor::from_rgb8(0x1b, 0x1b, 0x1f)
                         };
-                        push_pdf_label_text(&mut content, name, color)?;
+                        push_pdf_label_text(&mut content, name, color, fallback_mappings)?;
                         content.push_str("EMC\nQ\n");
+                    }
+                    content.push_str("Q\n");
+                }
+                PdfElement::Text {
+                    source,
+                    text,
+                    frame_clips,
+                    transform,
+                    color,
+                    opacity,
+                } => {
+                    if source.id().is_empty() || source.pointer().is_empty() {
+                        return Err(FormatEncodeError::Encoding(
+                            "PDF text lost its source identity".to_owned(),
+                        ));
+                    }
+                    let (sin, cos) = if transform.angle_radians == 0.0 {
+                        (0.0, 1.0)
+                    } else {
+                        (transform.angle_radians.sin(), transform.angle_radians.cos())
+                    };
+                    let offset_x = transform.translation_x + transform.center_x
+                        - cos * transform.center_x
+                        + sin * transform.center_y;
+                    let offset_y = transform.translation_y + transform.center_y
+                        - sin * transform.center_x
+                        - cos * transform.center_y;
+                    content.push_str("q\n");
+                    for frame_clip in frame_clips {
+                        push_transformed_clip(&mut content, frame_clip)?;
+                    }
+                    push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    let effective_opacity = *opacity * color.alpha();
+                    if effective_opacity != 1.0 {
+                        push_opacity_resource(&mut content, opacity_resources, effective_opacity)?;
+                    }
+                    content.push_str("/CS1 cs\n");
+                    push_color(&mut content, color.rgb_f64(), "scn")?;
+                    for line in &text.lines {
+                        content.push_str("/Span << /ActualText <FEFF");
+                        push_utf16be_hex(&mut content, &line.text)?;
+                        content.push_str("> >> BDC\nBT\n/F2 ");
+                        push_pdf_number(&mut content, text.font_size, "PDF text font size")?;
+                        content.push_str(" Tf\n");
+                        for glyph in &line.glyphs {
+                            content.push_str("1 0 0 -1 ");
+                            push_pdf_number(&mut content, glyph.x, "PDF text glyph x")?;
+                            content.push(' ');
+                            push_pdf_number(&mut content, glyph.y, "PDF text glyph y")?;
+                            content.push_str(" Tm\n<");
+                            let code = glyph_mapping_code(official_mappings, glyph)?;
+                            write!(content, "{code:04X}").map_err(|_| {
+                                FormatEncodeError::Encoding(
+                                    "failed to write PDF text glyph ID".to_owned(),
+                                )
+                            })?;
+                            content.push_str("> Tj\n");
+                        }
+                        content.push_str("ET\nEMC\n");
                     }
                     content.push_str("Q\n");
                 }
@@ -1225,6 +1369,7 @@ impl PdfPlan {
                         *height,
                         label.as_ref(),
                         self.fallback_colors,
+                        fallback_mappings,
                     )?;
                     content.push_str("Q\n");
                 }
@@ -1233,6 +1378,49 @@ impl PdfPlan {
         content.push('Q');
         Ok(content)
     }
+}
+
+fn glyph_mappings<'a>(
+    labels: impl IntoIterator<Item = &'a super::text::ResolvedLabel>,
+    subject: &'static str,
+) -> Result<Vec<PdfGlyphMapping>, FormatEncodeError> {
+    let mut mappings = Vec::new();
+    for label in labels {
+        for glyph in &label.glyphs {
+            if mappings.iter().any(|mapping: &PdfGlyphMapping| {
+                mapping.glyph_id == glyph.id && mapping.unicode == glyph.unicode
+            }) {
+                continue;
+            }
+            let code = u16::try_from(mappings.len().saturating_add(1)).map_err(|_| {
+                FormatEncodeError::Encoding(
+                    "PDF font requires more deterministic character codes than Identity-H supports"
+                        .to_owned(),
+                )
+            })?;
+            let mut unicode = Vec::new();
+            unicode
+                .try_reserve_exact(glyph.unicode.len())
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "format_workspace",
+                    subject,
+                })?;
+            unicode.extend_from_slice(&glyph.unicode);
+            mappings
+                .try_reserve(1)
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "format_workspace",
+                    subject,
+                })?;
+            mappings.push(PdfGlyphMapping {
+                code,
+                glyph_id: glyph.id,
+                advance_1000: glyph.advance_1000,
+                unicode,
+            });
+        }
+    }
+    Ok(mappings)
 }
 
 pub(super) fn page_dimensions(
@@ -1689,6 +1877,7 @@ fn push_fallback_body(
     height: f64,
     label: Option<&super::text::ResolvedLabel>,
     colors: super::FallbackColors,
+    mappings: &[PdfGlyphMapping],
 ) -> Result<(), FormatEncodeError> {
     push_pdf_rectangle(output, width, height)?;
     output.push_str("W\nn\n/CS1 cs\n");
@@ -1714,7 +1903,7 @@ fn push_fallback_body(
         output.push_str("/Span << /ActualText <FEFF");
         push_utf16be_hex(output, &label.text)?;
         output.push_str("> >> BDC\n");
-        push_pdf_label_text(output, label, colors.label)?;
+        push_pdf_label_text(output, label, colors.label, mappings)?;
         output.push_str("EMC\n");
     }
     Ok(())
@@ -1724,6 +1913,7 @@ fn push_pdf_label_text(
     output: &mut String,
     label: &super::text::ResolvedLabel,
     color: CanonicalColor,
+    mappings: &[PdfGlyphMapping],
 ) -> Result<(), FormatEncodeError> {
     output.push_str("/CS1 cs\n");
     push_color(output, color.rgb_f64(), "scn")?;
@@ -1734,13 +1924,29 @@ fn push_pdf_label_text(
         output.push(' ');
         push_pdf_number(output, glyph.y, "PDF fallback glyph y")?;
         output.push_str(" Tm\n<");
-        write!(output, "{:04X}", glyph.id).map_err(|_| {
+        let code = glyph_mapping_code(mappings, glyph)?;
+        write!(output, "{code:04X}").map_err(|_| {
             FormatEncodeError::Encoding("failed to write PDF fallback glyph ID".to_owned())
         })?;
         output.push_str("> Tj\n");
     }
     output.push_str("ET\n");
     Ok(())
+}
+
+fn glyph_mapping_code(
+    mappings: &[PdfGlyphMapping],
+    glyph: &super::text::ResolvedGlyph,
+) -> Result<u16, FormatEncodeError> {
+    mappings
+        .iter()
+        .find(|mapping| mapping.glyph_id == glyph.id && mapping.unicode == glyph.unicode)
+        .map(|mapping| mapping.code)
+        .ok_or_else(|| {
+            FormatEncodeError::Encoding(
+                "PDF shaped glyph has no deterministic character-code mapping".to_owned(),
+            )
+        })
 }
 
 fn push_transformed_clip(
@@ -1826,7 +2032,10 @@ fn push_utf16be_hex(output: &mut String, text: &str) -> Result<(), FormatEncodeE
     Ok(())
 }
 
-fn fallback_to_unicode_cmap(mappings: &[PdfGlyphMapping]) -> Result<String, FormatEncodeError> {
+fn to_unicode_cmap(
+    mappings: &[PdfGlyphMapping],
+    base_font: &str,
+) -> Result<String, FormatEncodeError> {
     let mut cmap = String::new();
     let capacity = mappings
         .len()
@@ -1842,15 +2051,18 @@ fn fallback_to_unicode_cmap(mappings: &[PdfGlyphMapping]) -> Result<String, Form
         "/CIDInit /ProcSet findresource begin\n",
         "12 dict begin\nbegincmap\n",
         "/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n",
-        "/CMapName /LiberationSans-UCS def\n/CMapType 2 def\n",
-        "1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n"
+        "/CMapName /"
     ));
+    cmap.push_str(base_font);
+    cmap.push_str(
+        "-UCS def\n/CMapType 2 def\n1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n",
+    );
     for chunk in mappings.chunks(100) {
         writeln!(cmap, "{} beginbfchar", chunk.len()).map_err(|_| {
             FormatEncodeError::Encoding("failed to write PDF ToUnicode count".to_owned())
         })?;
         for mapping in chunk {
-            write!(cmap, "<{:04X}> <", mapping.glyph_id).map_err(|_| {
+            write!(cmap, "<{:04X}> <", mapping.code).map_err(|_| {
                 FormatEncodeError::Encoding("failed to write PDF ToUnicode source".to_owned())
             })?;
             if mapping.unicode.is_empty() {

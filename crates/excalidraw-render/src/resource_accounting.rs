@@ -128,6 +128,8 @@ pub(crate) enum ResourceRecordKind {
     FormatPlanBase,
     FormatPlanOperation,
     BuiltInSelectionState,
+    BuiltInGlyphOrRangeState,
+    RequestDerivedBuiltInBlob,
     RasterColorSurface,
     RasterMaskSurface,
     #[allow(dead_code)]

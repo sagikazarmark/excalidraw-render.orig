@@ -1,8 +1,14 @@
 use std::collections::TryReserveError;
 
-use rustybuzz::ttf_parser::{GlyphId, OutlineBuilder};
+use rustybuzz::ttf_parser::{GlyphId, OutlineBuilder, Tag};
 
 const LIBERATION_SANS_PATH: &str = "fonts/Liberation/LiberationSans-Regular.woff2";
+const EXCALIFONT_LATIN_PATH: &str =
+    "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2";
+const EXCALIFONT_LATIN_IDENTITY: &str = concat!(
+    "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2@sha256:",
+    "e4423b318e11432aff2e6e865e300b7ca270f92321a3f56632268fede01c1b48"
+);
 const LIBERATION_SANS_IDENTITY: &str = concat!(
     "fonts/Liberation/LiberationSans-Regular.woff2@sha256:",
     "006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8"
@@ -14,8 +20,32 @@ pub(super) struct FallbackFont {
     sfnt: Vec<u8>,
 }
 
+pub(super) struct OfficialFont {
+    woff2: Vec<u8>,
+    sfnt: Vec<u8>,
+}
+
+pub(super) struct ResolvedText {
+    pub(super) font_size: f64,
+    pub(super) lines: Vec<ResolvedLabel>,
+    pub(super) scalar_count: u64,
+    pub(super) line_break_steps: u64,
+    pub(super) missing_codepoints: Vec<u32>,
+    pub(super) prepaid_glyphs: u64,
+    pub(super) prepaid_line_break_steps: u64,
+}
+
+pub(super) struct TextLayout<'a> {
+    pub(super) width: f64,
+    pub(super) font_size: f64,
+    pub(super) line_height: f64,
+    pub(super) text_align: &'a str,
+}
+
 pub(super) struct ResolvedLabel {
     pub(super) text: String,
+    pub(super) display_text: String,
+    pub(super) baseline: f64,
     pub(super) path: LabelPath,
     pub(super) glyph_count: u64,
     pub(super) missing_codepoints: Vec<u32>,
@@ -111,10 +141,7 @@ impl FallbackFont {
         height: f64,
     ) -> Result<Option<ResolvedLabel>, LabelError> {
         let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
-        let mut buffer = rustybuzz::UnicodeBuffer::new();
-        buffer.push_str(text);
-        buffer.guess_segment_properties();
-        let glyphs = rustybuzz::shape(&face, &[], buffer);
+        let glyphs = shape_text(&face, text);
         let advance_units = glyphs
             .glyph_positions()
             .iter()
@@ -133,20 +160,6 @@ impl FallbackFont {
         let estimated_operations = glyphs.glyph_infos().len().saturating_mul(32);
         operations.try_reserve(estimated_operations)?;
         let mut missing_codepoints = Vec::new();
-        for info in glyphs.glyph_infos() {
-            if info.glyph_id != 0 {
-                continue;
-            }
-            let cluster = usize::try_from(info.cluster).map_err(|_| LabelError::InvalidFont)?;
-            if let Some(codepoint) = text
-                .get(cluster..)
-                .and_then(|cluster| cluster.chars().next())
-                .map(u32::from)
-            {
-                missing_codepoints.try_reserve(1)?;
-                missing_codepoints.push(codepoint);
-            }
-        }
         let mut pen_x = 0_i64;
         let mut pen_y = 0_i64;
         let mut resolved_glyphs = Vec::new();
@@ -163,16 +176,13 @@ impl FallbackFont {
             };
             let glyph_id = u16::try_from(info.glyph_id).map_err(|_| LabelError::InvalidFont)?;
             let cluster = usize::try_from(info.cluster).map_err(|_| LabelError::InvalidFont)?;
-            let cluster_end = glyphs
-                .glyph_infos()
-                .iter()
-                .filter_map(|candidate| usize::try_from(candidate.cluster).ok())
-                .filter(|candidate| *candidate > cluster)
-                .min()
-                .unwrap_or(text.len());
-            let cluster_text = text
-                .get(cluster..cluster_end)
-                .ok_or(LabelError::InvalidFont)?;
+            let cluster_text = glyph_cluster_text(&glyphs, text, cluster)?;
+            if glyph_id == 0 {
+                if let Some(codepoint) = cluster_text.chars().next().map(u32::from) {
+                    missing_codepoints.try_reserve(1)?;
+                    missing_codepoints.push(codepoint);
+                }
+            }
             let mut unicode = Vec::new();
             unicode.try_reserve_exact(cluster_text.encode_utf16().count())?;
             unicode.extend(cluster_text.encode_utf16());
@@ -209,6 +219,8 @@ impl FallbackFont {
         owned_text.push_str(text);
         Ok(Some(ResolvedLabel {
             text: owned_text,
+            display_text: try_owned(text)?,
+            baseline,
             path: LabelPath { operations },
             glyph_count: u64::try_from(glyphs.glyph_infos().len()).unwrap_or(u64::MAX),
             missing_codepoints,
@@ -217,26 +229,319 @@ impl FallbackFont {
     }
 }
 
-pub(super) fn mandatory_notice_manifest() -> Result<String, LabelError> {
-    let notice = liberation_sans_notice().ok_or(LabelError::InvalidFont)?;
+impl OfficialFont {
+    pub(super) fn load_excalifont() -> Result<Self, LabelError> {
+        let asset = excalidraw_render_assets_base::load_asset(EXCALIFONT_LATIN_PATH)
+            .map_err(|_| LabelError::InvalidFont)?
+            .ok_or(LabelError::InvalidFont)?;
+        let mut woff2 = Vec::new();
+        woff2.try_reserve_exact(asset.bytes().len())?;
+        woff2.extend_from_slice(asset.bytes());
+        let predecoded = excalidraw_render_assets_base::load_excalifont_basic_latin_sfnt()
+            .map_err(|_| LabelError::InvalidFont)?;
+        let mut sfnt = Vec::new();
+        sfnt.try_reserve_exact(predecoded.bytes().len())?;
+        sfnt.extend_from_slice(predecoded.bytes());
+        rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        Ok(Self { woff2, sfnt })
+    }
+
+    pub(super) fn layout(
+        &self,
+        text: &str,
+        layout: TextLayout<'_>,
+    ) -> Result<ResolvedText, LabelError> {
+        let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let mut display_text = String::new();
+        display_text.try_reserve_exact(text.len())?;
+        let mut missing_codepoints = Vec::new();
+        for character in text.chars() {
+            if character == '\n' || face.glyph_index(character).is_some() {
+                display_text.push(character);
+            } else {
+                display_text.push('?');
+                missing_codepoints.try_reserve(1)?;
+                missing_codepoints.push(u32::from(character));
+            }
+        }
+        let mut stored_lines = Vec::new();
+        let mut line_break_steps = 0_u64;
+        let mut source_lines = text.split_inclusive('\n');
+        let mut display_lines = display_text.split_inclusive('\n');
+        loop {
+            let source_line = source_lines.next();
+            let display_line = display_lines.next();
+            let (Some(source_line), Some(display_line)) = (source_line, display_line) else {
+                break;
+            };
+            let has_newline = source_line.ends_with('\n');
+            let source_content = source_line.strip_suffix('\n').unwrap_or(source_line);
+            let display_content = display_line.strip_suffix('\n').unwrap_or(display_line);
+            stored_lines.try_reserve(1)?;
+            stored_lines.push(StoredLine {
+                source: try_owned(source_content)?,
+                display: try_owned(display_content)?,
+            });
+            line_break_steps = line_break_steps.saturating_add(1);
+            if has_newline {
+                let last = stored_lines.last_mut().ok_or(LabelError::InvalidFont)?;
+                last.source.push('\n');
+            }
+        }
+        if text.is_empty() || text.ends_with('\n') {
+            stored_lines.try_reserve(1)?;
+            stored_lines.push(StoredLine {
+                source: String::new(),
+                display: String::new(),
+            });
+            line_break_steps = line_break_steps.saturating_add(1);
+        }
+        let line_step = layout.font_size * layout.line_height;
+        let scale = layout.font_size / f64::from(face.units_per_em());
+        // Canvas centers the font's ascender/descender box within each line box.
+        let first_baseline =
+            line_step / 2.0 + f64::from(face.ascender() + face.descender()) * scale / 2.0;
+        let mut lines = Vec::new();
+        lines.try_reserve_exact(stored_lines.len())?;
+        for (index, line) in stored_lines.into_iter().enumerate() {
+            let baseline = first_baseline + index as f64 * line_step;
+            lines.push(shape_official_line(
+                &face,
+                &line.source,
+                &line.display,
+                layout.width,
+                layout.font_size,
+                baseline,
+                layout.text_align,
+            )?);
+        }
+        Ok(ResolvedText {
+            font_size: layout.font_size,
+            lines,
+            scalar_count: u64::try_from(text.chars().count()).unwrap_or(u64::MAX),
+            line_break_steps,
+            missing_codepoints,
+            prepaid_glyphs: u64::try_from(
+                text.chars().filter(|character| *character != '\n').count(),
+            )
+            .unwrap_or(u64::MAX),
+            prepaid_line_break_steps: u64::try_from(text.split('\n').count()).unwrap_or(u64::MAX),
+        })
+    }
+
+    pub(super) fn into_parts(self) -> (Vec<u8>, Vec<u8>) {
+        (self.woff2, self.sfnt)
+    }
+}
+
+struct StoredLine {
+    source: String,
+    display: String,
+}
+
+impl ResolvedText {
+    pub(super) fn glyph_count(&self) -> u64 {
+        self.lines
+            .iter()
+            .fold(0_u64, |total, line| total.saturating_add(line.glyph_count))
+    }
+
+    pub(super) fn outline_segments(&self) -> u64 {
+        self.lines.iter().fold(0_u64, |total, line| {
+            total.saturating_add(u64::try_from(line.path.operations.len()).unwrap_or(u64::MAX))
+        })
+    }
+}
+
+fn shape_official_line(
+    face: &rustybuzz::Face<'_>,
+    source_text: &str,
+    display_text: &str,
+    width: f64,
+    font_size: f64,
+    baseline: f64,
+    text_align: &str,
+) -> Result<ResolvedLabel, LabelError> {
+    let glyphs = shape_text(face, display_text);
+    let scale = font_size / f64::from(face.units_per_em());
+    let advance = glyphs
+        .glyph_positions()
+        .iter()
+        .fold(0_i64, |sum, position| {
+            sum.saturating_add(i64::from(position.x_advance))
+        }) as f64
+        * scale;
+    let origin_x = match text_align {
+        "center" => (width - advance) / 2.0,
+        "right" => width - advance,
+        _ => 0.0,
+    };
+    let mut operations = Vec::new();
+    operations.try_reserve(glyphs.glyph_infos().len().saturating_mul(32))?;
+    let mut missing_codepoints = Vec::new();
+    let mut resolved_glyphs = Vec::new();
+    resolved_glyphs.try_reserve_exact(glyphs.glyph_infos().len())?;
+    let mut pen_x = 0_i64;
+    let mut pen_y = 0_i64;
+    for (info, position) in glyphs.glyph_infos().iter().zip(glyphs.glyph_positions()) {
+        let glyph_id = u16::try_from(info.glyph_id).map_err(|_| LabelError::InvalidFont)?;
+        let cluster = usize::try_from(info.cluster).map_err(|_| LabelError::InvalidFont)?;
+        let cluster_text = glyph_cluster_text(&glyphs, display_text, cluster)?;
+        if glyph_id == 0 {
+            if let Some(codepoint) = cluster_text.chars().next().map(u32::from) {
+                missing_codepoints.try_reserve(1)?;
+                missing_codepoints.push(codepoint);
+            }
+        }
+        let mut unicode = Vec::new();
+        unicode.try_reserve_exact(cluster_text.encode_utf16().count())?;
+        unicode.extend(cluster_text.encode_utf16());
+        let advance_units = face
+            .glyph_hor_advance(GlyphId(glyph_id))
+            .unwrap_or_default();
+        let units_per_em =
+            u64::try_from(face.units_per_em()).map_err(|_| LabelError::InvalidFont)?;
+        let advance_1000 =
+            u16::try_from((u64::from(advance_units) * 1_000 + units_per_em / 2) / units_per_em)
+                .map_err(|_| LabelError::InvalidFont)?;
+        resolved_glyphs.push(ResolvedGlyph {
+            id: glyph_id,
+            x: origin_x + (pen_x + i64::from(position.x_offset)) as f64 * scale,
+            y: baseline - (pen_y + i64::from(position.y_offset)) as f64 * scale,
+            advance_1000,
+            unicode,
+        });
+        let mut builder = GlyphOutlineBuilder {
+            operations: &mut operations,
+            failed: false,
+            origin_x,
+            baseline,
+            glyph_x: (pen_x + i64::from(position.x_offset)) as f64,
+            glyph_y: (pen_y + i64::from(position.y_offset)) as f64,
+            scale,
+        };
+        if face
+            .outline_glyph(GlyphId(glyph_id), &mut builder)
+            .is_none()
+            && glyph_id != 0
+            && !cluster_text.chars().all(char::is_whitespace)
+        {
+            return Err(LabelError::InvalidFont);
+        }
+        if builder.failed {
+            return Err(LabelError::Memory);
+        }
+        pen_x = pen_x.saturating_add(i64::from(position.x_advance));
+        pen_y = pen_y.saturating_add(i64::from(position.y_advance));
+    }
+    let mut owned_text = String::new();
+    owned_text.try_reserve_exact(source_text.len())?;
+    owned_text.push_str(source_text);
+    let mut owned_display_text = String::new();
+    owned_display_text.try_reserve_exact(display_text.len())?;
+    owned_display_text.push_str(display_text);
+    Ok(ResolvedLabel {
+        text: owned_text,
+        display_text: owned_display_text,
+        baseline,
+        path: LabelPath { operations },
+        glyph_count: u64::try_from(glyphs.glyph_infos().len()).unwrap_or(u64::MAX),
+        missing_codepoints,
+        glyphs: resolved_glyphs,
+    })
+}
+
+fn shape_text(face: &rustybuzz::Face<'_>, text: &str) -> rustybuzz::GlyphBuffer {
+    let mut buffer = rustybuzz::UnicodeBuffer::new();
+    buffer.push_str(text);
+    buffer.guess_segment_properties();
+    let features = [
+        rustybuzz::Feature::new(Tag::from_bytes(b"liga"), 0, ..),
+        rustybuzz::Feature::new(Tag::from_bytes(b"clig"), 0, ..),
+    ];
+    rustybuzz::shape(face, &features, buffer)
+}
+
+fn try_owned(value: &str) -> Result<String, LabelError> {
+    let mut owned = String::new();
+    owned.try_reserve_exact(value.len())?;
+    owned.push_str(value);
+    Ok(owned)
+}
+
+fn glyph_cluster_text<'a>(
+    glyphs: &rustybuzz::GlyphBuffer,
+    text: &'a str,
+    cluster: usize,
+) -> Result<&'a str, LabelError> {
+    let cluster_end = glyphs
+        .glyph_infos()
+        .iter()
+        .filter_map(|candidate| usize::try_from(candidate.cluster).ok())
+        .filter(|candidate| *candidate > cluster)
+        .min()
+        .unwrap_or(text.len());
+    text.get(cluster..cluster_end)
+        .ok_or(LabelError::InvalidFont)
+}
+
+pub(super) fn mandatory_notice_manifest(
+    liberation: bool,
+    excalifont: bool,
+) -> Result<String, LabelError> {
+    let full_ofl_notice = liberation_sans_notice().ok_or(LabelError::InvalidFont)?;
+    let liberation_notice = if liberation { full_ofl_notice } else { "" };
+    let excalifont_attribution = "Copyright (c) 2024 by Excalidraw. Excalifont is derived from Virgil by Your Own Font Foundry, with modifications by Jan Filipek / DizajnDesign. Excalifont and Virgil provenance is retained together.";
+    let ofl_start = full_ofl_notice
+        .find("This Font Software is licensed")
+        .map(|index| &full_ofl_notice[index..])
+        .ok_or(LabelError::InvalidFont)?;
+    let mut excalifont_notice = String::new();
+    excalifont_notice.try_reserve_exact(
+        excalifont_attribution
+            .len()
+            .saturating_add(2)
+            .saturating_add(ofl_start.len()),
+    )?;
+    excalifont_notice.push_str(excalifont_attribution);
+    excalifont_notice.push_str("\n\n");
+    excalifont_notice.push_str(ofl_start);
     let prefix = concat!(
         "{\"schema_version\":1,\"provenance\":null,\"diagnostic_summary\":null,",
-        "\"notices\":[{\"asset_identity\":\""
+        "\"notices\":["
     );
-    let middle = "\",\"text\":\"";
-    let suffix = "\"}],\"embedded_scene\":null}";
+    let suffix = "],\"embedded_scene\":null}";
     let mut manifest = String::new();
     let capacity = prefix
         .len()
         .saturating_add(LIBERATION_SANS_IDENTITY.len())
-        .saturating_add(middle.len())
-        .saturating_add(notice.len().saturating_mul(2))
+        .saturating_add(EXCALIFONT_LATIN_IDENTITY.len())
+        .saturating_add(liberation_notice.len().saturating_mul(2))
+        .saturating_add(excalifont_notice.len().saturating_mul(2))
+        .saturating_add(128)
         .saturating_add(suffix.len());
     manifest.try_reserve_exact(capacity)?;
     manifest.push_str(prefix);
-    manifest.push_str(LIBERATION_SANS_IDENTITY);
-    manifest.push_str(middle);
-    push_json_string_content(&mut manifest, notice);
+    let mut separator = "";
+    for (include, identity, notice) in [
+        (liberation, LIBERATION_SANS_IDENTITY, liberation_notice),
+        (
+            excalifont,
+            EXCALIFONT_LATIN_IDENTITY,
+            excalifont_notice.as_str(),
+        ),
+    ] {
+        if !include {
+            continue;
+        }
+        manifest.push_str(separator);
+        manifest.push_str("{\"asset_identity\":\"");
+        manifest.push_str(identity);
+        manifest.push_str("\",\"text\":\"");
+        push_json_string_content(&mut manifest, notice);
+        manifest.push_str("\"}");
+        separator = ",";
+    }
     manifest.push_str(suffix);
     Ok(manifest)
 }

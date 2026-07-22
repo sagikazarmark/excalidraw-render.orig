@@ -8,6 +8,8 @@ use sha2::{Digest, Sha256};
 
 const CASE_ID: &str = "focused.rectangle-outline.v1";
 const CASE_RELATIVE_PATH: &str = "tests/conformance/cases/focused/rectangle-outline";
+const TYPOGRAPHY_CASE_ID: &str = "focused.excalifont-text.v1";
+const TYPOGRAPHY_CASE_RELATIVE_PATH: &str = "tests/conformance/cases/focused/excalifont-text";
 const MANIFEST_SCHEMA: &str = "excalidraw-render/conformance-case/rectangle-reference/v1";
 const APPROVAL_SCHEMA: &str = "excalidraw-render/conformance-approval-subject/v1";
 const EMPTY_REPORT: &[u8] = br#"{"schema_version":1,"diagnostics":[]}"#;
@@ -24,6 +26,9 @@ pub fn repo_root() -> PathBuf {
 
 pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
     let loaded = load(case_id)?;
+    if case_id == TYPOGRAPHY_CASE_ID {
+        return verify_typography(&loaded, require_approval);
+    }
     verify_manifest_digest(&loaded)?;
     verify_exact_keys(
         object(&loaded.manifest, "manifest")?,
@@ -96,12 +101,104 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
     Ok(())
 }
 
+fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), String> {
+    verify_manifest_digest(loaded)?;
+    verify_exact_keys(
+        object(&loaded.manifest, "manifest")?,
+        &[
+            "approval",
+            "assets",
+            "case_id",
+            "comparison",
+            "compatibility_revision",
+            "coverage",
+            "crops",
+            "determinism",
+            "exceptions",
+            "expected_report",
+            "feature_tags",
+            "layer",
+            "license",
+            "originating_issue",
+            "provenance",
+            "purpose",
+            "reference",
+            "sanitization",
+            "scene",
+            "schema",
+            "semantic_expectations",
+            "variants",
+        ],
+        "manifest",
+    )?;
+    if loaded.manifest["case_id"] != json!(TYPOGRAPHY_CASE_ID)
+        || loaded.manifest["compatibility_revision"] != json!(1)
+        || loaded.manifest["layer"] != json!("focused")
+        || loaded.manifest["crops"] != json!([])
+        || loaded.manifest["exceptions"] != json!([])
+        || loaded.manifest["originating_issue"]
+            != json!("https://github.com/sagikazarmark/excalidraw-render.orig/issues/58")
+    {
+        return Err("typography case identity or policy metadata is invalid".to_owned());
+    }
+    if loaded.manifest["assets"]
+        != json!([{
+            "byte_length": 24956,
+            "path": "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
+            "role": "official-rendering-font",
+            "sha256": "e4423b318e11432aff2e6e865e300b7ca270f92321a3f56632268fede01c1b48"
+        }])
+        || loaded.manifest["semantic_expectations"]
+            != json!({
+                "element_count": 1, "element_type": "text", "embedded_scene": false,
+                "images": 0, "links": 0, "masks": 0, "selectable_text": true
+            })
+    {
+        return Err("typography assets or semantic expectations are invalid".to_owned());
+    }
+    verify_schema_for(
+        &loaded.manifest,
+        "excalidraw-render/conformance-case/typography-reference/v1",
+        "tests/conformance/typography-reference-case-v1.schema.json",
+    )?;
+    verify_comparison(&loaded.manifest)?;
+    verify_reference_identities(&loaded.manifest)?;
+    let mut referenced = Vec::new();
+    verify_descriptor(&loaded.root, &loaded.manifest["scene"], &mut referenced)?;
+    verify_descriptor(
+        &loaded.root,
+        &loaded.manifest["expected_report"],
+        &mut referenced,
+    )?;
+    verify_descriptor(
+        &loaded.root,
+        &loaded.manifest["provenance"],
+        &mut referenced,
+    )?;
+    verify_typography_scene(loaded)?;
+    verify_expected_report(loaded)?;
+    verify_typography_variants(loaded, &mut referenced)?;
+    verify_typography_provenance(loaded)?;
+    let subject = subject_digest(&loaded.manifest, referenced)?;
+    match &loaded.manifest["approval"] {
+        Value::Null if require_approval => Err("case has no approval record".to_owned()),
+        Value::Null => Ok(()),
+        approval => verify_approval_for_issue(approval, &subject, "58"),
+    }
+}
+
 fn verify_schema(manifest: &Value) -> Result<(), String> {
+    verify_schema_for(
+        manifest,
+        MANIFEST_SCHEMA,
+        "tests/conformance/rectangle-reference-case-v1.schema.json",
+    )
+}
+
+fn verify_schema_for(manifest: &Value, schema_id: &str, schema_path: &str) -> Result<(), String> {
     let schema = object(&manifest["schema"], "schema")?;
     verify_exact_keys(schema, &["digest", "id", "path"], "schema")?;
-    if schema["id"] != json!(MANIFEST_SCHEMA)
-        || schema["path"] != json!("tests/conformance/rectangle-reference-case-v1.schema.json")
-    {
+    if schema["id"] != json!(schema_id) || schema["path"] != json!(schema_path) {
         return Err("manifest references an unknown case schema".to_owned());
     }
     let path = schema["path"].as_str().unwrap();
@@ -305,7 +402,11 @@ pub fn record_approval(
         "approval_subject_sha256": format!("sha256:{subject}"),
         "approval_url": approval_url,
     });
-    verify_approval(&approval, &subject)?;
+    if case_id == TYPOGRAPHY_CASE_ID {
+        verify_approval_for_issue(&approval, &subject, "58")?;
+    } else {
+        verify_approval(&approval, &subject)?;
+    }
     loaded.manifest["approval"] = approval;
     let bytes = canonical_bytes(&loaded.manifest)?;
     fs::write(&loaded.manifest_path, [&bytes[..], b"\n"].concat())
@@ -326,10 +427,12 @@ struct LoadedCase {
 }
 
 fn load(case_id: &str) -> Result<LoadedCase, String> {
-    if case_id != CASE_ID {
-        return Err(format!("unknown conformance case {case_id:?}"));
-    }
-    let root = repo_root().join(CASE_RELATIVE_PATH);
+    let relative = match case_id {
+        CASE_ID => CASE_RELATIVE_PATH,
+        TYPOGRAPHY_CASE_ID => TYPOGRAPHY_CASE_RELATIVE_PATH,
+        _ => return Err(format!("unknown conformance case {case_id:?}")),
+    };
+    let root = repo_root().join(relative);
     let manifest_path = root.join("manifest.json");
     let manifest_bytes = fs::read(&manifest_path)
         .map_err(|error| format!("failed to read {}: {error}", manifest_path.display()))?;
@@ -465,6 +568,163 @@ fn verify_scene(case_data: &LoadedCase) -> Result<(), String> {
     }
     if !scene["appState"].is_object() || !scene["files"].is_object() {
         return Err("scene must explicitly contain appState and files objects".to_owned());
+    }
+    Ok(())
+}
+
+fn verify_typography_scene(case_data: &LoadedCase) -> Result<(), String> {
+    let path = descriptor_path(&case_data.root, &case_data.manifest["scene"])?;
+    let scene: Value = serde_json::from_slice(
+        &fs::read(path).map_err(|error| format!("failed to read text scene: {error}"))?,
+    )
+    .map_err(|error| format!("invalid text scene: {error}"))?;
+    let elements = scene["elements"]
+        .as_array()
+        .ok_or_else(|| "text scene elements must be an array".to_owned())?;
+    if scene["type"] != json!("excalidraw")
+        || scene["version"] != json!(2)
+        || elements.len() != 1
+        || elements[0]["type"] != json!("text")
+        || elements[0]["fontFamily"] != json!(5)
+        || elements[0]["text"] != json!("One two three\nFour")
+        || elements[0]["width"] != json!(90)
+        || elements[0]["fontSize"] != json!(20)
+        || !scene["appState"].is_object()
+        || !scene["files"].is_object()
+    {
+        return Err("typography scene does not isolate the approved wrapped text".to_owned());
+    }
+    Ok(())
+}
+
+fn verify_typography_variants(
+    case_data: &LoadedCase,
+    referenced: &mut Vec<Value>,
+) -> Result<(), String> {
+    let variants = case_data.manifest["variants"]
+        .as_array()
+        .ok_or_else(|| "variants must be an array".to_owned())?;
+    if variants.len() != 1 || variants[0]["id"] != json!("default") {
+        return Err("typography case must have one default variant".to_owned());
+    }
+    if variants[0]["options"]
+        != json!({
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {"clip": true, "enabled": true, "name": true, "outline": true},
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+        })
+    {
+        return Err("typography variant options are invalid".to_owned());
+    }
+    let formats = object(&variants[0]["formats"], "formats")?;
+    verify_exact_keys(formats, &["png", "svg"], "formats")?;
+    for format in ["png", "svg"] {
+        let value = object(&formats[format], format)?;
+        verify_exact_keys(value, &["artifact", "raw_raster", "visual_class"], format)?;
+        if value["visual_class"] != json!("geometry/image") {
+            return Err(format!("{format} has the wrong visual class"));
+        }
+        verify_descriptor(&case_data.root, &value["artifact"], referenced)?;
+        verify_descriptor(&case_data.root, &value["raw_raster"], referenced)?;
+        verify_typography_format(&case_data.root, format, value)?;
+    }
+    Ok(())
+}
+
+fn verify_typography_format(
+    root: &Path,
+    format: &str,
+    value: &Map<String, Value>,
+) -> Result<(), String> {
+    let artifact = object(&value["artifact"], "artifact")?;
+    let raw = object(&value["raw_raster"], "raw raster")?;
+    let width = u32_field(artifact, "width")?;
+    let height = u32_field(artifact, "height")?;
+    if width != u32_field(raw, "width")? || height != u32_field(raw, "height")? {
+        return Err(format!("{format} typography dimensions differ"));
+    }
+    let raw_bytes = fs::read(descriptor_path(root, &value["raw_raster"])?)
+        .map_err(|error| format!("failed to read typography raster: {error}"))?;
+    if raw_bytes.len() != width as usize * height as usize * 4 {
+        return Err(format!("{format} typography raster length is invalid"));
+    }
+    let bytes = fs::read(descriptor_path(root, &value["artifact"])?)
+        .map_err(|error| format!("failed to read typography artifact: {error}"))?;
+    if format == "png" {
+        if png_dimensions(&bytes)? != (width, height) {
+            return Err("typography PNG dimensions are invalid".to_owned());
+        }
+        verify_png_semantics(&bytes, &raw_bytes)
+    } else {
+        if svg_dimensions(&bytes)? != (width, height) {
+            return Err("typography SVG dimensions are invalid".to_owned());
+        }
+        let document = roxmltree::Document::parse(
+            std::str::from_utf8(&bytes).map_err(|error| format!("SVG is not UTF-8: {error}"))?,
+        )
+        .map_err(|error| format!("typography SVG is invalid: {error}"))?;
+        let texts: Vec<_> = document
+            .descendants()
+            .filter(|node| node.is_element() && node.tag_name().name() == "text")
+            .collect();
+        if texts.len() != 2
+            || texts[0].text() != Some("One two three")
+            || texts[1].text() != Some("Four")
+            || document.descendants().any(|node| {
+                node.is_element() && matches!(node.tag_name().name(), "a" | "image" | "mask")
+            })
+            || !std::str::from_utf8(&bytes)
+                .unwrap()
+                .contains("font-family: Excalifont")
+        {
+            return Err("typography SVG selectable text or embedded font is invalid".to_owned());
+        }
+        Ok(())
+    }
+}
+
+fn verify_typography_provenance(case_data: &LoadedCase) -> Result<(), String> {
+    let path = descriptor_path(&case_data.root, &case_data.manifest["provenance"])?;
+    let bytes = fs::read(path).map_err(|error| format!("failed to read provenance: {error}"))?;
+    let provenance: Value =
+        serde_json::from_slice(&bytes).map_err(|error| format!("invalid provenance: {error}"))?;
+    if bytes != [&canonical_bytes(&provenance)?[..], b"\n"].concat()
+        || provenance["case_id"] != json!(TYPOGRAPHY_CASE_ID)
+        || provenance["generated_at"] != json!("2026-07-22")
+        || provenance["png_independent_from_svg"] != json!(true)
+        || provenance["reference_profile_digest"] != json!(format!("sha256:{PROFILE_DIGEST}"))
+        || provenance["generation_invocation"]
+            != json!(
+                "cargo run --locked -p xtask -- conformance generate focused.excalifont-text.v1"
+            )
+        || provenance["reproduction_invocation"]
+            != json!(
+                "cargo run --locked -p xtask -- conformance reproduce focused.excalifont-text.v1"
+            )
+    {
+        return Err("typography provenance identity is invalid".to_owned());
+    }
+    verify_repo_descriptor(&provenance["generator"], "generator")?;
+    verify_repo_descriptor(&provenance["runner"], "runner")?;
+    let runs = provenance["runs"]
+        .as_array()
+        .ok_or_else(|| "typography provenance runs are missing".to_owned())?;
+    if runs.len() != 2 || runs[0]["requests"] != runs[1]["requests"] {
+        return Err("typography evidence was not repeated in fresh processes".to_owned());
+    }
+    for format in ["png", "svg"] {
+        let manifest = &case_data.manifest["variants"][0]["formats"][format];
+        if runs[0]["outputs"][format]["artifact_sha256"] != manifest["artifact"]["sha256"]
+            || runs[0]["outputs"][format]["raw_raster_sha256"] != manifest["raw_raster"]["sha256"]
+            || runs[0]["outputs"][format] != runs[1]["outputs"][format]
+        {
+            return Err(format!("typography {format} evidence is not repeatable"));
+        }
     }
     Ok(())
 }
@@ -801,6 +1061,10 @@ fn verify_repo_descriptor(value: &Value, subject: &str) -> Result<(), String> {
 }
 
 fn verify_approval(approval: &Value, subject: &str) -> Result<(), String> {
+    verify_approval_for_issue(approval, subject, "32")
+}
+
+fn verify_approval_for_issue(approval: &Value, subject: &str, issue: &str) -> Result<(), String> {
     let approval = object(approval, "approval")?;
     verify_exact_keys(
         approval,
@@ -818,9 +1082,10 @@ fn verify_approval(approval: &Value, subject: &str) -> Result<(), String> {
     let approved_by = approval["approved_by"].as_str().unwrap_or_default();
     let approved_at = approval["approved_at"].as_str().unwrap_or_default();
     let approval_url = approval["approval_url"].as_str().unwrap_or_default();
-    let comment_id = approval_url.strip_prefix(
-        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/32#issuecomment-",
+    let prefix = format!(
+        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/{issue}#issuecomment-"
     );
+    let comment_id = approval_url.strip_prefix(&prefix);
     if !valid_github_login(approved_by)
         || !valid_date(approved_at)
         || comment_id.is_none_or(str::is_empty)

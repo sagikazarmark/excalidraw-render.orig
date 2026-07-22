@@ -54,11 +54,22 @@ pub(crate) enum NormalizedElementKind {
     Rectangle,
     Diamond,
     Ellipse,
+    Text(NormalizedText),
     Linear(NormalizedLinear),
     Freedraw(NormalizedFreedraw),
     Image(NormalizedImage),
     Frame(NormalizedFrame),
     MagicFrame(NormalizedFrame),
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) struct NormalizedText {
+    pub(crate) font_size: f64,
+    pub(crate) font_family: i32,
+    pub(crate) text: String,
+    pub(crate) text_align: String,
+    pub(crate) vertical_align: String,
+    pub(crate) line_height: f64,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -1225,6 +1236,7 @@ impl ElementKind {
             Self::Rectangle => "normalized_rectangle",
             Self::Diamond => "normalized_diamond",
             Self::Ellipse => "normalized_ellipse",
+            Self::Text => "normalized_text",
             Self::Line | Self::LegacyDraw | Self::Arrow => "normalized_linear",
             Self::Freedraw => "normalized_freedraw",
             Self::Image => "normalized_image",
@@ -1235,6 +1247,7 @@ impl ElementKind {
     fn normalized_field_count(self, participation: NormalizationParticipation) -> u64 {
         match self {
             Self::Rectangle | Self::Diamond | Self::Ellipse => 0,
+            Self::Text => 6,
             Self::Line | Self::LegacyDraw => 6,
             Self::Arrow => 7,
             Self::Freedraw => 4,
@@ -1252,6 +1265,13 @@ fn planned_kind_working_bytes(
         |value: Option<&str>| value.map_or(64, |value| owned_field_bytes(value.len()));
     match source.kind {
         ElementKind::Rectangle | ElementKind::Diamond | ElementKind::Ellipse => 0,
+        ElementKind::Text => {
+            let text = match source.text {
+                SourceField::Value(text) => text,
+                SourceField::Missing | SourceField::Invalid => "",
+            };
+            owned_field_bytes(text.len()).saturating_add(5 * 64)
+        }
         ElementKind::Line | ElementKind::LegacyDraw | ElementKind::Arrow => {
             let point_count = match source.points {
                 SourceField::Value(points)
@@ -1402,6 +1422,9 @@ fn kind_working_bytes(
         NormalizedElementKind::Rectangle
         | NormalizedElementKind::Diamond
         | NormalizedElementKind::Ellipse => 0,
+        NormalizedElementKind::Text(text) => {
+            owned_field_bytes(text.text.len()).saturating_add(5 * 64)
+        }
         NormalizedElementKind::Linear(linear) => u64::try_from(linear.points.len())
             .unwrap_or(u64::MAX)
             .saturating_mul(2 * 64)
@@ -1690,6 +1713,98 @@ fn normalize_element_kind(
             fields.width,
             fields.height,
         )),
+        ElementKind::Text => {
+            if !source_accepts(source.font_size, |value| value > 0.0) {
+                diagnostic_context.unsupported(
+                    "fontSize",
+                    &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+                    Recovery::Substituted,
+                    None,
+                )?;
+            }
+            if !source_accepts(source.font_family, |value| {
+                matches!(value, 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9)
+            }) {
+                diagnostic_context.unsupported(
+                    "fontFamily",
+                    &[
+                        DiagnosticEffect::InputRepair,
+                        DiagnosticEffect::Visual,
+                        DiagnosticEffect::Semantic,
+                    ],
+                    Recovery::Substituted,
+                    None,
+                )?;
+            }
+            if matches!(source.text, SourceField::Invalid) {
+                diagnostic_context.unsupported(
+                    "text",
+                    &[
+                        DiagnosticEffect::InputRepair,
+                        DiagnosticEffect::Visual,
+                        DiagnosticEffect::Semantic,
+                    ],
+                    Recovery::Substituted,
+                    None,
+                )?;
+            }
+            if !matches!(
+                source.text_align,
+                SourceField::Missing | SourceField::Value("left" | "center" | "right")
+            ) {
+                diagnostic_context.unsupported(
+                    "textAlign",
+                    &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+                    Recovery::Substituted,
+                    None,
+                )?;
+            }
+            if !matches!(
+                source.vertical_align,
+                SourceField::Missing | SourceField::Value("top" | "middle" | "bottom")
+            ) {
+                diagnostic_context.unsupported(
+                    "verticalAlign",
+                    &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+                    Recovery::Substituted,
+                    None,
+                )?;
+            }
+            if !source_accepts(source.line_height, |value| value > 0.0) {
+                diagnostic_context.unsupported(
+                    "lineHeight",
+                    &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+                    Recovery::Substituted,
+                    None,
+                )?;
+            }
+            let text = match source.text {
+                SourceField::Value(text) => text,
+                SourceField::Missing | SourceField::Invalid => "",
+            };
+            Ok((
+                NormalizedElementKind::Text(NormalizedText {
+                    font_size: manifested_value(source.font_size, 20.0, |value| value > 0.0),
+                    font_family: manifested_value(source.font_family, 5, |value| {
+                        matches!(value, 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9)
+                    }),
+                    text: try_owned(text)?,
+                    text_align: try_owned(manifested_value(source.text_align, "left", |value| {
+                        matches!(value, "left" | "center" | "right")
+                    }))?,
+                    vertical_align: try_owned(manifested_value(
+                        source.vertical_align,
+                        "top",
+                        |value| matches!(value, "top" | "middle" | "bottom"),
+                    ))?,
+                    line_height: manifested_value(source.line_height, 1.25, |value| value > 0.0),
+                }),
+                fields.x,
+                fields.y,
+                fields.width,
+                fields.height,
+            ))
+        }
         ElementKind::Line | ElementKind::LegacyDraw | ElementKind::Arrow => {
             if matches!(source.points, SourceField::Invalid) {
                 diagnostic_context.unsupported(

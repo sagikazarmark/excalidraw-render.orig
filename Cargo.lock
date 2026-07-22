@@ -515,7 +515,9 @@ version = "0.1.0"
 dependencies = [
  "excalidraw-render-assets-data-000",
  "excalidraw-render-assets-data-001",
+ "rustybuzz",
  "sha2",
+ "wuff",
 ]
 
 [[package]]
@@ -1908,8 +1910,10 @@ dependencies = [
  "jsonschema",
  "png",
  "roxmltree",
+ "rustybuzz",
  "serde_json",
  "sha2",
+ "wuff",
 ]
 
 [[package]]

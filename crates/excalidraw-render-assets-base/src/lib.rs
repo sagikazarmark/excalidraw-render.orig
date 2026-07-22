@@ -74,6 +74,21 @@ pub struct VerifiedAsset {
     bytes: Vec<u8>,
 }
 
+/// Auditable transformation metadata for one checked-in predecoded font.
+#[derive(Clone, Copy, Debug)]
+pub struct PredecodedFontTransformation {
+    pub source_path: &'static str,
+    pub source_sha256: &'static str,
+    pub output_sha256: &'static str,
+    pub tool: &'static str,
+    pub invocation: &'static str,
+    pub reviewer: &'static str,
+    pub review_date: &'static str,
+    pub exact_output_bytes_reviewed: bool,
+    pub comparison: &'static str,
+    pub metadata_json: &'static [u8],
+}
+
 impl VerifiedAsset {
     /// Returns the verified complete asset bytes.
     pub fn bytes(&self) -> &[u8] {
@@ -132,6 +147,49 @@ pub fn load_asset(upstream_path: &str) -> Result<Option<VerifiedAsset>, AssetInt
         return Ok(None);
     };
     verify_asset(&ASSETS[index]).map(Some)
+}
+
+const EXCALIFONT_BASIC_LATIN_SFNT_IDENTITY: &str = concat!(
+    "catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt@sha256:",
+    "a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb"
+);
+const EXCALIFONT_BASIC_LATIN_SFNT: &[u8] = include_bytes!(
+    "../catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt"
+);
+
+/// Loads the digest-verified predecoded sfnt for the manifested Excalifont basic-Latin chunk.
+pub fn load_excalifont_basic_latin_sfnt() -> Result<VerifiedAsset, AssetIntegrityError> {
+    if EXCALIFONT_BASIC_LATIN_SFNT.len() != 61_948
+        || sha256(EXCALIFONT_BASIC_LATIN_SFNT)
+            != "a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb"
+    {
+        return Err(AssetIntegrityError {
+            asset_identity: EXCALIFONT_BASIC_LATIN_SFNT_IDENTITY,
+            segment_identity: None,
+        });
+    }
+    Ok(VerifiedAsset {
+        bytes: EXCALIFONT_BASIC_LATIN_SFNT.to_vec(),
+    })
+}
+
+/// Returns the checked-in transformation record for the predecoded sfnt bytes.
+pub const fn excalifont_basic_latin_sfnt_transformation() -> PredecodedFontTransformation {
+    PredecodedFontTransformation {
+        source_path:
+            "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
+        source_sha256: "e4423b318e11432aff2e6e865e300b7ca270f92321a3f56632268fede01c1b48",
+        output_sha256: "a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb",
+        tool: "wuff 0.2.8",
+        invocation: "wuff::decompress_woff2(source_bytes)",
+        reviewer: "OpenAI gpt-5.6-sol",
+        review_date: "2026-07-22",
+        exact_output_bytes_reviewed: true,
+        comparison: "byte-identical container decode; all 14 tables, names, metrics, glyphs, outlines, mappings, and legal metadata reviewed",
+        metadata_json: include_bytes!(
+            "../catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt.json"
+        ),
+    }
 }
 
 /// Returns the package-wide canonical license and notice bundle.

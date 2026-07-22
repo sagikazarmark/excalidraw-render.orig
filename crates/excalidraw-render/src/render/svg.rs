@@ -15,6 +15,7 @@ pub(super) struct SvgPlan {
     background: Option<CanonicalColor>,
     fallback_colors: super::FallbackColors,
     fallback_font_woff2: Option<Vec<u8>>,
+    official_font_woff2: Option<Vec<u8>>,
     mandatory_manifest: Option<String>,
     elements: Vec<SvgElement>,
 }
@@ -65,6 +66,14 @@ enum SvgElement {
         center_y: f64,
         opacity: f64,
     },
+    Text {
+        source: NormalizedElementSource,
+        text: super::text::ResolvedText,
+        frame_clips: Vec<super::ResolvedClip>,
+        transform: super::ResolvedTransform,
+        color: CanonicalColor,
+        opacity: f64,
+    },
     Fallback {
         source: super::FallbackSource,
         clip_index: usize,
@@ -88,6 +97,7 @@ impl SvgElement {
             Self::RoughOutline { frame_clips, .. }
             | Self::Freedraw { frame_clips, .. }
             | Self::Frame { frame_clips, .. }
+            | Self::Text { frame_clips, .. }
             | Self::Fallback { frame_clips, .. } => frame_clips,
         }
     }
@@ -169,6 +179,7 @@ impl SvgPlan {
             Sizing::MaxDimension(_) => 1.0,
         };
         let fallback_font_woff2 = scene.fallback_font_woff2;
+        let official_font_woff2 = scene.official_font_woff2;
         let mandatory_manifest = scene.mandatory_manifest;
         let mut elements = Vec::new();
         elements
@@ -241,6 +252,16 @@ impl SvgPlan {
                     });
                     fallback_index = fallback_index.saturating_add(1);
                 }
+                ResolvedElement::Text(text) => {
+                    elements.push(SvgElement::Text {
+                        source: text.source,
+                        text: text.text,
+                        frame_clips: text.frame_clips,
+                        transform: text.transform,
+                        color: text.color,
+                        opacity: text.opacity,
+                    });
+                }
                 ResolvedElement::Fallback(fallback) => {
                     elements.push(SvgElement::Fallback {
                         source: fallback.source,
@@ -270,6 +291,7 @@ impl SvgPlan {
             background: scene.include_background.then_some(scene.background_color),
             fallback_colors: scene.fallback_colors,
             fallback_font_woff2,
+            official_font_woff2,
             mandatory_manifest,
             elements,
         })
@@ -278,6 +300,17 @@ impl SvgPlan {
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
         let mut capacity = 256_usize;
         if let Some(font) = &self.fallback_font_woff2 {
+            capacity = checked_capacity_add(
+                capacity,
+                font.len()
+                    .checked_add(2)
+                    .and_then(|length| length.checked_div(3))
+                    .and_then(|groups| groups.checked_mul(4))
+                    .and_then(|encoded| encoded.checked_add(256))
+                    .ok_or_else(svg_size_error)?,
+            )?;
+        }
+        if let Some(font) = &self.official_font_woff2 {
             capacity = checked_capacity_add(
                 capacity,
                 font.len()
@@ -329,6 +362,13 @@ impl SvgPlan {
                     }
                     capacity = checked_capacity_add(capacity, 512)?;
                 }
+                SvgElement::Text { text, .. } => {
+                    for line in &text.lines {
+                        capacity = checked_capacity_add(capacity, escaped_capacity(&line.text)?)?;
+                    }
+                    capacity =
+                        checked_capacity_add(capacity, text.lines.len().saturating_mul(192))?;
+                }
                 SvgElement::Fallback { label, link, .. } => {
                     if let Some(label) = label {
                         capacity = checked_capacity_add(capacity, escaped_capacity(label)?)?;
@@ -367,6 +407,14 @@ impl SvgPlan {
         if let Some(font) = &self.fallback_font_woff2 {
             svg.push_str(concat!(
                 "<defs><style>@font-face{font-family:'Liberation Sans';font-style:normal;",
+                "font-weight:400;src:url(data:font/woff2;base64,"
+            ));
+            push_base64(&mut svg, font)?;
+            svg.push_str(") format('woff2')}</style></defs>");
+        }
+        if let Some(font) = &self.official_font_woff2 {
+            svg.push_str(concat!(
+                "<defs><style>@font-face{font-family:'Excalifont';font-style:normal;",
                 "font-weight:400;src:url(data:font/woff2;base64,"
             ));
             push_base64(&mut svg, font)?;
@@ -615,6 +663,84 @@ impl SvgPlan {
                     }
                     svg.push_str("</g>");
                 }
+                SvgElement::Text {
+                    source,
+                    text,
+                    frame_clips: _,
+                    transform,
+                    color,
+                    opacity,
+                } => {
+                    if source.id().is_empty() || source.pointer().is_empty() {
+                        return Err(FormatEncodeError::Encoding(
+                            "SVG text lost its source identity".to_owned(),
+                        ));
+                    }
+                    svg.push_str("<g transform=\"translate(");
+                    push_svg_number(&mut svg, transform.translation_x, "SVG text translation x")?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, transform.translation_y, "SVG text translation y")?;
+                    svg.push_str(") rotate(");
+                    push_svg_number(
+                        &mut svg,
+                        180.0 * transform.angle_radians / std::f64::consts::PI,
+                        "SVG text rotation",
+                    )?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, transform.center_x, "SVG text center x")?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, transform.center_y, "SVG text center y")?;
+                    svg.push_str(")\"");
+                    let effective_opacity = opacity * color.alpha();
+                    if effective_opacity != 1.0 {
+                        svg.push_str(" opacity=\"");
+                        push_svg_number(&mut svg, effective_opacity, "SVG text opacity")?;
+                        svg.push('"');
+                    }
+                    svg.push('>');
+                    svg.push_str("<text data-source-text=\"");
+                    for line in &text.lines {
+                        push_escaped_attribute(&mut svg, &line.text);
+                    }
+                    svg.push_str("\" xml:space=\"preserve\" fill=\"");
+                    color.write_hex(&mut svg).map_err(|_| {
+                        FormatEncodeError::Encoding("failed to write SVG text color".to_owned())
+                    })?;
+                    svg.push_str("\" font-family=\"Excalifont\" font-size=\"");
+                    push_svg_number(&mut svg, text.font_size, "SVG text font size")?;
+                    svg.push_str("\">");
+                    for line in &text.lines {
+                        svg.push_str("<tspan x=\"");
+                        if line.glyphs.is_empty() {
+                            svg.push('0');
+                        } else {
+                            for (index, glyph) in line.glyphs.iter().enumerate() {
+                                if index != 0 {
+                                    svg.push(' ');
+                                }
+                                push_svg_number(&mut svg, glyph.x, "SVG shaped glyph x")?;
+                            }
+                        }
+                        svg.push_str("\" y=\"");
+                        if line.glyphs.is_empty() {
+                            push_svg_number(&mut svg, line.baseline, "SVG text line baseline")?;
+                        } else {
+                            for (index, glyph) in line.glyphs.iter().enumerate() {
+                                if index != 0 {
+                                    svg.push(' ');
+                                }
+                                push_svg_number(&mut svg, glyph.y, "SVG shaped glyph y")?;
+                            }
+                        }
+                        svg.push_str("\">");
+                        push_escaped_text(&mut svg, &line.display_text);
+                        svg.push_str("</tspan>");
+                        if line.text.ends_with('\n') {
+                            svg.push('\n');
+                        }
+                    }
+                    svg.push_str("</text></g>");
+                }
                 SvgElement::Fallback {
                     source,
                     clip_index,
@@ -761,6 +887,7 @@ impl SvgPlan {
             SvgElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
+            SvgElement::Text { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -986,6 +1113,9 @@ fn push_escaped_attribute(output: &mut String, value: &str) {
             '"' => output.push_str("&quot;"),
             '<' => output.push_str("&lt;"),
             '>' => output.push_str("&gt;"),
+            '\n' => output.push_str("&#10;"),
+            '\r' => output.push_str("&#13;"),
+            '\t' => output.push_str("&#9;"),
             character => output.push(character),
         }
     }

@@ -1,6 +1,10 @@
 use std::collections::BTreeMap;
 
-use excalidraw_render_assets_base::{load_asset, revision_1, RAW_SHARD_LIMIT};
+use excalidraw_render_assets_base::{
+    excalifont_basic_latin_sfnt_transformation, load_asset, load_excalifont_basic_latin_sfnt,
+    revision_1, RAW_SHARD_LIMIT,
+};
+use sha2::{Digest, Sha256};
 
 #[test]
 fn every_catalog_asset_reassembles_and_verifies_before_use() {
@@ -51,4 +55,40 @@ fn every_catalog_asset_reassembles_and_verifies_before_use() {
     assert!(load_asset("fonts/Assistant/Assistant-Regular.woff2")
         .expect("missing lookup is not an integrity error")
         .is_none());
+}
+
+#[test]
+fn predecoded_excalifont_basic_latin_sfnt_is_checked_in_and_digest_verified() {
+    let source =
+        load_asset("fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2")
+            .expect("source integrity")
+            .expect("source is manifested");
+    let sfnt = load_excalifont_basic_latin_sfnt().expect("predecoded sfnt integrity");
+    let transformation = excalifont_basic_latin_sfnt_transformation();
+
+    assert_eq!(
+        format!("{:x}", Sha256::digest(source.bytes())),
+        transformation.source_sha256
+    );
+    assert_eq!(
+        format!("{:x}", Sha256::digest(sfnt.bytes())),
+        transformation.output_sha256
+    );
+    assert_eq!(
+        wuff::decompress_woff2(source.bytes()).expect("source decodes"),
+        sfnt.bytes()
+    );
+    let face = rustybuzz::Face::from_slice(sfnt.bytes(), 0).expect("output is a valid sfnt");
+    assert!(face.glyph_index('A').is_some());
+    assert_eq!(transformation.tool, "wuff 0.2.8");
+    assert_eq!(
+        transformation.invocation,
+        "wuff::decompress_woff2(source_bytes)"
+    );
+    assert_eq!(transformation.reviewer, "OpenAI gpt-5.6-sol");
+    assert_eq!(transformation.review_date, "2026-07-22");
+    assert!(transformation.exact_output_bytes_reviewed);
+    assert!(std::str::from_utf8(transformation.metadata_json)
+        .expect("transformation metadata is UTF-8")
+        .contains("all 14 SFNT tables and declared checksums are identical"));
 }

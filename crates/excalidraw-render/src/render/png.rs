@@ -56,6 +56,16 @@ enum PngElement {
         opacity: f64,
         render: bool,
     },
+    Text {
+        source: NormalizedElementSource,
+        text: super::text::ResolvedText,
+        frame_clips: Vec<PngFrameClip>,
+        transform: PngTransform,
+        color: CanonicalColor,
+        opacity: f64,
+        base_element_work_units: u64,
+        render: bool,
+    },
     Fallback {
         source: super::FallbackSource,
         label: Option<super::text::ResolvedLabel>,
@@ -99,7 +109,8 @@ impl PngElement {
         match self {
             Self::RoughOutline { frame_clips, .. }
             | Self::Freedraw { frame_clips, .. }
-            | Self::Frame { frame_clips, .. } => frame_clips,
+            | Self::Frame { frame_clips, .. }
+            | Self::Text { frame_clips, .. } => frame_clips,
             Self::Fallback { .. } => &[],
         }
     }
@@ -244,6 +255,18 @@ impl PngPlan {
                         frame_clips: project_frame_clips(frame.frame_clips, scale)?,
                         transform: PngTransform::new(&frame.transform, scale),
                         opacity: frame.opacity,
+                        render: true,
+                    });
+                }
+                ResolvedElement::Text(text) => {
+                    elements.push(PngElement::Text {
+                        source: text.source,
+                        text: text.text,
+                        frame_clips: project_frame_clips(text.frame_clips, scale)?,
+                        transform: PngTransform::new(&text.transform, scale),
+                        color: text.color,
+                        opacity: text.opacity,
+                        base_element_work_units: text.base_element_work_units,
                         render: true,
                     });
                 }
@@ -519,6 +542,37 @@ impl PngPlan {
                             );
                         }
                     }
+                    PngElement::Text {
+                        source,
+                        text,
+                        frame_clips: _,
+                        transform,
+                        color,
+                        opacity,
+                        base_element_work_units: _,
+                        render,
+                    } => {
+                        if !render {
+                            continue;
+                        }
+                        if source.id().is_empty() || source.pointer().is_empty() {
+                            return Err(FormatEncodeError::Encoding(
+                                "PNG text lost its source identity".to_owned(),
+                            ));
+                        }
+                        let paint = solid_paint(*color, *opacity)?;
+                        let raster_transform = transform.raster_transform(SUBPIXEL_SCALE)?;
+                        for line in &text.lines {
+                            let path = label_path(&line.path)?;
+                            surface.fill_path(
+                                &path,
+                                &paint,
+                                FillRule::Winding,
+                                raster_transform,
+                                frame_mask,
+                            );
+                        }
+                    }
                     PngElement::Fallback {
                         source,
                         label,
@@ -713,6 +767,18 @@ impl PngPlan {
                 self.height,
             ),
             PngElement::Frame { .. } => 0,
+            PngElement::Text {
+                text,
+                frame_clips,
+                transform,
+                ..
+            } => conservative_text_coverage_area(
+                text,
+                frame_clips,
+                *transform,
+                self.width,
+                self.height,
+            ),
             PngElement::Fallback {
                 width,
                 height,
@@ -739,6 +805,10 @@ impl PngPlan {
                 ..
             } => *base_element_work_units,
             PngElement::Frame { .. } => 8,
+            PngElement::Text {
+                base_element_work_units,
+                ..
+            } => base_element_work_units.saturating_add(8),
             PngElement::Fallback {
                 base_element_work_units,
                 ..
@@ -751,6 +821,7 @@ impl PngPlan {
             PngElement::RoughOutline { .. } => None,
             PngElement::Freedraw { .. } => None,
             PngElement::Frame { .. } => None,
+            PngElement::Text { .. } => None,
             PngElement::Fallback {
                 width,
                 height,
@@ -771,6 +842,7 @@ impl PngPlan {
             PngElement::RoughOutline { frame_clips, .. }
             | PngElement::Freedraw { frame_clips, .. }
             | PngElement::Frame { frame_clips, .. }
+            | PngElement::Text { frame_clips, .. }
                 if !frame_clips.is_empty() =>
             {
                 Some(u64::from(self.width).saturating_mul(u64::from(self.height)))
@@ -786,6 +858,7 @@ impl PngPlan {
                 PngElement::RoughOutline { frame_clips, .. }
                     | PngElement::Freedraw { frame_clips, .. }
                     | PngElement::Frame { frame_clips, .. }
+                    | PngElement::Text { frame_clips, .. }
                     if !frame_clips.is_empty()
             )
         })
@@ -808,6 +881,7 @@ impl PngPlan {
             PngElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
             PngElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
             PngElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
+            PngElement::Text { source, .. } => (Some(source.id()), source.pointer()),
             PngElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -823,6 +897,10 @@ impl PngPlan {
                 true
             }
             Some(PngElement::Frame { render, .. }) => {
+                *render = false;
+                true
+            }
+            Some(PngElement::Text { render, .. }) => {
                 *render = false;
                 true
             }
@@ -1417,6 +1495,110 @@ fn conservative_freedraw_coverage_area(
     let bottom = (max_y + outset)
         .ceil()
         .clamp(0.0, f64::from(surface_height));
+    ((right - left) as u64).saturating_mul((bottom - top) as u64)
+}
+
+fn conservative_text_coverage_area(
+    text: &super::text::ResolvedText,
+    clips: &[PngFrameClip],
+    transform: PngTransform,
+    surface_width: u32,
+    surface_height: u32,
+) -> u64 {
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    let mut include = |x: f64, y: f64| {
+        let point = transform.map_point(Point { x, y });
+        min_x = min_x.min(point.x);
+        min_y = min_y.min(point.y);
+        max_x = max_x.max(point.x);
+        max_y = max_y.max(point.y);
+    };
+    for operation in text.lines.iter().flat_map(|line| &line.path.operations) {
+        match *operation {
+            super::text::LabelPathOperation::Move { x, y }
+            | super::text::LabelPathOperation::Line { x, y } => include(x, y),
+            super::text::LabelPathOperation::Quadratic {
+                control_x,
+                control_y,
+                x,
+                y,
+            } => {
+                include(control_x, control_y);
+                include(x, y);
+            }
+            super::text::LabelPathOperation::Cubic {
+                control_1_x,
+                control_1_y,
+                control_2_x,
+                control_2_y,
+                x,
+                y,
+            } => {
+                include(control_1_x, control_1_y);
+                include(control_2_x, control_2_y);
+                include(x, y);
+            }
+            super::text::LabelPathOperation::Close => {}
+        }
+    }
+    if !min_x.is_finite() || !min_y.is_finite() || !max_x.is_finite() || !max_y.is_finite() {
+        return 0;
+    }
+    for clip in clips {
+        let Some((clip_min_x, clip_min_y, clip_max_x, clip_max_y)) = clip.path.cubic_bounds()
+        else {
+            return 0;
+        };
+        let corners = [
+            Point {
+                x: clip_min_x,
+                y: clip_min_y,
+            },
+            Point {
+                x: clip_max_x,
+                y: clip_min_y,
+            },
+            Point {
+                x: clip_max_x,
+                y: clip_max_y,
+            },
+            Point {
+                x: clip_min_x,
+                y: clip_max_y,
+            },
+        ]
+        .map(|point| clip.transform.map_point(point));
+        let clip_left = corners
+            .iter()
+            .map(|point| point.x)
+            .fold(f64::INFINITY, f64::min);
+        let clip_top = corners
+            .iter()
+            .map(|point| point.y)
+            .fold(f64::INFINITY, f64::min);
+        let clip_right = corners
+            .iter()
+            .map(|point| point.x)
+            .fold(f64::NEG_INFINITY, f64::max);
+        let clip_bottom = corners
+            .iter()
+            .map(|point| point.y)
+            .fold(f64::NEG_INFINITY, f64::max);
+        min_x = min_x.max(clip_left);
+        min_y = min_y.max(clip_top);
+        max_x = max_x.min(clip_right);
+        max_y = max_y.min(clip_bottom);
+    }
+    if min_x >= max_x || min_y >= max_y {
+        return 0;
+    }
+    let left = min_x.floor().clamp(0.0, f64::from(surface_width));
+    let top = min_y.floor().clamp(0.0, f64::from(surface_height));
+    let right = max_x.ceil().clamp(0.0, f64::from(surface_width));
+    let bottom = max_y.ceil().clamp(0.0, f64::from(surface_height));
     ((right - left) as u64).saturating_mul((bottom - top) as u64)
 }
 

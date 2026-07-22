@@ -89,6 +89,10 @@ struct RenderSession {
     meter: ResourceMeter,
     staged_output: Option<Vec<u8>>,
     element_source_order_base: u64,
+    excalifont_selected: bool,
+    excalifont_range_selected: bool,
+    excalifont_glyphs: Vec<u16>,
+    excalifont_request_derived_bytes: u64,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -112,6 +116,10 @@ impl RenderSession {
             meter: ResourceMeter::new(request.resource_limits()),
             staged_output: None,
             element_source_order_base: scene.source_owner_order("elements", 0),
+            excalifont_selected: false,
+            excalifont_range_selected: false,
+            excalifont_glyphs: Vec::new(),
+            excalifont_request_derived_bytes: 0,
         }
     }
 
@@ -129,6 +137,10 @@ impl RenderSession {
             meter: ResourceMeter::with_trace(profile, scene, request),
             staged_output: None,
             element_source_order_base: scene.source_owner_order("elements", 0),
+            excalifont_selected: false,
+            excalifont_range_selected: false,
+            excalifont_glyphs: Vec::new(),
+            excalifont_request_derived_bytes: 0,
         }
     }
 
@@ -456,6 +468,15 @@ impl RenderSession {
                     outlines.push((source, None));
                     continue;
                 }
+                if matches!(
+                    &source.kind,
+                    NormalizedElementKind::Text(text) if text.font_family == 5
+                ) {
+                    if self.preflight_official_text(&source, request, &mut semantic_working)? {
+                        outlines.push((source, None));
+                    }
+                    continue;
+                }
                 if !is_outline || !source.direct_outline_compatible {
                     let uses_non_generic_recovery =
                         self.report.diagnostics.iter().any(|diagnostic| {
@@ -630,7 +651,8 @@ impl RenderSession {
                     NormalizedElementKind::Ellipse => "rough_ellipse_geometry",
                     NormalizedElementKind::Linear(_) => "rough_linear_geometry",
                     NormalizedElementKind::Freedraw(_) => "freedraw_geometry",
-                    NormalizedElementKind::Image(_)
+                    NormalizedElementKind::Text(_)
+                    | NormalizedElementKind::Image(_)
                     | NormalizedElementKind::Frame(_)
                     | NormalizedElementKind::MagicFrame(_) => {
                         unreachable!("only direct outlines reach geometry accounting")
@@ -1339,6 +1361,233 @@ impl RenderSession {
                 )?;
                 continue;
             }
+            if let ResolvedElement::Text(text) = element {
+                let clip_segments = text.frame_clips.iter().fold(0_u64, |total, clip| {
+                    total.saturating_add(
+                        u64::try_from(clip.path.operations.len()).unwrap_or(u64::MAX),
+                    )
+                });
+                let outline_segments = text.text.outline_segments();
+                let geometry_segments = outline_segments.saturating_add(clip_segments);
+                let glyphs = text.text.glyph_count();
+                let text_scalars = text.text.scalar_count;
+                let line_break_steps = text.text.line_break_steps;
+                let remaining_work_units = line_break_steps
+                    .saturating_sub(text.text.prepaid_line_break_steps)
+                    .saturating_mul(32)
+                    .saturating_add(
+                        glyphs
+                            .saturating_sub(text.text.prepaid_glyphs)
+                            .saturating_mul(32),
+                    )
+                    .saturating_add(geometry_segments.saturating_mul(32));
+                let total_work_units = text_scalars
+                    .saturating_mul(32)
+                    .saturating_add(text.text.prepaid_glyphs.saturating_mul(32))
+                    .saturating_add(text.text.prepaid_line_break_steps.saturating_mul(32))
+                    .saturating_add(remaining_work_units);
+                text.base_element_work_units = total_work_units;
+                let path_headers = u64::try_from(text.text.lines.len())
+                    .unwrap_or(u64::MAX)
+                    .saturating_add(u64::try_from(text.frame_clips.len()).unwrap_or(u64::MAX));
+                let working_bytes = glyphs
+                    .saturating_mul(64)
+                    .saturating_add(line_break_steps.saturating_mul(32))
+                    .saturating_add(path_headers.saturating_mul(128))
+                    .saturating_add(geometry_segments.saturating_mul(64));
+                let delta = ResourceDelta {
+                    geometry_segments,
+                    working_bytes,
+                    total_work_units: remaining_work_units,
+                    ..ResourceDelta::default()
+                };
+                let context = ResourceContext::new(
+                    ResourcePhase::SharedSemanticResolution,
+                    "text_layout_and_glyph_geometry",
+                    text.source.pointer(),
+                )
+                .with_element_id(Some(text.source.id()))
+                .with_local_owner(Some(text.source.id()));
+                if self.meter.would_cross_fatal(delta) {
+                    self.transact(request, context, delta)?;
+                    return Err(self.internal_failure(
+                        request.format(),
+                        "fatal text resource preflight committed unexpectedly",
+                        "/elements",
+                    ));
+                }
+                let local_crossing = if geometry_segments
+                    > u64::from(
+                        request
+                            .resource_limits()
+                            .max_geometry_segments_per_element(),
+                    ) {
+                    Some(ElementLocalCrossing {
+                        code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
+                        field: "max_geometry_segments_per_element",
+                        configured: ResourceValue::Integer(u64::from(
+                            request
+                                .resource_limits()
+                                .max_geometry_segments_per_element(),
+                        )),
+                        value_kind: ValueKind::Count,
+                        attempted: ResourceValue::Integer(geometry_segments),
+                        pointer_field: None,
+                        message:
+                            "text was omitted because its glyph outlines exceed the geometry limit",
+                    })
+                } else if total_work_units > request.resource_limits().max_element_work_units() {
+                    Some(ElementLocalCrossing {
+                        code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
+                        field: "max_element_work_units",
+                        configured: ResourceValue::Integer(
+                            request.resource_limits().max_element_work_units(),
+                        ),
+                        value_kind: ValueKind::WorkUnits,
+                        attempted: ResourceValue::Integer(total_work_units),
+                        pointer_field: None,
+                        message: "text was omitted because shaping exceeds its work limit",
+                    })
+                } else {
+                    None
+                };
+                if let Some(crossing) = local_crossing {
+                    let diagnostic = crossing
+                        .diagnostic(
+                            request.format(),
+                            Some(text.source.id()),
+                            text.source.pointer(),
+                        )
+                        .map_err(|_| {
+                            self.memory_failure(
+                                request,
+                                "compatibility_report",
+                                "text_local_recovery",
+                            )
+                        })?;
+                    self.retain_diagnostic_with_owner(
+                        request,
+                        ResourcePhase::SharedSemanticResolution,
+                        "text_local_resource_recovery",
+                        diagnostic,
+                        DiagnosticOwnership {
+                            local_owner: Some(text.source.id()),
+                            source_order: Some(text.source_order),
+                            source_position: Some(0),
+                        },
+                    )?;
+                    self.charge_local_omission(
+                        request,
+                        Some(text.source.id()),
+                        text.source.pointer(),
+                        "text_local_omission",
+                    )?;
+                    text.render = false;
+                    continue;
+                }
+                for codepoint in &text.text.missing_codepoints {
+                    let diagnostic = official_missing_glyph_diagnostic(
+                        request.format(),
+                        text.source.id(),
+                        text.source.pointer(),
+                        *codepoint,
+                    )
+                    .map_err(|_| {
+                        self.memory_failure(
+                            request,
+                            "compatibility_report",
+                            "official_missing_glyph",
+                        )
+                    })?;
+                    self.retain_diagnostic_with_owner(
+                        request,
+                        ResourcePhase::SharedSemanticResolution,
+                        "official_missing_glyph",
+                        diagnostic,
+                        DiagnosticOwnership {
+                            local_owner: Some(text.source.id()),
+                            source_order: Some(text.source_order),
+                            source_position: Some(u64::MAX),
+                        },
+                    )?;
+                }
+                self.transact(request, context, delta)?;
+                for glyph_id in text
+                    .text
+                    .lines
+                    .iter()
+                    .flat_map(|line| line.glyphs.iter().map(|glyph| glyph.id))
+                {
+                    if self.excalifont_glyphs.contains(&glyph_id) {
+                        continue;
+                    }
+                    self.transact(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::SharedSemanticResolution,
+                            "excalifont_glyph_selection",
+                            text.source.pointer(),
+                        )
+                        .with_element_id(Some(text.source.id()))
+                        .with_local_owner(Some(text.source.id()))
+                        .with_record(ResourceRecordKind::BuiltInGlyphOrRangeState),
+                        ResourceDelta {
+                            working_bytes: 64,
+                            ..ResourceDelta::default()
+                        },
+                    )?;
+                    self.excalifont_glyphs.try_reserve(1).map_err(|_| {
+                        self.memory_failure(request, "built_in_selection", "excalifont_glyph")
+                    })?;
+                    self.excalifont_glyphs.push(glyph_id);
+                }
+                let derived_bytes = glyphs.saturating_mul(8).saturating_add(
+                    u64::try_from(text.text.missing_codepoints.len())
+                        .unwrap_or(u64::MAX)
+                        .saturating_mul(4),
+                );
+                if derived_bytes != 0 {
+                    let previous = self.excalifont_request_derived_bytes;
+                    let next = previous.saturating_add(derived_bytes);
+                    let working_bytes = logical_aligned_bytes(next)
+                        .saturating_sub(logical_aligned_bytes(previous))
+                        .saturating_add(u64::from(previous == 0) * 256);
+                    self.transact(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::SharedSemanticResolution,
+                            "excalifont_request_derived_data",
+                            text.source.pointer(),
+                        )
+                        .with_element_id(Some(text.source.id()))
+                        .with_local_owner(Some(text.source.id()))
+                        .with_record(ResourceRecordKind::RequestDerivedBuiltInBlob),
+                        ResourceDelta {
+                            working_bytes,
+                            ..ResourceDelta::default()
+                        },
+                    )?;
+                    self.excalifont_request_derived_bytes = next;
+                }
+                semantic_working.try_reserve(1).map_err(|_| {
+                    self.memory_failure(request, "semantic_geometry", "text_working_record")
+                })?;
+                semantic_working.push(SemanticWorkingRecord {
+                    source_order: text.source_order,
+                    event: "resolved_text_layout_and_glyph_geometry",
+                    element_id: Some(try_owned(text.source.id()).map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "text_identity")
+                    })?),
+                    local_owner: Some(try_owned(text.source.id()).map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "text_owner")
+                    })?),
+                    json_pointer: try_owned(text.source.pointer()).map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "text_pointer")
+                    })?,
+                    bytes: working_bytes,
+                });
+                continue;
+            }
             if let ResolvedElement::Frame(frame) = element {
                 let outline_segments = frame.outline_path.as_ref().map_or(0, |path| {
                     u64::try_from(path.operations.len()).unwrap_or(u64::MAX)
@@ -1534,20 +1783,213 @@ impl RenderSession {
                 bytes: working_bytes,
             });
         }
-        resolved.elements.retain(
-            |element| !matches!(element, ResolvedElement::Fallback(fallback) if !fallback.render),
-        );
-        if !resolved.elements.iter().any(|element| match element {
+        resolved.elements.retain(|element| {
+            !matches!(element, ResolvedElement::Fallback(fallback) if !fallback.render)
+                && !matches!(element, ResolvedElement::Text(text) if !text.render)
+        });
+        let has_fallback_label = resolved.elements.iter().any(|element| match element {
             ResolvedElement::Frame(frame) => frame.name.is_some(),
             ResolvedElement::Fallback(fallback) => fallback.label.is_some(),
             _ => false,
-        }) {
+        });
+        let has_official_text = resolved
+            .elements
+            .iter()
+            .any(|element| matches!(element, ResolvedElement::Text(_)));
+        if !has_fallback_label {
             resolved.fallback_font_woff2 = None;
             resolved.fallback_font_sfnt = None;
-            resolved.mandatory_manifest = None;
         }
+        if !has_official_text {
+            resolved.official_font_woff2 = None;
+            resolved.official_font_sfnt = None;
+        }
+        resolved.mandatory_manifest = if has_fallback_label || has_official_text {
+            Some(
+                text::mandatory_notice_manifest(has_fallback_label, has_official_text).map_err(
+                    |error| match error {
+                        text::LabelError::Memory => self.memory_failure(
+                            request,
+                            "artifact_manifest",
+                            "font_notice_manifest",
+                        ),
+                        text::LabelError::InvalidFont => self.internal_failure(
+                            request.format(),
+                            "the mandatory font notice could not be resolved",
+                            "/elements",
+                        ),
+                    },
+                )?,
+            )
+        } else {
+            None
+        };
         semantic_working.sort_unstable_by_key(|record| record.source_order);
         Ok(())
+    }
+
+    fn preflight_official_text(
+        &mut self,
+        source: &NormalizedElement,
+        request: &RenderRequest,
+        semantic_working: &mut Vec<SemanticWorkingRecord>,
+    ) -> Result<bool, RenderError> {
+        let NormalizedElementKind::Text(text) = &source.kind else {
+            return Err(self.internal_failure(
+                request.format(),
+                "official text preflight received a non-text element",
+                "/elements",
+            ));
+        };
+        let text_scalars = u64::try_from(text.text.chars().count()).unwrap_or(u64::MAX);
+        let source_bytes = u64::try_from(text.text.len()).unwrap_or(u64::MAX);
+        let prospective_glyphs = u64::try_from(
+            text.text
+                .chars()
+                .filter(|character| *character != '\n')
+                .count(),
+        )
+        .unwrap_or(u64::MAX);
+        let stored_line_steps = u64::try_from(text.text.split('\n').count()).unwrap_or(u64::MAX);
+        let prepaid_work = text_scalars
+            .saturating_mul(32)
+            .saturating_add(prospective_glyphs.saturating_mul(32))
+            .saturating_add(stored_line_steps.saturating_mul(32));
+        let working_bytes = 256_u64.saturating_add(logical_aligned_bytes(source_bytes));
+        let delta = ResourceDelta {
+            text_scalars,
+            working_bytes,
+            total_work_units: prepaid_work,
+            ..ResourceDelta::default()
+        };
+        let context = ResourceContext::new(
+            ResourcePhase::SharedSemanticResolution,
+            "text_scalar_and_run_preflight",
+            source.source.pointer(),
+        )
+        .with_element_id(Some(source.source.id()))
+        .with_local_owner(Some(source.source.id()));
+        if self.meter.would_cross_fatal(delta) {
+            self.transact(request, context, delta)?;
+            return Err(self.internal_failure(
+                request.format(),
+                "fatal text scalar preflight committed unexpectedly",
+                "/elements",
+            ));
+        }
+        let crossing = if text_scalars
+            > u64::from(request.resource_limits().max_text_scalars_per_element())
+        {
+            Some(ElementLocalCrossing {
+                code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
+                field: "max_text_scalars_per_element",
+                configured: ResourceValue::Integer(u64::from(
+                    request.resource_limits().max_text_scalars_per_element(),
+                )),
+                value_kind: ValueKind::Count,
+                attempted: ResourceValue::Integer(text_scalars),
+                pointer_field: None,
+                message: "text was omitted because it exceeds its scalar limit",
+            })
+        } else if prepaid_work > request.resource_limits().max_element_work_units() {
+            Some(ElementLocalCrossing {
+                code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
+                field: "max_element_work_units",
+                configured: ResourceValue::Integer(
+                    request.resource_limits().max_element_work_units(),
+                ),
+                value_kind: ValueKind::WorkUnits,
+                attempted: ResourceValue::Integer(prepaid_work),
+                pointer_field: None,
+                message: "text was omitted before shaping because scalar work exceeds its limit",
+            })
+        } else {
+            None
+        };
+        if let Some(crossing) = crossing {
+            let diagnostic = crossing
+                .diagnostic(
+                    request.format(),
+                    Some(source.source.id()),
+                    source.source.pointer(),
+                )
+                .map_err(|_| {
+                    self.memory_failure(request, "compatibility_report", "text_preflight_recovery")
+                })?;
+            self.retain_diagnostic_with_owner(
+                request,
+                ResourcePhase::SharedSemanticResolution,
+                "text_preflight_local_recovery",
+                diagnostic,
+                DiagnosticOwnership {
+                    local_owner: Some(source.source.id()),
+                    source_order: Some(source.source_order),
+                    source_position: Some(0),
+                },
+            )?;
+            self.charge_local_omission(
+                request,
+                Some(source.source.id()),
+                source.source.pointer(),
+                "text_preflight_local_omission",
+            )?;
+            return Ok(false);
+        }
+        self.transact(request, context, delta)?;
+        semantic_working.try_reserve(1).map_err(|_| {
+            self.memory_failure(request, "semantic_geometry", "text_run_working_record")
+        })?;
+        semantic_working.push(SemanticWorkingRecord {
+            source_order: source.source_order,
+            event: "resolved_text_run",
+            element_id: Some(try_owned(source.source.id()).map_err(|_| {
+                self.memory_failure(request, "semantic_geometry", "text_run_identity")
+            })?),
+            local_owner: Some(try_owned(source.source.id()).map_err(|_| {
+                self.memory_failure(request, "semantic_geometry", "text_run_owner")
+            })?),
+            json_pointer: try_owned(source.source.pointer()).map_err(|_| {
+                self.memory_failure(request, "semantic_geometry", "text_run_pointer")
+            })?,
+            bytes: working_bytes,
+        });
+        if !self.excalifont_selected {
+            self.transact(
+                request,
+                ResourceContext::new(
+                    ResourcePhase::SharedSemanticResolution,
+                    "excalifont_builtin_selection",
+                    source.source.pointer(),
+                )
+                .with_element_id(Some(source.source.id()))
+                .with_local_owner(Some(source.source.id()))
+                .with_record(ResourceRecordKind::BuiltInSelectionState),
+                ResourceDelta {
+                    working_bytes: 256,
+                    ..ResourceDelta::default()
+                },
+            )?;
+            self.excalifont_selected = true;
+        }
+        if !self.excalifont_range_selected {
+            self.transact(
+                request,
+                ResourceContext::new(
+                    ResourcePhase::SharedSemanticResolution,
+                    "excalifont_basic_latin_range_selection",
+                    source.source.pointer(),
+                )
+                .with_element_id(Some(source.source.id()))
+                .with_local_owner(Some(source.source.id()))
+                .with_record(ResourceRecordKind::BuiltInGlyphOrRangeState),
+                ResourceDelta {
+                    working_bytes: 64,
+                    ..ResourceDelta::default()
+                },
+            )?;
+            self.excalifont_range_selected = true;
+        }
+        Ok(true)
     }
 
     fn retain_fallback_font_diagnostics(
@@ -2267,6 +2709,8 @@ struct ResolvedScene {
     elements: Vec<ResolvedElement>,
     fallback_font_woff2: Option<Vec<u8>>,
     fallback_font_sfnt: Option<Vec<u8>>,
+    official_font_woff2: Option<Vec<u8>>,
+    official_font_sfnt: Option<Vec<u8>>,
     mandatory_manifest: Option<String>,
     _relationships: crate::relationships::ResolvedRelationshipGraph,
 }
@@ -2444,6 +2888,8 @@ impl ResolvedScene {
             elements: Vec::new(),
             fallback_font_woff2: None,
             fallback_font_sfnt: None,
+            official_font_woff2: None,
+            official_font_sfnt: None,
             mandatory_manifest: None,
             _relationships: relationships,
         })
@@ -2631,6 +3077,16 @@ impl ResolvedScene {
         } else {
             None
         };
+        let official_font = if outlines.iter().any(|(source, _)| {
+            matches!(&source.kind, NormalizedElementKind::Text(text) if text.font_family == 5 && !text.text.is_empty())
+        }) {
+            Some(text::OfficialFont::load_excalifont().map_err(|error| match error {
+                text::LabelError::Memory => ResolveSceneError::Memory,
+                text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+            })?)
+        } else {
+            None
+        };
         let mut has_label = false;
         for (source, geometry) in outlines {
             let frame_clips = resolve_frame_clips(
@@ -2695,6 +3151,48 @@ impl ResolvedScene {
                         opacity: source.opacity / 100.0 * frame_opacity,
                     }));
                 }
+                continue;
+            }
+            if let NormalizedElementKind::Text(text_source) = &source.kind {
+                if text_source.text.is_empty() {
+                    continue;
+                }
+                let font = official_font
+                    .as_ref()
+                    .ok_or(ResolveSceneError::InvalidFallbackFont)?;
+                let laid_out = font
+                    .layout(
+                        &text_source.text,
+                        text::TextLayout {
+                            width: source.width,
+                            font_size: text_source.font_size,
+                            line_height: text_source.line_height,
+                            text_align: &text_source.text_align,
+                        },
+                    )
+                    .map_err(|error| match error {
+                        text::LabelError::Memory => ResolveSceneError::Memory,
+                        text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+                    })?;
+                elements.push(ResolvedElement::Text(ResolvedTextElement {
+                    source_order: source.source_order,
+                    source: source.source,
+                    text: laid_out,
+                    frame_clips,
+                    transform: ResolvedTransform {
+                        translation_x: source.x - min_x + request.padding(),
+                        translation_y: source.y - min_y + request.padding(),
+                        angle_radians: source.angle,
+                        center_x: source.width / 2.0,
+                        center_y: source.height / 2.0,
+                    },
+                    color: color::parse_css(&source.stroke_color)
+                        .ok_or(ResolveSceneError::InvalidColor)?
+                        .for_mode(request.color_mode()),
+                    opacity: source.opacity / 100.0 * frame_opacity,
+                    render: true,
+                    base_element_work_units: 0,
+                }));
                 continue;
             }
             let Some(geometry) = geometry else {
@@ -2860,16 +3358,24 @@ impl ResolvedScene {
         } else {
             (None, None)
         };
-        let mandatory_manifest = if has_label {
+        let has_official_text = elements
+            .iter()
+            .any(|element| matches!(element, ResolvedElement::Text(_)));
+        let mandatory_manifest = if has_label || has_official_text {
             Some(
-                text::mandatory_notice_manifest().map_err(|error| match error {
-                    text::LabelError::Memory => ResolveSceneError::Memory,
-                    text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+                text::mandatory_notice_manifest(has_label, has_official_text).map_err(|error| {
+                    match error {
+                        text::LabelError::Memory => ResolveSceneError::Memory,
+                        text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+                    }
                 })?,
             )
         } else {
             None
         };
+        let (official_font_woff2, official_font_sfnt) = official_font
+            .map(text::OfficialFont::into_parts)
+            .map_or((None, None), |(woff2, sfnt)| (Some(woff2), Some(sfnt)));
 
         Ok(Some(Self {
             logical_width,
@@ -2880,6 +3386,8 @@ impl ResolvedScene {
             elements,
             fallback_font_woff2,
             fallback_font_sfnt,
+            official_font_woff2,
+            official_font_sfnt,
             mandatory_manifest,
             _relationships: relationships,
         }))
@@ -2898,6 +3406,7 @@ impl ResolvedScene {
                 (Some(freedraw.source.id()), freedraw.source.pointer())
             }
             ResolvedElement::Frame(frame) => (Some(frame.source.id()), frame.source.pointer()),
+            ResolvedElement::Text(text) => (Some(text.source.id()), text.source.pointer()),
             ResolvedElement::Fallback(fallback) => (
                 fallback.source.id.as_deref(),
                 fallback.source.pointer.as_str(),
@@ -2921,6 +3430,7 @@ enum ResolvedElement {
     Outline(ResolvedOutline),
     Freedraw(ResolvedFreedraw),
     Frame(ResolvedFrame),
+    Text(ResolvedTextElement),
     Fallback(ResolvedFallback),
 }
 
@@ -2930,9 +3440,22 @@ impl ResolvedElement {
             Self::Outline(outline) => outline.source_order,
             Self::Freedraw(freedraw) => freedraw.source_order,
             Self::Frame(frame) => frame.source_order,
+            Self::Text(text) => text.source_order,
             Self::Fallback(fallback) => fallback.source_order,
         }
     }
+}
+
+struct ResolvedTextElement {
+    source_order: u64,
+    source: NormalizedElementSource,
+    text: text::ResolvedText,
+    frame_clips: Vec<ResolvedClip>,
+    transform: ResolvedTransform,
+    color: CanonicalColor,
+    opacity: f64,
+    render: bool,
+    base_element_work_units: u64,
 }
 
 struct ResolvedOutline {
@@ -3248,6 +3771,25 @@ fn fallback_font_diagnostic(
         })),
         order: DiagnosticOrder::default(),
     })
+}
+
+fn official_missing_glyph_diagnostic(
+    format: OutputFormat,
+    element_id: &str,
+    json_pointer: &str,
+    codepoint: u32,
+) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
+    let mut diagnostic = fallback_font_diagnostic(
+        DiagnosticCode::FONT_MISSING_GLYPH,
+        DiagnosticSeverity::Warning,
+        format,
+        Some(element_id),
+        json_pointer,
+        Some(codepoint),
+    )?;
+    diagnostic.message =
+        try_owned("official text used the deterministic basic-Latin replacement glyph")?;
+    Ok(diagnostic)
 }
 
 fn known_element_fallback(
@@ -3584,6 +4126,7 @@ fn rough_drawing(
             Ok(drawing)
         }
         NormalizedElementKind::Freedraw(_)
+        | NormalizedElementKind::Text(_)
         | NormalizedElementKind::Image(_)
         | NormalizedElementKind::Frame(_)
         | NormalizedElementKind::MagicFrame(_) => {
@@ -4321,10 +4864,10 @@ mod tests {
             .remove("approval")
             .expect("PDF expectation manifest is approved");
         assert_eq!(approval["approved_by"], "sagikazarmark");
-        assert_eq!(approval["approved_at"], "2026-07-21");
+        assert_eq!(approval["approved_at"], "2026-07-22");
         assert_eq!(
             approval["approval_url"],
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5033087465"
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5051200664"
         );
         let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
         canonical.push(b'\n');

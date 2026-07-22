@@ -148,8 +148,13 @@ fn no_more_args(mut args: impl Iterator<Item = String>) -> Result<(), String> {
 }
 
 fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
+    let runner = if case_id == "focused.excalifont-text.v1" {
+        "tools/reference-oracle/run-typography-conformance.sh"
+    } else {
+        "tools/reference-oracle/run-conformance.sh"
+    };
     let status = Command::new("bash")
-        .arg(conformance::repo_root().join("tools/reference-oracle/run-conformance.sh"))
+        .arg(conformance::repo_root().join(runner))
         .arg(mode)
         .arg(case_id)
         .status()

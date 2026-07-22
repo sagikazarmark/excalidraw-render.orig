@@ -16,6 +16,20 @@ cargo run --locked -p xtask -- conformance generate focused.rectangle-outline.v1
 cargo run --locked -p xtask -- conformance reproduce focused.rectangle-outline.v1
 ```
 
+The first typography case uses a separate pinned runner so changes needed for
+font-bearing evidence cannot invalidate the approved rectangle generator:
+
+```sh
+cargo run --locked -p xtask -- conformance generate focused.excalifont-text.v1
+cargo run --locked -p xtask -- conformance reproduce focused.excalifont-text.v1
+cargo run --locked -p xtask -- conformance approval-subject focused.excalifont-text.v1
+```
+
+`focused.excalifont-text.v1` binds the official basic-Latin Excalifont WOFF2
+identity and remains unapproved until a maintainer records approval for its
+printed subject digest. Policy approval for deterministic predecoding does not
+constitute approval of either the generated SFNT bytes or this evidence case.
+
 The checked manifest is canonical JSON followed by one LF. Its adjacent digest
 hashes the canonical bytes without that LF. The approval subject excludes only
 the four-field approval object and binds the remaining manifest plus every

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sagikazarmark/excalidraw-render.orig/tests/conformance/typography-reference-case-v1.schema.json",
+  "title": "Excalidraw typography reference case v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "approval",
+    "assets",
+    "case_id",
+    "comparison",
+    "compatibility_revision",
+    "coverage",
+    "crops",
+    "determinism",
+    "exceptions",
+    "expected_report",
+    "feature_tags",
+    "layer",
+    "license",
+    "originating_issue",
+    "provenance",
+    "purpose",
+    "reference",
+    "sanitization",
+    "scene",
+    "schema",
+    "semantic_expectations",
+    "variants"
+  ],
+  "properties": {
+    "approval": { "type": ["object", "null"] },
+    "assets": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/asset" } },
+    "case_id": { "const": "focused.excalifont-text.v1" },
+    "comparison": { "type": "object" },
+    "compatibility_revision": { "const": 1 },
+    "coverage": { "type": "array", "minItems": 1, "uniqueItems": true },
+    "crops": { "type": "array", "maxItems": 0 },
+    "determinism": { "type": "object" },
+    "exceptions": { "type": "array", "maxItems": 0 },
+    "expected_report": { "$ref": "#/$defs/file" },
+    "feature_tags": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "layer": { "const": "focused" },
+    "license": { "type": "object" },
+    "originating_issue": { "const": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/58" },
+    "provenance": { "$ref": "#/$defs/file" },
+    "purpose": { "type": "string", "minLength": 1 },
+    "reference": { "type": "object" },
+    "sanitization": { "type": "object" },
+    "scene": { "$ref": "#/$defs/file" },
+    "schema": {
+      "type": "object",
+      "required": ["digest", "id", "path"],
+      "properties": {
+        "digest": { "$ref": "#/$defs/prefixedDigest" },
+        "id": { "const": "excalidraw-render/conformance-case/typography-reference/v1" },
+        "path": { "const": "tests/conformance/typography-reference-case-v1.schema.json" }
+      },
+      "additionalProperties": false
+    },
+    "semantic_expectations": { "type": "object" },
+    "variants": { "type": "array", "minItems": 1, "maxItems": 1 }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "prefixedDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "file": {
+      "type": "object",
+      "required": ["byte_length", "path", "sha256"],
+      "properties": {
+        "byte_length": { "type": "integer", "minimum": 0 },
+        "height": { "type": "integer", "minimum": 1 },
+        "layout": { "type": "string" },
+        "media_type": { "type": "string" },
+        "path": { "type": "string", "minLength": 1 },
+        "pixel_format": { "type": "string" },
+        "sha256": { "$ref": "#/$defs/digest" },
+        "width": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "asset": {
+      "type": "object",
+      "required": ["byte_length", "path", "role", "sha256"],
+      "properties": {
+        "byte_length": { "const": 24956 },
+        "path": { "const": "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2" },
+        "role": { "const": "official-rendering-font" },
+        "sha256": { "const": "e4423b318e11432aff2e6e865e300b7ca270f92321a3f56632268fede01c1b48" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
