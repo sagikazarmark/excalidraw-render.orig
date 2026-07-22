@@ -32,6 +32,18 @@ enum PngElement {
         base_element_work_units: u64,
         render: bool,
     },
+    Freedraw {
+        source: NormalizedElementSource,
+        path: super::freedraw::ProjectedPath,
+        background_fill: Option<super::rough::Fill>,
+        transform: PngTransform,
+        color: CanonicalColor,
+        background_color: Option<CanonicalColor>,
+        source_stroke_width: f64,
+        opacity: f64,
+        base_element_work_units: u64,
+        render: bool,
+    },
     Fallback {
         source: super::FallbackSource,
         label: Option<super::text::ResolvedLabel>,
@@ -157,6 +169,20 @@ impl PngPlan {
                         opacity: outline.opacity,
                         background_color: outline.background_color,
                         base_element_work_units: outline.base_element_work_units,
+                        render: true,
+                    });
+                }
+                ResolvedElement::Freedraw(freedraw) => {
+                    elements.push(PngElement::Freedraw {
+                        source: freedraw.source,
+                        path: super::freedraw::project(freedraw.path)?,
+                        background_fill: freedraw.background_fill,
+                        transform: PngTransform::new(&freedraw.transform, scale),
+                        color: freedraw.color,
+                        background_color: freedraw.background_color,
+                        source_stroke_width: freedraw.source_stroke_width,
+                        opacity: freedraw.opacity,
+                        base_element_work_units: freedraw.base_element_work_units,
                         render: true,
                     });
                 }
@@ -296,6 +322,68 @@ impl PngPlan {
                                 *opacity,
                             )?;
                         }
+                    }
+                    PngElement::Freedraw {
+                        source,
+                        path,
+                        background_fill,
+                        transform,
+                        color,
+                        background_color,
+                        source_stroke_width,
+                        opacity,
+                        render,
+                        ..
+                    } => {
+                        if !render {
+                            continue;
+                        }
+                        if source.id().is_empty() || source.pointer().is_empty() {
+                            return Err(FormatEncodeError::Encoding(
+                                "PNG freedraw lost its source identity".to_owned(),
+                            ));
+                        }
+                        let raster_transform = transform.raster_transform(SUBPIXEL_SCALE)?;
+                        if let (Some(fill), Some(background_color)) =
+                            (background_fill, background_color)
+                        {
+                            let path = tiny_skia_path(&fill.path)?;
+                            let paint = solid_paint(*background_color, *opacity)?;
+                            match fill.kind {
+                                FillKind::Solid => surface.fill_path(
+                                    &path,
+                                    &paint,
+                                    FillRule::EvenOdd,
+                                    raster_transform,
+                                    None,
+                                ),
+                                FillKind::Sketch => {
+                                    let stroke = Stroke {
+                                        width: finite_f32(
+                                            *source_stroke_width / 2.0,
+                                            "PNG freedraw fill weight",
+                                        )?,
+                                        miter_limit: 4.0,
+                                        line_cap: LineCap::Round,
+                                        line_join: LineJoin::Round,
+                                        dash: None,
+                                    };
+                                    surface.stroke_path(
+                                        &path,
+                                        &paint,
+                                        &stroke,
+                                        raster_transform,
+                                        None,
+                                    );
+                                }
+                            }
+                        }
+                        if path.is_empty() {
+                            continue;
+                        }
+                        let path = tiny_skia_freedraw_path(path)?;
+                        let paint = solid_paint(*color, *opacity)?;
+                        surface.fill_path(&path, &paint, FillRule::Winding, raster_transform, None);
                     }
                     PngElement::Fallback {
                         source,
@@ -477,6 +565,20 @@ impl PngPlan {
                 self.width,
                 self.height,
             ),
+            PngElement::Freedraw {
+                path,
+                background_fill,
+                transform,
+                source_stroke_width,
+                ..
+            } => conservative_freedraw_coverage_area(
+                path,
+                background_fill.as_ref(),
+                *transform,
+                *source_stroke_width,
+                self.width,
+                self.height,
+            ),
             PngElement::Fallback {
                 width,
                 height,
@@ -498,6 +600,10 @@ impl PngPlan {
                 base_element_work_units,
                 ..
             } => *base_element_work_units,
+            PngElement::Freedraw {
+                base_element_work_units,
+                ..
+            } => *base_element_work_units,
             PngElement::Fallback {
                 base_element_work_units,
                 ..
@@ -508,6 +614,7 @@ impl PngPlan {
     pub(super) fn fallback_surface_area(&self, index: usize) -> Option<Option<u64>> {
         self.elements.get(index).map(|element| match element {
             PngElement::RoughOutline { .. } => None,
+            PngElement::Freedraw { .. } => None,
             PngElement::Fallback {
                 width,
                 height,
@@ -530,6 +637,7 @@ impl PngPlan {
     pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
         self.elements.get(index).map(|element| match element {
             PngElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
+            PngElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
             PngElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -537,6 +645,10 @@ impl PngPlan {
     pub(super) fn omit_element(&mut self, index: usize) -> bool {
         match self.elements.get_mut(index) {
             Some(PngElement::RoughOutline { render, .. }) => {
+                *render = false;
+                true
+            }
+            Some(PngElement::Freedraw { render, .. }) => {
                 *render = false;
                 true
             }
@@ -756,6 +868,39 @@ fn tiny_skia_path(path: &Path) -> Result<tiny_skia::Path, FormatEncodeError> {
     }
     builder.finish().ok_or_else(|| {
         FormatEncodeError::Encoding("PNG path contains no drawable operations".to_owned())
+    })
+}
+
+fn tiny_skia_freedraw_path(
+    path: &super::freedraw::ProjectedPath,
+) -> Result<tiny_skia::Path, FormatEncodeError> {
+    let points = path
+        .operations
+        .len()
+        .checked_mul(2)
+        .ok_or_else(png_size_error)?;
+    let mut builder = PathBuilder::with_capacity(path.operations.len(), points);
+    for operation in &path.operations {
+        match operation {
+            super::freedraw::PathOperation::Move(point) => builder.move_to(
+                finite_f32(point.x, "PNG freedraw x")?,
+                finite_f32(point.y, "PNG freedraw y")?,
+            ),
+            super::freedraw::PathOperation::Quadratic { control, end } => builder.quad_to(
+                finite_f32(control.x, "PNG freedraw control x")?,
+                finite_f32(control.y, "PNG freedraw control y")?,
+                finite_f32(end.x, "PNG freedraw x")?,
+                finite_f32(end.y, "PNG freedraw y")?,
+            ),
+            super::freedraw::PathOperation::Line(point) => builder.line_to(
+                finite_f32(point.x, "PNG freedraw x")?,
+                finite_f32(point.y, "PNG freedraw y")?,
+            ),
+            super::freedraw::PathOperation::Close => builder.close(),
+        }
+    }
+    builder.finish().ok_or_else(|| {
+        FormatEncodeError::Encoding("PNG freedraw path contains no outline".to_owned())
     })
 }
 
@@ -1000,6 +1145,57 @@ fn conservative_coverage_area(
         return 0;
     }
     let outset = stroke_width * transform.scale / 2.0;
+    let left = (min_x - outset)
+        .floor()
+        .clamp(0.0, f64::from(surface_width));
+    let top = (min_y - outset)
+        .floor()
+        .clamp(0.0, f64::from(surface_height));
+    let right = (max_x + outset).ceil().clamp(0.0, f64::from(surface_width));
+    let bottom = (max_y + outset)
+        .ceil()
+        .clamp(0.0, f64::from(surface_height));
+    ((right - left) as u64).saturating_mul((bottom - top) as u64)
+}
+
+fn conservative_freedraw_coverage_area(
+    path: &super::freedraw::ProjectedPath,
+    background_fill: Option<&super::rough::Fill>,
+    transform: PngTransform,
+    source_stroke_width: f64,
+    surface_width: u32,
+    surface_height: u32,
+) -> u64 {
+    let fill_bounds = background_fill.and_then(|fill| fill.path.cubic_bounds());
+    let Some((min_x, min_y, max_x, max_y)) = super::union_bounds(path.bounds(), fill_bounds) else {
+        return 0;
+    };
+    let points = [
+        Point { x: min_x, y: min_y },
+        Point { x: max_x, y: min_y },
+        Point { x: max_x, y: max_y },
+        Point { x: min_x, y: max_y },
+    ]
+    .map(|point| transform.map_point(point));
+    let min_x = points
+        .iter()
+        .map(|point| point.x)
+        .fold(f64::INFINITY, f64::min);
+    let min_y = points
+        .iter()
+        .map(|point| point.y)
+        .fold(f64::INFINITY, f64::min);
+    let max_x = points
+        .iter()
+        .map(|point| point.x)
+        .fold(f64::NEG_INFINITY, f64::max);
+    let max_y = points
+        .iter()
+        .map(|point| point.y)
+        .fold(f64::NEG_INFINITY, f64::max);
+    let outset = background_fill
+        .filter(|fill| matches!(fill.kind, FillKind::Sketch))
+        .map_or(0.0, |_| source_stroke_width * transform.scale / 4.0);
     let left = (min_x - outset)
         .floor()
         .clamp(0.0, f64::from(surface_width));

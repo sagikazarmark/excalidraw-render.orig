@@ -64,6 +64,16 @@ enum PdfElement {
         opacity: f64,
         background_color: CanonicalColor,
     },
+    Freedraw {
+        source: NormalizedElementSource,
+        path: super::freedraw::ProjectedPath,
+        background_fill: Option<super::rough::Fill>,
+        transform: super::ResolvedTransform,
+        color: CanonicalColor,
+        background_color: Option<CanonicalColor>,
+        source_stroke_width: f64,
+        opacity: f64,
+    },
     Fallback {
         source: super::FallbackSource,
         label: Option<super::text::ResolvedLabel>,
@@ -117,6 +127,18 @@ impl PdfPlan {
                         source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
                         background_color: outline.background_color,
+                    });
+                }
+                ResolvedElement::Freedraw(freedraw) => {
+                    elements.push(PdfElement::Freedraw {
+                        source: freedraw.source,
+                        path: super::freedraw::project(freedraw.path)?,
+                        background_fill: freedraw.background_fill,
+                        transform: freedraw.transform,
+                        color: freedraw.color,
+                        background_color: freedraw.background_color,
+                        source_stroke_width: freedraw.source_stroke_width,
+                        opacity: freedraw.opacity,
                     });
                 }
                 ResolvedElement::Fallback(fallback) => {
@@ -476,6 +498,7 @@ impl PdfPlan {
     pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
         self.elements.get(index).map(|element| match element {
             PdfElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
+            PdfElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
             PdfElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -757,6 +780,17 @@ impl PdfPlan {
                         }
                     }
                 }
+                PdfElement::Freedraw {
+                    color,
+                    background_color,
+                    opacity,
+                    ..
+                } => {
+                    retain(*opacity * color.alpha());
+                    if let Some(background_color) = background_color {
+                        retain(*opacity * background_color.alpha());
+                    }
+                }
                 PdfElement::Fallback { opacity, .. } => retain(*opacity),
             }
         }
@@ -827,6 +861,20 @@ impl PdfPlan {
                     .operation_count()
                     .checked_mul(200)
                     .and_then(|path_bytes| path_bytes.checked_add(512))
+                    .ok_or_else(pdf_size_error)?,
+                PdfElement::Freedraw {
+                    path,
+                    background_fill,
+                    ..
+                } => path
+                    .operation_count()
+                    .saturating_add(
+                        background_fill
+                            .as_ref()
+                            .map_or(0, |fill| fill.path.operations.len()),
+                    )
+                    .checked_mul(160)
+                    .and_then(|path_bytes| path_bytes.checked_add(256))
                     .ok_or_else(pdf_size_error)?,
                 PdfElement::Fallback { label, .. } => label.as_ref().map_or(1_024, |label| {
                     label
@@ -994,6 +1042,76 @@ impl PdfPlan {
                         )?;
                     }
                     content.push_str("Q\n");
+                }
+                PdfElement::Freedraw {
+                    source,
+                    path,
+                    background_fill,
+                    transform,
+                    color,
+                    background_color,
+                    source_stroke_width,
+                    opacity,
+                } => {
+                    if source.id().is_empty() || source.pointer().is_empty() {
+                        return Err(FormatEncodeError::Encoding(
+                            "PDF freedraw lost its source identity".to_owned(),
+                        ));
+                    }
+                    let (sin, cos) = if transform.angle_radians == 0.0 {
+                        (0.0, 1.0)
+                    } else {
+                        (transform.angle_radians.sin(), transform.angle_radians.cos())
+                    };
+                    let offset_x = transform.translation_x + transform.center_x
+                        - cos * transform.center_x
+                        + sin * transform.center_y;
+                    let offset_y = transform.translation_y + transform.center_y
+                        - sin * transform.center_x
+                        - cos * transform.center_y;
+                    content.push_str("q\n");
+                    push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    if let (Some(fill), Some(background_color)) =
+                        (background_fill, background_color)
+                    {
+                        content.push_str("q\n");
+                        let fill_opacity = *opacity * background_color.alpha();
+                        if fill_opacity != 1.0 {
+                            push_opacity_resource(&mut content, opacity_resources, fill_opacity)?;
+                        }
+                        match fill.kind {
+                            FillKind::Solid => {
+                                content.push_str("/CS1 cs\n");
+                                push_color(&mut content, background_color.rgb_f64(), "scn")?;
+                                push_rough_path(&mut content, &fill.path)?;
+                                content.push_str("f*\n");
+                            }
+                            FillKind::Sketch => {
+                                push_pdf_number(
+                                    &mut content,
+                                    *source_stroke_width / 2.0,
+                                    "PDF freedraw fill weight",
+                                )?;
+                                content.push_str(" w\n1 J\n/CS1 CS\n");
+                                push_color(&mut content, background_color.rgb_f64(), "SCN")?;
+                                push_rough_path(&mut content, &fill.path)?;
+                                content.push_str("S\n");
+                            }
+                        }
+                        content.push_str("Q\n");
+                    }
+                    if path.is_empty() {
+                        content.push_str("Q\n");
+                        continue;
+                    }
+                    let effective_opacity = *opacity * color.alpha();
+                    if effective_opacity != 1.0 {
+                        push_opacity_resource(&mut content, opacity_resources, effective_opacity)?;
+                    }
+                    content.push_str("/CS1 cs\n");
+                    push_color(&mut content, color.rgb_f64(), "scn")?;
+                    push_freedraw_path(&mut content, path)?;
+                    content.push_str("f\nQ\n");
                 }
                 PdfElement::Fallback {
                     source,
@@ -1327,6 +1445,66 @@ fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeE
                 }
                 output.push_str(" c\n");
             }
+        }
+    }
+    Ok(())
+}
+
+fn push_freedraw_path(
+    output: &mut String,
+    path: &super::freedraw::ProjectedPath,
+) -> Result<(), FormatEncodeError> {
+    let mut current = None;
+    for operation in &path.operations {
+        match *operation {
+            super::freedraw::PathOperation::Move(point) => {
+                push_pdf_number(output, point.x, "PDF freedraw x")?;
+                output.push(' ');
+                push_pdf_number(output, point.y, "PDF freedraw y")?;
+                output.push_str(" m\n");
+                current = Some(point);
+            }
+            super::freedraw::PathOperation::Quadratic { control, end } => {
+                let start = current.ok_or_else(|| {
+                    FormatEncodeError::Encoding(
+                        "PDF freedraw quadratic has no current point".to_owned(),
+                    )
+                })?;
+                let control_1 = super::rough::Point {
+                    x: start.x + (control.x - start.x) * (2.0 / 3.0),
+                    y: start.y + (control.y - start.y) * (2.0 / 3.0),
+                };
+                let control_2 = super::rough::Point {
+                    x: end.x + (control.x - end.x) * (2.0 / 3.0),
+                    y: end.y + (control.y - end.y) * (2.0 / 3.0),
+                };
+                for (index, value) in [
+                    control_1.x,
+                    control_1.y,
+                    control_2.x,
+                    control_2.y,
+                    end.x,
+                    end.y,
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    if index != 0 {
+                        output.push(' ');
+                    }
+                    push_pdf_number(output, value, "PDF freedraw coordinate")?;
+                }
+                output.push_str(" c\n");
+                current = Some(end);
+            }
+            super::freedraw::PathOperation::Line(point) => {
+                push_pdf_number(output, point.x, "PDF freedraw x")?;
+                output.push(' ');
+                push_pdf_number(output, point.y, "PDF freedraw y")?;
+                output.push_str(" l\n");
+                current = Some(point);
+            }
+            super::freedraw::PathOperation::Close => output.push_str("h\n"),
         }
     }
     Ok(())

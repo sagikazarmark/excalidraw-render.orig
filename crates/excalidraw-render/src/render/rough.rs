@@ -76,16 +76,7 @@ impl GenerationBudget {
         Ok(())
     }
 
-    fn push_operation(
-        &mut self,
-        operations: &mut Vec<PathOperation>,
-        operation: PathOperation,
-    ) -> Result<(), GenerationError> {
-        if self.discard_next_move && matches!(operation, PathOperation::Move(_)) {
-            self.discard_next_move = false;
-            self.work(1)?;
-            return Ok(());
-        }
+    pub(super) fn operation(&mut self) -> Result<(), GenerationError> {
         let attempted = self.operations.saturating_add(1);
         if attempted > self.operation_limit {
             return Err(GenerationError::Limit {
@@ -98,9 +89,23 @@ impl GenerationBudget {
                 },
             });
         }
+        self.operations = attempted;
+        Ok(())
+    }
+
+    fn push_operation(
+        &mut self,
+        operations: &mut Vec<PathOperation>,
+        operation: PathOperation,
+    ) -> Result<(), GenerationError> {
+        if self.discard_next_move && matches!(operation, PathOperation::Move(_)) {
+            self.discard_next_move = false;
+            self.work(1)?;
+            return Ok(());
+        }
+        self.operation()?;
         operations.try_reserve(1)?;
         operations.push(operation);
-        self.operations = attempted;
         Ok(())
     }
 
@@ -774,45 +779,18 @@ pub(super) fn curve_drawing(
         )?;
     }
     let fill = if closed {
-        match fill_style {
-            Some(FillStyle::Solid) => {
-                let fill_roughness = if roughness == 0.0 {
-                    0.0
-                } else {
-                    roughness + 0.8
-                };
-                let mut fill_operations = Vec::new();
-                curve_stroke(
+        fill_style
+            .map(|style| {
+                curve_fill_with_random(
                     points,
-                    1.0 * (1.0 + fill_roughness * 0.2),
-                    fill_roughness,
-                    &mut random,
-                    &mut fill_operations,
-                    budget,
-                )?;
-                Some(Fill {
-                    path: Path {
-                        operations: fill_operations,
-                    },
-                    kind: FillKind::Solid,
-                })
-            }
-            Some(style) => {
-                let bezier = curve_to_bezier(points, budget)?;
-                let fill_points =
-                    points_on_bezier_curves(&bezier, 10.0, Some((1.0 + roughness) / 2.0), budget)?;
-                Some(fill_polygon(
-                    &fill_points,
                     style,
                     source_stroke_width,
                     roughness,
-                    true,
                     &mut random,
                     budget,
-                )?)
-            }
-            None => None,
-        }
+                )
+            })
+            .transpose()?
     } else {
         None
     };
@@ -822,6 +800,71 @@ pub(super) fn curve_drawing(
         shape: DrawableShape::Curve,
         decorations: Vec::new(),
     })
+}
+
+pub(super) fn curve_fill(
+    points: &[Point],
+    seed: i32,
+    roughness: f64,
+    fill_style: FillStyle,
+    source_stroke_width: f64,
+    budget: &mut GenerationBudget,
+) -> Result<Fill, GenerationError> {
+    let mut random = Random::new(seed);
+    curve_fill_with_random(
+        points,
+        fill_style,
+        source_stroke_width,
+        roughness,
+        &mut random,
+        budget,
+    )
+}
+
+fn curve_fill_with_random(
+    points: &[Point],
+    fill_style: FillStyle,
+    source_stroke_width: f64,
+    roughness: f64,
+    random: &mut Random,
+    budget: &mut GenerationBudget,
+) -> Result<Fill, GenerationError> {
+    match fill_style {
+        FillStyle::Solid => {
+            let fill_roughness = if roughness == 0.0 {
+                0.0
+            } else {
+                roughness + 0.8
+            };
+            let mut operations = Vec::new();
+            curve_stroke(
+                points,
+                1.0 * (1.0 + fill_roughness * 0.2),
+                fill_roughness,
+                random,
+                &mut operations,
+                budget,
+            )?;
+            Ok(Fill {
+                path: Path { operations },
+                kind: FillKind::Solid,
+            })
+        }
+        style => {
+            let bezier = curve_to_bezier(points, budget)?;
+            let fill_points =
+                points_on_bezier_curves(&bezier, 10.0, Some((1.0 + roughness) / 2.0), budget)?;
+            fill_polygon(
+                &fill_points,
+                style,
+                source_stroke_width,
+                roughness,
+                true,
+                random,
+                budget,
+            )
+        }
+    }
 }
 
 pub(super) fn rounded_fill_points(

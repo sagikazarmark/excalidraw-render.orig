@@ -36,6 +36,20 @@ enum SvgElement {
         opacity: f64,
         background_color: CanonicalColor,
     },
+    Freedraw {
+        source: NormalizedElementSource,
+        path_data: String,
+        background_fill: Option<super::rough::Fill>,
+        translation_x: f64,
+        translation_y: f64,
+        rotation_degrees: f64,
+        center_x: f64,
+        center_y: f64,
+        color: CanonicalColor,
+        background_color: Option<CanonicalColor>,
+        source_stroke_width: f64,
+        opacity: f64,
+    },
     Fallback {
         source: super::FallbackSource,
         clip_index: usize,
@@ -97,6 +111,23 @@ impl SvgPlan {
                         source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
                         background_color: outline.background_color,
+                    });
+                }
+                ResolvedElement::Freedraw(freedraw) => {
+                    elements.push(SvgElement::Freedraw {
+                        source: freedraw.source,
+                        path_data: freedraw_path_data(&freedraw.path)?,
+                        background_fill: freedraw.background_fill,
+                        translation_x: freedraw.transform.translation_x,
+                        translation_y: freedraw.transform.translation_y,
+                        rotation_degrees: 180.0 * freedraw.transform.angle_radians
+                            / std::f64::consts::PI,
+                        center_x: freedraw.transform.center_x,
+                        center_y: freedraw.transform.center_y,
+                        color: freedraw.color,
+                        background_color: freedraw.background_color,
+                        source_stroke_width: freedraw.source_stroke_width,
+                        opacity: freedraw.opacity,
                     });
                 }
                 ResolvedElement::Fallback(fallback) => {
@@ -162,6 +193,24 @@ impl SvgPlan {
                             .ok_or_else(svg_size_error)?,
                     )?;
                     capacity = checked_capacity_add(capacity, 512)?;
+                }
+                SvgElement::Freedraw {
+                    path_data,
+                    background_fill,
+                    ..
+                } => {
+                    capacity = checked_capacity_add(capacity, path_data.len())?;
+                    if let Some(fill) = background_fill {
+                        capacity = checked_capacity_add(
+                            capacity,
+                            fill.path
+                                .operations
+                                .len()
+                                .checked_mul(200)
+                                .ok_or_else(svg_size_error)?,
+                        )?;
+                    }
+                    capacity = checked_capacity_add(capacity, 256)?;
                 }
                 SvgElement::Fallback { label, link, .. } => {
                     if let Some(label) = label {
@@ -287,6 +336,106 @@ impl SvgPlan {
                         )?;
                     }
                     svg.push_str("</g>");
+                }
+                SvgElement::Freedraw {
+                    source,
+                    path_data,
+                    background_fill,
+                    translation_x,
+                    translation_y,
+                    rotation_degrees,
+                    center_x,
+                    center_y,
+                    color,
+                    background_color,
+                    source_stroke_width,
+                    opacity,
+                } => {
+                    if source.id().is_empty() || source.pointer().is_empty() {
+                        return Err(FormatEncodeError::Encoding(
+                            "SVG plan freedraw lost its source identity".to_owned(),
+                        ));
+                    }
+                    svg.push_str("<g transform=\"translate(");
+                    push_svg_number(&mut svg, *translation_x, "SVG freedraw translation x")?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, *translation_y, "SVG freedraw translation y")?;
+                    svg.push_str(") rotate(");
+                    push_svg_number(&mut svg, *rotation_degrees, "SVG freedraw rotation")?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, *center_x, "SVG freedraw center x")?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, *center_y, "SVG freedraw center y")?;
+                    svg.push_str(")\">");
+                    if let (Some(fill), Some(background_color)) =
+                        (background_fill, background_color)
+                    {
+                        svg.push_str("<path d=\"");
+                        push_rough_path(&mut svg, &fill.path)?;
+                        match fill.kind {
+                            FillKind::Solid => {
+                                svg.push_str("\" stroke=\"none\" fill=\"");
+                                background_color.write_hex(&mut svg).map_err(|_| {
+                                    FormatEncodeError::Encoding(
+                                        "failed to write SVG freedraw background".to_owned(),
+                                    )
+                                })?;
+                                svg.push_str("\" fill-rule=\"evenodd\"");
+                                let fill_opacity = background_color.alpha() * opacity;
+                                if fill_opacity != 1.0 {
+                                    svg.push_str(" fill-opacity=\"");
+                                    push_svg_number(
+                                        &mut svg,
+                                        fill_opacity,
+                                        "SVG freedraw background opacity",
+                                    )?;
+                                    svg.push('"');
+                                }
+                            }
+                            FillKind::Sketch => {
+                                svg.push_str("\" stroke=\"");
+                                background_color.write_hex(&mut svg).map_err(|_| {
+                                    FormatEncodeError::Encoding(
+                                        "failed to write SVG freedraw sketch fill".to_owned(),
+                                    )
+                                })?;
+                                svg.push_str("\" stroke-width=\"");
+                                push_svg_number(
+                                    &mut svg,
+                                    source_stroke_width / 2.0,
+                                    "SVG freedraw fill weight",
+                                )?;
+                                svg.push_str("\" fill=\"none\"");
+                                let fill_opacity = background_color.alpha() * opacity;
+                                if fill_opacity != 1.0 {
+                                    svg.push_str(" stroke-opacity=\"");
+                                    push_svg_number(
+                                        &mut svg,
+                                        fill_opacity,
+                                        "SVG freedraw sketch opacity",
+                                    )?;
+                                    svg.push('"');
+                                }
+                            }
+                        }
+                        svg.push_str("/> ");
+                    }
+                    svg.push_str("<path d=\"");
+                    svg.push_str(path_data);
+                    svg.push_str("\" fill=\"");
+                    color.write_hex(&mut svg).map_err(|_| {
+                        FormatEncodeError::Encoding("failed to write SVG freedraw color".to_owned())
+                    })?;
+                    let effective_opacity = color.alpha() * opacity;
+                    if effective_opacity != 1.0 {
+                        svg.push_str("\" fill-opacity=\"");
+                        push_svg_number(
+                            &mut svg,
+                            effective_opacity,
+                            "SVG freedraw effective opacity",
+                        )?;
+                    }
+                    svg.push_str("\"/></g>");
                 }
                 SvgElement::Fallback {
                     source,
@@ -484,6 +633,7 @@ impl SvgPlan {
     pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
         self.elements.get(index).map(|element| match element {
             SvgElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
+            SvgElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -617,6 +767,73 @@ fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeE
             }
         }
     }
+    Ok(())
+}
+
+fn freedraw_path_data(path: &super::freedraw::Path) -> Result<String, FormatEncodeError> {
+    let mut output = String::new();
+    output
+        .try_reserve(path.operations.len().saturating_mul(64))
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_plan",
+            subject: "svg_freedraw_path_data",
+        })?;
+    for operation in &path.operations {
+        match *operation {
+            super::freedraw::PathOperation::Move(point) => {
+                output.push_str("M ");
+                push_freedraw_point(&mut output, point)?;
+                output.push_str(" Q");
+            }
+            super::freedraw::PathOperation::Quadratic { control, end } => {
+                output.push(' ');
+                push_freedraw_point(&mut output, control)?;
+                output.push(' ');
+                push_freedraw_point(&mut output, end)?;
+            }
+            super::freedraw::PathOperation::Line(point) => {
+                output.push_str(" L ");
+                push_freedraw_point(&mut output, point)?;
+            }
+            super::freedraw::PathOperation::Close => output.push_str(" Z"),
+        }
+    }
+    Ok(output)
+}
+
+fn push_freedraw_point(
+    output: &mut String,
+    point: super::rough::Point,
+) -> Result<(), FormatEncodeError> {
+    push_freedraw_number(output, point.x)?;
+    output.push(',');
+    push_freedraw_number(output, point.y)
+}
+
+fn push_freedraw_number(output: &mut String, value: f64) -> Result<(), FormatEncodeError> {
+    if !value.is_finite() {
+        return Err(FormatEncodeError::Encoding(
+            "SVG freedraw path contains a non-finite coordinate".to_owned(),
+        ));
+    }
+    let token = super::freedraw::ecmascript_number(value);
+    let Some(decimal) = token.find('.') else {
+        output.push_str(&token);
+        return Ok(());
+    };
+    let digits = token[decimal + 1..]
+        .bytes()
+        .take_while(u8::is_ascii_digit)
+        .count()
+        .min(2);
+    let retained_end = decimal + 1 + digits;
+    let consumed_end = token[retained_end..]
+        .bytes()
+        .take_while(|byte| byte.is_ascii_digit() || matches!(byte, b'e' | b'-'))
+        .count()
+        + retained_end;
+    output.push_str(&token[..retained_end]);
+    output.push_str(&token[consumed_end..]);
     Ok(())
 }
 

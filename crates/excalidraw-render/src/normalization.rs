@@ -646,6 +646,7 @@ fn normalize_scene_impl<E>(
                 | ElementKind::Ellipse
                 | ElementKind::Line
                 | ElementKind::LegacyDraw
+                | ElementKind::Freedraw
                 | ElementKind::Arrow
         ) && matches!(defaulted(source.group_ids, 0), Some(0))
             && matches!(defaulted(source.frame_id, None), Some(None))

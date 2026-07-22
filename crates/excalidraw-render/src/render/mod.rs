@@ -1,3 +1,4 @@
+mod freedraw;
 mod pdf;
 mod png;
 mod rough;
@@ -322,6 +323,12 @@ impl RenderSession {
                             geometry_available: true,
                             ..
                         })
+                        | NormalizedElementKind::Freedraw(
+                            crate::normalization::NormalizedFreedraw {
+                                geometry_available: true,
+                                ..
+                            }
+                        )
                 );
                 if !is_outline || !source.direct_outline_compatible {
                     let uses_non_generic_recovery =
@@ -392,6 +399,9 @@ impl RenderSession {
                         .points
                         .windows(2)
                         .any(|points| points[0] != points[1]),
+                    NormalizedElementKind::Freedraw(freedraw) => {
+                        !freedraw.points.is_empty() || !freedraw.simulate_pressure
+                    }
                     _ => source.width != 0.0 && source.height != 0.0,
                 };
                 let base_element_work_units = source
@@ -401,7 +411,7 @@ impl RenderSession {
                 // Coordinate and already-spent work admission must precede any Rough allocation.
                 let mut local_crossing =
                     outline_local_crossing(&source, request, 0, base_element_work_units);
-                let drawing = if has_outline && local_crossing.is_none() {
+                let geometry = if has_outline && local_crossing.is_none() {
                     let max_size = source.width.max(source.height);
                     let min_size = source.width.min(source.height);
                     let adjusted_roughness = if min_size >= 20.0 && max_size >= 50.0
@@ -422,8 +432,41 @@ impl RenderSession {
                         request.resource_limits().max_element_work_units(),
                         base_element_work_units,
                     );
-                    match rough_drawing(&source, adjusted_roughness, &mut budget) {
-                        Ok(drawing) => Some(drawing),
+                    let generated = match &source.kind {
+                        NormalizedElementKind::Freedraw(freedraw) => {
+                            freedraw::generate(freedraw, source.stroke_width, &mut budget).and_then(
+                                |path| {
+                                    let background_fill =
+                                        if source.background_color == "transparent" {
+                                            None
+                                        } else {
+                                            let fill_style = match source.fill_style.as_str() {
+                                                "hachure" => rough::FillStyle::Hachure,
+                                                "cross-hatch" => rough::FillStyle::CrossHatch,
+                                                "zigzag" => rough::FillStyle::Zigzag,
+                                                _ => rough::FillStyle::Solid,
+                                            };
+                                            freedraw::background_fill(
+                                                &freedraw.points,
+                                                source.seed,
+                                                adjusted_roughness,
+                                                fill_style,
+                                                source.stroke_width,
+                                                &mut budget,
+                                            )?
+                                        };
+                                    Ok(GeneratedGeometry::Freedraw(GeneratedFreedraw {
+                                        path,
+                                        background_fill,
+                                    }))
+                                },
+                            )
+                        }
+                        _ => rough_drawing(&source, adjusted_roughness, &mut budget)
+                            .map(GeneratedGeometry::Rough),
+                    };
+                    match generated {
+                        Ok(geometry) => Some(geometry),
                         Err(rough::GenerationError::Memory) => {
                             return Err(self.memory_failure(
                                 request,
@@ -440,11 +483,11 @@ impl RenderSession {
                 } else {
                     None
                 };
-                let geometry_segments = drawing.as_ref().map_or(0, |drawing| {
-                    u64::try_from(drawing.operation_count()).unwrap_or(u64::MAX)
+                let geometry_segments = geometry.as_ref().map_or(0, |geometry| {
+                    u64::try_from(geometry.operation_count()).unwrap_or(u64::MAX)
                 });
                 let geometry_work_units = geometry_segments * 32;
-                let geometry_working_bytes = if drawing.is_some() {
+                let geometry_working_bytes = if geometry.is_some() {
                     128 + geometry_segments * 64
                 } else {
                     0
@@ -460,8 +503,8 @@ impl RenderSession {
                     NormalizedElementKind::Diamond => "rough_diamond_geometry",
                     NormalizedElementKind::Ellipse => "rough_ellipse_geometry",
                     NormalizedElementKind::Linear(_) => "rough_linear_geometry",
-                    NormalizedElementKind::Freedraw(_)
-                    | NormalizedElementKind::Image(_)
+                    NormalizedElementKind::Freedraw(_) => "freedraw_geometry",
+                    NormalizedElementKind::Image(_)
                     | NormalizedElementKind::Frame(_)
                     | NormalizedElementKind::MagicFrame(_) => {
                         unreachable!("only direct outlines reach geometry accounting")
@@ -542,7 +585,7 @@ impl RenderSession {
                     })?,
                     bytes: semantic_working_bytes,
                 });
-                outlines.push((source, include_outline.then_some(drawing).flatten()));
+                outlines.push((source, include_outline.then_some(geometry).flatten()));
             }
             semantic_working.push(SemanticWorkingRecord {
                 source_order: scene.source_owner_order("appState", 0),
@@ -1912,6 +1955,62 @@ struct ResolvedScene {
     mandatory_manifest: Option<String>,
 }
 
+enum GeneratedGeometry {
+    Rough(rough::Drawing),
+    Freedraw(GeneratedFreedraw),
+}
+
+struct GeneratedFreedraw {
+    path: freedraw::Path,
+    background_fill: Option<rough::Fill>,
+}
+
+impl GeneratedGeometry {
+    fn operation_count(&self) -> usize {
+        match self {
+            Self::Rough(drawing) => drawing.operation_count(),
+            Self::Freedraw(freedraw) => {
+                freedraw.path.operation_count()
+                    + freedraw
+                        .background_fill
+                        .as_ref()
+                        .map_or(0, |fill| fill.path.operations.len())
+            }
+        }
+    }
+
+    fn bounds(&self, source: &NormalizedElement) -> (f64, f64, f64, f64) {
+        match self {
+            Self::Rough(drawing) => local_outline_bounds(source, Some(drawing)),
+            Self::Freedraw(_) => source_layout_bounds(source),
+        }
+    }
+}
+
+fn source_layout_bounds(source: &NormalizedElement) -> (f64, f64, f64, f64) {
+    match &source.kind {
+        NormalizedElementKind::Freedraw(freedraw) if !freedraw.points.is_empty() => {
+            freedraw.points.iter().fold(
+                (
+                    f64::INFINITY,
+                    f64::INFINITY,
+                    f64::NEG_INFINITY,
+                    f64::NEG_INFINITY,
+                ),
+                |(min_x, min_y, max_x, max_y), point| {
+                    (
+                        min_x.min(point[0]),
+                        min_y.min(point[1]),
+                        max_x.max(point[0]),
+                        max_y.max(point[1]),
+                    )
+                },
+            )
+        }
+        _ => (0.0, 0.0, source.width, source.height),
+    }
+}
+
 enum ResolveSceneError {
     Memory,
     InvalidFallbackFont,
@@ -1947,7 +2046,7 @@ impl ResolvedScene {
     }
 
     fn elements(
-        outlines: Vec<(NormalizedElement, Option<rough::Drawing>)>,
+        outlines: Vec<(NormalizedElement, Option<GeneratedGeometry>)>,
         fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
         clip_fallbacks_to_frames: bool,
         background_color: &str,
@@ -1961,7 +2060,7 @@ impl ResolvedScene {
         let mut min_y = f64::INFINITY;
         let mut max_x = f64::NEG_INFINITY;
         let mut max_y = f64::NEG_INFINITY;
-        for (source, drawing) in &outlines {
+        for (source, geometry) in &outlines {
             if source.stroke_width < 0.0
                 || source.roughness < 0.0
                 || !(0.0..=100.0).contains(&source.opacity)
@@ -1970,11 +2069,31 @@ impl ResolvedScene {
                 return Ok(None);
             }
             let (local_min_x, local_min_y, local_max_x, local_max_y) =
-                local_outline_bounds(source, drawing.as_ref());
+                geometry.as_ref().map_or_else(
+                    || source_layout_bounds(source),
+                    |geometry| geometry.bounds(source),
+                );
             let center_x = source.x + (local_min_x + local_max_x) / 2.0;
             let center_y = source.y + (local_min_y + local_max_y) / 2.0;
             let sin = source.angle.sin();
             let cos = source.angle.cos();
+            if let NormalizedElementKind::Freedraw(freedraw) = &source.kind {
+                if !freedraw.points.is_empty() {
+                    for point in &freedraw.points {
+                        let point_x = source.x + point[0];
+                        let point_y = source.y + point[1];
+                        let delta_x = point_x - center_x;
+                        let delta_y = point_y - center_y;
+                        let rotated_x = center_x + delta_x * cos - delta_y * sin;
+                        let rotated_y = center_y + delta_x * sin + delta_y * cos;
+                        min_x = min_x.min(rotated_x);
+                        min_y = min_y.min(rotated_y);
+                        max_x = max_x.max(rotated_x);
+                        max_y = max_y.max(rotated_y);
+                    }
+                    continue;
+                }
+            }
             for (corner_x, corner_y) in [
                 (source.x + local_min_x, source.y + local_min_y),
                 (source.x + local_max_x, source.y + local_min_y),
@@ -2032,51 +2151,74 @@ impl ResolvedScene {
                 });
             }
         }
-        for (source, drawing) in outlines {
-            let Some(drawing) = drawing else {
+        for (source, geometry) in outlines {
+            let Some(geometry) = geometry else {
                 continue;
             };
-            let geometry_work_units = u64::try_from(drawing.operation_count())
+            let geometry_work_units = u64::try_from(geometry.operation_count())
                 .unwrap_or(u64::MAX)
                 .saturating_mul(32);
-            let (local_min_x, local_min_y, local_max_x, local_max_y) =
-                local_outline_bounds(&source, Some(&drawing));
-            elements.push(ResolvedElement::Outline(ResolvedOutline {
-                source_order: source.source_order,
-                source: source.source,
-                base_element_work_units: source.normalization_work_units
-                    + geometry_work_units
-                    + 8
-                    + source.repair_work_units,
-                drawing,
-                transform: ResolvedTransform {
-                    translation_x: source.x - min_x + request.padding(),
-                    translation_y: source.y - min_y + request.padding(),
-                    angle_radians: source.angle,
-                    center_x: (local_min_x + local_max_x) / 2.0,
-                    center_y: (local_min_y + local_max_y) / 2.0,
-                },
-                stroke_color: color::parse_css(&source.stroke_color)
-                    .ok_or(ResolveSceneError::InvalidColor)?
-                    .for_mode(request.color_mode()),
-                fill_color: (source.background_color != "transparent")
-                    .then(|| color::parse_css(&source.background_color))
-                    .flatten()
-                    .map(|color| color.for_mode(request.color_mode())),
-                stroke_width: if source.stroke_style == "solid" {
-                    source.stroke_width
-                } else {
-                    source.stroke_width + 0.5
-                },
-                stroke_style: match source.stroke_style.as_str() {
-                    "dashed" => StrokeStyle::Dashed,
-                    "dotted" => StrokeStyle::Dotted,
-                    _ => StrokeStyle::Solid,
-                },
-                source_stroke_width: source.stroke_width,
-                opacity: source.opacity / 100.0,
-                background_color,
-            }));
+            let (local_min_x, local_min_y, local_max_x, local_max_y) = geometry.bounds(&source);
+            let transform = ResolvedTransform {
+                translation_x: source.x - min_x + request.padding(),
+                translation_y: source.y - min_y + request.padding(),
+                angle_radians: source.angle,
+                center_x: (local_min_x + local_max_x) / 2.0,
+                center_y: (local_min_y + local_max_y) / 2.0,
+            };
+            let stroke_color = color::parse_css(&source.stroke_color)
+                .ok_or(ResolveSceneError::InvalidColor)?
+                .for_mode(request.color_mode());
+            let base_element_work_units = source.normalization_work_units
+                + geometry_work_units
+                + 8
+                + source.repair_work_units;
+            match geometry {
+                GeneratedGeometry::Rough(drawing) => {
+                    elements.push(ResolvedElement::Outline(ResolvedOutline {
+                        source_order: source.source_order,
+                        source: source.source,
+                        base_element_work_units,
+                        drawing,
+                        transform,
+                        stroke_color,
+                        fill_color: (source.background_color != "transparent")
+                            .then(|| color::parse_css(&source.background_color))
+                            .flatten()
+                            .map(|color| color.for_mode(request.color_mode())),
+                        stroke_width: if source.stroke_style == "solid" {
+                            source.stroke_width
+                        } else {
+                            source.stroke_width + 0.5
+                        },
+                        stroke_style: match source.stroke_style.as_str() {
+                            "dashed" => StrokeStyle::Dashed,
+                            "dotted" => StrokeStyle::Dotted,
+                            _ => StrokeStyle::Solid,
+                        },
+                        source_stroke_width: source.stroke_width,
+                        opacity: source.opacity / 100.0,
+                        background_color,
+                    }));
+                }
+                GeneratedGeometry::Freedraw(freedraw) => {
+                    elements.push(ResolvedElement::Freedraw(ResolvedFreedraw {
+                        source_order: source.source_order,
+                        source: source.source,
+                        base_element_work_units,
+                        path: freedraw.path,
+                        background_fill: freedraw.background_fill,
+                        transform,
+                        color: stroke_color,
+                        background_color: (source.background_color != "transparent")
+                            .then(|| color::parse_css(&source.background_color))
+                            .flatten()
+                            .map(|color| color.for_mode(request.color_mode())),
+                        source_stroke_width: source.stroke_width,
+                        opacity: source.opacity / 100.0,
+                    }));
+                }
+            }
         }
         let fallback_font = if !fallbacks.iter().any(|fallback| fallback.paint) {
             None
@@ -2180,6 +2322,9 @@ impl ResolvedScene {
             ResolvedElement::Outline(outline) => {
                 (Some(outline.source.id()), outline.source.pointer())
             }
+            ResolvedElement::Freedraw(freedraw) => {
+                (Some(freedraw.source.id()), freedraw.source.pointer())
+            }
             ResolvedElement::Fallback(fallback) => (
                 fallback.source.id.as_deref(),
                 fallback.source.pointer.as_str(),
@@ -2201,6 +2346,7 @@ impl ResolvedScene {
 
 enum ResolvedElement {
     Outline(ResolvedOutline),
+    Freedraw(ResolvedFreedraw),
     Fallback(ResolvedFallback),
 }
 
@@ -2208,6 +2354,7 @@ impl ResolvedElement {
     fn source_order(&self) -> u64 {
         match self {
             Self::Outline(outline) => outline.source_order,
+            Self::Freedraw(freedraw) => freedraw.source_order,
             Self::Fallback(fallback) => fallback.source_order,
         }
     }
@@ -2226,6 +2373,19 @@ struct ResolvedOutline {
     source_stroke_width: f64,
     opacity: f64,
     background_color: CanonicalColor,
+}
+
+struct ResolvedFreedraw {
+    source_order: u64,
+    source: NormalizedElementSource,
+    base_element_work_units: u64,
+    path: freedraw::Path,
+    background_fill: Option<rough::Fill>,
+    transform: ResolvedTransform,
+    color: CanonicalColor,
+    background_color: Option<CanonicalColor>,
+    source_stroke_width: f64,
+    opacity: f64,
 }
 
 #[derive(Clone, Copy)]
@@ -3240,6 +3400,22 @@ fn local_outline_bounds(
     )
 }
 
+fn union_bounds(
+    first: Option<(f64, f64, f64, f64)>,
+    second: Option<(f64, f64, f64, f64)>,
+) -> Option<(f64, f64, f64, f64)> {
+    match (first, second) {
+        (Some(first), Some(second)) => Some((
+            first.0.min(second.0),
+            first.1.min(second.1),
+            first.2.max(second.2),
+            first.3.max(second.3),
+        )),
+        (Some(bounds), None) | (None, Some(bounds)) => Some(bounds),
+        (None, None) => None,
+    }
+}
+
 fn corner_radius(size: f64, roundness: crate::normalization::NormalizedRoundness) -> f64 {
     const PROPORTIONAL_RADIUS: f64 = 0.25;
     match roundness {
@@ -3339,8 +3515,13 @@ fn outline_local_crossing(
             });
         }
     }
-    if let NormalizedElementKind::Linear(linear) = &source.kind {
-        for point in &linear.points {
+    let points = match &source.kind {
+        NormalizedElementKind::Linear(linear) => Some(linear.points.as_slice()),
+        NormalizedElementKind::Freedraw(freedraw) => Some(freedraw.points.as_slice()),
+        _ => None,
+    };
+    if let Some(points) = points {
+        for point in points {
             for value in point {
                 let magnitude = value.abs();
                 if magnitude > coordinate_limit {

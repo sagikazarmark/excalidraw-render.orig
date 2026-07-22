@@ -213,7 +213,7 @@ fn compatibility_labels_use_full_ellipsis_or_omitted_fit_behavior() {
 }
 
 #[test]
-fn newly_supported_arrows_render_beside_known_unavailable_elements() {
+fn arrows_and_freedraw_render_without_known_element_fallbacks() {
     let scene = SceneDocument::parse(
         br##"{
         "type":"excalidraw",
@@ -248,26 +248,11 @@ fn newly_supported_arrows_render_beside_known_unavailable_elements() {
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let outcome = render(&scene, format);
-        let diagnostics = boundary_diagnostics(&outcome);
-        let [diagnostic] = diagnostics.as_slice() else {
-            panic!("only freedraw remains unavailable: {diagnostics:?}");
-        };
-        assert_eq!(
-            diagnostic.code(),
-            DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
-        );
-        assert_eq!(diagnostic.element_id(), Some("freedraw"));
-        assert!(matches!(
-            diagnostic.details(),
-            Some(ErrorDetails::Compatibility {
-                recovery: Recovery::Placeholder,
-                recipe_id: Some(recipe),
-            }) if recipe == "renderer.known-element-unavailable.v1"
-        ));
+        assert!(boundary_diagnostics(&outcome).is_empty());
         if format == OutputFormat::Svg {
             let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
             assert!(!svg.contains(">Unavailable: arrow</text>"));
-            assert!(svg.contains(">Unavailable: freedraw</text>"));
+            assert!(!svg.contains(">Unavailable: freedraw</text>"));
         }
     }
 }
