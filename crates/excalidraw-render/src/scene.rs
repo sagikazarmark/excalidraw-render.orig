@@ -219,6 +219,8 @@ impl SceneDocument {
             "image" => ElementKind::Image,
             "frame" => ElementKind::Frame,
             "magicframe" => ElementKind::MagicFrame,
+            "iframe" => ElementKind::Iframe,
+            "embeddable" => ElementKind::Embeddable,
             _ => return None,
         };
         Some(ElementSource {
@@ -353,6 +355,8 @@ pub(crate) enum ElementKind {
     Image,
     Frame,
     MagicFrame,
+    Iframe,
+    Embeddable,
 }
 
 impl ElementKind {
@@ -369,6 +373,8 @@ impl ElementKind {
             Self::Image => "image",
             Self::Frame => "frame",
             Self::MagicFrame => "magicframe",
+            Self::Iframe => "iframe",
+            Self::Embeddable => "embeddable",
         }
     }
 }

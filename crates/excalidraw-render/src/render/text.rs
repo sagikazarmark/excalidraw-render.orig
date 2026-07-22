@@ -381,6 +381,53 @@ impl OfficialFont {
         })
     }
 
+    pub(super) fn wrap_embeddable_label(
+        &self,
+        text: &str,
+        font_size: f64,
+        max_width: f64,
+    ) -> Result<String, LabelError> {
+        if max_width < 0.0 || !max_width.is_finite() {
+            return try_owned(text);
+        }
+        let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let scale = font_size / f64::from(face.units_per_em());
+        let mut wrapped = String::new();
+        wrapped.try_reserve_exact(text.len().saturating_add(text.chars().count()))?;
+        for (line_index, line) in text.split('\n').enumerate() {
+            if line_index != 0 {
+                wrapped.push('\n');
+            }
+            let width = shape_text(&face, line)
+                .glyph_positions()
+                .iter()
+                .fold(0_i64, |sum, position| {
+                    sum.saturating_add(i64::from(position.x_advance))
+                }) as f64
+                * scale;
+            if width <= max_width {
+                wrapped.push_str(line);
+                continue;
+            }
+            let mut line_width = 0.0;
+            let mut has_character = false;
+            for character in line.chars() {
+                let advance = face
+                    .glyph_index(character)
+                    .and_then(|glyph| face.glyph_hor_advance(glyph))
+                    .map_or(0.0, |advance| f64::from(advance) * scale);
+                if has_character && line_width + advance > max_width {
+                    wrapped.push('\n');
+                    line_width = 0.0;
+                }
+                wrapped.push(character);
+                line_width += advance;
+                has_character = true;
+            }
+        }
+        Ok(wrapped)
+    }
+
     pub(super) fn into_parts(self) -> (&'static str, &'static str, &'static str, Vec<u8>, Vec<u8>) {
         (
             self.family,

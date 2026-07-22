@@ -38,6 +38,12 @@ enum SvgElement {
         opacity: f64,
         background_color: CanonicalColor,
         label_mask: Option<super::ResolvedLabelMask>,
+        link: Option<String>,
+        generated_label: Option<super::text::ResolvedText>,
+        generated_label_color: Option<CanonicalColor>,
+        generated_label_offset_y: f64,
+        width: f64,
+        height: f64,
     },
     Freedraw {
         source: NormalizedElementSource,
@@ -53,6 +59,9 @@ enum SvgElement {
         background_color: Option<CanonicalColor>,
         source_stroke_width: f64,
         opacity: f64,
+        link: Option<String>,
+        width: f64,
+        height: f64,
     },
     Frame {
         source: NormalizedElementSource,
@@ -66,6 +75,9 @@ enum SvgElement {
         center_x: f64,
         center_y: f64,
         opacity: f64,
+        link: Option<String>,
+        width: f64,
+        height: f64,
     },
     Text {
         source: NormalizedElementSource,
@@ -74,6 +86,9 @@ enum SvgElement {
         transform: super::ResolvedTransform,
         color: CanonicalColor,
         opacity: f64,
+        link: Option<String>,
+        width: f64,
+        height: f64,
     },
     Fallback {
         source: super::FallbackSource,
@@ -147,6 +162,23 @@ fn push_frame_clip_prefix(
     Ok(())
 }
 
+fn push_svg_link_hit_rect(
+    svg: &mut String,
+    link: Option<&str>,
+    width: f64,
+    height: f64,
+) -> Result<(), FormatEncodeError> {
+    if link.is_none() {
+        return Ok(());
+    }
+    svg.push_str("<rect x=\"0\" y=\"0\" width=\"");
+    push_svg_number(svg, width, "SVG link hit width")?;
+    svg.push_str("\" height=\"");
+    push_svg_number(svg, height, "SVG link hit height")?;
+    svg.push_str("\" fill=\"transparent\"/>");
+    Ok(())
+}
+
 fn push_frame_clip_id(
     svg: &mut String,
     element_index: usize,
@@ -199,10 +231,15 @@ impl SvgPlan {
                             outline.source.pointer()
                         )));
                     }
+                    let frame_clips = if outline.generated_label.is_some() {
+                        Vec::new()
+                    } else {
+                        outline.frame_clips
+                    };
                     elements.push(SvgElement::RoughOutline {
                         source: outline.source,
                         drawing: outline.drawing,
-                        frame_clips: outline.frame_clips,
+                        frame_clips,
                         translation_x: outline.transform.translation_x,
                         translation_y: outline.transform.translation_y,
                         rotation_degrees: 180.0 * outline.transform.angle_radians
@@ -214,9 +251,19 @@ impl SvgPlan {
                         stroke_width: outline.stroke_width,
                         stroke_style: outline.stroke_style,
                         source_stroke_width: outline.source_stroke_width,
-                        opacity: outline.opacity,
+                        opacity: if outline.generated_label.is_some() {
+                            outline.element_opacity
+                        } else {
+                            outline.opacity
+                        },
                         background_color: outline.background_color,
                         label_mask: outline.label_mask,
+                        link: outline.link,
+                        generated_label: outline.generated_label,
+                        generated_label_color: outline.generated_label_color,
+                        generated_label_offset_y: outline.generated_label_offset_y,
+                        width: outline.width,
+                        height: outline.height,
                     });
                 }
                 ResolvedElement::Freedraw(freedraw) => {
@@ -235,6 +282,9 @@ impl SvgPlan {
                         background_color: freedraw.background_color,
                         source_stroke_width: freedraw.source_stroke_width,
                         opacity: freedraw.opacity,
+                        link: freedraw.link,
+                        width: freedraw.width,
+                        height: freedraw.height,
                     });
                 }
                 ResolvedElement::Frame(frame) => {
@@ -251,6 +301,9 @@ impl SvgPlan {
                         center_x: frame.transform.center_x,
                         center_y: frame.transform.center_y,
                         opacity: frame.opacity,
+                        link: frame.link,
+                        width: frame.width,
+                        height: frame.height,
                     });
                     fallback_index = fallback_index.saturating_add(1);
                 }
@@ -262,6 +315,9 @@ impl SvgPlan {
                         transform: text.transform,
                         color: text.color,
                         opacity: text.opacity,
+                        link: text.link,
+                        width: text.width,
+                        height: text.height,
                     });
                 }
                 ResolvedElement::Fallback(fallback) => {
@@ -330,8 +386,16 @@ impl SvgPlan {
         }
         capacity = checked_capacity_add(capacity, usize::from(self.background.is_some()) * 32)?;
         for element in &self.elements {
+            if let Some(link) = element.link() {
+                capacity = checked_capacity_add(capacity, escaped_capacity(link)?)?;
+                capacity = checked_capacity_add(capacity, 32)?;
+            }
             match element {
-                SvgElement::RoughOutline { drawing, .. } => {
+                SvgElement::RoughOutline {
+                    drawing,
+                    generated_label,
+                    ..
+                } => {
                     capacity = checked_capacity_add(
                         capacity,
                         drawing
@@ -340,6 +404,14 @@ impl SvgPlan {
                             .ok_or_else(svg_size_error)?,
                     )?;
                     capacity = checked_capacity_add(capacity, 512)?;
+                    if let Some(label) = generated_label {
+                        capacity = checked_capacity_add(
+                            capacity,
+                            label.lines.iter().fold(256_usize, |size, line| {
+                                size.saturating_add(line.text.len()).saturating_add(192)
+                            }),
+                        )?;
+                    }
                 }
                 SvgElement::Freedraw {
                     path_data,
@@ -372,12 +444,9 @@ impl SvgPlan {
                     capacity =
                         checked_capacity_add(capacity, text.lines.len().saturating_mul(192))?;
                 }
-                SvgElement::Fallback { label, link, .. } => {
+                SvgElement::Fallback { label, .. } => {
                     if let Some(label) = label {
                         capacity = checked_capacity_add(capacity, escaped_capacity(label)?)?;
-                    }
-                    if let Some(link) = link {
-                        capacity = checked_capacity_add(capacity, escaped_capacity(link)?)?;
                     }
                     capacity = checked_capacity_add(capacity, 1_024)?;
                 }
@@ -449,6 +518,11 @@ impl SvgPlan {
                 legacy_fallback_index,
                 element.frame_clips(),
             )?;
+            if let Some(link) = element.link() {
+                svg.push_str("<a href=\"");
+                push_escaped_attribute(&mut svg, link);
+                svg.push_str("\">");
+            }
             match element {
                 SvgElement::RoughOutline {
                     source,
@@ -467,6 +541,13 @@ impl SvgPlan {
                     opacity,
                     background_color,
                     label_mask,
+                    generated_label,
+                    generated_label_color,
+                    generated_label_offset_y,
+                    link,
+                    width,
+                    height,
+                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -517,6 +598,7 @@ impl SvgPlan {
                     push_svg_number(&mut svg, *center_y, "SVG rotation center y")?;
                     svg.push_str(")\"");
                     svg.push('>');
+                    push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
                     push_svg_drawing(
                         &mut svg,
                         drawing,
@@ -546,6 +628,53 @@ impl SvgPlan {
                             *opacity,
                         )?;
                     }
+                    if let (Some(label), Some(color)) = (generated_label, generated_label_color) {
+                        svg.push_str("<text data-source-text=\"");
+                        for line in &label.lines {
+                            push_escaped_attribute(&mut svg, &line.text);
+                        }
+                        svg.push_str("\" xml:space=\"preserve\" fill=\"");
+                        color.write_hex(&mut svg).map_err(|_| {
+                            FormatEncodeError::Encoding(
+                                "failed to write SVG embeddable label color".to_owned(),
+                            )
+                        })?;
+                        svg.push_str("\" font-family=\"Liberation Sans\" font-size=\"");
+                        push_svg_number(&mut svg, label.font_size, "SVG embeddable font size")?;
+                        svg.push_str("\">");
+                        for line in &label.lines {
+                            svg.push_str("<tspan x=\"");
+                            for (index, glyph) in line.glyphs.iter().enumerate() {
+                                if index != 0 {
+                                    svg.push(' ');
+                                }
+                                push_svg_number(&mut svg, glyph.x, "SVG embeddable glyph x")?;
+                            }
+                            svg.push_str("\" y=\"");
+                            if line.glyphs.is_empty() {
+                                push_svg_number(
+                                    &mut svg,
+                                    line.baseline + generated_label_offset_y,
+                                    "SVG embeddable baseline",
+                                )?;
+                            } else {
+                                for (index, glyph) in line.glyphs.iter().enumerate() {
+                                    if index != 0 {
+                                        svg.push(' ');
+                                    }
+                                    push_svg_number(
+                                        &mut svg,
+                                        glyph.y + generated_label_offset_y,
+                                        "SVG embeddable glyph y",
+                                    )?;
+                                }
+                            }
+                            svg.push_str("\">");
+                            push_escaped_text(&mut svg, &line.display_text);
+                            svg.push_str("</tspan>");
+                        }
+                        svg.push_str("</text>");
+                    }
                     svg.push_str("</g>");
                     if label_mask.is_some() {
                         svg.push_str("</g>");
@@ -565,6 +694,10 @@ impl SvgPlan {
                     background_color,
                     source_stroke_width,
                     opacity,
+                    link,
+                    width,
+                    height,
+                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -582,6 +715,7 @@ impl SvgPlan {
                     svg.push(' ');
                     push_svg_number(&mut svg, *center_y, "SVG freedraw center y")?;
                     svg.push_str(")\">");
+                    push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
                     if let (Some(fill), Some(background_color)) =
                         (background_fill, background_color)
                     {
@@ -664,6 +798,10 @@ impl SvgPlan {
                     center_x,
                     center_y,
                     opacity,
+                    link,
+                    width,
+                    height,
+                    ..
                 } => {
                     svg.push_str("<g transform=\"translate(");
                     push_svg_number(&mut svg, *translation_x, "SVG frame translation x")?;
@@ -682,6 +820,7 @@ impl SvgPlan {
                         svg.push('"');
                     }
                     svg.push('>');
+                    push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
                     if let Some(outline_path) = outline_path {
                         svg.push_str("<path data-frame-outline=\"");
                         push_escaped_attribute(&mut svg, source.id());
@@ -739,6 +878,10 @@ impl SvgPlan {
                     transform,
                     color,
                     opacity,
+                    link,
+                    width,
+                    height,
+                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -767,6 +910,7 @@ impl SvgPlan {
                         svg.push('"');
                     }
                     svg.push('>');
+                    push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
                     svg.push_str("<text data-source-text=\"");
                     for line in &text.lines {
                         push_escaped_attribute(&mut svg, &line.text);
@@ -816,7 +960,7 @@ impl SvgPlan {
                     source,
                     clip_index,
                     label,
-                    link,
+                    link: _,
                     frame_clips: _,
                     width,
                     height,
@@ -831,11 +975,6 @@ impl SvgPlan {
                         return Err(FormatEncodeError::Encoding(
                             "SVG fallback lost its source location".to_owned(),
                         ));
-                    }
-                    if let Some(link) = link {
-                        svg.push_str("<a href=\"");
-                        push_escaped_attribute(&mut svg, link);
-                        svg.push_str("\">");
                     }
                     svg.push_str("<g transform=\"translate(");
                     push_svg_number(&mut svg, *translation_x, "SVG fallback translation x")?;
@@ -936,10 +1075,10 @@ impl SvgPlan {
                         svg.push_str("</text>");
                     }
                     svg.push_str("</g></g>");
-                    if link.is_some() {
-                        svg.push_str("</a>");
-                    }
                 }
+            }
+            if element.link().is_some() {
+                svg.push_str("</a>");
             }
             for _ in 0..frame_clip_count {
                 svg.push_str("</g>");
@@ -961,6 +1100,18 @@ impl SvgPlan {
             SvgElement::Text { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
+    }
+}
+
+impl SvgElement {
+    fn link(&self) -> Option<&str> {
+        match self {
+            Self::RoughOutline { link, .. }
+            | Self::Freedraw { link, .. }
+            | Self::Frame { link, .. }
+            | Self::Text { link, .. }
+            | Self::Fallback { link, .. } => link.as_deref(),
+        }
     }
 }
 

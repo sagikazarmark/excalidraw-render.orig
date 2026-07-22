@@ -66,6 +66,12 @@ enum PdfElement {
         opacity: f64,
         background_color: CanonicalColor,
         label_mask: Option<super::ResolvedLabelMask>,
+        link: Option<String>,
+        width: f64,
+        height: f64,
+        generated_label: Option<super::text::ResolvedText>,
+        generated_label_color: Option<CanonicalColor>,
+        generated_label_offset_y: f64,
     },
     Freedraw {
         source: NormalizedElementSource,
@@ -77,6 +83,9 @@ enum PdfElement {
         background_color: Option<CanonicalColor>,
         source_stroke_width: f64,
         opacity: f64,
+        link: Option<String>,
+        width: f64,
+        height: f64,
     },
     Frame {
         source: NormalizedElementSource,
@@ -86,6 +95,9 @@ enum PdfElement {
         frame_clips: Vec<super::ResolvedClip>,
         transform: super::ResolvedTransform,
         opacity: f64,
+        link: Option<String>,
+        width: f64,
+        height: f64,
     },
     Text {
         source: NormalizedElementSource,
@@ -94,6 +106,9 @@ enum PdfElement {
         transform: super::ResolvedTransform,
         color: CanonicalColor,
         opacity: f64,
+        link: Option<String>,
+        width: f64,
+        height: f64,
     },
     Fallback {
         source: super::FallbackSource,
@@ -138,19 +153,34 @@ impl PdfPlan {
                             outline.source.pointer()
                         )));
                     }
+                    let frame_clips = if outline.generated_label.is_some() {
+                        Vec::new()
+                    } else {
+                        outline.frame_clips
+                    };
                     elements.push(PdfElement::RoughOutline {
                         source: outline.source,
                         drawing: outline.drawing,
-                        frame_clips: outline.frame_clips,
+                        frame_clips,
                         transform: outline.transform,
                         stroke_color: outline.stroke_color,
                         fill_color: outline.fill_color,
                         stroke_width: outline.stroke_width,
                         stroke_style: outline.stroke_style,
                         source_stroke_width: outline.source_stroke_width,
-                        opacity: outline.opacity,
+                        opacity: if outline.generated_label.is_some() {
+                            outline.element_opacity
+                        } else {
+                            outline.opacity
+                        },
                         background_color: outline.background_color,
                         label_mask: outline.label_mask,
+                        link: outline.link,
+                        width: outline.width,
+                        height: outline.height,
+                        generated_label: outline.generated_label,
+                        generated_label_color: outline.generated_label_color,
+                        generated_label_offset_y: outline.generated_label_offset_y,
                     });
                 }
                 ResolvedElement::Freedraw(freedraw) => {
@@ -164,6 +194,9 @@ impl PdfPlan {
                         background_color: freedraw.background_color,
                         source_stroke_width: freedraw.source_stroke_width,
                         opacity: freedraw.opacity,
+                        link: freedraw.link,
+                        width: freedraw.width,
+                        height: freedraw.height,
                     });
                 }
                 ResolvedElement::Frame(frame) => {
@@ -175,6 +208,9 @@ impl PdfPlan {
                         frame_clips: frame.frame_clips,
                         transform: frame.transform,
                         opacity: frame.opacity,
+                        link: frame.link,
+                        width: frame.width,
+                        height: frame.height,
                     });
                 }
                 ResolvedElement::Text(text) => {
@@ -185,6 +221,9 @@ impl PdfPlan {
                         transform: text.transform,
                         color: text.color,
                         opacity: text.opacity,
+                        link: text.link,
+                        width: text.width,
+                        height: text.height,
                     });
                 }
                 ResolvedElement::Fallback(fallback) => {
@@ -230,18 +269,10 @@ impl PdfPlan {
             .transpose()?;
         let mut link_count = 0_usize;
         for element in &self.elements {
-            if let PdfElement::Fallback {
-                link: Some(_),
-                width,
-                height,
-                transform,
-                frame_clips,
-                ..
-            } = element
-            {
+            if let Some((_, width, height, transform, frame_clips)) = element.link_geometry() {
                 if link_annotation_visible(
-                    *width,
-                    *height,
+                    width,
+                    height,
                     transform,
                     frame_clips,
                     self.scale * POINTS_PER_LOGICAL_PIXEL,
@@ -486,21 +517,14 @@ impl PdfPlan {
             pdf.extend_from_slice(b"\nendstream\nendobj\n");
         }
         let mut link_index = 0_usize;
-        for element in &self.elements {
-            let PdfElement::Fallback {
-                link: Some(link),
-                width,
-                height,
-                transform,
-                frame_clips,
-                ..
-            } = element
+        for element in self.elements.iter().rev() {
+            let Some((link, width, height, transform, frame_clips)) = element.link_geometry()
             else {
                 continue;
             };
             if !link_annotation_visible(
-                *width,
-                *height,
+                width,
+                height,
                 transform,
                 frame_clips,
                 self.scale * POINTS_PER_LOGICAL_PIXEL,
@@ -513,7 +537,7 @@ impl PdfPlan {
                 .checked_add(link_index)
                 .ok_or_else(pdf_size_error)?;
             begin_object(&mut pdf, &mut offsets, object)?;
-            self.write_link_annotation(&mut pdf, link, *width, *height, transform, frame_clips)?;
+            self.write_link_annotation(&mut pdf, link, width, height, transform, frame_clips)?;
             link_index = link_index.saturating_add(1);
         }
         for (index, form) in fallback_forms.iter().enumerate() {
@@ -659,13 +683,8 @@ impl PdfPlan {
         push_pdf_vec_number(pdf, max_y, "PDF link rectangle y maximum")?;
         pdf.extend_from_slice(b"]\n/QuadPoints [");
         let mut first = true;
-        for index in 1..points.len() - 1 {
-            for (x, y) in [
-                points[0],
-                points[index],
-                points[index + 1],
-                points[index + 1],
-            ] {
+        let mut write_quadrilateral = |quadrilateral: [(f64, f64); 4]| {
+            for (x, y) in quadrilateral {
                 if !first {
                     pdf.push(b' ');
                 }
@@ -673,6 +692,19 @@ impl PdfPlan {
                 push_pdf_vec_number(pdf, x, "PDF link quadrilateral x")?;
                 pdf.push(b' ');
                 push_pdf_vec_number(pdf, y, "PDF link quadrilateral y")?;
+            }
+            Ok::<(), FormatEncodeError>(())
+        };
+        if points.len() == 4 {
+            write_quadrilateral([points[0], points[1], points[3], points[2]])?;
+        } else {
+            for index in 1..points.len() - 1 {
+                write_quadrilateral([
+                    points[0],
+                    points[index],
+                    points[index + 1],
+                    points[index + 1],
+                ])?;
             }
         }
         pdf.extend_from_slice(b"]\n/Border [0 0 0]\n/A <<\n/S /URI\n/URI (");
@@ -822,6 +854,10 @@ impl PdfPlan {
                     PdfElement::Text { text, .. } if text.font_index == font_index => {
                         text.lines.as_slice()
                     }
+                    PdfElement::RoughOutline {
+                        generated_label: Some(text),
+                        ..
+                    } if text.font_index == font_index => text.lines.as_slice(),
                     _ => &[],
                 }),
                 "pdf_text_glyph_mappings",
@@ -858,6 +894,7 @@ impl PdfPlan {
                     fill_color,
                     drawing,
                     background_color,
+                    generated_label_color,
                     ..
                 } => {
                     retain(*opacity * stroke_color.alpha());
@@ -873,6 +910,9 @@ impl PdfPlan {
                             );
                             retain(*opacity * color.alpha());
                         }
+                    }
+                    if let Some(color) = generated_label_color {
+                        retain(color.alpha());
                     }
                 }
                 PdfElement::Freedraw {
@@ -963,10 +1003,20 @@ impl PdfPlan {
         let mut capacity = 1_024_usize;
         for element in &self.elements {
             let element_bytes = match element {
-                PdfElement::RoughOutline { drawing, .. } => drawing
+                PdfElement::RoughOutline {
+                    drawing,
+                    generated_label,
+                    ..
+                } => drawing
                     .operation_count()
                     .checked_mul(200)
-                    .and_then(|path_bytes| path_bytes.checked_add(512))
+                    .and_then(|path_bytes| {
+                        path_bytes.checked_add(generated_label.as_ref().map_or(512, |label| {
+                            label.lines.iter().fold(1_024_usize, |size, line| {
+                                size.saturating_add(line.glyphs.len().saturating_mul(96))
+                            })
+                        }))
+                    })
                     .ok_or_else(pdf_size_error)?,
                 PdfElement::Freedraw {
                     path,
@@ -1055,6 +1105,10 @@ impl PdfPlan {
                     opacity,
                     background_color,
                     label_mask,
+                    generated_label,
+                    generated_label_color,
+                    generated_label_offset_y,
+                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -1182,6 +1236,65 @@ impl PdfPlan {
                             opacity_resources,
                         )?;
                     }
+                    if let (Some(label), Some(color)) = (generated_label, generated_label_color) {
+                        content.push_str("q\n1 0 0 1 0 ");
+                        push_pdf_number(
+                            &mut content,
+                            *generated_label_offset_y,
+                            "PDF embeddable label offset",
+                        )?;
+                        content.push_str(" cm\n");
+                        let effective_opacity = color.alpha();
+                        if effective_opacity != 1.0 {
+                            push_opacity_resource(
+                                &mut content,
+                                opacity_resources,
+                                effective_opacity,
+                            )?;
+                        }
+                        content.push_str("/CS1 cs\n");
+                        push_color(&mut content, color.rgb_f64(), "scn")?;
+                        for line in &label.lines {
+                            content.push_str("/Span << /ActualText <FEFF");
+                            push_utf16be_hex(&mut content, &line.text)?;
+                            content.push_str("> >> BDC\nBT\n/F");
+                            write!(content, "{} ", label.font_index + 2).map_err(|_| {
+                                FormatEncodeError::Encoding(
+                                    "failed to write PDF embeddable font resource".to_owned(),
+                                )
+                            })?;
+                            push_pdf_number(
+                                &mut content,
+                                label.font_size,
+                                "PDF embeddable font size",
+                            )?;
+                            content.push_str(" Tf\n");
+                            for glyph in &line.glyphs {
+                                content.push_str("1 0 0 -1 ");
+                                push_pdf_number(&mut content, glyph.x, "PDF embeddable glyph x")?;
+                                content.push(' ');
+                                push_pdf_number(&mut content, glyph.y, "PDF embeddable glyph y")?;
+                                content.push_str(" Tm\n<");
+                                let mappings =
+                                    official_mappings.get(label.font_index).ok_or_else(|| {
+                                        FormatEncodeError::Encoding(format!(
+                                            "PDF embeddable references font {} of {} resources",
+                                            label.font_index,
+                                            official_mappings.len()
+                                        ))
+                                    })?;
+                                let code = glyph_mapping_code(mappings, glyph)?;
+                                write!(content, "{code:04X}").map_err(|_| {
+                                    FormatEncodeError::Encoding(
+                                        "failed to write PDF embeddable glyph ID".to_owned(),
+                                    )
+                                })?;
+                                content.push_str("> Tj\n");
+                            }
+                            content.push_str("ET\nEMC\n");
+                        }
+                        content.push_str("Q\n");
+                    }
                     content.push_str("Q\n");
                 }
                 PdfElement::Freedraw {
@@ -1194,6 +1307,7 @@ impl PdfPlan {
                     background_color,
                     source_stroke_width,
                     opacity,
+                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -1266,6 +1380,7 @@ impl PdfPlan {
                     frame_clips,
                     transform,
                     opacity,
+                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -1317,6 +1432,7 @@ impl PdfPlan {
                     transform,
                     color,
                     opacity,
+                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -1448,6 +1564,62 @@ impl PdfPlan {
         }
         content.push('Q');
         Ok(content)
+    }
+}
+
+impl PdfElement {
+    fn link_geometry(
+        &self,
+    ) -> Option<(
+        &str,
+        f64,
+        f64,
+        &super::ResolvedTransform,
+        &[super::ResolvedClip],
+    )> {
+        match self {
+            Self::RoughOutline {
+                link: Some(link),
+                width,
+                height,
+                transform,
+                frame_clips,
+                ..
+            }
+            | Self::Freedraw {
+                link: Some(link),
+                width,
+                height,
+                transform,
+                frame_clips,
+                ..
+            }
+            | Self::Frame {
+                link: Some(link),
+                width,
+                height,
+                transform,
+                frame_clips,
+                ..
+            }
+            | Self::Text {
+                link: Some(link),
+                width,
+                height,
+                transform,
+                frame_clips,
+                ..
+            }
+            | Self::Fallback {
+                link: Some(link),
+                width,
+                height,
+                transform,
+                frame_clips,
+                ..
+            } => Some((link, *width, *height, transform, frame_clips)),
+            _ => None,
+        }
     }
 }
 
@@ -1585,16 +1757,92 @@ fn clipped_link_polygon(
         ],
     )?;
     for frame_clip in frame_clips {
-        let frame = transformed_pdf_points(
-            frame_clip.width,
-            frame_clip.height,
-            &frame_clip.transform,
-            point_scale,
-            page_height,
-        );
-        polygon = clip_convex_polygon(&polygon, &[frame[0], frame[2], frame[3], frame[1]])?;
+        let frame = transformed_clip_path(frame_clip, point_scale, page_height)?;
+        polygon = clip_convex_polygon(&polygon, &frame)?;
     }
     Ok(polygon)
+}
+
+fn transformed_clip_path(
+    clip: &super::ResolvedClip,
+    point_scale: f64,
+    page_height: f64,
+) -> Result<Vec<(f64, f64)>, FormatEncodeError> {
+    const CURVE_STEPS: usize = 8;
+    let mut points = Vec::new();
+    points
+        .try_reserve_exact(clip.path.operations.len().saturating_mul(CURVE_STEPS))
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_workspace",
+            subject: "pdf_link_frame_clip",
+        })?;
+    let mut current = rough::Point { x: 0.0, y: 0.0 };
+    for operation in &clip.path.operations {
+        match operation {
+            PathOperation::Move(point) => {
+                current = *point;
+                points.push(transformed_clip_point(
+                    current,
+                    &clip.transform,
+                    point_scale,
+                    page_height,
+                ));
+            }
+            PathOperation::Line(point) => {
+                current = *point;
+                points.push(transformed_clip_point(
+                    current,
+                    &clip.transform,
+                    point_scale,
+                    page_height,
+                ));
+            }
+            PathOperation::Cubic {
+                control_1,
+                control_2,
+                end,
+            } => {
+                let start = current;
+                for step in 1..=CURVE_STEPS {
+                    let t = step as f64 / CURVE_STEPS as f64;
+                    let inverse = 1.0 - t;
+                    let point = rough::Point {
+                        x: inverse.powi(3) * start.x
+                            + 3.0 * inverse * inverse * t * control_1.x
+                            + 3.0 * inverse * t * t * control_2.x
+                            + t.powi(3) * end.x,
+                        y: inverse.powi(3) * start.y
+                            + 3.0 * inverse * inverse * t * control_1.y
+                            + 3.0 * inverse * t * t * control_2.y
+                            + t.powi(3) * end.y,
+                    };
+                    points.push(transformed_clip_point(
+                        point,
+                        &clip.transform,
+                        point_scale,
+                        page_height,
+                    ));
+                }
+                current = *end;
+            }
+        }
+    }
+    Ok(points)
+}
+
+fn transformed_clip_point(
+    point: rough::Point,
+    transform: &super::ResolvedTransform,
+    point_scale: f64,
+    page_height: f64,
+) -> (f64, f64) {
+    let sin = transform.angle_radians.sin();
+    let cos = transform.angle_radians.cos();
+    let delta_x = point.x - transform.center_x;
+    let delta_y = point.y - transform.center_y;
+    let x = transform.translation_x + transform.center_x + delta_x * cos - delta_y * sin;
+    let y = transform.translation_y + transform.center_y + delta_x * sin + delta_y * cos;
+    (x * point_scale, page_height - y * point_scale)
 }
 
 fn clip_convex_polygon(

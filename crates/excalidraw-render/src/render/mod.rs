@@ -429,13 +429,38 @@ impl RenderSession {
             outlines
                 .try_reserve_exact(normalization.elements.len())
                 .map_err(|_| self.memory_failure(request, "normalization", "outline_list"))?;
-            for source in normalization.elements {
+            for mut source in normalization.elements {
                 debug_assert!(!source.index.is_empty());
+                if let NormalizedElementKind::Embeddable { iframe, .. } = &source.kind {
+                    let both_transparent = source.stroke_color == "transparent"
+                        && source.background_color == "transparent";
+                    if both_transparent {
+                        source.background_color = try_owned("#d3d3d3").map_err(|_| {
+                            self.memory_failure(request, "normalization", "embeddable_color")
+                        })?;
+                        source.fill_style = try_owned("solid").map_err(|_| {
+                            self.memory_failure(request, "normalization", "embeddable_fill")
+                        })?;
+                        source.roughness = 0.0;
+                    } else if *iframe {
+                        if source.background_color == "transparent" {
+                            source.background_color = try_owned("#f4f4f6").map_err(|_| {
+                                self.memory_failure(request, "normalization", "iframe_background")
+                            })?;
+                        }
+                        if source.stroke_color == "transparent" {
+                            source.stroke_color = try_owned("#000000").map_err(|_| {
+                                self.memory_failure(request, "normalization", "iframe_stroke")
+                            })?;
+                        }
+                    }
+                }
                 let is_outline = matches!(
                     &source.kind,
                     NormalizedElementKind::Rectangle
                         | NormalizedElementKind::Diamond
                         | NormalizedElementKind::Ellipse
+                        | NormalizedElementKind::Embeddable { .. }
                         | NormalizedElementKind::Linear(crate::normalization::NormalizedLinear {
                             geometry_available: true,
                             ..
@@ -546,6 +571,7 @@ impl RenderSession {
                     NormalizedElementKind::Freedraw(freedraw) => {
                         !freedraw.points.is_empty() || !freedraw.simulate_pressure
                     }
+                    NormalizedElementKind::Embeddable { .. } => true,
                     _ => source.width != 0.0 && source.height != 0.0,
                 };
                 let base_element_work_units = source
@@ -646,6 +672,7 @@ impl RenderSession {
                     NormalizedElementKind::Rectangle => "rough_rectangle_geometry",
                     NormalizedElementKind::Diamond => "rough_diamond_geometry",
                     NormalizedElementKind::Ellipse => "rough_ellipse_geometry",
+                    NormalizedElementKind::Embeddable { .. } => "rough_embeddable_geometry",
                     NormalizedElementKind::Linear(_) => "rough_linear_geometry",
                     NormalizedElementKind::Freedraw(_) => "freedraw_geometry",
                     NormalizedElementKind::Text(_)
@@ -1322,6 +1349,9 @@ impl RenderSession {
         semantic_working: &mut Vec<SemanticWorkingRecord>,
     ) -> Result<(), RenderError> {
         for element in &mut resolved.elements {
+            if let ResolvedElement::Outline(outline) = element {
+                self.account_embeddable_label(outline, request)?;
+            }
             let direct_clip_source = match element {
                 ResolvedElement::Outline(outline) if !outline.frame_clips.is_empty() => Some((
                     outline.source.id(),
@@ -1789,10 +1819,11 @@ impl RenderSession {
             ResolvedElement::Fallback(fallback) => fallback.label.is_some(),
             _ => false,
         });
-        let has_official_text = resolved
-            .elements
-            .iter()
-            .any(|element| matches!(element, ResolvedElement::Text(_)));
+        let has_official_text = resolved.elements.iter().any(|element| match element {
+            ResolvedElement::Text(_) => true,
+            ResolvedElement::Outline(outline) => outline.generated_label.is_some(),
+            _ => false,
+        });
         if !has_fallback_label {
             resolved.fallback_font_woff2 = None;
             resolved.fallback_font_sfnt = None;
@@ -1820,6 +1851,163 @@ impl RenderSession {
             None
         };
         semantic_working.sort_unstable_by_key(|record| record.source_order);
+        Ok(())
+    }
+
+    fn account_embeddable_label(
+        &mut self,
+        outline: &mut ResolvedOutline,
+        request: &RenderRequest,
+    ) -> Result<(), RenderError> {
+        let Some(label) = outline.generated_label.as_ref() else {
+            return Ok(());
+        };
+        let geometry_segments = label.outline_segments();
+        let glyphs = label.glyph_count();
+        let text_scalars = label.scalar_count;
+        let line_break_steps = label.line_break_steps;
+        let total_work_units = text_scalars
+            .saturating_add(glyphs)
+            .saturating_add(line_break_steps)
+            .saturating_add(geometry_segments)
+            .saturating_mul(32);
+        let working_bytes = glyphs
+            .saturating_mul(64)
+            .saturating_add(line_break_steps.saturating_mul(32))
+            .saturating_add(
+                u64::try_from(label.lines.len())
+                    .unwrap_or(u64::MAX)
+                    .saturating_mul(128),
+            )
+            .saturating_add(geometry_segments.saturating_mul(64));
+        let delta = ResourceDelta {
+            geometry_segments,
+            working_bytes,
+            total_work_units,
+            ..ResourceDelta::default()
+        };
+        let context = ResourceContext::new(
+            ResourcePhase::SharedSemanticResolution,
+            "embeddable_label_layout_and_glyph_geometry",
+            outline.source.pointer(),
+        )
+        .with_element_id(Some(outline.source.id()))
+        .with_local_owner(Some(outline.source.id()));
+        if self.meter.would_cross_fatal(delta) {
+            self.transact(request, context, delta)?;
+            return Err(self.internal_failure(
+                request.format(),
+                "fatal embeddable label resource preflight committed unexpectedly",
+                "/elements",
+            ));
+        }
+        let local_crossing = if geometry_segments
+            > u64::from(
+                request
+                    .resource_limits()
+                    .max_geometry_segments_per_element(),
+            ) {
+            Some(ElementLocalCrossing {
+                code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
+                field: "max_geometry_segments_per_element",
+                configured: ResourceValue::Integer(u64::from(
+                    request
+                        .resource_limits()
+                        .max_geometry_segments_per_element(),
+                )),
+                value_kind: ValueKind::Count,
+                attempted: ResourceValue::Integer(geometry_segments),
+                pointer_field: None,
+                message: "embeddable label was omitted because its glyph outlines exceed the geometry limit",
+            })
+        } else if outline
+            .base_element_work_units
+            .saturating_add(total_work_units)
+            > request.resource_limits().max_element_work_units()
+        {
+            Some(ElementLocalCrossing {
+                code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
+                field: "max_element_work_units",
+                configured: ResourceValue::Integer(
+                    request.resource_limits().max_element_work_units(),
+                ),
+                value_kind: ValueKind::WorkUnits,
+                attempted: ResourceValue::Integer(
+                    outline
+                        .base_element_work_units
+                        .saturating_add(total_work_units),
+                ),
+                pointer_field: None,
+                message: "embeddable label was omitted because shaping exceeds its work limit",
+            })
+        } else {
+            None
+        };
+        if let Some(crossing) = local_crossing {
+            let diagnostic = crossing
+                .diagnostic(
+                    request.format(),
+                    Some(outline.source.id()),
+                    outline.source.pointer(),
+                )
+                .map_err(|_| {
+                    self.memory_failure(
+                        request,
+                        "compatibility_report",
+                        "embeddable_label_local_recovery",
+                    )
+                })?;
+            self.retain_diagnostic_with_owner(
+                request,
+                ResourcePhase::SharedSemanticResolution,
+                "embeddable_label_local_resource_recovery",
+                diagnostic,
+                DiagnosticOwnership {
+                    local_owner: Some(outline.source.id()),
+                    source_order: Some(outline.source_order),
+                    source_position: Some(0),
+                },
+            )?;
+            self.charge_local_omission(
+                request,
+                Some(outline.source.id()),
+                outline.source.pointer(),
+                "embeddable_label_local_omission",
+            )?;
+            outline.generated_label = None;
+            outline.generated_label_color = None;
+            return Ok(());
+        }
+        for codepoint in &label.missing_codepoints {
+            let diagnostic = official_missing_glyph_diagnostic(
+                request.format(),
+                outline.source.id(),
+                outline.source.pointer(),
+                *codepoint,
+            )
+            .map_err(|_| {
+                self.memory_failure(
+                    request,
+                    "compatibility_report",
+                    "embeddable_label_missing_glyph",
+                )
+            })?;
+            self.retain_diagnostic_with_owner(
+                request,
+                ResourcePhase::SharedSemanticResolution,
+                "embeddable_label_missing_glyph",
+                diagnostic,
+                DiagnosticOwnership {
+                    local_owner: Some(outline.source.id()),
+                    source_order: Some(outline.source_order),
+                    source_position: Some(u64::MAX),
+                },
+            )?;
+        }
+        self.transact(request, context, delta)?;
+        outline.base_element_work_units = outline
+            .base_element_work_units
+            .saturating_add(total_work_units);
         Ok(())
     }
 
@@ -3173,8 +3361,6 @@ fn resolve_frame_clips(
     clips.try_reserve_exact(1)?;
     clips.push(ResolvedClip {
         path: resolved_frame_outline(frame.width, frame.height)?,
-        width: frame.width,
-        height: frame.height,
         transform: ResolvedTransform {
             translation_x: frame.x - min_x + padding,
             translation_y: frame.y - min_y + padding,
@@ -3500,6 +3686,9 @@ impl ResolvedScene {
                             center_y: source.height / 2.0,
                         },
                         opacity: source.opacity / 100.0 * frame_opacity,
+                        link: source.link,
+                        width: source.width,
+                        height: source.height,
                     }));
                 }
                 continue;
@@ -3581,6 +3770,9 @@ impl ResolvedScene {
                     render: true,
                     base_element_work_units: 0,
                     container_source_order,
+                    link: source.link,
+                    width: source.width,
+                    height: source.height,
                 }));
                 continue;
             }
@@ -3608,6 +3800,70 @@ impl ResolvedScene {
             let source_index = source.source.source_index();
             match geometry {
                 GeneratedGeometry::Rough(drawing) => {
+                    let (generated_label, generated_label_color, generated_label_offset_y) =
+                        if request.format() == OutputFormat::Png
+                            && (source.width == 0.0 || source.height == 0.0)
+                        {
+                            (None, None, 0.0)
+                        } else if let NormalizedElementKind::Embeddable { label, .. } = &source.kind
+                        {
+                            let font_size = embeddable_font_size(source.width, label);
+                            let font_index = if let Some(index) = official_fonts
+                                .iter()
+                                .position(|font| font.matches_family(2))
+                            {
+                                index
+                            } else {
+                                official_fonts.try_reserve(1)?;
+                                official_fonts.push(text::OfficialFont::load(2, label).map_err(
+                                    |error| match error {
+                                        text::LabelError::Memory => ResolveSceneError::Memory,
+                                        text::LabelError::InvalidFont => {
+                                            ResolveSceneError::InvalidFallbackFont
+                                        }
+                                    },
+                                )?);
+                                official_fonts.len() - 1
+                            };
+                            let wrapped_label = official_fonts[font_index]
+                                .wrap_embeddable_label(label, font_size, source.width - 20.0)
+                                .map_err(|error| match error {
+                                    text::LabelError::Memory => ResolveSceneError::Memory,
+                                    text::LabelError::InvalidFont => {
+                                        ResolveSceneError::InvalidFallbackFont
+                                    }
+                                })?;
+                            let mut laid_out = official_fonts[font_index]
+                                .layout(
+                                    &wrapped_label,
+                                    text::TextLayout {
+                                        width: source.width,
+                                        font_size,
+                                        line_height: 1.15,
+                                        text_align: "center",
+                                    },
+                                )
+                                .map_err(|error| match error {
+                                    text::LabelError::Memory => ResolveSceneError::Memory,
+                                    text::LabelError::InvalidFont => {
+                                        ResolveSceneError::InvalidFallbackFont
+                                    }
+                                })?;
+                            laid_out.font_index = font_index;
+                            let line_count = laid_out.lines.len() as f64;
+                            let offset_y = (source.height - line_count * font_size * 1.15) / 2.0;
+                            let label_color =
+                                color::parse_css(if source.stroke_color == "transparent" {
+                                    "#000000"
+                                } else {
+                                    &source.stroke_color
+                                })
+                                .ok_or(ResolveSceneError::InvalidColor)?
+                                .for_mode(request.color_mode());
+                            (Some(laid_out), Some(label_color), offset_y)
+                        } else {
+                            (None, None, 0.0)
+                        };
                     elements.push(ResolvedElement::Outline(ResolvedOutline {
                         source_order: source.source_order,
                         source: source.source,
@@ -3632,6 +3888,7 @@ impl ResolvedScene {
                         },
                         source_stroke_width: source.stroke_width,
                         opacity: source.opacity / 100.0 * frame_opacity,
+                        element_opacity: source.opacity / 100.0,
                         background_color,
                         label_mask: bound_text_masks
                             .iter()
@@ -3642,6 +3899,13 @@ impl ResolvedScene {
                                 width: mask.width,
                                 height: mask.height,
                             }),
+                        width: source.width,
+                        height: source.height,
+                        generated_label,
+                        generated_label_color,
+                        generated_label_offset_y,
+                        final_pass: matches!(source.kind, NormalizedElementKind::Embeddable { .. }),
+                        link: source.link,
                     }));
                 }
                 GeneratedGeometry::Freedraw(freedraw) => {
@@ -3660,6 +3924,9 @@ impl ResolvedScene {
                             .map(|color| color.for_mode(request.color_mode())),
                         source_stroke_width: source.stroke_width,
                         opacity: source.opacity / 100.0 * frame_opacity,
+                        link: source.link,
+                        width: source.width,
+                        height: source.height,
                     }));
                 }
             }
@@ -3706,8 +3973,6 @@ impl ResolvedScene {
                     clips.try_reserve_exact(1)?;
                     clips.push(ResolvedClip {
                         path: resolved_frame_outline(frame.width, frame.height)?,
-                        width: frame.width,
-                        height: frame.height,
                         transform: ResolvedTransform {
                             translation_x: frame.x - min_x + request.padding(),
                             translation_y: frame.y - min_y + request.padding(),
@@ -3757,9 +4022,11 @@ impl ResolvedScene {
         } else {
             (None, None)
         };
-        let has_official_text = elements
-            .iter()
-            .any(|element| matches!(element, ResolvedElement::Text(_)));
+        let has_official_text = elements.iter().any(|element| match element {
+            ResolvedElement::Text(_) => true,
+            ResolvedElement::Outline(outline) => outline.generated_label.is_some(),
+            _ => false,
+        });
         let mut resolved_fonts = Vec::new();
         resolved_fonts.try_reserve_exact(official_fonts.len())?;
         for font in official_fonts {
@@ -3851,12 +4118,13 @@ impl ResolvedElement {
         }
     }
 
-    fn paint_order(&self) -> (u64, u8) {
+    fn paint_order(&self) -> (bool, u64, u8) {
         match self {
             Self::Text(text) => text
                 .container_source_order
-                .map_or((text.source_order, 0), |order| (order, 1)),
-            _ => (self.source_order(), 0),
+                .map_or((false, text.source_order, 0), |order| (false, order, 1)),
+            Self::Outline(outline) => (outline.final_pass, outline.source_order, 0),
+            _ => (false, self.source_order(), 0),
         }
     }
 }
@@ -3872,6 +4140,9 @@ struct ResolvedTextElement {
     render: bool,
     base_element_work_units: u64,
     container_source_order: Option<u64>,
+    link: Option<String>,
+    width: f64,
+    height: f64,
 }
 
 struct ResolvedOutline {
@@ -3887,8 +4158,16 @@ struct ResolvedOutline {
     stroke_style: StrokeStyle,
     source_stroke_width: f64,
     opacity: f64,
+    element_opacity: f64,
     background_color: CanonicalColor,
     label_mask: Option<ResolvedLabelMask>,
+    link: Option<String>,
+    width: f64,
+    height: f64,
+    generated_label: Option<text::ResolvedText>,
+    generated_label_color: Option<CanonicalColor>,
+    generated_label_offset_y: f64,
+    final_pass: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -3911,6 +4190,9 @@ struct ResolvedFreedraw {
     background_color: Option<CanonicalColor>,
     source_stroke_width: f64,
     opacity: f64,
+    link: Option<String>,
+    width: f64,
+    height: f64,
 }
 
 struct ResolvedFrame {
@@ -3922,6 +4204,9 @@ struct ResolvedFrame {
     frame_clips: Vec<ResolvedClip>,
     transform: ResolvedTransform,
     opacity: f64,
+    link: Option<String>,
+    width: f64,
+    height: f64,
 }
 
 fn resolved_frame_outline(width: f64, height: f64) -> Result<rough::Path, ResolveSceneError> {
@@ -3994,6 +4279,16 @@ struct FallbackColors {
     label: CanonicalColor,
 }
 
+fn embeddable_font_size(width: f64, label: &str) -> f64 {
+    let utf16_length = label.encode_utf16().count().max(1) as f64;
+    let raw = (width / 2.0).min(width / utf16_length).max(width / 30.0);
+    if raw == 0.0 {
+        20.0
+    } else {
+        raw
+    }
+}
+
 impl FallbackColors {
     fn for_mode(mode: crate::ColorMode) -> Self {
         Self {
@@ -4038,8 +4333,6 @@ struct SemanticFrameSource {
 
 struct ResolvedClip {
     path: rough::Path,
-    width: f64,
-    height: f64,
     transform: ResolvedTransform,
 }
 
@@ -4295,7 +4588,7 @@ fn rough_drawing(
         });
     let disable_multi_stroke = source.stroke_style != "solid";
     match &source.kind {
-        NormalizedElementKind::Rectangle => {
+        NormalizedElementKind::Rectangle | NormalizedElementKind::Embeddable { .. } => {
             let Some(roundness) = source.roundness else {
                 return rough::rectangle_drawing(
                     width,

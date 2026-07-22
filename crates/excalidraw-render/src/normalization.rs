@@ -60,6 +60,7 @@ pub(crate) enum NormalizedElementKind {
     Image(NormalizedImage),
     Frame(NormalizedFrame),
     MagicFrame(NormalizedFrame),
+    Embeddable { iframe: bool, label: String },
 }
 
 #[derive(Debug, PartialEq)]
@@ -664,9 +665,10 @@ fn normalize_scene_impl<E>(
                 | ElementKind::LegacyDraw
                 | ElementKind::Freedraw
                 | ElementKind::Arrow
+                | ElementKind::Iframe
+                | ElementKind::Embeddable
         ) && defaulted(source.group_ids, 0).is_some()
-            && !matches!(source.bound_elements, SourceField::Invalid)
-            && matches!(defaulted(source.link, None), Some(None));
+            && !matches!(source.bound_elements, SourceField::Invalid);
         pending.push(PendingElement {
             source_index: index,
             source,
@@ -1018,12 +1020,10 @@ fn normalize_scene_impl<E>(
             roughness: fields.roughness,
             opacity: fields.opacity,
             link: match source.link {
-                SourceField::Value(Some(link)) if crate::scene_surface::safe_link(link) => {
-                    Some(memory_at_source!(try_owned(link)))
+                SourceField::Value(Some(link)) => {
+                    memory_at_source!(crate::scene_surface::sanitized_link(link))
                 }
-                SourceField::Missing
-                | SourceField::Invalid
-                | SourceField::Value(None | Some(_)) => None,
+                SourceField::Missing | SourceField::Invalid | SourceField::Value(None) => None,
             },
             frame_id: match source.frame_id {
                 SourceField::Value(Some(frame_id)) if !frame_id.is_empty() => {
@@ -1241,6 +1241,7 @@ impl ElementKind {
             Self::Freedraw => "normalized_freedraw",
             Self::Image => "normalized_image",
             Self::Frame | Self::MagicFrame => "normalized_frame",
+            Self::Iframe | Self::Embeddable => "normalized_embeddable",
         }
     }
 
@@ -1253,6 +1254,7 @@ impl ElementKind {
             Self::Freedraw => 4,
             Self::Image => 3 + u64::from(participation.authoritative_file),
             Self::Frame | Self::MagicFrame => participation.frame_names as u64,
+            Self::Iframe | Self::Embeddable => 0,
         }
     }
 }
@@ -1265,6 +1267,13 @@ fn planned_kind_working_bytes(
         |value: Option<&str>| value.map_or(64, |value| owned_field_bytes(value.len()));
     match source.kind {
         ElementKind::Rectangle | ElementKind::Diamond | ElementKind::Ellipse => 0,
+        ElementKind::Iframe => owned_field_bytes("IFrame element".len()),
+        ElementKind::Embeddable => owned_field_bytes(match source.link {
+            SourceField::Value(Some(link)) => link.len(),
+            SourceField::Missing | SourceField::Invalid | SourceField::Value(None) => {
+                "Empty Web-Embed".len()
+            }
+        }),
         ElementKind::Text => {
             let text = match source.text {
                 SourceField::Value(text) => text,
@@ -1422,6 +1431,7 @@ fn kind_working_bytes(
         NormalizedElementKind::Rectangle
         | NormalizedElementKind::Diamond
         | NormalizedElementKind::Ellipse => 0,
+        NormalizedElementKind::Embeddable { label, .. } => owned_field_bytes(label.len()),
         NormalizedElementKind::Text(text) => {
             owned_field_bytes(text.text.len()).saturating_add(5 * 64)
         }
@@ -2199,6 +2209,26 @@ fn normalize_element_kind(
                         None
                     },
                 }),
+                fields.x,
+                fields.y,
+                fields.width,
+                fields.height,
+            ))
+        }
+        ElementKind::Iframe | ElementKind::Embeddable => {
+            let iframe = matches!(source.kind, ElementKind::Iframe);
+            let label = if iframe {
+                try_owned("IFrame element")?
+            } else {
+                match source.link {
+                    SourceField::Value(Some(link)) => try_owned(link)?,
+                    SourceField::Missing | SourceField::Invalid | SourceField::Value(None) => {
+                        try_owned("Empty Web-Embed")?
+                    }
+                }
+            };
+            Ok((
+                NormalizedElementKind::Embeddable { iframe, label },
                 fields.x,
                 fields.y,
                 fields.width,

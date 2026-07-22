@@ -229,7 +229,7 @@ pub(crate) fn classify(
                         element_id,
                         &pointer,
                         &label,
-                        fallback_link(members),
+                        fallback_link(members)?,
                         fallback_frame_id(members),
                         matches!(element_policy.kind, "frame" | "magicframe"),
                         bounds,
@@ -313,6 +313,33 @@ pub(crate) fn classify(
                 message,
             )?,
         });
+        if format != OutputFormat::Png
+            && diagnostics.len() < diagnostic_limit
+            && matches!(member_value(members, "link"), Some(JsonValue::String(link)) if !safe_link(link))
+        {
+            diagnostics.try_reserve(1)?;
+            diagnostics.push(SurfaceDiagnostic {
+                source_order,
+                source_position: u64::try_from(
+                    members
+                        .iter()
+                        .position(|member| &*member.key == "link")
+                        .unwrap_or(usize::MAX),
+                )
+                .unwrap_or(u64::MAX)
+                .saturating_mul(u64::from(u32::MAX) + 1),
+                local_owner: element_id.map(try_owned).transpose()?,
+                diagnostic: value_rule_diagnostic(
+                    DiagnosticCode::LINK_UNSAFE_OMITTED,
+                    format,
+                    &[DiagnosticEffect::Semantic],
+                    element_id,
+                    &pointer_child(&pointer, "link")?,
+                    Recovery::Omitted,
+                    "unsafe link was omitted by the revision-1 sanitizer",
+                )?,
+            });
+        }
         if let Some(bounds) = bounds {
             fallbacks.try_reserve(1)?;
             fallbacks.push(surface_fallback(
@@ -320,7 +347,7 @@ pub(crate) fn classify(
                 element_id,
                 &pointer,
                 &label,
-                fallback_link(members),
+                fallback_link(members)?,
                 fallback_frame_id(members),
                 false,
                 bounds,
@@ -810,17 +837,121 @@ fn field_participates(field: &SceneFieldPolicy, format: OutputFormat, frame_name
 }
 
 pub(crate) fn safe_link(link: &str) -> bool {
-    if link.is_empty() || link.chars().any(char::is_control) {
-        return false;
+    matches!(sanitized_link(link), Ok(Some(_)))
+}
+
+pub(crate) fn sanitized_link(link: &str) -> Result<Option<String>, TryReserveError> {
+    let decoded = decode_numeric_html_entities(link)?;
+    let mut sanitized = String::new();
+    sanitized.try_reserve_exact(decoded.len())?;
+    let mut index = 0;
+    while index < decoded.len() {
+        let remaining = &decoded[index..];
+        if remaining
+            .get(..9)
+            .is_some_and(|prefix| prefix.eq_ignore_ascii_case("&newline;"))
+        {
+            index += 9;
+            continue;
+        }
+        if remaining
+            .get(..5)
+            .is_some_and(|prefix| prefix.eq_ignore_ascii_case("&tab;"))
+        {
+            index += 5;
+            continue;
+        }
+        let Some(character) = remaining.chars().next() else {
+            break;
+        };
+        if !matches!(
+            u32::from(character),
+            0x0000..=0x001f | 0x007f..=0x009f | 0x2000..=0x200d | 0xfeff
+        ) {
+            sanitized.push(character);
+        }
+        index += character.len_utf8();
     }
-    let scheme_end = link.find(':');
-    let path_end = link.find(['/', '?', '#']).unwrap_or(link.len());
-    match scheme_end.filter(|scheme_end| *scheme_end < path_end) {
-        Some(scheme_end) => ["http", "https", "mailto"]
-            .iter()
-            .any(|allowed| link[..scheme_end].eq_ignore_ascii_case(allowed)),
-        None => true,
+    let sanitized = sanitized.trim();
+    if sanitized.is_empty() {
+        return Ok(None);
     }
+    if matches!(sanitized.as_bytes().first(), Some(b'.' | b'/')) {
+        return try_owned(sanitized).map(Some);
+    }
+    if sanitized.contains(':') || contains_ascii_case_insensitive(sanitized, b"&colon;") {
+        let protocol = sanitized.trim_start_matches(|character: char| {
+            !character.is_ascii_alphanumeric() && character != '_'
+        });
+        if starts_with_ascii_case_insensitive(protocol, b"javascript")
+            || starts_with_ascii_case_insensitive(protocol, b"data")
+            || starts_with_ascii_case_insensitive(protocol, b"vbscript")
+        {
+            return Ok(None);
+        }
+    }
+    try_owned(sanitized).map(Some)
+}
+
+fn decode_numeric_html_entities(link: &str) -> Result<String, TryReserveError> {
+    let mut decoded = String::new();
+    decoded.try_reserve_exact(link.len())?;
+    let mut remaining = link;
+    while let Some(start) = remaining.find("&#") {
+        decoded.push_str(&remaining[..start]);
+        let entity = &remaining[start + 2..];
+        let word_bytes = entity
+            .bytes()
+            .take_while(|byte| byte.is_ascii_alphanumeric() || *byte == b'_')
+            .count();
+        if word_bytes == 0 {
+            decoded.push_str("&#");
+            remaining = entity;
+            continue;
+        }
+        let token = &entity[..word_bytes];
+        let number = token
+            .strip_prefix("0x")
+            .or_else(|| token.strip_prefix("0X"))
+            .map_or_else(
+                || token.parse::<f64>().unwrap_or(f64::NAN),
+                |hex| {
+                    hex.bytes().fold(0.0, |value, digit| {
+                        value * 16.0
+                            + f64::from(match digit {
+                                b'0'..=b'9' => digit - b'0',
+                                b'a'..=b'f' => digit - b'a' + 10,
+                                b'A'..=b'F' => digit - b'A' + 10,
+                                _ => 0,
+                            })
+                    })
+                },
+            );
+        let value = if number.is_finite() {
+            number.trunc().rem_euclid(65_536.0) as u32
+        } else {
+            0
+        };
+        decoded.push(char::from_u32(value).unwrap_or('\0'));
+        let suffix = usize::from(entity.as_bytes().get(word_bytes) == Some(&b';'));
+        remaining = &entity[word_bytes + suffix..];
+    }
+    decoded.push_str(remaining);
+    Ok(decoded)
+}
+
+fn starts_with_ascii_case_insensitive(value: &str, prefix: &[u8]) -> bool {
+    value
+        .as_bytes()
+        .get(..prefix.len())
+        .is_some_and(|candidate| candidate.eq_ignore_ascii_case(prefix))
+}
+
+fn contains_ascii_case_insensitive(value: &str, needle: &[u8]) -> bool {
+    value
+        .as_bytes()
+        .windows(needle.len())
+        .any(|candidate| candidate.eq_ignore_ascii_case(needle))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1351,7 +1482,7 @@ fn surface_fallback(
     element_id: Option<&str>,
     json_pointer: &str,
     label: &str,
-    link: Option<&str>,
+    link: Option<String>,
     frame_id: Option<&str>,
     is_frame: bool,
     bounds: RecoverableBounds,
@@ -1361,7 +1492,7 @@ fn surface_fallback(
         element_id: element_id.map(try_owned).transpose()?,
         json_pointer: try_owned(json_pointer)?,
         label: try_owned(label)?,
-        link: link.map(try_owned).transpose()?,
+        link,
         frame_id: frame_id.map(try_owned).transpose()?,
         is_frame,
         x: bounds.x,
@@ -1374,10 +1505,10 @@ fn surface_fallback(
     })
 }
 
-fn fallback_link(members: &[JsonMember]) -> Option<&str> {
+fn fallback_link(members: &[JsonMember]) -> Result<Option<String>, TryReserveError> {
     match member_value(members, "link") {
-        Some(JsonValue::String(link)) if safe_link(link) => Some(link),
-        _ => None,
+        Some(JsonValue::String(link)) => sanitized_link(link),
+        _ => Ok(None),
     }
 }
 

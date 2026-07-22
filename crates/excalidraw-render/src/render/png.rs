@@ -31,6 +31,9 @@ enum PngElement {
         opacity: f64,
         background_color: CanonicalColor,
         label_mask: Option<PngLabelMask>,
+        generated_label: Option<super::text::ResolvedText>,
+        generated_label_color: Option<CanonicalColor>,
+        generated_label_offset_y: f64,
         base_element_work_units: u64,
         render: bool,
     },
@@ -249,6 +252,9 @@ impl PngPlan {
                             width: mask.width * scale,
                             height: mask.height * scale,
                         }),
+                        generated_label: outline.generated_label,
+                        generated_label_color: outline.generated_label_color,
+                        generated_label_offset_y: outline.generated_label_offset_y,
                         base_element_work_units: outline.base_element_work_units,
                         render: true,
                     });
@@ -391,6 +397,9 @@ impl PngPlan {
                         opacity,
                         background_color,
                         label_mask: _,
+                        generated_label,
+                        generated_label_color,
+                        generated_label_offset_y,
                         render,
                         ..
                     } => {
@@ -402,7 +411,8 @@ impl PngPlan {
                                 "PNG plan outline lost its source identity".to_owned(),
                             ));
                         }
-                        let transform = transform.raster_transform(SUBPIXEL_SCALE)?;
+                        let element_transform = *transform;
+                        let transform = element_transform.raster_transform(SUBPIXEL_SCALE)?;
                         paint_rough_drawing(
                             &mut surface,
                             drawing,
@@ -435,6 +445,23 @@ impl PngPlan {
                                 *opacity,
                                 paint_mask,
                             )?;
+                        }
+                        if let (Some(label), Some(color)) = (generated_label, generated_label_color)
+                        {
+                            let paint = solid_paint(*color, 1.0)?;
+                            let label_transform = element_transform
+                                .with_local_offset(0.0, *generated_label_offset_y)
+                                .raster_transform(SUBPIXEL_SCALE)?;
+                            for line in &label.lines {
+                                let path = label_path(&line.path)?;
+                                surface.fill_path(
+                                    &path,
+                                    &paint,
+                                    FillRule::Winding,
+                                    label_transform,
+                                    paint_mask,
+                                );
+                            }
                         }
                     }
                     PngElement::Freedraw {

@@ -291,6 +291,188 @@ fn compatibility_placeholder_preserves_safe_links_only_in_semantic_formats() {
 }
 
 #[test]
+fn pinned_link_sanitizer_preserves_its_safe_canonical_value_and_omits_active_actions() {
+    for (link, expected) in [
+        (
+            "  https://example.com/a\\tb  ",
+            Some("https://example.com/ab"),
+        ),
+        ("../relative/path", Some("../relative/path")),
+        ("ftp://example.com/file", Some("ftp://example.com/file")),
+        ("ééééé:https", Some("ééééé:https")),
+        ("java&#115;cript:alert(1)", None),
+        ("java&#4294967411;cript:alert(1)", None),
+        ("java&#0000000000000000000000115;cript:alert(1)", None),
+        ("data:text/html,unsafe", None),
+        ("vbscript:unsafe", None),
+    ] {
+        let source = format!(
+            r#"{{"type":"excalidraw","version":2,"elements":[{{"id":"linked","type":"future","x":0,"y":0,"width":200,"height":60,"link":"{link}","updated":1}}],"appState":{{}},"files":{{}}}}"#
+        );
+        let scene = SceneDocument::parse(source.as_bytes()).expect("link case is admitted");
+        let outcome = render(&scene, OutputFormat::Svg);
+        let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+
+        match expected {
+            Some(expected) => {
+                assert!(svg.contains(&format!("<a href=\"{expected}\">")), "{link}");
+                assert!(!outcome
+                    .report()
+                    .diagnostics()
+                    .iter()
+                    .any(|diagnostic| diagnostic.code() == DiagnosticCode::LINK_UNSAFE_OMITTED));
+            }
+            None => {
+                assert!(!svg.contains("<a href="), "{link}");
+                assert!(
+                    outcome
+                        .report()
+                        .diagnostics()
+                        .iter()
+                        .any(|diagnostic| diagnostic.code() == DiagnosticCode::LINK_UNSAFE_OMITTED),
+                    "{link}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn supported_linked_elements_keep_navigation_in_semantic_formats() {
+    let scene = SceneDocument::parse(
+        br##"{"type":"excalidraw","version":2,"elements":[{"id":"rectangle","type":"rectangle","x":0,"y":0,"width":120,"height":60,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"strokeStyle":"solid","roundness":null,"roughness":1,"opacity":100,"seed":1,"isDeleted":false,"groupIds":[],"frameId":null,"boundElements":[],"link":"/docs","version":1,"versionNonce":0,"updated":1,"locked":false}],"appState":{},"files":{}}"##,
+    )
+    .expect("linked rectangle is admitted");
+
+    let svg = render(&scene, OutputFormat::Svg);
+    assert!(!svg.report().diagnostics().iter().any(|diagnostic| {
+        diagnostic.code() == DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
+    }));
+    let svg_bytes = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg_bytes.contains("<a href=\"/docs\">"));
+
+    let pdf = render(&scene, OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    assert!(pdf.contains("/Subtype /Link"));
+    assert!(pdf.contains("/URI (http://reference.invalid/docs)"));
+}
+
+#[test]
+fn pdf_link_annotations_are_ordered_from_topmost_to_bottommost() {
+    let scene = SceneDocument::parse(
+        br##"{"type":"excalidraw","version":2,"elements":[{"id":"bottom","type":"rectangle","x":0,"y":0,"width":120,"height":60,"strokeColor":"#1e1e1e","link":"https://example.com/bottom","seed":1,"updated":1},{"id":"top","type":"rectangle","x":10,"y":10,"width":120,"height":60,"strokeColor":"#1e1e1e","link":"https://example.com/top","seed":2,"updated":2}],"appState":{},"files":{}}"##,
+    )
+    .expect("overlapping links are admitted");
+
+    let pdf = render(&scene, OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let top = pdf.find("/URI (https://example.com/top)").unwrap();
+    let bottom = pdf.find("/URI (https://example.com/bottom)").unwrap();
+    assert!(top < bottom);
+}
+
+#[test]
+fn iframe_and_embeddable_render_the_official_offline_shell_in_the_final_pass() {
+    let scene = SceneDocument::parse(
+        br##"{
+            "type":"excalidraw","version":2,
+            "elements":[
+                {"id":"iframe","type":"iframe","x":0,"y":0,"width":240,"height":100,"strokeColor":"transparent","backgroundColor":"transparent","seed":1,"updated":1},
+                {"id":"after","type":"rectangle","x":300,"y":0,"width":40,"height":40,"strokeColor":"#ff0000","seed":2,"updated":2},
+                {"id":"embed","type":"embeddable","x":0,"y":140,"width":240,"height":100,"strokeColor":"#1e1e1e","backgroundColor":"#a5d8ff","link":"https://example.com/embed","seed":3,"updated":3}
+            ],
+            "appState":{},"files":{}
+        }"##,
+    )
+    .expect("offline embeddables are admitted");
+
+    let outcome = render(&scene, OutputFormat::Svg);
+    assert!(!outcome.report().diagnostics().iter().any(|diagnostic| {
+        diagnostic.code() == DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
+    }));
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("data-source-text=\"IFrame element\""));
+    assert!(svg.contains("data-source-text=\"https://example.com/embed\""));
+    assert!(svg.contains("fill=\"#d3d3d3\""));
+    assert!(svg.contains("fill=\"#a5d8ff\""));
+    assert!(
+        svg.rfind("data-source-text=\"IFrame element\"").unwrap() > svg.find("#ff0000").unwrap()
+    );
+    assert!(svg.contains("<a href=\"https://example.com/embed\">"));
+    assert!(svg.contains("Liberation Sans"));
+
+    let png = render(&scene, OutputFormat::Png);
+    let (_, _, rgba) = decode_png(png.artifact().bytes());
+    assert!(rgba
+        .chunks_exact(4)
+        .any(|pixel| pixel[..3] == [0xd3, 0xd3, 0xd3]));
+    assert!(!png
+        .artifact()
+        .bytes()
+        .windows(8)
+        .any(|bytes| bytes == b"https://"));
+
+    let pdf = render(&scene, OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    assert!(pdf.contains("/Subtype /Link"));
+    assert!(pdf.contains("/URI (https://example.com/embed)"));
+    assert!(pdf.contains("/ActualText <FEFF"));
+}
+
+#[test]
+fn unsupported_embeddable_values_use_field_recovery_without_replacing_the_shell() {
+    let scene = SceneDocument::parse(
+        br##"{"type":"excalidraw","version":2,"elements":[{"id":"embed","type":"embeddable","x":0,"y":0,"width":200,"height":80,"strokeColor":"#1e1e1e","backgroundColor":"#a5d8ff","strokeWidth":0,"seed":1,"updated":1}],"appState":{},"files":{}}"##,
+    )
+    .expect("embeddable with a recoverable field value is admitted");
+
+    let outcome = render(&scene, OutputFormat::Svg);
+    assert!(outcome.report().diagnostics().iter().any(|diagnostic| {
+        diagnostic.code() == DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE
+            && diagnostic.json_pointer() == "/elements/0/strokeWidth"
+    }));
+    assert!(!outcome.report().diagnostics().iter().any(|diagnostic| {
+        diagnostic.code() == DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
+    }));
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("data-source-text=\"Empty Web-Embed\""));
+    assert!(svg.contains("fill=\"#a5d8ff\""));
+}
+
+#[test]
+fn unsafe_embeddable_navigation_is_omitted_without_hiding_its_source_label() {
+    let link = "javascript:alert(1)";
+    let source = format!(
+        r##"{{"type":"excalidraw","version":2,"elements":[{{"id":"embed","type":"embeddable","x":0,"y":0,"width":200,"height":80,"strokeColor":"#1e1e1e","backgroundColor":"#a5d8ff","link":"{link}","seed":1,"updated":1}}],"appState":{{}},"files":{{}}}}"##
+    );
+    let scene = SceneDocument::parse(source.as_bytes()).expect("unsafe embeddable is admitted");
+
+    let outcome = render(&scene, OutputFormat::Svg);
+    assert!(outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .any(|diagnostic| diagnostic.code() == DiagnosticCode::LINK_UNSAFE_OMITTED));
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("data-source-text=\"javascript:alert(1)\""));
+    assert!(!svg.contains("<a href="));
+}
+
+#[test]
+fn long_embeddable_links_wrap_within_the_offline_label_width() {
+    let link = "https://example.com/this-is-a-deliberately-long-embeddable-link";
+    let source = format!(
+        r##"{{"type":"excalidraw","version":2,"elements":[{{"id":"embed","type":"embeddable","x":0,"y":0,"width":120,"height":100,"strokeColor":"#1e1e1e","backgroundColor":"#a5d8ff","link":"{link}","seed":1,"updated":1}}],"appState":{{}},"files":{{}}}}"##
+    );
+    let scene =
+        SceneDocument::parse(source.as_bytes()).expect("long linked embeddable is admitted");
+
+    let outcome = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.matches("<tspan ").count() > 1);
+}
+
+#[test]
 fn compatibility_placeholder_omits_components_that_do_not_fit_source_bounds() {
     let scene = SceneDocument::parse(
         br#"{
