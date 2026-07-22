@@ -65,6 +65,7 @@ enum PdfElement {
         source_stroke_width: f64,
         opacity: f64,
         background_color: CanonicalColor,
+        label_mask: Option<super::ResolvedLabelMask>,
     },
     Freedraw {
         source: NormalizedElementSource,
@@ -149,6 +150,7 @@ impl PdfPlan {
                         source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
                         background_color: outline.background_color,
+                        label_mask: outline.label_mask,
                     });
                 }
                 ResolvedElement::Freedraw(freedraw) => {
@@ -1052,6 +1054,7 @@ impl PdfPlan {
                     source_stroke_width,
                     opacity,
                     background_color,
+                    label_mask,
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -1072,6 +1075,29 @@ impl PdfPlan {
                     content.push_str("q\n");
                     for frame_clip in frame_clips {
                         push_transformed_clip(&mut content, frame_clip)?;
+                    }
+                    if let Some(mask) = label_mask {
+                        content.push_str("0 0 ");
+                        push_pdf_number(
+                            &mut content,
+                            self.logical_width,
+                            "PDF arrow mask outer width",
+                        )?;
+                        content.push(' ');
+                        push_pdf_number(
+                            &mut content,
+                            self.logical_height,
+                            "PDF arrow mask outer height",
+                        )?;
+                        content.push_str(" re\n");
+                        push_pdf_number(&mut content, mask.x, "PDF arrow label mask x")?;
+                        content.push(' ');
+                        push_pdf_number(&mut content, mask.y, "PDF arrow label mask y")?;
+                        content.push(' ');
+                        push_pdf_number(&mut content, mask.width, "PDF arrow label mask width")?;
+                        content.push(' ');
+                        push_pdf_number(&mut content, mask.height, "PDF arrow label mask height")?;
+                        content.push_str(" re\nW*\nn\n");
                     }
                     push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
                     if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {

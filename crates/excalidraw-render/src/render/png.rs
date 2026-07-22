@@ -30,6 +30,7 @@ enum PngElement {
         source_stroke_width: f64,
         opacity: f64,
         background_color: CanonicalColor,
+        label_mask: Option<PngLabelMask>,
         base_element_work_units: u64,
         render: bool,
     },
@@ -84,6 +85,14 @@ struct PngFrameClip {
     transform: PngTransform,
 }
 
+#[derive(Clone, Copy)]
+struct PngLabelMask {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
+
 fn project_frame_clips(
     clips: Vec<super::ResolvedClip>,
     scale: f64,
@@ -112,6 +121,13 @@ impl PngElement {
             | Self::Frame { frame_clips, .. }
             | Self::Text { frame_clips, .. } => frame_clips,
             Self::Fallback { .. } => &[],
+        }
+    }
+
+    fn label_mask(&self) -> Option<PngLabelMask> {
+        match self {
+            Self::RoughOutline { label_mask, .. } => *label_mask,
+            _ => None,
         }
     }
 }
@@ -227,6 +243,12 @@ impl PngPlan {
                         source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
                         background_color: outline.background_color,
+                        label_mask: outline.label_mask.map(|mask| PngLabelMask {
+                            x: mask.x * scale,
+                            y: mask.y * scale,
+                            width: mask.width * scale,
+                            height: mask.height * scale,
+                        }),
                         base_element_work_units: outline.base_element_work_units,
                         render: true,
                     });
@@ -347,13 +369,14 @@ impl PngPlan {
                 surface.fill(Color::from_rgba8(red, green, blue, alpha));
             }
             for element in &self.elements {
-                let frame_mask = png_frame_mask(
+                let paint_mask = png_paint_mask(
                     raster_width,
                     raster_height,
                     element.frame_clips(),
+                    element.label_mask(),
                     SUBPIXEL_SCALE,
                 )?;
-                let frame_mask = frame_mask.as_ref();
+                let paint_mask = paint_mask.as_ref();
                 match element {
                     PngElement::RoughOutline {
                         source,
@@ -367,6 +390,7 @@ impl PngPlan {
                         source_stroke_width,
                         opacity,
                         background_color,
+                        label_mask: _,
                         render,
                         ..
                     } => {
@@ -389,7 +413,7 @@ impl PngPlan {
                             *stroke_style,
                             *source_stroke_width,
                             *opacity,
-                            frame_mask,
+                            paint_mask,
                         )?;
                         for decoration in &drawing.decorations {
                             let fill = super::decoration_fill_color(
@@ -409,7 +433,7 @@ impl PngPlan {
                                 decoration_style,
                                 decoration_stroke_width,
                                 *opacity,
-                                frame_mask,
+                                paint_mask,
                             )?;
                         }
                     }
@@ -446,7 +470,7 @@ impl PngPlan {
                                     &paint,
                                     FillRule::EvenOdd,
                                     raster_transform,
-                                    frame_mask,
+                                    paint_mask,
                                 ),
                                 FillKind::Sketch => {
                                     let stroke = Stroke {
@@ -464,7 +488,7 @@ impl PngPlan {
                                         &paint,
                                         &stroke,
                                         raster_transform,
-                                        frame_mask,
+                                        paint_mask,
                                     );
                                 }
                             }
@@ -479,7 +503,7 @@ impl PngPlan {
                             &paint,
                             FillRule::Winding,
                             raster_transform,
-                            frame_mask,
+                            paint_mask,
                         );
                     }
                     PngElement::Frame {
@@ -520,7 +544,7 @@ impl PngPlan {
                                 &paint,
                                 &stroke,
                                 transform.raster_transform(SUBPIXEL_SCALE)?,
-                                frame_mask,
+                                paint_mask,
                             );
                         }
                         if let Some(name) = name {
@@ -538,7 +562,7 @@ impl PngPlan {
                                 transform
                                     .with_local_offset(0.0, -24.0)
                                     .raster_transform(SUBPIXEL_SCALE)?,
-                                frame_mask,
+                                paint_mask,
                             );
                         }
                     }
@@ -569,7 +593,7 @@ impl PngPlan {
                                 &paint,
                                 FillRule::Winding,
                                 raster_transform,
-                                frame_mask,
+                                paint_mask,
                             );
                         }
                     }
@@ -837,10 +861,16 @@ impl PngPlan {
         })
     }
 
-    pub(super) fn frame_mask_surface_area(&self, index: usize) -> Option<Option<u64>> {
+    pub(super) fn paint_mask_surface_area(&self, index: usize) -> Option<Option<u64>> {
         self.elements.get(index).map(|element| match element {
-            PngElement::RoughOutline { frame_clips, .. }
-            | PngElement::Freedraw { frame_clips, .. }
+            PngElement::RoughOutline {
+                frame_clips,
+                label_mask,
+                ..
+            } if !frame_clips.is_empty() || label_mask.is_some() => {
+                Some(u64::from(self.width).saturating_mul(u64::from(self.height)))
+            }
+            PngElement::Freedraw { frame_clips, .. }
             | PngElement::Frame { frame_clips, .. }
             | PngElement::Text { frame_clips, .. }
                 if !frame_clips.is_empty() =>
@@ -851,21 +881,21 @@ impl PngPlan {
         })
     }
 
-    pub(super) fn has_frame_masks(&self) -> bool {
+    pub(super) fn has_paint_masks(&self) -> bool {
         self.elements.iter().any(|element| {
-            matches!(
-                element,
-                PngElement::RoughOutline { frame_clips, .. }
-                    | PngElement::Freedraw { frame_clips, .. }
+            matches!(element, PngElement::RoughOutline { frame_clips, label_mask, .. } if !frame_clips.is_empty() || label_mask.is_some())
+                || matches!(
+                    element,
+                    PngElement::Freedraw { frame_clips, .. }
                     | PngElement::Frame { frame_clips, .. }
                     | PngElement::Text { frame_clips, .. }
                     if !frame_clips.is_empty()
-            )
+                )
         })
     }
 
-    pub(super) fn maximum_frame_mask_surface_area(&self) -> u64 {
-        if self.has_frame_masks() {
+    pub(super) fn maximum_paint_mask_surface_area(&self) -> u64 {
+        if self.has_paint_masks() {
             u64::from(self.width).saturating_mul(u64::from(self.height))
         } else {
             0
@@ -1317,13 +1347,14 @@ fn paint_rough_drawing(
     Ok(())
 }
 
-fn png_frame_mask(
+fn png_paint_mask(
     width: u32,
     height: u32,
     clips: &[PngFrameClip],
+    label_mask: Option<PngLabelMask>,
     multiplier: u32,
 ) -> Result<Option<Mask>, FormatEncodeError> {
-    if clips.is_empty() {
+    if clips.is_empty() && label_mask.is_none() {
         return Ok(None);
     }
     let mask_bytes = usize::try_from(width)
@@ -1337,6 +1368,29 @@ fn png_frame_mask(
             subject: "png_frame_clip",
         })?;
     data.resize(mask_bytes, 255);
+    if let Some(label) = label_mask {
+        let multiplier = f64::from(multiplier);
+        let left = (label.x * multiplier).floor().max(0.0) as u32;
+        let top = (label.y * multiplier).floor().max(0.0) as u32;
+        let right = ((label.x + label.width) * multiplier)
+            .ceil()
+            .clamp(0.0, f64::from(width)) as u32;
+        let bottom = ((label.y + label.height) * multiplier)
+            .ceil()
+            .clamp(0.0, f64::from(height)) as u32;
+        for y in top.min(height)..bottom {
+            let row = usize::try_from(y)
+                .ok()
+                .and_then(|value| value.checked_mul(usize::try_from(width).ok()?))
+                .ok_or_else(png_size_error)?;
+            for x in left.min(width)..right {
+                let index = row
+                    .checked_add(usize::try_from(x).map_err(|_| png_size_error())?)
+                    .ok_or_else(png_size_error)?;
+                data[index] = 0;
+            }
+        }
+    }
     let size = IntSize::from_wh(width, height).ok_or_else(png_size_error)?;
     let mut mask = Mask::from_vec(data, size).ok_or_else(|| {
         FormatEncodeError::Encoding("PNG frame clip dimensions are invalid".to_owned())

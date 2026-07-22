@@ -948,17 +948,17 @@ impl RenderSession {
                 )
                 .with_record(ResourceRecordKind::RasterColorSurface);
                 self.acquire_working(request, surface, surface_bytes)?;
-                let frame_mask_bytes = plan
-                    .maximum_frame_mask_surface_area()
-                    .saturating_add(u64::from(plan.has_frame_masks()) * 256);
-                let frame_mask_surface = ResourceContext::new(
+                let paint_mask_bytes = plan
+                    .maximum_paint_mask_surface_area()
+                    .saturating_add(u64::from(plan.has_paint_masks()) * 256);
+                let paint_mask_surface = ResourceContext::new(
                     ResourcePhase::ProjectionAndFallback,
                     "frame_clip_mask_surface",
                     "",
                 )
                 .with_record(ResourceRecordKind::RasterMaskSurface);
-                if frame_mask_bytes != 0 {
-                    self.acquire_working(request, frame_mask_surface, frame_mask_bytes)?;
+                if paint_mask_bytes != 0 {
+                    self.acquire_working(request, paint_mask_surface, paint_mask_bytes)?;
                 }
 
                 let raster_work = if plan.includes_background() {
@@ -985,10 +985,10 @@ impl RenderSession {
                         )
                     })?;
                     if let Some(mask_pixels) =
-                        plan.frame_mask_surface_area(index).ok_or_else(|| {
+                        plan.paint_mask_surface_area(index).ok_or_else(|| {
                             self.internal_failure(
                                 request.format(),
-                                "PNG frame mask source is missing",
+                                "PNG paint mask source is missing",
                                 "/elements",
                             )
                         })?
@@ -1011,7 +1011,7 @@ impl RenderSession {
                             self.transact(request, mask_context, mask_delta)?;
                             return Err(self.internal_failure(
                                 request.format(),
-                                "fatal frame mask preflight committed unexpectedly",
+                                "fatal paint mask preflight committed unexpectedly",
                                 "/elements",
                             ));
                         }
@@ -1023,7 +1023,7 @@ impl RenderSession {
                                 value_kind: ValueKind::Pixels,
                                 attempted: ResourceValue::Integer(mask_pixels),
                                 pointer_field: None,
-                                message: "framed element omitted because its clip mask exceeds its raster surface limit",
+                                message: "masked element omitted because its paint mask exceeds its raster surface limit",
                             }
                             .diagnostic(request.format(), element_id, json_pointer)
                             .map_err(|_| {
@@ -1048,7 +1048,7 @@ impl RenderSession {
                             if !plan.omit_element(index) {
                                 return Err(self.internal_failure(
                                     request.format(),
-                                    "PNG omitted framed operation is missing",
+                                    "PNG omitted masked operation is missing",
                                     "/elements",
                                 ));
                             }
@@ -1234,8 +1234,8 @@ impl RenderSession {
                     rgba_bytes,
                     || plan.encode(),
                 )?;
-                if frame_mask_bytes != 0 {
-                    self.release_working(request, frame_mask_surface, frame_mask_bytes)?;
+                if paint_mask_bytes != 0 {
+                    self.release_working(request, paint_mask_surface, paint_mask_bytes)?;
                 }
                 self.release_working(request, workspace, workspace_bytes)?;
                 self.release_working(request, surface, surface_bytes)?;
@@ -2809,12 +2809,24 @@ fn relationship_frame_target(
     source_index: usize,
     relationships: &crate::relationships::ResolvedRelationshipGraph,
 ) -> Option<usize> {
+    relationship_element_target(
+        source_index,
+        crate::relationships::RelationshipKind::Frame,
+        relationships,
+    )
+}
+
+fn relationship_element_target(
+    source_index: usize,
+    kind: crate::relationships::RelationshipKind,
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+) -> Option<usize> {
     let node_index = relationships
         .nodes
         .iter()
         .position(|node| node.source_index == source_index)?;
     relationships.edges.iter().find_map(|edge| {
-        if edge.source != node_index || edge.kind != crate::relationships::RelationshipKind::Frame {
+        if edge.source != node_index || edge.kind != kind {
             return None;
         }
         let crate::relationships::RelationshipTarget::Element(target) = edge.target else {
@@ -2825,6 +2837,315 @@ fn relationship_frame_target(
             .get(target)
             .map(|node| node.source_index)
     })
+}
+
+#[derive(Clone, Copy)]
+struct BoundTextPlacement {
+    source_index: usize,
+    x: f64,
+    y: f64,
+    angle: f64,
+}
+
+#[derive(Clone, Copy)]
+struct BoundTextMaskSource {
+    container_source_index: usize,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+}
+
+fn resolve_bound_text_placements(
+    outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+) -> Result<Vec<BoundTextPlacement>, ResolveSceneError> {
+    let mut placements = Vec::new();
+    placements.try_reserve(outlines.len())?;
+    for (text, _) in outlines {
+        let NormalizedElementKind::Text(text_source) = &text.kind else {
+            continue;
+        };
+        let Some(container_index) = relationship_element_target(
+            text.source.source_index(),
+            crate::relationships::RelationshipKind::Binding,
+            relationships,
+        ) else {
+            continue;
+        };
+        let Some((container, geometry)) = outlines
+            .iter()
+            .find(|(candidate, _)| candidate.source.source_index() == container_index)
+        else {
+            continue;
+        };
+        let (x, y, angle) = match &container.kind {
+            NormalizedElementKind::Rectangle
+            | NormalizedElementKind::Diamond
+            | NormalizedElementKind::Ellipse => {
+                let [box_x, box_y, box_width, box_height] =
+                    bound_text_box(container).ok_or(ResolveSceneError::UnboundedGeometry)?;
+                let x = match text_source.text_align.as_str() {
+                    "center" => box_x + (box_width - text.width) / 2.0,
+                    "right" => box_x + box_width - text.width,
+                    _ => box_x,
+                };
+                let y = match text_source.vertical_align.as_str() {
+                    "middle" => box_y + (box_height - text.height) / 2.0,
+                    "bottom" => box_y + box_height - text.height,
+                    _ => box_y,
+                };
+                (x, y, container.angle)
+            }
+            NormalizedElementKind::Linear(linear)
+                if linear.kind == crate::normalization::NormalizedLinearKind::Arrow =>
+            {
+                let Some(midpoint) = linear_midpoint(container, linear, geometry.as_ref()) else {
+                    continue;
+                };
+                let (min_x, min_y, max_x, max_y) = geometry.as_ref().map_or_else(
+                    || source_layout_bounds(container),
+                    |geometry| geometry.bounds(container),
+                );
+                let center_x = (min_x + max_x) / 2.0;
+                let center_y = (min_y + max_y) / 2.0;
+                let delta_x = midpoint[0] - center_x;
+                let delta_y = midpoint[1] - center_y;
+                let sin = container.angle.sin();
+                let cos = container.angle.cos();
+                let global_x = container.x + center_x + delta_x * cos - delta_y * sin;
+                let global_y = container.y + center_y + delta_x * sin + delta_y * cos;
+                (
+                    global_x - text.width / 2.0,
+                    global_y - text.height / 2.0,
+                    text.angle,
+                )
+            }
+            _ => continue,
+        };
+        placements.push(BoundTextPlacement {
+            source_index: text.source.source_index(),
+            x,
+            y,
+            angle,
+        });
+    }
+    Ok(placements)
+}
+
+fn bound_text_box(container: &NormalizedElement) -> Option<[f64; 4]> {
+    const PADDING: f64 = 5.0;
+    let (offset_x, offset_y, width, height) = match container.kind {
+        NormalizedElementKind::Rectangle => (
+            PADDING,
+            PADDING,
+            container.width - PADDING * 2.0,
+            container.height - PADDING * 2.0,
+        ),
+        NormalizedElementKind::Ellipse => {
+            let inset_x = container.width / 2.0 * (1.0 - std::f64::consts::FRAC_1_SQRT_2);
+            let inset_y = container.height / 2.0 * (1.0 - std::f64::consts::FRAC_1_SQRT_2);
+            (
+                PADDING + inset_x,
+                PADDING + inset_y,
+                (container.width / 2.0 * std::f64::consts::SQRT_2).round() - PADDING * 2.0,
+                (container.height / 2.0 * std::f64::consts::SQRT_2).round() - PADDING * 2.0,
+            )
+        }
+        NormalizedElementKind::Diamond => (
+            PADDING + container.width / 4.0,
+            PADDING + container.height / 4.0,
+            (container.width / 2.0).round() - PADDING * 2.0,
+            (container.height / 2.0).round() - PADDING * 2.0,
+        ),
+        _ => return None,
+    };
+    let values = [
+        container.x + offset_x,
+        container.y + offset_y,
+        width.max(0.0),
+        height.max(0.0),
+    ];
+    values
+        .iter()
+        .all(|value| value.is_finite())
+        .then_some(values)
+}
+
+fn linear_midpoint(
+    source: &NormalizedElement,
+    linear: &crate::normalization::NormalizedLinear,
+    geometry: Option<&GeneratedGeometry>,
+) -> Option<[f64; 2]> {
+    let points = &linear.points;
+    if points.is_empty() {
+        return None;
+    }
+    if points.len() % 2 == 1 {
+        return points.get(points.len() / 2).copied();
+    }
+    let right = points.len() / 2;
+    let left_point = points.get(right.checked_sub(1)?)?;
+    let right_point = points.get(right)?;
+    if points.len() > 2 && source.roundness.is_some() {
+        if let Some(GeneratedGeometry::Rough(drawing)) = geometry {
+            if let Some(midpoint) = rough_segment_midpoint(&drawing.outline, *right_point) {
+                return Some(midpoint);
+            }
+        }
+    }
+    Some([
+        (left_point[0] + right_point[0]) / 2.0,
+        (left_point[1] + right_point[1]) / 2.0,
+    ])
+}
+
+fn rough_segment_midpoint(path: &rough::Path, target: [f64; 2]) -> Option<[f64; 2]> {
+    let mut current = None;
+    let mut closest = None;
+    let mut closest_distance = f64::INFINITY;
+    for operation in &path.operations {
+        match *operation {
+            rough::PathOperation::Move(point) | rough::PathOperation::Line(point) => {
+                current = Some(point);
+            }
+            rough::PathOperation::Cubic {
+                control_1,
+                control_2,
+                end,
+            } => {
+                let start = current?;
+                let distance = (end.x - target[0]).hypot(end.y - target[1]);
+                if distance < closest_distance {
+                    closest_distance = distance;
+                    closest = Some((start, control_1, control_2, end));
+                }
+                current = Some(end);
+            }
+        }
+    }
+    let (start, control_1, control_2, end) = closest?;
+    let mut samples = [[0.0; 2]; 21];
+    for (index, sample) in samples.iter_mut().enumerate() {
+        let t = 1.0 - index as f64 * 0.05;
+        *sample = cubic_point(start, control_1, control_2, end, t);
+    }
+    let mut lengths = [0.0; 21];
+    for index in 1..samples.len() {
+        lengths[index] = lengths[index - 1]
+            + (samples[index][0] - samples[index - 1][0])
+                .hypot(samples[index][1] - samples[index - 1][1]);
+    }
+    let target_length = lengths[20] / 2.0;
+    let upper = lengths
+        .partition_point(|length| *length < target_length)
+        .min(20);
+    let lower = upper.saturating_sub(1);
+    let span = lengths[upper] - lengths[lower];
+    let fraction = if span == 0.0 {
+        0.0
+    } else {
+        (target_length - lengths[lower]) / span
+    };
+    let sample_position = lower as f64 + fraction;
+    let t = 1.0 - sample_position / 20.0;
+    Some(cubic_point(start, control_1, control_2, end, t))
+}
+
+fn cubic_point(
+    start: rough::Point,
+    control_1: rough::Point,
+    control_2: rough::Point,
+    end: rough::Point,
+    t: f64,
+) -> [f64; 2] {
+    let inverse = 1.0 - t;
+    let coordinate = |start: f64, control_1: f64, control_2: f64, end: f64| {
+        inverse.powi(3) * end
+            + 3.0 * t * inverse.powi(2) * control_2
+            + 3.0 * t.powi(2) * inverse * control_1
+            + t.powi(3) * start
+    };
+    [
+        coordinate(start.x, control_1.x, control_2.x, end.x),
+        coordinate(start.y, control_1.y, control_2.y, end.y),
+    ]
+}
+
+fn has_reciprocal_bound_text(
+    container_source_index: usize,
+    text_source_index: usize,
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+) -> bool {
+    let Some(container_node) = relationships
+        .nodes
+        .iter()
+        .position(|node| node.source_index == container_source_index)
+    else {
+        return false;
+    };
+    relationships.edges.iter().any(|edge| {
+        if edge.source != container_node
+            || edge.kind != crate::relationships::RelationshipKind::Binding
+            || !(edge.json_pointer.contains("/boundElements/")
+                || edge.json_pointer.contains("/boundElementIds/"))
+        {
+            return false;
+        }
+        let crate::relationships::RelationshipTarget::Element(target) = edge.target else {
+            return false;
+        };
+        relationships
+            .nodes
+            .get(target)
+            .is_some_and(|node| node.source_index == text_source_index)
+    })
+}
+
+fn resolve_bound_text_masks(
+    outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+) -> Result<Vec<BoundTextMaskSource>, ResolveSceneError> {
+    let mut masks = Vec::new();
+    masks.try_reserve(outlines.len())?;
+    for (text, _) in outlines {
+        if !matches!(text.kind, NormalizedElementKind::Text(_)) {
+            continue;
+        }
+        let Some(container_source_index) = relationship_element_target(
+            text.source.source_index(),
+            crate::relationships::RelationshipKind::Mask,
+            relationships,
+        ) else {
+            continue;
+        };
+        let is_arrow = outlines.iter().any(|(candidate, _)| {
+            candidate.source.source_index() == container_source_index
+                && matches!(
+                    candidate.kind,
+                    NormalizedElementKind::Linear(crate::normalization::NormalizedLinear {
+                        kind: crate::normalization::NormalizedLinearKind::Arrow,
+                        ..
+                    })
+                )
+        });
+        if is_arrow
+            && has_reciprocal_bound_text(
+                container_source_index,
+                text.source.source_index(),
+                relationships,
+            )
+        {
+            masks.push(BoundTextMaskSource {
+                container_source_index,
+                x: text.x,
+                y: text.y,
+                width: text.width,
+                height: text.height,
+            });
+        }
+    }
+    Ok(masks)
 }
 
 fn resolve_frame_clips(
@@ -2921,7 +3242,7 @@ impl ResolvedScene {
     }
 
     fn elements(
-        outlines: Vec<(NormalizedElement, Option<GeneratedGeometry>)>,
+        mut outlines: Vec<(NormalizedElement, Option<GeneratedGeometry>)>,
         fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
         relationships: crate::relationships::ResolvedRelationshipGraph,
         frame_rendering: EffectiveFrameRendering,
@@ -2931,6 +3252,20 @@ impl ResolvedScene {
         if outlines.is_empty() && fallbacks.is_empty() {
             return Ok(None);
         }
+
+        let text_placements = resolve_bound_text_placements(&outlines, &relationships)?;
+        for placement in text_placements {
+            let Some((text, _)) = outlines
+                .iter_mut()
+                .find(|(candidate, _)| candidate.source.source_index() == placement.source_index)
+            else {
+                continue;
+            };
+            text.x = placement.x;
+            text.y = placement.y;
+            text.angle = placement.angle;
+        }
+        let bound_text_masks = resolve_bound_text_masks(&outlines, &relationships)?;
 
         let mut min_x = f64::INFINITY;
         let mut min_y = f64::INFINITY;
@@ -3173,6 +3508,27 @@ impl ResolvedScene {
                 if text_source.text.is_empty() {
                     continue;
                 }
+                let container_source_index = relationship_element_target(
+                    source.source.source_index(),
+                    crate::relationships::RelationshipKind::Binding,
+                    &relationships,
+                );
+                if container_source_index.is_some_and(|container| {
+                    !has_reciprocal_bound_text(
+                        container,
+                        source.source.source_index(),
+                        &relationships,
+                    )
+                }) {
+                    continue;
+                }
+                let container_source_order = container_source_index.and_then(|container| {
+                    relationships
+                        .nodes
+                        .iter()
+                        .find(|node| node.source_index == container)
+                        .map(|node| node.source_order)
+                });
                 let font_index = if let Some(index) = official_fonts
                     .iter()
                     .position(|font| font.matches_family(text_source.font_family))
@@ -3224,6 +3580,7 @@ impl ResolvedScene {
                     opacity: source.opacity / 100.0 * frame_opacity,
                     render: true,
                     base_element_work_units: 0,
+                    container_source_order,
                 }));
                 continue;
             }
@@ -3248,6 +3605,7 @@ impl ResolvedScene {
                 + geometry_work_units
                 + 8
                 + source.repair_work_units;
+            let source_index = source.source.source_index();
             match geometry {
                 GeneratedGeometry::Rough(drawing) => {
                     elements.push(ResolvedElement::Outline(ResolvedOutline {
@@ -3275,6 +3633,15 @@ impl ResolvedScene {
                         source_stroke_width: source.stroke_width,
                         opacity: source.opacity / 100.0 * frame_opacity,
                         background_color,
+                        label_mask: bound_text_masks
+                            .iter()
+                            .find(|mask| mask.container_source_index == source_index)
+                            .map(|mask| ResolvedLabelMask {
+                                x: mask.x - min_x + request.padding(),
+                                y: mask.y - min_y + request.padding(),
+                                width: mask.width,
+                                height: mask.height,
+                            }),
                     }));
                 }
                 GeneratedGeometry::Freedraw(freedraw) => {
@@ -3382,7 +3749,7 @@ impl ResolvedScene {
                 render: true,
             }));
         }
-        elements.sort_by_key(ResolvedElement::source_order);
+        elements.sort_by_key(ResolvedElement::paint_order);
         let (fallback_font_woff2, fallback_font_sfnt) = if has_label {
             fallback_font
                 .map(text::FallbackFont::into_parts)
@@ -3483,6 +3850,15 @@ impl ResolvedElement {
             Self::Fallback(fallback) => fallback.source_order,
         }
     }
+
+    fn paint_order(&self) -> (u64, u8) {
+        match self {
+            Self::Text(text) => text
+                .container_source_order
+                .map_or((text.source_order, 0), |order| (order, 1)),
+            _ => (self.source_order(), 0),
+        }
+    }
 }
 
 struct ResolvedTextElement {
@@ -3495,6 +3871,7 @@ struct ResolvedTextElement {
     opacity: f64,
     render: bool,
     base_element_work_units: u64,
+    container_source_order: Option<u64>,
 }
 
 struct ResolvedOutline {
@@ -3511,6 +3888,15 @@ struct ResolvedOutline {
     source_stroke_width: f64,
     opacity: f64,
     background_color: CanonicalColor,
+    label_mask: Option<ResolvedLabelMask>,
+}
+
+#[derive(Clone, Copy)]
+struct ResolvedLabelMask {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
 }
 
 struct ResolvedFreedraw {

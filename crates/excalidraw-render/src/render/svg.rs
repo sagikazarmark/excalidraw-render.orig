@@ -37,6 +37,7 @@ enum SvgElement {
         source_stroke_width: f64,
         opacity: f64,
         background_color: CanonicalColor,
+        label_mask: Option<super::ResolvedLabelMask>,
     },
     Freedraw {
         source: NormalizedElementSource,
@@ -215,6 +216,7 @@ impl SvgPlan {
                         source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
                         background_color: outline.background_color,
+                        label_mask: outline.label_mask,
                     });
                 }
                 ResolvedElement::Freedraw(freedraw) => {
@@ -464,11 +466,43 @@ impl SvgPlan {
                     source_stroke_width,
                     opacity,
                     background_color,
+                    label_mask,
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
                             "SVG plan outline lost its source identity".to_owned(),
                         ));
+                    }
+                    if let Some(mask) = label_mask {
+                        svg.push_str("<defs><mask id=\"arrow-label-mask-");
+                        write!(svg, "{element_index}").map_err(|_| {
+                            FormatEncodeError::Encoding(
+                                "failed to write SVG arrow label mask ID".to_owned(),
+                            )
+                        })?;
+                        svg.push_str("\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"");
+                        push_svg_number(&mut svg, self.logical_width, "SVG label mask width")?;
+                        svg.push_str("\" height=\"");
+                        push_svg_number(&mut svg, self.logical_height, "SVG label mask height")?;
+                        svg.push_str(
+                            "\"><rect width=\"100%\" height=\"100%\" fill=\"white\"/><rect x=\"",
+                        );
+                        push_svg_number(&mut svg, mask.x, "SVG label mask x")?;
+                        svg.push_str("\" y=\"");
+                        push_svg_number(&mut svg, mask.y, "SVG label mask y")?;
+                        svg.push_str("\" width=\"");
+                        push_svg_number(&mut svg, mask.width, "SVG label mask rectangle width")?;
+                        svg.push_str("\" height=\"");
+                        push_svg_number(&mut svg, mask.height, "SVG label mask rectangle height")?;
+                        svg.push_str(
+                            "\" fill=\"black\"/></mask></defs><g mask=\"url(#arrow-label-mask-",
+                        );
+                        write!(svg, "{element_index}").map_err(|_| {
+                            FormatEncodeError::Encoding(
+                                "failed to write SVG arrow label mask reference".to_owned(),
+                            )
+                        })?;
+                        svg.push_str(")\">");
                     }
                     svg.push_str("<g stroke-linecap=\"round\"");
                     svg.push_str(" transform=\"translate(");
@@ -513,6 +547,9 @@ impl SvgPlan {
                         )?;
                     }
                     svg.push_str("</g>");
+                    if label_mask.is_some() {
+                        svg.push_str("</g>");
+                    }
                 }
                 SvgElement::Freedraw {
                     source,
@@ -655,10 +692,42 @@ impl SvgPlan {
                     if let Some(name) = name {
                         svg.push_str("<text data-frame-name=\"");
                         push_escaped_attribute(&mut svg, source.id());
-                        svg.push_str("\" x=\"0\" y=\"-8\" font-family=\"Liberation Sans\" font-size=\"14\" fill=\"");
+                        svg.push_str("\" data-source-text=\"");
+                        push_escaped_attribute(&mut svg, &name.text);
+                        svg.push_str("\" x=\"");
+                        if name.glyphs.is_empty() {
+                            svg.push('0');
+                        } else {
+                            for (index, glyph) in name.glyphs.iter().enumerate() {
+                                if index != 0 {
+                                    svg.push(' ');
+                                }
+                                push_svg_number(&mut svg, glyph.x, "SVG frame name glyph x")?;
+                            }
+                        }
+                        svg.push_str("\" y=\"");
+                        if name.glyphs.is_empty() {
+                            push_svg_number(
+                                &mut svg,
+                                name.baseline - 24.0,
+                                "SVG frame name baseline",
+                            )?;
+                        } else {
+                            for (index, glyph) in name.glyphs.iter().enumerate() {
+                                if index != 0 {
+                                    svg.push(' ');
+                                }
+                                push_svg_number(
+                                    &mut svg,
+                                    glyph.y - 24.0,
+                                    "SVG frame name glyph y",
+                                )?;
+                            }
+                        }
+                        svg.push_str("\" font-family=\"Liberation Sans\" font-size=\"14\" fill=\"");
                         svg.push_str(if *magic { "#7affd7" } else { "#1b1b1f" });
                         svg.push_str("\">");
-                        push_escaped_text(&mut svg, &name.text);
+                        push_escaped_text(&mut svg, &name.display_text);
                         svg.push_str("</text>");
                     }
                     svg.push_str("</g>");
