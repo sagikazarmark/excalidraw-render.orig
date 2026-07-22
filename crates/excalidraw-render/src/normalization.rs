@@ -653,8 +653,7 @@ fn normalize_scene_impl<E>(
                 | ElementKind::LegacyDraw
                 | ElementKind::Freedraw
                 | ElementKind::Arrow
-        ) && matches!(defaulted(source.group_ids, 0), Some(0))
-            && matches!(defaulted(source.frame_id, None), Some(None))
+        ) && defaulted(source.group_ids, 0).is_some()
             && !matches!(source.bound_elements, SourceField::Invalid)
             && matches!(defaulted(source.link, None), Some(None));
         pending.push(PendingElement {

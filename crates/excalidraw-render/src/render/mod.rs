@@ -382,10 +382,12 @@ impl RenderSession {
             let frame_rendering = normalization.frame_rendering;
             let view_background_color = normalization.view_background_color;
             let view_background_working_bytes = normalization.view_background_working_bytes;
-            let clip_fallbacks_to_frames = frame_rendering.enabled
-                && frame_rendering.clip
-                && request.frame_options().enabled()
-                && request.frame_options().clip();
+            let effective_frame_rendering = EffectiveFrameRendering {
+                enabled: frame_rendering.enabled && request.frame_options().enabled(),
+                clip: frame_rendering.clip && request.frame_options().clip(),
+                name: frame_rendering.name && request.frame_options().name(),
+                outline: frame_rendering.outline && request.frame_options().outline(),
+            };
             let normalized_files = normalization.files;
             for edge in &relationships.graph.edges {
                 let owner = relationships.graph.nodes.get(edge.source).ok_or_else(|| {
@@ -433,6 +435,27 @@ impl RenderSession {
                             }
                         )
                 );
+                if matches!(
+                    source.kind,
+                    NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
+                ) {
+                    semantic_working.push(SemanticWorkingRecord {
+                        source_order: source.source_order,
+                        event: "resolved_frame",
+                        element_id: Some(try_owned(source.source.id()).map_err(|_| {
+                            self.memory_failure(request, "normalization", "working_record_identity")
+                        })?),
+                        local_owner: Some(try_owned(source.source.id()).map_err(|_| {
+                            self.memory_failure(request, "normalization", "working_record_owner")
+                        })?),
+                        json_pointer: try_owned(source.source.pointer()).map_err(|_| {
+                            self.memory_failure(request, "normalization", "working_record_pointer")
+                        })?,
+                        bytes: source.normalized_working_bytes,
+                    });
+                    outlines.push((source, None));
+                    continue;
+                }
                 if !is_outline || !source.direct_outline_compatible {
                     let uses_non_generic_recovery =
                         self.report.diagnostics.iter().any(|diagnostic| {
@@ -737,7 +760,7 @@ impl RenderSession {
                     outlines,
                     fallbacks,
                     relationships.graph,
-                    clip_fallbacks_to_frames,
+                    effective_frame_rendering,
                     &view_background_color,
                     request,
                 ) {
@@ -906,6 +929,18 @@ impl RenderSession {
                 )
                 .with_record(ResourceRecordKind::RasterColorSurface);
                 self.acquire_working(request, surface, surface_bytes)?;
+                let frame_mask_bytes = plan
+                    .maximum_frame_mask_surface_area()
+                    .saturating_add(u64::from(plan.has_frame_masks()) * 256);
+                let frame_mask_surface = ResourceContext::new(
+                    ResourcePhase::ProjectionAndFallback,
+                    "frame_clip_mask_surface",
+                    "",
+                )
+                .with_record(ResourceRecordKind::RasterMaskSurface);
+                if frame_mask_bytes != 0 {
+                    self.acquire_working(request, frame_mask_surface, frame_mask_bytes)?;
+                }
 
                 let raster_work = if plan.includes_background() {
                     pixels.saturating_mul(4)
@@ -930,6 +965,78 @@ impl RenderSession {
                             "/elements",
                         )
                     })?;
+                    if let Some(mask_pixels) =
+                        plan.frame_mask_surface_area(index).ok_or_else(|| {
+                            self.internal_failure(
+                                request.format(),
+                                "PNG frame mask source is missing",
+                                "/elements",
+                            )
+                        })?
+                    {
+                        let surface_limit = request.resource_limits().max_raster_surface_pixels();
+                        let mask_delta = ResourceDelta {
+                            rasterized_pixels: mask_pixels,
+                            total_work_units: mask_pixels.saturating_mul(2),
+                            ..ResourceDelta::default()
+                        };
+                        let mask_context = ResourceContext::new(
+                            ResourcePhase::ProjectionAndFallback,
+                            "frame_clip_mask_surface",
+                            json_pointer,
+                        )
+                        .with_element_id(element_id)
+                        .with_local_owner(element_id)
+                        .with_record(ResourceRecordKind::RasterMaskSurface);
+                        if self.meter.would_cross_fatal(mask_delta) {
+                            self.transact(request, mask_context, mask_delta)?;
+                            return Err(self.internal_failure(
+                                request.format(),
+                                "fatal frame mask preflight committed unexpectedly",
+                                "/elements",
+                            ));
+                        }
+                        if mask_pixels > surface_limit {
+                            let diagnostic = ElementLocalCrossing {
+                                code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
+                                field: "max_raster_surface_pixels",
+                                configured: ResourceValue::Integer(surface_limit),
+                                value_kind: ValueKind::Pixels,
+                                attempted: ResourceValue::Integer(mask_pixels),
+                                pointer_field: None,
+                                message: "framed element omitted because its clip mask exceeds its raster surface limit",
+                            }
+                            .diagnostic(request.format(), element_id, json_pointer)
+                            .map_err(|_| {
+                                self.memory_failure(
+                                    request,
+                                    "compatibility_report",
+                                    "frame_mask_surface_recovery",
+                                )
+                            })?;
+                            self.retain_diagnostic(
+                                request,
+                                ResourcePhase::ProjectionAndFallback,
+                                "frame_mask_surface_local_recovery",
+                                diagnostic,
+                            )?;
+                            self.charge_local_omission(
+                                request,
+                                element_id,
+                                json_pointer,
+                                "frame_mask_surface_local_omission",
+                            )?;
+                            if !plan.omit_element(index) {
+                                return Err(self.internal_failure(
+                                    request.format(),
+                                    "PNG omitted framed operation is missing",
+                                    "/elements",
+                                ));
+                            }
+                            continue;
+                        }
+                        self.transact(request, mask_context, mask_delta)?;
+                    }
                     if let Some(fallback_pixels) =
                         plan.fallback_surface_area(index).ok_or_else(|| {
                             self.internal_failure(
@@ -1108,6 +1215,9 @@ impl RenderSession {
                     rgba_bytes,
                     || plan.encode(),
                 )?;
+                if frame_mask_bytes != 0 {
+                    self.release_working(request, frame_mask_surface, frame_mask_bytes)?;
+                }
                 self.release_working(request, workspace, workspace_bytes)?;
                 self.release_working(request, surface, surface_bytes)?;
                 for index in 0..plan.source_count() {
@@ -1193,10 +1303,109 @@ impl RenderSession {
         semantic_working: &mut Vec<SemanticWorkingRecord>,
     ) -> Result<(), RenderError> {
         for element in &mut resolved.elements {
+            let direct_clip_source = match element {
+                ResolvedElement::Outline(outline) if !outline.frame_clips.is_empty() => Some((
+                    outline.source.id(),
+                    outline.source.pointer(),
+                    &outline.frame_clips,
+                )),
+                ResolvedElement::Freedraw(freedraw) if !freedraw.frame_clips.is_empty() => Some((
+                    freedraw.source.id(),
+                    freedraw.source.pointer(),
+                    &freedraw.frame_clips,
+                )),
+                _ => None,
+            };
+            if let Some((element_id, json_pointer, clips)) = direct_clip_source {
+                let geometry_segments = clips.iter().fold(0_u64, |total, clip| {
+                    total.saturating_add(
+                        u64::try_from(clip.path.operations.len()).unwrap_or(u64::MAX),
+                    )
+                });
+                self.transact(
+                    request,
+                    ResourceContext::new(
+                        ResourcePhase::SharedSemanticResolution,
+                        "frame_clip_geometry",
+                        json_pointer,
+                    )
+                    .with_element_id(Some(element_id))
+                    .with_local_owner(Some(element_id)),
+                    ResourceDelta {
+                        geometry_segments,
+                        total_work_units: geometry_segments.saturating_mul(32),
+                        ..ResourceDelta::default()
+                    },
+                )?;
+                continue;
+            }
+            if let ResolvedElement::Frame(frame) = element {
+                let outline_segments = frame.outline_path.as_ref().map_or(0, |path| {
+                    u64::try_from(path.operations.len()).unwrap_or(u64::MAX)
+                });
+                let clip_segments = frame.frame_clips.iter().fold(0_u64, |total, clip| {
+                    total.saturating_add(
+                        u64::try_from(clip.path.operations.len()).unwrap_or(u64::MAX),
+                    )
+                });
+                let label_segments = frame.name.as_ref().map_or(0, |label| {
+                    u64::try_from(label.path.operations.len()).unwrap_or(u64::MAX)
+                });
+                let text_scalars = frame.name.as_ref().map_or(0, |label| {
+                    u64::try_from(label.text.chars().count()).unwrap_or(u64::MAX)
+                });
+                let geometry_segments = outline_segments
+                    .saturating_add(clip_segments)
+                    .saturating_add(label_segments);
+                let total_work_units = geometry_segments
+                    .saturating_mul(32)
+                    .saturating_add(text_scalars.saturating_mul(32));
+                let working_bytes = 128_u64
+                    .saturating_add(geometry_segments.saturating_mul(64))
+                    .saturating_add(text_scalars.saturating_mul(4));
+                let delta = ResourceDelta {
+                    geometry_segments,
+                    text_scalars,
+                    working_bytes,
+                    total_work_units,
+                    ..ResourceDelta::default()
+                };
+                let context = ResourceContext::new(
+                    ResourcePhase::SharedSemanticResolution,
+                    "frame_geometry_and_name",
+                    frame.source.pointer(),
+                )
+                .with_element_id(Some(frame.source.id()))
+                .with_local_owner(Some(frame.source.id()));
+                self.transact(request, context, delta)?;
+                semantic_working.try_reserve(1).map_err(|_| {
+                    self.memory_failure(request, "semantic_geometry", "frame_working_record")
+                })?;
+                semantic_working.push(SemanticWorkingRecord {
+                    source_order: frame.source_order,
+                    event: "resolved_frame_geometry",
+                    element_id: Some(try_owned(frame.source.id()).map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "frame_identity")
+                    })?),
+                    local_owner: Some(try_owned(frame.source.id()).map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "frame_owner")
+                    })?),
+                    json_pointer: try_owned(frame.source.pointer()).map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "frame_pointer")
+                    })?,
+                    bytes: working_bytes,
+                });
+                continue;
+            }
             let ResolvedElement::Fallback(fallback) = element else {
                 continue;
             };
-            let geometry_segments = fallback.geometry_command_count();
+            let clip_segments = fallback.frame_clips.iter().fold(0_u64, |total, clip| {
+                total.saturating_add(u64::try_from(clip.path.operations.len()).unwrap_or(u64::MAX))
+            });
+            let geometry_segments = fallback
+                .geometry_command_count()
+                .saturating_add(clip_segments);
             let glyphs = fallback.label.as_ref().map_or(0, |label| label.glyph_count);
             let working_bytes = 128_u64.saturating_add(geometry_segments.saturating_mul(64));
             let total_work_units = geometry_segments
@@ -1328,8 +1537,10 @@ impl RenderSession {
         resolved.elements.retain(
             |element| !matches!(element, ResolvedElement::Fallback(fallback) if !fallback.render),
         );
-        if !resolved.elements.iter().any(|element| {
-            matches!(element, ResolvedElement::Fallback(fallback) if fallback.label.is_some())
+        if !resolved.elements.iter().any(|element| match element {
+            ResolvedElement::Frame(frame) => frame.name.is_some(),
+            ResolvedElement::Fallback(fallback) => fallback.label.is_some(),
+            _ => false,
         }) {
             resolved.fallback_font_woff2 = None;
             resolved.fallback_font_sfnt = None;
@@ -2060,6 +2271,14 @@ struct ResolvedScene {
     _relationships: crate::relationships::ResolvedRelationshipGraph,
 }
 
+#[derive(Clone, Copy)]
+struct EffectiveFrameRendering {
+    enabled: bool,
+    clip: bool,
+    name: bool,
+    outline: bool,
+}
+
 enum GeneratedGeometry {
     Rough(rough::Drawing),
     Freedraw(GeneratedFreedraw),
@@ -2116,6 +2335,81 @@ fn source_layout_bounds(source: &NormalizedElement) -> (f64, f64, f64, f64) {
     }
 }
 
+fn relationship_frame_target(
+    source_index: usize,
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+) -> Option<usize> {
+    let node_index = relationships
+        .nodes
+        .iter()
+        .position(|node| node.source_index == source_index)?;
+    relationships.edges.iter().find_map(|edge| {
+        if edge.source != node_index || edge.kind != crate::relationships::RelationshipKind::Frame {
+            return None;
+        }
+        let crate::relationships::RelationshipTarget::Element(target) = edge.target else {
+            return None;
+        };
+        relationships
+            .nodes
+            .get(target)
+            .map(|node| node.source_index)
+    })
+}
+
+fn resolve_frame_clips(
+    source_index: usize,
+    frames: &[SemanticFrameSource],
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+    rendering: EffectiveFrameRendering,
+    min_x: f64,
+    min_y: f64,
+    padding: f64,
+) -> Result<Vec<ResolvedClip>, ResolveSceneError> {
+    let mut clips = Vec::new();
+    if !rendering.enabled || !rendering.clip {
+        return Ok(clips);
+    }
+    let Some(parent_index) = relationship_frame_target(source_index, relationships) else {
+        return Ok(clips);
+    };
+    let Some(frame) = frames
+        .iter()
+        .find(|frame| frame.source_index == parent_index)
+    else {
+        return Ok(clips);
+    };
+    clips.try_reserve_exact(1)?;
+    clips.push(ResolvedClip {
+        path: resolved_frame_outline(frame.width, frame.height)?,
+        width: frame.width,
+        height: frame.height,
+        transform: ResolvedTransform {
+            translation_x: frame.x - min_x + padding,
+            translation_y: frame.y - min_y + padding,
+            angle_radians: frame.angle,
+            center_x: frame.width / 2.0,
+            center_y: frame.height / 2.0,
+        },
+    });
+    Ok(clips)
+}
+
+fn resolve_frame_opacity(
+    source_index: usize,
+    frames: &[SemanticFrameSource],
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+    _rendering: EffectiveFrameRendering,
+) -> f64 {
+    relationship_frame_target(source_index, relationships)
+        .and_then(|parent_index| {
+            frames
+                .iter()
+                .find(|frame| frame.source_index == parent_index)
+        })
+        .map_or(1.0, |frame| frame.opacity)
+}
+
 enum ResolveSceneError {
     Memory,
     InvalidFallbackFont,
@@ -2159,7 +2453,7 @@ impl ResolvedScene {
         outlines: Vec<(NormalizedElement, Option<GeneratedGeometry>)>,
         fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
         relationships: crate::relationships::ResolvedRelationshipGraph,
-        clip_fallbacks_to_frames: bool,
+        frame_rendering: EffectiveFrameRendering,
         background_color: &str,
         request: &RenderRequest,
     ) -> Result<Option<Self>, ResolveSceneError> {
@@ -2179,13 +2473,38 @@ impl ResolvedScene {
             {
                 return Ok(None);
             }
-            let (local_min_x, local_min_y, local_max_x, local_max_y) =
+            let is_frame = matches!(
+                source.kind,
+                NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
+            );
+            if is_frame && !frame_rendering.enabled {
+                continue;
+            }
+            if frame_rendering.enabled
+                && frame_rendering.clip
+                && relationship_frame_target(source.source.source_index(), &relationships).is_some()
+            {
+                continue;
+            }
+            let (local_min_x, mut local_min_y, local_max_x, local_max_y) =
                 geometry.as_ref().map_or_else(
                     || source_layout_bounds(source),
                     |geometry| geometry.bounds(source),
                 );
-            let center_x = source.x + (local_min_x + local_max_x) / 2.0;
-            let center_y = source.y + (local_min_y + local_max_y) / 2.0;
+            if is_frame && frame_rendering.name {
+                local_min_y = local_min_y.min(-24.0);
+            }
+            let (center_x, center_y) = if is_frame {
+                (
+                    source.x + source.width / 2.0,
+                    source.y + source.height / 2.0,
+                )
+            } else {
+                (
+                    source.x + (local_min_x + local_max_x) / 2.0,
+                    source.y + (local_min_y + local_max_y) / 2.0,
+                )
+            };
             let sin = source.angle.sin();
             let cos = source.angle.cos();
             if let NormalizedElementKind::Freedraw(freedraw) = &source.kind {
@@ -2222,6 +2541,21 @@ impl ResolvedScene {
             }
         }
         for fallback in &fallbacks {
+            let is_clipped_child = frame_rendering.enabled
+                && frame_rendering.clip
+                && fallback.element_id.as_deref().is_some_and(|id| {
+                    relationships
+                        .nodes
+                        .iter()
+                        .find(|node| node.id == id)
+                        .and_then(|node| {
+                            relationship_frame_target(node.source_index, &relationships)
+                        })
+                        .is_some()
+                });
+            if is_clipped_child {
+                continue;
+            }
             include_transformed_bounds(
                 fallback.x,
                 fallback.y,
@@ -2234,6 +2568,13 @@ impl ResolvedScene {
                 &mut max_y,
             );
         }
+        if min_x == f64::INFINITY
+            && min_y == f64::INFINITY
+            && max_x == f64::NEG_INFINITY
+            && max_y == f64::NEG_INFINITY
+        {
+            return Self::empty(relationships, background_color, request).map(Some);
+        }
         let logical_width = max_x - min_x + request.padding() * 2.0;
         let logical_height = max_y - min_y + request.padding() * 2.0;
         if !logical_width.is_finite() || !logical_height.is_finite() {
@@ -2245,14 +2586,32 @@ impl ResolvedScene {
         let background_color = color::parse_css(background_color)
             .ok_or(ResolveSceneError::InvalidColor)?
             .for_mode(request.color_mode());
-        let mut frame_clips = Vec::new();
-        if clip_fallbacks_to_frames {
-            frame_clips.try_reserve(fallbacks.len())?;
+        let mut semantic_frames = Vec::new();
+        semantic_frames.try_reserve(outlines.len())?;
+        for (source, _) in &outlines {
+            if matches!(
+                source.kind,
+                NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
+            ) {
+                semantic_frames.push(SemanticFrameSource {
+                    source_index: source.source.source_index(),
+                    x: source.x,
+                    y: source.y,
+                    width: source.width,
+                    height: source.height,
+                    angle: source.angle,
+                    opacity: source.opacity / 100.0,
+                });
+            }
+        }
+        let mut fallback_frame_clips = Vec::new();
+        if frame_rendering.enabled && frame_rendering.clip {
+            fallback_frame_clips.try_reserve(fallbacks.len())?;
             for fallback in &fallbacks {
                 let Some(id) = fallback.element_id.as_deref().filter(|_| fallback.is_frame) else {
                     continue;
                 };
-                frame_clips.push(FallbackFrameClipSource {
+                fallback_frame_clips.push(FallbackFrameClipSource {
                     id: try_owned(id)?,
                     x: fallback.x,
                     y: fallback.y,
@@ -2262,7 +2621,82 @@ impl ResolvedScene {
                 });
             }
         }
+        let needs_frame_font =
+            frame_rendering.enabled && frame_rendering.name && !semantic_frames.is_empty();
+        let fallback_font = if needs_frame_font || fallbacks.iter().any(|fallback| fallback.paint) {
+            Some(text::FallbackFont::load().map_err(|error| match error {
+                text::LabelError::Memory => ResolveSceneError::Memory,
+                text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+            })?)
+        } else {
+            None
+        };
+        let mut has_label = false;
         for (source, geometry) in outlines {
+            let frame_clips = resolve_frame_clips(
+                source.source.source_index(),
+                &semantic_frames,
+                &relationships,
+                frame_rendering,
+                min_x,
+                min_y,
+                request.padding(),
+            )?;
+            let frame_opacity = resolve_frame_opacity(
+                source.source.source_index(),
+                &semantic_frames,
+                &relationships,
+                frame_rendering,
+            );
+            if let NormalizedElementKind::Frame(frame) | NormalizedElementKind::MagicFrame(frame) =
+                &source.kind
+            {
+                if frame_rendering.enabled {
+                    let name = if frame_rendering.name {
+                        let text = frame.name.as_deref().unwrap_or({
+                            if matches!(source.kind, NormalizedElementKind::MagicFrame(_)) {
+                                "AI Frame"
+                            } else {
+                                "Frame"
+                            }
+                        });
+                        let font = fallback_font
+                            .as_ref()
+                            .ok_or(ResolveSceneError::InvalidFallbackFont)?;
+                        font.resolve(text, source.width, 20.0)
+                            .map_err(|error| match error {
+                                text::LabelError::Memory => ResolveSceneError::Memory,
+                                text::LabelError::InvalidFont => {
+                                    ResolveSceneError::InvalidFallbackFont
+                                }
+                            })?
+                    } else {
+                        None
+                    };
+                    has_label |= name.is_some();
+                    let outline_path = frame_rendering
+                        .outline
+                        .then_some(resolved_frame_outline(source.width, source.height))
+                        .transpose()?;
+                    elements.push(ResolvedElement::Frame(ResolvedFrame {
+                        source_order: source.source_order,
+                        source: source.source,
+                        name,
+                        magic: matches!(source.kind, NormalizedElementKind::MagicFrame(_)),
+                        outline_path,
+                        frame_clips,
+                        transform: ResolvedTransform {
+                            translation_x: source.x - min_x + request.padding(),
+                            translation_y: source.y - min_y + request.padding(),
+                            angle_radians: source.angle,
+                            center_x: source.width / 2.0,
+                            center_y: source.height / 2.0,
+                        },
+                        opacity: source.opacity / 100.0 * frame_opacity,
+                    }));
+                }
+                continue;
+            }
             let Some(geometry) = geometry else {
                 continue;
             };
@@ -2291,6 +2725,7 @@ impl ResolvedScene {
                         source: source.source,
                         base_element_work_units,
                         drawing,
+                        frame_clips,
                         transform,
                         stroke_color,
                         fill_color: (source.background_color != "transparent")
@@ -2308,7 +2743,7 @@ impl ResolvedScene {
                             _ => StrokeStyle::Solid,
                         },
                         source_stroke_width: source.stroke_width,
-                        opacity: source.opacity / 100.0,
+                        opacity: source.opacity / 100.0 * frame_opacity,
                         background_color,
                     }));
                 }
@@ -2319,6 +2754,7 @@ impl ResolvedScene {
                         base_element_work_units,
                         path: freedraw.path,
                         background_fill: freedraw.background_fill,
+                        frame_clips,
                         transform,
                         color: stroke_color,
                         background_color: (source.background_color != "transparent")
@@ -2326,20 +2762,11 @@ impl ResolvedScene {
                             .flatten()
                             .map(|color| color.for_mode(request.color_mode())),
                         source_stroke_width: source.stroke_width,
-                        opacity: source.opacity / 100.0,
+                        opacity: source.opacity / 100.0 * frame_opacity,
                     }));
                 }
             }
         }
-        let fallback_font = if !fallbacks.iter().any(|fallback| fallback.paint) {
-            None
-        } else {
-            Some(text::FallbackFont::load().map_err(|error| match error {
-                text::LabelError::Memory => ResolveSceneError::Memory,
-                text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
-            })?)
-        };
-        let mut has_label = false;
         for fallback in fallbacks {
             if !fallback.paint {
                 continue;
@@ -2354,11 +2781,34 @@ impl ResolvedScene {
                     text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
                 })?;
             has_label |= label.is_some();
-            let frame_clip = fallback.frame_id.as_deref().and_then(|frame_id| {
-                frame_clips
+            let source_index = fallback.element_id.as_deref().and_then(|id| {
+                relationships
+                    .nodes
                     .iter()
-                    .find(|frame| frame.id == frame_id)
-                    .map(|frame| ResolvedClip {
+                    .find(|node| node.id == id)
+                    .map(|node| node.source_index)
+            });
+            let frame_clips = if let Some(source_index) = source_index {
+                resolve_frame_clips(
+                    source_index,
+                    &semantic_frames,
+                    &relationships,
+                    frame_rendering,
+                    min_x,
+                    min_y,
+                    request.padding(),
+                )?
+            } else {
+                let frame = fallback.frame_id.as_deref().and_then(|frame_id| {
+                    fallback_frame_clips
+                        .iter()
+                        .find(|frame| frame.id == frame_id)
+                });
+                let mut clips = Vec::new();
+                if let Some(frame) = frame {
+                    clips.try_reserve_exact(1)?;
+                    clips.push(ResolvedClip {
+                        path: resolved_frame_outline(frame.width, frame.height)?,
                         width: frame.width,
                         height: frame.height,
                         transform: ResolvedTransform {
@@ -2368,7 +2818,17 @@ impl ResolvedScene {
                             center_x: frame.width / 2.0,
                             center_y: frame.height / 2.0,
                         },
-                    })
+                    });
+                }
+                clips
+            };
+            let frame_opacity = source_index.map_or(1.0, |source_index| {
+                resolve_frame_opacity(
+                    source_index,
+                    &semantic_frames,
+                    &relationships,
+                    frame_rendering,
+                )
             });
             elements.push(ResolvedElement::Fallback(ResolvedFallback {
                 source_order: fallback.source_order,
@@ -2378,7 +2838,7 @@ impl ResolvedScene {
                 },
                 label,
                 link: fallback.link,
-                frame_clip,
+                frame_clips,
                 width: fallback.width,
                 height: fallback.height,
                 transform: ResolvedTransform {
@@ -2388,7 +2848,7 @@ impl ResolvedScene {
                     center_x: fallback.width / 2.0,
                     center_y: fallback.height / 2.0,
                 },
-                opacity: fallback.opacity / 100.0,
+                opacity: fallback.opacity / 100.0 * frame_opacity,
                 render: true,
             }));
         }
@@ -2437,6 +2897,7 @@ impl ResolvedScene {
             ResolvedElement::Freedraw(freedraw) => {
                 (Some(freedraw.source.id()), freedraw.source.pointer())
             }
+            ResolvedElement::Frame(frame) => (Some(frame.source.id()), frame.source.pointer()),
             ResolvedElement::Fallback(fallback) => (
                 fallback.source.id.as_deref(),
                 fallback.source.pointer.as_str(),
@@ -2459,6 +2920,7 @@ impl ResolvedScene {
 enum ResolvedElement {
     Outline(ResolvedOutline),
     Freedraw(ResolvedFreedraw),
+    Frame(ResolvedFrame),
     Fallback(ResolvedFallback),
 }
 
@@ -2467,6 +2929,7 @@ impl ResolvedElement {
         match self {
             Self::Outline(outline) => outline.source_order,
             Self::Freedraw(freedraw) => freedraw.source_order,
+            Self::Frame(frame) => frame.source_order,
             Self::Fallback(fallback) => fallback.source_order,
         }
     }
@@ -2477,6 +2940,7 @@ struct ResolvedOutline {
     source: NormalizedElementSource,
     base_element_work_units: u64,
     drawing: rough::Drawing,
+    frame_clips: Vec<ResolvedClip>,
     transform: ResolvedTransform,
     stroke_color: CanonicalColor,
     fill_color: Option<CanonicalColor>,
@@ -2493,11 +2957,57 @@ struct ResolvedFreedraw {
     base_element_work_units: u64,
     path: freedraw::Path,
     background_fill: Option<rough::Fill>,
+    frame_clips: Vec<ResolvedClip>,
     transform: ResolvedTransform,
     color: CanonicalColor,
     background_color: Option<CanonicalColor>,
     source_stroke_width: f64,
     opacity: f64,
+}
+
+struct ResolvedFrame {
+    source_order: u64,
+    source: NormalizedElementSource,
+    name: Option<text::ResolvedLabel>,
+    magic: bool,
+    outline_path: Option<rough::Path>,
+    frame_clips: Vec<ResolvedClip>,
+    transform: ResolvedTransform,
+    opacity: f64,
+}
+
+fn resolved_frame_outline(width: f64, height: f64) -> Result<rough::Path, ResolveSceneError> {
+    let radius = 8.0_f64.min(width / 2.0).min(height / 2.0).max(0.0);
+    let kappa = 0.552_284_749_830_793_6;
+    let point = |x, y| rough::Point { x, y };
+    let mut operations = Vec::new();
+    operations.try_reserve_exact(10)?;
+    operations.push(rough::PathOperation::Move(point(radius, 0.0)));
+    operations.push(rough::PathOperation::Line(point(width - radius, 0.0)));
+    operations.push(rough::PathOperation::Cubic {
+        control_1: point(width - radius + radius * kappa, 0.0),
+        control_2: point(width, radius - radius * kappa),
+        end: point(width, radius),
+    });
+    operations.push(rough::PathOperation::Line(point(width, height - radius)));
+    operations.push(rough::PathOperation::Cubic {
+        control_1: point(width, height - radius + radius * kappa),
+        control_2: point(width - radius + radius * kappa, height),
+        end: point(width - radius, height),
+    });
+    operations.push(rough::PathOperation::Line(point(radius, height)));
+    operations.push(rough::PathOperation::Cubic {
+        control_1: point(radius - radius * kappa, height),
+        control_2: point(0.0, height - radius + radius * kappa),
+        end: point(0.0, height - radius),
+    });
+    operations.push(rough::PathOperation::Line(point(0.0, radius)));
+    operations.push(rough::PathOperation::Cubic {
+        control_1: point(0.0, radius - radius * kappa),
+        control_2: point(radius - radius * kappa, 0.0),
+        end: point(radius, 0.0),
+    });
+    Ok(rough::Path { operations })
 }
 
 #[derive(Clone, Copy)]
@@ -2551,7 +3061,7 @@ struct ResolvedFallback {
     source: FallbackSource,
     label: Option<text::ResolvedLabel>,
     link: Option<String>,
-    frame_clip: Option<ResolvedClip>,
+    frame_clips: Vec<ResolvedClip>,
     width: f64,
     height: f64,
     transform: ResolvedTransform,
@@ -2568,8 +3078,18 @@ struct FallbackFrameClipSource {
     angle: f64,
 }
 
-#[derive(Clone, Copy)]
+struct SemanticFrameSource {
+    source_index: usize,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    angle: f64,
+    opacity: f64,
+}
+
 struct ResolvedClip {
+    path: rough::Path,
     width: f64,
     height: f64,
     transform: ResolvedTransform,

@@ -23,6 +23,7 @@ enum SvgElement {
     RoughOutline {
         source: NormalizedElementSource,
         drawing: Drawing,
+        frame_clips: Vec<super::ResolvedClip>,
         translation_x: f64,
         translation_y: f64,
         rotation_degrees: f64,
@@ -40,6 +41,7 @@ enum SvgElement {
         source: NormalizedElementSource,
         path_data: String,
         background_fill: Option<super::rough::Fill>,
+        frame_clips: Vec<super::ResolvedClip>,
         translation_x: f64,
         translation_y: f64,
         rotation_degrees: f64,
@@ -50,12 +52,25 @@ enum SvgElement {
         source_stroke_width: f64,
         opacity: f64,
     },
+    Frame {
+        source: NormalizedElementSource,
+        name: Option<super::text::ResolvedLabel>,
+        magic: bool,
+        outline_path: Option<Path>,
+        frame_clips: Vec<super::ResolvedClip>,
+        translation_x: f64,
+        translation_y: f64,
+        rotation_degrees: f64,
+        center_x: f64,
+        center_y: f64,
+        opacity: f64,
+    },
     Fallback {
         source: super::FallbackSource,
         clip_index: usize,
         label: Option<String>,
         link: Option<String>,
-        frame_clip: Option<super::ResolvedClip>,
+        frame_clips: Vec<super::ResolvedClip>,
         width: f64,
         height: f64,
         translation_x: f64,
@@ -65,6 +80,83 @@ enum SvgElement {
         center_y: f64,
         opacity: f64,
     },
+}
+
+impl SvgElement {
+    fn frame_clips(&self) -> &[super::ResolvedClip] {
+        match self {
+            Self::RoughOutline { frame_clips, .. }
+            | Self::Freedraw { frame_clips, .. }
+            | Self::Frame { frame_clips, .. }
+            | Self::Fallback { frame_clips, .. } => frame_clips,
+        }
+    }
+}
+
+fn push_frame_clip_prefix(
+    svg: &mut String,
+    element_index: usize,
+    legacy_fallback_index: Option<usize>,
+    clips: &[super::ResolvedClip],
+) -> Result<(), FormatEncodeError> {
+    for (clip_index, clip) in clips.iter().enumerate() {
+        svg.push_str("<clipPath id=\"");
+        push_frame_clip_id(svg, element_index, legacy_fallback_index, clip_index)?;
+        svg.push_str("\"><path d=\"");
+        push_rough_path(svg, &clip.path)?;
+        svg.push_str("\" transform=\"translate(");
+        push_svg_number(
+            svg,
+            clip.transform.translation_x,
+            "SVG frame clip translation x",
+        )?;
+        svg.push(' ');
+        push_svg_number(
+            svg,
+            clip.transform.translation_y,
+            "SVG frame clip translation y",
+        )?;
+        svg.push_str(") rotate(");
+        push_svg_number(
+            svg,
+            180.0 * clip.transform.angle_radians / std::f64::consts::PI,
+            "SVG frame clip rotation",
+        )?;
+        svg.push(' ');
+        push_svg_number(svg, clip.transform.center_x, "SVG frame clip center x")?;
+        svg.push(' ');
+        push_svg_number(svg, clip.transform.center_y, "SVG frame clip center y")?;
+        svg.push_str(")\"/></clipPath>");
+    }
+    for clip_index in 0..clips.len() {
+        svg.push_str("<g clip-path=\"url(#");
+        push_frame_clip_id(svg, element_index, legacy_fallback_index, clip_index)?;
+        svg.push_str(")\">");
+    }
+    Ok(())
+}
+
+fn push_frame_clip_id(
+    svg: &mut String,
+    element_index: usize,
+    legacy_fallback_index: Option<usize>,
+    clip_index: usize,
+) -> Result<(), FormatEncodeError> {
+    if let Some(fallback_index) = legacy_fallback_index {
+        write!(svg, "frame-fallback-{fallback_index}").map_err(|_| {
+            FormatEncodeError::Encoding("failed to write SVG fallback clip ID".to_owned())
+        })?;
+        if clip_index != 0 {
+            write!(svg, "-{clip_index}").map_err(|_| {
+                FormatEncodeError::Encoding("failed to write SVG fallback clip suffix".to_owned())
+            })?;
+        }
+    } else {
+        write!(svg, "frame-clip-{element_index}-{clip_index}").map_err(|_| {
+            FormatEncodeError::Encoding("failed to write SVG frame clip ID".to_owned())
+        })?;
+    }
+    Ok(())
 }
 
 impl SvgPlan {
@@ -98,6 +190,7 @@ impl SvgPlan {
                     elements.push(SvgElement::RoughOutline {
                         source: outline.source,
                         drawing: outline.drawing,
+                        frame_clips: outline.frame_clips,
                         translation_x: outline.transform.translation_x,
                         translation_y: outline.transform.translation_y,
                         rotation_degrees: 180.0 * outline.transform.angle_radians
@@ -118,6 +211,7 @@ impl SvgPlan {
                         source: freedraw.source,
                         path_data: freedraw_path_data(&freedraw.path)?,
                         background_fill: freedraw.background_fill,
+                        frame_clips: freedraw.frame_clips,
                         translation_x: freedraw.transform.translation_x,
                         translation_y: freedraw.transform.translation_y,
                         rotation_degrees: 180.0 * freedraw.transform.angle_radians
@@ -130,13 +224,30 @@ impl SvgPlan {
                         opacity: freedraw.opacity,
                     });
                 }
+                ResolvedElement::Frame(frame) => {
+                    elements.push(SvgElement::Frame {
+                        source: frame.source,
+                        name: frame.name,
+                        magic: frame.magic,
+                        outline_path: frame.outline_path,
+                        frame_clips: frame.frame_clips,
+                        translation_x: frame.transform.translation_x,
+                        translation_y: frame.transform.translation_y,
+                        rotation_degrees: 180.0 * frame.transform.angle_radians
+                            / std::f64::consts::PI,
+                        center_x: frame.transform.center_x,
+                        center_y: frame.transform.center_y,
+                        opacity: frame.opacity,
+                    });
+                    fallback_index = fallback_index.saturating_add(1);
+                }
                 ResolvedElement::Fallback(fallback) => {
                     elements.push(SvgElement::Fallback {
                         source: fallback.source,
                         clip_index: fallback_index,
                         label: fallback.label.map(|label| label.text),
                         link: fallback.link,
-                        frame_clip: fallback.frame_clip,
+                        frame_clips: fallback.frame_clips,
                         width: fallback.width,
                         height: fallback.height,
                         translation_x: fallback.transform.translation_x,
@@ -212,6 +323,12 @@ impl SvgPlan {
                     }
                     capacity = checked_capacity_add(capacity, 256)?;
                 }
+                SvgElement::Frame { name, .. } => {
+                    if let Some(name) = name {
+                        capacity = checked_capacity_add(capacity, escaped_capacity(&name.text)?)?;
+                    }
+                    capacity = checked_capacity_add(capacity, 512)?;
+                }
                 SvgElement::Fallback { label, link, .. } => {
                     if let Some(label) = label {
                         capacity = checked_capacity_add(capacity, escaped_capacity(label)?)?;
@@ -270,11 +387,23 @@ impl SvgPlan {
             }
             svg.push_str("\"/>");
         }
-        for element in &self.elements {
+        for (element_index, element) in self.elements.iter().enumerate() {
+            let frame_clip_count = element.frame_clips().len();
+            let legacy_fallback_index = match element {
+                SvgElement::Fallback { clip_index, .. } => Some(*clip_index),
+                _ => None,
+            };
+            push_frame_clip_prefix(
+                &mut svg,
+                element_index,
+                legacy_fallback_index,
+                element.frame_clips(),
+            )?;
             match element {
                 SvgElement::RoughOutline {
                     source,
                     drawing,
+                    frame_clips: _,
                     translation_x,
                     translation_y,
                     rotation_degrees,
@@ -341,6 +470,7 @@ impl SvgPlan {
                     source,
                     path_data,
                     background_fill,
+                    frame_clips: _,
                     translation_x,
                     translation_y,
                     rotation_degrees,
@@ -437,12 +567,60 @@ impl SvgPlan {
                     }
                     svg.push_str("\"/></g>");
                 }
+                SvgElement::Frame {
+                    source,
+                    name,
+                    magic,
+                    outline_path,
+                    frame_clips: _,
+                    translation_x,
+                    translation_y,
+                    rotation_degrees,
+                    center_x,
+                    center_y,
+                    opacity,
+                } => {
+                    svg.push_str("<g transform=\"translate(");
+                    push_svg_number(&mut svg, *translation_x, "SVG frame translation x")?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, *translation_y, "SVG frame translation y")?;
+                    svg.push_str(") rotate(");
+                    push_svg_number(&mut svg, *rotation_degrees, "SVG frame rotation")?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, *center_x, "SVG frame center x")?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, *center_y, "SVG frame center y")?;
+                    svg.push_str(")\"");
+                    if *opacity != 1.0 {
+                        svg.push_str(" opacity=\"");
+                        push_svg_number(&mut svg, *opacity, "SVG frame opacity")?;
+                        svg.push('"');
+                    }
+                    svg.push('>');
+                    if let Some(outline_path) = outline_path {
+                        svg.push_str("<path data-frame-outline=\"");
+                        push_escaped_attribute(&mut svg, source.id());
+                        svg.push_str("\" d=\"");
+                        push_rough_path(&mut svg, outline_path)?;
+                        svg.push_str("\" fill=\"none\" stroke=\"#bbbbbb\" stroke-width=\"2\" stroke-linejoin=\"round\"/>");
+                    }
+                    if let Some(name) = name {
+                        svg.push_str("<text data-frame-name=\"");
+                        push_escaped_attribute(&mut svg, source.id());
+                        svg.push_str("\" x=\"0\" y=\"-8\" font-family=\"Liberation Sans\" font-size=\"14\" fill=\"");
+                        svg.push_str(if *magic { "#7affd7" } else { "#1b1b1f" });
+                        svg.push_str("\">");
+                        push_escaped_text(&mut svg, &name.text);
+                        svg.push_str("</text>");
+                    }
+                    svg.push_str("</g>");
+                }
                 SvgElement::Fallback {
                     source,
                     clip_index,
                     label,
                     link,
-                    frame_clip,
+                    frame_clips: _,
                     width,
                     height,
                     translation_x,
@@ -457,62 +635,10 @@ impl SvgPlan {
                             "SVG fallback lost its source location".to_owned(),
                         ));
                     }
-                    if let Some(frame_clip) = frame_clip {
-                        svg.push_str("<clipPath id=\"frame-fallback-");
-                        write!(svg, "{clip_index}").map_err(|_| {
-                            FormatEncodeError::Encoding(
-                                "failed to write SVG frame clip identity".to_owned(),
-                            )
-                        })?;
-                        svg.push_str("\"><rect x=\"0\" y=\"0\" width=\"");
-                        push_svg_number(&mut svg, frame_clip.width, "SVG frame clip width")?;
-                        svg.push_str("\" height=\"");
-                        push_svg_number(&mut svg, frame_clip.height, "SVG frame clip height")?;
-                        svg.push_str("\" transform=\"translate(");
-                        push_svg_number(
-                            &mut svg,
-                            frame_clip.transform.translation_x,
-                            "SVG frame clip translation x",
-                        )?;
-                        svg.push(' ');
-                        push_svg_number(
-                            &mut svg,
-                            frame_clip.transform.translation_y,
-                            "SVG frame clip translation y",
-                        )?;
-                        svg.push_str(") rotate(");
-                        push_svg_number(
-                            &mut svg,
-                            180.0 * frame_clip.transform.angle_radians / std::f64::consts::PI,
-                            "SVG frame clip rotation",
-                        )?;
-                        svg.push(' ');
-                        push_svg_number(
-                            &mut svg,
-                            frame_clip.transform.center_x,
-                            "SVG frame clip center x",
-                        )?;
-                        svg.push(' ');
-                        push_svg_number(
-                            &mut svg,
-                            frame_clip.transform.center_y,
-                            "SVG frame clip center y",
-                        )?;
-                        svg.push_str(")\"/></clipPath>");
-                    }
                     if let Some(link) = link {
                         svg.push_str("<a href=\"");
                         push_escaped_attribute(&mut svg, link);
                         svg.push_str("\">");
-                    }
-                    if frame_clip.is_some() {
-                        svg.push_str("<g clip-path=\"url(#frame-fallback-");
-                        write!(svg, "{clip_index}").map_err(|_| {
-                            FormatEncodeError::Encoding(
-                                "failed to write SVG frame clip reference".to_owned(),
-                            )
-                        })?;
-                        svg.push_str(")\">");
                     }
                     svg.push_str("<g transform=\"translate(");
                     push_svg_number(&mut svg, *translation_x, "SVG fallback translation x")?;
@@ -613,13 +739,13 @@ impl SvgPlan {
                         svg.push_str("</text>");
                     }
                     svg.push_str("</g></g>");
-                    if frame_clip.is_some() {
-                        svg.push_str("</g>");
-                    }
                     if link.is_some() {
                         svg.push_str("</a>");
                     }
                 }
+            }
+            for _ in 0..frame_clip_count {
+                svg.push_str("</g>");
             }
         }
         svg.push_str("</svg>");
@@ -634,6 +760,7 @@ impl SvgPlan {
         self.elements.get(index).map(|element| match element {
             SvgElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
+            SvgElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }

@@ -386,12 +386,13 @@ fn compatibility_placeholder_preserves_frame_clipping_in_every_format() {
             .expect("fixture pixel offset fits usize");
         &rgba[offset..offset + 4]
     };
-    assert_ne!(pixel(95, 40), [255, 255, 255, 255]);
-    assert_eq!(pixel(140, 40), [255, 255, 255, 255]);
+    assert_ne!(pixel(95, 64), [255, 255, 255, 255]);
+    assert_eq!(pixel(140, 64), [255, 255, 255, 255]);
 
     let pdf = render(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
-    assert!(pdf.matches("W\nn\n").count() >= 3);
+    assert!(pdf.matches("W\nn\n").count() >= 2);
+    assert!(!pdf.contains("/Subtype /Image"));
 }
 
 #[test]

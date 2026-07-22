@@ -129,6 +129,7 @@ pub(crate) enum ResourceRecordKind {
     FormatPlanOperation,
     BuiltInSelectionState,
     RasterColorSurface,
+    RasterMaskSurface,
     #[allow(dead_code)]
     Diagnostic,
     SvgSerializerWorkspace,

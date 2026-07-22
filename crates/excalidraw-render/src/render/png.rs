@@ -21,6 +21,7 @@ enum PngElement {
     RoughOutline {
         source: NormalizedElementSource,
         drawing: Drawing,
+        frame_clips: Vec<PngFrameClip>,
         transform: PngTransform,
         stroke_color: CanonicalColor,
         fill_color: Option<CanonicalColor>,
@@ -36,6 +37,7 @@ enum PngElement {
         source: NormalizedElementSource,
         path: super::freedraw::ProjectedPath,
         background_fill: Option<super::rough::Fill>,
+        frame_clips: Vec<PngFrameClip>,
         transform: PngTransform,
         color: CanonicalColor,
         background_color: Option<CanonicalColor>,
@@ -44,10 +46,20 @@ enum PngElement {
         base_element_work_units: u64,
         render: bool,
     },
+    Frame {
+        source: NormalizedElementSource,
+        name: Option<super::text::ResolvedLabel>,
+        magic: bool,
+        outline_path: Option<Path>,
+        frame_clips: Vec<PngFrameClip>,
+        transform: PngTransform,
+        opacity: f64,
+        render: bool,
+    },
     Fallback {
         source: super::FallbackSource,
         label: Option<super::text::ResolvedLabel>,
-        frame_clip: Option<PngFrameClip>,
+        frame_clips: Vec<PngFrameClip>,
         width: f64,
         height: f64,
         transform: PngTransform,
@@ -57,11 +69,40 @@ enum PngElement {
     },
 }
 
-#[derive(Clone, Copy)]
 struct PngFrameClip {
-    width: f64,
-    height: f64,
+    path: Path,
     transform: PngTransform,
+}
+
+fn project_frame_clips(
+    clips: Vec<super::ResolvedClip>,
+    scale: f64,
+) -> Result<Vec<PngFrameClip>, FormatEncodeError> {
+    let mut projected = Vec::new();
+    projected
+        .try_reserve_exact(clips.len())
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_plan",
+            subject: "png_frame_clips",
+        })?;
+    for clip in clips {
+        projected.push(PngFrameClip {
+            path: clip.path,
+            transform: PngTransform::new(&clip.transform, scale),
+        });
+    }
+    Ok(projected)
+}
+
+impl PngElement {
+    fn frame_clips(&self) -> &[PngFrameClip] {
+        match self {
+            Self::RoughOutline { frame_clips, .. }
+            | Self::Freedraw { frame_clips, .. }
+            | Self::Frame { frame_clips, .. } => frame_clips,
+            Self::Fallback { .. } => &[],
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -128,6 +169,12 @@ impl PngTransform {
             y: self.b * point.x + self.d * point.y + self.f,
         }
     }
+
+    fn with_local_offset(mut self, x: f64, y: f64) -> Self {
+        self.e += self.a * x + self.c * y;
+        self.f += self.b * x + self.d * y;
+        self
+    }
 }
 
 impl PngPlan {
@@ -160,6 +207,7 @@ impl PngPlan {
                     elements.push(PngElement::RoughOutline {
                         source: outline.source,
                         drawing: outline.drawing,
+                        frame_clips: project_frame_clips(outline.frame_clips, scale)?,
                         transform: PngTransform::new(&outline.transform, scale),
                         stroke_color: outline.stroke_color,
                         fill_color: outline.fill_color,
@@ -177,12 +225,25 @@ impl PngPlan {
                         source: freedraw.source,
                         path: super::freedraw::project(freedraw.path)?,
                         background_fill: freedraw.background_fill,
+                        frame_clips: project_frame_clips(freedraw.frame_clips, scale)?,
                         transform: PngTransform::new(&freedraw.transform, scale),
                         color: freedraw.color,
                         background_color: freedraw.background_color,
                         source_stroke_width: freedraw.source_stroke_width,
                         opacity: freedraw.opacity,
                         base_element_work_units: freedraw.base_element_work_units,
+                        render: true,
+                    });
+                }
+                ResolvedElement::Frame(frame) => {
+                    elements.push(PngElement::Frame {
+                        source: frame.source,
+                        name: frame.name,
+                        magic: frame.magic,
+                        outline_path: frame.outline_path,
+                        frame_clips: project_frame_clips(frame.frame_clips, scale)?,
+                        transform: PngTransform::new(&frame.transform, scale),
+                        opacity: frame.opacity,
                         render: true,
                     });
                 }
@@ -205,11 +266,7 @@ impl PngPlan {
                     elements.push(PngElement::Fallback {
                         source: fallback.source,
                         label: fallback.label,
-                        frame_clip: fallback.frame_clip.map(|clip| PngFrameClip {
-                            width: clip.width,
-                            height: clip.height,
-                            transform: PngTransform::new(&clip.transform, scale),
-                        }),
+                        frame_clips: project_frame_clips(fallback.frame_clips, scale)?,
                         width: fallback.width,
                         height: fallback.height,
                         transform: PngTransform::new(&fallback.transform, scale),
@@ -267,10 +324,18 @@ impl PngPlan {
                 surface.fill(Color::from_rgba8(red, green, blue, alpha));
             }
             for element in &self.elements {
+                let frame_mask = png_frame_mask(
+                    raster_width,
+                    raster_height,
+                    element.frame_clips(),
+                    SUBPIXEL_SCALE,
+                )?;
+                let frame_mask = frame_mask.as_ref();
                 match element {
                     PngElement::RoughOutline {
                         source,
                         drawing,
+                        frame_clips: _,
                         transform,
                         stroke_color,
                         fill_color,
@@ -301,6 +366,7 @@ impl PngPlan {
                             *stroke_style,
                             *source_stroke_width,
                             *opacity,
+                            frame_mask,
                         )?;
                         for decoration in &drawing.decorations {
                             let fill = super::decoration_fill_color(
@@ -320,6 +386,7 @@ impl PngPlan {
                                 decoration_style,
                                 decoration_stroke_width,
                                 *opacity,
+                                frame_mask,
                             )?;
                         }
                     }
@@ -327,6 +394,7 @@ impl PngPlan {
                         source,
                         path,
                         background_fill,
+                        frame_clips: _,
                         transform,
                         color,
                         background_color,
@@ -355,7 +423,7 @@ impl PngPlan {
                                     &paint,
                                     FillRule::EvenOdd,
                                     raster_transform,
-                                    None,
+                                    frame_mask,
                                 ),
                                 FillKind::Sketch => {
                                     let stroke = Stroke {
@@ -373,7 +441,7 @@ impl PngPlan {
                                         &paint,
                                         &stroke,
                                         raster_transform,
-                                        None,
+                                        frame_mask,
                                     );
                                 }
                             }
@@ -383,12 +451,78 @@ impl PngPlan {
                         }
                         let path = tiny_skia_freedraw_path(path)?;
                         let paint = solid_paint(*color, *opacity)?;
-                        surface.fill_path(&path, &paint, FillRule::Winding, raster_transform, None);
+                        surface.fill_path(
+                            &path,
+                            &paint,
+                            FillRule::Winding,
+                            raster_transform,
+                            frame_mask,
+                        );
+                    }
+                    PngElement::Frame {
+                        source,
+                        name,
+                        magic,
+                        outline_path,
+                        frame_clips: _,
+                        transform,
+                        opacity,
+                        render,
+                    } => {
+                        if !render {
+                            continue;
+                        }
+                        if source.id().is_empty() || source.pointer().is_empty() {
+                            return Err(FormatEncodeError::Encoding(
+                                "PNG frame lost its source identity".to_owned(),
+                            ));
+                        }
+                        if let Some(outline_path) = outline_path {
+                            let path = tiny_skia_path(outline_path)?;
+                            let color = if *magic {
+                                CanonicalColor::from_rgb8(0x7a, 0xff, 0xd7)
+                            } else {
+                                CanonicalColor::from_rgb8(0xbb, 0xbb, 0xbb)
+                            };
+                            let paint = solid_paint(color, *opacity)?;
+                            let stroke = Stroke {
+                                width: 2.0,
+                                miter_limit: 4.0,
+                                line_cap: LineCap::Round,
+                                line_join: LineJoin::Round,
+                                dash: None,
+                            };
+                            surface.stroke_path(
+                                &path,
+                                &paint,
+                                &stroke,
+                                transform.raster_transform(SUBPIXEL_SCALE)?,
+                                frame_mask,
+                            );
+                        }
+                        if let Some(name) = name {
+                            let path = label_path(&name.path)?;
+                            let color = if *magic {
+                                CanonicalColor::from_rgb8(0x7a, 0xff, 0xd7)
+                            } else {
+                                CanonicalColor::from_rgb8(0x1b, 0x1b, 0x1f)
+                            };
+                            let paint = solid_paint(color, *opacity)?;
+                            surface.fill_path(
+                                &path,
+                                &paint,
+                                FillRule::Winding,
+                                transform
+                                    .with_local_offset(0.0, -24.0)
+                                    .raster_transform(SUBPIXEL_SCALE)?,
+                                frame_mask,
+                            );
+                        }
                     }
                     PngElement::Fallback {
                         source,
                         label,
-                        frame_clip,
+                        frame_clips,
                         width,
                         height,
                         transform,
@@ -454,9 +588,8 @@ impl PngPlan {
                             )
                         })?;
                         clip.fill_path(&bounds, FillRule::Winding, true, transform);
-                        if let Some(frame_clip) = frame_clip {
-                            let (frame_bounds, _) =
-                                fallback_paths(frame_clip.width, frame_clip.height)?;
+                        for frame_clip in frame_clips {
+                            let frame_bounds = tiny_skia_path(&frame_clip.path)?;
                             clip.intersect_path(
                                 &frame_bounds,
                                 FillRule::Winding,
@@ -579,6 +712,7 @@ impl PngPlan {
                 self.width,
                 self.height,
             ),
+            PngElement::Frame { .. } => 0,
             PngElement::Fallback {
                 width,
                 height,
@@ -604,6 +738,7 @@ impl PngPlan {
                 base_element_work_units,
                 ..
             } => *base_element_work_units,
+            PngElement::Frame { .. } => 8,
             PngElement::Fallback {
                 base_element_work_units,
                 ..
@@ -615,6 +750,7 @@ impl PngPlan {
         self.elements.get(index).map(|element| match element {
             PngElement::RoughOutline { .. } => None,
             PngElement::Freedraw { .. } => None,
+            PngElement::Frame { .. } => None,
             PngElement::Fallback {
                 width,
                 height,
@@ -630,6 +766,39 @@ impl PngPlan {
         })
     }
 
+    pub(super) fn frame_mask_surface_area(&self, index: usize) -> Option<Option<u64>> {
+        self.elements.get(index).map(|element| match element {
+            PngElement::RoughOutline { frame_clips, .. }
+            | PngElement::Freedraw { frame_clips, .. }
+            | PngElement::Frame { frame_clips, .. }
+                if !frame_clips.is_empty() =>
+            {
+                Some(u64::from(self.width).saturating_mul(u64::from(self.height)))
+            }
+            _ => None,
+        })
+    }
+
+    pub(super) fn has_frame_masks(&self) -> bool {
+        self.elements.iter().any(|element| {
+            matches!(
+                element,
+                PngElement::RoughOutline { frame_clips, .. }
+                    | PngElement::Freedraw { frame_clips, .. }
+                    | PngElement::Frame { frame_clips, .. }
+                    if !frame_clips.is_empty()
+            )
+        })
+    }
+
+    pub(super) fn maximum_frame_mask_surface_area(&self) -> u64 {
+        if self.has_frame_masks() {
+            u64::from(self.width).saturating_mul(u64::from(self.height))
+        } else {
+            0
+        }
+    }
+
     pub(super) fn source_count(&self) -> usize {
         self.elements.len()
     }
@@ -638,6 +807,7 @@ impl PngPlan {
         self.elements.get(index).map(|element| match element {
             PngElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
             PngElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
+            PngElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
             PngElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -649,6 +819,10 @@ impl PngPlan {
                 true
             }
             Some(PngElement::Freedraw { render, .. }) => {
+                *render = false;
+                true
+            }
+            Some(PngElement::Frame { render, .. }) => {
                 *render = false;
                 true
             }
@@ -992,6 +1166,7 @@ fn paint_rough_drawing(
     stroke_style: StrokeStyle,
     source_stroke_width: f64,
     opacity: f64,
+    mask: Option<&Mask>,
 ) -> Result<(), FormatEncodeError> {
     if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
         let path = tiny_skia_path(&fill.path)?;
@@ -1006,7 +1181,7 @@ fn paint_rough_drawing(
                     FillRule::Winding
                 },
                 transform,
-                None,
+                mask,
             ),
             FillKind::Sketch => {
                 let stroke = Stroke {
@@ -1016,7 +1191,7 @@ fn paint_rough_drawing(
                     line_join: LineJoin::Round,
                     dash: None,
                 };
-                surface.stroke_path(&path, &paint, &stroke, transform, None);
+                surface.stroke_path(&path, &paint, &stroke, transform, mask);
             }
         }
     }
@@ -1059,9 +1234,45 @@ fn paint_rough_drawing(
         &paint,
         FillRule::Winding,
         Transform::identity(),
-        None,
+        mask,
     );
     Ok(())
+}
+
+fn png_frame_mask(
+    width: u32,
+    height: u32,
+    clips: &[PngFrameClip],
+    multiplier: u32,
+) -> Result<Option<Mask>, FormatEncodeError> {
+    if clips.is_empty() {
+        return Ok(None);
+    }
+    let mask_bytes = usize::try_from(width)
+        .ok()
+        .and_then(|width| width.checked_mul(usize::try_from(height).ok()?))
+        .ok_or_else(png_size_error)?;
+    let mut data = Vec::new();
+    data.try_reserve_exact(mask_bytes)
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "raster_surface",
+            subject: "png_frame_clip",
+        })?;
+    data.resize(mask_bytes, 255);
+    let size = IntSize::from_wh(width, height).ok_or_else(png_size_error)?;
+    let mut mask = Mask::from_vec(data, size).ok_or_else(|| {
+        FormatEncodeError::Encoding("PNG frame clip dimensions are invalid".to_owned())
+    })?;
+    for clip in clips {
+        let path = tiny_skia_path(&clip.path)?;
+        mask.intersect_path(
+            &path,
+            FillRule::Winding,
+            true,
+            clip.transform.raster_transform(multiplier)?,
+        );
+    }
+    Ok(Some(mask))
 }
 
 fn solid_paint(color: CanonicalColor, opacity: f64) -> Result<Paint<'static>, FormatEncodeError> {

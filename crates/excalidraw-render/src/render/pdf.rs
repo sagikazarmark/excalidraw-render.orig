@@ -55,6 +55,7 @@ enum PdfElement {
     RoughOutline {
         source: NormalizedElementSource,
         drawing: Drawing,
+        frame_clips: Vec<super::ResolvedClip>,
         transform: super::ResolvedTransform,
         stroke_color: CanonicalColor,
         fill_color: Option<CanonicalColor>,
@@ -68,17 +69,27 @@ enum PdfElement {
         source: NormalizedElementSource,
         path: super::freedraw::ProjectedPath,
         background_fill: Option<super::rough::Fill>,
+        frame_clips: Vec<super::ResolvedClip>,
         transform: super::ResolvedTransform,
         color: CanonicalColor,
         background_color: Option<CanonicalColor>,
         source_stroke_width: f64,
         opacity: f64,
     },
+    Frame {
+        source: NormalizedElementSource,
+        name: Option<super::text::ResolvedLabel>,
+        magic: bool,
+        outline_path: Option<Path>,
+        frame_clips: Vec<super::ResolvedClip>,
+        transform: super::ResolvedTransform,
+        opacity: f64,
+    },
     Fallback {
         source: super::FallbackSource,
         label: Option<super::text::ResolvedLabel>,
         link: Option<String>,
-        frame_clip: Option<super::ResolvedClip>,
+        frame_clips: Vec<super::ResolvedClip>,
         width: f64,
         height: f64,
         transform: super::ResolvedTransform,
@@ -119,6 +130,7 @@ impl PdfPlan {
                     elements.push(PdfElement::RoughOutline {
                         source: outline.source,
                         drawing: outline.drawing,
+                        frame_clips: outline.frame_clips,
                         transform: outline.transform,
                         stroke_color: outline.stroke_color,
                         fill_color: outline.fill_color,
@@ -134,6 +146,7 @@ impl PdfPlan {
                         source: freedraw.source,
                         path: super::freedraw::project(freedraw.path)?,
                         background_fill: freedraw.background_fill,
+                        frame_clips: freedraw.frame_clips,
                         transform: freedraw.transform,
                         color: freedraw.color,
                         background_color: freedraw.background_color,
@@ -141,12 +154,23 @@ impl PdfPlan {
                         opacity: freedraw.opacity,
                     });
                 }
+                ResolvedElement::Frame(frame) => {
+                    elements.push(PdfElement::Frame {
+                        source: frame.source,
+                        name: frame.name,
+                        magic: frame.magic,
+                        outline_path: frame.outline_path,
+                        frame_clips: frame.frame_clips,
+                        transform: frame.transform,
+                        opacity: frame.opacity,
+                    });
+                }
                 ResolvedElement::Fallback(fallback) => {
                     elements.push(PdfElement::Fallback {
                         source: fallback.source,
                         label: fallback.label,
                         link: fallback.link,
-                        frame_clip: fallback.frame_clip,
+                        frame_clips: fallback.frame_clips,
                         width: fallback.width,
                         height: fallback.height,
                         transform: fallback.transform,
@@ -178,29 +202,30 @@ impl PdfPlan {
             .as_deref()
             .map(xmp_metadata)
             .transpose()?;
-        let link_count = self
-            .elements
-            .iter()
-            .filter(|element| match element {
-                PdfElement::Fallback {
-                    link: Some(_),
-                    width,
-                    height,
-                    transform,
-                    frame_clip,
-                    ..
-                } => link_annotation_visible(
+        let mut link_count = 0_usize;
+        for element in &self.elements {
+            if let PdfElement::Fallback {
+                link: Some(_),
+                width,
+                height,
+                transform,
+                frame_clips,
+                ..
+            } = element
+            {
+                if link_annotation_visible(
                     *width,
                     *height,
                     transform,
-                    frame_clip.as_ref(),
+                    frame_clips,
                     self.scale * POINTS_PER_LOGICAL_PIXEL,
                     self.page_width,
                     self.page_height,
-                ),
-                _ => false,
-            })
-            .count();
+                )? {
+                    link_count = link_count.checked_add(1).ok_or_else(pdf_size_error)?;
+                }
+            }
+        }
         let srgb_icc_profile = srgb_icc_profile()?;
         let object_count = 6_usize
             .checked_add(opacity_resources.len())
@@ -401,7 +426,7 @@ impl PdfPlan {
                 width,
                 height,
                 transform,
-                frame_clip,
+                frame_clips,
                 ..
             } = element
             else {
@@ -411,25 +436,18 @@ impl PdfPlan {
                 *width,
                 *height,
                 transform,
-                frame_clip.as_ref(),
+                frame_clips,
                 self.scale * POINTS_PER_LOGICAL_PIXEL,
                 self.page_width,
                 self.page_height,
-            ) {
+            )? {
                 continue;
             }
             let object = first_link_object
                 .checked_add(link_index)
                 .ok_or_else(pdf_size_error)?;
             begin_object(&mut pdf, &mut offsets, object)?;
-            self.write_link_annotation(
-                &mut pdf,
-                link,
-                *width,
-                *height,
-                transform,
-                frame_clip.as_ref(),
-            )?;
+            self.write_link_annotation(&mut pdf, link, *width, *height, transform, frame_clips)?;
             link_index = link_index.saturating_add(1);
         }
         for (index, form) in fallback_forms.iter().enumerate() {
@@ -499,6 +517,7 @@ impl PdfPlan {
         self.elements.get(index).map(|element| match element {
             PdfElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
             PdfElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
+            PdfElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
             PdfElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -510,65 +529,22 @@ impl PdfPlan {
         width: f64,
         height: f64,
         transform: &super::ResolvedTransform,
-        frame_clip: Option<&super::ResolvedClip>,
+        frame_clips: &[super::ResolvedClip],
     ) -> Result<(), FormatEncodeError> {
-        let sin = transform.angle_radians.sin();
-        let cos = transform.angle_radians.cos();
-        let offset_x = transform.translation_x + transform.center_x - cos * transform.center_x
-            + sin * transform.center_y;
-        let offset_y = transform.translation_y + transform.center_y
-            - sin * transform.center_x
-            - cos * transform.center_y;
         let point_scale = self.scale * POINTS_PER_LOGICAL_PIXEL;
-        let map = |x: f64, y: f64| {
-            let logical_x = cos * x - sin * y + offset_x;
-            let logical_y = sin * x + cos * y + offset_y;
-            (
-                logical_x * point_scale,
-                self.page_height - logical_y * point_scale,
-            )
-        };
-        let top_left = map(0.0, 0.0);
-        let top_right = map(width, 0.0);
-        let bottom_left = map(0.0, height);
-        let bottom_right = map(width, height);
-        let mut points = [top_left, top_right, bottom_left, bottom_right];
-        let mut clip_min_x = 0.0;
-        let mut clip_min_y = 0.0;
-        let mut clip_max_x = self.page_width;
-        let mut clip_max_y = self.page_height;
-        if let Some(frame_clip) = frame_clip {
-            let frame_points = transformed_pdf_points(
-                frame_clip.width,
-                frame_clip.height,
-                &frame_clip.transform,
-                point_scale,
-                self.page_height,
-            );
-            clip_min_x = frame_points
-                .iter()
-                .map(|point| point.0)
-                .fold(f64::INFINITY, f64::min)
-                .max(clip_min_x);
-            clip_min_y = frame_points
-                .iter()
-                .map(|point| point.1)
-                .fold(f64::INFINITY, f64::min)
-                .max(clip_min_y);
-            clip_max_x = frame_points
-                .iter()
-                .map(|point| point.0)
-                .fold(f64::NEG_INFINITY, f64::max)
-                .min(clip_max_x);
-            clip_max_y = frame_points
-                .iter()
-                .map(|point| point.1)
-                .fold(f64::NEG_INFINITY, f64::max)
-                .min(clip_max_y);
-        }
-        for point in &mut points {
-            point.0 = point.0.clamp(clip_min_x, clip_max_x);
-            point.1 = point.1.clamp(clip_min_y, clip_max_y);
+        let points = clipped_link_polygon(
+            width,
+            height,
+            transform,
+            frame_clips,
+            point_scale,
+            self.page_width,
+            self.page_height,
+        )?;
+        if points.len() < 3 {
+            return Err(FormatEncodeError::Encoding(
+                "PDF link annotation has no clipped area".to_owned(),
+            ));
         }
         let min_x = points
             .iter()
@@ -596,13 +572,22 @@ impl PdfPlan {
         pdf.push(b' ');
         push_pdf_vec_number(pdf, max_y, "PDF link rectangle y maximum")?;
         pdf.extend_from_slice(b"]\n/QuadPoints [");
-        for (index, (x, y)) in points.into_iter().enumerate() {
-            if index != 0 {
+        let mut first = true;
+        for index in 1..points.len() - 1 {
+            for (x, y) in [
+                points[0],
+                points[index],
+                points[index + 1],
+                points[index + 1],
+            ] {
+                if !first {
+                    pdf.push(b' ');
+                }
+                first = false;
+                push_pdf_vec_number(pdf, x, "PDF link quadrilateral x")?;
                 pdf.push(b' ');
+                push_pdf_vec_number(pdf, y, "PDF link quadrilateral y")?;
             }
-            push_pdf_vec_number(pdf, x, "PDF link quadrilateral x")?;
-            pdf.push(b' ');
-            push_pdf_vec_number(pdf, y, "PDF link quadrilateral y")?;
         }
         pdf.extend_from_slice(b"]\n/Border [0 0 0]\n/A <<\n/S /URI\n/URI (");
         push_pdf_link(pdf, link);
@@ -701,6 +686,9 @@ impl PdfPlan {
             PdfElement::Fallback {
                 label: Some(label), ..
             } => Some(label),
+            PdfElement::Frame {
+                name: Some(label), ..
+            } => Some(label),
             _ => None,
         }) {
             for glyph in &label.glyphs {
@@ -791,6 +779,7 @@ impl PdfPlan {
                         retain(*opacity * background_color.alpha());
                     }
                 }
+                PdfElement::Frame { opacity, .. } => retain(*opacity),
                 PdfElement::Fallback { opacity, .. } => retain(*opacity),
             }
         }
@@ -876,6 +865,9 @@ impl PdfPlan {
                     .checked_mul(160)
                     .and_then(|path_bytes| path_bytes.checked_add(256))
                     .ok_or_else(pdf_size_error)?,
+                PdfElement::Frame { name, .. } => name
+                    .as_ref()
+                    .map_or(512, |name| name.text.len().saturating_add(1_024)),
                 PdfElement::Fallback { label, .. } => label.as_ref().map_or(1_024, |label| {
                     label
                         .path
@@ -932,6 +924,7 @@ impl PdfPlan {
                 PdfElement::RoughOutline {
                     source,
                     drawing,
+                    frame_clips,
                     transform,
                     stroke_color,
                     fill_color,
@@ -958,6 +951,9 @@ impl PdfPlan {
                         - sin * transform.center_x
                         - cos * transform.center_y;
                     content.push_str("q\n");
+                    for frame_clip in frame_clips {
+                        push_transformed_clip(&mut content, frame_clip)?;
+                    }
                     push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
                     if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
                         content.push_str("q\n");
@@ -1047,6 +1043,7 @@ impl PdfPlan {
                     source,
                     path,
                     background_fill,
+                    frame_clips,
                     transform,
                     color,
                     background_color,
@@ -1070,6 +1067,9 @@ impl PdfPlan {
                         - sin * transform.center_x
                         - cos * transform.center_y;
                     content.push_str("q\n");
+                    for frame_clip in frame_clips {
+                        push_transformed_clip(&mut content, frame_clip)?;
+                    }
                     push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
                     if let (Some(fill), Some(background_color)) =
                         (background_fill, background_color)
@@ -1113,11 +1113,63 @@ impl PdfPlan {
                     push_freedraw_path(&mut content, path)?;
                     content.push_str("f\nQ\n");
                 }
+                PdfElement::Frame {
+                    source,
+                    name,
+                    magic,
+                    outline_path,
+                    frame_clips,
+                    transform,
+                    opacity,
+                } => {
+                    if source.id().is_empty() || source.pointer().is_empty() {
+                        return Err(FormatEncodeError::Encoding(
+                            "PDF frame lost its source identity".to_owned(),
+                        ));
+                    }
+                    let (sin, cos) = if transform.angle_radians == 0.0 {
+                        (0.0, 1.0)
+                    } else {
+                        (transform.angle_radians.sin(), transform.angle_radians.cos())
+                    };
+                    let offset_x = transform.translation_x + transform.center_x
+                        - cos * transform.center_x
+                        + sin * transform.center_y;
+                    let offset_y = transform.translation_y + transform.center_y
+                        - sin * transform.center_x
+                        - cos * transform.center_y;
+                    content.push_str("q\n");
+                    for frame_clip in frame_clips {
+                        push_transformed_clip(&mut content, frame_clip)?;
+                    }
+                    push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    if *opacity != 1.0 {
+                        push_opacity_resource(&mut content, opacity_resources, *opacity)?;
+                    }
+                    if let Some(outline_path) = outline_path {
+                        content.push_str("2 w\n1 J\n1 j\n/CS1 CS\n0.7333333333333333 0.7333333333333333 0.7333333333333333 SCN\n");
+                        push_rough_path(&mut content, outline_path)?;
+                        content.push_str("S\n");
+                    }
+                    if let Some(name) = name {
+                        content.push_str("q\n1 0 0 1 0 -24 cm\n/Span << /ActualText <FEFF");
+                        push_utf16be_hex(&mut content, &name.text)?;
+                        content.push_str("> >> BDC\n");
+                        let color = if *magic {
+                            CanonicalColor::from_rgb8(0x7a, 0xff, 0xd7)
+                        } else {
+                            CanonicalColor::from_rgb8(0x1b, 0x1b, 0x1f)
+                        };
+                        push_pdf_label_text(&mut content, name, color)?;
+                        content.push_str("EMC\nQ\n");
+                    }
+                    content.push_str("Q\n");
+                }
                 PdfElement::Fallback {
                     source,
                     label,
                     link: _,
-                    frame_clip,
+                    frame_clips,
                     width,
                     height,
                     transform,
@@ -1140,7 +1192,7 @@ impl PdfPlan {
                         - sin * transform.center_x
                         - cos * transform.center_y;
                     content.push_str("q\n");
-                    if let Some(frame_clip) = frame_clip {
+                    for frame_clip in frame_clips {
                         push_transformed_clip(&mut content, frame_clip)?;
                     }
                     push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
@@ -1228,38 +1280,52 @@ fn link_annotation_visible(
     width: f64,
     height: f64,
     transform: &super::ResolvedTransform,
-    frame_clip: Option<&super::ResolvedClip>,
+    frame_clips: &[super::ResolvedClip],
     point_scale: f64,
     page_width: f64,
     page_height: f64,
-) -> bool {
-    let bounds = |points: &[(f64, f64); 4]| {
-        (
-            points
-                .iter()
-                .map(|point| point.0)
-                .fold(f64::INFINITY, f64::min),
-            points
-                .iter()
-                .map(|point| point.1)
-                .fold(f64::INFINITY, f64::min),
-            points
-                .iter()
-                .map(|point| point.0)
-                .fold(f64::NEG_INFINITY, f64::max),
-            points
-                .iter()
-                .map(|point| point.1)
-                .fold(f64::NEG_INFINITY, f64::max),
-        )
-    };
+) -> Result<bool, FormatEncodeError> {
+    Ok(clipped_link_polygon(
+        width,
+        height,
+        transform,
+        frame_clips,
+        point_scale,
+        page_width,
+        page_height,
+    )?
+    .len()
+        >= 3)
+}
+
+fn clipped_link_polygon(
+    width: f64,
+    height: f64,
+    transform: &super::ResolvedTransform,
+    frame_clips: &[super::ResolvedClip],
+    point_scale: f64,
+    page_width: f64,
+    page_height: f64,
+) -> Result<Vec<(f64, f64)>, FormatEncodeError> {
     let element = transformed_pdf_points(width, height, transform, point_scale, page_height);
-    let (mut min_x, mut min_y, mut max_x, mut max_y) = bounds(&element);
-    min_x = min_x.max(0.0);
-    min_y = min_y.max(0.0);
-    max_x = max_x.min(page_width);
-    max_y = max_y.min(page_height);
-    if let Some(frame_clip) = frame_clip {
+    let mut polygon = Vec::new();
+    polygon
+        .try_reserve_exact(4)
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_workspace",
+            subject: "pdf_link_polygon",
+        })?;
+    polygon.extend([element[0], element[1], element[3], element[2]]);
+    polygon = clip_convex_polygon(
+        &polygon,
+        &[
+            (0.0, 0.0),
+            (0.0, page_height),
+            (page_width, page_height),
+            (page_width, 0.0),
+        ],
+    )?;
+    for frame_clip in frame_clips {
         let frame = transformed_pdf_points(
             frame_clip.width,
             frame_clip.height,
@@ -1267,13 +1333,88 @@ fn link_annotation_visible(
             point_scale,
             page_height,
         );
-        let (frame_min_x, frame_min_y, frame_max_x, frame_max_y) = bounds(&frame);
-        min_x = min_x.max(frame_min_x);
-        min_y = min_y.max(frame_min_y);
-        max_x = max_x.min(frame_max_x);
-        max_y = max_y.min(frame_max_y);
+        polygon = clip_convex_polygon(&polygon, &[frame[0], frame[2], frame[3], frame[1]])?;
     }
-    min_x < max_x && min_y < max_y
+    Ok(polygon)
+}
+
+fn clip_convex_polygon(
+    subject: &[(f64, f64)],
+    clip: &[(f64, f64)],
+) -> Result<Vec<(f64, f64)>, FormatEncodeError> {
+    let mut output = Vec::new();
+    output
+        .try_reserve_exact(subject.len())
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_workspace",
+            subject: "pdf_link_clip_input",
+        })?;
+    output.extend_from_slice(subject);
+    let orientation = clip
+        .iter()
+        .zip(clip.iter().cycle().skip(1))
+        .take(clip.len())
+        .map(|(left, right)| left.0 * right.1 - right.0 * left.1)
+        .sum::<f64>()
+        .signum();
+    for (edge_start, edge_end) in clip
+        .iter()
+        .copied()
+        .zip(clip.iter().copied().cycle().skip(1))
+        .take(clip.len())
+    {
+        let input = output;
+        output = Vec::new();
+        output
+            .try_reserve(input.len().saturating_add(1))
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_workspace",
+                subject: "pdf_clipped_link_polygon",
+            })?;
+        let Some(mut previous) = input.last().copied() else {
+            break;
+        };
+        let mut previous_inside =
+            polygon_half_plane(previous, edge_start, edge_end) * orientation >= 0.0;
+        for current in input {
+            let current_inside =
+                polygon_half_plane(current, edge_start, edge_end) * orientation >= 0.0;
+            if current_inside != previous_inside {
+                output.push(line_intersection(previous, current, edge_start, edge_end));
+            }
+            if current_inside {
+                output.push(current);
+            }
+            previous = current;
+            previous_inside = current_inside;
+        }
+    }
+    Ok(output)
+}
+
+fn polygon_half_plane(point: (f64, f64), edge_start: (f64, f64), edge_end: (f64, f64)) -> f64 {
+    (edge_end.0 - edge_start.0) * (point.1 - edge_start.1)
+        - (edge_end.1 - edge_start.1) * (point.0 - edge_start.0)
+}
+
+fn line_intersection(
+    start: (f64, f64),
+    end: (f64, f64),
+    edge_start: (f64, f64),
+    edge_end: (f64, f64),
+) -> (f64, f64) {
+    let start_distance = polygon_half_plane(start, edge_start, edge_end);
+    let end_distance = polygon_half_plane(end, edge_start, edge_end);
+    let denominator = start_distance - end_distance;
+    let ratio = if denominator == 0.0 {
+        0.0
+    } else {
+        start_distance / denominator
+    };
+    (
+        start.0 + (end.0 - start.0) * ratio,
+        start.1 + (end.1 - start.1) * ratio,
+    )
 }
 
 fn srgb_icc_profile() -> Result<Vec<u8>, FormatEncodeError> {
@@ -1615,16 +1756,33 @@ fn push_transformed_clip(
         - sin * clip.transform.center_x
         - cos * clip.transform.center_y;
     let map = |x: f64, y: f64| (cos * x - sin * y + offset_x, sin * x + cos * y + offset_y);
-    let corners = [
-        map(0.0, 0.0),
-        map(clip.width, 0.0),
-        map(clip.width, clip.height),
-        map(0.0, clip.height),
-    ];
-    for (index, (x, y)) in corners.into_iter().enumerate() {
-        push_pdf_point(output, x, y, if index == 0 { "m" } else { "l" })?;
+    for operation in &clip.path.operations {
+        match operation {
+            PathOperation::Move(point) => {
+                let (x, y) = map(point.x, point.y);
+                push_pdf_point(output, x, y, "m")?;
+            }
+            PathOperation::Line(point) => {
+                let (x, y) = map(point.x, point.y);
+                push_pdf_point(output, x, y, "l")?;
+            }
+            PathOperation::Cubic {
+                control_1,
+                control_2,
+                end,
+            } => {
+                for point in [control_1, control_2, end] {
+                    let (x, y) = map(point.x, point.y);
+                    push_pdf_number(output, x, "PDF frame clip curve x")?;
+                    output.push(' ');
+                    push_pdf_number(output, y, "PDF frame clip curve y")?;
+                    output.push(' ');
+                }
+                output.push_str("c\n");
+            }
+        }
     }
-    output.push_str("h\nW\nn\n");
+    output.push_str("W\nn\n");
     Ok(())
 }
 
