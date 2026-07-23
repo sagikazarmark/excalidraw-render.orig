@@ -883,7 +883,7 @@ impl RenderSession {
                                 return Err(self.memory_failure(
                                     request,
                                     "asset_resolution",
-                                    "static_png",
+                                    "raster_asset",
                                 ));
                             }
                             if !matches!(failure, asset::ResolveError::Missing)
@@ -5445,6 +5445,16 @@ fn image_asset_failure_diagnostic(
             "referenced WebP payload could not be decoded",
             None,
         ),
+        asset::ResolveError::BmpDecodeFailed => (
+            DiagnosticCode::IMAGE_DECODE_FAILED,
+            "referenced BMP payload could not be decoded",
+            None,
+        ),
+        asset::ResolveError::IcoDecodeFailed => (
+            DiagnosticCode::IMAGE_DECODE_FAILED,
+            "referenced ICO payload could not be decoded",
+            None,
+        ),
         asset::ResolveError::Missing => {
             unreachable!("missing assets are diagnosed by normalization")
         }
@@ -5532,6 +5542,8 @@ fn image_asset_failure_diagnostic(
                         asset::ResolveError::JpegDecodeFailed => Some(try_owned("image/jpeg")?),
                         asset::ResolveError::GifDecodeFailed => Some(try_owned("image/gif")?),
                         asset::ResolveError::WebPDecodeFailed => Some(try_owned("image/webp")?),
+                        asset::ResolveError::BmpDecodeFailed => Some(try_owned("image/bmp")?),
+                        asset::ResolveError::IcoDecodeFailed => Some(try_owned("image/x-icon")?),
                         _ => None,
                     },
                     recovery,
