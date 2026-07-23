@@ -20,12 +20,31 @@ pub(crate) struct Failure {
     pub(crate) error: ResolveError,
 }
 
+#[derive(Clone)]
+pub(crate) struct EffectCause {
+    pub(crate) slots: Vec<(u64, u64)>,
+    pub(crate) node_ordinal: u64,
+    pub(crate) attribute: Option<(u64, String)>,
+    pub(crate) effect_input: bool,
+}
+
+#[derive(Clone)]
+pub(crate) struct Effect {
+    pub(crate) node_ordinal: u64,
+    pub(crate) filter_id: String,
+    pub(crate) usage_id: String,
+    pub(crate) marker: String,
+    pub(crate) causes: Vec<EffectCause>,
+    pub(crate) unisolatable: bool,
+}
+
 pub(super) struct SanitizedSvg {
     pub(super) bytes: Vec<u8>,
     pub(super) width: u32,
     pub(super) height: u32,
     pub(super) removals: Vec<Removal>,
     pub(super) failures: Vec<Failure>,
+    pub(super) effects: Vec<Effect>,
     pub(super) work_units: u64,
     pub(super) working_bytes: u64,
     pub(super) nested_asset_entries: u64,
@@ -78,6 +97,7 @@ fn sanitize_at(
     {
         return Err(ResolveError::SvgDecodeFailed);
     }
+    let mut effects = discover_effects(&document);
     let nodes = document
         .descendants()
         .filter(|node| node.is_element() || node.is_text())
@@ -99,6 +119,7 @@ fn sanitize_at(
         &mut serialized,
         &mut removals,
         &mut failures,
+        &mut effects,
         limits,
         revision,
         format,
@@ -154,6 +175,7 @@ fn sanitize_at(
         height,
         removals,
         failures,
+        effects,
         work_units,
         working_bytes,
         nested_asset_entries,
@@ -246,6 +268,7 @@ fn serialize_node(
     output: &mut String,
     removals: &mut Vec<Removal>,
     failures: &mut Vec<Failure>,
+    effects: &mut Vec<Effect>,
     limits: &ResourceLimits,
     revision: CompatibilityRevision,
     format: OutputFormat,
@@ -282,9 +305,25 @@ fn serialize_node(
     if is_root {
         output.push_str(" xmlns=\"http://www.w3.org/2000/svg\"");
     }
+    if format == OutputFormat::Pdf
+        && filter_reference(node).is_some()
+        && node.attribute("id").is_none()
+    {
+        output.push_str(" id=\"__excalidraw_effect_");
+        output.push_str(&ordinal.to_string());
+        output.push('"');
+    }
+    if format == OutputFormat::Pdf && name.starts_with("fe") && node.attribute("result").is_none() {
+        output.push_str(" result=\"__excalidraw_filter_result_");
+        output.push_str(&ordinal.to_string());
+        output.push('"');
+    }
     for (attribute_ordinal, attribute) in node.attributes().enumerate() {
         let attribute_name = attribute.name();
         let value = attribute.value();
+        if attribute_name == "filter" && filter_reference_is_noop(node, value) {
+            continue;
+        }
         if unsafe_attribute(name, attribute_name, attribute.namespace(), value) {
             removals.push(Removal {
                 node_ordinal: ordinal,
@@ -306,6 +345,7 @@ fn serialize_node(
                 normalized_rasters,
                 removals,
                 failures,
+                effects,
                 nested_asset_entries,
                 nested_asset_bytes,
                 nested_decoded_pixels,
@@ -322,6 +362,8 @@ fn serialize_node(
                     continue;
                 }
             }
+        } else if attribute_name == "style" {
+            style_without_noop_filter(node, value)
         } else {
             None
         };
@@ -346,6 +388,7 @@ fn serialize_node(
                 output,
                 removals,
                 failures,
+                effects,
                 limits,
                 revision,
                 format,
@@ -375,6 +418,7 @@ fn sanitize_nested_data_image(
     normalized_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
     removals: &mut Vec<Removal>,
     failures: &mut Vec<Failure>,
+    effects: &mut Vec<Effect>,
     nested_asset_entries: &mut u64,
     nested_asset_bytes: &mut u64,
     nested_decoded_pixels: &mut u64,
@@ -427,6 +471,14 @@ fn sanitize_nested_data_image(
                     .path
                     .insert(0, (slot_node_ordinal, slot_attribute_ordinal));
                 failures.push(failure);
+            }
+            for mut effect in nested.effects {
+                for cause in &mut effect.causes {
+                    cause
+                        .slots
+                        .insert(0, (slot_node_ordinal, slot_attribute_ordinal));
+                }
+                effects.push(effect);
             }
             (
                 "image/svg+xml",
@@ -519,6 +571,32 @@ fn allowed_element(name: &str) -> bool {
             | "tspan"
             | "textPath"
             | "a"
+            | "filter"
+            | "feBlend"
+            | "feColorMatrix"
+            | "feComponentTransfer"
+            | "feFuncR"
+            | "feFuncG"
+            | "feFuncB"
+            | "feFuncA"
+            | "feComposite"
+            | "feConvolveMatrix"
+            | "feDiffuseLighting"
+            | "feDisplacementMap"
+            | "feDistantLight"
+            | "feDropShadow"
+            | "feFlood"
+            | "feGaussianBlur"
+            | "feImage"
+            | "feMerge"
+            | "feMergeNode"
+            | "feMorphology"
+            | "feOffset"
+            | "fePointLight"
+            | "feSpecularLighting"
+            | "feSpotLight"
+            | "feTile"
+            | "feTurbulence"
     )
 }
 
@@ -538,9 +616,6 @@ fn unsafe_attribute(element_name: &str, name: &str, namespace: Option<&str>, val
     ) {
         return !safe_href(element_name, value);
     }
-    if name == "filter" {
-        return true;
-    }
     let lowercase = value.to_ascii_lowercase();
     lowercase.contains("@import")
         || lowercase.contains("javascript:")
@@ -548,6 +623,302 @@ fn unsafe_attribute(element_name: &str, name: &str, namespace: Option<&str>, val
         || lowercase.contains("-moz-binding")
         || lowercase.contains("behavior:")
         || contains_nonlocal_url(&lowercase)
+}
+
+fn discover_effects(document: &roxmltree::Document<'_>) -> Vec<Effect> {
+    let mut effects = Vec::new();
+    for node in document.descendants().filter(|node| node.is_element()) {
+        let Some((attribute_ordinal, attribute_name, filter_value)) = filter_reference(node) else {
+            continue;
+        };
+        let Some(filter_id) = local_url_target(&filter_value) else {
+            continue;
+        };
+        let Some(filter) = referenced_filter(node, &filter_value) else {
+            continue;
+        };
+        let primitives = filter
+            .children()
+            .filter(|child| child.is_element() && child.tag_name().name().starts_with("fe"))
+            .collect::<Vec<_>>();
+        if effect_fully_clipped(node)
+            || primitives.is_empty()
+            || primitives
+                .iter()
+                .all(|primitive| primitive_is_noop(*primitive))
+        {
+            continue;
+        }
+        let node_ordinal = source_node_ordinal(document, node);
+        let mut causes = Vec::new();
+        causes.push(EffectCause {
+            slots: Vec::new(),
+            node_ordinal,
+            attribute: Some((
+                u64::try_from(attribute_ordinal).unwrap_or(u64::MAX),
+                attribute_name,
+            )),
+            effect_input: false,
+        });
+        for primitive in &primitives {
+            let primitive_ordinal = source_node_ordinal(document, *primitive);
+            causes.push(EffectCause {
+                slots: Vec::new(),
+                node_ordinal: primitive_ordinal,
+                attribute: None,
+                effect_input: false,
+            });
+            for (attribute_ordinal, attribute) in primitive.attributes().enumerate() {
+                if matches!(attribute.name(), "in" | "in2") {
+                    causes.push(EffectCause {
+                        slots: Vec::new(),
+                        node_ordinal: primitive_ordinal,
+                        attribute: Some((
+                            u64::try_from(attribute_ordinal).unwrap_or(u64::MAX),
+                            attribute.name().to_owned(),
+                        )),
+                        effect_input: true,
+                    });
+                }
+            }
+        }
+        let unisolatable = primitives.iter().any(|primitive| {
+            primitive.attributes().any(|attribute| {
+                matches!(attribute.name(), "in" | "in2")
+                    && matches!(attribute.value(), "BackgroundImage" | "BackgroundAlpha")
+            })
+        });
+        effects.push(Effect {
+            node_ordinal,
+            filter_id: filter_id.to_owned(),
+            usage_id: node
+                .attribute("id")
+                .map(str::to_owned)
+                .unwrap_or_else(|| format!("__excalidraw_effect_{node_ordinal}")),
+            marker: primitives[0]
+                .attribute("result")
+                .map(str::to_owned)
+                .unwrap_or_else(|| {
+                    format!(
+                        "__excalidraw_filter_result_{}",
+                        source_node_ordinal(document, primitives[0])
+                    )
+                }),
+            causes,
+            unisolatable,
+        });
+    }
+    effects
+}
+
+fn filter_reference(node: roxmltree::Node<'_, '_>) -> Option<(usize, String, String)> {
+    for (attribute_ordinal, attribute) in node.attributes().enumerate() {
+        if attribute.name() == "filter" {
+            return Some((
+                attribute_ordinal,
+                "filter".to_owned(),
+                attribute.value().to_owned(),
+            ));
+        }
+        if attribute.name() == "style" {
+            for declaration in attribute.value().split(';') {
+                let Some((name, value)) = declaration.split_once(':') else {
+                    continue;
+                };
+                if name.trim().eq_ignore_ascii_case("filter") {
+                    return Some((
+                        attribute_ordinal,
+                        "style".to_owned(),
+                        value.trim().to_owned(),
+                    ));
+                }
+            }
+        }
+    }
+    None
+}
+
+fn local_url_target(value: &str) -> Option<&str> {
+    value
+        .trim()
+        .strip_prefix("url(")?
+        .strip_suffix(')')?
+        .trim()
+        .trim_matches(['\'', '"'])
+        .strip_prefix('#')
+}
+
+fn filter_reference_is_noop(node: roxmltree::Node<'_, '_>, value: &str) -> bool {
+    effect_fully_clipped(node) || filter_value_is_noop(node, value)
+}
+
+fn filter_value_is_noop(node: roxmltree::Node<'_, '_>, value: &str) -> bool {
+    let Some(filter) = referenced_filter(node, value) else {
+        return false;
+    };
+    let primitives = filter
+        .children()
+        .filter(|child| child.is_element() && child.tag_name().name().starts_with("fe"))
+        .collect::<Vec<_>>();
+    primitives.is_empty()
+        || primitives
+            .iter()
+            .all(|primitive| primitive_is_noop(*primitive))
+}
+
+fn referenced_filter<'a, 'input>(
+    node: roxmltree::Node<'a, 'input>,
+    value: &str,
+) -> Option<roxmltree::Node<'a, 'input>> {
+    let filter_id = local_url_target(value)?;
+    node.document().descendants().find(|candidate| {
+        candidate.is_element()
+            && candidate.tag_name().name() == "filter"
+            && candidate.attribute("id") == Some(filter_id)
+    })
+}
+
+fn style_without_noop_filter(node: roxmltree::Node<'_, '_>, style: &str) -> Option<String> {
+    let mut removed = false;
+    let mut retained = Vec::new();
+    for declaration in style.split(';') {
+        let declaration = declaration.trim();
+        if declaration.is_empty() {
+            continue;
+        }
+        if let Some((name, value)) = declaration.split_once(':') {
+            if name.trim().eq_ignore_ascii_case("filter")
+                && filter_reference_is_noop(node, value.trim())
+            {
+                removed = true;
+                continue;
+            }
+        }
+        retained.push(declaration);
+    }
+    removed.then(|| retained.join(";"))
+}
+
+fn effect_fully_clipped(node: roxmltree::Node<'_, '_>) -> bool {
+    let Some(clip_id) = node.attribute("clip-path").and_then(local_url_target) else {
+        return false;
+    };
+    let Some(subject) = source_shape_bounds(node) else {
+        return false;
+    };
+    let Some(clip) = node.document().descendants().find(|candidate| {
+        candidate.is_element()
+            && candidate.tag_name().name() == "clipPath"
+            && candidate.attribute("id") == Some(clip_id)
+    }) else {
+        return false;
+    };
+    let clip = clip
+        .descendants()
+        .filter(|candidate| candidate.is_element())
+        .filter_map(source_shape_bounds)
+        .reduce(|left, right| {
+            (
+                left.0.min(right.0),
+                left.1.min(right.1),
+                left.2.max(right.2),
+                left.3.max(right.3),
+            )
+        });
+    clip.is_none_or(|clip| {
+        subject.2 <= clip.0 || subject.0 >= clip.2 || subject.3 <= clip.1 || subject.1 >= clip.3
+    })
+}
+
+fn source_shape_bounds(node: roxmltree::Node<'_, '_>) -> Option<(f64, f64, f64, f64)> {
+    let number = |name: &str, default: f64| {
+        node.attribute(name)
+            .map_or(Some(default), |value| value.parse::<f64>().ok())
+    };
+    match node.tag_name().name() {
+        "rect" | "image" => {
+            let x = number("x", 0.0)?;
+            let y = number("y", 0.0)?;
+            let width = number("width", 0.0)?.max(0.0);
+            let height = number("height", 0.0)?.max(0.0);
+            Some((x, y, x + width, y + height))
+        }
+        "circle" => {
+            let cx = number("cx", 0.0)?;
+            let cy = number("cy", 0.0)?;
+            let radius = number("r", 0.0)?.max(0.0);
+            Some((cx - radius, cy - radius, cx + radius, cy + radius))
+        }
+        "ellipse" => {
+            let cx = number("cx", 0.0)?;
+            let cy = number("cy", 0.0)?;
+            let radius_x = number("rx", 0.0)?.max(0.0);
+            let radius_y = number("ry", 0.0)?.max(0.0);
+            Some((cx - radius_x, cy - radius_y, cx + radius_x, cy + radius_y))
+        }
+        _ => None,
+    }
+}
+
+fn source_node_ordinal(document: &roxmltree::Document<'_>, target: roxmltree::Node<'_, '_>) -> u64 {
+    document
+        .descendants()
+        .filter(|node| node.is_element() || node.is_text())
+        .position(|node| node == target)
+        .and_then(|ordinal| u64::try_from(ordinal).ok())
+        .unwrap_or(u64::MAX)
+}
+
+fn primitive_is_noop(node: roxmltree::Node<'_, '_>) -> bool {
+    match node.tag_name().name() {
+        "feGaussianBlur" => number_pair_is_zero(node.attribute("stdDeviation").unwrap_or("0")),
+        "feOffset" => {
+            number_is_zero(node.attribute("dx").unwrap_or("0"))
+                && number_is_zero(node.attribute("dy").unwrap_or("0"))
+        }
+        "feColorMatrix" => color_matrix_is_identity(node),
+        "feComponentTransfer" => node
+            .children()
+            .filter(|child| child.is_element() && child.tag_name().name().starts_with("feFunc"))
+            .all(|function| function.attribute("type").unwrap_or("identity") == "identity"),
+        _ => false,
+    }
+}
+
+fn color_matrix_is_identity(node: roxmltree::Node<'_, '_>) -> bool {
+    match node.attribute("type").unwrap_or("matrix") {
+        "saturate" => node
+            .attribute("values")
+            .is_none_or(|value| value.trim() == "1"),
+        "hueRotate" => node.attribute("values").is_none_or(number_is_zero),
+        "matrix" => {
+            let identity = [
+                1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+            ];
+            node.attribute("values").is_none_or(|values| {
+                values
+                    .split(|character: char| character.is_ascii_whitespace() || character == ',')
+                    .filter(|value| !value.is_empty())
+                    .map(str::parse::<f64>)
+                    .collect::<Result<Vec<_>, _>>()
+                    .is_ok_and(|values| values == identity)
+            })
+        }
+        "luminanceToAlpha" => false,
+        _ => false,
+    }
+}
+
+fn number_pair_is_zero(value: &str) -> bool {
+    let mut values = value
+        .split(|character: char| character.is_ascii_whitespace() || character == ',')
+        .filter(|value| !value.is_empty());
+    values.next().is_none_or(number_is_zero) && values.next().is_none_or(number_is_zero)
+}
+
+fn number_is_zero(value: &str) -> bool {
+    value.parse::<f64>().is_ok_and(|value| value == 0.0)
 }
 
 fn safe_href(element_name: &str, value: &str) -> bool {

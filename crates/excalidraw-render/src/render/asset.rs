@@ -366,7 +366,15 @@ impl Cache {
             limits.max_asset_bytes(),
         )?;
         if svg::looks_like_svg(&payload.bytes) {
-            return self.resolve_svg(revision, format, limits, file_id, payload, &mut transact);
+            return self.resolve_svg(
+                revision,
+                format,
+                limits,
+                file_id,
+                authority,
+                payload,
+                &mut transact,
+            );
         }
         let media_kind = sniff_media_kind(&payload.bytes)?;
         let identity = semantic_identity(revision, media_kind, &payload.bytes);
@@ -645,6 +653,8 @@ impl Cache {
                     .map(|decoded| Arc::clone(&decoded.premultiplied_rgba)),
                 sanitized_svg: None,
                 sanitized_svg_tree: None,
+                svg_effects: Vec::new(),
+                svg_fallback_pointer: None,
             }),
             claims: payload.claims,
             animated: validated.semantics.animated(),
@@ -654,12 +664,14 @@ impl Cache {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn resolve_svg<F>(
         &mut self,
         revision: CompatibilityRevision,
         format: OutputFormat,
         limits: &ResourceLimits,
         file_id: &str,
+        authority: Authority,
         payload: Payload,
         transact: &mut F,
     ) -> Result<Resolution, ResolutionFailure>
@@ -763,6 +775,14 @@ impl Cache {
                 premultiplied_rgba: None,
                 sanitized_svg: Some(Arc::new(sanitized.bytes.clone())),
                 sanitized_svg_tree: Some(Arc::clone(&sanitized.tree)),
+                svg_effects: sanitized.effects.clone(),
+                svg_fallback_pointer: match authority {
+                    Authority::Scene => Some(format!(
+                        "/files/{}/dataURL",
+                        file_id.replace('~', "~0").replace('/', "~1")
+                    )),
+                    Authority::Supplemental | Authority::Missing => Some(String::new()),
+                },
             }),
             claims: payload.claims,
             animated: false,

@@ -1839,6 +1839,7 @@ dependencies = [
  "resvg",
  "siphasher 1.0.3",
  "subsetter",
+ "tiny-skia",
  "ttf-parser",
  "usvg",
 ]

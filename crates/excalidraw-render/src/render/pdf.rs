@@ -1,7 +1,10 @@
 use std::fmt::Write as _;
 use std::io::Write as _;
 
-use crate::{color::CanonicalColor, RenderRequest};
+use crate::{
+    color::CanonicalColor, FiniteValue, LogicalBounds, NestedPath, NestedPathSegment,
+    NestedSegmentKind, RenderRequest,
+};
 
 use super::{
     rough::{self, Drawing, FillKind, Path, PathOperation},
@@ -50,6 +53,32 @@ pub(super) struct PdfPlan {
     fallback_font_sfnt: Option<Vec<u8>>,
     official_fonts: Vec<super::ResolvedFont>,
     elements: Vec<PdfElement>,
+    raster_closures: Vec<PdfRasterClosure>,
+}
+
+pub(super) struct PdfRasterClosure {
+    pub(super) element_id: String,
+    pub(super) json_pointer: String,
+    pub(super) source_order: u64,
+    pub(super) source_position: u64,
+    pub(super) logical_bounds: LogicalBounds,
+    pub(super) pixel_width: u64,
+    pub(super) pixel_height: u64,
+    pub(super) causes: Vec<NestedPath>,
+    pub(super) unisolatable: bool,
+}
+
+struct PdfSvgResource {
+    asset: std::sync::Arc<super::ResolvedImageAsset>,
+    raster_scale: f64,
+}
+
+struct FilterOccurrence {
+    filter_id: String,
+    usage_id: String,
+    marker: String,
+    bounds: (f64, f64, f64, f64),
+    parent: Option<usize>,
 }
 
 enum PdfElement {
@@ -150,14 +179,21 @@ struct PdfSvgChunk {
 
 impl PdfPlan {
     pub(super) fn image_resource_pixel_counts(&self) -> Result<Vec<u64>, FormatEncodeError> {
-        self.image_resources()?
+        let mut counts = self
+            .image_resources()?
             .iter()
             .map(|asset| {
                 u64::from(asset.width)
                     .checked_mul(u64::from(asset.height))
                     .ok_or_else(pdf_size_error)
             })
-            .collect()
+            .collect::<Result<Vec<_>, _>>()?;
+        counts.extend(
+            self.raster_closures
+                .iter()
+                .map(|closure| closure.pixel_width.saturating_mul(closure.pixel_height)),
+        );
+        Ok(counts)
     }
 
     pub(super) fn new(
@@ -285,6 +321,8 @@ impl PdfPlan {
                 }
             }
         }
+        let raster_closures =
+            collect_raster_closures(&elements, scale, scene.logical_width, scene.logical_height)?;
         Ok(Self {
             logical_width: scene.logical_width,
             logical_height: scene.logical_height,
@@ -297,7 +335,12 @@ impl PdfPlan {
             fallback_font_sfnt: scene.fallback_font_sfnt,
             official_fonts: scene.official_fonts,
             elements,
+            raster_closures,
         })
+    }
+
+    pub(super) fn raster_closures(&self) -> &[PdfRasterClosure] {
+        &self.raster_closures
     }
 
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
@@ -1223,9 +1266,7 @@ impl PdfPlan {
         Ok(resources)
     }
 
-    fn svg_resources(
-        &self,
-    ) -> Result<Vec<std::sync::Arc<super::ResolvedImageAsset>>, FormatEncodeError> {
+    fn svg_resources(&self) -> Result<Vec<PdfSvgResource>, FormatEncodeError> {
         let mut resources = Vec::new();
         resources
             .try_reserve_exact(self.elements.len())
@@ -1237,18 +1278,30 @@ impl PdfPlan {
             let PdfElement::Image { asset, .. } = element else {
                 continue;
             };
-            if asset.sanitized_svg.is_none()
-                || resources
-                    .iter()
-                    .any(|candidate: &std::sync::Arc<super::ResolvedImageAsset>| {
-                        candidate.identity == asset.identity
-                    })
-            {
+            if asset.sanitized_svg.is_none() {
                 continue;
             }
-            resources.push(std::sync::Arc::clone(asset));
+            let has_effects = !asset.svg_effects.is_empty();
+            if resources.iter().any(|candidate: &PdfSvgResource| {
+                if has_effects {
+                    std::sync::Arc::ptr_eq(&candidate.asset, asset)
+                } else {
+                    candidate.asset.identity == asset.identity
+                }
+            }) {
+                continue;
+            }
+            let raster_scale = if has_effects {
+                (width_scale(element) * self.scale).max(1.0)
+            } else {
+                1.0
+            };
+            resources.push(PdfSvgResource {
+                asset: std::sync::Arc::clone(asset),
+                raster_scale,
+            });
         }
-        resources.sort_unstable_by_key(|asset| asset.identity);
+        resources.sort_by_key(|resource| resource.asset.identity);
         Ok(resources)
     }
 
@@ -1256,7 +1309,7 @@ impl PdfPlan {
         &self,
         opacity_resources: &[f64],
         image_resources: &[std::sync::Arc<super::ResolvedImageAsset>],
-        svg_resources: &[std::sync::Arc<super::ResolvedImageAsset>],
+        svg_resources: &[PdfSvgResource],
         fallback_mappings: &[PdfGlyphMapping],
         official_mappings: &[Vec<PdfGlyphMapping>],
     ) -> Result<String, FormatEncodeError> {
@@ -1777,9 +1830,13 @@ impl PdfPlan {
                     let (resource_prefix, resource) = if asset.sanitized_svg.is_some() {
                         (
                             "Svg",
-                            svg_resources
-                                .iter()
-                                .position(|candidate| candidate.identity == asset.identity),
+                            svg_resources.iter().position(|candidate| {
+                                if asset.svg_effects.is_empty() {
+                                    candidate.asset.identity == asset.identity
+                                } else {
+                                    std::sync::Arc::ptr_eq(&candidate.asset, asset)
+                                }
+                            }),
                         )
                     } else {
                         (
@@ -2960,9 +3017,345 @@ fn pdf_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("PDF plan exceeds serializer capacity".to_owned())
 }
 
-fn svg_chunks(
-    resources: &[std::sync::Arc<super::ResolvedImageAsset>],
-) -> Result<Vec<PdfSvgChunk>, FormatEncodeError> {
+fn width_scale(element: &PdfElement) -> f64 {
+    let PdfElement::Image {
+        asset,
+        width,
+        height,
+        source_rect,
+        ..
+    } = element
+    else {
+        return 1.0;
+    };
+    let source_width = source_rect
+        .width
+        .min(f64::from(asset.width))
+        .max(f64::EPSILON);
+    let source_height = source_rect
+        .height
+        .min(f64::from(asset.height))
+        .max(f64::EPSILON);
+    (*width / source_width).max(*height / source_height)
+}
+
+fn collect_raster_closures(
+    elements: &[PdfElement],
+    final_scale: f64,
+    logical_width: f64,
+    logical_height: f64,
+) -> Result<Vec<PdfRasterClosure>, FormatEncodeError> {
+    let mut closures: Vec<PdfRasterClosure> = Vec::new();
+    for (element_index, element) in elements.iter().enumerate() {
+        let PdfElement::Image {
+            source,
+            asset,
+            transform,
+            frame_clips,
+            width,
+            height,
+            source_rect,
+            scale,
+            ..
+        } = element
+        else {
+            continue;
+        };
+        if asset.svg_effects.is_empty() {
+            continue;
+        }
+        let tree = asset.sanitized_svg_tree.as_deref().ok_or_else(|| {
+            FormatEncodeError::Encoding("PDF effect source lost its sanitized tree".to_owned())
+        })?;
+        let mut occurrences = Vec::new();
+        collect_filter_occurrences(tree.root(), None, &mut occurrences);
+        let mut occurrence_closures: Vec<Option<usize>> = Vec::new();
+        occurrence_closures.resize(occurrences.len(), None);
+        let mut matched_occurrences = std::collections::BTreeMap::<String, usize>::new();
+        for (occurrence_index, occurrence) in occurrences.iter().enumerate() {
+            let exact_usage = asset.svg_effects.iter().find(|effect| {
+                !occurrence.usage_id.is_empty() && effect.usage_id == occurrence.usage_id
+            });
+            let candidates = asset
+                .svg_effects
+                .iter()
+                .filter(|effect| {
+                    effect.marker == occurrence.marker || effect.filter_id == occurrence.filter_id
+                })
+                .collect::<Vec<_>>();
+            let key = if occurrence.marker.is_empty() {
+                occurrence.filter_id.clone()
+            } else {
+                occurrence.marker.clone()
+            };
+            let matched = matched_occurrences.entry(key).or_default();
+            let effect = exact_usage.or_else(|| {
+                (!candidates.is_empty()).then(|| candidates[*matched % candidates.len()])
+            });
+            *matched = matched.saturating_add(1);
+            let Some(effect) = effect else {
+                continue;
+            };
+            if let Some(parent_closure) = occurrence
+                .parent
+                .and_then(|parent| occurrence_closures.get(parent).copied().flatten())
+            {
+                let closure = closures
+                    .get_mut(parent_closure)
+                    .ok_or_else(pdf_size_error)?;
+                closure
+                    .causes
+                    .extend(effect.causes.iter().map(effect_cause_path));
+                closure.unisolatable |= effect.unisolatable;
+                occurrence_closures[occurrence_index] = Some(parent_closure);
+                continue;
+            }
+            let (x, y, right, bottom) = occurrence.bounds;
+            let viewport_right = f64::from(asset.width);
+            let viewport_bottom = f64::from(asset.height);
+            let x = x.max(0.0).max(source_rect.x);
+            let y = y.max(0.0).max(source_rect.y);
+            let right = right
+                .min(viewport_right)
+                .min(source_rect.x + source_rect.width);
+            let bottom = bottom
+                .min(viewport_bottom)
+                .min(source_rect.y + source_rect.height);
+            if right <= x || bottom <= y {
+                continue;
+            }
+            let local =
+                map_asset_bounds((x, y, right, bottom), *width, *height, *source_rect, *scale);
+            let (x, y, right, bottom) = transform_bounds(local, *transform);
+            let mut x = x.max(0.0);
+            let mut y = y.max(0.0);
+            let mut right = right.min(logical_width);
+            let mut bottom = bottom.min(logical_height);
+            for clip in frame_clips {
+                let Some(clip_bounds) = clip.path.cubic_bounds() else {
+                    right = x;
+                    bottom = y;
+                    break;
+                };
+                let clip_bounds = transform_bounds(clip_bounds, clip.transform);
+                x = x.max(clip_bounds.0);
+                y = y.max(clip_bounds.1);
+                right = right.min(clip_bounds.2);
+                bottom = bottom.min(clip_bounds.3);
+            }
+            if right <= x || bottom <= y {
+                continue;
+            }
+            let pixel_x = (x * final_scale).floor();
+            let pixel_y = (y * final_scale).floor();
+            let pixel_right = (right * final_scale).ceil();
+            let pixel_bottom = (bottom * final_scale).ceil();
+            let pixel_width = (pixel_right - pixel_x).max(1.0) as u64;
+            let pixel_height = (pixel_bottom - pixel_y).max(1.0) as u64;
+            let logical_bounds = LogicalBounds {
+                x: FiniteValue::new(pixel_x / final_scale).ok_or_else(pdf_size_error)?,
+                y: FiniteValue::new(pixel_y / final_scale).ok_or_else(pdf_size_error)?,
+                width: FiniteValue::new(pixel_width as f64 / final_scale)
+                    .ok_or_else(pdf_size_error)?,
+                height: FiniteValue::new(pixel_height as f64 / final_scale)
+                    .ok_or_else(pdf_size_error)?,
+            };
+            let causes = effect
+                .causes
+                .iter()
+                .map(effect_cause_path)
+                .collect::<Vec<_>>();
+            closures.push(PdfRasterClosure {
+                element_id: source.id().to_owned(),
+                json_pointer: asset.svg_fallback_pointer.clone().unwrap_or_default(),
+                source_order: u64::try_from(element_index).unwrap_or(u64::MAX),
+                source_position: effect.node_ordinal,
+                logical_bounds,
+                pixel_width,
+                pixel_height,
+                causes,
+                unisolatable: effect.unisolatable,
+            });
+            occurrence_closures[occurrence_index] = Some(closures.len() - 1);
+        }
+    }
+    Ok(closures)
+}
+
+fn collect_filter_occurrences(
+    group: &usvg::Group,
+    parent: Option<usize>,
+    occurrences: &mut Vec<FilterOccurrence>,
+) {
+    let mut child_parent = parent;
+    if !group.filters().is_empty()
+        && group.has_children()
+        && group.bounding_box().width() > 0.0
+        && group.bounding_box().height() > 0.0
+    {
+        let rect = group.abs_layer_bounding_box();
+        let mut bounds = (
+            f64::from(rect.x()),
+            f64::from(rect.y()),
+            f64::from(rect.right()),
+            f64::from(rect.bottom()),
+        );
+        if let Some(clip) = group.clip_path() {
+            let Some(clip_bounds) = nested_clip_bounds(clip) else {
+                return;
+            };
+            bounds.0 = bounds.0.max(clip_bounds.0);
+            bounds.1 = bounds.1.max(clip_bounds.1);
+            bounds.2 = bounds.2.min(clip_bounds.2);
+            bounds.3 = bounds.3.min(clip_bounds.3);
+            if bounds.2 <= bounds.0 || bounds.3 <= bounds.1 {
+                return;
+            }
+        }
+        for filter in group.filters() {
+            occurrences.push(FilterOccurrence {
+                filter_id: filter.id().to_owned(),
+                usage_id: group.id().to_owned(),
+                marker: filter
+                    .primitives()
+                    .first()
+                    .map(|primitive| primitive.result().to_owned())
+                    .unwrap_or_default(),
+                bounds,
+                parent,
+            });
+            child_parent = Some(occurrences.len() - 1);
+        }
+    }
+    for child in group.children() {
+        if let usvg::Node::Group(child) = child {
+            collect_filter_occurrences(child, child_parent, occurrences);
+        }
+        child.subroots(|subroot| {
+            collect_filter_occurrences(subroot, child_parent, occurrences);
+        });
+    }
+}
+
+fn nested_clip_bounds(clip: &usvg::ClipPath) -> Option<(f64, f64, f64, f64)> {
+    if clip.root().bounding_box().width() == 0.0 || clip.root().bounding_box().height() == 0.0 {
+        return None;
+    }
+    let rect = clip
+        .root()
+        .abs_layer_bounding_box()
+        .transform(clip.transform())?;
+    let mut bounds = (
+        f64::from(rect.x()),
+        f64::from(rect.y()),
+        f64::from(rect.right()),
+        f64::from(rect.bottom()),
+    );
+    if let Some(parent) = clip.clip_path() {
+        let parent = nested_clip_bounds(parent)?;
+        bounds.0 = bounds.0.max(parent.0);
+        bounds.1 = bounds.1.max(parent.1);
+        bounds.2 = bounds.2.min(parent.2);
+        bounds.3 = bounds.3.min(parent.3);
+        if bounds.2 <= bounds.0 || bounds.3 <= bounds.1 {
+            return None;
+        }
+    }
+    Some(bounds)
+}
+
+fn map_asset_bounds(
+    bounds: (f64, f64, f64, f64),
+    width: f64,
+    height: f64,
+    source: super::ResolvedImageSourceRect,
+    scale: [i8; 2],
+) -> (f64, f64, f64, f64) {
+    let map_x = |value: f64| {
+        let value = (value - source.x) * width / source.width;
+        if scale[0] < 0 {
+            width - value
+        } else {
+            value
+        }
+    };
+    let map_y = |value: f64| {
+        let value = (value - source.y) * height / source.height;
+        if scale[1] < 0 {
+            height - value
+        } else {
+            value
+        }
+    };
+    let (x1, x2) = (map_x(bounds.0), map_x(bounds.2));
+    let (y1, y2) = (map_y(bounds.1), map_y(bounds.3));
+    (x1.min(x2), y1.min(y2), x1.max(x2), y1.max(y2))
+}
+
+fn transform_bounds(
+    bounds: (f64, f64, f64, f64),
+    transform: super::ResolvedTransform,
+) -> (f64, f64, f64, f64) {
+    let (sin, cos) = transform.angle_radians.sin_cos();
+    let offset_x = transform.translation_x + transform.center_x - cos * transform.center_x
+        + sin * transform.center_y;
+    let offset_y = transform.translation_y + transform.center_y
+        - sin * transform.center_x
+        - cos * transform.center_y;
+    let point = |x: f64, y: f64| (cos * x - sin * y + offset_x, sin * x + cos * y + offset_y);
+    let points = [
+        point(bounds.0, bounds.1),
+        point(bounds.2, bounds.1),
+        point(bounds.2, bounds.3),
+        point(bounds.0, bounds.3),
+    ];
+    points.iter().fold(
+        (
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        ),
+        |(min_x, min_y, max_x, max_y), (x, y)| {
+            (min_x.min(*x), min_y.min(*y), max_x.max(*x), max_y.max(*y))
+        },
+    )
+}
+
+fn effect_cause_path(cause: &super::asset::svg::EffectCause) -> NestedPath {
+    let mut segments = Vec::new();
+    for (node, attribute) in &cause.slots {
+        segments.push(NestedPathSegment {
+            kind: NestedSegmentKind::Node,
+            ordinal: *node,
+            name: None,
+        });
+        segments.push(NestedPathSegment {
+            kind: NestedSegmentKind::Attribute,
+            ordinal: *attribute,
+            name: Some("href".to_owned()),
+        });
+    }
+    segments.push(NestedPathSegment {
+        kind: NestedSegmentKind::Node,
+        ordinal: cause.node_ordinal,
+        name: None,
+    });
+    if let Some((ordinal, name)) = &cause.attribute {
+        segments.push(NestedPathSegment {
+            kind: if cause.effect_input {
+                NestedSegmentKind::EffectInput
+            } else {
+                NestedSegmentKind::Attribute
+            },
+            ordinal: *ordinal,
+            name: Some(name.clone()),
+        });
+    }
+    NestedPath { segments }
+}
+
+fn svg_chunks(resources: &[PdfSvgResource]) -> Result<Vec<PdfSvgChunk>, FormatEncodeError> {
     let mut chunks = Vec::new();
     chunks.try_reserve_exact(resources.len()).map_err(|_| {
         FormatEncodeError::MemoryUnavailable {
@@ -2971,14 +3364,18 @@ fn svg_chunks(
         }
     })?;
     for resource in resources {
-        let tree = resource.sanitized_svg_tree.as_deref().ok_or_else(|| {
-            FormatEncodeError::Encoding("PDF SVG resource lost its sanitized tree".to_owned())
-        })?;
+        let tree = resource
+            .asset
+            .sanitized_svg_tree
+            .as_deref()
+            .ok_or_else(|| {
+                FormatEncodeError::Encoding("PDF SVG resource lost its sanitized tree".to_owned())
+            })?;
         let (chunk, root) = svg2pdf::to_chunk(
             tree,
             svg2pdf::ConversionOptions {
                 compress: false,
-                raster_scale: 1.0,
+                raster_scale: resource.raster_scale as f32,
                 embed_text: false,
                 ..svg2pdf::ConversionOptions::default()
             },
