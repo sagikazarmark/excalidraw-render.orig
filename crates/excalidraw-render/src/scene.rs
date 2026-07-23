@@ -138,6 +138,10 @@ impl SceneDocument {
         Ok(bytes)
     }
 
+    pub(crate) fn visit_canonicalized_original(&self, visitor: &mut impl FnMut(&[u8])) {
+        visit_canonical_json(&self._root, visitor);
+    }
+
     pub(crate) fn element_occurrence_count(&self) -> usize {
         let JsonValue::Object(root) = &*self._root else {
             return 0;
@@ -1749,77 +1753,76 @@ pub(crate) fn pointer_index(parent: &str, index: usize) -> Result<String, TryRes
 }
 
 fn write_canonical_json(value: &JsonValue, bytes: &mut Vec<u8>) -> Result<(), TryReserveError> {
-    match value {
-        JsonValue::Null => extend_bytes(bytes, b"null")?,
-        JsonValue::Bool(true) => extend_bytes(bytes, b"true")?,
-        JsonValue::Bool(false) => extend_bytes(bytes, b"false")?,
-        JsonValue::Number(number) => extend_bytes(bytes, number.as_bytes())?,
-        JsonValue::String(string) => write_canonical_string(string, bytes)?,
-        JsonValue::Array(values) => {
-            push_byte(bytes, b'[')?;
-            for (index, value) in values.iter().enumerate() {
-                if index != 0 {
-                    push_byte(bytes, b',')?;
-                }
-                write_canonical_json(value, bytes)?;
-            }
-            push_byte(bytes, b']')?;
+    let mut result = Ok(());
+    visit_canonical_json(value, &mut |chunk| {
+        if result.is_ok() {
+            result = bytes
+                .try_reserve(chunk.len())
+                .map(|()| bytes.extend_from_slice(chunk));
         }
-        JsonValue::Object(members) => {
-            push_byte(bytes, b'{')?;
-            for (index, member) in members.iter().enumerate() {
-                if index != 0 {
-                    push_byte(bytes, b',')?;
-                }
-                write_canonical_string(&member.key, bytes)?;
-                push_byte(bytes, b':')?;
-                write_canonical_json(&member.value, bytes)?;
-            }
-            push_byte(bytes, b'}')?;
-        }
-    }
-    Ok(())
+    });
+    result
 }
 
-fn write_canonical_string(value: &str, bytes: &mut Vec<u8>) -> Result<(), TryReserveError> {
+fn visit_canonical_json(value: &JsonValue, visitor: &mut impl FnMut(&[u8])) {
+    match value {
+        JsonValue::Null => visitor(b"null"),
+        JsonValue::Bool(true) => visitor(b"true"),
+        JsonValue::Bool(false) => visitor(b"false"),
+        JsonValue::Number(number) => visitor(number.as_bytes()),
+        JsonValue::String(string) => visit_canonical_string(string, visitor),
+        JsonValue::Array(values) => {
+            visitor(b"[");
+            for (index, value) in values.iter().enumerate() {
+                if index != 0 {
+                    visitor(b",");
+                }
+                visit_canonical_json(value, visitor);
+            }
+            visitor(b"]");
+        }
+        JsonValue::Object(members) => {
+            visitor(b"{");
+            for (index, member) in members.iter().enumerate() {
+                if index != 0 {
+                    visitor(b",");
+                }
+                visit_canonical_string(&member.key, visitor);
+                visitor(b":");
+                visit_canonical_json(&member.value, visitor);
+            }
+            visitor(b"}");
+        }
+    }
+}
+
+fn visit_canonical_string(value: &str, visitor: &mut impl FnMut(&[u8])) {
     const HEX: &[u8; 16] = b"0123456789abcdef";
 
-    push_byte(bytes, b'"')?;
+    visitor(b"\"");
     for character in value.chars() {
         match character {
-            '"' => extend_bytes(bytes, br#"\""#)?,
-            '\\' => extend_bytes(bytes, br#"\\"#)?,
-            '\u{0008}' => extend_bytes(bytes, br"\b")?,
-            '\t' => extend_bytes(bytes, br"\t")?,
-            '\n' => extend_bytes(bytes, br"\n")?,
-            '\u{000c}' => extend_bytes(bytes, br"\f")?,
-            '\r' => extend_bytes(bytes, br"\r")?,
+            '"' => visitor(br#"\""#),
+            '\\' => visitor(br#"\\"#),
+            '\u{0008}' => visitor(br"\b"),
+            '\t' => visitor(br"\t"),
+            '\n' => visitor(br"\n"),
+            '\u{000c}' => visitor(br"\f"),
+            '\r' => visitor(br"\r"),
             '\u{0000}'..='\u{001f}' => {
                 let control = character as usize;
-                extend_bytes(bytes, br"\u00")?;
-                push_byte(bytes, HEX[control >> 4])?;
-                push_byte(bytes, HEX[control & 0x0f])?;
+                visitor(br"\u00");
+                visitor(&HEX[control >> 4..=control >> 4]);
+                let low = control & 0x0f;
+                visitor(&HEX[low..=low]);
             }
             _ => {
                 let mut encoded = [0; 4];
-                extend_bytes(bytes, character.encode_utf8(&mut encoded).as_bytes())?;
+                visitor(character.encode_utf8(&mut encoded).as_bytes());
             }
         }
     }
-    push_byte(bytes, b'"')?;
-    Ok(())
-}
-
-fn push_byte(bytes: &mut Vec<u8>, byte: u8) -> Result<(), TryReserveError> {
-    bytes.try_reserve(1)?;
-    bytes.push(byte);
-    Ok(())
-}
-
-fn extend_bytes(bytes: &mut Vec<u8>, value: &[u8]) -> Result<(), TryReserveError> {
-    bytes.try_reserve(value.len())?;
-    bytes.extend_from_slice(value);
-    Ok(())
+    visitor(b"\"");
 }
 
 fn allocated_bytes(bytes: usize) -> u64 {

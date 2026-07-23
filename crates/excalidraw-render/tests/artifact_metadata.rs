@@ -120,6 +120,71 @@ fn output_exhaustion_omits_only_the_crossing_optional_component() {
 }
 
 #[test]
+fn rejected_higher_priority_metadata_does_not_block_a_later_component() {
+    let renderer = Renderer::new();
+    let scene = SceneDocument::parse(SOURCE).expect("scene is admitted");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let provenance = renderer
+            .render(
+                &scene,
+                &RenderRequest::builder(format)
+                    .metadata_options(MetadataOptions::new(false, true, false))
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        let summary = renderer
+            .render(
+                &scene,
+                &RenderRequest::builder(format)
+                    .metadata_options(MetadataOptions::new(false, false, true))
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        let limit = u64::try_from(summary.artifact().bytes().len()).unwrap();
+        assert!(
+            provenance.artifact().bytes().len() > summary.artifact().bytes().len(),
+            "the vector must isolate the higher-priority component"
+        );
+        let request = RenderRequest::builder(format)
+            .metadata_options(MetadataOptions::new(false, true, true))
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(limit)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+
+        let outcome = renderer.render(&scene, &request).unwrap();
+        let manifest = artifact_manifest(format, outcome.artifact().bytes())
+            .expect("the later summary component is retained");
+        assert!(
+            manifest.contains("\"provenance\":null"),
+            "{format:?}: provenance={}, summary={}, limited={}; manifest: {manifest}",
+            provenance.artifact().bytes().len(),
+            summary.artifact().bytes().len(),
+            outcome.artifact().bytes().len(),
+        );
+        assert!(manifest.contains("\"diagnostic_summary\":{"));
+        assert_eq!(
+            outcome
+                .report()
+                .diagnostics()
+                .iter()
+                .filter(|diagnostic| {
+                    diagnostic.code() == DiagnosticCode::RESOURCE_OPTIONAL_METADATA_OMITTED
+                })
+                .count(),
+            1
+        );
+    }
+}
+
+#[test]
 fn rasterized_font_glyphs_do_not_create_a_png_notice_manifest() {
     let scene = SceneDocument::parse(
         br#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","width":100,"height":30,"fontSize":20,"fontFamily":3,"text":"Code","updated":1}],"appState":{},"files":{}}"#,

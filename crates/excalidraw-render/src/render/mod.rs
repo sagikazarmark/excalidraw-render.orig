@@ -22,10 +22,10 @@ use crate::{
     },
     scene::{OriginalJsonEntryKind, OriginalJsonVisitError},
     Artifact, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode, DiagnosticEffect,
-    DiagnosticSeverity, ErrorCode, ErrorDetails, FiniteValue, Measurement,
-    MetadataComponent as ManifestComponent, MetadataOperation, OutputFormat, Recovery,
-    ReferenceProfileIdentity, RenderError, RenderErrorCategory, RenderOutcome, RenderRequest,
-    ResourceValue, SceneDocument, Sizing, ValueKind,
+    DiagnosticSeverity, ErrorCode, ErrorDetails, FiniteValue, Measurement, MetadataComponent,
+    MetadataOperation, OutputFormat, Recovery, ReferenceProfileIdentity, RenderError,
+    RenderErrorCategory, RenderOutcome, RenderRequest, ResourceValue, SceneDocument, Sizing,
+    ValueKind,
 };
 
 use self::{pdf::PdfPlan, png::PngPlan, svg::SvgPlan};
@@ -46,10 +46,28 @@ fn surface_diagnostic_preflight_limit(request: &RenderRequest) -> usize {
 
 pub(super) enum FormatEncodeError {
     Encoding(String),
+    Metadata(MetadataFailure),
     MemoryUnavailable {
         subject_kind: &'static str,
         subject: &'static str,
     },
+}
+
+pub(super) struct MetadataFailure {
+    code: DiagnosticCode,
+    component: MetadataComponent,
+    operation: MetadataOperation,
+}
+
+pub(super) const fn metadata_embedding_error(
+    code: DiagnosticCode,
+    component: MetadataComponent,
+) -> FormatEncodeError {
+    FormatEncodeError::Metadata(MetadataFailure {
+        code,
+        component,
+        operation: MetadataOperation::Embedding,
+    })
 }
 
 pub(crate) fn render(
@@ -139,21 +157,19 @@ impl OptionalMetadataComponent {
         }
     }
 
-    const fn manifest_component(self) -> ManifestComponent {
+    const fn measurement_event(self) -> &'static str {
         match self {
-            Self::Provenance => ManifestComponent::Provenance,
-            Self::DiagnosticSummary => ManifestComponent::DiagnosticSummary,
-            Self::EmbeddedScene => ManifestComponent::EmbeddedScene,
+            Self::Provenance => "provenance_metadata_measurement",
+            Self::DiagnosticSummary => "diagnostic_summary_metadata_measurement",
+            Self::EmbeddedScene => "embedded_scene_metadata_measurement",
         }
     }
 
-    const fn serialization_code(self) -> DiagnosticCode {
+    const fn retention_event(self) -> &'static str {
         match self {
-            Self::Provenance => DiagnosticCode::METADATA_PROVENANCE_SERIALIZATION_FAILED,
-            Self::DiagnosticSummary => {
-                DiagnosticCode::METADATA_DIAGNOSTIC_SUMMARY_SERIALIZATION_FAILED
-            }
-            Self::EmbeddedScene => DiagnosticCode::METADATA_SCENE_SERIALIZATION_FAILED,
+            Self::Provenance => "provenance_metadata_retention",
+            Self::DiagnosticSummary => "diagnostic_summary_metadata_retention",
+            Self::EmbeddedScene => "embedded_scene_metadata_retention",
         }
     }
 }
@@ -1808,7 +1824,7 @@ impl RenderSession {
                     ErrorCode::ENCODE_SVG_FAILED,
                     0,
                     |metadata| {
-                        plan.set_metadata(metadata.clone());
+                        plan.set_metadata(metadata.try_clone()?);
                         plan.encode()
                     },
                 )?;
@@ -2215,7 +2231,7 @@ impl RenderSession {
                     ErrorCode::ENCODE_PNG_FAILED,
                     rgba_bytes,
                     |metadata| {
-                        plan.set_metadata(metadata.clone());
+                        plan.set_metadata(metadata.try_clone()?);
                         plan.encode()
                     },
                 )?;
@@ -2313,7 +2329,7 @@ impl RenderSession {
                     ErrorCode::ENCODE_PDF_FAILED,
                     0,
                     |metadata| {
-                        plan.set_metadata(metadata.clone());
+                        plan.set_metadata(metadata.try_clone()?);
                         plan.encode()
                     },
                 )?;
@@ -2414,6 +2430,39 @@ impl RenderSession {
         let snapshot = self.report.clone();
         let requested = metadata::MetadataSelection::requested(request);
         let mut accepted = metadata::MetadataSelection::default();
+        let baseline_estimate = metadata::ArtifactMetadata::estimate(
+            scene,
+            self.profile,
+            &snapshot,
+            mandatory_notices,
+            accepted,
+        );
+        let baseline_context = ResourceContext::new(
+            ResourcePhase::Metadata,
+            "mandatory_notice_metadata_generation",
+            "",
+        );
+        if mandatory_notices.is_some() {
+            let baseline_delta = ResourceDelta {
+                working_bytes: baseline_estimate.scratch_bytes,
+                total_work_units: baseline_estimate.generation_work,
+                ..ResourceDelta::default()
+            };
+            if self
+                .meter
+                .optional_metadata_crossing(baseline_context, baseline_delta)
+                .is_some()
+            {
+                return Err(self.format_failure(
+                    request,
+                    error_code,
+                    FormatEncodeError::Encoding(
+                        "mandatory notice metadata cannot be generated".to_owned(),
+                    ),
+                ));
+            }
+            self.transact(request, baseline_context, baseline_delta)?;
+        }
         let baseline = metadata::ArtifactMetadata::build(
             scene,
             self.profile,
@@ -2427,10 +2476,14 @@ impl RenderSession {
         let baseline_bytes = u64::try_from(baseline_artifact.len()).unwrap_or(u64::MAX);
         if self
             .meter
-            .optional_metadata_crossing(artifact_retention_delta(
-                baseline_bytes,
-                codec_emission_work,
-            ))
+            .optional_metadata_crossing(
+                ResourceContext::new(
+                    ResourcePhase::Metadata,
+                    "mandatory_notice_metadata_retention",
+                    "",
+                ),
+                artifact_retention_delta(baseline_bytes, codec_emission_work),
+            )
             .is_some()
         {
             if mandatory_notices.is_some() {
@@ -2442,10 +2495,21 @@ impl RenderSession {
                     ),
                 ));
             }
+            if mandatory_notices.is_some() {
+                self.release_working(request, baseline_context, baseline_estimate.scratch_bytes)?;
+            }
             return Ok((baseline, baseline_artifact));
+        }
+        if mandatory_notices.is_some() {
+            self.release_working(request, baseline_context, baseline_estimate.scratch_bytes)?;
         }
         let mut accepted_metadata = baseline;
         let mut accepted_artifact = baseline_artifact;
+        let mut accepted_estimate = if mandatory_notices.is_some() {
+            baseline_estimate
+        } else {
+            metadata::MetadataEstimate::default()
+        };
 
         for component in [
             OptionalMetadataComponent::Provenance,
@@ -2457,48 +2521,33 @@ impl RenderSession {
             }
             let mut candidate_selection = accepted;
             component.enable(&mut candidate_selection);
-            let candidate = match metadata::ArtifactMetadata::build(
+            let candidate_estimate = metadata::ArtifactMetadata::estimate(
                 scene,
                 self.profile,
                 &snapshot,
                 mandatory_notices,
                 candidate_selection,
-            ) {
-                Ok(candidate) => candidate,
-                Err(error @ FormatEncodeError::MemoryUnavailable { .. }) => {
-                    return Err(self.format_failure(request, error_code, error));
-                }
-                Err(FormatEncodeError::Encoding(_)) => {
-                    self.retain_diagnostic(
-                        request,
-                        ResourcePhase::Metadata,
-                        component.event(),
-                        metadata_component_failure_diagnostic(
-                            request.format(),
-                            component,
-                            MetadataOperation::Serialization,
-                        ),
-                    )?;
-                    continue;
-                }
-            };
+            );
             let compression_workspace = u64::from(matches!(
                 component,
                 OptionalMetadataComponent::EmbeddedScene
             )) * 1_048_576;
-            let scratch_bytes = candidate
-                .scratch_bytes()
-                .saturating_sub(accepted_metadata.scratch_bytes())
+            let scratch_bytes = candidate_estimate
+                .scratch_bytes
+                .saturating_sub(accepted_estimate.scratch_bytes)
                 .saturating_add(compression_workspace);
-            let generation_work = candidate
-                .generation_work()
-                .saturating_sub(accepted_metadata.generation_work());
+            let generation_work = candidate_estimate
+                .generation_work
+                .saturating_sub(accepted_estimate.generation_work);
             let generation_delta = ResourceDelta {
                 working_bytes: scratch_bytes,
                 total_work_units: generation_work,
                 ..ResourceDelta::default()
             };
-            if let Some(crossing) = self.meter.optional_metadata_crossing(generation_delta) {
+            if let Some(crossing) = self.meter.optional_metadata_crossing(
+                ResourceContext::new(ResourcePhase::Metadata, component.event(), ""),
+                generation_delta,
+            ) {
                 self.retain_diagnostic(
                     request,
                     ResourcePhase::Metadata,
@@ -2510,35 +2559,136 @@ impl RenderSession {
             let generation_context =
                 ResourceContext::new(ResourcePhase::Metadata, component.event(), "");
             self.transact(request, generation_context, generation_delta)?;
+            let candidate = match metadata::ArtifactMetadata::build(
+                scene,
+                self.profile,
+                &snapshot,
+                mandatory_notices,
+                candidate_selection,
+            ) {
+                Ok(candidate) => candidate,
+                Err(error @ FormatEncodeError::MemoryUnavailable { .. }) => {
+                    return Err(self.format_failure(request, error_code, error));
+                }
+                Err(FormatEncodeError::Metadata(failure)) => {
+                    self.release_working(request, generation_context, scratch_bytes)?;
+                    if failure.component == MetadataComponent::Manifest {
+                        if mandatory_notices.is_some() {
+                            return Err(self.format_failure(
+                                request,
+                                error_code,
+                                FormatEncodeError::Encoding(
+                                    "mandatory notice manifest could not be serialized".to_owned(),
+                                ),
+                            ));
+                        }
+                        self.retain_diagnostic(
+                            request,
+                            ResourcePhase::Metadata,
+                            "artifact_manifest_metadata_omitted",
+                            metadata_failure_diagnostic(request.format(), failure),
+                        )?;
+                        let empty = metadata::ArtifactMetadata::empty();
+                        let artifact = measure(&empty)
+                            .map_err(|error| self.format_failure(request, error_code, error))?;
+                        return Ok((empty, artifact));
+                    }
+                    self.retain_diagnostic(
+                        request,
+                        ResourcePhase::Metadata,
+                        component.event(),
+                        metadata_failure_diagnostic(request.format(), failure),
+                    )?;
+                    continue;
+                }
+                Err(error @ FormatEncodeError::Encoding(_)) => {
+                    self.release_working(request, generation_context, scratch_bytes)?;
+                    return Err(self.format_failure(request, error_code, error));
+                }
+            };
+            let measurement_delta = ResourceDelta {
+                total_work_units: generation_work,
+                ..ResourceDelta::default()
+            };
+            if let Some(crossing) = self.meter.optional_metadata_crossing(
+                ResourceContext::new(ResourcePhase::Metadata, component.measurement_event(), ""),
+                measurement_delta,
+            ) {
+                self.release_working(request, generation_context, scratch_bytes)?;
+                self.retain_diagnostic(
+                    request,
+                    ResourcePhase::Metadata,
+                    component.event(),
+                    optional_metadata_omitted_diagnostic(request.format(), crossing),
+                )?;
+                continue;
+            }
+            self.transact(
+                request,
+                ResourceContext::new(ResourcePhase::Metadata, component.measurement_event(), ""),
+                measurement_delta,
+            )?;
             let measured = measure(&candidate);
-            self.release_working(request, generation_context, scratch_bytes)?;
             let candidate_artifact = match measured {
                 Ok(candidate_artifact) => candidate_artifact,
                 Err(error @ FormatEncodeError::MemoryUnavailable { .. }) => {
                     return Err(self.format_failure(request, error_code, error));
                 }
-                Err(FormatEncodeError::Encoding(_)) => {
+                Err(FormatEncodeError::Metadata(failure)) => {
+                    self.release_working(request, generation_context, scratch_bytes)?;
+                    if failure.component == MetadataComponent::Manifest {
+                        if mandatory_notices.is_some() {
+                            return Err(self.format_failure(
+                                request,
+                                error_code,
+                                FormatEncodeError::Encoding(
+                                    "mandatory notice manifest could not be embedded".to_owned(),
+                                ),
+                            ));
+                        }
+                        self.retain_diagnostic(
+                            request,
+                            ResourcePhase::Metadata,
+                            "artifact_manifest_metadata_omitted",
+                            metadata_failure_diagnostic(request.format(), failure),
+                        )?;
+                        let empty = metadata::ArtifactMetadata::empty();
+                        let artifact = measure(&empty)
+                            .map_err(|error| self.format_failure(request, error_code, error))?;
+                        return Ok((empty, artifact));
+                    }
                     self.retain_diagnostic(
                         request,
                         ResourcePhase::Metadata,
                         component.event(),
-                        metadata_component_failure_diagnostic(
-                            request.format(),
-                            component,
-                            MetadataOperation::Embedding,
-                        ),
+                        metadata_failure_diagnostic(request.format(), failure),
                     )?;
                     continue;
                 }
+                Err(error @ FormatEncodeError::Encoding(_)) => {
+                    self.release_working(request, generation_context, scratch_bytes)?;
+                    return Err(self.format_failure(request, error_code, error));
+                }
             };
-            let output_bytes = u64::try_from(candidate_artifact.len()).unwrap_or(u64::MAX);
-            if let Some(crossing) = self
-                .meter
-                .optional_metadata_crossing(artifact_retention_delta(
-                    output_bytes,
-                    codec_emission_work,
-                ))
-            {
+            let marginal_bytes = candidate_artifact
+                .len()
+                .checked_sub(accepted_artifact.len())
+                .and_then(|bytes| u64::try_from(bytes).ok())
+                .ok_or_else(|| {
+                    self.internal_failure(
+                        request.format(),
+                        "optional metadata reduced the encoded artifact length",
+                        "",
+                    )
+                })?;
+            let output_bytes = u64::try_from(accepted_artifact.len())
+                .unwrap_or(u64::MAX)
+                .saturating_add(marginal_bytes);
+            if let Some(crossing) = self.meter.optional_metadata_crossing(
+                ResourceContext::new(ResourcePhase::Metadata, component.retention_event(), ""),
+                artifact_retention_delta(output_bytes, codec_emission_work),
+            ) {
+                self.release_working(request, generation_context, scratch_bytes)?;
                 self.retain_diagnostic(
                     request,
                     ResourcePhase::Metadata,
@@ -2546,9 +2696,11 @@ impl RenderSession {
                     optional_metadata_omitted_diagnostic(request.format(), crossing),
                 )?;
             } else {
+                self.release_working(request, generation_context, scratch_bytes)?;
                 accepted = candidate_selection;
                 accepted_metadata = candidate;
                 accepted_artifact = candidate_artifact;
+                accepted_estimate = candidate_estimate;
             }
         }
 
@@ -4220,13 +4372,12 @@ impl RenderSession {
     ) -> Result<(), RenderError> {
         let output_bytes = u64::try_from(measured.len()).unwrap_or(u64::MAX);
         self.admit_output(request, output_bytes, codec_emission_work)?;
-        drop(measured);
 
         let emitted = encode().map_err(|error| self.format_failure(request, error_code, error))?;
-        if u64::try_from(emitted.len()).unwrap_or(u64::MAX) != output_bytes {
+        if emitted != measured {
             return Err(self.internal_failure(
                 request.format(),
-                "measured and emitted artifact lengths differ",
+                "measured and emitted artifact bytes differ",
                 "",
             ));
         }
@@ -4495,6 +4646,11 @@ impl RenderSession {
             FormatEncodeError::Encoding(message) => {
                 self.encoding_failure(request.format(), code, message)
             }
+            FormatEncodeError::Metadata(_) => self.encoding_failure(
+                request.format(),
+                code,
+                "mandatory artifact metadata could not be encoded".to_owned(),
+            ),
             FormatEncodeError::MemoryUnavailable {
                 subject_kind,
                 subject,
@@ -7869,14 +8025,12 @@ fn optional_metadata_omitted_diagnostic(
     }
 }
 
-fn metadata_component_failure_diagnostic(
+fn metadata_failure_diagnostic(
     format: OutputFormat,
-    component: OptionalMetadataComponent,
-    operation: MetadataOperation,
+    failure: MetadataFailure,
 ) -> CompatibilityDiagnostic {
-    let code = component.serialization_code();
     CompatibilityDiagnostic {
-        code,
+        code: failure.code,
         severity: DiagnosticSeverity::Warning,
         format,
         effects: vec![DiagnosticEffect::Metadata],
@@ -7884,8 +8038,8 @@ fn metadata_component_failure_diagnostic(
         json_pointer: String::new(),
         message: "optional artifact metadata component could not be retained".to_owned(),
         details: Some(Box::new(ErrorDetails::Metadata {
-            component: component.manifest_component(),
-            operation,
+            component: failure.component,
+            operation: failure.operation,
             recovery: Recovery::MetadataOmitted,
         })),
         order: DiagnosticOrder::default(),
@@ -8464,6 +8618,249 @@ mod tests {
         assert_eq!(error.code(), ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED);
         assert_eq!(passes, 1, "rejected output is measured but never emitted");
         assert!(session.staged_output.is_none());
+    }
+
+    #[test]
+    fn emission_must_match_the_measured_artifact_bytes() {
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("request is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+        let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
+        let mut session = RenderSession::new(
+            profile,
+            crate::catalog::REVISION_1.scene_surface(),
+            &scene,
+            &request,
+        );
+
+        let error = session
+            .emit_premeasured_output(
+                &request,
+                ErrorCode::ENCODE_SVG_FAILED,
+                0,
+                b"measured".to_vec(),
+                || Ok(b"tampered".to_vec()),
+            )
+            .expect_err("same-length output from a divergent pass is not publishable");
+
+        assert_eq!(error.code(), ErrorCode::RENDER_INTERNAL_FAILURE);
+        assert!(session.staged_output.is_none());
+    }
+
+    #[test]
+    fn allocation_refusal_preserves_the_committed_trace_and_report_prefix() {
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("request is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+        let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
+        let mut successful = RenderSession::new_with_trace(
+            profile,
+            crate::catalog::REVISION_1.scene_surface(),
+            &scene,
+            &request,
+        );
+        let mut refused = RenderSession::new_with_trace(
+            profile,
+            crate::catalog::REVISION_1.scene_surface(),
+            &scene,
+            &request,
+        );
+        let diagnostic = test_diagnostic();
+        refused
+            .retain_diagnostic(
+                &request,
+                ResourcePhase::ProjectionAndFallback,
+                "test_diagnostic",
+                diagnostic.clone(),
+            )
+            .expect("report prefix is retained");
+        successful
+            .retain_diagnostic(
+                &request,
+                ResourcePhase::ProjectionAndFallback,
+                "test_diagnostic",
+                diagnostic.clone(),
+            )
+            .expect("control report prefix is retained");
+        successful
+            .emit_premeasured_output(
+                &request,
+                ErrorCode::ENCODE_SVG_FAILED,
+                0,
+                b"artifact".to_vec(),
+                || Ok(b"artifact".to_vec()),
+            )
+            .expect("control emission succeeds");
+        let expected_trace: serde_json::Value =
+            serde_json::from_slice(&successful.meter.trace_bytes()).expect("control trace is JSON");
+
+        let error = refused
+            .emit_premeasured_output(
+                &request,
+                ErrorCode::ENCODE_SVG_FAILED,
+                0,
+                b"artifact".to_vec(),
+                || {
+                    Err(FormatEncodeError::MemoryUnavailable {
+                        subject_kind: "artifact",
+                        subject: "svg_output",
+                    })
+                },
+            )
+            .expect_err("injected physical allocation refusal is fatal");
+
+        assert_eq!(error.code(), ErrorCode::RESOURCE_MEMORY_UNAVAILABLE);
+        assert_eq!(error.report().diagnostics().len(), 1);
+        assert!(refused.staged_output.is_none());
+        let refused_trace: serde_json::Value =
+            serde_json::from_slice(&refused.meter.trace_bytes()).expect("refusal trace is JSON");
+        assert_eq!(refused_trace["header"], expected_trace["header"]);
+        assert_eq!(refused_trace["entries"], expected_trace["entries"]);
+    }
+
+    #[test]
+    fn scene_carrier_failure_omits_only_the_scene_component() {
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .metadata_options(crate::MetadataOptions::new(true, true, true))
+            .build()
+            .expect("request is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+        let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
+        let mut session = RenderSession::new(
+            profile,
+            crate::catalog::REVISION_1.scene_surface(),
+            &scene,
+            &request,
+        );
+
+        let (metadata, _) = session
+            .select_artifact_metadata(
+                &scene,
+                &request,
+                None,
+                ErrorCode::ENCODE_SVG_FAILED,
+                0,
+                |metadata| {
+                    if metadata.canonical_scene().is_some() {
+                        Err(FormatEncodeError::Metadata(MetadataFailure {
+                            code: DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
+                            component: MetadataComponent::EmbeddedScene,
+                            operation: MetadataOperation::Embedding,
+                        }))
+                    } else {
+                        Ok(metadata.manifest().unwrap_or_default().as_bytes().to_vec())
+                    }
+                },
+            )
+            .expect("scene carrier failure is recoverable");
+
+        assert!(metadata.canonical_scene().is_none());
+        let manifest = metadata.manifest().expect("earlier metadata remains");
+        assert!(manifest.contains("\"provenance\":{"));
+        assert!(manifest.contains("\"diagnostic_summary\":{"));
+        assert!(manifest.ends_with("\"embedded_scene\":null}"));
+        assert_eq!(session.report.diagnostics.len(), 1);
+        assert_eq!(
+            session.report.diagnostics[0].code(),
+            DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED
+        );
+    }
+
+    #[test]
+    fn manifest_carrier_failure_without_notices_drops_all_optional_metadata() {
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .metadata_options(crate::MetadataOptions::new(false, true, false))
+            .build()
+            .expect("request is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+        let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
+        let mut session = RenderSession::new(
+            profile,
+            crate::catalog::REVISION_1.scene_surface(),
+            &scene,
+            &request,
+        );
+
+        let (metadata, artifact) = session
+            .select_artifact_metadata(
+                &scene,
+                &request,
+                None,
+                ErrorCode::ENCODE_SVG_FAILED,
+                0,
+                |metadata| {
+                    if metadata.manifest().is_some() {
+                        Err(FormatEncodeError::Metadata(MetadataFailure {
+                            code: DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
+                            component: MetadataComponent::Manifest,
+                            operation: MetadataOperation::Embedding,
+                        }))
+                    } else {
+                        Ok(b"required artifact".to_vec())
+                    }
+                },
+            )
+            .expect("optional manifest carrier failure is recoverable");
+
+        assert!(metadata.manifest().is_none());
+        assert!(metadata.canonical_scene().is_none());
+        assert_eq!(artifact, b"required artifact");
+        assert_eq!(session.report.diagnostics.len(), 1);
+        assert_eq!(
+            session.report.diagnostics[0].code(),
+            DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED
+        );
+    }
+
+    #[test]
+    fn metadata_retention_rejection_preserves_measurement_work_in_the_trace() {
+        let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+        let metadata = crate::MetadataOptions::new(true, true, true);
+        let unlimited_request = RenderRequest::builder(OutputFormat::Svg)
+            .metadata_options(metadata.clone())
+            .build()
+            .expect("request is valid");
+        let unlimited = Renderer::new()
+            .render(&scene, &unlimited_request)
+            .expect("control render succeeds");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .metadata_options(metadata)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(
+                        u64::try_from(unlimited.artifact().bytes().len()).unwrap() - 1,
+                    )
+                    .build()
+                    .expect("limits are valid"),
+            )
+            .build()
+            .expect("request is valid");
+
+        let (result, trace) = render_with_trace(profile, &scene, &request);
+        result.expect("embedded scene retention exhaustion is recoverable");
+        let trace: serde_json::Value = serde_json::from_slice(&trace).expect("trace is JSON");
+        let entries = trace["entries"].as_array().expect("entries are an array");
+        let measurement = entries
+            .iter()
+            .position(|entry| entry["event"] == "embedded_scene_metadata_measurement")
+            .expect("measurement work is committed");
+        let rejection = entries
+            .iter()
+            .position(|entry| entry["event"] == "embedded_scene_metadata_retention")
+            .expect("retention rejection is traced");
+
+        assert!(measurement < rejection);
+        assert_eq!(entries[measurement]["decision"], "committed");
+        assert_eq!(entries[rejection]["decision"], "rejected_local");
+        assert_eq!(entries[rejection]["before"], entries[rejection]["after"]);
     }
 
     #[test]

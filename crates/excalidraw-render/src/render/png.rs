@@ -1709,7 +1709,12 @@ fn encode_rgba(
             })?;
             text.extend_from_slice(b"application/vnd.excalidraw+json\0");
             text.extend_from_slice(wrapper);
-            append_chunk(&mut png, *b"tEXt", &text)?;
+            append_chunk(&mut png, *b"tEXt", &text).map_err(|_| {
+                super::metadata_embedding_error(
+                    crate::DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
+                    crate::MetadataComponent::EmbeddedScene,
+                )
+            })?;
         }
         if let Some(manifest) = metadata.manifest() {
             let mut text = Vec::new();
@@ -1725,7 +1730,12 @@ fn encode_rgba(
             })?;
             text.extend_from_slice(b"excalidraw-render:artifact-manifest\0\0\0\0\0");
             text.extend_from_slice(manifest.as_bytes());
-            append_chunk(&mut png, *b"iTXt", &text)?;
+            append_chunk(&mut png, *b"iTXt", &text).map_err(|_| {
+                super::metadata_embedding_error(
+                    crate::DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
+                    crate::MetadataComponent::Manifest,
+                )
+            })?;
         }
     }
     append_chunk(&mut png, *b"IEND", &[])?;

@@ -318,16 +318,29 @@ impl ResourceMeter {
     }
 
     pub(crate) fn optional_metadata_crossing(
-        &self,
+        &mut self,
+        context: ResourceContext<'_>,
         delta: ResourceDelta,
     ) -> Option<OptionalMetadataCrossing> {
         let (kind, attempted) = fatal_crossing(self.attempted(delta), &self.limits)?;
         let configured = kind.configured(&self.limits);
+        let measurement = attempted.measurement(configured);
+        let before = self.counters;
+        self.record_transaction(
+            context,
+            delta,
+            before,
+            attempted_counters_for_trace(self.attempted(delta), &self.limits),
+            before,
+            measurement_form(measurement),
+            TraceDecision::RejectedLocal,
+            None,
+        );
         Some(OptionalMetadataCrossing {
             field: kind.field(),
             configured,
             value_kind: kind.value_kind(),
-            measurement: attempted.measurement(configured),
+            measurement,
         })
     }
 

@@ -415,8 +415,15 @@ impl SvgPlan {
             .as_ref()
             .and_then(super::metadata::ArtifactMetadata::manifest)
         {
-            capacity = checked_capacity_add(capacity, escaped_capacity(manifest)?)?;
-            capacity = checked_capacity_add(capacity, 256)?;
+            capacity = escaped_capacity(manifest)
+                .and_then(|manifest_capacity| checked_capacity_add(capacity, manifest_capacity))
+                .and_then(|capacity| checked_capacity_add(capacity, 256))
+                .map_err(|_| {
+                    super::metadata_embedding_error(
+                        crate::DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
+                        crate::MetadataComponent::Manifest,
+                    )
+                })?;
         }
         if let Some(wrapper) = self
             .metadata
@@ -430,8 +437,14 @@ impl SvgPlan {
                     .saturating_add(2)
                     .div_ceil(3)
                     .saturating_mul(4),
-            )?;
-            capacity = checked_capacity_add(capacity, 256)?;
+            )
+            .and_then(|capacity| checked_capacity_add(capacity, 256))
+            .map_err(|_| {
+                super::metadata_embedding_error(
+                    crate::DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
+                    crate::MetadataComponent::EmbeddedScene,
+                )
+            })?;
         }
         capacity = checked_capacity_add(capacity, usize::from(self.background.is_some()) * 32)?;
         for element in &self.elements {

@@ -3,31 +3,63 @@ use std::fmt::Write as _;
 use sha2::{Digest, Sha256};
 
 use crate::{
-    CompatibilityReport, DiagnosticSeverity, ReferenceProfileIdentity, RenderRequest, SceneDocument,
+    CompatibilityReport, DiagnosticCode, DiagnosticSeverity, MetadataComponent, MetadataOperation,
+    ReferenceProfileIdentity, RenderRequest, SceneDocument,
 };
 
-use super::FormatEncodeError;
+use super::{FormatEncodeError, MetadataFailure};
 
 const SCENE_MEDIA_TYPE: &str = "application/vnd.excalidraw+json";
 const WRAPPER_PREFIX: &[u8] =
     b"{\"version\":\"1\",\"encoding\":\"bstring\",\"compressed\":true,\"encoded\":\"";
 
-#[derive(Clone)]
 pub(super) struct ArtifactMetadata {
     manifest: Option<String>,
     scene: Option<EmbeddedScene>,
 }
 
-#[derive(Clone)]
 struct EmbeddedScene {
     canonical: Vec<u8>,
     wrapper: Vec<u8>,
     compressed_len: usize,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(super) struct MetadataEstimate {
+    pub(super) scratch_bytes: u64,
+    pub(super) generation_work: u64,
+}
+
 impl ArtifactMetadata {
+    pub(super) const fn empty() -> Self {
+        Self {
+            manifest: None,
+            scene: None,
+        }
+    }
+
+    pub(super) fn try_clone(&self) -> Result<Self, FormatEncodeError> {
+        let manifest = self
+            .manifest
+            .as_deref()
+            .map(|manifest| try_string(manifest, "artifact_manifest_clone"))
+            .transpose()?;
+        let scene = self
+            .scene
+            .as_ref()
+            .map(|scene| {
+                Ok(EmbeddedScene {
+                    canonical: try_bytes(&scene.canonical, "canonical_scene_clone")?,
+                    wrapper: try_bytes(&scene.wrapper, "scene_wrapper_clone")?,
+                    compressed_len: scene.compressed_len,
+                })
+            })
+            .transpose()?;
+        Ok(Self { manifest, scene })
+    }
+
     pub(super) fn build(
-        scene: &SceneDocument,
+        scene_document: &SceneDocument,
         profile: &ReferenceProfileIdentity,
         report: &CompatibilityReport,
         mandatory_notices: Option<&super::notices::MandatoryNotices>,
@@ -35,14 +67,28 @@ impl ArtifactMetadata {
     ) -> Result<Self, FormatEncodeError> {
         let canonical = selection
             .embedded_scene
-            .then(|| scene.canonicalized_original_bytes())
+            .then(|| scene_document.canonicalized_original_bytes())
             .transpose()
             .map_err(|_| memory("canonical_original_scene"))?;
-        let scene_digest = canonical.as_deref().map(sha256_string);
+        let scene_digest = canonical.as_deref().map(sha256_string).transpose()?;
         let scene = canonical
             .map(|canonical| {
-                let compressed = stored_zlib(&canonical)?;
-                let wrapper = scene_wrapper(&compressed)?;
+                let compressed = stored_zlib(&canonical).map_err(|error| {
+                    metadata_failure(
+                        error,
+                        DiagnosticCode::METADATA_SCENE_COMPRESSION_FAILED,
+                        MetadataComponent::EmbeddedScene,
+                        MetadataOperation::Compression,
+                    )
+                })?;
+                let wrapper = scene_wrapper(&compressed).map_err(|error| {
+                    metadata_failure(
+                        error,
+                        DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
+                        MetadataComponent::EmbeddedScene,
+                        MetadataOperation::Embedding,
+                    )
+                })?;
                 Ok(EmbeddedScene {
                     canonical,
                     wrapper,
@@ -57,8 +103,75 @@ impl ArtifactMetadata {
             || mandatory_notices.is_some();
         let manifest = has_manifest
             .then(|| manifest_json(profile, report, notices, scene_digest.as_deref(), selection))
-            .transpose()?;
-        Ok(Self { manifest, scene })
+            .transpose()
+            .map_err(|error| {
+                metadata_failure(
+                    error,
+                    DiagnosticCode::METADATA_MANIFEST_SERIALIZATION_FAILED,
+                    MetadataComponent::Manifest,
+                    MetadataOperation::Serialization,
+                )
+            })?;
+        let metadata = Self { manifest, scene };
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(
+            Self::estimate(
+                scene_document,
+                profile,
+                report,
+                mandatory_notices,
+                selection
+            ),
+            MetadataEstimate {
+                scratch_bytes: metadata.scratch_bytes(),
+                generation_work: metadata.generation_work(),
+            }
+        );
+        Ok(metadata)
+    }
+
+    pub(super) fn estimate(
+        scene: &SceneDocument,
+        profile: &ReferenceProfileIdentity,
+        report: &CompatibilityReport,
+        mandatory_notices: Option<&super::notices::MandatoryNotices>,
+        selection: MetadataSelection,
+    ) -> MetadataEstimate {
+        let scene = selection
+            .embedded_scene
+            .then(|| embedded_scene_estimate(scene));
+        let notices = mandatory_notices.map_or("[]", super::notices::MandatoryNotices::as_json);
+        let has_manifest = selection.provenance
+            || selection.diagnostic_summary
+            || selection.embedded_scene
+            || mandatory_notices.is_some();
+        let manifest_len = has_manifest.then(|| {
+            manifest_json_len(
+                profile,
+                report,
+                notices,
+                selection.embedded_scene,
+                selection,
+            )
+        });
+        let scene_scratch = scene.map_or(0, |scene| {
+            aligned(scene.canonical_len).saturating_add(aligned(scene.compressed_len))
+        });
+        let scratch_bytes = 512_u64
+            .saturating_add(scene_scratch)
+            .saturating_add(manifest_len.map_or(0, aligned));
+        let generation_work = scene
+            .map_or(0, |scene| {
+                scene
+                    .canonical_len
+                    .saturating_add(scene.compressed_len)
+                    .saturating_add(scene.wrapper_len)
+            })
+            .saturating_add(manifest_len.unwrap_or(0));
+        MetadataEstimate {
+            scratch_bytes,
+            generation_work,
+        }
     }
 
     pub(super) fn manifest(&self) -> Option<&str> {
@@ -101,6 +214,76 @@ impl ArtifactMetadata {
     }
 }
 
+#[derive(Clone, Copy)]
+struct EmbeddedSceneEstimate {
+    canonical_len: u64,
+    compressed_len: u64,
+    wrapper_len: u64,
+}
+
+fn embedded_scene_estimate(scene: &SceneDocument) -> EmbeddedSceneEstimate {
+    let mut canonical_len = 0_u64;
+    scene.visit_canonicalized_original(&mut |bytes| {
+        canonical_len =
+            canonical_len.saturating_add(u64::try_from(bytes.len()).unwrap_or(u64::MAX));
+    });
+    let block_count = canonical_len.max(1).div_ceil(u64::from(u16::MAX));
+    let compressed_len = 2_u64
+        .saturating_add(block_count.saturating_mul(5))
+        .saturating_add(canonical_len)
+        .saturating_add(4);
+    let mut escaped_compressed_len = escaped_byte_len(0x78).saturating_add(escaped_byte_len(0x01));
+    let mut offset = 0_u64;
+    let mut adler_a = 1_u32;
+    let mut adler_b = 0_u32;
+    if canonical_len == 0 {
+        for byte in [1, 0, 0, 0xff, 0xff] {
+            escaped_compressed_len = escaped_compressed_len.saturating_add(escaped_byte_len(byte));
+        }
+    }
+    scene.visit_canonicalized_original(&mut |bytes| {
+        for byte in bytes {
+            if offset.is_multiple_of(u64::from(u16::MAX)) {
+                let block_len = (canonical_len - offset).min(u64::from(u16::MAX)) as u16;
+                let final_block = offset + u64::from(block_len) == canonical_len;
+                for header in [
+                    u8::from(final_block),
+                    block_len.to_le_bytes()[0],
+                    block_len.to_le_bytes()[1],
+                    (!block_len).to_le_bytes()[0],
+                    (!block_len).to_le_bytes()[1],
+                ] {
+                    escaped_compressed_len =
+                        escaped_compressed_len.saturating_add(escaped_byte_len(header));
+                }
+            }
+            escaped_compressed_len = escaped_compressed_len.saturating_add(escaped_byte_len(*byte));
+            adler_a = (adler_a + u32::from(*byte)) % 65_521;
+            adler_b = (adler_b + adler_a) % 65_521;
+            offset = offset.saturating_add(1);
+        }
+    });
+    for byte in ((adler_b << 16) | adler_a).to_be_bytes() {
+        escaped_compressed_len = escaped_compressed_len.saturating_add(escaped_byte_len(byte));
+    }
+    EmbeddedSceneEstimate {
+        canonical_len,
+        compressed_len,
+        wrapper_len: u64::try_from(WRAPPER_PREFIX.len())
+            .unwrap_or(u64::MAX)
+            .saturating_add(escaped_compressed_len)
+            .saturating_add(2),
+    }
+}
+
+fn escaped_byte_len(byte: u8) -> u64 {
+    match byte {
+        b'"' | b'\\' | 0x08 | 0x09 | 0x0a | 0x0c | 0x0d => 2,
+        0x00..=0x1f => 6,
+        _ => 1,
+    }
+}
+
 #[derive(Clone, Copy, Default)]
 pub(super) struct MetadataSelection {
     pub(super) provenance: bool,
@@ -115,6 +298,103 @@ impl MetadataSelection {
             diagnostic_summary: request.metadata_options().diagnostic_summary(),
             embedded_scene: request.metadata_options().embedded_scene(),
         }
+    }
+}
+
+fn manifest_json_len(
+    profile: &ReferenceProfileIdentity,
+    report: &CompatibilityReport,
+    notices: &str,
+    has_scene_digest: bool,
+    selection: MetadataSelection,
+) -> u64 {
+    let mut len = byte_len("{\"schema_version\":1,\"provenance\":");
+    if selection.provenance {
+        len = len
+            .saturating_add(byte_len("{\"renderer_version\":\""))
+            .saturating_add(byte_len(env!("CARGO_PKG_VERSION")))
+            .saturating_add(byte_len("\",\"compatibility_revision\":"))
+            .saturating_add(decimal_len(profile.compatibility_revision().get()))
+            .saturating_add(byte_len(",\"excalidraw_release\":\""))
+            .saturating_add(byte_len(profile.excalidraw_release()))
+            .saturating_add(byte_len("\",\"reference_profile_digest\":\""))
+            .saturating_add(byte_len(profile.profile_digest()))
+            .saturating_add(2);
+    } else {
+        len = len.saturating_add(4);
+    }
+    len = len.saturating_add(byte_len(",\"diagnostic_summary\":"));
+    if selection.diagnostic_summary {
+        len = len.saturating_add(diagnostic_summary_len(report));
+    } else {
+        len = len.saturating_add(4);
+    }
+    len = len
+        .saturating_add(byte_len(",\"notices\":"))
+        .saturating_add(byte_len(notices))
+        .saturating_add(byte_len(",\"embedded_scene\":"));
+    if has_scene_digest {
+        len = len
+            .saturating_add(byte_len("{\"name\":\"scene.excalidraw\",\"media_type\":\""))
+            .saturating_add(byte_len(SCENE_MEDIA_TYPE))
+            .saturating_add(byte_len("\",\"sha256\":\""))
+            .saturating_add(71)
+            .saturating_add(2);
+    } else {
+        len = len.saturating_add(4);
+    }
+    len.saturating_add(1)
+}
+
+fn diagnostic_summary_len(report: &CompatibilityReport) -> u64 {
+    let info = report
+        .diagnostics()
+        .iter()
+        .filter(|diagnostic| diagnostic.severity() == DiagnosticSeverity::Info)
+        .count();
+    let warning = report.len().saturating_sub(info);
+    let mut len = byte_len("{\"snapshot\":\"pre_metadata\",\"total\":")
+        .saturating_add(decimal_len(u64::try_from(report.len()).unwrap_or(u64::MAX)))
+        .saturating_add(byte_len(",\"by_severity\":{\"info\":"))
+        .saturating_add(decimal_len(u64::try_from(info).unwrap_or(u64::MAX)))
+        .saturating_add(byte_len(",\"warning\":"))
+        .saturating_add(decimal_len(u64::try_from(warning).unwrap_or(u64::MAX)))
+        .saturating_add(byte_len("},\"by_code\":["));
+    let mut unique = 0_u64;
+    for (index, diagnostic) in report.diagnostics().iter().enumerate() {
+        let code = diagnostic.code().as_str();
+        if report.diagnostics()[..index]
+            .iter()
+            .any(|prior| prior.code().as_str() == code)
+        {
+            continue;
+        }
+        let count = report
+            .diagnostics()
+            .iter()
+            .filter(|candidate| candidate.code().as_str() == code)
+            .count();
+        len = len
+            .saturating_add(u64::from(unique != 0))
+            .saturating_add(byte_len("{\"code\":\""))
+            .saturating_add(byte_len(code))
+            .saturating_add(byte_len("\",\"count\":"))
+            .saturating_add(decimal_len(u64::try_from(count).unwrap_or(u64::MAX)))
+            .saturating_add(1);
+        unique = unique.saturating_add(1);
+    }
+    len.saturating_add(2)
+}
+
+fn byte_len(value: &str) -> u64 {
+    u64::try_from(value.len()).unwrap_or(u64::MAX)
+}
+
+fn decimal_len(value: u64) -> u64 {
+    if value == 0 {
+        1
+    } else {
+        u64::from(value.ilog10()) + 1
     }
 }
 
@@ -293,8 +573,37 @@ fn stored_zlib(source: &[u8]) -> Result<Vec<u8>, FormatEncodeError> {
     Ok(zlib)
 }
 
-fn sha256_string(bytes: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(bytes))
+fn sha256_string(bytes: &[u8]) -> Result<String, FormatEncodeError> {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let digest = Sha256::digest(bytes);
+    let mut value = String::new();
+    value
+        .try_reserve_exact(71)
+        .map_err(|_| memory("embedded_scene_digest"))?;
+    value.push_str("sha256:");
+    for byte in digest {
+        value.push(char::from(HEX[usize::from(byte >> 4)]));
+        value.push(char::from(HEX[usize::from(byte & 0x0f)]));
+    }
+    Ok(value)
+}
+
+fn try_string(value: &str, subject: &'static str) -> Result<String, FormatEncodeError> {
+    let mut cloned = String::new();
+    cloned
+        .try_reserve_exact(value.len())
+        .map_err(|_| memory(subject))?;
+    cloned.push_str(value);
+    Ok(cloned)
+}
+
+fn try_bytes(value: &[u8], subject: &'static str) -> Result<Vec<u8>, FormatEncodeError> {
+    let mut cloned = Vec::new();
+    cloned
+        .try_reserve_exact(value.len())
+        .map_err(|_| memory(subject))?;
+    cloned.extend_from_slice(value);
+    Ok(cloned)
 }
 
 fn memory(subject: &'static str) -> FormatEncodeError {
@@ -306,6 +615,24 @@ fn memory(subject: &'static str) -> FormatEncodeError {
 
 fn metadata_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("artifact metadata size exceeds the supported range".to_owned())
+}
+
+fn metadata_failure(
+    error: FormatEncodeError,
+    code: DiagnosticCode,
+    component: MetadataComponent,
+    operation: MetadataOperation,
+) -> FormatEncodeError {
+    match error {
+        FormatEncodeError::MemoryUnavailable { .. } => error,
+        FormatEncodeError::Encoding(_) | FormatEncodeError::Metadata(_) => {
+            FormatEncodeError::Metadata(MetadataFailure {
+                code,
+                component,
+                operation,
+            })
+        }
+    }
 }
 
 fn aligned(bytes: u64) -> u64 {

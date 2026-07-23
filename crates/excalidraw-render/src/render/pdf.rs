@@ -374,7 +374,13 @@ impl PdfPlan {
             .as_ref()
             .and_then(super::metadata::ArtifactMetadata::manifest)
             .map(xmp_metadata)
-            .transpose()?;
+            .transpose()
+            .map_err(|_| {
+                super::metadata_embedding_error(
+                    crate::DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
+                    crate::MetadataComponent::Manifest,
+                )
+            })?;
         let embedded_scene = self
             .metadata
             .as_ref()
