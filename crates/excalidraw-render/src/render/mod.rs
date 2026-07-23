@@ -94,6 +94,14 @@ struct RenderSession {
     excalifont_range_selected: bool,
     excalifont_glyphs: Vec<u16>,
     excalifont_request_derived_bytes: u64,
+    pending_png_animation_diagnostics: Vec<PendingAnimationDiagnostic>,
+}
+
+struct PendingAnimationDiagnostic {
+    diagnostic: CompatibilityDiagnostic,
+    local_owner: String,
+    source_order: u64,
+    working_bytes: u64,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -121,6 +129,7 @@ impl RenderSession {
             excalifont_range_selected: false,
             excalifont_glyphs: Vec::new(),
             excalifont_request_derived_bytes: 0,
+            pending_png_animation_diagnostics: Vec::new(),
         }
     }
 
@@ -142,6 +151,7 @@ impl RenderSession {
             excalifont_range_selected: false,
             excalifont_glyphs: Vec::new(),
             excalifont_request_derived_bytes: 0,
+            pending_png_animation_diagnostics: Vec::new(),
         }
     }
 
@@ -752,30 +762,91 @@ impl RenderSession {
                                                 "image_animation_pointer",
                                             )
                                         })?;
-                                let diagnostic = image_animation_flattened_diagnostic(
-                                    request.format(),
-                                    file_id,
-                                    source.source.id(),
-                                    &file_id_pointer,
-                                )
-                                .map_err(|_| {
-                                    self.memory_failure(
+                                if request.format() == OutputFormat::Png {
+                                    let pointer_bytes =
+                                        u64::try_from(file_id_pointer.len()).unwrap_or(u64::MAX);
+                                    let owner_bytes =
+                                        u64::try_from(source.source.id().len()).unwrap_or(u64::MAX);
+                                    let working_bytes = 512_u64
+                                        .saturating_add(logical_aligned_bytes(pointer_bytes))
+                                        .saturating_add(logical_aligned_bytes(owner_bytes));
+                                    self.acquire_working(
                                         request,
-                                        "compatibility_report",
-                                        "image_animation_flattened",
+                                        ResourceContext::new(
+                                            ResourcePhase::SharedSemanticResolution,
+                                            "pending_image_animation_flattened",
+                                            &file_id_pointer,
+                                        )
+                                        .with_element_id(Some(source.source.id()))
+                                        .with_local_owner(Some(source.source.id())),
+                                        working_bytes,
+                                    )?;
+                                    self.pending_png_animation_diagnostics
+                                        .try_reserve(1)
+                                        .map_err(|_| {
+                                            self.memory_failure(
+                                                request,
+                                                "compatibility_report",
+                                                "pending_image_animation_flattened",
+                                            )
+                                        })?;
+                                    let local_owner =
+                                        try_owned(source.source.id()).map_err(|_| {
+                                            self.memory_failure(
+                                                request,
+                                                "compatibility_report",
+                                                "pending_image_animation_owner",
+                                            )
+                                        })?;
+                                    let diagnostic = image_animation_flattened_diagnostic(
+                                        request.format(),
+                                        file_id,
+                                        source.source.id(),
+                                        &file_id_pointer,
+                                        media_type,
                                     )
-                                })?;
-                                self.retain_diagnostic_with_owner(
-                                    request,
-                                    ResourcePhase::SharedSemanticResolution,
-                                    "image_animation_flattened",
-                                    diagnostic,
-                                    DiagnosticOwnership {
-                                        local_owner: Some(source.source.id()),
-                                        source_order: Some(source.source_order),
-                                        source_position: Some(u64::MAX),
-                                    },
-                                )?;
+                                    .map_err(|_| {
+                                        self.memory_failure(
+                                            request,
+                                            "compatibility_report",
+                                            "image_animation_flattened",
+                                        )
+                                    })?;
+                                    self.pending_png_animation_diagnostics.push(
+                                        PendingAnimationDiagnostic {
+                                            diagnostic,
+                                            local_owner,
+                                            source_order: source.source_order,
+                                            working_bytes,
+                                        },
+                                    );
+                                } else {
+                                    let diagnostic = image_animation_flattened_diagnostic(
+                                        request.format(),
+                                        file_id,
+                                        source.source.id(),
+                                        &file_id_pointer,
+                                        media_type,
+                                    )
+                                    .map_err(|_| {
+                                        self.memory_failure(
+                                            request,
+                                            "compatibility_report",
+                                            "image_animation_flattened",
+                                        )
+                                    })?;
+                                    self.retain_diagnostic_with_owner(
+                                        request,
+                                        ResourcePhase::SharedSemanticResolution,
+                                        "image_animation_flattened",
+                                        diagnostic,
+                                        DiagnosticOwnership {
+                                            local_owner: Some(source.source.id()),
+                                            source_order: Some(source.source_order),
+                                            source_position: Some(u64::MAX),
+                                        },
+                                    )?;
+                                }
                             }
                             image_assets.insert(source.source.source_index(), asset);
                             semantic_working.push(SemanticWorkingRecord {
@@ -1534,6 +1605,7 @@ impl RenderSession {
                                 json_pointer,
                                 "frame_mask_surface_local_omission",
                             )?;
+                            self.discard_pending_png_animation_diagnostic(request, element_id)?;
                             if !plan.omit_element(index) {
                                 return Err(self.internal_failure(
                                     request.format(),
@@ -1609,6 +1681,7 @@ impl RenderSession {
                                 .with_local_owner(element_id),
                                 8,
                             )?;
+                            self.discard_pending_png_animation_diagnostic(request, element_id)?;
                             if !plan.omit_element(index) {
                                 return Err(self.internal_failure(
                                     request.format(),
@@ -1715,6 +1788,7 @@ impl RenderSession {
                             .with_local_owner(element_id),
                             8,
                         )?;
+                        self.discard_pending_png_animation_diagnostic(request, element_id)?;
                         if !plan.omit_element(index) {
                             return Err(self.internal_failure(
                                 request.format(),
@@ -1757,6 +1831,8 @@ impl RenderSession {
                         }
                     }
                 }
+
+                self.flush_pending_png_animation_diagnostics(request)?;
 
                 let workspace_bytes = 2_u64
                     .saturating_mul(1_048_576)
@@ -3083,6 +3159,66 @@ impl RenderSession {
             event,
             diagnostic,
             DiagnosticOwnership::default(),
+        )
+    }
+
+    fn discard_pending_png_animation_diagnostic(
+        &mut self,
+        request: &RenderRequest,
+        element_id: Option<&str>,
+    ) -> Result<(), RenderError> {
+        if let Some(element_id) = element_id {
+            if let Some(index) = self
+                .pending_png_animation_diagnostics
+                .iter()
+                .position(|pending| pending.local_owner == element_id)
+            {
+                let pending = self.pending_png_animation_diagnostics.remove(index);
+                self.release_pending_png_animation_diagnostic(request, &pending)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn flush_pending_png_animation_diagnostics(
+        &mut self,
+        request: &RenderRequest,
+    ) -> Result<(), RenderError> {
+        let pending = std::mem::take(&mut self.pending_png_animation_diagnostics);
+        for pending in &pending {
+            self.release_pending_png_animation_diagnostic(request, pending)?;
+        }
+        for pending in pending {
+            self.retain_diagnostic_with_owner(
+                request,
+                ResourcePhase::ProjectionAndFallback,
+                "image_animation_flattened",
+                pending.diagnostic,
+                DiagnosticOwnership {
+                    local_owner: Some(&pending.local_owner),
+                    source_order: Some(pending.source_order),
+                    source_position: Some(u64::MAX),
+                },
+            )?;
+        }
+        Ok(())
+    }
+
+    fn release_pending_png_animation_diagnostic(
+        &mut self,
+        request: &RenderRequest,
+        pending: &PendingAnimationDiagnostic,
+    ) -> Result<(), RenderError> {
+        self.release_working(
+            request,
+            ResourceContext::new(
+                ResourcePhase::SharedSemanticResolution,
+                "pending_image_animation_flattened",
+                &pending.diagnostic.json_pointer,
+            )
+            .with_element_id(pending.diagnostic.element_id.as_deref())
+            .with_local_owner(Some(&pending.local_owner)),
+            pending.working_bytes,
         )
     }
 
@@ -5299,6 +5435,11 @@ fn image_asset_failure_diagnostic(
             "referenced JPEG/JFIF payload could not be decoded",
             None,
         ),
+        asset::ResolveError::GifDecodeFailed => (
+            DiagnosticCode::IMAGE_DECODE_FAILED,
+            "referenced GIF payload could not be decoded",
+            None,
+        ),
         asset::ResolveError::Missing => {
             unreachable!("missing assets are diagnosed by normalization")
         }
@@ -5384,6 +5525,7 @@ fn image_asset_failure_diagnostic(
                     validated_media_type: match failure {
                         asset::ResolveError::DecodeFailed => Some(try_owned("image/png")?),
                         asset::ResolveError::JpegDecodeFailed => Some(try_owned("image/jpeg")?),
+                        asset::ResolveError::GifDecodeFailed => Some(try_owned("image/gif")?),
                         _ => None,
                     },
                     recovery,
@@ -5400,6 +5542,7 @@ fn image_animation_flattened_diagnostic(
     asset_id: &str,
     element_id: &str,
     json_pointer: &str,
+    media_type: &str,
 ) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
     let mut effects = Vec::new();
     effects.try_reserve_exact(1)?;
@@ -5415,7 +5558,7 @@ fn image_animation_flattened_diagnostic(
         details: Some(Box::new(ErrorDetails::Asset {
             asset_id: try_owned(asset_id)?,
             claimed_media_type: None,
-            validated_media_type: Some(try_owned("image/png")?),
+            validated_media_type: Some(try_owned(media_type)?),
             recovery: Recovery::Flattened,
             recipe_id: None,
         })),
