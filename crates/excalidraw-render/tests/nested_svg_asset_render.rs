@@ -1,7 +1,7 @@
 use base64::Engine as _;
 use excalidraw_render::{
-    DiagnosticCode, ErrorCode, ErrorDetails, OutputFormat, Recovery, RenderRequest, Renderer,
-    ResourceLimits, SceneDocument,
+    DiagnosticCode, ErrorCode, ErrorDetails, OutputFormat, PdfOptions, PdfRasterFallback, Recovery,
+    RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
 use std::io::Cursor;
 
@@ -422,6 +422,187 @@ fn filter_primitives_are_removed_instead_of_triggering_silent_pdf_rasterization(
             .count(),
         2
     );
+}
+
+#[test]
+fn svg_projection_preserves_sanitized_semantics_and_selectable_text() {
+    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10">
+        <defs><path id="mark" d="M0 0h10v10H0z"/></defs>
+        <use href="#mark" fill="#ff0000"/>
+        <text x="10" y="9" font-family="Excalifont" font-size="10">A</text>
+    </svg>"##;
+    let scene = image_scene(nested, 20, 10);
+    let svg = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(&svg).expect("artifact SVG is UTF-8");
+    let nested = embedded_svg(svg);
+
+    assert!(nested.contains("<use"));
+    assert!(nested.contains("<text"));
+    assert!(nested.contains("<path"));
+}
+
+#[test]
+fn png_projects_nested_vectors_at_final_device_scale() {
+    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"><circle cx="0.5" cy="0.5" r="0.5" fill="#ff0000"/></svg>"##;
+    let scene = image_scene(nested, 100, 100);
+    let png = render(&scene, OutputFormat::Png);
+    let decoder = png::Decoder::new(Cursor::new(png));
+    let mut reader = decoder.read_info().expect("artifact is PNG");
+    let mut rgba = vec![0; reader.output_buffer_size()];
+    let output = reader.next_frame(&mut rgba).expect("PNG frame decodes");
+
+    assert_eq!((output.width, output.height), (120, 120));
+    assert_eq!(pixel(&rgba, 120, 10, 10), [255, 255, 255, 255]);
+    assert_eq!(pixel(&rgba, 120, 60, 60), [255, 0, 0, 255]);
+}
+
+#[test]
+fn pdf_projects_nested_text_as_vector_outlines() {
+    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><text x="2" y="16" font-family="Excalifont" font-size="18">ABC</text></svg>"##;
+    let scene = image_scene(nested, 40, 20);
+    let request = RenderRequest::builder(OutputFormat::Pdf)
+        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .build()
+        .expect("PDF request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("outlined nested text renders in PDF");
+    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+
+    assert!(!pdf.contains("/Subtype /Image"));
+    assert!(!pdf.contains("/Type /Font"));
+    assert!(
+        pdf.contains(" c\n"),
+        "glyph outlines contain cubic path segments"
+    );
+    assert!(
+        pdf.contains("\nf\n") || pdf.contains("\nf*\n"),
+        "glyph outlines are filled"
+    );
+    assert!(!outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
+}
+
+#[test]
+fn closed_vector_native_families_remain_native_pdf_content() {
+    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40" viewBox="0 0 80 40" preserveAspectRatio="xMidYMid meet">
+        <defs>
+            <linearGradient id="linear"><stop stop-color="#ff0000" stop-opacity="0.5"/><stop offset="1" stop-color="#0000ff"/></linearGradient>
+            <radialGradient id="radial"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#000000"/></radialGradient>
+            <pattern id="tiles" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 0h2v2H0z" fill="#00ff00"/></pattern>
+            <clipPath id="clip"><circle cx="20" cy="20" r="18"/></clipPath>
+            <mask id="mask" mask-type="luminance"><rect width="80" height="40" fill="url(#radial)"/></mask>
+            <marker id="arrow" markerWidth="4" markerHeight="4" refX="4" refY="2" orient="auto"><path d="M0 0L4 2L0 4z"/></marker>
+            <symbol id="shape" viewBox="0 0 20 20"><path d="M1 10 Q5 1 10 10 C12 14 16 14 19 10 A4 4 0 0 1 15 18 Z" fill="url(#linear)"/></symbol>
+        </defs>
+        <g transform="translate(2 0)" opacity="0.8" clip-path="url(#clip)" mask="url(#mask)" style="mix-blend-mode:multiply;isolation:isolate">
+            <use href="#shape" width="40" height="40"/>
+            <rect x="40" width="40" height="40" fill="url(#tiles)"/>
+            <path d="M2 36L76 36" stroke="#000000" marker-end="url(#arrow)"/>
+        </g>
+    </svg>"##;
+    let scene = image_scene(nested, 80, 40);
+    let request = RenderRequest::builder(OutputFormat::Pdf)
+        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .build()
+        .expect("PDF request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("closed vector-native matrix renders");
+    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+
+    for structure in [
+        "/PatternType 1",
+        "/ShadingType 2",
+        "/ShadingType 3",
+        "/SMask",
+        "/BM /Multiply",
+    ] {
+        assert!(pdf.contains(structure), "missing PDF structure {structure}");
+    }
+    assert!(!pdf.contains("/Subtype /Image"));
+    assert!(!outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
+}
+
+#[test]
+fn every_native_blend_mode_remains_vector_pdf_content() {
+    let blends = [
+        ("normal", "/BM /Normal"),
+        ("multiply", "/BM /Multiply"),
+        ("screen", "/BM /Screen"),
+        ("overlay", "/BM /Overlay"),
+        ("darken", "/BM /Darken"),
+        ("lighten", "/BM /Lighten"),
+        ("color-dodge", "/BM /ColorDodge"),
+        ("color-burn", "/BM /ColorBurn"),
+        ("hard-light", "/BM /HardLight"),
+        ("soft-light", "/BM /SoftLight"),
+        ("difference", "/BM /Difference"),
+        ("exclusion", "/BM /Exclusion"),
+        ("hue", "/BM /Hue"),
+        ("saturation", "/BM /Saturation"),
+        ("color", "/BM /Color"),
+        ("luminosity", "/BM /Luminosity"),
+    ];
+
+    for (blend, pdf_name) in blends {
+        let nested = format!(
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/><g style="mix-blend-mode:{blend};isolation:isolate"><circle cx="10" cy="5" r="5" fill="#0000ff"/></g></svg>"##
+        );
+        let scene = image_scene(nested.as_bytes(), 20, 10);
+        let request = RenderRequest::builder(OutputFormat::Pdf)
+            .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+            .build()
+            .expect("PDF request is valid");
+        let outcome = Renderer::new()
+            .render(&scene, &request)
+            .expect("native blend renders without fallback");
+        let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+
+        assert!(pdf.contains(pdf_name), "missing PDF blend {blend}");
+        assert!(!pdf.contains("/Subtype /Image"));
+        assert!(!outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
+    }
+}
+
+#[test]
+fn nested_raster_nodes_are_source_content_in_png_and_pdf() {
+    let nested = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/png;base64,{PNG_BASE64}"/></svg>"#
+    );
+    let scene = image_scene(nested.as_bytes(), 20, 10);
+
+    let png = render(&scene, OutputFormat::Png);
+    let decoder = png::Decoder::new(Cursor::new(png));
+    let mut reader = decoder.read_info().expect("artifact is PNG");
+    let mut rgba = vec![0; reader.output_buffer_size()];
+    reader.next_frame(&mut rgba).expect("PNG frame decodes");
+    assert_ne!(pixel(&rgba, 40, 20, 15), [255, 255, 255, 255]);
+
+    let request = RenderRequest::builder(OutputFormat::Pdf)
+        .build()
+        .expect("PDF request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("nested source raster renders in PDF");
+    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    assert!(pdf.contains("/Subtype /Image"));
+    assert!(!outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
 }
 
 fn image_scene(svg: &[u8], width: u32, height: u32) -> SceneDocument {

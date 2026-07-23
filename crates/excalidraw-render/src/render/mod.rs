@@ -6898,7 +6898,7 @@ mod tests {
         assert_eq!(approval["approved_at"], "2026-07-23");
         assert_eq!(
             approval["approval_url"],
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5056917122"
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5059287026"
         );
         let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
         canonical.push(b'\n');

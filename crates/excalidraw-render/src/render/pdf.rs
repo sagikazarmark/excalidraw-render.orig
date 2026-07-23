@@ -2977,7 +2977,9 @@ fn svg_chunks(
         let (chunk, root) = svg2pdf::to_chunk(
             tree,
             svg2pdf::ConversionOptions {
+                compress: false,
                 raster_scale: 1.0,
+                embed_text: false,
                 ..svg2pdf::ConversionOptions::default()
             },
         )
@@ -3053,6 +3055,7 @@ fn append_chunk(
     Ok(())
 }
 
+#[allow(clippy::type_complexity)]
 fn canonicalize_pdf_chunk(
     chunk: &pdf_writer::Chunk,
 ) -> Result<(Vec<u8>, Vec<(usize, usize)>), FormatEncodeError> {

@@ -652,7 +652,7 @@ impl Cache {
     fn resolve_svg<F>(
         &mut self,
         revision: CompatibilityRevision,
-        format: OutputFormat,
+        _format: OutputFormat,
         limits: &ResourceLimits,
         file_id: &str,
         payload: Payload,
@@ -733,34 +733,6 @@ impl Cache {
             .map_err(ResolutionFailure::Transaction)?;
         }
         let identity = semantic_identity(revision, MediaKind::Svg, &sanitized.bytes);
-        let (rgba, premultiplied_rgba) = if format != OutputFormat::Png {
-            (None, None)
-        } else {
-            let pixels = u64::from(sanitized.width)
-                .checked_mul(u64::from(sanitized.height))
-                .ok_or(ResolveError::Memory)?;
-            if sanitized.width.max(sanitized.height) > limits.max_raster_dimension() {
-                return Err(ResolveError::Dimensions {
-                    attempted: u64::from(sanitized.width.max(sanitized.height)),
-                }
-                .into());
-            }
-            if pixels > limits.max_decoded_pixels_per_asset() {
-                return Err(ResolveError::Pixels { attempted: pixels }.into());
-            }
-            let working = 256_u64.saturating_add(pixels.saturating_mul(4));
-            transact(IntrinsicTransaction::Acquire {
-                event: MediaKind::Svg.decoded_event(),
-                identity,
-                persistent_working_bytes: working,
-                temporary_working_bytes: 0,
-                decoded_pixels: pixels,
-                total_work_units: pixels.saturating_mul(4),
-            })
-            .map_err(ResolutionFailure::Transaction)?;
-            let decoded = svg::render(&sanitized).map_err(ResolutionFailure::Asset)?;
-            (Some(decoded.rgba), Some(decoded.premultiplied_rgba))
-        };
         Ok(Resolution {
             asset: Arc::new(ResolvedImageAsset {
                 identity,
@@ -768,8 +740,8 @@ impl Cache {
                 media_type: MediaKind::Svg.media_type(),
                 width: sanitized.width,
                 height: sanitized.height,
-                rgba,
-                premultiplied_rgba,
+                rgba: None,
+                premultiplied_rgba: None,
                 sanitized_svg: Some(Arc::new(sanitized.bytes.clone())),
                 sanitized_svg_tree: Some(Arc::clone(&sanitized.tree)),
             }),

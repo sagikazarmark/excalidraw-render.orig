@@ -1,8 +1,8 @@
 use crate::{color::CanonicalColor, RenderRequest};
 use tiny_skia::{
     BlendMode, Color, FillRule, FilterQuality, IntSize, LineCap, LineJoin, Mask, Paint,
-    PathBuilder, PathStroker, PixmapMut, PixmapPaint, PixmapRef, Rect, Shader, Stroke, StrokeDash,
-    Transform,
+    PathBuilder, PathStroker, Pixmap, PixmapMut, PixmapPaint, PixmapRef, Rect, Shader, Stroke,
+    StrokeDash, Transform,
 };
 
 use super::{
@@ -258,6 +258,20 @@ impl PngTransform {
         height: f64,
         scale: [i8; 2],
     ) -> Result<Transform, FormatEncodeError> {
+        self.raster_image_transform_with_origin(multiplier, source, width, height, scale, 0, 0)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn raster_image_transform_with_origin(
+        self,
+        multiplier: u32,
+        source: super::ResolvedImageSourceRect,
+        width: f64,
+        height: f64,
+        scale: [i8; 2],
+        origin_x: u32,
+        origin_y: u32,
+    ) -> Result<Transform, FormatEncodeError> {
         let base_scale_x = width / source.width;
         let base_scale_y = height / source.height;
         let (scale_x, offset_x) = if scale[0] < 0 {
@@ -277,11 +291,11 @@ impl PngTransform {
             finite_f32(self.c * scale_y * multiplier, "PNG image transform c")?,
             finite_f32(self.d * scale_y * multiplier, "PNG image transform d")?,
             finite_f32(
-                (self.a * offset_x + self.c * offset_y + self.e) * multiplier,
+                (self.a * offset_x + self.c * offset_y + self.e) * multiplier - f64::from(origin_x),
                 "PNG image transform e",
             )?,
             finite_f32(
-                (self.b * offset_x + self.d * offset_y + self.f) * multiplier,
+                (self.b * offset_x + self.d * offset_y + self.f) * multiplier - f64::from(origin_y),
                 "PNG image transform f",
             )?,
         );
@@ -762,13 +776,89 @@ impl PngPlan {
                                 "PNG image lost its source identity".to_owned(),
                             ));
                         }
-                        let pixels = asset.premultiplied_rgba.as_deref().ok_or_else(|| {
-                            FormatEncodeError::Encoding(
-                                "PNG image has no normalized pixel resource".to_owned(),
-                            )
-                        })?;
-                        let pixmap = PixmapRef::from_bytes(pixels, asset.width, asset.height)
-                            .ok_or_else(png_size_error)?;
+                        if let Some(tree) = asset.sanitized_svg_tree.as_deref() {
+                            let corners = [
+                                Point { x: 0.0, y: 0.0 },
+                                Point { x: *width, y: 0.0 },
+                                Point {
+                                    x: *width,
+                                    y: *height,
+                                },
+                                Point { x: 0.0, y: *height },
+                            ]
+                            .map(|point| transform.map_point(point));
+                            let multiplier = f64::from(SUBPIXEL_SCALE);
+                            let left = (corners
+                                .iter()
+                                .map(|point| point.x)
+                                .fold(f64::INFINITY, f64::min)
+                                * multiplier)
+                                .floor()
+                                .clamp(0.0, f64::from(raster_width))
+                                as u32;
+                            let top = (corners
+                                .iter()
+                                .map(|point| point.y)
+                                .fold(f64::INFINITY, f64::min)
+                                * multiplier)
+                                .floor()
+                                .clamp(0.0, f64::from(raster_height))
+                                as u32;
+                            let right = (corners
+                                .iter()
+                                .map(|point| point.x)
+                                .fold(f64::NEG_INFINITY, f64::max)
+                                * multiplier)
+                                .ceil()
+                                .clamp(0.0, f64::from(raster_width))
+                                as u32;
+                            let bottom = (corners
+                                .iter()
+                                .map(|point| point.y)
+                                .fold(f64::NEG_INFINITY, f64::max)
+                                * multiplier)
+                                .ceil()
+                                .clamp(0.0, f64::from(raster_height))
+                                as u32;
+                            let Some(layer_width) =
+                                right.checked_sub(left).filter(|width| *width > 0)
+                            else {
+                                continue;
+                            };
+                            let Some(layer_height) =
+                                bottom.checked_sub(top).filter(|height| *height > 0)
+                            else {
+                                continue;
+                            };
+                            let raster_transform = transform.raster_image_transform_with_origin(
+                                SUBPIXEL_SCALE,
+                                *source_rect,
+                                *width,
+                                *height,
+                                *scale,
+                                left,
+                                top,
+                            )?;
+                            let mut layer = Pixmap::new(layer_width, layer_height).ok_or(
+                                FormatEncodeError::MemoryUnavailable {
+                                    subject_kind: "raster_surface",
+                                    subject: "png_nested_svg_surface",
+                                },
+                            )?;
+                            resvg::render(tree, raster_transform, &mut layer.as_mut());
+                            surface.draw_pixmap(
+                                i32::try_from(left).map_err(|_| png_size_error())?,
+                                i32::try_from(top).map_err(|_| png_size_error())?,
+                                layer.as_ref(),
+                                &PixmapPaint {
+                                    opacity: finite_f32(*opacity, "PNG image opacity")?,
+                                    ..PixmapPaint::default()
+                                },
+                                Transform::identity(),
+                                paint_mask,
+                            );
+                            continue;
+                        }
                         let raster_transform = transform.raster_image_transform(
                             SUBPIXEL_SCALE,
                             *source_rect,
@@ -776,6 +866,13 @@ impl PngPlan {
                             *height,
                             *scale,
                         )?;
+                        let pixels = asset.premultiplied_rgba.as_deref().ok_or_else(|| {
+                            FormatEncodeError::Encoding(
+                                "PNG image has no normalized pixel resource".to_owned(),
+                            )
+                        })?;
+                        let pixmap = PixmapRef::from_bytes(pixels, asset.width, asset.height)
+                            .ok_or_else(png_size_error)?;
                         surface.draw_pixmap(
                             0,
                             0,

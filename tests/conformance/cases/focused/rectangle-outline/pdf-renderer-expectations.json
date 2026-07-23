@@ -1,7 +1,7 @@
 {
   "approval": {
-    "approval_subject_sha256": "sha256:278880bce36c615623b6e824972c79662510434137a7d52c645392d4779078b2",
-    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5056917122",
+    "approval_subject_sha256": "sha256:fb9c462fb00e2ea8260dd16c9d2f3cbc6d764b04546a2837865bcfe99534fdd7",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5059287026",
     "approved_at": "2026-07-23",
     "approved_by": "sagikazarmark"
   },
@@ -30,7 +30,7 @@
   "files": [
     {
       "path": "tests/conformance/cases/focused/rectangle-outline/manifest.json",
-      "sha256": "a4b437c2b32b65b57b52ed61fbbf8eaee1374f8e2552c50e3e2619b44f5aab3f"
+      "sha256": "876bb71f718912a7e559ff0f7bb055b4f886eff9690402f9013acf72a6890cf9"
     },
     {
       "path": "tests/conformance/cases/focused/rectangle-outline/scene.excalidraw",
@@ -78,7 +78,7 @@
     },
     {
       "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
-      "sha256": "74d809059aa84fbc065b2b536e2ab8f04334d1ae6244af3fbe7e055290ba5519"
+      "sha256": "d677c20aef297f31f7cb6e750a07e9b1ec3922f5b7f235f730ed0b6d81308b85"
     }
   ],
   "format": "pdf",

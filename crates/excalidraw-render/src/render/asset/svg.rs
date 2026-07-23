@@ -26,11 +26,6 @@ pub(super) struct SanitizedSvg {
     pub(super) tree: Arc<usvg::Tree>,
 }
 
-pub(super) struct DecodedSvg {
-    pub(super) rgba: Arc<Vec<u8>>,
-    pub(super) premultiplied_rgba: Arc<Vec<u8>>,
-}
-
 pub(super) fn looks_like_svg(bytes: &[u8]) -> bool {
     let text = String::from_utf8_lossy(bytes);
     let text = text.trim_start_matches('\u{feff}').trim_start();
@@ -178,9 +173,7 @@ fn remove_dtd_and_entities(text: &str) -> Result<(String, Vec<Removal>), Resolve
         };
         let entity = &rest[1..end];
         if matches!(entity, "amp" | "lt" | "gt" | "quot" | "apos")
-            || entity
-                .strip_prefix('#')
-                .is_some_and(|number| valid_numeric_entity(number))
+            || entity.strip_prefix('#').is_some_and(valid_numeric_entity)
         {
             sanitized.push_str(&rest[..=end]);
         } else {
@@ -225,6 +218,7 @@ fn valid_numeric_entity(number: &str) -> bool {
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn serialize_node(
     node: roxmltree::Node<'_, '_>,
     is_root: bool,
@@ -507,37 +501,14 @@ fn escape_attribute(output: &mut String, value: &str) {
     }
 }
 
-pub(super) fn render(svg: &SanitizedSvg) -> Result<DecodedSvg, ResolveError> {
-    let mut pixmap = tiny_skia::Pixmap::new(svg.width, svg.height).ok_or(ResolveError::Memory)?;
-    resvg::render(
-        &svg.tree,
-        tiny_skia::Transform::identity(),
-        &mut pixmap.as_mut(),
-    );
-    let premultiplied = pixmap.data().to_vec();
-    let mut rgba = premultiplied.clone();
-    for pixel in rgba.chunks_exact_mut(4) {
-        let alpha = u16::from(pixel[3]);
-        if alpha == 0 {
-            pixel[..3].fill(0);
-        } else {
-            for channel in &mut pixel[..3] {
-                *channel = ((u16::from(*channel) * 255 + alpha / 2) / alpha).min(255) as u8;
-            }
-        }
-    }
-    Ok(DecodedSvg {
-        rgba: Arc::new(rgba),
-        premultiplied_rgba: Arc::new(premultiplied),
-    })
-}
-
 fn viewer_options() -> Result<usvg::Options<'static>, ResolveError> {
     let font = excalidraw_render_assets_base::load_excalifont_basic_latin_sfnt()
         .map_err(|_| ResolveError::SvgDecodeFailed)?;
-    let mut options = usvg::Options::default();
-    options.resources_dir = None;
-    options.font_family = "Excalifont".to_owned();
+    let mut options = usvg::Options {
+        resources_dir: None,
+        font_family: "Excalifont".to_owned(),
+        ..usvg::Options::default()
+    };
     let mut fontdb = usvg::fontdb::Database::new();
     fontdb.load_font_data(font.bytes().to_vec());
     options.fontdb = Arc::new(fontdb);
