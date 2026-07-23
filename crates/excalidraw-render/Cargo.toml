@@ -24,6 +24,7 @@ rustybuzz.workspace = true
 svgtypes.workspace = true
 tiny-skia.workspace = true
 wuff.workspace = true
+zune-jpeg.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 anyhow.workspace = true
@@ -35,3 +36,4 @@ usvg.workspace = true
 
 [dev-dependencies]
 excalidraw-render-compare = { path = "../excalidraw-render-compare" }
+jpeg-encoder.workspace = true

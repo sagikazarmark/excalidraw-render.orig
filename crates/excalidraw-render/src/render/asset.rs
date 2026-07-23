@@ -5,9 +5,14 @@ use std::sync::Arc;
 use base64::Engine as _;
 use moxcms::{
     curve_from_gamma, Chromaticity, CicpColorPrimaries, CicpProfile, ColorPrimaries, ColorProfile,
-    Layout, MatrixCoefficients, ToneReprCurve, TransferCharacteristics, TransformOptions, XyY,
+    DataColorSpace, Layout, MatrixCoefficients, ToneReprCurve, TransferCharacteristics,
+    TransformOptions, XyY,
 };
 use sha2::{Digest as _, Sha256};
+use zune_jpeg::zune_core::bytestream::ZCursor;
+use zune_jpeg::zune_core::colorspace::ColorSpace;
+use zune_jpeg::zune_core::options::DecoderOptions;
+use zune_jpeg::JpegDecoder;
 
 use crate::scene::SourceField;
 use crate::{
@@ -18,7 +23,58 @@ use crate::{
 use super::ResolvedImageAsset;
 
 const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
+const JPEG_SIGNATURE: &[u8; 3] = b"\xff\xd8\xff";
 const IDENTITY_DOMAIN: &[u8] = b"excalidraw-render:semantic-asset:v1\0";
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub(super) enum MediaKind {
+    Png,
+    Jpeg,
+}
+
+impl MediaKind {
+    const fn tag(self) -> u64 {
+        match self {
+            Self::Png => 1,
+            Self::Jpeg => 2,
+        }
+    }
+
+    pub(super) const fn media_type(self) -> &'static str {
+        match self {
+            Self::Png => "image/png",
+            Self::Jpeg => "image/jpeg",
+        }
+    }
+
+    const fn source_event(self) -> &'static str {
+        match self {
+            Self::Png => "semantic_png_source",
+            Self::Jpeg => "semantic_jpeg_source",
+        }
+    }
+
+    const fn color_event(self) -> &'static str {
+        match self {
+            Self::Png => "png_color_normalize",
+            Self::Jpeg => "jpeg_color_normalize",
+        }
+    }
+
+    const fn decoded_event(self) -> &'static str {
+        match self {
+            Self::Png => "decoded_png_rgba",
+            Self::Jpeg => "decoded_jpeg_rgba",
+        }
+    }
+}
+
+pub(super) fn is_persistent_event(event: &str) -> bool {
+    matches!(
+        event,
+        "semantic_png_source" | "decoded_png_rgba" | "semantic_jpeg_source" | "decoded_jpeg_rgba"
+    )
+}
 
 #[derive(Clone, Copy)]
 pub(super) enum Authority {
@@ -33,6 +89,7 @@ pub(super) enum ResolveError {
     Malformed,
     Unsupported,
     DecodeFailed,
+    JpegDecodeFailed,
     AssetBytes { attempted: u64 },
     Dimensions { attempted: u64 },
     Pixels { attempted: u64 },
@@ -81,20 +138,53 @@ pub(super) struct Resolution {
     pub(super) asset: Arc<ResolvedImageAsset>,
     pub(super) claims: Claims,
     pub(super) animated: bool,
+    pub(super) media_kind: MediaKind,
 }
 
-struct ValidatedPng {
+struct ValidatedRaster {
     identity: [u8; 32],
     bytes: Arc<Vec<u8>>,
+    media_kind: MediaKind,
+    source_width: u32,
+    source_height: u32,
     width: u32,
     height: u32,
-    semantics: PngSemantics,
+    semantics: RasterSemantics,
+}
+
+enum RasterSemantics {
+    Png(PngSemantics),
+    Jpeg(JpegSemantics),
+}
+
+impl RasterSemantics {
+    const fn orientation(&self) -> Option<u8> {
+        match self {
+            Self::Png(semantics) => semantics.orientation,
+            Self::Jpeg(semantics) => semantics.orientation,
+        }
+    }
+
+    const fn animated(&self) -> bool {
+        matches!(self, Self::Png(semantics) if semantics.animation_frames > 1)
+    }
 }
 
 #[derive(Clone, Copy, Default)]
 struct PngSemantics {
     cicp: Option<[u8; 4]>,
     animation_frames: u32,
+    orientation: Option<u8>,
+}
+
+#[derive(Clone, Copy, Default)]
+struct JpegSemantics {
+    orientation: Option<u8>,
+}
+
+struct JpegMetadata {
+    width: u32,
+    height: u32,
     orientation: Option<u8>,
 }
 
@@ -121,15 +211,15 @@ const LINEAR_TO_SRGB: [u8; 256] = [
     255, 255,
 ];
 
-struct DecodedPng {
+struct DecodedRaster {
     rgba: Arc<Vec<u8>>,
     premultiplied_rgba: Arc<Vec<u8>>,
 }
 
 #[derive(Default)]
 pub(super) struct Cache {
-    validated: BTreeMap<[u8; 32], Arc<ValidatedPng>>,
-    decoded: BTreeMap<[u8; 32], Arc<DecodedPng>>,
+    validated: BTreeMap<[u8; 32], Arc<ValidatedRaster>>,
+    decoded: BTreeMap<[u8; 32], Arc<DecodedRaster>>,
 }
 
 impl Cache {
@@ -155,15 +245,22 @@ impl Cache {
             authority,
             limits.max_asset_bytes(),
         )?;
-        let identity = semantic_identity(revision, &payload.bytes);
-        let (prepared_width, prepared_height) = read_png_ihdr(&payload.bytes)?;
-        let pixels = u64::from(prepared_width)
-            .checked_mul(u64::from(prepared_height))
+        let media_kind = sniff_media_kind(&payload.bytes)?;
+        let identity = semantic_identity(revision, media_kind, &payload.bytes);
+        let (source_width, source_height) = match media_kind {
+            MediaKind::Png => read_png_ihdr(&payload.bytes)?,
+            MediaKind::Jpeg => read_jpeg_dimensions(&payload.bytes)?,
+        };
+        let pixels = u64::from(source_width)
+            .checked_mul(u64::from(source_height))
             .ok_or(ResolveError::Pixels {
                 attempted: u64::MAX,
             })?;
         let payload_bytes = u64::try_from(payload.bytes.len()).unwrap_or(u64::MAX);
-        let animation_validation_work = png_animation_validation_work(&payload.bytes, pixels)?;
+        let animation_validation_work = match media_kind {
+            MediaKind::Png => png_animation_validation_work(&payload.bytes, pixels)?,
+            MediaKind::Jpeg => 0,
+        };
         let validation_working_bytes = if self.validated.contains_key(&identity) {
             0
         } else {
@@ -185,9 +282,9 @@ impl Cache {
                 }
                 .into());
             }
-            let decoder_workspace = decoder_workspace_bytes(prepared_width, prepared_height)?;
+            let decoder_workspace = decoder_workspace_bytes(source_width, source_height)?;
             transact(IntrinsicTransaction::Acquire {
-                event: "semantic_png_source",
+                event: media_kind.source_event(),
                 identity,
                 persistent_working_bytes: validation_working_bytes,
                 temporary_working_bytes: decoder_workspace,
@@ -195,11 +292,23 @@ impl Cache {
                 total_work_units: validation_work,
             })
             .map_err(ResolutionFailure::Transaction)?;
-            let validation = match validate_static_png(&payload.bytes) {
+            let validation = match media_kind {
+                MediaKind::Png => {
+                    validate_static_png(&payload.bytes).map(|(width, height, semantics)| {
+                        (width, height, RasterSemantics::Png(semantics))
+                    })
+                }
+                MediaKind::Jpeg => {
+                    validate_static_jpeg(&payload.bytes).map(|(width, height, semantics)| {
+                        (width, height, RasterSemantics::Jpeg(semantics))
+                    })
+                }
+            };
+            let validation = match validation {
                 Ok(validation) => validation,
                 Err(error) => {
                     transact(IntrinsicTransaction::Abort {
-                        event: "semantic_png_source",
+                        event: media_kind.source_event(),
                         identity,
                         bytes: validation_working_bytes.saturating_add(decoder_workspace),
                     })
@@ -208,15 +317,18 @@ impl Cache {
                 }
             };
             transact(IntrinsicTransaction::ReleaseTemporary {
-                event: "png_validation_workspace",
+                event: "raster_validation_workspace",
                 identity,
                 bytes: decoder_workspace,
             })
             .map_err(ResolutionFailure::Transaction)?;
             let (width, height, semantics) = validation;
-            let validated = Arc::new(ValidatedPng {
+            let validated = Arc::new(ValidatedRaster {
                 identity,
                 bytes: Arc::new(payload.bytes),
+                media_kind,
+                source_width,
+                source_height,
                 width,
                 height,
                 semantics,
@@ -255,7 +367,7 @@ impl Cache {
             }
             let decoder_workspace = decoder_workspace_bytes(validated.width, validated.height)?;
             transact(IntrinsicTransaction::Acquire {
-                event: "png_color_normalize",
+                event: validated.media_kind.color_event(),
                 identity,
                 persistent_working_bytes: 0,
                 temporary_working_bytes: decoder_workspace,
@@ -265,13 +377,13 @@ impl Cache {
             .map_err(ResolutionFailure::Transaction)?;
             let color_normalization = match prepare_color_normalization(
                 &validated.bytes,
-                validated.semantics,
+                &validated.semantics,
                 decoder_workspace,
             ) {
                 Ok(normalization) => normalization,
                 Err(error) => {
                     transact(IntrinsicTransaction::Abort {
-                        event: "png_color_normalize",
+                        event: validated.media_kind.color_event(),
                         identity,
                         bytes: decoder_workspace,
                     })
@@ -280,7 +392,7 @@ impl Cache {
                 }
             };
             transact(IntrinsicTransaction::ReleaseTemporary {
-                event: "png_color_normalize_workspace",
+                event: "raster_color_normalize_workspace",
                 identity,
                 bytes: decoder_workspace,
             })
@@ -289,7 +401,7 @@ impl Cache {
                 .checked_add(pixels.checked_mul(4).ok_or(ResolveError::Memory)?)
                 .ok_or(ResolveError::Memory)?;
             transact(IntrinsicTransaction::Acquire {
-                event: "decoded_png_rgba",
+                event: validated.media_kind.decoded_event(),
                 identity,
                 persistent_working_bytes: decode_working_bytes,
                 temporary_working_bytes: decoder_workspace,
@@ -299,17 +411,25 @@ impl Cache {
                     .saturating_add(pixels.saturating_mul(4)),
             })
             .map_err(ResolutionFailure::Transaction)?;
-            let decoded = decode_static_png(
-                &validated.bytes,
-                pixels,
-                color_normalization,
-                validated.semantics.orientation,
-            );
+            let decoded = match validated.media_kind {
+                MediaKind::Png => decode_static_png(
+                    &validated.bytes,
+                    pixels,
+                    color_normalization,
+                    validated.semantics.orientation(),
+                ),
+                MediaKind::Jpeg => decode_static_jpeg(
+                    &validated.bytes,
+                    pixels,
+                    color_normalization,
+                    validated.semantics.orientation(),
+                ),
+            };
             let decoded = match decoded {
                 Ok(decoded) => Arc::new(decoded),
                 Err(error) => {
                     transact(IntrinsicTransaction::Abort {
-                        event: "decoded_png_rgba",
+                        event: validated.media_kind.decoded_event(),
                         identity,
                         bytes: decode_working_bytes.saturating_add(decoder_workspace),
                     })
@@ -318,7 +438,7 @@ impl Cache {
                 }
             };
             transact(IntrinsicTransaction::ReleaseTemporary {
-                event: "png_decoder_workspace",
+                event: "raster_decoder_workspace",
                 identity,
                 bytes: decoder_workspace,
             })
@@ -327,19 +447,26 @@ impl Cache {
             Some(decoded)
         };
 
+        let (width, height) = if format == OutputFormat::Svg {
+            (validated.source_width, validated.source_height)
+        } else {
+            (validated.width, validated.height)
+        };
         Ok(Resolution {
             asset: Arc::new(ResolvedImageAsset {
                 identity: validated.identity,
-                source_png: Arc::clone(&validated.bytes),
-                width: validated.width,
-                height: validated.height,
+                source_bytes: Arc::clone(&validated.bytes),
+                media_type: validated.media_kind.media_type(),
+                width,
+                height,
                 rgba: decoded.as_ref().map(|decoded| Arc::clone(&decoded.rgba)),
                 premultiplied_rgba: decoded
                     .as_ref()
                     .map(|decoded| Arc::clone(&decoded.premultiplied_rgba)),
             }),
             claims: payload.claims,
-            animated: validated.semantics.animation_frames > 1,
+            animated: validated.semantics.animated(),
+            media_kind: validated.media_kind,
         })
     }
 }
@@ -368,6 +495,213 @@ fn read_png_ihdr(bytes: &[u8]) -> Result<(u32, u32), ResolveError> {
         return Err(ResolveError::DecodeFailed);
     }
     Ok((width, height))
+}
+
+fn sniff_media_kind(bytes: &[u8]) -> Result<MediaKind, ResolveError> {
+    if bytes.starts_with(PNG_SIGNATURE) {
+        Ok(MediaKind::Png)
+    } else if bytes.starts_with(JPEG_SIGNATURE) {
+        Ok(MediaKind::Jpeg)
+    } else {
+        Err(ResolveError::Unsupported)
+    }
+}
+
+fn jpeg_decoder(bytes: &[u8]) -> JpegDecoder<ZCursor<&[u8]>> {
+    let options = DecoderOptions::default()
+        .set_max_width(usize::from(u16::MAX))
+        .set_max_height(usize::from(u16::MAX))
+        .set_use_unsafe(false)
+        .set_strict_mode(true)
+        .jpeg_set_out_colorspace(ColorSpace::RGB);
+    JpegDecoder::new_with_options(ZCursor::new(bytes), options)
+}
+
+fn read_jpeg_dimensions(bytes: &[u8]) -> Result<(u32, u32), ResolveError> {
+    if !bytes.starts_with(JPEG_SIGNATURE) {
+        return Err(ResolveError::Unsupported);
+    }
+    let metadata = read_jpeg_metadata(bytes)?;
+    Ok((metadata.width, metadata.height))
+}
+
+fn read_jpeg_metadata(bytes: &[u8]) -> Result<JpegMetadata, ResolveError> {
+    let mut decoder = jpeg_decoder(bytes);
+    decoder
+        .decode_headers()
+        .map_err(|_| ResolveError::JpegDecodeFailed)?;
+    let info = decoder.info().ok_or(ResolveError::JpegDecodeFailed)?;
+    if info.width == 0 || info.height == 0 {
+        return Err(ResolveError::JpegDecodeFailed);
+    }
+    Ok(JpegMetadata {
+        width: u32::from(info.width),
+        height: u32::from(info.height),
+        orientation: decoder.exif().and_then(|data| exif_orientation(data)),
+    })
+}
+
+fn validate_static_jpeg(bytes: &[u8]) -> Result<(u32, u32, JpegSemantics), ResolveError> {
+    if !bytes.starts_with(JPEG_SIGNATURE) || validate_jpeg_markers(bytes).is_err() {
+        return Err(if bytes.starts_with(JPEG_SIGNATURE) {
+            ResolveError::JpegDecodeFailed
+        } else {
+            ResolveError::Unsupported
+        });
+    }
+    let metadata = read_jpeg_metadata(bytes)?;
+    let orientation = metadata.orientation;
+    let (width, height) =
+        oriented_dimensions(metadata.width, metadata.height, orientation.unwrap_or(1));
+    Ok((width, height, JpegSemantics { orientation }))
+}
+
+fn validate_jpeg_markers(bytes: &[u8]) -> Result<(), ResolveError> {
+    let mut image_start = 0_usize;
+    let mut image_count = 0_u8;
+    let mut primary_has_mpf = false;
+    let mut primary_has_gain_map_metadata = false;
+    while image_start < bytes.len() {
+        let mut icc_parts = [false; 256];
+        let mut icc_part_count = None;
+        if bytes.get(image_start..image_start.saturating_add(2)) != Some(b"\xff\xd8") {
+            return Err(ResolveError::JpegDecodeFailed);
+        }
+        let mut offset = image_start + 2;
+        let mut saw_frame = false;
+        let mut saw_scan = false;
+        loop {
+            let marker_start = offset;
+            if bytes.get(offset) != Some(&0xff) {
+                return Err(ResolveError::JpegDecodeFailed);
+            }
+            while bytes.get(offset) == Some(&0xff) {
+                offset = offset
+                    .checked_add(1)
+                    .ok_or(ResolveError::JpegDecodeFailed)?;
+            }
+            let marker = *bytes.get(offset).ok_or(ResolveError::JpegDecodeFailed)?;
+            offset = offset
+                .checked_add(1)
+                .ok_or(ResolveError::JpegDecodeFailed)?;
+            match marker {
+                0xd9 if saw_frame && saw_scan => {
+                    if let Some(part_count) = icc_part_count {
+                        if !(1..=part_count).all(|part| icc_parts[usize::from(part)]) {
+                            return Err(ResolveError::JpegDecodeFailed);
+                        }
+                    }
+                    image_start = offset;
+                    break;
+                }
+                0xd8 | 0x00 | 0x01 | 0xd0..=0xd8 => {
+                    return Err(ResolveError::JpegDecodeFailed);
+                }
+                _ => {
+                    let length_end = offset
+                        .checked_add(2)
+                        .ok_or(ResolveError::JpegDecodeFailed)?;
+                    let length = usize::from(u16::from_be_bytes(
+                        bytes
+                            .get(offset..length_end)
+                            .ok_or(ResolveError::JpegDecodeFailed)?
+                            .try_into()
+                            .map_err(|_| ResolveError::JpegDecodeFailed)?,
+                    ));
+                    if length < 2 {
+                        return Err(ResolveError::JpegDecodeFailed);
+                    }
+                    let segment_end = offset
+                        .checked_add(length)
+                        .ok_or(ResolveError::JpegDecodeFailed)?;
+                    let segment = bytes
+                        .get(length_end..segment_end)
+                        .ok_or(ResolveError::JpegDecodeFailed)?;
+                    if image_count == 0 && marker == 0xe2 && segment.starts_with(b"MPF\0") {
+                        primary_has_mpf = true;
+                    }
+                    if marker == 0xe2 && segment.starts_with(b"ICC_PROFILE\0") {
+                        let sequence = *segment.get(12).ok_or(ResolveError::JpegDecodeFailed)?;
+                        let part_count = *segment.get(13).ok_or(ResolveError::JpegDecodeFailed)?;
+                        if sequence == 0
+                            || part_count == 0
+                            || sequence > part_count
+                            || icc_part_count.is_some_and(|expected| expected != part_count)
+                            || icc_parts[usize::from(sequence)]
+                        {
+                            return Err(ResolveError::JpegDecodeFailed);
+                        }
+                        icc_part_count = Some(part_count);
+                        icc_parts[usize::from(sequence)] = true;
+                    }
+                    if image_count == 0
+                        && marker == 0xe1
+                        && segment
+                            .windows(b"hdrgm:Version".len())
+                            .any(|window| window == b"hdrgm:Version")
+                    {
+                        primary_has_gain_map_metadata = true;
+                    }
+                    if matches!(marker, 0xc0..=0xc2) {
+                        if segment.len() < 6 || segment[0] != 8 {
+                            return Err(ResolveError::JpegDecodeFailed);
+                        }
+                        saw_frame = true;
+                    } else if matches!(marker, 0xc3..=0xcf) && !matches!(marker, 0xc4 | 0xc8 | 0xcc)
+                    {
+                        return Err(ResolveError::JpegDecodeFailed);
+                    }
+                    offset = segment_end;
+                    if marker != 0xda {
+                        continue;
+                    }
+                    if !saw_frame || segment.is_empty() {
+                        return Err(ResolveError::JpegDecodeFailed);
+                    }
+                    saw_scan = true;
+                    loop {
+                        let byte = *bytes.get(offset).ok_or(ResolveError::JpegDecodeFailed)?;
+                        offset = offset
+                            .checked_add(1)
+                            .ok_or(ResolveError::JpegDecodeFailed)?;
+                        if byte != 0xff {
+                            continue;
+                        }
+                        while bytes.get(offset) == Some(&0xff) {
+                            offset = offset
+                                .checked_add(1)
+                                .ok_or(ResolveError::JpegDecodeFailed)?;
+                        }
+                        match bytes.get(offset).copied() {
+                            Some(0x00 | 0xd0..=0xd7) => offset += 1,
+                            Some(_) => {
+                                offset = offset
+                                    .checked_sub(1)
+                                    .ok_or(ResolveError::JpegDecodeFailed)?;
+                                break;
+                            }
+                            None => return Err(ResolveError::JpegDecodeFailed),
+                        }
+                    }
+                }
+            }
+            if offset <= marker_start {
+                return Err(ResolveError::JpegDecodeFailed);
+            }
+        }
+        image_count = image_count
+            .checked_add(1)
+            .ok_or(ResolveError::JpegDecodeFailed)?;
+        if image_start < bytes.len()
+            && (image_count != 1 || !primary_has_mpf || !primary_has_gain_map_metadata)
+        {
+            return Err(ResolveError::JpegDecodeFailed);
+        }
+    }
+    if image_count > 2 {
+        return Err(ResolveError::JpegDecodeFailed);
+    }
+    Ok(())
 }
 
 fn decoder_workspace_bytes(width: u32, height: u32) -> Result<u64, ResolveError> {
@@ -554,11 +888,15 @@ const fn base64_value(byte: u8) -> Option<u8> {
     }
 }
 
-fn semantic_identity(revision: CompatibilityRevision, bytes: &[u8]) -> [u8; 32] {
+fn semantic_identity(
+    revision: CompatibilityRevision,
+    media_kind: MediaKind,
+    bytes: &[u8],
+) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(IDENTITY_DOMAIN);
     hasher.update(revision.get().to_le_bytes());
-    hasher.update(1_u64.to_le_bytes());
+    hasher.update(media_kind.tag().to_le_bytes());
     hasher.update(u64::try_from(bytes.len()).unwrap_or(u64::MAX).to_le_bytes());
     hasher.update(bytes);
     hasher.finalize().into()
@@ -746,7 +1084,7 @@ fn decode_static_png(
     pixels: u64,
     color_normalization: ColorNormalization,
     orientation: Option<u8>,
-) -> Result<DecodedPng, ResolveError> {
+) -> Result<DecodedRaster, ResolveError> {
     let mut decoder = png::Decoder::new(Cursor::new(bytes));
     decoder.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
     let logical_bytes = pixels
@@ -892,9 +1230,91 @@ fn decode_static_png(
             *channel = ((u16::from(*channel) * alpha + 127) / 255) as u8;
         }
     }
-    Ok(DecodedPng {
+    Ok(DecodedRaster {
         rgba: Arc::new(rgba),
         premultiplied_rgba: Arc::new(premultiplied),
+    })
+}
+
+fn decode_static_jpeg(
+    bytes: &[u8],
+    pixels: u64,
+    color_normalization: ColorNormalization,
+    orientation: Option<u8>,
+) -> Result<DecodedRaster, ResolveError> {
+    let source_color_space = match &color_normalization {
+        ColorNormalization::Profile(profile) => match profile.color_space {
+            DataColorSpace::Rgb => ColorSpace::RGB,
+            DataColorSpace::Gray => ColorSpace::Luma,
+            _ => return Err(ResolveError::Unsupported),
+        },
+        ColorNormalization::None | ColorNormalization::LinearSrgb => ColorSpace::RGB,
+    };
+    let mut decoder = jpeg_decoder(bytes);
+    decoder.set_options((*decoder.options()).jpeg_set_out_colorspace(source_color_space));
+    let mut rgb = decoder
+        .decode()
+        .map_err(|_| ResolveError::JpegDecodeFailed)?;
+    let info = decoder.info().ok_or(ResolveError::JpegDecodeFailed)?;
+    let components =
+        u64::try_from(source_color_space.num_components()).map_err(|_| ResolveError::Memory)?;
+    let expected_rgb = usize::try_from(pixels.checked_mul(components).ok_or(ResolveError::Memory)?)
+        .map_err(|_| ResolveError::Memory)?;
+    if rgb.len() != expected_rgb {
+        return Err(ResolveError::JpegDecodeFailed);
+    }
+    if let ColorNormalization::Profile(profile) = color_normalization {
+        let srgb = ColorProfile::new_srgb();
+        let (source_layout, source_is_gray) = match profile.color_space {
+            DataColorSpace::Rgb => (Layout::Rgb, false),
+            DataColorSpace::Gray => (Layout::Gray, true),
+            _ => return Err(ResolveError::Unsupported),
+        };
+        let transform = profile
+            .create_transform_8bit(
+                source_layout,
+                &srgb,
+                Layout::Rgb,
+                TransformOptions::default(),
+            )
+            .map_err(|_| ResolveError::Unsupported)?;
+        let source = try_copy(&rgb)?;
+        if source_is_gray {
+            let rgb_size = usize::try_from(pixels.checked_mul(3).ok_or(ResolveError::Memory)?)
+                .map_err(|_| ResolveError::Memory)?;
+            rgb.try_reserve_exact(rgb_size.saturating_sub(rgb.len()))
+                .map_err(|_| ResolveError::Memory)?;
+            rgb.resize(rgb_size, 0);
+        }
+        transform
+            .transform(&source, &mut rgb)
+            .map_err(|_| ResolveError::Unsupported)?;
+    } else if matches!(color_normalization, ColorNormalization::LinearSrgb) {
+        for channel in &mut rgb {
+            *channel = LINEAR_TO_SRGB[usize::from(*channel)];
+        }
+    }
+
+    let rgba_size = usize::try_from(pixels.checked_mul(4).ok_or(ResolveError::Memory)?)
+        .map_err(|_| ResolveError::Memory)?;
+    let mut rgba = Vec::new();
+    rgba.try_reserve_exact(rgba_size)
+        .map_err(|_| ResolveError::Memory)?;
+    for pixel in rgb.chunks_exact(3) {
+        rgba.extend_from_slice(&[pixel[0], pixel[1], pixel[2], 255]);
+    }
+    if let Some(orientation) = orientation {
+        rgba = orient_rgba(
+            &rgba,
+            u32::from(info.width),
+            u32::from(info.height),
+            orientation,
+        )?;
+    }
+    let premultiplied_rgba = try_copy(&rgba)?;
+    Ok(DecodedRaster {
+        rgba: Arc::new(rgba),
+        premultiplied_rgba: Arc::new(premultiplied_rgba),
     })
 }
 
@@ -992,22 +1412,40 @@ fn orient_rgba(
 
 fn prepare_color_normalization(
     bytes: &[u8],
-    semantics: PngSemantics,
+    semantics: &RasterSemantics,
     workspace_bytes: u64,
 ) -> Result<ColorNormalization, ResolveError> {
-    if let Some(cicp) = semantics.cicp {
-        return cicp_color_profile(cicp)
-            .map(Box::new)
-            .map(ColorNormalization::Profile);
+    match semantics {
+        RasterSemantics::Png(semantics) => {
+            if let Some(cicp) = semantics.cicp {
+                return cicp_color_profile(cicp)
+                    .map(Box::new)
+                    .map(ColorNormalization::Profile);
+            }
+            let mut decoder = png::Decoder::new(Cursor::new(bytes));
+            decoder.set_limits(png::Limits {
+                bytes: usize::try_from(workspace_bytes).map_err(|_| ResolveError::Memory)?,
+            });
+            let reader = decoder
+                .read_info()
+                .map_err(|_| ResolveError::DecodeFailed)?;
+            png_color_profile(reader.info())
+        }
+        RasterSemantics::Jpeg(_) => {
+            let mut decoder = jpeg_decoder(bytes);
+            decoder
+                .decode_headers()
+                .map_err(|_| ResolveError::JpegDecodeFailed)?;
+            decoder
+                .icc_profile()
+                .map_or(Ok(ColorNormalization::None), |profile| {
+                    ColorProfile::new_from_slice(&profile)
+                        .map(Box::new)
+                        .map(ColorNormalization::Profile)
+                        .map_err(|_| ResolveError::Unsupported)
+                })
+        }
     }
-    let mut decoder = png::Decoder::new(Cursor::new(bytes));
-    decoder.set_limits(png::Limits {
-        bytes: usize::try_from(workspace_bytes).map_err(|_| ResolveError::Memory)?,
-    });
-    let reader = decoder
-        .read_info()
-        .map_err(|_| ResolveError::DecodeFailed)?;
-    png_color_profile(reader.info())
 }
 
 fn cicp_color_profile(cicp: [u8; 4]) -> Result<ColorProfile, ResolveError> {

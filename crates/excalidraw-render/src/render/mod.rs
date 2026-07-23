@@ -685,6 +685,7 @@ impl RenderSession {
                         let asset_failure = asset_resolution.as_ref().err().copied();
                         if let Ok(resolution) = asset_resolution {
                             let animated = resolution.animated;
+                            let media_type = resolution.media_kind.media_type();
                             let asset = resolution.asset;
                             for (claim, field) in [
                                 (resolution.claims.mime_type.as_deref(), "mimeType"),
@@ -696,7 +697,7 @@ impl RenderSession {
                                         .next()
                                         .unwrap_or_default()
                                         .trim()
-                                        .eq_ignore_ascii_case("image/png")
+                                        .eq_ignore_ascii_case(media_type)
                                 }) else {
                                     continue;
                                 };
@@ -720,7 +721,7 @@ impl RenderSession {
                                     file_id,
                                     &json_pointer,
                                     Some(claim),
-                                    Some("image/png"),
+                                    Some(media_type),
                                 )
                                 .map_err(|_| {
                                     self.memory_failure(
@@ -3211,7 +3212,7 @@ impl RenderSession {
         asset_records: bool,
     ) -> Result<(), RenderError> {
         for record in records {
-            let is_asset = matches!(record.event, "semantic_png_source" | "decoded_png_rgba");
+            let is_asset = asset::is_persistent_event(record.event);
             if is_asset != asset_records {
                 continue;
             }
@@ -4921,7 +4922,8 @@ impl ResolvedElement {
 
 struct ResolvedImageAsset {
     identity: [u8; 32],
-    source_png: std::sync::Arc<Vec<u8>>,
+    source_bytes: std::sync::Arc<Vec<u8>>,
+    media_type: &'static str,
     width: u32,
     height: u32,
     rgba: Option<std::sync::Arc<Vec<u8>>>,
@@ -5284,12 +5286,17 @@ fn image_asset_failure_diagnostic(
         ),
         asset::ResolveError::Unsupported => (
             DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT,
-            "referenced image payload was not a supported static PNG",
+            "referenced image payload was not a supported raster format",
             None,
         ),
         asset::ResolveError::DecodeFailed => (
             DiagnosticCode::IMAGE_DECODE_FAILED,
             "referenced static PNG payload could not be decoded",
+            None,
+        ),
+        asset::ResolveError::JpegDecodeFailed => (
+            DiagnosticCode::IMAGE_DECODE_FAILED,
+            "referenced JPEG/JFIF payload could not be decoded",
             None,
         ),
         asset::ResolveError::Missing => {
@@ -5307,7 +5314,7 @@ fn image_asset_failure_diagnostic(
         ),
         asset::ResolveError::Dimensions { attempted } => (
             DiagnosticCode::RESOURCE_IMAGE_DIMENSIONS_EXCEEDED,
-            "static PNG dimensions exceeded the local image ceiling",
+            "raster dimensions exceeded the local image ceiling",
             Some((
                 "max_raster_dimension",
                 u64::from(limits.max_raster_dimension()),
@@ -5317,7 +5324,7 @@ fn image_asset_failure_diagnostic(
         ),
         asset::ResolveError::Pixels { attempted } => (
             DiagnosticCode::RESOURCE_IMAGE_PIXELS_EXCEEDED,
-            "static PNG pixels exceeded the local asset ceiling",
+            "raster pixels exceeded the local asset ceiling",
             Some((
                 "max_decoded_pixels_per_asset",
                 limits.max_decoded_pixels_per_asset(),
@@ -5327,7 +5334,7 @@ fn image_asset_failure_diagnostic(
         ),
         asset::ResolveError::AssetWork { attempted } => (
             DiagnosticCode::RESOURCE_ASSET_WORK_EXCEEDED,
-            "static PNG intrinsic work exceeded the local asset ceiling",
+            "raster intrinsic work exceeded the local asset ceiling",
             Some((
                 "max_asset_work_units",
                 limits.max_asset_work_units(),
@@ -5374,9 +5381,11 @@ fn image_asset_failure_diagnostic(
                 ErrorDetails::Asset {
                     asset_id: try_owned(asset_id)?,
                     claimed_media_type: None,
-                    validated_media_type: matches!(failure, asset::ResolveError::DecodeFailed)
-                        .then(|| try_owned("image/png"))
-                        .transpose()?,
+                    validated_media_type: match failure {
+                        asset::ResolveError::DecodeFailed => Some(try_owned("image/png")?),
+                        asset::ResolveError::JpegDecodeFailed => Some(try_owned("image/jpeg")?),
+                        _ => None,
+                    },
                     recovery,
                     recipe_id: recipe_id.map(try_owned).transpose()?,
                 }
@@ -6569,7 +6578,7 @@ mod tests {
         assert_eq!(approval["approved_at"], "2026-07-23");
         assert_eq!(
             approval["approval_url"],
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5056158617"
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5056917122"
         );
         let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
         canonical.push(b'\n');

@@ -31,6 +31,7 @@ crc32fast = "=1.4.2"
 jsonschema = { version = "=0.33.0", default-features = false }
 moxcms = { version = "=0.9.0", default-features = false }
 png = "=0.17.16"
+jpeg-encoder = "=0.6.1"
 resvg = { version = "=0.45.1", default-features = false }
 roxmltree = "=0.20.0"
 roughr = "=0.12.0"
@@ -44,6 +45,7 @@ svgtypes = "=0.15.3"
 tiny-skia = { version = "=0.11.4", default-features = false, features = ["png-format", "std"] }
 usvg = { version = "=0.45.1", default-features = false }
 wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
+zune-jpeg = { version = "=0.5.15", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

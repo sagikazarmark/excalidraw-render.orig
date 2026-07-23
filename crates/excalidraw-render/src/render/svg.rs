@@ -474,7 +474,7 @@ impl SvgPlan {
                 }
                 SvgElement::Image { asset, .. } => {
                     let encoded = asset
-                        .source_png
+                        .source_bytes
                         .len()
                         .checked_add(2)
                         .and_then(|length| length.checked_div(3))
@@ -1075,8 +1075,10 @@ impl SvgPlan {
                         push_svg_number(&mut svg, source_rect.height, "SVG image crop height")?;
                         svg.push_str("\" preserveAspectRatio=\"none\" overflow=\"hidden\">");
                     }
-                    svg.push_str("<image href=\"data:image/png;base64,");
-                    push_base64(&mut svg, &asset.source_png)?;
+                    svg.push_str("<image href=\"data:");
+                    svg.push_str(asset.media_type);
+                    svg.push_str(";base64,");
+                    push_base64(&mut svg, &asset.source_bytes)?;
                     svg.push_str("\" width=\"");
                     push_svg_number(
                         &mut svg,
