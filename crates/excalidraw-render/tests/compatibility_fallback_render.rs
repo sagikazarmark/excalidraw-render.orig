@@ -652,7 +652,7 @@ fn fallback_label_text_is_preflighted_at_aggregate_and_local_boundaries() {
 }
 
 #[test]
-fn png_fallback_surface_obeys_aggregate_precedence_and_local_recovery() {
+fn png_fallback_surface_is_charged_after_the_required_main_raster() {
     let scene = SceneDocument::parse(br#"{
         "type":"excalidraw","version":2,
         "elements":[{"id":"unknown","type":"future","x":0,"y":0,"width":200,"height":60,"updated":1}],
@@ -661,8 +661,8 @@ fn png_fallback_surface_obeys_aggregate_precedence_and_local_recovery() {
     .expect("fallback raster vector is admitted");
 
     let aggregate = ResourceLimits::builder()
-        .max_raster_surface_pixels(10_000)
-        .max_total_rasterized_pixels(10_000)
+        .max_raster_surface_pixels(17_600)
+        .max_total_rasterized_pixels(29_599)
         .build()
         .expect("aggregate fallback raster limits are valid");
     let request = RenderRequest::builder(OutputFormat::Png)
@@ -677,25 +677,22 @@ fn png_fallback_surface_obeys_aggregate_precedence_and_local_recovery() {
         ErrorCode::RESOURCE_TOTAL_RASTERIZED_PIXELS_EXCEEDED
     );
 
-    let local = ResourceLimits::builder()
-        .max_raster_surface_pixels(10_000)
-        .max_total_rasterized_pixels(20_000)
+    let equality = ResourceLimits::builder()
+        .max_raster_surface_pixels(17_600)
+        .max_total_rasterized_pixels(29_600)
         .build()
-        .expect("local fallback raster limits are valid");
+        .expect("fallback raster equality limits are valid");
     let request = RenderRequest::builder(OutputFormat::Png)
-        .resource_limits(local)
+        .resource_limits(equality)
         .build()
         .expect("resource-limited PNG request is valid");
     let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect("local fallback surface exhaustion retains the background");
+        .expect("the main and fallback surfaces fit at exact aggregate equality");
     let (_, _, rgba) = decode_png(outcome.artifact().bytes());
     assert!(rgba
         .chunks_exact(4)
-        .all(|pixel| pixel == [255, 255, 255, 255]));
-    assert!(outcome.report().diagnostics().iter().any(|diagnostic| {
-        diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
-    }));
+        .any(|pixel| pixel != [255, 255, 255, 255]));
 }
 
 #[test]

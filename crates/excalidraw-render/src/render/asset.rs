@@ -162,6 +162,7 @@ pub(super) enum ResolveError {
 pub(super) enum ResolutionFailure {
     Asset(ResolveError),
     Transaction(RenderError),
+    Memory,
 }
 
 impl From<ResolveError> for ResolutionFailure {
@@ -171,10 +172,22 @@ impl From<ResolveError> for ResolutionFailure {
 }
 
 pub(super) enum IntrinsicTransaction {
-    DiscoverNested {
+    PreflightNested {
         asset_entries: u64,
         asset_bytes: u64,
         decoded_pixels: u64,
+        total_work_units: u64,
+    },
+    DiscoverNestedOccurrence {
+        asset_bytes: u64,
+    },
+    DiscoverNestedPixels {
+        decoded_pixels: u64,
+    },
+    RejectLocalWork {
+        event: &'static str,
+        identity: [u8; 32],
+        total_work_units: u64,
     },
     Acquire {
         event: &'static str,
@@ -338,7 +351,6 @@ pub(super) struct Cache {
     svg: BTreeMap<[u8; 32], Arc<svg::SanitizedSvg>>,
     normalized_nested_rasters: BTreeMap<[u8; 32], Arc<NormalizedNestedRaster>>,
     svg_discovery_owners: std::collections::BTreeSet<String>,
-    svg_nested_pixels_charged: std::collections::BTreeSet<[u8; 32]>,
     svg_diagnostic_owners: std::collections::BTreeSet<String>,
 }
 
@@ -421,6 +433,12 @@ impl Cache {
                 },
             )?;
             if validation_work > limits.max_asset_work_units() {
+                transact(IntrinsicTransaction::RejectLocalWork {
+                    event: media_kind.source_event(),
+                    identity,
+                    total_work_units: validation_work,
+                })
+                .map_err(ResolutionFailure::Transaction)?;
                 return Err(ResolveError::AssetWork {
                     attempted: validation_work,
                 }
@@ -529,6 +547,12 @@ impl Cache {
                     attempted: u64::MAX,
                 })?;
             if work > limits.max_asset_work_units() {
+                transact(IntrinsicTransaction::RejectLocalWork {
+                    event: validated.media_kind.decoded_event(),
+                    identity,
+                    total_work_units: work,
+                })
+                .map_err(ResolutionFailure::Transaction)?;
                 return Err(ResolveError::AssetWork { attempted: work }.into());
             }
             let decoder_workspace = decoder_workspace_bytes(validated.width, validated.height)?;
@@ -679,11 +703,18 @@ impl Cache {
         F: FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
     {
         let source_identity = semantic_identity(revision, MediaKind::Svg, &payload.bytes);
-        let sanitized = if let Some(svg) = self.svg.get(&source_identity) {
-            Arc::clone(svg)
+        let mut pending_nested_rasters = BTreeMap::new();
+        let (sanitized, discovered_live) = if let Some(svg) = self.svg.get(&source_identity) {
+            (Arc::clone(svg), false)
         } else {
             let source_len = u64::try_from(payload.bytes.len()).unwrap_or(u64::MAX);
             if source_len > limits.max_asset_work_units() {
+                transact(IntrinsicTransaction::RejectLocalWork {
+                    event: MediaKind::Svg.source_event(),
+                    identity: source_identity,
+                    total_work_units: source_len,
+                })
+                .map_err(ResolutionFailure::Transaction)?;
                 return Err(ResolveError::AssetWork {
                     attempted: source_len,
                 }
@@ -704,10 +735,12 @@ impl Cache {
                 limits,
                 revision,
                 format,
-                &mut self.normalized_nested_rasters,
+                &self.normalized_nested_rasters,
+                &mut pending_nested_rasters,
+                transact,
             ) {
                 Ok(svg) => Arc::new(svg),
-                Err(error) => {
+                Err(ResolutionFailure::Asset(error)) => {
                     transact(IntrinsicTransaction::Abort {
                         event: MediaKind::Svg.source_event(),
                         identity: source_identity,
@@ -716,8 +749,18 @@ impl Cache {
                     .map_err(ResolutionFailure::Transaction)?;
                     return Err(error.into());
                 }
+                Err(ResolutionFailure::Transaction(error)) => {
+                    return Err(ResolutionFailure::Transaction(error));
+                }
+                Err(ResolutionFailure::Memory) => return Err(ResolutionFailure::Memory),
             };
             if sanitized.work_units > limits.max_asset_work_units() {
+                transact(IntrinsicTransaction::RejectLocalWork {
+                    event: "derived_sanitized_svg",
+                    identity: source_identity,
+                    total_work_units: sanitized.work_units.saturating_sub(source_len),
+                })
+                .map_err(ResolutionFailure::Transaction)?;
                 transact(IntrinsicTransaction::Abort {
                     event: MediaKind::Svg.source_event(),
                     identity: source_identity,
@@ -744,23 +787,46 @@ impl Cache {
                 bytes: temporary,
             })
             .map_err(ResolutionFailure::Transaction)?;
+            for admission in &sanitized.nested_admissions {
+                let transaction = match admission {
+                    svg::NestedAdmission::Occurrence { asset_bytes } => {
+                        IntrinsicTransaction::DiscoverNestedOccurrence {
+                            asset_bytes: *asset_bytes,
+                        }
+                    }
+                    svg::NestedAdmission::DecodedPixels { decoded_pixels } => {
+                        IntrinsicTransaction::DiscoverNestedPixels {
+                            decoded_pixels: *decoded_pixels,
+                        }
+                    }
+                    svg::NestedAdmission::Work {
+                        identity,
+                        total_work_units,
+                    } => IntrinsicTransaction::Acquire {
+                        event: "nested_asset_intrinsic_work",
+                        identity: *identity,
+                        persistent_working_bytes: 0,
+                        temporary_working_bytes: 0,
+                        decoded_pixels: 0,
+                        total_work_units: *total_work_units,
+                    },
+                };
+                transact(transaction).map_err(ResolutionFailure::Transaction)?;
+            }
+            self.normalized_nested_rasters
+                .append(&mut pending_nested_rasters);
             self.svg.insert(source_identity, Arc::clone(&sanitized));
-            sanitized
+            (sanitized, true)
         };
-        if sanitized.nested_asset_entries != 0
-            && self.svg_discovery_owners.insert(file_id.to_owned())
-        {
-            let decoded_pixels = if self.svg_nested_pixels_charged.insert(source_identity) {
-                sanitized.nested_decoded_pixels
-            } else {
-                0
-            };
-            transact(IntrinsicTransaction::DiscoverNested {
-                asset_entries: sanitized.nested_asset_entries,
-                asset_bytes: sanitized.nested_asset_bytes,
-                decoded_pixels,
-            })
-            .map_err(ResolutionFailure::Transaction)?;
+        if self.svg_discovery_owners.insert(file_id.to_owned()) && !discovered_live {
+            for admission in &sanitized.nested_admissions {
+                if let svg::NestedAdmission::Occurrence { asset_bytes } = admission {
+                    transact(IntrinsicTransaction::DiscoverNestedOccurrence {
+                        asset_bytes: *asset_bytes,
+                    })
+                    .map_err(ResolutionFailure::Transaction)?;
+                }
+            }
         }
         let identity = semantic_identity(revision, MediaKind::Svg, &sanitized.bytes);
         let report_svg_diagnostics = self.svg_diagnostic_owners.insert(file_id.to_owned());
@@ -803,7 +869,6 @@ impl Cache {
 
 struct NormalizedNestedRaster {
     source_media_kind: MediaKind,
-    pixels: u64,
     normalized_png: Vec<u8>,
 }
 
@@ -814,25 +879,14 @@ struct ValidatedNestedRaster {
     width: u32,
     height: u32,
     pixels: u64,
+    validation_work: u64,
     semantics: RasterSemantics,
 }
 
 fn normalize_nested_raster(
     bytes: &[u8],
-    limits: &ResourceLimits,
+    validated: ValidatedNestedRaster,
 ) -> Result<NormalizedNestedRaster, ResolveError> {
-    let validated = validate_nested_raster_semantics(bytes, limits)?;
-    let largest = validated.source_width.max(validated.source_height);
-    if largest > limits.max_raster_dimension() {
-        return Err(ResolveError::Dimensions {
-            attempted: u64::from(largest),
-        });
-    }
-    if validated.pixels > limits.max_decoded_pixels_per_asset() {
-        return Err(ResolveError::Pixels {
-            attempted: validated.pixels,
-        });
-    }
     let color_normalization = prepare_color_normalization(
         bytes,
         &validated.semantics,
@@ -874,7 +928,6 @@ fn normalize_nested_raster(
     let normalized_png = encode_normalized_png(validated.width, validated.height, &decoded.rgba)?;
     Ok(NormalizedNestedRaster {
         source_media_kind: validated.media_kind,
-        pixels: validated.pixels,
         normalized_png,
     })
 }
@@ -882,9 +935,13 @@ fn normalize_nested_raster(
 fn validate_nested_raster(
     bytes: &[u8],
     limits: &ResourceLimits,
-) -> Result<(MediaKind, u64), ResolveError> {
+) -> Result<(MediaKind, u64, u64), ResolveError> {
     let validated = validate_nested_raster_semantics(bytes, limits)?;
-    Ok((validated.media_kind, validated.pixels))
+    Ok((
+        validated.media_kind,
+        validated.pixels,
+        validated.validation_work,
+    ))
 }
 
 fn validate_nested_raster_semantics(
@@ -947,6 +1004,7 @@ fn validate_nested_raster_semantics(
         width,
         height,
         pixels,
+        validation_work: work,
         semantics,
     })
 }

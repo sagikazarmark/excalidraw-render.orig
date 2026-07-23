@@ -366,6 +366,33 @@ fn nested_svg_sanitizer_is_bounded_by_asset_work() {
 }
 
 #[test]
+fn rejected_parent_svg_never_admits_or_decodes_nested_occurrences() {
+    let parent = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><image width="1" height="1" href="data:image/png;base64,{PNG_BASE64}"/></svg>"#
+    );
+    let scene = image_scene(parent.as_bytes(), 1, 1);
+    let limits = ResourceLimits::builder()
+        .max_asset_entries(1)
+        .max_asset_work_units(u64::try_from(parent.len()).expect("fixture length fits u64"))
+        .build()
+        .expect("parent rejection limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .resource_limits(limits)
+        .build()
+        .expect("PNG request is valid");
+
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("parent work recovery occurs before nested discovery");
+
+    assert_eq!(outcome.report().diagnostics().len(), 1);
+    assert_eq!(
+        outcome.report().diagnostics()[0].code(),
+        DiagnosticCode::RESOURCE_ASSET_WORK_EXCEEDED
+    );
+}
+
+#[test]
 fn nested_data_resources_participate_in_asset_occurrence_accounting() {
     let child = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
     let parent = svg_with_nested_data_image(child);
@@ -384,6 +411,91 @@ fn nested_data_resources_participate_in_asset_occurrence_accounting() {
         .expect_err("nested data resource crosses the aggregate occurrence ceiling");
 
     assert_eq!(error.code(), ErrorCode::RESOURCE_ASSET_COUNT_EXCEEDED);
+}
+
+#[test]
+fn nested_raster_occurrences_are_admitted_before_distinct_identity_decodes() {
+    let bmp = base64::engine::general_purpose::STANDARD.encode(fixture_bmp24([0, 0, 255]));
+    let parent = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="1"><image width="1" height="1" href="data:image/png;base64,{PNG_BASE64}"/><image x="1" width="1" height="1" href="data:image/bmp;base64,{bmp}"/></svg>"#
+    );
+    let scene = image_scene(parent.as_bytes(), 2, 1);
+    let limits = ResourceLimits::builder()
+        .max_decoded_pixels_per_asset(1)
+        .max_total_decoded_pixels(1)
+        .build()
+        .expect("nested pixel limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .resource_limits(limits)
+        .build()
+        .expect("PNG request is valid");
+
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("the second identity is rejected before its raster decode");
+
+    assert_eq!(
+        error.code(),
+        ErrorCode::RESOURCE_TOTAL_DECODED_PIXELS_EXCEEDED
+    );
+    assert!(error.report().diagnostics().is_empty());
+}
+
+#[test]
+fn repeated_nested_occurrences_share_decode_but_not_occurrence_admission() {
+    let parent = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="1"><image width="1" height="1" href="data:image/png;base64,{PNG_BASE64}"/><image x="1" width="1" height="1" href="data:image/png;base64,{PNG_BASE64}"/></svg>"#
+    );
+    let scene = image_scene(parent.as_bytes(), 2, 1);
+    let limits = ResourceLimits::builder()
+        .max_asset_entries(3)
+        .max_decoded_pixels_per_asset(1)
+        .max_total_decoded_pixels(1)
+        .build()
+        .expect("shared nested identity limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .resource_limits(limits)
+        .build()
+        .expect("PNG request is valid");
+
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("both occurrences render from one admitted decode identity");
+
+    assert!(outcome.report().diagnostics().is_empty());
+}
+
+#[test]
+fn shared_parent_identity_never_bypasses_nested_occurrence_admission() {
+    let parent = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><image width="1" height="1" href="data:image/png;base64,{PNG_BASE64}"/></svg>"#
+    );
+    let encoded = base64::engine::general_purpose::STANDARD.encode(parent);
+    let json = format!(
+        r#"{{"type":"excalidraw","version":2,"elements":[
+            {{"id":"one","type":"image","x":0,"y":0,"width":1,"height":1,"fileId":"one","status":"saved","scale":[1,1],"seed":1,"updated":1}},
+            {{"id":"two","type":"image","x":1,"y":0,"width":1,"height":1,"fileId":"two","status":"saved","scale":[1,1],"seed":2,"updated":1}}
+        ],"appState":{{}},"files":{{
+            "one":{{"id":"one","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,{encoded}","created":1}},
+            "two":{{"id":"two","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,{encoded}","created":1}}
+        }}}}"#
+    );
+    let scene = SceneDocument::parse(json.as_bytes()).expect("shared-parent scene is admitted");
+    let limits = ResourceLimits::builder()
+        .max_asset_entries(3)
+        .build()
+        .expect("asset occurrence limit is valid");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .resource_limits(limits)
+        .build()
+        .expect("PNG request is valid");
+
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("both authoritative parents admit their nested occurrence");
+
+    assert_eq!(error.code(), ErrorCode::RESOURCE_ASSET_COUNT_EXCEEDED);
+    assert!(error.report().diagnostics().is_empty());
 }
 
 #[test]
@@ -860,6 +972,25 @@ fn pdf_effect_surface_limit_is_preflighted_before_any_fallback_is_emitted() {
         .expect_err("one pixel over the surface limit is rejected");
 
     assert_eq!(error.code(), ErrorCode::RESOURCE_RASTER_SURFACE_EXCEEDED);
+    assert!(error.report().diagnostics().is_empty());
+
+    let combined_limits = ResourceLimits::builder()
+        .max_raster_surface_pixels(199)
+        .max_total_rasterized_pixels(199)
+        .build()
+        .expect("combined fallback limits are valid");
+    let combined = RenderRequest::builder(OutputFormat::Pdf)
+        .resource_limits(combined_limits)
+        .build()
+        .expect("request is valid");
+    let error = Renderer::new()
+        .render(&scene, &combined)
+        .expect_err("fatal aggregate pixels beat the local fallback-area crossing");
+
+    assert_eq!(
+        error.code(),
+        ErrorCode::RESOURCE_TOTAL_RASTERIZED_PIXELS_EXCEEDED
+    );
     assert!(error.report().diagnostics().is_empty());
 }
 

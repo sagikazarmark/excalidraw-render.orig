@@ -218,6 +218,41 @@ impl ResourceMeter {
         self.transact_with_decision(context, delta, TraceDecision::RejectedLocal)
     }
 
+    pub(crate) fn preflight_local_rejection(
+        &mut self,
+        context: ResourceContext<'_>,
+        delta: ResourceDelta,
+    ) -> Result<(), ResourceCrossing> {
+        let before = self.counters;
+        let attempted = self.attempted(delta);
+        if let Some((kind, crossing_attempt)) = fatal_crossing(attempted, &self.limits) {
+            let measurement = crossing_attempt.measurement(kind.configured(&self.limits));
+            self.record_transaction(
+                context,
+                delta,
+                before,
+                attempted_counters_for_trace(attempted, &self.limits),
+                before,
+                measurement_form(measurement),
+                TraceDecision::RejectedFatal,
+                Some(kind.code()),
+            );
+            return Err(ResourceCrossing { kind, measurement });
+        }
+        let attempted = attempted_counters_for_trace(attempted, &self.limits);
+        self.record_transaction(
+            context,
+            delta,
+            before,
+            attempted,
+            before,
+            TraceMeasurementForm::Exact,
+            TraceDecision::RejectedLocal,
+            None,
+        );
+        Ok(())
+    }
+
     fn transact_with_decision(
         &mut self,
         context: ResourceContext<'_>,

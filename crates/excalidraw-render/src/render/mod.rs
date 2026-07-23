@@ -631,10 +631,40 @@ impl RenderSession {
                             file_id,
                             authority,
                             |transaction| match transaction {
-                                asset::IntrinsicTransaction::DiscoverNested {
+                                asset::IntrinsicTransaction::PreflightNested {
                                     asset_entries,
                                     asset_bytes,
                                     decoded_pixels,
+                                    total_work_units,
+                                } => {
+                                    let delta = ResourceDelta {
+                                        asset_entries,
+                                        asset_bytes,
+                                        decoded_pixels,
+                                        total_work_units,
+                                        ..ResourceDelta::default()
+                                    };
+                                    if self.meter.would_cross_fatal(delta) {
+                                        self.transact(
+                                            request,
+                                            ResourceContext::new(
+                                                ResourcePhase::IntrinsicAssets,
+                                                "nested_asset_preflight",
+                                                source.source.pointer(),
+                                            )
+                                            .with_local_owner(Some(file_id)),
+                                            delta,
+                                        )?;
+                                        return Err(self.internal_failure(
+                                            request.format(),
+                                            "fatal nested asset preflight committed unexpectedly",
+                                            "/elements",
+                                        ));
+                                    }
+                                    Ok(())
+                                }
+                                asset::IntrinsicTransaction::DiscoverNestedOccurrence {
+                                    asset_bytes,
                                 } => self.transact(
                                     request,
                                     ResourceContext::new(
@@ -644,13 +674,55 @@ impl RenderSession {
                                     )
                                     .with_local_owner(Some(file_id)),
                                     ResourceDelta {
-                                        asset_entries,
+                                        asset_entries: 1,
                                         asset_bytes,
-                                        decoded_pixels,
                                         total_work_units: asset_bytes,
                                         ..ResourceDelta::default()
                                     },
                                 ),
+                                asset::IntrinsicTransaction::DiscoverNestedPixels {
+                                    decoded_pixels,
+                                } => self.transact(
+                                    request,
+                                    ResourceContext::new(
+                                        ResourcePhase::IntrinsicAssets,
+                                        "nested_asset_decode",
+                                        source.source.pointer(),
+                                    )
+                                    .with_local_owner(Some(file_id)),
+                                    ResourceDelta {
+                                        decoded_pixels,
+                                        ..ResourceDelta::default()
+                                    },
+                                ),
+                                asset::IntrinsicTransaction::RejectLocalWork {
+                                    event,
+                                    identity,
+                                    total_work_units,
+                                } => {
+                                    let identity =
+                                        semantic_identity_hex(&identity).map_err(|_| {
+                                            self.memory_failure(
+                                                request,
+                                                "asset_resolution",
+                                                "semantic_identity",
+                                            )
+                                        })?;
+                                    self.preflight_local_rejection(
+                                        request,
+                                        ResourceContext::new(
+                                            ResourcePhase::IntrinsicAssets,
+                                            event,
+                                            source.source.pointer(),
+                                        )
+                                        .with_semantic_identity(&identity)
+                                        .with_local_owner(Some(file_id)),
+                                        ResourceDelta {
+                                            total_work_units,
+                                            ..ResourceDelta::default()
+                                        },
+                                    )
+                                }
                                 asset::IntrinsicTransaction::Acquire {
                                     event,
                                     identity,
@@ -764,6 +836,13 @@ impl RenderSession {
                             Ok(resolution) => Ok(resolution),
                             Err(asset::ResolutionFailure::Asset(error)) => Err(error),
                             Err(asset::ResolutionFailure::Transaction(error)) => return Err(error),
+                            Err(asset::ResolutionFailure::Memory) => {
+                                return Err(self.memory_failure(
+                                    request,
+                                    "nested_asset_discovery",
+                                    "occurrence_cache",
+                                ));
+                            }
                         };
                         semantic_working.append(&mut pending_asset_working);
                         let asset_failure = asset_resolution.as_ref().err().copied();
@@ -1772,6 +1851,26 @@ impl RenderSession {
                 self.release_semantic_working(request, semantic_working, false)?;
                 let pixels = u64::from(plan.width()).saturating_mul(u64::from(plan.height()));
                 let rgba_bytes = pixels.saturating_mul(4);
+                let surface_limit = request.resource_limits().max_raster_surface_pixels();
+                if pixels > surface_limit {
+                    return Err(self.required_raster_surface_failure(
+                        request,
+                        surface_limit,
+                        pixels,
+                    ));
+                }
+                self.transact(
+                    request,
+                    ResourceContext::new(
+                        ResourcePhase::ProjectionAndFallback,
+                        "main_raster_surface",
+                        "",
+                    ),
+                    ResourceDelta {
+                        rasterized_pixels: pixels,
+                        ..ResourceDelta::default()
+                    },
+                )?;
                 let surface_bytes = 256_u64.saturating_add(rgba_bytes);
                 let surface = ResourceContext::new(
                     ResourcePhase::ProjectionAndFallback,
@@ -1899,6 +1998,7 @@ impl RenderSession {
                             ));
                         }
                         if fallback_pixels > surface_limit {
+                            self.preflight_local_rejection(request, raster_context, raster_delta)?;
                             let diagnostic = ElementLocalCrossing {
                                 code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
                                 field: "max_raster_surface_pixels",
@@ -3062,9 +3162,30 @@ impl RenderSession {
         for closure in plan.raster_closures() {
             let pixels = closure.pixel_width.saturating_mul(closure.pixel_height);
             let limits = request.resource_limits();
+            let delta = ResourceDelta {
+                rasterized_pixels: pixels,
+                total_work_units: pixels,
+                ..ResourceDelta::default()
+            };
+            let context = ResourceContext::new(
+                ResourcePhase::ProjectionAndFallback,
+                "pdf_raster_fallback",
+                &closure.json_pointer,
+            )
+            .with_element_id(Some(&closure.element_id))
+            .with_local_owner(Some(&closure.element_id));
+            if self.meter.would_cross_fatal(delta) {
+                self.transact(request, context, delta)?;
+                return Err(self.internal_failure(
+                    request.format(),
+                    "fatal PDF fallback preflight committed unexpectedly",
+                    "/elements",
+                ));
+            }
             if closure.pixel_width > u64::from(limits.max_raster_dimension())
                 || closure.pixel_height > u64::from(limits.max_raster_dimension())
             {
+                self.preflight_local_rejection(request, context, delta)?;
                 return Err(self.pdf_raster_surface_failure(
                     request,
                     closure,
@@ -3075,6 +3196,7 @@ impl RenderSession {
                 ));
             }
             if pixels > limits.max_raster_surface_pixels() {
+                self.preflight_local_rejection(request, context, delta)?;
                 return Err(self.pdf_raster_surface_failure(
                     request,
                     closure,
@@ -3084,21 +3206,7 @@ impl RenderSession {
                     ValueKind::Pixels,
                 ));
             }
-            self.transact(
-                request,
-                ResourceContext::new(
-                    ResourcePhase::ProjectionAndFallback,
-                    "pdf_raster_fallback",
-                    &closure.json_pointer,
-                )
-                .with_element_id(Some(&closure.element_id))
-                .with_local_owner(Some(&closure.element_id)),
-                ResourceDelta {
-                    rasterized_pixels: pixels,
-                    total_work_units: pixels,
-                    ..ResourceDelta::default()
-                },
-            )?;
+            self.transact(request, context, delta)?;
             let bytes = 256_u64.saturating_add(pixels.saturating_mul(4));
             self.acquire_working(
                 request,
@@ -3153,6 +3261,32 @@ impl RenderSession {
                 field,
                 configured: ResourceValue::Integer(configured),
                 value_kind,
+                measurement: Measurement::Attempted {
+                    value: ResourceValue::Integer(attempted),
+                },
+                recovery: None,
+            })),
+            report: self.take_report(),
+        }
+    }
+
+    fn required_raster_surface_failure(
+        &mut self,
+        request: &RenderRequest,
+        configured: u64,
+        attempted: u64,
+    ) -> RenderError {
+        RenderError {
+            category: RenderErrorCategory::ResourceLimit,
+            code: ErrorCode::RESOURCE_RASTER_SURFACE_EXCEEDED,
+            message: Box::from("required PNG raster surface exceeds its configured limit"),
+            format: request.format(),
+            element_id: None,
+            json_pointer: Box::from(""),
+            details: Some(Box::new(ErrorDetails::ResourceLimit {
+                field: "max_raster_surface_pixels",
+                configured: ResourceValue::Integer(configured),
+                value_kind: ValueKind::Pixels,
                 measurement: Measurement::Attempted {
                     value: ResourceValue::Integer(attempted),
                 },
@@ -4203,6 +4337,21 @@ impl RenderSession {
             .meter
             .commit_local_rejection_observation(context, delta)
         {
+            Ok(()) => Ok(()),
+            Err(crossing) => Err(self.resource_failure(request, crossing, failure_location)),
+        }
+    }
+
+    fn preflight_local_rejection(
+        &mut self,
+        request: &RenderRequest,
+        context: ResourceContext<'_>,
+        delta: ResourceDelta,
+    ) -> Result<(), RenderError> {
+        let failure_location = context
+            .try_failure_location()
+            .map_err(|_| self.memory_failure(request, "resource_failure", "source_location"))?;
+        match self.meter.preflight_local_rejection(context, delta) {
             Ok(()) => Ok(()),
             Err(crossing) => Err(self.resource_failure(request, crossing, failure_location)),
         }
@@ -6299,7 +6448,7 @@ fn image_asset_failure_diagnostic(
                 "max_raster_dimension",
                 u64::from(limits.max_raster_dimension()),
                 attempted,
-                ValueKind::Pixels,
+                ValueKind::Dimension,
             )),
         ),
         asset::ResolveError::Pixels { attempted } => (
@@ -6339,7 +6488,7 @@ fn image_asset_failure_diagnostic(
                 "max_nested_asset_depth",
                 u64::from(limits.max_nested_asset_depth()),
                 attempted,
-                ValueKind::Count,
+                ValueKind::Depth,
             )),
         ),
         asset::ResolveError::Memory => unreachable!("memory failure is fatal before diagnostics"),
@@ -8052,7 +8201,7 @@ mod tests {
             ),
             (
                 OutputFormat::Png,
-                "3f96fd0444186a0419c2a785f4ec851b969c0fa029a7d918997ccf58394a3190",
+                "ea83686bc428297bb5c5b9b99faa5749350fd6f8480d1728a1aa7d827fdaa097",
             ),
             (
                 OutputFormat::Pdf,
@@ -8126,6 +8275,33 @@ mod tests {
                 "canonical {format:?} trace changed"
             );
         }
+    }
+
+    #[test]
+    fn required_raster_trace_precedes_projection_work() {
+        let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
+        let request = RenderRequest::builder(OutputFormat::Png)
+            .build()
+            .expect("request is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+
+        let (result, trace) = render_with_trace(profile, &scene, &request);
+        result.expect("empty PNG renders");
+        let trace: serde_json::Value = serde_json::from_slice(&trace).expect("trace is valid JSON");
+        let entries = trace["entries"].as_array().expect("entries are an array");
+        let main = entries
+            .iter()
+            .position(|entry| entry["event"] == "main_raster_surface")
+            .expect("required main raster is traced");
+        let background = entries
+            .iter()
+            .position(|entry| entry["event"] == "solid_background_samples")
+            .expect("background projection is traced");
+
+        assert!(main < background);
+        assert_eq!(entries[main]["deltas"]["rasterized_pixels"], 400);
+        assert_eq!(entries[main]["decision"], "committed");
     }
 
     #[test]

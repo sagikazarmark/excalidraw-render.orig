@@ -164,6 +164,38 @@ fn final_output_bytes_are_admitted_atomically_for_every_format() {
 }
 
 #[test]
+fn required_png_surface_is_admitted_before_projection_and_fallbacks() {
+    let required_pixels = 20 * 20;
+
+    let accepted = ResourceLimits::builder()
+        .max_raster_surface_pixels(required_pixels)
+        .max_total_rasterized_pixels(required_pixels)
+        .build()
+        .expect("required-raster equality limits are valid");
+    render_empty(OutputFormat::Png, accepted)
+        .expect("the required main raster is accepted at exact equality");
+
+    let configured = required_pixels - 1;
+    let rejected = ResourceLimits::builder()
+        .max_raster_surface_pixels(configured)
+        .max_total_rasterized_pixels(configured)
+        .build()
+        .expect("required-raster crossing limits are valid");
+    let error = render_empty(OutputFormat::Png, rejected)
+        .expect_err("the required main raster is rejected before projection");
+
+    assert_resource_failure(
+        &error,
+        ErrorCode::RESOURCE_RASTER_SURFACE_EXCEEDED,
+        "max_raster_surface_pixels",
+        configured,
+        required_pixels,
+        "pixels",
+        "",
+    );
+}
+
+#[test]
 fn canonical_peak_working_bytes_are_independent_of_physical_allocations() {
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let output_bytes = default_artifact_len(format);

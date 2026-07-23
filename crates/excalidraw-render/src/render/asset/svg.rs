@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use base64::Engine as _;
 
-use super::ResolveError;
-use crate::{CompatibilityRevision, OutputFormat, ResourceLimits};
+use super::{IntrinsicTransaction, ResolutionFailure, ResolveError};
+use crate::{CompatibilityRevision, OutputFormat, RenderError, ResourceLimits};
 
 #[derive(Clone)]
 pub(crate) struct Removal {
@@ -47,10 +47,32 @@ pub(super) struct SanitizedSvg {
     pub(super) effects: Vec<Effect>,
     pub(super) work_units: u64,
     pub(super) working_bytes: u64,
-    pub(super) nested_asset_entries: u64,
-    pub(super) nested_asset_bytes: u64,
-    pub(super) nested_decoded_pixels: u64,
+    pub(super) nested_admissions: Vec<NestedAdmission>,
     pub(super) tree: Arc<usvg::Tree>,
+}
+
+#[derive(Clone)]
+pub(super) enum NestedAdmission {
+    Occurrence {
+        asset_bytes: u64,
+    },
+    DecodedPixels {
+        decoded_pixels: u64,
+    },
+    Work {
+        identity: [u8; 32],
+        total_work_units: u64,
+    },
+}
+
+#[derive(Default)]
+struct NestedAccounting {
+    admissions: Vec<NestedAdmission>,
+    sanitized_svgs: BTreeMap<[u8; 32], Arc<SanitizedSvg>>,
+    asset_entries: u64,
+    asset_bytes: u64,
+    decoded_pixels: u64,
+    total_work_units: u64,
 }
 
 pub(super) fn looks_like_svg(bytes: &[u8]) -> bool {
@@ -64,19 +86,38 @@ pub(super) fn sanitize(
     limits: &ResourceLimits,
     revision: CompatibilityRevision,
     format: OutputFormat,
-    normalized_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
-) -> Result<SanitizedSvg, ResolveError> {
-    sanitize_at(bytes, limits, revision, format, 0, normalized_rasters)
+    shared_rasters: &BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
+    pending_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
+    transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+) -> Result<SanitizedSvg, ResolutionFailure> {
+    let mut nested_accounting = NestedAccounting::default();
+    let mut sanitized = sanitize_at(
+        bytes,
+        limits,
+        revision,
+        format,
+        0,
+        shared_rasters,
+        pending_rasters,
+        transact,
+        &mut nested_accounting,
+    )?;
+    sanitized.nested_admissions = nested_accounting.admissions;
+    Ok(sanitized)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn sanitize_at(
     bytes: &[u8],
     limits: &ResourceLimits,
     revision: CompatibilityRevision,
     format: OutputFormat,
     depth: u32,
-    normalized_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
-) -> Result<SanitizedSvg, ResolveError> {
+    shared_rasters: &BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
+    pending_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
+    transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+    nested_accounting: &mut NestedAccounting,
+) -> Result<SanitizedSvg, ResolutionFailure> {
     let text = std::str::from_utf8(bytes).map_err(|_| ResolveError::SvgDecodeFailed)?;
     let (text, mut removals) = remove_dtd_and_entities(text)?;
     let mut failures = Vec::new();
@@ -95,7 +136,7 @@ fn sanitize_at(
     if root.tag_name().name() != "svg"
         || root.tag_name().namespace() != Some("http://www.w3.org/2000/svg")
     {
-        return Err(ResolveError::SvgDecodeFailed);
+        return Err(ResolveError::SvgDecodeFailed.into());
     }
     let mut effects = discover_effects(&document);
     let nodes = document
@@ -105,42 +146,16 @@ fn sanitize_at(
     if nodes > usize::try_from(limits.max_nested_svg_nodes()).unwrap_or(usize::MAX) {
         return Err(ResolveError::SvgComplexity {
             attempted: u64::try_from(nodes).unwrap_or(u64::MAX),
-        });
+        }
+        .into());
     }
-    let mut serialized = String::new();
-    let mut node_ordinal = 0;
-    let mut nested_asset_entries = 0;
-    let mut nested_asset_bytes = 0;
-    let mut nested_decoded_pixels = 0;
-    serialize_node(
-        root,
-        true,
-        &mut node_ordinal,
-        &mut serialized,
-        &mut removals,
-        &mut failures,
-        &mut effects,
-        limits,
-        revision,
-        format,
-        depth,
-        normalized_rasters,
-        &mut nested_asset_entries,
-        &mut nested_asset_bytes,
-        &mut nested_decoded_pixels,
-    )?;
-    let options = viewer_options()?;
-    let tree =
-        usvg::Tree::from_str(&serialized, &options).map_err(|_| ResolveError::SvgDecodeFailed)?;
-    let size = tree.size().to_int_size();
-    let width = size.width();
-    let height = size.height();
     let attributes = document
         .descendants()
         .filter(|node| node.is_element())
         .map(|node| node.attributes().len())
         .sum::<usize>()
-        .saturating_add(removals.len());
+        .saturating_add(removals.len())
+        .saturating_add(local_removal_count(&document));
     let tokens = nodes.saturating_add(attributes);
     let local_references = document
         .descendants()
@@ -155,9 +170,37 @@ fn sanitize_at(
         .saturating_add(u64::try_from(nodes).unwrap_or(u64::MAX))
         .saturating_add(u64::try_from(attributes).unwrap_or(u64::MAX))
         .saturating_add(u64::try_from(local_references).unwrap_or(u64::MAX));
-    let work_units = u64::try_from(bytes.len())
-        .unwrap_or(u64::MAX)
-        .saturating_add(semantic_records.saturating_mul(16));
+    let source_len = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
+    let work_units = source_len.saturating_add(semantic_records.saturating_mul(16));
+    if work_units > limits.max_asset_work_units() {
+        if depth != 0 {
+            transact(IntrinsicTransaction::PreflightNested {
+                asset_entries: nested_accounting.asset_entries,
+                asset_bytes: nested_accounting.asset_bytes,
+                decoded_pixels: nested_accounting.decoded_pixels,
+                total_work_units: nested_accounting
+                    .total_work_units
+                    .saturating_add(nested_accounting.asset_bytes)
+                    .saturating_add(work_units),
+            })
+            .map_err(ResolutionFailure::Transaction)?;
+        }
+        let identity = super::semantic_identity(revision, super::MediaKind::Svg, bytes);
+        transact(IntrinsicTransaction::RejectLocalWork {
+            event: "derived_sanitized_svg",
+            identity,
+            total_work_units: if depth == 0 {
+                work_units.saturating_sub(source_len)
+            } else {
+                work_units
+            },
+        })
+        .map_err(ResolutionFailure::Transaction)?;
+        return Err(ResolveError::AssetWork {
+            attempted: work_units,
+        }
+        .into());
+    }
     let working_bytes = 512_u64
         .saturating_add(u64::try_from(nodes).unwrap_or(u64::MAX).saturating_mul(128))
         .saturating_add(
@@ -169,6 +212,31 @@ fn sanitize_at(
             .unwrap_or(u64::MAX)
             .saturating_mul(64),
         );
+    let mut serialized = String::new();
+    let mut node_ordinal = 0;
+    serialize_node(
+        root,
+        true,
+        &mut node_ordinal,
+        &mut serialized,
+        &mut removals,
+        &mut failures,
+        &mut effects,
+        limits,
+        revision,
+        format,
+        depth,
+        shared_rasters,
+        pending_rasters,
+        transact,
+        nested_accounting,
+    )?;
+    let options = viewer_options()?;
+    let tree =
+        usvg::Tree::from_str(&serialized, &options).map_err(|_| ResolveError::SvgDecodeFailed)?;
+    let size = tree.size().to_int_size();
+    let width = size.width();
+    let height = size.height();
     Ok(SanitizedSvg {
         bytes: serialized.into_bytes(),
         width,
@@ -178,11 +246,44 @@ fn sanitize_at(
         effects,
         work_units,
         working_bytes,
-        nested_asset_entries,
-        nested_asset_bytes,
-        nested_decoded_pixels,
+        nested_admissions: Vec::new(),
         tree: Arc::new(tree),
     })
+}
+
+fn local_removal_count(document: &roxmltree::Document<'_>) -> usize {
+    document
+        .descendants()
+        .filter(|node| node.is_element())
+        .filter(|node| {
+            !node
+                .ancestors()
+                .skip(1)
+                .filter(|ancestor| ancestor.is_element())
+                .any(|ancestor| !is_allowed_svg_node(&ancestor))
+        })
+        .map(|node| {
+            let name = node.tag_name().name();
+            if !is_allowed_svg_node(&node) {
+                return 1;
+            }
+            node.attributes()
+                .filter(|attribute| {
+                    unsafe_attribute(
+                        name,
+                        attribute.name(),
+                        attribute.namespace(),
+                        attribute.value(),
+                    )
+                })
+                .count()
+        })
+        .sum()
+}
+
+fn is_allowed_svg_node(node: &roxmltree::Node<'_, '_>) -> bool {
+    node.tag_name().namespace() == Some("http://www.w3.org/2000/svg")
+        && allowed_element(node.tag_name().name())
 }
 
 fn remove_dtd_and_entities(text: &str) -> Result<(String, Vec<Removal>), ResolveError> {
@@ -273,11 +374,11 @@ fn serialize_node(
     revision: CompatibilityRevision,
     format: OutputFormat,
     depth: u32,
-    normalized_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
-    nested_asset_entries: &mut u64,
-    nested_asset_bytes: &mut u64,
-    nested_decoded_pixels: &mut u64,
-) -> Result<(), ResolveError> {
+    shared_rasters: &BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
+    pending_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
+    transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+    nested_accounting: &mut NestedAccounting,
+) -> Result<(), ResolutionFailure> {
     let ordinal = *node_ordinal;
     *node_ordinal = node_ordinal.saturating_add(1);
     if node.is_text() {
@@ -342,16 +443,16 @@ fn serialize_node(
                 depth,
                 ordinal,
                 u64::try_from(attribute_ordinal).unwrap_or(u64::MAX),
-                normalized_rasters,
+                shared_rasters,
+                pending_rasters,
                 removals,
                 failures,
                 effects,
-                nested_asset_entries,
-                nested_asset_bytes,
-                nested_decoded_pixels,
+                transact,
+                nested_accounting,
             ) {
                 Ok(value) => value,
-                Err(error) => {
+                Err(ResolutionFailure::Asset(error)) => {
                     failures.push(Failure {
                         path: vec![(
                             ordinal,
@@ -361,6 +462,10 @@ fn serialize_node(
                     });
                     continue;
                 }
+                Err(ResolutionFailure::Transaction(error)) => {
+                    return Err(ResolutionFailure::Transaction(error));
+                }
+                Err(ResolutionFailure::Memory) => return Err(ResolutionFailure::Memory),
             }
         } else if attribute_name == "style" {
             style_without_noop_filter(node, value)
@@ -393,10 +498,10 @@ fn serialize_node(
                 revision,
                 format,
                 depth,
-                normalized_rasters,
-                nested_asset_entries,
-                nested_asset_bytes,
-                nested_decoded_pixels,
+                shared_rasters,
+                pending_rasters,
+                transact,
+                nested_accounting,
             )?;
         }
     }
@@ -415,31 +520,31 @@ fn sanitize_nested_data_image(
     depth: u32,
     slot_node_ordinal: u64,
     slot_attribute_ordinal: u64,
-    normalized_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
+    shared_rasters: &BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
+    pending_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
     removals: &mut Vec<Removal>,
     failures: &mut Vec<Failure>,
     effects: &mut Vec<Effect>,
-    nested_asset_entries: &mut u64,
-    nested_asset_bytes: &mut u64,
-    nested_decoded_pixels: &mut u64,
-) -> Result<Option<String>, ResolveError> {
+    transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+    nested_accounting: &mut NestedAccounting,
+) -> Result<Option<String>, ResolutionFailure> {
     let Some(data) = value.strip_prefix("data:") else {
         return Ok(None);
     };
     let Some((claimed_media_type, encoded)) = data.split_once(";base64,") else {
-        return Err(ResolveError::SvgDecodeFailed);
+        return Err(ResolveError::SvgDecodeFailed.into());
     };
     let (decoded_prefix, valid_base64) = super::decoded_prefix(encoded);
-    *nested_asset_entries = nested_asset_entries.saturating_add(1);
-    *nested_asset_bytes = nested_asset_bytes.saturating_add(decoded_prefix);
+    admit_nested_occurrence(decoded_prefix, transact, nested_accounting)?;
     if !valid_base64 {
-        return Err(ResolveError::SvgDecodeFailed);
+        return Err(ResolveError::SvgDecodeFailed.into());
     }
     let attempted_depth = depth.saturating_add(1);
     if attempted_depth > limits.max_nested_asset_depth() {
         return Err(ResolveError::SvgDepth {
             attempted: u64::from(attempted_depth),
-        });
+        }
+        .into());
     }
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(encoded)
@@ -448,74 +553,198 @@ fn sanitize_nested_data_image(
     if decoded_bytes > limits.max_asset_bytes() {
         return Err(ResolveError::AssetBytes {
             attempted: decoded_bytes,
-        });
+        }
+        .into());
     }
     let validated_media_type = if looks_like_svg(&bytes) {
         "image/svg+xml"
     } else {
         super::sniff_media_kind(&bytes)?.media_type()
     };
-    let (media_type, canonical_bytes, child_entries, child_bytes, child_pixels) =
-        if looks_like_svg(&bytes) {
-            let nested = sanitize_at(
+    let (media_type, canonical_bytes) = if looks_like_svg(&bytes) {
+        let identity = super::semantic_identity(revision, super::MediaKind::Svg, &bytes);
+        let cached = nested_accounting.sanitized_svgs.get(&identity).cloned();
+        let (nested, shared) = if let Some(nested) = cached {
+            for admission in &nested.nested_admissions {
+                if let NestedAdmission::Occurrence { asset_bytes } = admission {
+                    admit_nested_occurrence(*asset_bytes, transact, nested_accounting)?;
+                }
+            }
+            (nested, true)
+        } else {
+            let admission_start = nested_accounting.admissions.len();
+            let mut nested = sanitize_at(
                 &bytes,
                 limits,
                 revision,
                 format,
                 attempted_depth,
-                normalized_rasters,
+                shared_rasters,
+                pending_rasters,
+                transact,
+                nested_accounting,
             )?;
-            removals.extend(nested.removals);
-            for mut failure in nested.failures {
-                failure
-                    .path
-                    .insert(0, (slot_node_ordinal, slot_attribute_ordinal));
-                failures.push(failure);
-            }
-            for mut effect in nested.effects {
-                for cause in &mut effect.causes {
-                    cause
-                        .slots
-                        .insert(0, (slot_node_ordinal, slot_attribute_ordinal));
-                }
-                effects.push(effect);
-            }
-            (
-                "image/svg+xml",
-                nested.bytes,
-                nested.nested_asset_entries,
-                nested.nested_asset_bytes,
-                nested.nested_decoded_pixels,
-            )
-        } else {
-            let (kind, pixels, canonical_bytes) = if format == OutputFormat::Svg {
-                let (kind, _) = super::validate_nested_raster(&bytes, limits)?;
-                (kind, 0, Arc::new(bytes.clone()))
-            } else {
-                let kind = super::sniff_media_kind(&bytes)?;
-                let identity = super::semantic_identity(revision, kind, &bytes);
-                let (normalized, decoded_pixels) =
-                    if let Some(normalized) = normalized_rasters.get(&identity) {
-                        (Arc::clone(normalized), 0)
-                    } else {
-                        let normalized = Arc::new(super::normalize_nested_raster(&bytes, limits)?);
-                        normalized_rasters.insert(identity, Arc::clone(&normalized));
-                        let decoded_pixels = normalized.pixels;
-                        (normalized, decoded_pixels)
-                    };
-                (
-                    normalized.source_media_kind,
-                    decoded_pixels,
-                    Arc::new(normalized.normalized_png.clone()),
-                )
-            };
-            let emitted_type = if format == OutputFormat::Svg {
-                kind.media_type()
-            } else {
-                "image/png"
-            };
-            (emitted_type, canonical_bytes.as_ref().clone(), 0, 0, pixels)
+            let child_admissions = &nested_accounting.admissions[admission_start..];
+            nested
+                .nested_admissions
+                .try_reserve_exact(child_admissions.len())
+                .map_err(|_| ResolutionFailure::Memory)?;
+            nested
+                .nested_admissions
+                .extend(child_admissions.iter().cloned());
+            let nested = Arc::new(nested);
+            nested_accounting
+                .sanitized_svgs
+                .insert(identity, Arc::clone(&nested));
+            (nested, false)
         };
+        if !shared {
+            let total_work_units = nested_accounting
+                .total_work_units
+                .saturating_add(nested.work_units);
+            transact(IntrinsicTransaction::PreflightNested {
+                asset_entries: nested_accounting.asset_entries,
+                asset_bytes: nested_accounting.asset_bytes,
+                decoded_pixels: nested_accounting.decoded_pixels,
+                total_work_units: total_work_units.saturating_add(nested_accounting.asset_bytes),
+            })
+            .map_err(ResolutionFailure::Transaction)?;
+            nested_accounting
+                .admissions
+                .try_reserve(1)
+                .map_err(|_| ResolutionFailure::Memory)?;
+            nested_accounting.admissions.push(NestedAdmission::Work {
+                identity,
+                total_work_units: nested.work_units,
+            });
+            nested_accounting.total_work_units = total_work_units;
+        }
+        removals.extend(nested.removals.iter().cloned());
+        for mut failure in nested.failures.iter().cloned() {
+            failure
+                .path
+                .insert(0, (slot_node_ordinal, slot_attribute_ordinal));
+            failures.push(failure);
+        }
+        for mut effect in nested.effects.iter().cloned() {
+            for cause in &mut effect.causes {
+                cause
+                    .slots
+                    .insert(0, (slot_node_ordinal, slot_attribute_ordinal));
+            }
+            effects.push(effect);
+        }
+        ("image/svg+xml", nested.bytes.clone())
+    } else {
+        let (kind, canonical_bytes) = if format == OutputFormat::Svg {
+            let (kind, _, validation_work) = super::validate_nested_raster(&bytes, limits)?;
+            let identity = super::semantic_identity(revision, kind, &bytes);
+            let total_work_units = nested_accounting
+                .total_work_units
+                .saturating_add(validation_work);
+            transact(IntrinsicTransaction::PreflightNested {
+                asset_entries: nested_accounting.asset_entries,
+                asset_bytes: nested_accounting.asset_bytes,
+                decoded_pixels: nested_accounting.decoded_pixels,
+                total_work_units: total_work_units.saturating_add(nested_accounting.asset_bytes),
+            })
+            .map_err(ResolutionFailure::Transaction)?;
+            nested_accounting
+                .admissions
+                .try_reserve(1)
+                .map_err(|_| ResolutionFailure::Memory)?;
+            nested_accounting.admissions.push(NestedAdmission::Work {
+                identity,
+                total_work_units: validation_work,
+            });
+            nested_accounting.total_work_units = total_work_units;
+            (kind, Arc::new(bytes.clone()))
+        } else {
+            let kind = super::sniff_media_kind(&bytes)?;
+            let identity = super::semantic_identity(revision, kind, &bytes);
+            let normalized = if let Some(normalized) = pending_rasters
+                .get(&identity)
+                .or_else(|| shared_rasters.get(&identity))
+            {
+                Arc::clone(normalized)
+            } else {
+                let validated = super::validate_nested_raster_semantics(&bytes, limits)?;
+                let work = u64::try_from(bytes.len())
+                    .unwrap_or(u64::MAX)
+                    .saturating_mul(5)
+                    .saturating_add(validated.pixels.saturating_mul(4))
+                    .saturating_add(validated.validation_work);
+                let decoded_pixels = nested_accounting
+                    .decoded_pixels
+                    .saturating_add(validated.pixels);
+                transact(IntrinsicTransaction::PreflightNested {
+                    asset_entries: nested_accounting.asset_entries,
+                    asset_bytes: nested_accounting.asset_bytes,
+                    decoded_pixels,
+                    total_work_units: nested_accounting
+                        .total_work_units
+                        .saturating_add(nested_accounting.asset_bytes)
+                        .saturating_add(work),
+                })
+                .map_err(ResolutionFailure::Transaction)?;
+                let largest = validated.source_width.max(validated.source_height);
+                if largest > limits.max_raster_dimension() {
+                    return Err(ResolveError::Dimensions {
+                        attempted: u64::from(largest),
+                    }
+                    .into());
+                }
+                if validated.pixels > limits.max_decoded_pixels_per_asset() {
+                    return Err(ResolveError::Pixels {
+                        attempted: validated.pixels,
+                    }
+                    .into());
+                }
+                if work > limits.max_asset_work_units() {
+                    transact(IntrinsicTransaction::RejectLocalWork {
+                        event: "nested_raster_normalization",
+                        identity,
+                        total_work_units: work,
+                    })
+                    .map_err(ResolutionFailure::Transaction)?;
+                    return Err(ResolveError::AssetWork { attempted: work }.into());
+                }
+                nested_accounting
+                    .admissions
+                    .try_reserve(1)
+                    .map_err(|_| ResolutionFailure::Memory)?;
+                nested_accounting
+                    .admissions
+                    .push(NestedAdmission::DecodedPixels {
+                        decoded_pixels: validated.pixels,
+                    });
+                nested_accounting.decoded_pixels = decoded_pixels;
+                nested_accounting
+                    .admissions
+                    .try_reserve(1)
+                    .map_err(|_| ResolutionFailure::Memory)?;
+                nested_accounting.admissions.push(NestedAdmission::Work {
+                    identity,
+                    total_work_units: work,
+                });
+                nested_accounting.total_work_units =
+                    nested_accounting.total_work_units.saturating_add(work);
+                let normalized = Arc::new(super::normalize_nested_raster(&bytes, validated)?);
+                pending_rasters.insert(identity, Arc::clone(&normalized));
+                normalized
+            };
+            (
+                normalized.source_media_kind,
+                Arc::new(normalized.normalized_png.clone()),
+            )
+        };
+        let emitted_type = if format == OutputFormat::Svg {
+            kind.media_type()
+        } else {
+            "image/png"
+        };
+        (emitted_type, canonical_bytes.as_ref().clone())
+    };
     if claimed_media_type != validated_media_type {
         removals.push(Removal {
             node_ordinal: 0,
@@ -524,12 +753,35 @@ fn sanitize_nested_data_image(
             changes_appearance: false,
         });
     }
-    *nested_asset_entries = nested_asset_entries.saturating_add(child_entries);
-    *nested_asset_bytes = nested_asset_bytes.saturating_add(child_bytes);
-    *nested_decoded_pixels = nested_decoded_pixels.saturating_add(child_pixels);
     let mut canonical = format!("data:{media_type};base64,");
     base64::engine::general_purpose::STANDARD.encode_string(canonical_bytes, &mut canonical);
     Ok(Some(canonical))
+}
+
+fn admit_nested_occurrence(
+    decoded_bytes: u64,
+    transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+    accounting: &mut NestedAccounting,
+) -> Result<(), ResolutionFailure> {
+    let asset_entries = accounting.asset_entries.saturating_add(1);
+    let asset_bytes = accounting.asset_bytes.saturating_add(decoded_bytes);
+    transact(IntrinsicTransaction::PreflightNested {
+        asset_entries,
+        asset_bytes,
+        decoded_pixels: accounting.decoded_pixels,
+        total_work_units: accounting.total_work_units.saturating_add(asset_bytes),
+    })
+    .map_err(ResolutionFailure::Transaction)?;
+    accounting
+        .admissions
+        .try_reserve(1)
+        .map_err(|_| ResolutionFailure::Memory)?;
+    accounting.admissions.push(NestedAdmission::Occurrence {
+        asset_bytes: decoded_bytes,
+    });
+    accounting.asset_entries = asset_entries;
+    accounting.asset_bytes = asset_bytes;
+    Ok(())
 }
 
 fn count_descendants(node: roxmltree::Node<'_, '_>, node_ordinal: &mut u64) {
