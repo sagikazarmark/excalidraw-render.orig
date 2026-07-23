@@ -141,6 +141,13 @@ struct PdfGlyphMapping {
     unicode: Vec<u16>,
 }
 
+struct PdfSvgChunk {
+    chunk: pdf_writer::Chunk,
+    root: pdf_writer::Ref,
+    bytes: Vec<u8>,
+    object_offsets: Vec<(usize, usize)>,
+}
+
 impl PdfPlan {
     pub(super) fn image_resource_pixel_counts(&self) -> Result<Vec<u64>, FormatEncodeError> {
         self.image_resources()?
@@ -296,11 +303,14 @@ impl PdfPlan {
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
         let opacity_resources = self.opacity_resources()?;
         let image_resources = self.image_resources()?;
+        let svg_resources = self.svg_resources()?;
+        let raw_svg_chunks = svg_chunks(&svg_resources)?;
         let fallback_mappings = self.fallback_glyph_mappings()?;
         let official_mappings = self.official_glyph_mappings()?;
         let content = self.encode_content(
             &opacity_resources,
             &image_resources,
+            &svg_resources,
             &fallback_mappings,
             &official_mappings,
         )?;
@@ -381,10 +391,21 @@ impl PdfPlan {
             .len()
             .checked_mul(2)
             .ok_or_else(pdf_size_error)?;
+        let first_svg_object = first_image_object
+            .checked_add(image_object_count)
+            .ok_or_else(pdf_size_error)?;
+        let svg_object_count = raw_svg_chunks
+            .iter()
+            .try_fold(0_usize, |count, chunk| {
+                count.checked_add(chunk.chunk.refs().len())
+            })
+            .ok_or_else(pdf_size_error)?;
+        let svg_chunks = renumber_svg_chunks(raw_svg_chunks, first_svg_object)?;
         let object_count = object_count
             .checked_add(fallback_font_object_count)
             .and_then(|count| count.checked_add(official_font_object_count))
             .and_then(|count| count.checked_add(image_object_count))
+            .and_then(|count| count.checked_add(svg_object_count))
             .ok_or_else(pdf_size_error)?;
         let page_width = format_pdf_number(self.page_width, "PDF page width")?;
         let page_height = format_pdf_number(self.page_height, "PDF page height")?;
@@ -397,6 +418,11 @@ impl PdfPlan {
                     .len()
                     .checked_mul(256)
                     .and_then(|extra| capacity.checked_add(extra))
+            })
+            .and_then(|capacity| {
+                svg_chunks.iter().try_fold(capacity, |capacity, resource| {
+                    capacity.checked_add(resource.bytes.len())
+                })
             })
             .and_then(|capacity| {
                 xmp.as_ref().map_or(Some(capacity), |xmp| {
@@ -510,7 +536,7 @@ impl PdfPlan {
             }
             pdf.extend_from_slice(b" >>\n");
         }
-        if !fallback_forms.is_empty() || !image_resources.is_empty() {
+        if !fallback_forms.is_empty() || !image_resources.is_empty() || !svg_chunks.is_empty() {
             pdf.extend_from_slice(b"/XObject <<");
             for index in 0..fallback_forms.len() {
                 write!(
@@ -529,6 +555,9 @@ impl PdfPlan {
                     checked_object(first_image_object, index, 2)?
                 )
                 .map_err(write_error)?;
+            }
+            for (index, resource) in svg_chunks.iter().enumerate() {
+                write!(pdf, " /Svg{index} {} 0 R", resource.root.get()).map_err(write_error)?;
             }
             pdf.extend_from_slice(b" >>\n");
         }
@@ -766,6 +795,9 @@ impl PdfPlan {
             .map_err(write_error)?;
             pdf.extend_from_slice(&alpha);
             pdf.extend_from_slice(b"\nendstream\nendobj\n");
+        }
+        for resource in &svg_chunks {
+            append_chunk(&mut pdf, &mut offsets, resource)?;
         }
 
         let xref_offset = pdf.len();
@@ -1174,6 +1206,9 @@ impl PdfPlan {
             let PdfElement::Image { asset, .. } = element else {
                 continue;
             };
+            if asset.sanitized_svg.is_some() {
+                continue;
+            }
             if resources
                 .iter()
                 .any(|candidate: &std::sync::Arc<super::ResolvedImageAsset>| {
@@ -1188,10 +1223,40 @@ impl PdfPlan {
         Ok(resources)
     }
 
+    fn svg_resources(
+        &self,
+    ) -> Result<Vec<std::sync::Arc<super::ResolvedImageAsset>>, FormatEncodeError> {
+        let mut resources = Vec::new();
+        resources
+            .try_reserve_exact(self.elements.len())
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_workspace",
+                subject: "pdf_svg_resources",
+            })?;
+        for element in &self.elements {
+            let PdfElement::Image { asset, .. } = element else {
+                continue;
+            };
+            if asset.sanitized_svg.is_none()
+                || resources
+                    .iter()
+                    .any(|candidate: &std::sync::Arc<super::ResolvedImageAsset>| {
+                        candidate.identity == asset.identity
+                    })
+            {
+                continue;
+            }
+            resources.push(std::sync::Arc::clone(asset));
+        }
+        resources.sort_unstable_by_key(|asset| asset.identity);
+        Ok(resources)
+    }
+
     fn encode_content(
         &self,
         opacity_resources: &[f64],
         image_resources: &[std::sync::Arc<super::ResolvedImageAsset>],
+        svg_resources: &[std::sync::Arc<super::ResolvedImageAsset>],
         fallback_mappings: &[PdfGlyphMapping],
         official_mappings: &[Vec<PdfGlyphMapping>],
     ) -> Result<String, FormatEncodeError> {
@@ -1709,14 +1774,26 @@ impl PdfPlan {
                             "PDF image lost its source identity".to_owned(),
                         ));
                     }
-                    let resource = image_resources
-                        .iter()
-                        .position(|candidate| candidate.identity == asset.identity)
-                        .ok_or_else(|| {
-                            FormatEncodeError::Encoding(
-                                "PDF image resource has no semantic owner".to_owned(),
-                            )
-                        })?;
+                    let (resource_prefix, resource) = if asset.sanitized_svg.is_some() {
+                        (
+                            "Svg",
+                            svg_resources
+                                .iter()
+                                .position(|candidate| candidate.identity == asset.identity),
+                        )
+                    } else {
+                        (
+                            "Im",
+                            image_resources
+                                .iter()
+                                .position(|candidate| candidate.identity == asset.identity),
+                        )
+                    };
+                    let resource = resource.ok_or_else(|| {
+                        FormatEncodeError::Encoding(
+                            "PDF image resource has no semantic owner".to_owned(),
+                        )
+                    })?;
                     let (sin, cos) = if transform.angle_radians == 0.0 {
                         (0.0, 1.0)
                     } else {
@@ -1777,7 +1854,7 @@ impl PdfPlan {
                         image_offset_x,
                         image_offset_y,
                     )?;
-                    writeln!(content, "/Im{resource} Do").map_err(|_| {
+                    writeln!(content, "/{resource_prefix}{resource} Do").map_err(|_| {
                         FormatEncodeError::Encoding(
                             "failed to write PDF image invocation".to_owned(),
                         )
@@ -2881,6 +2958,221 @@ fn begin_object(
 
 fn pdf_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("PDF plan exceeds serializer capacity".to_owned())
+}
+
+fn svg_chunks(
+    resources: &[std::sync::Arc<super::ResolvedImageAsset>],
+) -> Result<Vec<PdfSvgChunk>, FormatEncodeError> {
+    let mut chunks = Vec::new();
+    chunks.try_reserve_exact(resources.len()).map_err(|_| {
+        FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_resource",
+            subject: "pdf_svg_chunks",
+        }
+    })?;
+    for resource in resources {
+        let tree = resource.sanitized_svg_tree.as_deref().ok_or_else(|| {
+            FormatEncodeError::Encoding("PDF SVG resource lost its sanitized tree".to_owned())
+        })?;
+        let (chunk, root) = svg2pdf::to_chunk(
+            tree,
+            svg2pdf::ConversionOptions {
+                raster_scale: 1.0,
+                ..svg2pdf::ConversionOptions::default()
+            },
+        )
+        .map_err(|error| {
+            FormatEncodeError::Encoding(format!("failed to lower sanitized SVG to PDF: {error}"))
+        })?;
+        chunks.push(PdfSvgChunk {
+            chunk,
+            root,
+            bytes: Vec::new(),
+            object_offsets: Vec::new(),
+        });
+    }
+    Ok(chunks)
+}
+
+fn renumber_svg_chunks(
+    chunks: Vec<PdfSvgChunk>,
+    first_object: usize,
+) -> Result<Vec<PdfSvgChunk>, FormatEncodeError> {
+    let total_objects = chunks
+        .iter()
+        .try_fold(0_usize, |count, chunk| {
+            count.checked_add(chunk.chunk.refs().len())
+        })
+        .ok_or_else(pdf_size_error)?;
+    let last_object = first_object
+        .checked_add(total_objects)
+        .ok_or_else(pdf_size_error)?;
+    if last_object > i32::MAX as usize {
+        return Err(pdf_size_error());
+    }
+    let mut next = i32::try_from(first_object).map_err(|_| pdf_size_error())?;
+    let mut renumbered = Vec::new();
+    renumbered.try_reserve_exact(chunks.len()).map_err(|_| {
+        FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_resource",
+            subject: "pdf_svg_chunks",
+        }
+    })?;
+    for resource in chunks {
+        let mut mapping = std::collections::BTreeMap::new();
+        let chunk = resource.chunk.renumber(|old| {
+            *mapping.entry(old).or_insert_with(|| {
+                let allocated = pdf_writer::Ref::new(next);
+                next += 1;
+                allocated
+            })
+        });
+        let root = *mapping.get(&resource.root).ok_or_else(pdf_size_error)?;
+        let (bytes, object_offsets) = canonicalize_pdf_chunk(&chunk)?;
+        renumbered.push(PdfSvgChunk {
+            chunk,
+            root,
+            bytes,
+            object_offsets,
+        });
+    }
+    Ok(renumbered)
+}
+
+fn append_chunk(
+    pdf: &mut Vec<u8>,
+    offsets: &mut [usize],
+    resource: &PdfSvgChunk,
+) -> Result<(), FormatEncodeError> {
+    for &(object, position) in &resource.object_offsets {
+        let index = object.checked_sub(1).ok_or_else(pdf_size_error)?;
+        *offsets.get_mut(index).ok_or_else(pdf_size_error)? =
+            pdf.len().checked_add(position).ok_or_else(pdf_size_error)?;
+    }
+    pdf.extend_from_slice(&resource.bytes);
+    Ok(())
+}
+
+fn canonicalize_pdf_chunk(
+    chunk: &pdf_writer::Chunk,
+) -> Result<(Vec<u8>, Vec<(usize, usize)>), FormatEncodeError> {
+    let bytes = chunk.as_bytes();
+    let mut canonical = Vec::with_capacity(bytes.len());
+    let mut offsets = Vec::new();
+    offsets.try_reserve_exact(chunk.refs().len()).map_err(|_| {
+        FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_workspace",
+            subject: "pdf_svg_object_offsets",
+        }
+    })?;
+    let mut cursor = 0_usize;
+    for reference in chunk.refs() {
+        while bytes.get(cursor).is_some_and(u8::is_ascii_whitespace) {
+            canonical.push(bytes[cursor]);
+            cursor += 1;
+        }
+        let marker = format!("{} 0 obj\n", reference.get());
+        if !bytes[cursor..].starts_with(marker.as_bytes()) {
+            return Err(FormatEncodeError::Encoding(
+                "PDF SVG chunk object order did not match its reference table".to_owned(),
+            ));
+        }
+        offsets.push((
+            usize::try_from(reference.get()).map_err(|_| pdf_size_error())?,
+            canonical.len(),
+        ));
+        canonical.extend_from_slice(marker.as_bytes());
+        cursor += marker.len();
+
+        let relative_end = find_bytes(&bytes[cursor..], b"endobj\n").ok_or_else(|| {
+            FormatEncodeError::Encoding("PDF SVG chunk object was unterminated".to_owned())
+        })?;
+        let relative_stream = find_bytes(&bytes[cursor..cursor + relative_end], b"stream\n");
+        if let Some(relative_stream) = relative_stream {
+            let stream = cursor + relative_stream;
+            canonicalize_pdf_text(&bytes[cursor..stream], &mut canonical);
+            canonical.extend_from_slice(b"stream\n");
+            let body = stream + b"stream\n".len();
+            let length = pdf_stream_length(&bytes[cursor..stream])?;
+            let body_end = body.checked_add(length).ok_or_else(pdf_size_error)?;
+            let trailer = b"\nendstream\nendobj\n";
+            let object_end = body_end
+                .checked_add(trailer.len())
+                .ok_or_else(pdf_size_error)?;
+            if bytes.get(body_end..object_end) != Some(trailer.as_slice()) {
+                return Err(FormatEncodeError::Encoding(
+                    "PDF SVG stream length did not match its object boundary".to_owned(),
+                ));
+            }
+            canonical.extend_from_slice(bytes.get(body..body_end).ok_or_else(pdf_size_error)?);
+            canonical.extend_from_slice(trailer);
+            cursor = object_end;
+        } else {
+            let object_end = cursor
+                .checked_add(relative_end)
+                .and_then(|end| end.checked_add(b"endobj\n".len()))
+                .ok_or_else(pdf_size_error)?;
+            canonicalize_pdf_text(&bytes[cursor..object_end], &mut canonical);
+            cursor = object_end;
+        }
+    }
+    canonicalize_pdf_text(&bytes[cursor..], &mut canonical);
+    Ok((canonical, offsets))
+}
+
+fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack
+        .windows(needle.len())
+        .position(|window| window == needle)
+}
+
+fn pdf_stream_length(dictionary: &[u8]) -> Result<usize, FormatEncodeError> {
+    let marker = b"/Length ";
+    let start = find_bytes(dictionary, marker)
+        .and_then(|index| index.checked_add(marker.len()))
+        .ok_or_else(|| {
+            FormatEncodeError::Encoding("PDF SVG stream had no direct length".to_owned())
+        })?;
+    let digits = dictionary[start..]
+        .iter()
+        .take_while(|byte| byte.is_ascii_digit())
+        .copied()
+        .collect::<Vec<_>>();
+    if digits.is_empty() {
+        return Err(FormatEncodeError::Encoding(
+            "PDF SVG stream length was not an integer".to_owned(),
+        ));
+    }
+    std::str::from_utf8(&digits)
+        .ok()
+        .and_then(|digits| digits.parse().ok())
+        .ok_or_else(pdf_size_error)
+}
+
+fn canonicalize_pdf_text(bytes: &[u8], output: &mut Vec<u8>) {
+    let mut lines = bytes.split_inclusive(|byte| *byte == b'\n').peekable();
+    while let Some(line) = lines.next() {
+        let indentation = line.iter().take_while(|byte| **byte == b' ').count();
+        if line.get(indentation) != Some(&b'/') || line.ends_with(b"<<\n") {
+            output.extend_from_slice(line);
+            continue;
+        }
+        let mut run = vec![line];
+        while let Some(next) = lines.peek().copied() {
+            let next_indentation = next.iter().take_while(|byte| **byte == b' ').count();
+            if next_indentation != indentation
+                || next.get(next_indentation) != Some(&b'/')
+                || next.ends_with(b"<<\n")
+            {
+                break;
+            }
+            run.push(lines.next().expect("peeked PDF line exists"));
+        }
+        run.sort_unstable();
+        for line in run {
+            output.extend_from_slice(line);
+        }
+    }
 }
 
 fn checked_object(first: usize, index: usize, stride: usize) -> Result<usize, FormatEncodeError> {

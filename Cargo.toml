@@ -33,6 +33,7 @@ image-webp = "=0.2.4"
 jsonschema = { version = "=0.33.0", default-features = false }
 moxcms = { version = "=0.9.0", default-features = false }
 png = "=0.17.16"
+pdf-writer = "=0.12.0"
 jpeg-encoder = "=0.6.1"
 resvg = { version = "=0.45.1", default-features = false }
 roxmltree = "=0.20.0"
@@ -45,7 +46,7 @@ rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] 
 svg2pdf = { version = "=0.13.0", default-features = false }
 svgtypes = "=0.15.3"
 tiny-skia = { version = "=0.11.4", default-features = false, features = ["png-format", "std"] }
-usvg = { version = "=0.45.1", default-features = false }
+usvg = { version = "=0.45.1", default-features = false, features = ["text"] }
 wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
 zune-jpeg = { version = "=0.5.15", default-features = false, features = ["std"] }
 

@@ -26,6 +26,7 @@ use super::ResolvedImageAsset;
 
 mod bmp;
 mod ico;
+pub(super) mod svg;
 
 const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
 const JPEG_SIGNATURE: &[u8; 3] = b"\xff\xd8\xff";
@@ -45,6 +46,7 @@ pub(super) enum MediaKind {
     WebP,
     Bmp,
     Ico,
+    Svg,
 }
 
 impl MediaKind {
@@ -56,6 +58,7 @@ impl MediaKind {
             Self::WebP => 4,
             Self::Bmp => 5,
             Self::Ico => 6,
+            Self::Svg => 8,
         }
     }
 
@@ -67,6 +70,7 @@ impl MediaKind {
             Self::WebP => "image/webp",
             Self::Bmp => "image/bmp",
             Self::Ico => "image/x-icon",
+            Self::Svg => "image/svg+xml",
         }
     }
 
@@ -78,6 +82,7 @@ impl MediaKind {
             Self::WebP => "semantic_webp_source",
             Self::Bmp => "semantic_bmp_source",
             Self::Ico => "semantic_ico_source",
+            Self::Svg => "semantic_svg_source",
         }
     }
 
@@ -89,6 +94,7 @@ impl MediaKind {
             Self::WebP => "webp_color_normalize",
             Self::Bmp => "bmp_color_normalize",
             Self::Ico => "ico_color_normalize",
+            Self::Svg => "svg_color_normalize",
         }
     }
 
@@ -100,6 +106,7 @@ impl MediaKind {
             Self::WebP => "decoded_webp_rgba",
             Self::Bmp => "decoded_bmp_rgba",
             Self::Ico => "decoded_ico_rgba",
+            Self::Svg => "decoded_svg_rgba",
         }
     }
 }
@@ -119,6 +126,8 @@ pub(super) fn is_persistent_event(event: &str) -> bool {
             | "decoded_bmp_rgba"
             | "semantic_ico_source"
             | "decoded_ico_rgba"
+            | "semantic_svg_source"
+            | "decoded_svg_rgba"
     )
 }
 
@@ -140,10 +149,13 @@ pub(super) enum ResolveError {
     WebPDecodeFailed,
     BmpDecodeFailed,
     IcoDecodeFailed,
+    SvgDecodeFailed,
     AssetBytes { attempted: u64 },
     Dimensions { attempted: u64 },
     Pixels { attempted: u64 },
     AssetWork { attempted: u64 },
+    SvgComplexity { attempted: u64 },
+    SvgDepth { attempted: u64 },
     Memory,
 }
 
@@ -159,6 +171,11 @@ impl From<ResolveError> for ResolutionFailure {
 }
 
 pub(super) enum IntrinsicTransaction {
+    DiscoverNested {
+        asset_entries: u64,
+        asset_bytes: u64,
+        decoded_pixels: u64,
+    },
     Acquire {
         event: &'static str,
         identity: [u8; 32],
@@ -189,6 +206,7 @@ pub(super) struct Resolution {
     pub(super) claims: Claims,
     pub(super) animated: bool,
     pub(super) media_kind: MediaKind,
+    pub(super) svg_removals: Vec<svg::Removal>,
 }
 
 struct ValidatedRaster {
@@ -316,6 +334,8 @@ struct DecodedRaster {
 pub(super) struct Cache {
     validated: BTreeMap<[u8; 32], Arc<ValidatedRaster>>,
     decoded: BTreeMap<[u8; 32], Arc<DecodedRaster>>,
+    svg: BTreeMap<[u8; 32], Arc<svg::SanitizedSvg>>,
+    svg_diagnostic_owners: std::collections::BTreeSet<String>,
 }
 
 impl Cache {
@@ -341,6 +361,9 @@ impl Cache {
             authority,
             limits.max_asset_bytes(),
         )?;
+        if svg::looks_like_svg(&payload.bytes) {
+            return self.resolve_svg(revision, format, limits, file_id, payload, &mut transact);
+        }
         let media_kind = sniff_media_kind(&payload.bytes)?;
         let identity = semantic_identity(revision, media_kind, &payload.bytes);
         let (source_width, source_height) = match media_kind {
@@ -350,6 +373,7 @@ impl Cache {
             MediaKind::WebP => read_webp_dimensions(&payload.bytes)?,
             MediaKind::Bmp => read_bmp_dimensions(&payload.bytes)?,
             MediaKind::Ico => read_ico_dimensions(&payload.bytes)?,
+            MediaKind::Svg => unreachable!("SVG assets use the sanitizer path"),
         };
         let pixels = u64::from(source_width)
             .checked_mul(u64::from(source_height))
@@ -367,6 +391,7 @@ impl Cache {
                     .map_err(|_| ResolveError::BmpDecodeFailed)?,
                 MediaKind::Ico => ico::validation_work(&payload.bytes)
                     .map_err(|_| ResolveError::IcoDecodeFailed)?,
+                MediaKind::Svg => unreachable!("SVG assets use the sanitizer path"),
             };
         let validation_working_bytes = if self.validated.contains_key(&identity) {
             0
@@ -431,6 +456,7 @@ impl Cache {
                 MediaKind::Ico => validate_ico(&payload.bytes).map(|(width, height, semantics)| {
                     (width, height, RasterSemantics::Ico(semantics))
                 }),
+                MediaKind::Svg => unreachable!("SVG assets use the sanitizer path"),
             };
             let validation = match validation {
                 Ok(validation) => validation,
@@ -573,6 +599,7 @@ impl Cache {
                     color_normalization,
                     &validated.semantics,
                 ),
+                MediaKind::Svg => unreachable!("SVG assets use the sanitizer path"),
             };
             let decoded = match decoded {
                 Ok(decoded) => Arc::new(decoded),
@@ -612,12 +639,206 @@ impl Cache {
                 premultiplied_rgba: decoded
                     .as_ref()
                     .map(|decoded| Arc::clone(&decoded.premultiplied_rgba)),
+                sanitized_svg: None,
+                sanitized_svg_tree: None,
             }),
             claims: payload.claims,
             animated: validated.semantics.animated(),
             media_kind: validated.media_kind,
+            svg_removals: Vec::new(),
         })
     }
+
+    fn resolve_svg<F>(
+        &mut self,
+        revision: CompatibilityRevision,
+        format: OutputFormat,
+        limits: &ResourceLimits,
+        file_id: &str,
+        payload: Payload,
+        transact: &mut F,
+    ) -> Result<Resolution, ResolutionFailure>
+    where
+        F: FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+    {
+        let source_identity = semantic_identity(revision, MediaKind::Svg, &payload.bytes);
+        let sanitized = if let Some(svg) = self.svg.get(&source_identity) {
+            Arc::clone(svg)
+        } else {
+            let source_len = u64::try_from(payload.bytes.len()).unwrap_or(u64::MAX);
+            if source_len > limits.max_asset_work_units() {
+                return Err(ResolveError::AssetWork {
+                    attempted: source_len,
+                }
+                .into());
+            }
+            let temporary = 1_048_576;
+            transact(IntrinsicTransaction::Acquire {
+                event: MediaKind::Svg.source_event(),
+                identity: source_identity,
+                persistent_working_bytes: 0,
+                temporary_working_bytes: temporary,
+                decoded_pixels: 0,
+                total_work_units: source_len,
+            })
+            .map_err(ResolutionFailure::Transaction)?;
+            let sanitized = match svg::sanitize(&payload.bytes, limits) {
+                Ok(svg) => Arc::new(svg),
+                Err(error) => {
+                    transact(IntrinsicTransaction::Abort {
+                        event: MediaKind::Svg.source_event(),
+                        identity: source_identity,
+                        bytes: temporary,
+                    })
+                    .map_err(ResolutionFailure::Transaction)?;
+                    return Err(error.into());
+                }
+            };
+            if sanitized.work_units > limits.max_asset_work_units() {
+                transact(IntrinsicTransaction::Abort {
+                    event: MediaKind::Svg.source_event(),
+                    identity: source_identity,
+                    bytes: temporary,
+                })
+                .map_err(ResolutionFailure::Transaction)?;
+                return Err(ResolveError::AssetWork {
+                    attempted: sanitized.work_units,
+                }
+                .into());
+            }
+            transact(IntrinsicTransaction::Acquire {
+                event: "derived_sanitized_svg",
+                identity: source_identity,
+                persistent_working_bytes: sanitized.working_bytes,
+                temporary_working_bytes: 0,
+                decoded_pixels: 0,
+                total_work_units: sanitized.work_units.saturating_sub(source_len),
+            })
+            .map_err(ResolutionFailure::Transaction)?;
+            transact(IntrinsicTransaction::ReleaseTemporary {
+                event: "svg_sanitizer_workspace",
+                identity: source_identity,
+                bytes: temporary,
+            })
+            .map_err(ResolutionFailure::Transaction)?;
+            self.svg.insert(source_identity, Arc::clone(&sanitized));
+            sanitized
+        };
+        if sanitized.nested_asset_entries != 0 {
+            transact(IntrinsicTransaction::DiscoverNested {
+                asset_entries: sanitized.nested_asset_entries,
+                asset_bytes: sanitized.nested_asset_bytes,
+                decoded_pixels: sanitized.nested_decoded_pixels,
+            })
+            .map_err(ResolutionFailure::Transaction)?;
+        }
+        let identity = semantic_identity(revision, MediaKind::Svg, &sanitized.bytes);
+        let (rgba, premultiplied_rgba) = if format != OutputFormat::Png {
+            (None, None)
+        } else {
+            let pixels = u64::from(sanitized.width)
+                .checked_mul(u64::from(sanitized.height))
+                .ok_or(ResolveError::Memory)?;
+            if sanitized.width.max(sanitized.height) > limits.max_raster_dimension() {
+                return Err(ResolveError::Dimensions {
+                    attempted: u64::from(sanitized.width.max(sanitized.height)),
+                }
+                .into());
+            }
+            if pixels > limits.max_decoded_pixels_per_asset() {
+                return Err(ResolveError::Pixels { attempted: pixels }.into());
+            }
+            let working = 256_u64.saturating_add(pixels.saturating_mul(4));
+            transact(IntrinsicTransaction::Acquire {
+                event: MediaKind::Svg.decoded_event(),
+                identity,
+                persistent_working_bytes: working,
+                temporary_working_bytes: 0,
+                decoded_pixels: pixels,
+                total_work_units: pixels.saturating_mul(4),
+            })
+            .map_err(ResolutionFailure::Transaction)?;
+            let decoded = svg::render(&sanitized).map_err(ResolutionFailure::Asset)?;
+            (Some(decoded.rgba), Some(decoded.premultiplied_rgba))
+        };
+        Ok(Resolution {
+            asset: Arc::new(ResolvedImageAsset {
+                identity,
+                source_bytes: Arc::new(sanitized.bytes.clone()),
+                media_type: MediaKind::Svg.media_type(),
+                width: sanitized.width,
+                height: sanitized.height,
+                rgba,
+                premultiplied_rgba,
+                sanitized_svg: Some(Arc::new(sanitized.bytes.clone())),
+                sanitized_svg_tree: Some(Arc::clone(&sanitized.tree)),
+            }),
+            claims: payload.claims,
+            animated: false,
+            media_kind: MediaKind::Svg,
+            svg_removals: if self.svg_diagnostic_owners.insert(file_id.to_owned()) {
+                sanitized.removals.clone()
+            } else {
+                Vec::new()
+            },
+        })
+    }
+}
+
+fn validate_nested_raster(
+    bytes: &[u8],
+    limits: &ResourceLimits,
+) -> Result<(MediaKind, u64), ResolveError> {
+    let media_kind = sniff_media_kind(bytes)?;
+    let (width, height) = match media_kind {
+        MediaKind::Png => read_png_ihdr(bytes)?,
+        MediaKind::Jpeg => read_jpeg_dimensions(bytes)?,
+        MediaKind::Gif => read_gif_dimensions(bytes)?,
+        MediaKind::WebP => read_webp_dimensions(bytes)?,
+        MediaKind::Bmp => read_bmp_dimensions(bytes)?,
+        MediaKind::Ico => read_ico_dimensions(bytes)?,
+        MediaKind::Svg => unreachable!("nested SVG uses recursive sanitization"),
+    };
+    let largest = width.max(height);
+    if largest > limits.max_raster_dimension() {
+        return Err(ResolveError::Dimensions {
+            attempted: u64::from(largest),
+        });
+    }
+    let pixels = u64::from(width)
+        .checked_mul(u64::from(height))
+        .ok_or(ResolveError::Memory)?;
+    if pixels > limits.max_decoded_pixels_per_asset() {
+        return Err(ResolveError::Pixels { attempted: pixels });
+    }
+    let bytes_len = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
+    let animation_work = match media_kind {
+        MediaKind::Png => png_animation_validation_work(bytes, pixels)?,
+        MediaKind::Jpeg => 0,
+        MediaKind::Gif => gif_animation_validation_work(bytes, pixels)?,
+        MediaKind::WebP => webp_animation_validation_work(bytes)?,
+        MediaKind::Bmp => bmp::validation_work(bytes).map_err(|_| ResolveError::BmpDecodeFailed)?,
+        MediaKind::Ico => ico::validation_work(bytes).map_err(|_| ResolveError::IcoDecodeFailed)?,
+        MediaKind::Svg => unreachable!("nested SVG uses recursive sanitization"),
+    };
+    let work = bytes_len
+        .checked_add(animation_work)
+        .ok_or(ResolveError::AssetWork {
+            attempted: u64::MAX,
+        })?;
+    if work > limits.max_asset_work_units() {
+        return Err(ResolveError::AssetWork { attempted: work });
+    }
+    match media_kind {
+        MediaKind::Png => validate_static_png(bytes).map(|_| ())?,
+        MediaKind::Jpeg => validate_static_jpeg(bytes).map(|_| ())?,
+        MediaKind::Gif => validate_gif(bytes).map(|_| ())?,
+        MediaKind::WebP => validate_webp(bytes).map(|_| ())?,
+        MediaKind::Bmp => validate_bmp(bytes).map(|_| ())?,
+        MediaKind::Ico => validate_ico(bytes).map(|_| ())?,
+        MediaKind::Svg => unreachable!("nested SVG uses recursive sanitization"),
+    }
+    Ok((media_kind, pixels))
 }
 
 fn read_png_ihdr(bytes: &[u8]) -> Result<(u32, u32), ResolveError> {

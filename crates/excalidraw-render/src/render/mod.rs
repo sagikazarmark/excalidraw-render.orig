@@ -577,6 +577,26 @@ impl RenderSession {
                             file_id,
                             authority,
                             |transaction| match transaction {
+                                asset::IntrinsicTransaction::DiscoverNested {
+                                    asset_entries,
+                                    asset_bytes,
+                                    decoded_pixels,
+                                } => self.transact(
+                                    request,
+                                    ResourceContext::new(
+                                        ResourcePhase::IntrinsicAssets,
+                                        "nested_asset_occurrence",
+                                        source.source.pointer(),
+                                    )
+                                    .with_local_owner(Some(file_id)),
+                                    ResourceDelta {
+                                        asset_entries,
+                                        asset_bytes,
+                                        decoded_pixels,
+                                        total_work_units: asset_bytes,
+                                        ..ResourceDelta::default()
+                                    },
+                                ),
                                 asset::IntrinsicTransaction::Acquire {
                                     event,
                                     identity,
@@ -696,6 +716,61 @@ impl RenderSession {
                         if let Ok(resolution) = asset_resolution {
                             let animated = resolution.animated;
                             let media_type = resolution.media_kind.media_type();
+                            let svg_diagnostic_location = if resolution.svg_removals.is_empty() {
+                                None
+                            } else {
+                                Some(
+                                    asset_failure_location(
+                                        scene,
+                                        request.supplemental_assets(),
+                                        file_id,
+                                        authority,
+                                    )
+                                    .map_err(|_| {
+                                        self.memory_failure(
+                                            request,
+                                            "compatibility_report",
+                                            "unsafe_svg_location",
+                                        )
+                                    })?,
+                                )
+                            };
+                            for removal in &resolution.svg_removals {
+                                let (json_pointer, source_order, source_position, local_owner) =
+                                    svg_diagnostic_location.as_ref().ok_or_else(|| {
+                                        self.internal_failure(
+                                            request.format(),
+                                            "unsafe SVG diagnostic lost its source location",
+                                            "/files",
+                                        )
+                                    })?;
+                                let diagnostic = unsafe_svg_removal_diagnostic(
+                                    request.format(),
+                                    file_id,
+                                    json_pointer,
+                                    removal,
+                                )
+                                .map_err(|_| {
+                                    self.memory_failure(
+                                        request,
+                                        "compatibility_report",
+                                        "unsafe_svg_removal",
+                                    )
+                                })?;
+                                self.retain_diagnostic_with_owner(
+                                    request,
+                                    ResourcePhase::SharedSemanticResolution,
+                                    "unsafe_svg_removal",
+                                    diagnostic,
+                                    DiagnosticOwnership {
+                                        local_owner: Some(local_owner),
+                                        source_order: Some(*source_order),
+                                        source_position: Some(
+                                            source_position.saturating_add(removal.node_ordinal),
+                                        ),
+                                    },
+                                )?;
+                            }
                             let asset = resolution.asset;
                             for (claim, field) in [
                                 (resolution.claims.mime_type.as_deref(), "mimeType"),
@@ -5064,6 +5139,8 @@ struct ResolvedImageAsset {
     height: u32,
     rgba: Option<std::sync::Arc<Vec<u8>>>,
     premultiplied_rgba: Option<std::sync::Arc<Vec<u8>>>,
+    sanitized_svg: Option<std::sync::Arc<Vec<u8>>>,
+    sanitized_svg_tree: Option<std::sync::Arc<usvg::Tree>>,
 }
 
 struct ResolvedImageInputs {
@@ -5455,6 +5532,11 @@ fn image_asset_failure_diagnostic(
             "referenced ICO payload could not be decoded",
             None,
         ),
+        asset::ResolveError::SvgDecodeFailed => (
+            DiagnosticCode::IMAGE_DECODE_FAILED,
+            "referenced nested SVG payload could not be parsed and sanitized",
+            None,
+        ),
         asset::ResolveError::Missing => {
             unreachable!("missing assets are diagnosed by normalization")
         }
@@ -5496,6 +5578,26 @@ fn image_asset_failure_diagnostic(
                 limits.max_asset_work_units(),
                 attempted,
                 ValueKind::WorkUnits,
+            )),
+        ),
+        asset::ResolveError::SvgComplexity { attempted } => (
+            DiagnosticCode::RESOURCE_NESTED_SVG_COMPLEXITY_EXCEEDED,
+            "nested SVG exceeded the local node ceiling",
+            Some((
+                "max_nested_svg_nodes",
+                u64::from(limits.max_nested_svg_nodes()),
+                attempted,
+                ValueKind::Count,
+            )),
+        ),
+        asset::ResolveError::SvgDepth { attempted } => (
+            DiagnosticCode::RESOURCE_NESTED_ASSET_DEPTH_EXCEEDED,
+            "nested SVG resource exceeded the local asset-depth ceiling",
+            Some((
+                "max_nested_asset_depth",
+                u64::from(limits.max_nested_asset_depth()),
+                attempted,
+                ValueKind::Count,
             )),
         ),
         asset::ResolveError::Memory => unreachable!("memory failure is fatal before diagnostics"),
@@ -5544,6 +5646,7 @@ fn image_asset_failure_diagnostic(
                         asset::ResolveError::WebPDecodeFailed => Some(try_owned("image/webp")?),
                         asset::ResolveError::BmpDecodeFailed => Some(try_owned("image/bmp")?),
                         asset::ResolveError::IcoDecodeFailed => Some(try_owned("image/x-icon")?),
+                        asset::ResolveError::SvgDecodeFailed => Some(try_owned("image/svg+xml")?),
                         _ => None,
                     },
                     recovery,
@@ -5579,6 +5682,62 @@ fn image_animation_flattened_diagnostic(
             validated_media_type: Some(try_owned(media_type)?),
             recovery: Recovery::Flattened,
             recipe_id: None,
+        })),
+        order: DiagnosticOrder::default(),
+    })
+}
+
+fn unsafe_svg_removal_diagnostic(
+    format: OutputFormat,
+    asset_id: &str,
+    json_pointer: &str,
+    removal: &asset::svg::Removal,
+) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
+    let mut effects = Vec::new();
+    effects.try_reserve_exact(if removal.changes_appearance { 2 } else { 1 })?;
+    effects.push(DiagnosticEffect::Semantic);
+    if removal.changes_appearance {
+        effects.push(DiagnosticEffect::Visual);
+    }
+    let mut asset_chain = Vec::new();
+    asset_chain.try_reserve_exact(1)?;
+    asset_chain.push(crate::AssetChainEntry {
+        asset_id: Some(try_owned(asset_id)?),
+        occurrence: 0,
+    });
+    let mut segments = Vec::new();
+    segments.try_reserve_exact(if removal.attribute_ordinal.is_some() {
+        2
+    } else {
+        1
+    })?;
+    segments.push(crate::NestedPathSegment {
+        kind: crate::NestedSegmentKind::Node,
+        ordinal: removal.node_ordinal,
+        name: None,
+    });
+    if let Some(ordinal) = removal.attribute_ordinal {
+        segments.push(crate::NestedPathSegment {
+            kind: crate::NestedSegmentKind::Attribute,
+            ordinal,
+            name: Some(try_owned(&removal.name)?),
+        });
+    }
+    let mut paths = Vec::new();
+    paths.try_reserve_exact(1)?;
+    paths.push(crate::NestedPath { segments });
+    Ok(CompatibilityDiagnostic {
+        code: DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED,
+        severity: DiagnosticSeverity::Warning,
+        format,
+        effects,
+        element_id: None,
+        json_pointer: try_owned(json_pointer)?,
+        message: try_owned("unsafe nested SVG content was removed before rendering")?,
+        details: Some(Box::new(ErrorDetails::NestedSource {
+            asset_chain,
+            paths,
+            recovery: Recovery::Removed,
         })),
         order: DiagnosticOrder::default(),
     })
