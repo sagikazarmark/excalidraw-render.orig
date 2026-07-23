@@ -195,6 +195,58 @@ fn nested_data_svg_depth_ceiling_stops_recursive_resolution() {
 }
 
 #[test]
+fn malformed_nested_image_is_removed_without_discarding_valid_siblings() {
+    let child = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/><image width="20" height="10" href="data:image/png;base64,AA=="/></svg>"##;
+    let parent = svg_with_nested_data_image(child);
+    let scene = image_scene(parent.as_bytes(), 20, 10);
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .build()
+        .expect("PNG request is valid");
+
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("malformed nested image has local recovery");
+    let [diagnostic] = outcome.report().diagnostics() else {
+        panic!("one nested image diagnostic is retained");
+    };
+    assert_eq!(diagnostic.code(), DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT);
+    let Some(ErrorDetails::NestedSource {
+        paths, recovery, ..
+    }) = diagnostic.details()
+    else {
+        panic!("nested failure has nested-source details");
+    };
+    assert_eq!(*recovery, Recovery::Removed);
+    assert_eq!(paths[0].segments().len(), 4);
+
+    let decoder = png::Decoder::new(Cursor::new(outcome.artifact().bytes()));
+    let mut reader = decoder.read_info().expect("artifact is PNG");
+    let mut rgba = vec![0; reader.output_buffer_size()];
+    reader.next_frame(&mut rgba).expect("PNG frame decodes");
+    assert_eq!(pixel(&rgba, 40, 20, 15), [255, 0, 0, 255]);
+}
+
+#[test]
+fn malformed_nested_payload_still_counts_as_an_asset_occurrence() {
+    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/png;base64,AA=="/></svg>"##;
+    let scene = image_scene(nested, 20, 10);
+    let limits = ResourceLimits::builder()
+        .max_asset_entries(1)
+        .build()
+        .expect("asset count limit is valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(limits)
+        .build()
+        .expect("SVG request is valid");
+
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("malformed nested occurrence crosses the aggregate entry limit");
+
+    assert_eq!(error.code(), ErrorCode::RESOURCE_ASSET_COUNT_EXCEEDED);
+}
+
+#[test]
 fn same_document_fragments_resolve_without_ambient_resources() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10">
         <defs><linearGradient id="paint"><stop stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/></linearGradient><rect id="tile" width="10" height="10" fill="url(#paint)"/></defs>
@@ -214,6 +266,26 @@ fn same_document_fragments_resolve_without_ambient_resources() {
             .expect("local fragments render deterministically");
         assert!(first.report().diagnostics().is_empty());
         assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+    }
+}
+
+#[test]
+fn cyclic_local_references_are_bounded_and_deterministic() {
+    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><g id="a"><use href="#b"/></g><g id="b"><use href="#a"/></g></defs><rect width="20" height="10" fill="#00ff00"/><use href="#a"/></svg>"##;
+    let scene = image_scene(nested, 20, 10);
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("request is valid");
+        let first = Renderer::new()
+            .render(&scene, &request)
+            .expect("cycle-closing local reference is bounded");
+        let second = Renderer::new()
+            .render(&scene, &request)
+            .expect("cycle handling is deterministic");
+        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+        assert_eq!(first.report(), second.report());
     }
 }
 
@@ -312,6 +384,37 @@ fn nested_data_resources_participate_in_asset_occurrence_accounting() {
         .expect_err("nested data resource crosses the aggregate occurrence ceiling");
 
     assert_eq!(error.code(), ErrorCode::RESOURCE_ASSET_COUNT_EXCEEDED);
+}
+
+#[test]
+fn repeated_references_discover_an_authoritative_nested_chain_once() {
+    let child = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
+    let parent = svg_with_nested_data_image(child);
+    let encoded = base64::engine::general_purpose::STANDARD.encode(parent);
+    let json = format!(
+        r#"{{"type":"excalidraw","version":2,"elements":[
+            {{"id":"one","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}},
+            {{"id":"two","type":"image","x":20,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":2,"updated":1}}
+        ],"appState":{{}},"files":{{
+            "asset":{{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,{encoded}","created":1}}
+        }}}}"#
+    );
+    let scene =
+        SceneDocument::parse(json.as_bytes()).expect("repeated-reference scene is admitted");
+    let limits = ResourceLimits::builder()
+        .max_asset_entries(2)
+        .build()
+        .expect("asset count limit is valid");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .resource_limits(limits)
+        .build()
+        .expect("PNG request is valid");
+
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("one authoritative parent discovers its nested occurrence once");
+
+    assert!(outcome.report().diagnostics().is_empty());
 }
 
 #[test]
@@ -605,6 +708,33 @@ fn nested_raster_nodes_are_source_content_in_png_and_pdf() {
         .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
 }
 
+#[test]
+fn nested_bmp_preserves_direct_svg_bytes_and_normalizes_png_and_pdf() {
+    let bmp = fixture_bmp24([24, 96, 208]);
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&bmp);
+    let child = format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="10" height="10" fill="#ff0000"/><image x="10" width="10" height="10" href="data:image/bmp;base64,{encoded}"/></svg>"##
+    );
+    let parent = svg_with_nested_data_image(child.as_bytes());
+    let scene = image_scene(parent.as_bytes(), 20, 10);
+
+    let svg = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(&svg).expect("artifact SVG is UTF-8");
+    assert!(embedded_svg(&embedded_svg(svg)).contains(&format!("data:image/bmp;base64,{encoded}")));
+
+    let png = render(&scene, OutputFormat::Png);
+    let decoder = png::Decoder::new(Cursor::new(png));
+    let mut reader = decoder.read_info().expect("artifact is PNG");
+    let mut rgba = vec![0; reader.output_buffer_size()];
+    reader.next_frame(&mut rgba).expect("PNG frame decodes");
+    assert_eq!(pixel(&rgba, 40, 15, 15), [255, 0, 0, 255]);
+    assert_eq!(pixel(&rgba, 40, 25, 15), [24, 96, 208, 255]);
+
+    let pdf = String::from_utf8_lossy(&render(&scene, OutputFormat::Pdf)).into_owned();
+    assert!(pdf.contains("/Subtype /Image"));
+    assert!(pdf.contains("/Subtype /Form"));
+}
+
 fn image_scene(svg: &[u8], width: u32, height: u32) -> SceneDocument {
     let encoded = base64::engine::general_purpose::STANDARD.encode(svg);
     let json = format!(
@@ -649,6 +779,23 @@ fn svg_with_nested_data_image(child: &[u8]) -> String {
     format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/svg+xml;base64,{child}"/></svg>"#
     )
+}
+
+fn fixture_bmp24(rgb: [u8; 3]) -> Vec<u8> {
+    let mut bytes = Vec::from(b"BM".as_slice());
+    bytes.extend_from_slice(&58_u32.to_le_bytes());
+    bytes.extend_from_slice(&[0; 4]);
+    bytes.extend_from_slice(&54_u32.to_le_bytes());
+    bytes.extend_from_slice(&40_u32.to_le_bytes());
+    bytes.extend_from_slice(&1_i32.to_le_bytes());
+    bytes.extend_from_slice(&1_i32.to_le_bytes());
+    bytes.extend_from_slice(&1_u16.to_le_bytes());
+    bytes.extend_from_slice(&24_u16.to_le_bytes());
+    bytes.extend_from_slice(&0_u32.to_le_bytes());
+    bytes.extend_from_slice(&4_u32.to_le_bytes());
+    bytes.extend_from_slice(&[0; 16]);
+    bytes.extend_from_slice(&[rgb[2], rgb[1], rgb[0], 0]);
+    bytes
 }
 
 fn pixel(rgba: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {

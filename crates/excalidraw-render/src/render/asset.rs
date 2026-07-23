@@ -207,6 +207,7 @@ pub(super) struct Resolution {
     pub(super) animated: bool,
     pub(super) media_kind: MediaKind,
     pub(super) svg_removals: Vec<svg::Removal>,
+    pub(super) svg_failures: Vec<svg::Failure>,
 }
 
 struct ValidatedRaster {
@@ -335,6 +336,9 @@ pub(super) struct Cache {
     validated: BTreeMap<[u8; 32], Arc<ValidatedRaster>>,
     decoded: BTreeMap<[u8; 32], Arc<DecodedRaster>>,
     svg: BTreeMap<[u8; 32], Arc<svg::SanitizedSvg>>,
+    normalized_nested_rasters: BTreeMap<[u8; 32], Arc<NormalizedNestedRaster>>,
+    svg_discovery_owners: std::collections::BTreeSet<String>,
+    svg_nested_pixels_charged: std::collections::BTreeSet<[u8; 32]>,
     svg_diagnostic_owners: std::collections::BTreeSet<String>,
 }
 
@@ -646,13 +650,14 @@ impl Cache {
             animated: validated.semantics.animated(),
             media_kind: validated.media_kind,
             svg_removals: Vec::new(),
+            svg_failures: Vec::new(),
         })
     }
 
     fn resolve_svg<F>(
         &mut self,
         revision: CompatibilityRevision,
-        _format: OutputFormat,
+        format: OutputFormat,
         limits: &ResourceLimits,
         file_id: &str,
         payload: Payload,
@@ -682,7 +687,13 @@ impl Cache {
                 total_work_units: source_len,
             })
             .map_err(ResolutionFailure::Transaction)?;
-            let sanitized = match svg::sanitize(&payload.bytes, limits) {
+            let sanitized = match svg::sanitize(
+                &payload.bytes,
+                limits,
+                revision,
+                format,
+                &mut self.normalized_nested_rasters,
+            ) {
                 Ok(svg) => Arc::new(svg),
                 Err(error) => {
                     transact(IntrinsicTransaction::Abort {
@@ -724,15 +735,23 @@ impl Cache {
             self.svg.insert(source_identity, Arc::clone(&sanitized));
             sanitized
         };
-        if sanitized.nested_asset_entries != 0 {
+        if sanitized.nested_asset_entries != 0
+            && self.svg_discovery_owners.insert(file_id.to_owned())
+        {
+            let decoded_pixels = if self.svg_nested_pixels_charged.insert(source_identity) {
+                sanitized.nested_decoded_pixels
+            } else {
+                0
+            };
             transact(IntrinsicTransaction::DiscoverNested {
                 asset_entries: sanitized.nested_asset_entries,
                 asset_bytes: sanitized.nested_asset_bytes,
-                decoded_pixels: sanitized.nested_decoded_pixels,
+                decoded_pixels,
             })
             .map_err(ResolutionFailure::Transaction)?;
         }
         let identity = semantic_identity(revision, MediaKind::Svg, &sanitized.bytes);
+        let report_svg_diagnostics = self.svg_diagnostic_owners.insert(file_id.to_owned());
         Ok(Resolution {
             asset: Arc::new(ResolvedImageAsset {
                 identity,
@@ -748,8 +767,13 @@ impl Cache {
             claims: payload.claims,
             animated: false,
             media_kind: MediaKind::Svg,
-            svg_removals: if self.svg_diagnostic_owners.insert(file_id.to_owned()) {
+            svg_removals: if report_svg_diagnostics {
                 sanitized.removals.clone()
+            } else {
+                Vec::new()
+            },
+            svg_failures: if report_svg_diagnostics {
+                sanitized.failures.clone()
             } else {
                 Vec::new()
             },
@@ -757,12 +781,98 @@ impl Cache {
     }
 }
 
+struct NormalizedNestedRaster {
+    source_media_kind: MediaKind,
+    pixels: u64,
+    normalized_png: Vec<u8>,
+}
+
+struct ValidatedNestedRaster {
+    media_kind: MediaKind,
+    source_width: u32,
+    source_height: u32,
+    width: u32,
+    height: u32,
+    pixels: u64,
+    semantics: RasterSemantics,
+}
+
+fn normalize_nested_raster(
+    bytes: &[u8],
+    limits: &ResourceLimits,
+) -> Result<NormalizedNestedRaster, ResolveError> {
+    let validated = validate_nested_raster_semantics(bytes, limits)?;
+    let largest = validated.source_width.max(validated.source_height);
+    if largest > limits.max_raster_dimension() {
+        return Err(ResolveError::Dimensions {
+            attempted: u64::from(largest),
+        });
+    }
+    if validated.pixels > limits.max_decoded_pixels_per_asset() {
+        return Err(ResolveError::Pixels {
+            attempted: validated.pixels,
+        });
+    }
+    let color_normalization = prepare_color_normalization(
+        bytes,
+        &validated.semantics,
+        decoder_workspace_bytes(validated.width, validated.height)?,
+    )?;
+    let decoded = match validated.media_kind {
+        MediaKind::Png => decode_static_png(
+            bytes,
+            validated.pixels,
+            color_normalization,
+            validated.semantics.orientation(),
+        ),
+        MediaKind::Jpeg => decode_static_jpeg(
+            bytes,
+            validated.pixels,
+            color_normalization,
+            validated.semantics.orientation(),
+        ),
+        MediaKind::Gif => {
+            decode_gif_default_frame(bytes, validated.width, validated.height, validated.pixels)
+        }
+        MediaKind::WebP => decode_webp_default_frame(
+            bytes,
+            validated.source_width,
+            validated.source_height,
+            validated.pixels,
+            color_normalization,
+            validated.semantics.orientation(),
+        ),
+        MediaKind::Bmp => decode_bmp(bytes, &validated.semantics),
+        MediaKind::Ico => decode_ico(
+            bytes,
+            validated.pixels,
+            color_normalization,
+            &validated.semantics,
+        ),
+        MediaKind::Svg => unreachable!("nested SVG uses recursive sanitization"),
+    }?;
+    let normalized_png = encode_normalized_png(validated.width, validated.height, &decoded.rgba)?;
+    Ok(NormalizedNestedRaster {
+        source_media_kind: validated.media_kind,
+        pixels: validated.pixels,
+        normalized_png,
+    })
+}
+
 fn validate_nested_raster(
     bytes: &[u8],
     limits: &ResourceLimits,
 ) -> Result<(MediaKind, u64), ResolveError> {
+    let validated = validate_nested_raster_semantics(bytes, limits)?;
+    Ok((validated.media_kind, validated.pixels))
+}
+
+fn validate_nested_raster_semantics(
+    bytes: &[u8],
+    limits: &ResourceLimits,
+) -> Result<ValidatedNestedRaster, ResolveError> {
     let media_kind = sniff_media_kind(bytes)?;
-    let (width, height) = match media_kind {
+    let (source_width, source_height) = match media_kind {
         MediaKind::Png => read_png_ihdr(bytes)?,
         MediaKind::Jpeg => read_jpeg_dimensions(bytes)?,
         MediaKind::Gif => read_gif_dimensions(bytes)?,
@@ -771,29 +881,20 @@ fn validate_nested_raster(
         MediaKind::Ico => read_ico_dimensions(bytes)?,
         MediaKind::Svg => unreachable!("nested SVG uses recursive sanitization"),
     };
-    let largest = width.max(height);
-    if largest > limits.max_raster_dimension() {
-        return Err(ResolveError::Dimensions {
-            attempted: u64::from(largest),
-        });
-    }
-    let pixels = u64::from(width)
-        .checked_mul(u64::from(height))
+    let source_pixels = u64::from(source_width)
+        .checked_mul(u64::from(source_height))
         .ok_or(ResolveError::Memory)?;
-    if pixels > limits.max_decoded_pixels_per_asset() {
-        return Err(ResolveError::Pixels { attempted: pixels });
-    }
-    let bytes_len = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
     let animation_work = match media_kind {
-        MediaKind::Png => png_animation_validation_work(bytes, pixels)?,
+        MediaKind::Png => png_animation_validation_work(bytes, source_pixels)?,
         MediaKind::Jpeg => 0,
-        MediaKind::Gif => gif_animation_validation_work(bytes, pixels)?,
+        MediaKind::Gif => gif_animation_validation_work(bytes, source_pixels)?,
         MediaKind::WebP => webp_animation_validation_work(bytes)?,
         MediaKind::Bmp => bmp::validation_work(bytes).map_err(|_| ResolveError::BmpDecodeFailed)?,
         MediaKind::Ico => ico::validation_work(bytes).map_err(|_| ResolveError::IcoDecodeFailed)?,
         MediaKind::Svg => unreachable!("nested SVG uses recursive sanitization"),
     };
-    let work = bytes_len
+    let work = u64::try_from(bytes.len())
+        .unwrap_or(u64::MAX)
         .checked_add(animation_work)
         .ok_or(ResolveError::AssetWork {
             attempted: u64::MAX,
@@ -801,16 +902,51 @@ fn validate_nested_raster(
     if work > limits.max_asset_work_units() {
         return Err(ResolveError::AssetWork { attempted: work });
     }
-    match media_kind {
-        MediaKind::Png => validate_static_png(bytes).map(|_| ())?,
-        MediaKind::Jpeg => validate_static_jpeg(bytes).map(|_| ())?,
-        MediaKind::Gif => validate_gif(bytes).map(|_| ())?,
-        MediaKind::WebP => validate_webp(bytes).map(|_| ())?,
-        MediaKind::Bmp => validate_bmp(bytes).map(|_| ())?,
-        MediaKind::Ico => validate_ico(bytes).map(|_| ())?,
+    let (width, height, semantics) = match media_kind {
+        MediaKind::Png => validate_static_png(bytes)
+            .map(|(width, height, semantics)| (width, height, RasterSemantics::Png(semantics)))?,
+        MediaKind::Jpeg => validate_static_jpeg(bytes)
+            .map(|(width, height, semantics)| (width, height, RasterSemantics::Jpeg(semantics)))?,
+        MediaKind::Gif => validate_gif(bytes)
+            .map(|(width, height, semantics)| (width, height, RasterSemantics::Gif(semantics)))?,
+        MediaKind::WebP => validate_webp(bytes)
+            .map(|(width, height, semantics)| (width, height, RasterSemantics::WebP(semantics)))?,
+        MediaKind::Bmp => validate_bmp(bytes)
+            .map(|(width, height, semantics)| (width, height, RasterSemantics::Bmp(semantics)))?,
+        MediaKind::Ico => validate_ico(bytes)
+            .map(|(width, height, semantics)| (width, height, RasterSemantics::Ico(semantics)))?,
         MediaKind::Svg => unreachable!("nested SVG uses recursive sanitization"),
+    };
+    let pixels = u64::from(width)
+        .checked_mul(u64::from(height))
+        .ok_or(ResolveError::Memory)?;
+    Ok(ValidatedNestedRaster {
+        media_kind,
+        source_width,
+        source_height,
+        width,
+        height,
+        pixels,
+        semantics,
+    })
+}
+
+fn encode_normalized_png(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, ResolveError> {
+    let mut bytes = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(&mut bytes, width, height);
+        encoder.set_color(png::ColorType::Rgba);
+        encoder.set_depth(png::BitDepth::Eight);
+        encoder.set_compression(png::Compression::Best);
+        encoder.set_filter(png::FilterType::NoFilter);
+        let mut writer = encoder
+            .write_header()
+            .map_err(|_| ResolveError::DecodeFailed)?;
+        writer
+            .write_image_data(rgba)
+            .map_err(|_| ResolveError::DecodeFailed)?;
     }
-    Ok((media_kind, pixels))
+    Ok(bytes)
 }
 
 fn read_png_ihdr(bytes: &[u8]) -> Result<(u32, u32), ResolveError> {

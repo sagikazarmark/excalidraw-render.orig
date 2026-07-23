@@ -1,9 +1,10 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use base64::Engine as _;
 
 use super::ResolveError;
-use crate::ResourceLimits;
+use crate::{CompatibilityRevision, OutputFormat, ResourceLimits};
 
 #[derive(Clone)]
 pub(crate) struct Removal {
@@ -13,11 +14,18 @@ pub(crate) struct Removal {
     pub(crate) changes_appearance: bool,
 }
 
+#[derive(Clone)]
+pub(crate) struct Failure {
+    pub(crate) path: Vec<(u64, u64)>,
+    pub(crate) error: ResolveError,
+}
+
 pub(super) struct SanitizedSvg {
     pub(super) bytes: Vec<u8>,
     pub(super) width: u32,
     pub(super) height: u32,
     pub(super) removals: Vec<Removal>,
+    pub(super) failures: Vec<Failure>,
     pub(super) work_units: u64,
     pub(super) working_bytes: u64,
     pub(super) nested_asset_entries: u64,
@@ -35,17 +43,24 @@ pub(super) fn looks_like_svg(bytes: &[u8]) -> bool {
 pub(super) fn sanitize(
     bytes: &[u8],
     limits: &ResourceLimits,
+    revision: CompatibilityRevision,
+    format: OutputFormat,
+    normalized_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
 ) -> Result<SanitizedSvg, ResolveError> {
-    sanitize_at(bytes, limits, 0)
+    sanitize_at(bytes, limits, revision, format, 0, normalized_rasters)
 }
 
 fn sanitize_at(
     bytes: &[u8],
     limits: &ResourceLimits,
+    revision: CompatibilityRevision,
+    format: OutputFormat,
     depth: u32,
+    normalized_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
 ) -> Result<SanitizedSvg, ResolveError> {
     let text = std::str::from_utf8(bytes).map_err(|_| ResolveError::SvgDecodeFailed)?;
     let (text, mut removals) = remove_dtd_and_entities(text)?;
+    let mut failures = Vec::new();
     let document = roxmltree::Document::parse(&text).map_err(|_| ResolveError::SvgDecodeFailed)?;
     for instruction in document.descendants().filter_map(|node| node.pi()) {
         if instruction.target != "xml" {
@@ -83,8 +98,12 @@ fn sanitize_at(
         &mut node_ordinal,
         &mut serialized,
         &mut removals,
+        &mut failures,
         limits,
+        revision,
+        format,
         depth,
+        normalized_rasters,
         &mut nested_asset_entries,
         &mut nested_asset_bytes,
         &mut nested_decoded_pixels,
@@ -134,6 +153,7 @@ fn sanitize_at(
         width,
         height,
         removals,
+        failures,
         work_units,
         working_bytes,
         nested_asset_entries,
@@ -225,8 +245,12 @@ fn serialize_node(
     node_ordinal: &mut u64,
     output: &mut String,
     removals: &mut Vec<Removal>,
+    failures: &mut Vec<Failure>,
     limits: &ResourceLimits,
+    revision: CompatibilityRevision,
+    format: OutputFormat,
     depth: u32,
+    normalized_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
     nested_asset_entries: &mut u64,
     nested_asset_bytes: &mut u64,
     nested_decoded_pixels: &mut u64,
@@ -271,15 +295,33 @@ fn serialize_node(
             continue;
         }
         let nested_value = if matches!(attribute_name, "href" | "xlink:href") {
-            sanitize_nested_data_image(
+            match sanitize_nested_data_image(
                 value,
                 limits,
+                revision,
+                format,
                 depth,
+                ordinal,
+                u64::try_from(attribute_ordinal).unwrap_or(u64::MAX),
+                normalized_rasters,
                 removals,
+                failures,
                 nested_asset_entries,
                 nested_asset_bytes,
                 nested_decoded_pixels,
-            )?
+            ) {
+                Ok(value) => value,
+                Err(error) => {
+                    failures.push(Failure {
+                        path: vec![(
+                            ordinal,
+                            u64::try_from(attribute_ordinal).unwrap_or(u64::MAX),
+                        )],
+                        error,
+                    });
+                    continue;
+                }
+            }
         } else {
             None
         };
@@ -303,8 +345,12 @@ fn serialize_node(
                 node_ordinal,
                 output,
                 removals,
+                failures,
                 limits,
+                revision,
+                format,
                 depth,
+                normalized_rasters,
                 nested_asset_entries,
                 nested_asset_bytes,
                 nested_decoded_pixels,
@@ -317,11 +363,18 @@ fn serialize_node(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn sanitize_nested_data_image(
     value: &str,
     limits: &ResourceLimits,
+    revision: CompatibilityRevision,
+    format: OutputFormat,
     depth: u32,
+    slot_node_ordinal: u64,
+    slot_attribute_ordinal: u64,
+    normalized_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
     removals: &mut Vec<Removal>,
+    failures: &mut Vec<Failure>,
     nested_asset_entries: &mut u64,
     nested_asset_bytes: &mut u64,
     nested_decoded_pixels: &mut u64,
@@ -332,6 +385,12 @@ fn sanitize_nested_data_image(
     let Some((claimed_media_type, encoded)) = data.split_once(";base64,") else {
         return Err(ResolveError::SvgDecodeFailed);
     };
+    let (decoded_prefix, valid_base64) = super::decoded_prefix(encoded);
+    *nested_asset_entries = nested_asset_entries.saturating_add(1);
+    *nested_asset_bytes = nested_asset_bytes.saturating_add(decoded_prefix);
+    if !valid_base64 {
+        return Err(ResolveError::SvgDecodeFailed);
+    }
     let attempted_depth = depth.saturating_add(1);
     if attempted_depth > limits.max_nested_asset_depth() {
         return Err(ResolveError::SvgDepth {
@@ -347,10 +406,28 @@ fn sanitize_nested_data_image(
             attempted: decoded_bytes,
         });
     }
+    let validated_media_type = if looks_like_svg(&bytes) {
+        "image/svg+xml"
+    } else {
+        super::sniff_media_kind(&bytes)?.media_type()
+    };
     let (media_type, canonical_bytes, child_entries, child_bytes, child_pixels) =
         if looks_like_svg(&bytes) {
-            let nested = sanitize_at(&bytes, limits, attempted_depth)?;
+            let nested = sanitize_at(
+                &bytes,
+                limits,
+                revision,
+                format,
+                attempted_depth,
+                normalized_rasters,
+            )?;
             removals.extend(nested.removals);
+            for mut failure in nested.failures {
+                failure
+                    .path
+                    .insert(0, (slot_node_ordinal, slot_attribute_ordinal));
+                failures.push(failure);
+            }
             (
                 "image/svg+xml",
                 nested.bytes,
@@ -359,10 +436,35 @@ fn sanitize_nested_data_image(
                 nested.nested_decoded_pixels,
             )
         } else {
-            let (kind, pixels) = super::validate_nested_raster(&bytes, limits)?;
-            (kind.media_type(), bytes, 0, 0, pixels)
+            let (kind, pixels, canonical_bytes) = if format == OutputFormat::Svg {
+                let (kind, _) = super::validate_nested_raster(&bytes, limits)?;
+                (kind, 0, Arc::new(bytes.clone()))
+            } else {
+                let kind = super::sniff_media_kind(&bytes)?;
+                let identity = super::semantic_identity(revision, kind, &bytes);
+                let (normalized, decoded_pixels) =
+                    if let Some(normalized) = normalized_rasters.get(&identity) {
+                        (Arc::clone(normalized), 0)
+                    } else {
+                        let normalized = Arc::new(super::normalize_nested_raster(&bytes, limits)?);
+                        normalized_rasters.insert(identity, Arc::clone(&normalized));
+                        let decoded_pixels = normalized.pixels;
+                        (normalized, decoded_pixels)
+                    };
+                (
+                    normalized.source_media_kind,
+                    decoded_pixels,
+                    Arc::new(normalized.normalized_png.clone()),
+                )
+            };
+            let emitted_type = if format == OutputFormat::Svg {
+                kind.media_type()
+            } else {
+                "image/png"
+            };
+            (emitted_type, canonical_bytes.as_ref().clone(), 0, 0, pixels)
         };
-    if claimed_media_type != media_type {
+    if claimed_media_type != validated_media_type {
         removals.push(Removal {
             node_ordinal: 0,
             attribute_ordinal: None,
@@ -370,12 +472,8 @@ fn sanitize_nested_data_image(
             changes_appearance: false,
         });
     }
-    *nested_asset_entries = nested_asset_entries
-        .saturating_add(1)
-        .saturating_add(child_entries);
-    *nested_asset_bytes = nested_asset_bytes
-        .saturating_add(decoded_bytes)
-        .saturating_add(child_bytes);
+    *nested_asset_entries = nested_asset_entries.saturating_add(child_entries);
+    *nested_asset_bytes = nested_asset_bytes.saturating_add(child_bytes);
     *nested_decoded_pixels = nested_decoded_pixels.saturating_add(child_pixels);
     let mut canonical = format!("data:{media_type};base64,");
     base64::engine::general_purpose::STANDARD.encode_string(canonical_bytes, &mut canonical);
@@ -512,6 +610,15 @@ fn viewer_options() -> Result<usvg::Options<'static>, ResolveError> {
     let mut fontdb = usvg::fontdb::Database::new();
     fontdb.load_font_data(font.bytes().to_vec());
     options.fontdb = Arc::new(fontdb);
-    options.image_href_resolver.resolve_string = Box::new(|_, _| None);
+    options.image_href_resolver = usvg::ImageHrefResolver {
+        resolve_data: Box::new(|media_type, bytes, options| match media_type {
+            "image/png" => Some(usvg::ImageKind::PNG(bytes)),
+            "image/svg+xml" => usvg::Tree::from_data(&bytes, options)
+                .ok()
+                .map(usvg::ImageKind::SVG),
+            _ => None,
+        }),
+        resolve_string: Box::new(|_, _| None),
+    };
     Ok(options)
 }

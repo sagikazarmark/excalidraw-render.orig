@@ -716,7 +716,9 @@ impl RenderSession {
                         if let Ok(resolution) = asset_resolution {
                             let animated = resolution.animated;
                             let media_type = resolution.media_kind.media_type();
-                            let svg_diagnostic_location = if resolution.svg_removals.is_empty() {
+                            let svg_diagnostic_location = if resolution.svg_removals.is_empty()
+                                && resolution.svg_failures.is_empty()
+                            {
                                 None
                             } else {
                                 Some(
@@ -768,6 +770,43 @@ impl RenderSession {
                                         source_position: Some(
                                             source_position.saturating_add(removal.node_ordinal),
                                         ),
+                                    },
+                                )?;
+                            }
+                            for failure in &resolution.svg_failures {
+                                let (json_pointer, source_order, source_position, local_owner) =
+                                    svg_diagnostic_location.as_ref().ok_or_else(|| {
+                                        self.internal_failure(
+                                            request.format(),
+                                            "nested SVG failure lost its source location",
+                                            "/files",
+                                        )
+                                    })?;
+                                let diagnostic = nested_image_failure_diagnostic(
+                                    failure,
+                                    request.format(),
+                                    file_id,
+                                    json_pointer,
+                                    request.resource_limits(),
+                                )
+                                .map_err(|_| {
+                                    self.memory_failure(
+                                        request,
+                                        "compatibility_report",
+                                        "nested_image_failure",
+                                    )
+                                })?;
+                                self.retain_diagnostic_with_owner(
+                                    request,
+                                    ResourcePhase::SharedSemanticResolution,
+                                    "nested_image_failure",
+                                    diagnostic,
+                                    DiagnosticOwnership {
+                                        local_owner: Some(local_owner),
+                                        source_order: Some(*source_order),
+                                        source_position: Some(source_position.saturating_add(
+                                            failure.path.first().map_or(0, |slot| slot.0),
+                                        )),
                                     },
                                 )?;
                             }
@@ -5741,6 +5780,55 @@ fn unsafe_svg_removal_diagnostic(
         })),
         order: DiagnosticOrder::default(),
     })
+}
+
+fn nested_image_failure_diagnostic(
+    failure: &asset::svg::Failure,
+    format: OutputFormat,
+    asset_id: &str,
+    json_pointer: &str,
+    limits: &crate::ResourceLimits,
+) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
+    let mut diagnostic = image_asset_failure_diagnostic(
+        failure.error,
+        format,
+        asset_id,
+        "",
+        json_pointer,
+        crate::normalization::NormalizedImageStatus::Saved,
+        limits,
+    )?;
+    let mut asset_chain = Vec::new();
+    asset_chain.try_reserve_exact(1)?;
+    asset_chain.push(crate::AssetChainEntry {
+        asset_id: Some(try_owned(asset_id)?),
+        occurrence: 0,
+    });
+    let mut segments = Vec::new();
+    segments.try_reserve_exact(failure.path.len().saturating_mul(2))?;
+    for (node_ordinal, attribute_ordinal) in &failure.path {
+        segments.push(crate::NestedPathSegment {
+            kind: crate::NestedSegmentKind::Node,
+            ordinal: *node_ordinal,
+            name: None,
+        });
+        segments.push(crate::NestedPathSegment {
+            kind: crate::NestedSegmentKind::Attribute,
+            ordinal: *attribute_ordinal,
+            name: Some(try_owned("href")?),
+        });
+    }
+    let mut paths = Vec::new();
+    paths.try_reserve_exact(1)?;
+    paths.push(crate::NestedPath { segments });
+    diagnostic.element_id = None;
+    diagnostic.message = try_owned("nested data image was removed after local recovery")?;
+    diagnostic.details = Some(Box::new(ErrorDetails::NestedSource {
+        asset_chain,
+        paths,
+        recovery: Recovery::Removed,
+    }));
+    Ok(diagnostic)
 }
 
 fn relationship_cycle_diagnostic(
