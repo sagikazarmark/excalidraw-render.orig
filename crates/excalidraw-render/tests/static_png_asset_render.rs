@@ -48,6 +48,133 @@ fn png_projects_canonical_rgba_pixels_into_the_image_occurrence() {
 }
 
 #[test]
+fn apng_is_preserved_in_svg_and_flattened_to_frame_zero_in_png_and_pdf() {
+    let apng = fixture_apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&apng);
+    let scene = image_scene(&format!("data:image/png;base64,{encoded}"));
+
+    let svg_outcome = render_outcome(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(svg_outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains(&format!("data:image/png;base64,{encoded}")));
+    assert!(svg_outcome.report().diagnostics().is_empty());
+
+    for format in [OutputFormat::Png, OutputFormat::Pdf] {
+        let outcome = render_outcome(&scene, format);
+        assert_eq!(
+            diagnostic_codes(&outcome),
+            [DiagnosticCode::IMAGE_ANIMATION_FLATTENED]
+        );
+        assert!(matches!(
+            outcome.report().diagnostics()[0].details(),
+            Some(ErrorDetails::Asset {
+                asset_id,
+                recovery: Recovery::Flattened,
+                recipe_id: None,
+                ..
+            }) if asset_id == "asset"
+        ));
+        assert_eq!(
+            outcome.report().diagnostics()[0].effects(),
+            &[excalidraw_render::DiagnosticEffect::Visual]
+        );
+        assert_eq!(
+            outcome.report().diagnostics()[0].json_pointer(),
+            "/elements/0/fileId"
+        );
+        if format == OutputFormat::Png {
+            let decoder = png::Decoder::new(Cursor::new(outcome.artifact().bytes()));
+            let mut reader = decoder.read_info().expect("artifact is a PNG");
+            let mut rgba = vec![0; reader.output_buffer_size()];
+            reader.next_frame(&mut rgba).expect("PNG frame decodes");
+            assert_eq!(pixel(&rgba, 21, 10, 10), [255, 0, 0, 255]);
+        }
+    }
+}
+
+#[test]
+fn one_frame_apng_does_not_report_animation_flattening() {
+    let mut apng = fixture_png(1, 1, &[[255, 0, 0, 255]]);
+    apng = png_with_chunks_before_idat(
+        &apng,
+        &[
+            (
+                *b"acTL",
+                [1_u32.to_be_bytes(), 0_u32.to_be_bytes()].concat(),
+            ),
+            (*b"fcTL", apng_frame_control(0, 1, 1)),
+        ],
+    );
+    let scene = image_scene(&format!(
+        "data:image/png;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(apng)
+    ));
+
+    for format in [OutputFormat::Png, OutputFormat::Pdf] {
+        let outcome = render_outcome(&scene, format);
+        assert!(outcome.report().diagnostics().is_empty());
+    }
+}
+
+#[test]
+fn shared_apng_bytes_report_each_rendered_occurrence() {
+    let apng = fixture_apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
+    let scene = two_payload_scene(&apng, &apng);
+
+    let outcome = render_outcome(&scene, OutputFormat::Png);
+
+    assert_eq!(
+        diagnostic_codes(&outcome),
+        [
+            DiagnosticCode::IMAGE_ANIMATION_FLATTENED,
+            DiagnosticCode::IMAGE_ANIMATION_FLATTENED,
+        ]
+    );
+    assert_eq!(
+        outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .map(|diagnostic| diagnostic.element_id())
+            .collect::<Vec<_>>(),
+        [Some("one"), Some("two")]
+    );
+}
+
+#[test]
+fn apng_validation_charges_each_additional_frame_without_deriving_svg_pixels() {
+    let apng = fixture_apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
+    let payload_bytes = u64::try_from(apng.len()).expect("fixture length fits u64");
+    let scene = image_scene(&format!(
+        "data:image/png;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(apng)
+    ));
+
+    for (limit, expected_diagnostics) in [(payload_bytes + 4, 0), (payload_bytes + 3, 1)] {
+        let limits = ResourceLimits::builder()
+            .max_asset_work_units(limit)
+            .max_decoded_pixels_per_asset(1)
+            .max_total_decoded_pixels(1)
+            .build()
+            .expect("APNG validation limits are valid");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .resource_limits(limits)
+            .build()
+            .expect("SVG request is valid");
+        let outcome = Renderer::new()
+            .render(&scene, &request)
+            .expect("APNG validation has local resource recovery");
+
+        assert_eq!(outcome.report().diagnostics().len(), expected_diagnostics);
+        if expected_diagnostics == 1 {
+            assert_eq!(
+                outcome.report().diagnostics()[0].code(),
+                DiagnosticCode::RESOURCE_ASSET_WORK_EXCEEDED
+            );
+        }
+    }
+}
+
+#[test]
 fn png_bilinear_projection_charges_twelve_samples_per_occurrence_pixel() {
     let scene = image_scene(&format!("data:image/png;base64,{PNG_BASE64}"));
     for (limit, expected_diagnostics) in [(32, 0), (31, 1)] {
@@ -574,6 +701,50 @@ fn direct_svg_rejects_corrupt_idat_with_a_valid_chunk_crc() {
 }
 
 #[test]
+fn direct_svg_validates_every_apng_frame_before_passthrough() {
+    let mut apng = fixture_apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
+    mutate_first_png_chunk(&mut apng, *b"fdAT", |data| {
+        data[4] ^= 0xff;
+    });
+    let scene = image_scene(&format!(
+        "data:image/png;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(apng)
+    ));
+
+    let outcome = render_outcome(&scene, OutputFormat::Svg);
+
+    assert_eq!(
+        diagnostic_codes(&outcome),
+        [DiagnosticCode::IMAGE_DECODE_FAILED]
+    );
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(!svg.contains("<image "));
+}
+
+#[test]
+fn direct_svg_validates_animation_after_a_separate_apng_default_image() {
+    let apng = apng_with_separate_default(true);
+    let scene = image_scene(&format!(
+        "data:image/png;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(apng)
+    ));
+
+    let outcome = render_outcome(&scene, OutputFormat::Svg);
+
+    assert_eq!(
+        diagnostic_codes(&outcome),
+        [DiagnosticCode::IMAGE_DECODE_FAILED]
+    );
+}
+
+#[test]
+fn png_selects_animation_frame_zero_instead_of_a_separate_apng_default_image() {
+    let apng = apng_with_separate_default(false);
+
+    assert_eq!(rendered_image_center(&apng), [0, 0, 255, 255]);
+}
+
+#[test]
 fn png_normalizes_gama_to_srgb_and_srgb_signaling_takes_precedence() {
     let source = fixture_png(1, 1, &[[128, 128, 128, 255]]);
     let linear =
@@ -591,12 +762,53 @@ fn png_normalizes_gama_to_srgb_and_srgb_signaling_takes_precedence() {
 }
 
 #[test]
-fn png_rejects_hdr_cicp_instead_of_treating_samples_as_srgb() {
+fn png_cicp_takes_precedence_over_legacy_color_chunks() {
+    let source = fixture_png(1, 1, &[[128, 128, 128, 255]]);
+    let tagged = png_with_chunks_before_idat(
+        &source,
+        &[
+            (*b"gAMA", 100_000_u32.to_be_bytes().to_vec()),
+            (*b"cICP", vec![1, 13, 0, 1]),
+        ],
+    );
+
+    assert_eq!(rendered_image_center(&tagged), [128, 128, 128, 255]);
+}
+
+#[test]
+fn png_standard_sdr_projection_uses_the_gain_map_base_image() {
+    let source = fixture_png(1, 1, &[[64, 128, 192, 255]]);
+    let gain_map = fixture_png(1, 1, &[[255, 255, 255, 255]]);
+    let tagged = png_with_chunks_before_idat(
+        &source,
+        &[(*b"gmAP", iso_gain_map_metadata()), (*b"gdAT", gain_map)],
+    );
+
+    assert_eq!(rendered_image_center(&tagged), [64, 128, 192, 255]);
+}
+
+#[test]
+fn png_canonicalizes_alpha_through_premultiplied_canvas_storage() {
+    let partial = fixture_png(1, 1, &[[200, 100, 50, 128]]);
+    let transparent = fixture_png(1, 1, &[[255, 17, 33, 0]]);
+
+    assert_eq!(
+        rendered_image_center_without_background(&partial),
+        [199, 100, 50, 128]
+    );
+    assert_eq!(
+        rendered_image_center_without_background(&transparent),
+        [0, 0, 0, 0]
+    );
+}
+
+#[test]
+fn png_tone_maps_hdr_cicp_instead_of_treating_samples_as_srgb() {
     let source = fixture_png(1, 1, &[[128, 128, 128, 255]]);
     let hdr = png_with_chunks_before_idat(&source, &[(*b"cICP", vec![9, 16, 0, 1])]);
     let scene = image_scene(&format!(
         "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(hdr)
+        base64::engine::general_purpose::STANDARD.encode(&hdr)
     ));
     let request = RenderRequest::builder(OutputFormat::Png)
         .build()
@@ -606,10 +818,39 @@ fn png_rejects_hdr_cicp_instead_of_treating_samples_as_srgb() {
         .render(&scene, &request)
         .expect("unsupported HDR signaling has local recovery");
 
-    assert_eq!(
-        diagnostic_codes(&outcome),
-        [DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT]
-    );
+    assert!(outcome.report().diagnostics().is_empty());
+    assert_eq!(rendered_image_center(&hdr), [24, 24, 24, 255]);
+}
+
+#[test]
+fn png_and_pdf_apply_png_exif_orientation_while_svg_preserves_source_bytes() {
+    let source = fixture_png(2, 1, &[[255, 0, 0, 255], [0, 0, 255, 255]]);
+    let exif = exif_orientation(6);
+    for oriented in [
+        png_with_chunks_before_idat(&source, &[(*b"eXIf", exif.clone())]),
+        png_with_chunk_before_iend(&source, *b"eXIf", &exif),
+    ] {
+        let encoded = base64::engine::general_purpose::STANDARD.encode(&oriented);
+        let scene = image_scene_with_size(&format!("data:image/png;base64,{encoded}"), 10, 20);
+
+        let svg_outcome = render_outcome(&scene, OutputFormat::Svg);
+        let svg = std::str::from_utf8(svg_outcome.artifact().bytes()).expect("SVG is UTF-8");
+        assert!(svg.contains(&format!("data:image/png;base64,{encoded}")));
+
+        let png = render_artifact(&scene, OutputFormat::Png);
+        let decoder = png::Decoder::new(Cursor::new(png));
+        let mut reader = decoder.read_info().expect("artifact is a PNG");
+        let mut rgba = vec![0; reader.output_buffer_size()];
+        let output = reader.next_frame(&mut rgba).expect("PNG frame decodes");
+        assert_eq!((output.width, output.height), (30, 40));
+        let top = pixel(&rgba, 30, 15, 14);
+        let bottom = pixel(&rgba, 30, 15, 25);
+        assert!(top[0] > 240 && top[2] < 20 && top[3] == 255);
+        assert!(bottom[0] < 20 && bottom[2] > 240 && bottom[3] == 255);
+
+        let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
+        assert!(pdf.contains("/Width 1\n/Height 2"));
+    }
 }
 
 #[test]
@@ -661,6 +902,35 @@ fn direct_svg_rejects_a_png_whose_ihdr_is_not_the_first_chunk() {
         [DiagnosticCode::IMAGE_DECODE_FAILED]
     );
     assert!(!svg.contains("<image "));
+}
+
+#[test]
+fn direct_svg_rejects_color_chunks_that_split_or_follow_image_data() {
+    let source = fixture_png(1, 1, &[[255, 0, 0, 255]]);
+    let idat = png_chunk_offset(&source, *b"IDAT");
+    let idat_length = usize::try_from(u32::from_be_bytes(
+        source[idat..idat + 4]
+            .try_into()
+            .expect("fixture IDAT length"),
+    ))
+    .expect("fixture IDAT length fits usize");
+    let idat_end = idat + 12 + idat_length;
+    let mut split = Vec::from(&source[..idat_end]);
+    append_png_chunk(&mut split, *b"cICP", &[1, 13, 0, 1]);
+    split.extend_from_slice(&source[idat..]);
+    let after = png_with_chunk_before_iend(&source, *b"cICP", &[1, 13, 0, 1]);
+
+    for malformed in [split, after] {
+        let scene = image_scene(&format!(
+            "data:image/png;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(malformed)
+        ));
+        let outcome = render_outcome(&scene, OutputFormat::Svg);
+        assert_eq!(
+            diagnostic_codes(&outcome),
+            [DiagnosticCode::IMAGE_DECODE_FAILED]
+        );
+    }
 }
 
 #[test]
@@ -799,6 +1069,19 @@ fn image_scene(data_url: &str) -> SceneDocument {
 }
 
 fn image_scene_with_media_type(data_url: &str, media_type: &str) -> SceneDocument {
+    image_scene_with_media_type_and_size(data_url, media_type, 1, 1)
+}
+
+fn image_scene_with_size(data_url: &str, width: u32, height: u32) -> SceneDocument {
+    image_scene_with_media_type_and_size(data_url, "image/png", width, height)
+}
+
+fn image_scene_with_media_type_and_size(
+    data_url: &str,
+    media_type: &str,
+    width: u32,
+    height: u32,
+) -> SceneDocument {
     let json = format!(
         r#"{{
             "type":"excalidraw",
@@ -808,8 +1091,8 @@ fn image_scene_with_media_type(data_url: &str, media_type: &str) -> SceneDocumen
                 "type":"image",
                 "x":0,
                 "y":0,
-                "width":1,
-                "height":1,
+                "width":{width},
+                "height":{height},
                 "angle":0,
                 "opacity":100,
                 "fileId":"asset",
@@ -908,6 +1191,118 @@ fn fixture_png(width: u32, height: u32, pixels: &[[u8; 4]]) -> Vec<u8> {
     bytes
 }
 
+fn fixture_apng(first: &[[u8; 4]], second: &[[u8; 4]]) -> Vec<u8> {
+    assert_eq!(first.len(), second.len());
+    let width = u32::try_from(first.len()).expect("fixture width fits u32");
+    let mut bytes = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(&mut bytes, width, 1);
+        encoder.set_color(png::ColorType::Rgba);
+        encoder.set_depth(png::BitDepth::Eight);
+        encoder
+            .set_animated(2, 0)
+            .expect("fixture animation is valid");
+        let mut writer = encoder.write_header().expect("fixture APNG header encodes");
+        let first: Vec<u8> = first.iter().flatten().copied().collect();
+        let second: Vec<u8> = second.iter().flatten().copied().collect();
+        writer
+            .write_image_data(&first)
+            .expect("first APNG frame encodes");
+        writer
+            .write_image_data(&second)
+            .expect("second APNG frame encodes");
+    }
+    bytes
+}
+
+fn apng_with_separate_default(corrupt_animation_frame: bool) -> Vec<u8> {
+    let source = fixture_apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
+    let mut output = Vec::from(&source[..8]);
+    let mut offset = 8;
+    let mut frame_control_count = 0;
+    while offset < source.len() {
+        let length = usize::try_from(u32::from_be_bytes(
+            source[offset..offset + 4]
+                .try_into()
+                .expect("fixture chunk length"),
+        ))
+        .expect("fixture chunk length fits usize");
+        let chunk_type: [u8; 4] = source[offset + 4..offset + 8]
+            .try_into()
+            .expect("fixture chunk type");
+        let mut data = source[offset + 8..offset + 8 + length].to_vec();
+        match &chunk_type {
+            b"acTL" => data[..4].copy_from_slice(&1_u32.to_be_bytes()),
+            b"fcTL" => {
+                frame_control_count += 1;
+                if frame_control_count == 1 {
+                    offset += 12 + length;
+                    continue;
+                }
+                data[..4].copy_from_slice(&0_u32.to_be_bytes());
+            }
+            b"fdAT" => {
+                data[..4].copy_from_slice(&1_u32.to_be_bytes());
+                if corrupt_animation_frame {
+                    data[4] ^= 0xff;
+                }
+            }
+            _ => {}
+        }
+        append_png_chunk(&mut output, chunk_type, &data);
+        offset += 12 + length;
+    }
+    output
+}
+
+fn apng_frame_control(sequence: u32, width: u32, height: u32) -> Vec<u8> {
+    let mut data = Vec::with_capacity(26);
+    data.extend_from_slice(&sequence.to_be_bytes());
+    data.extend_from_slice(&width.to_be_bytes());
+    data.extend_from_slice(&height.to_be_bytes());
+    data.extend_from_slice(&0_u32.to_be_bytes());
+    data.extend_from_slice(&0_u32.to_be_bytes());
+    data.extend_from_slice(&1_u16.to_be_bytes());
+    data.extend_from_slice(&30_u16.to_be_bytes());
+    data.extend_from_slice(&[0, 0]);
+    data
+}
+
+fn exif_orientation(orientation: u16) -> Vec<u8> {
+    let mut exif = Vec::new();
+    exif.extend_from_slice(b"II");
+    exif.extend_from_slice(&42_u16.to_le_bytes());
+    exif.extend_from_slice(&8_u32.to_le_bytes());
+    exif.extend_from_slice(&1_u16.to_le_bytes());
+    exif.extend_from_slice(&0x0112_u16.to_le_bytes());
+    exif.extend_from_slice(&3_u16.to_le_bytes());
+    exif.extend_from_slice(&1_u32.to_le_bytes());
+    exif.extend_from_slice(&orientation.to_le_bytes());
+    exif.extend_from_slice(&0_u16.to_le_bytes());
+    exif.extend_from_slice(&0_u32.to_le_bytes());
+    exif
+}
+
+fn iso_gain_map_metadata() -> Vec<u8> {
+    let mut metadata = Vec::new();
+    metadata.extend_from_slice(&0_u16.to_be_bytes());
+    metadata.extend_from_slice(&0_u16.to_be_bytes());
+    metadata.push(0x40);
+    for (numerator, denominator) in [
+        (0_i32, 1_u32),
+        (1, 1),
+        (0, 1),
+        (1, 1),
+        (1, 1),
+        (0, 1),
+        (0, 1),
+    ] {
+        metadata.extend_from_slice(&numerator.to_be_bytes());
+        metadata.extend_from_slice(&denominator.to_be_bytes());
+    }
+    metadata
+}
+
 fn append_png_chunk(bytes: &mut Vec<u8>, chunk_type: [u8; 4], data: &[u8]) {
     bytes.extend_from_slice(
         &u32::try_from(data.len())
@@ -932,15 +1327,27 @@ fn png_with_chunks_before_idat(source: &[u8], chunks: &[([u8; 4], Vec<u8>)]) -> 
     png
 }
 
+fn png_with_chunk_before_iend(source: &[u8], chunk_type: [u8; 4], data: &[u8]) -> Vec<u8> {
+    let iend = png_chunk_offset(source, *b"IEND");
+    let mut png = Vec::from(&source[..iend]);
+    append_png_chunk(&mut png, chunk_type, data);
+    png.extend_from_slice(&source[iend..]);
+    png
+}
+
 fn mutate_first_idat(png: &mut [u8], mutate: impl FnOnce(&mut [u8])) {
-    let offset = png_chunk_offset(png, *b"IDAT");
+    mutate_first_png_chunk(png, *b"IDAT", mutate);
+}
+
+fn mutate_first_png_chunk(png: &mut [u8], chunk_type: [u8; 4], mutate: impl FnOnce(&mut [u8])) {
+    let offset = png_chunk_offset(png, chunk_type);
     let length = u32::from_be_bytes(png[offset..offset + 4].try_into().expect("chunk length"));
     let length = usize::try_from(length).expect("chunk length fits usize");
     let data_start = offset + 8;
     let data_end = data_start + length;
     mutate(&mut png[data_start..data_end]);
     let mut crc = crc32fast::Hasher::new();
-    crc.update(b"IDAT");
+    crc.update(&chunk_type);
     crc.update(&png[data_start..data_end]);
     png[data_end..data_end + 4].copy_from_slice(&crc.finalize().to_be_bytes());
 }
@@ -957,11 +1364,28 @@ fn png_chunk_offset(png: &[u8], wanted: [u8; 4]) -> usize {
 }
 
 fn rendered_image_center(source: &[u8]) -> [u8; 4] {
+    rendered_image_center_with_background(source, true)
+}
+
+fn rendered_image_center_without_background(source: &[u8]) -> [u8; 4] {
+    rendered_image_center_with_background(source, false)
+}
+
+fn rendered_image_center_with_background(source: &[u8], include_background: bool) -> [u8; 4] {
     let scene = image_scene(&format!(
         "data:image/png;base64,{}",
         base64::engine::general_purpose::STANDARD.encode(source)
     ));
-    let png = render_artifact(&scene, OutputFormat::Png);
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .include_background(include_background)
+        .build()
+        .expect("PNG request is valid");
+    let png = Renderer::new()
+        .render(&scene, &request)
+        .expect("PNG-family asset renders")
+        .artifact()
+        .bytes()
+        .to_vec();
     let decoder = png::Decoder::new(Cursor::new(png));
     let mut reader = decoder.read_info().expect("artifact is a PNG");
     let mut rgba = vec![0; reader.output_buffer_size()];
@@ -1002,15 +1426,16 @@ fn cropped_image_scene(data_url: &str) -> SceneDocument {
 }
 
 fn render_artifact(scene: &SceneDocument, format: OutputFormat) -> Vec<u8> {
+    render_outcome(scene, format).artifact().bytes().to_vec()
+}
+
+fn render_outcome(scene: &SceneDocument, format: OutputFormat) -> excalidraw_render::RenderOutcome {
     let request = RenderRequest::builder(format)
         .build()
         .expect("request is valid");
     Renderer::new()
         .render(scene, &request)
-        .expect("static PNG renders")
-        .artifact()
-        .bytes()
-        .to_vec()
+        .expect("PNG-family asset renders")
 }
 
 fn pixel(pixels: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {

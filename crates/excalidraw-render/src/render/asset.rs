@@ -80,6 +80,7 @@ pub(super) struct Claims {
 pub(super) struct Resolution {
     pub(super) asset: Arc<ResolvedImageAsset>,
     pub(super) claims: Claims,
+    pub(super) animated: bool,
 }
 
 struct ValidatedPng {
@@ -93,7 +94,8 @@ struct ValidatedPng {
 #[derive(Clone, Copy, Default)]
 struct PngSemantics {
     cicp: Option<[u8; 4]>,
-    has_gain_map: bool,
+    animation_frames: u32,
+    orientation: Option<u8>,
 }
 
 enum ColorNormalization {
@@ -161,6 +163,7 @@ impl Cache {
                 attempted: u64::MAX,
             })?;
         let payload_bytes = u64::try_from(payload.bytes.len()).unwrap_or(u64::MAX);
+        let animation_validation_work = png_animation_validation_work(&payload.bytes, pixels)?;
         let validation_working_bytes = if self.validated.contains_key(&identity) {
             0
         } else {
@@ -171,7 +174,11 @@ impl Cache {
         let validated = if let Some(validated) = self.validated.get(&identity) {
             Arc::clone(validated)
         } else {
-            let validation_work = payload_bytes;
+            let validation_work = payload_bytes.checked_add(animation_validation_work).ok_or(
+                ResolveError::AssetWork {
+                    attempted: u64::MAX,
+                },
+            )?;
             if validation_work > limits.max_asset_work_units() {
                 return Err(ResolveError::AssetWork {
                     attempted: validation_work,
@@ -292,7 +299,12 @@ impl Cache {
                     .saturating_add(pixels.saturating_mul(4)),
             })
             .map_err(ResolutionFailure::Transaction)?;
-            let decoded = decode_static_png(&validated.bytes, pixels, color_normalization);
+            let decoded = decode_static_png(
+                &validated.bytes,
+                pixels,
+                color_normalization,
+                validated.semantics.orientation,
+            );
             let decoded = match decoded {
                 Ok(decoded) => Arc::new(decoded),
                 Err(error) => {
@@ -327,6 +339,7 @@ impl Cache {
                     .map(|decoded| Arc::clone(&decoded.premultiplied_rgba)),
             }),
             claims: payload.claims,
+            animated: validated.semantics.animation_frames > 1,
         })
     }
 }
@@ -361,6 +374,56 @@ fn decoder_workspace_bytes(width: u32, height: u32) -> Result<u64, ResolveError>
     1_048_576_u64
         .checked_add(32_u64.saturating_mul(u64::from(width.max(height))))
         .ok_or(ResolveError::Memory)
+}
+
+fn png_animation_validation_work(bytes: &[u8], pixels: u64) -> Result<u64, ResolveError> {
+    let mut offset = PNG_SIGNATURE.len();
+    let mut animation_frames = 0_u32;
+    let mut first_frame_control_precedes_idat = false;
+    while offset < bytes.len() {
+        let header_end = offset.checked_add(8).ok_or(ResolveError::DecodeFailed)?;
+        let header = bytes
+            .get(offset..header_end)
+            .ok_or(ResolveError::DecodeFailed)?;
+        let length = usize::try_from(u32::from_be_bytes(
+            header[..4]
+                .try_into()
+                .map_err(|_| ResolveError::DecodeFailed)?,
+        ))
+        .map_err(|_| ResolveError::DecodeFailed)?;
+        let chunk_type = &header[4..8];
+        let data_end = header_end
+            .checked_add(length)
+            .ok_or(ResolveError::DecodeFailed)?;
+        let crc_end = data_end.checked_add(4).ok_or(ResolveError::DecodeFailed)?;
+        let data = bytes
+            .get(header_end..data_end)
+            .ok_or(ResolveError::DecodeFailed)?;
+        match chunk_type {
+            b"acTL" if length == 8 => {
+                animation_frames = u32::from_be_bytes(
+                    data[..4]
+                        .try_into()
+                        .map_err(|_| ResolveError::DecodeFailed)?,
+                );
+            }
+            b"fcTL" if animation_frames != 0 => first_frame_control_precedes_idat = true,
+            b"IDAT" => break,
+            _ => {}
+        }
+        offset = crc_end;
+    }
+    if animation_frames == 0 {
+        return Ok(0);
+    }
+    let decoded_frames =
+        animation_frames.saturating_add(u32::from(!first_frame_control_precedes_idat));
+    u64::from(decoded_frames.saturating_sub(1))
+        .checked_mul(pixels)
+        .and_then(|work| work.checked_mul(4))
+        .ok_or(ResolveError::AssetWork {
+            attempted: u64::MAX,
+        })
 }
 
 struct Payload {
@@ -513,6 +576,7 @@ fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantics), Resolve
     let mut saw_idat = false;
     let mut idat_ended = false;
     let mut saw_iend = false;
+    let mut saw_exif = false;
     let mut semantics = PngSemantics::default();
     while offset < bytes.len() {
         let header_end = offset.checked_add(8).ok_or(ResolveError::DecodeFailed)?;
@@ -551,6 +615,7 @@ fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantics), Resolve
         if crc.finalize() != expected_crc {
             return Err(ResolveError::DecodeFailed);
         }
+        idat_ended |= saw_idat && &chunk_type != b"IDAT";
         match &chunk_type {
             b"IHDR" if chunk_index == 0 && length == 13 => {
                 let width = u32::from_be_bytes(
@@ -581,12 +646,26 @@ fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantics), Resolve
                 dimensions = Some((width, height));
                 color_type = Some(png_color_type);
             }
-            b"acTL" => return Err(ResolveError::Unsupported),
-            b"cICP" if length == 4 && semantics.cicp.is_none() => {
+            b"acTL" if length == 8 && !saw_idat && semantics.animation_frames == 0 => {
+                semantics.animation_frames = u32::from_be_bytes(
+                    data[..4]
+                        .try_into()
+                        .map_err(|_| ResolveError::DecodeFailed)?,
+                );
+                if semantics.animation_frames == 0 {
+                    return Err(ResolveError::DecodeFailed);
+                }
+            }
+            b"acTL" => return Err(ResolveError::DecodeFailed),
+            b"cICP" if length == 4 && !saw_plte && !saw_idat && semantics.cicp.is_none() => {
                 semantics.cicp = Some(data.try_into().map_err(|_| ResolveError::DecodeFailed)?);
             }
             b"cICP" => return Err(ResolveError::DecodeFailed),
-            b"gmAP" => semantics.has_gain_map = true,
+            b"eXIf" if !saw_exif => {
+                saw_exif = true;
+                semantics.orientation = exif_orientation(data);
+            }
+            b"eXIf" => return Err(ResolveError::DecodeFailed),
             b"IHDR" => return Err(ResolveError::DecodeFailed),
             b"PLTE"
                 if !saw_plte
@@ -610,7 +689,7 @@ fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantics), Resolve
             _ if chunk_type[0].is_ascii_uppercase() => {
                 return Err(ResolveError::DecodeFailed);
             }
-            _ => idat_ended |= saw_idat,
+            _ => {}
         }
         chunk_index = chunk_index
             .checked_add(1)
@@ -620,8 +699,13 @@ fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantics), Resolve
     if !saw_iend || offset != bytes.len() {
         return Err(ResolveError::DecodeFailed);
     }
-    let (width, height) = dimensions.ok_or(ResolveError::DecodeFailed)?;
-    validate_png_stream(bytes, width, height)?;
+    let (source_width, source_height) = dimensions.ok_or(ResolveError::DecodeFailed)?;
+    let (width, height) = oriented_dimensions(
+        source_width,
+        source_height,
+        semantics.orientation.unwrap_or(1),
+    );
+    validate_png_stream(bytes, source_width, source_height)?;
     Ok((width, height, semantics))
 }
 
@@ -637,11 +721,23 @@ fn validate_png_stream(bytes: &[u8], width: u32, height: u32) -> Result<(), Reso
     let mut reader = decoder
         .read_info()
         .map_err(|_| ResolveError::DecodeFailed)?;
-    while reader
-        .next_row()
-        .map_err(|_| ResolveError::DecodeFailed)?
-        .is_some()
-    {}
+    let default_image_is_separate =
+        reader.info().frame_control.is_none() && reader.info().animation_control.is_some();
+    let frame_count = reader.info().animation_control.map_or(1, |animation| {
+        animation
+            .num_frames
+            .saturating_add(u32::from(default_image_is_separate))
+    });
+    let mut frame = Vec::new();
+    frame
+        .try_reserve_exact(reader.output_buffer_size())
+        .map_err(|_| ResolveError::Memory)?;
+    frame.resize(reader.output_buffer_size(), 0);
+    for _ in 0..frame_count {
+        reader
+            .next_frame(&mut frame)
+            .map_err(|_| ResolveError::DecodeFailed)?;
+    }
     reader.finish().map_err(|_| ResolveError::DecodeFailed)
 }
 
@@ -649,6 +745,7 @@ fn decode_static_png(
     bytes: &[u8],
     pixels: u64,
     color_normalization: ColorNormalization,
+    orientation: Option<u8>,
 ) -> Result<DecodedPng, ResolveError> {
     let mut decoder = png::Decoder::new(Cursor::new(bytes));
     decoder.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
@@ -662,8 +759,10 @@ fn decode_static_png(
     let mut reader = decoder
         .read_info()
         .map_err(|_| ResolveError::DecodeFailed)?;
-    if reader.info().animation_control.is_some() {
-        return Err(ResolveError::Unsupported);
+    if reader.info().animation_control.is_some() && reader.info().frame_control.is_none() {
+        reader
+            .next_frame_info()
+            .map_err(|_| ResolveError::DecodeFailed)?;
     }
     let output_size = reader.output_buffer_size();
     let mut decoded = Vec::new();
@@ -677,30 +776,72 @@ fn decode_static_png(
     decoded.truncate(output.buffer_size());
     let rgba_size = usize::try_from(pixels.checked_mul(4).ok_or(ResolveError::Memory)?)
         .map_err(|_| ResolveError::Memory)?;
-    let mut rgba = Vec::new();
-    rgba.try_reserve_exact(rgba_size)
+    let frame_pixels = u64::from(output.width)
+        .checked_mul(u64::from(output.height))
+        .ok_or(ResolveError::Memory)?;
+    let frame_rgba_size = usize::try_from(frame_pixels.checked_mul(4).ok_or(ResolveError::Memory)?)
+        .map_err(|_| ResolveError::Memory)?;
+    let mut frame_rgba = Vec::new();
+    frame_rgba
+        .try_reserve_exact(frame_rgba_size)
         .map_err(|_| ResolveError::Memory)?;
     match output.color_type {
-        png::ColorType::Rgba => rgba.extend_from_slice(&decoded),
+        png::ColorType::Rgba => frame_rgba.extend_from_slice(&decoded),
         png::ColorType::Rgb => {
             for pixel in decoded.chunks_exact(3) {
-                rgba.extend_from_slice(&[pixel[0], pixel[1], pixel[2], 255]);
+                frame_rgba.extend_from_slice(&[pixel[0], pixel[1], pixel[2], 255]);
             }
         }
         png::ColorType::Grayscale => {
             for &value in &decoded {
-                rgba.extend_from_slice(&[value, value, value, 255]);
+                frame_rgba.extend_from_slice(&[value, value, value, 255]);
             }
         }
         png::ColorType::GrayscaleAlpha => {
             for pixel in decoded.chunks_exact(2) {
-                rgba.extend_from_slice(&[pixel[0], pixel[0], pixel[0], pixel[1]]);
+                frame_rgba.extend_from_slice(&[pixel[0], pixel[0], pixel[0], pixel[1]]);
             }
         }
         png::ColorType::Indexed => return Err(ResolveError::DecodeFailed),
     }
-    if rgba.len() != rgba_size {
+    if frame_rgba.len() != frame_rgba_size {
         return Err(ResolveError::DecodeFailed);
+    }
+    let mut rgba = Vec::new();
+    rgba.try_reserve_exact(rgba_size)
+        .map_err(|_| ResolveError::Memory)?;
+    rgba.resize(rgba_size, 0);
+    let frame_control = reader.info().frame_control;
+    let (x_offset, y_offset) =
+        frame_control.map_or((0, 0), |frame| (frame.x_offset, frame.y_offset));
+    let canvas_width = usize::try_from(reader.info().width).map_err(|_| ResolveError::Memory)?;
+    let frame_width = usize::try_from(output.width).map_err(|_| ResolveError::Memory)?;
+    let x_offset = usize::try_from(x_offset).map_err(|_| ResolveError::Memory)?;
+    let y_offset = usize::try_from(y_offset).map_err(|_| ResolveError::Memory)?;
+    for y in 0..usize::try_from(output.height).map_err(|_| ResolveError::Memory)? {
+        let source_start = y
+            .checked_mul(frame_width)
+            .and_then(|value| value.checked_mul(4))
+            .ok_or(ResolveError::Memory)?;
+        let source_end = source_start
+            .checked_add(frame_width.saturating_mul(4))
+            .ok_or(ResolveError::Memory)?;
+        let destination_start = y
+            .checked_add(y_offset)
+            .and_then(|value| value.checked_mul(canvas_width))
+            .and_then(|value| value.checked_add(x_offset))
+            .and_then(|value| value.checked_mul(4))
+            .ok_or(ResolveError::Memory)?;
+        let destination_end = destination_start
+            .checked_add(frame_width.saturating_mul(4))
+            .ok_or(ResolveError::Memory)?;
+        let source = frame_rgba
+            .get(source_start..source_end)
+            .ok_or(ResolveError::DecodeFailed)?;
+        let destination = rgba
+            .get_mut(destination_start..destination_end)
+            .ok_or(ResolveError::DecodeFailed)?;
+        destination.copy_from_slice(source);
     }
     match color_normalization {
         ColorNormalization::None => {}
@@ -727,6 +868,14 @@ fn decode_static_png(
                 .map_err(|_| ResolveError::Unsupported)?;
         }
     }
+    if let Some(orientation) = orientation {
+        rgba = orient_rgba(
+            &rgba,
+            reader.info().width,
+            reader.info().height,
+            orientation,
+        )?;
+    }
     for pixel in rgba.chunks_exact_mut(4) {
         if pixel[3] == 0 {
             pixel[..3].fill(0);
@@ -749,14 +898,103 @@ fn decode_static_png(
     })
 }
 
+fn exif_orientation(exif: &[u8]) -> Option<u8> {
+    let little_endian = match exif.get(..2)? {
+        b"II" => true,
+        b"MM" => false,
+        _ => return None,
+    };
+    let read_u16 = |bytes: &[u8]| {
+        let bytes: [u8; 2] = bytes.try_into().ok()?;
+        Some(if little_endian {
+            u16::from_le_bytes(bytes)
+        } else {
+            u16::from_be_bytes(bytes)
+        })
+    };
+    let read_u32 = |bytes: &[u8]| {
+        let bytes: [u8; 4] = bytes.try_into().ok()?;
+        Some(if little_endian {
+            u32::from_le_bytes(bytes)
+        } else {
+            u32::from_be_bytes(bytes)
+        })
+    };
+    if read_u16(exif.get(2..4)?)? != 42 {
+        return None;
+    }
+    let ifd_offset = usize::try_from(read_u32(exif.get(4..8)?)?).ok()?;
+    let entry_count = usize::from(read_u16(exif.get(ifd_offset..ifd_offset.checked_add(2)?)?)?);
+    let entries_start = ifd_offset.checked_add(2)?;
+    for index in 0..entry_count {
+        let start = entries_start.checked_add(index.checked_mul(12)?)?;
+        let entry = exif.get(start..start.checked_add(12)?)?;
+        if read_u16(&entry[..2])? != 0x0112 {
+            continue;
+        }
+        if read_u16(&entry[2..4])? != 3 || read_u32(&entry[4..8])? != 1 {
+            return None;
+        }
+        let orientation = read_u16(&entry[8..10])?;
+        return u8::try_from(orientation)
+            .ok()
+            .filter(|value| (1..=8).contains(value));
+    }
+    None
+}
+
+fn oriented_dimensions(width: u32, height: u32, orientation: u8) -> (u32, u32) {
+    if matches!(orientation, 5..=8) {
+        (height, width)
+    } else {
+        (width, height)
+    }
+}
+
+fn orient_rgba(
+    source: &[u8],
+    width: u32,
+    height: u32,
+    orientation: u8,
+) -> Result<Vec<u8>, ResolveError> {
+    if orientation == 1 {
+        return try_copy(source);
+    }
+    let (output_width, _) = oriented_dimensions(width, height, orientation);
+    let mut output = Vec::new();
+    output
+        .try_reserve_exact(source.len())
+        .map_err(|_| ResolveError::Memory)?;
+    output.resize(source.len(), 0);
+    let width = usize::try_from(width).map_err(|_| ResolveError::Memory)?;
+    let height = usize::try_from(height).map_err(|_| ResolveError::Memory)?;
+    let output_width = usize::try_from(output_width).map_err(|_| ResolveError::Memory)?;
+    for y in 0..height {
+        for x in 0..width {
+            let (destination_x, destination_y) = match orientation {
+                2 => (width - 1 - x, y),
+                3 => (width - 1 - x, height - 1 - y),
+                4 => (x, height - 1 - y),
+                5 => (y, x),
+                6 => (height - 1 - y, x),
+                7 => (height - 1 - y, width - 1 - x),
+                8 => (y, width - 1 - x),
+                _ => (x, y),
+            };
+            let source_start = (y * width + x) * 4;
+            let destination_start = (destination_y * output_width + destination_x) * 4;
+            output[destination_start..destination_start + 4]
+                .copy_from_slice(&source[source_start..source_start + 4]);
+        }
+    }
+    Ok(output)
+}
+
 fn prepare_color_normalization(
     bytes: &[u8],
     semantics: PngSemantics,
     workspace_bytes: u64,
 ) -> Result<ColorNormalization, ResolveError> {
-    if semantics.has_gain_map {
-        return Err(ResolveError::Unsupported);
-    }
     if let Some(cicp) = semantics.cicp {
         return cicp_color_profile(cicp)
             .map(Box::new)
@@ -787,10 +1025,7 @@ fn cicp_color_profile(cicp: [u8; 4]) -> Result<ColorProfile, ResolveError> {
         )
         || matches!(
             transfer_characteristics,
-            TransferCharacteristics::Reserved
-                | TransferCharacteristics::Unspecified
-                | TransferCharacteristics::Smpte2084
-                | TransferCharacteristics::Hlg
+            TransferCharacteristics::Reserved | TransferCharacteristics::Unspecified
         )
     {
         return Err(ResolveError::Unsupported);

@@ -684,6 +684,7 @@ impl RenderSession {
                         semantic_working.append(&mut pending_asset_working);
                         let asset_failure = asset_resolution.as_ref().err().copied();
                         if let Ok(resolution) = asset_resolution {
+                            let animated = resolution.animated;
                             let asset = resolution.asset;
                             for (claim, field) in [
                                 (resolution.claims.mime_type.as_deref(), "mimeType"),
@@ -737,6 +738,41 @@ impl RenderSession {
                                         local_owner: Some(&local_owner),
                                         source_order: Some(source_order),
                                         source_position: Some(source_position),
+                                    },
+                                )?;
+                            }
+                            if animated && request.format() != OutputFormat::Svg {
+                                let file_id_pointer =
+                                    crate::scene::pointer_child(source.source.pointer(), "fileId")
+                                        .map_err(|_| {
+                                            self.memory_failure(
+                                                request,
+                                                "compatibility_report",
+                                                "image_animation_pointer",
+                                            )
+                                        })?;
+                                let diagnostic = image_animation_flattened_diagnostic(
+                                    request.format(),
+                                    file_id,
+                                    source.source.id(),
+                                    &file_id_pointer,
+                                )
+                                .map_err(|_| {
+                                    self.memory_failure(
+                                        request,
+                                        "compatibility_report",
+                                        "image_animation_flattened",
+                                    )
+                                })?;
+                                self.retain_diagnostic_with_owner(
+                                    request,
+                                    ResourcePhase::SharedSemanticResolution,
+                                    "image_animation_flattened",
+                                    diagnostic,
+                                    DiagnosticOwnership {
+                                        local_owner: Some(source.source.id()),
+                                        source_order: Some(source.source_order),
+                                        source_position: Some(u64::MAX),
                                     },
                                 )?;
                             }
@@ -5350,6 +5386,34 @@ fn image_asset_failure_diagnostic(
     })
 }
 
+fn image_animation_flattened_diagnostic(
+    format: OutputFormat,
+    asset_id: &str,
+    element_id: &str,
+    json_pointer: &str,
+) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
+    let mut effects = Vec::new();
+    effects.try_reserve_exact(1)?;
+    effects.push(DiagnosticEffect::Visual);
+    Ok(CompatibilityDiagnostic {
+        code: DiagnosticCode::IMAGE_ANIMATION_FLATTENED,
+        severity: DiagnosticSeverity::Info,
+        format,
+        effects,
+        element_id: Some(try_owned(element_id)?),
+        json_pointer: try_owned(json_pointer)?,
+        message: try_owned("animated image was flattened to its first animation frame")?,
+        details: Some(Box::new(ErrorDetails::Asset {
+            asset_id: try_owned(asset_id)?,
+            claimed_media_type: None,
+            validated_media_type: Some(try_owned("image/png")?),
+            recovery: Recovery::Flattened,
+            recipe_id: None,
+        })),
+        order: DiagnosticOrder::default(),
+    })
+}
+
 fn relationship_cycle_diagnostic(
     format: OutputFormat,
     element_id: &str,
@@ -6502,10 +6566,10 @@ mod tests {
             .remove("approval")
             .expect("PDF expectation manifest is approved");
         assert_eq!(approval["approved_by"], "sagikazarmark");
-        assert_eq!(approval["approved_at"], "2026-07-22");
+        assert_eq!(approval["approved_at"], "2026-07-23");
         assert_eq!(
             approval["approval_url"],
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5051200664"
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5056158617"
         );
         let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
         canonical.push(b'\n');
