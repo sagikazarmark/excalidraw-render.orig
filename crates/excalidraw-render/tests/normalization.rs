@@ -223,10 +223,14 @@ fn supplemental_authority_participates_in_image_crop_normalization() {
         .render(&scene, &request)
         .expect("known unavailable image retains a compatibility artifact");
 
-    assert_eq!(non_replacement_diagnostics(&outcome).len(), 1);
+    assert_eq!(non_replacement_diagnostics(&outcome).len(), 2);
     assert_eq!(
         non_replacement_diagnostics(&outcome)[0].json_pointer(),
         "/elements/0/crop/naturalHeight"
+    );
+    assert_eq!(
+        non_replacement_diagnostics(&outcome)[1].code(),
+        DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT
     );
 }
 

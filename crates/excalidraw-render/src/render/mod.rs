@@ -1,3 +1,4 @@
+mod asset;
 mod freedraw;
 mod pdf;
 mod png;
@@ -314,7 +315,7 @@ impl RenderSession {
                         attempted_depth,
                     } => {
                         let context = ResourceContext::new(
-                            ResourcePhase::SharedSemanticResolution,
+                            ResourcePhase::AuthorityReferenceCensus,
                             "relationship_search_step",
                             json_pointer,
                         )
@@ -333,7 +334,7 @@ impl RenderSession {
                         self.transact(
                             request,
                             ResourceContext::new(
-                                ResourcePhase::SharedSemanticResolution,
+                                ResourcePhase::AuthorityReferenceCensus,
                                 "relationship_traversal",
                                 traversal.json_pointer,
                             )
@@ -360,6 +361,112 @@ impl RenderSession {
                     ));
                 }
             };
+            let asset_authorities =
+                relationship_asset_authorities(&relationships.graph).map_err(|_| {
+                    self.memory_failure(request, "relationship_resolution", "asset_authorities")
+                })?;
+            let occurrence_count = scene
+                .file_record_count()
+                .checked_add(request.supplemental_assets().len())
+                .ok_or_else(|| {
+                    self.memory_failure(request, "asset_admission", "occurrence_count")
+                })?;
+            let mut asset_occurrence_working = Vec::new();
+            asset_occurrence_working
+                .try_reserve_exact(occurrence_count)
+                .map_err(|_| {
+                    self.memory_failure(request, "asset_admission", "occurrence_records")
+                })?;
+            for index in 0..scene.file_record_count() {
+                let Some(record) = scene.file_record_at(index) else {
+                    continue;
+                };
+                let crate::scene::SourceField::Value(data_url) = record.data_url() else {
+                    continue;
+                };
+                let decoded_bytes = asset::data_url_decoded_len(data_url);
+                let pointer = crate::scene::pointer_child(
+                    &crate::scene::pointer_child("/files", record.key()).map_err(|_| {
+                        self.memory_failure(request, "asset_admission", "scene_asset_pointer")
+                    })?,
+                    "dataURL",
+                )
+                .map_err(|_| {
+                    self.memory_failure(request, "asset_admission", "scene_asset_pointer")
+                })?;
+                let occurrence_bytes = 256_u64.saturating_add(logical_aligned_bytes(
+                    u64::try_from(if record.key().is_empty() {
+                        pointer.len()
+                    } else {
+                        record.key().len()
+                    })
+                    .unwrap_or(u64::MAX),
+                ));
+                self.transact(
+                    request,
+                    ResourceContext::new(
+                        ResourcePhase::AuthorityReferenceCensus,
+                        "asset_occurrence",
+                        &pointer,
+                    )
+                    .with_local_owner(Some(record.key())),
+                    ResourceDelta {
+                        asset_entries: 1,
+                        asset_bytes: decoded_bytes,
+                        working_bytes: occurrence_bytes,
+                        total_work_units: decoded_bytes,
+                        ..ResourceDelta::default()
+                    },
+                )?;
+                asset_occurrence_working.push((
+                    pointer,
+                    try_owned(record.key()).map_err(|_| {
+                        self.memory_failure(request, "asset_admission", "occurrence_owner")
+                    })?,
+                    occurrence_bytes,
+                ));
+            }
+            for (file_id, supplemental) in request.supplemental_assets().iter() {
+                let bytes = u64::try_from(supplemental.bytes().len()).unwrap_or(u64::MAX);
+                let occurrence_bytes = 256_u64.saturating_add(logical_aligned_bytes(
+                    u64::try_from(file_id.len()).unwrap_or(u64::MAX),
+                ));
+                self.transact(
+                    request,
+                    ResourceContext::new(
+                        ResourcePhase::AuthorityReferenceCensus,
+                        "asset_occurrence",
+                        "",
+                    )
+                    .with_local_owner(Some(file_id)),
+                    ResourceDelta {
+                        asset_entries: 1,
+                        asset_bytes: bytes,
+                        working_bytes: occurrence_bytes,
+                        total_work_units: bytes.saturating_mul(2),
+                        ..ResourceDelta::default()
+                    },
+                )?;
+                asset_occurrence_working.push((
+                    String::new(),
+                    try_owned(file_id).map_err(|_| {
+                        self.memory_failure(request, "asset_admission", "occurrence_owner")
+                    })?,
+                    occurrence_bytes,
+                ));
+            }
+            for (pointer, owner, bytes) in &asset_occurrence_working {
+                self.release_working(
+                    request,
+                    ResourceContext::new(
+                        ResourcePhase::AuthorityReferenceCensus,
+                        "asset_occurrence",
+                        pointer,
+                    )
+                    .with_local_owner(Some(owner)),
+                    *bytes,
+                )?;
+            }
             for cycle in &relationships.removed_cycles {
                 let diagnostic = relationship_cycle_diagnostic(
                     request.format(),
@@ -426,11 +533,343 @@ impl RenderSession {
             }
             let mut fallbacks = normalization.fallbacks;
             let mut outlines = Vec::new();
+            let mut image_assets = std::collections::BTreeMap::new();
+            let mut image_fallbacks = Vec::new();
+            let mut asset_cache = asset::Cache::default();
             outlines
                 .try_reserve_exact(normalization.elements.len())
                 .map_err(|_| self.memory_failure(request, "normalization", "outline_list"))?;
             for mut source in normalization.elements {
                 debug_assert!(!source.index.is_empty());
+                if let NormalizedElementKind::Image(image) = &source.kind {
+                    if let Some(file_id) = image.file_id.as_deref() {
+                        let authority = asset_authorities
+                            .binary_search_by_key(&source.source.source_index(), |(index, _)| {
+                                *index
+                            })
+                            .ok()
+                            .and_then(|index| asset_authorities.get(index))
+                            .map_or(asset::Authority::Missing, |(_, authority)| *authority);
+                        let mut pending_asset_working = Vec::new();
+                        pending_asset_working.try_reserve_exact(2).map_err(|_| {
+                            self.memory_failure(
+                                request,
+                                "asset_resolution",
+                                "pending_working_records",
+                            )
+                        })?;
+                        let asset_resolution = asset_cache.resolve(
+                            scene,
+                            request.supplemental_assets(),
+                            self.profile.compatibility_revision(),
+                            request.format(),
+                            request.resource_limits(),
+                            file_id,
+                            authority,
+                            |transaction| match transaction {
+                                asset::IntrinsicTransaction::Acquire {
+                                    event,
+                                    identity,
+                                    persistent_working_bytes,
+                                    temporary_working_bytes,
+                                    decoded_pixels,
+                                    total_work_units,
+                                } => {
+                                    let identity =
+                                        semantic_identity_hex(&identity).map_err(|_| {
+                                            self.memory_failure(
+                                                request,
+                                                "asset_resolution",
+                                                "semantic_identity",
+                                            )
+                                        })?;
+                                    let record = (persistent_working_bytes != 0)
+                                        .then(|| {
+                                            Ok::<_, RenderError>(SemanticWorkingRecord {
+                                                source_order: source.source_order,
+                                                event,
+                                                element_id: None,
+                                                local_owner: None,
+                                                json_pointer: try_owned(source.source.pointer())
+                                                    .map_err(|_| {
+                                                        self.memory_failure(
+                                                            request,
+                                                            "asset_resolution",
+                                                            "semantic_working_pointer",
+                                                        )
+                                                    })?,
+                                                bytes: persistent_working_bytes,
+                                            })
+                                        })
+                                        .transpose()?;
+                                    self.transact(
+                                        request,
+                                        ResourceContext::new(
+                                            ResourcePhase::IntrinsicAssets,
+                                            event,
+                                            source.source.pointer(),
+                                        )
+                                        .with_semantic_identity(&identity)
+                                        .with_sharing_key(event),
+                                        ResourceDelta {
+                                            decoded_pixels,
+                                            working_bytes: persistent_working_bytes
+                                                .saturating_add(temporary_working_bytes),
+                                            total_work_units,
+                                            ..ResourceDelta::default()
+                                        },
+                                    )?;
+                                    if let Some(record) = record {
+                                        pending_asset_working.push(record);
+                                    }
+                                    Ok(())
+                                }
+                                asset::IntrinsicTransaction::ReleaseTemporary {
+                                    event,
+                                    identity,
+                                    bytes,
+                                } => {
+                                    let identity =
+                                        semantic_identity_hex(&identity).map_err(|_| {
+                                            self.memory_failure(
+                                                request,
+                                                "asset_resolution",
+                                                "semantic_identity",
+                                            )
+                                        })?;
+                                    self.release_working(
+                                        request,
+                                        ResourceContext::new(
+                                            ResourcePhase::IntrinsicAssets,
+                                            event,
+                                            source.source.pointer(),
+                                        )
+                                        .with_semantic_identity(&identity),
+                                        bytes,
+                                    )
+                                }
+                                asset::IntrinsicTransaction::Abort {
+                                    event,
+                                    identity,
+                                    bytes,
+                                } => {
+                                    let identity =
+                                        semantic_identity_hex(&identity).map_err(|_| {
+                                            self.memory_failure(
+                                                request,
+                                                "asset_resolution",
+                                                "semantic_identity",
+                                            )
+                                        })?;
+                                    self.release_working(
+                                        request,
+                                        ResourceContext::new(
+                                            ResourcePhase::IntrinsicAssets,
+                                            event,
+                                            source.source.pointer(),
+                                        )
+                                        .with_semantic_identity(&identity),
+                                        bytes,
+                                    )?;
+                                    pending_asset_working.retain(|record| record.event != event);
+                                    Ok(())
+                                }
+                            },
+                        );
+                        let asset_resolution = match asset_resolution {
+                            Ok(resolution) => Ok(resolution),
+                            Err(asset::ResolutionFailure::Asset(error)) => Err(error),
+                            Err(asset::ResolutionFailure::Transaction(error)) => return Err(error),
+                        };
+                        semantic_working.append(&mut pending_asset_working);
+                        let asset_failure = asset_resolution.as_ref().err().copied();
+                        if let Ok(resolution) = asset_resolution {
+                            let asset = resolution.asset;
+                            for (claim, field) in [
+                                (resolution.claims.mime_type.as_deref(), "mimeType"),
+                                (resolution.claims.data_url_media_type.as_deref(), "dataURL"),
+                            ] {
+                                let Some(claim) = claim.filter(|claim| {
+                                    !claim
+                                        .split(';')
+                                        .next()
+                                        .unwrap_or_default()
+                                        .trim()
+                                        .eq_ignore_ascii_case("image/png")
+                                }) else {
+                                    continue;
+                                };
+                                let (json_pointer, source_order, source_position, local_owner) =
+                                    asset_claim_location(
+                                        scene,
+                                        request.supplemental_assets(),
+                                        file_id,
+                                        authority,
+                                        field,
+                                    )
+                                    .map_err(|_| {
+                                        self.memory_failure(
+                                            request,
+                                            "compatibility_report",
+                                            "asset_pointer",
+                                        )
+                                    })?;
+                                let diagnostic = crate::scene_surface::asset_media_type_diagnostic(
+                                    request.format(),
+                                    file_id,
+                                    &json_pointer,
+                                    Some(claim),
+                                    Some("image/png"),
+                                )
+                                .map_err(|_| {
+                                    self.memory_failure(
+                                        request,
+                                        "compatibility_report",
+                                        "asset_media_type_mismatch",
+                                    )
+                                })?;
+                                self.retain_diagnostic_with_owner(
+                                    request,
+                                    ResourcePhase::SharedSemanticResolution,
+                                    "asset_media_type_mismatch",
+                                    diagnostic,
+                                    DiagnosticOwnership {
+                                        local_owner: Some(&local_owner),
+                                        source_order: Some(source_order),
+                                        source_position: Some(source_position),
+                                    },
+                                )?;
+                            }
+                            image_assets.insert(source.source.source_index(), asset);
+                            semantic_working.push(SemanticWorkingRecord {
+                                source_order: source.source_order,
+                                event: "resolved_image",
+                                element_id: Some(try_owned(source.source.id()).map_err(|_| {
+                                    self.memory_failure(
+                                        request,
+                                        "normalization",
+                                        "working_record_identity",
+                                    )
+                                })?),
+                                local_owner: Some(try_owned(source.source.id()).map_err(|_| {
+                                    self.memory_failure(
+                                        request,
+                                        "normalization",
+                                        "working_record_owner",
+                                    )
+                                })?),
+                                json_pointer: try_owned(source.source.pointer()).map_err(|_| {
+                                    self.memory_failure(
+                                        request,
+                                        "normalization",
+                                        "working_record_pointer",
+                                    )
+                                })?,
+                                bytes: source.normalized_working_bytes,
+                            });
+                            outlines.push((source, None));
+                            continue;
+                        }
+                        if let Some(failure) = asset_failure {
+                            if matches!(failure, asset::ResolveError::Memory) {
+                                return Err(self.memory_failure(
+                                    request,
+                                    "asset_resolution",
+                                    "static_png",
+                                ));
+                            }
+                            if !matches!(failure, asset::ResolveError::Missing)
+                                && !self.report.diagnostics.iter().any(|diagnostic| {
+                                    matches!(
+                                        diagnostic.details(),
+                                        Some(ErrorDetails::Asset { asset_id, .. })
+                                            if asset_id == file_id
+                                    ) && diagnostic_replaces_element(diagnostic)
+                                })
+                            {
+                                let (json_pointer, source_order, source_position, local_owner) =
+                                    asset_failure_location(
+                                        scene,
+                                        request.supplemental_assets(),
+                                        file_id,
+                                        authority,
+                                    )
+                                    .map_err(|_| {
+                                        self.memory_failure(
+                                            request,
+                                            "compatibility_report",
+                                            "asset_failure_pointer",
+                                        )
+                                    })?;
+                                let diagnostic = image_asset_failure_diagnostic(
+                                    failure,
+                                    request.format(),
+                                    file_id,
+                                    source.source.id(),
+                                    &json_pointer,
+                                    image.status,
+                                    request.resource_limits(),
+                                )
+                                .map_err(|_| {
+                                    self.memory_failure(
+                                        request,
+                                        "compatibility_report",
+                                        "asset_failure",
+                                    )
+                                })?;
+                                self.retain_diagnostic_with_owner(
+                                    request,
+                                    ResourcePhase::SharedSemanticResolution,
+                                    "asset_failure",
+                                    diagnostic,
+                                    DiagnosticOwnership {
+                                        local_owner: Some(&local_owner),
+                                        source_order: Some(source_order),
+                                        source_position: Some(source_position),
+                                    },
+                                )?;
+                            }
+                        }
+                    }
+                    if request.format() == OutputFormat::Png
+                        && self.report.diagnostics.iter().any(|diagnostic| {
+                            diagnostic_uses_non_generic_recovery(&source, diagnostic)
+                        })
+                    {
+                        image_fallbacks.try_reserve(1).map_err(|_| {
+                            self.memory_failure(request, "asset_resolution", "image_fallbacks")
+                        })?;
+                        image_fallbacks.push((source.source.source_index(), image.status));
+                        semantic_working.push(SemanticWorkingRecord {
+                            source_order: source.source_order,
+                            event: "resolved_image_fallback",
+                            element_id: Some(try_owned(source.source.id()).map_err(|_| {
+                                self.memory_failure(
+                                    request,
+                                    "normalization",
+                                    "working_record_identity",
+                                )
+                            })?),
+                            local_owner: Some(try_owned(source.source.id()).map_err(|_| {
+                                self.memory_failure(
+                                    request,
+                                    "normalization",
+                                    "working_record_owner",
+                                )
+                            })?),
+                            json_pointer: try_owned(source.source.pointer()).map_err(|_| {
+                                self.memory_failure(
+                                    request,
+                                    "normalization",
+                                    "working_record_pointer",
+                                )
+                            })?,
+                            bytes: source.normalized_working_bytes,
+                        });
+                        outlines.push((source, None));
+                        continue;
+                    }
+                }
                 if let NormalizedElementKind::Embeddable { iframe, .. } = &source.kind {
                     let both_transparent = source.stroke_color == "transparent"
                         && source.background_color == "transparent";
@@ -505,8 +944,9 @@ impl RenderSession {
                             diagnostic_uses_non_generic_recovery(&source, diagnostic)
                         });
                     if !self.report.diagnostics.iter().any(|diagnostic| {
-                        diagnostic.element_id() == Some(source.source.id())
-                            && diagnostic_replaces_element(diagnostic)
+                        diagnostic_uses_non_generic_recovery(&source, diagnostic)
+                            || diagnostic.element_id() == Some(source.source.id())
+                                && diagnostic_replaces_element(diagnostic)
                     }) {
                         let diagnostic = known_element_replaced_diagnostic(
                             request.format(),
@@ -804,6 +1244,10 @@ impl RenderSession {
             } else {
                 match ResolvedScene::elements(
                     outlines,
+                    ResolvedImageInputs {
+                        assets: image_assets,
+                        fallbacks: image_fallbacks,
+                    },
                     fallbacks,
                     relationships.graph,
                     effective_frame_rendering,
@@ -925,7 +1369,7 @@ impl RenderSession {
                 let plan = SvgPlan::new(resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_SVG_FAILED, error)
                 })?;
-                self.release_semantic_working(request, semantic_working)?;
+                self.release_semantic_working(request, semantic_working, false)?;
                 let workspace_bytes = 256 * 1_024;
                 let workspace = ResourceContext::new(
                     ResourcePhase::EncodingAndOutcomeAssembly,
@@ -937,6 +1381,7 @@ impl RenderSession {
                 self.measure_and_emit_output(request, ErrorCode::ENCODE_SVG_FAILED, 0, || {
                     plan.encode()
                 })?;
+                self.release_semantic_working(request, semantic_working, true)?;
                 self.release_working(request, workspace, workspace_bytes)?;
                 for index in 0..plan.source_count() {
                     let (element_id, json_pointer) = plan.source(index).ok_or_else(|| {
@@ -964,7 +1409,7 @@ impl RenderSession {
                 let mut plan = PngPlan::new(resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error)
                 })?;
-                self.release_semantic_working(request, semantic_working)?;
+                self.release_semantic_working(request, semantic_working, false)?;
                 let pixels = u64::from(plan.width()).saturating_mul(u64::from(plan.height()));
                 let rgba_bytes = pixels.saturating_mul(4);
                 let surface_bytes = 256_u64.saturating_add(rgba_bytes);
@@ -1011,6 +1456,7 @@ impl RenderSession {
                             "/elements",
                         )
                     })?;
+                    let mut paint_mask_pixels = None;
                     if let Some(mask_pixels) =
                         plan.paint_mask_surface_area(index).ok_or_else(|| {
                             self.internal_failure(
@@ -1021,27 +1467,6 @@ impl RenderSession {
                         })?
                     {
                         let surface_limit = request.resource_limits().max_raster_surface_pixels();
-                        let mask_delta = ResourceDelta {
-                            rasterized_pixels: mask_pixels,
-                            total_work_units: mask_pixels.saturating_mul(2),
-                            ..ResourceDelta::default()
-                        };
-                        let mask_context = ResourceContext::new(
-                            ResourcePhase::ProjectionAndFallback,
-                            "frame_clip_mask_surface",
-                            json_pointer,
-                        )
-                        .with_element_id(element_id)
-                        .with_local_owner(element_id)
-                        .with_record(ResourceRecordKind::RasterMaskSurface);
-                        if self.meter.would_cross_fatal(mask_delta) {
-                            self.transact(request, mask_context, mask_delta)?;
-                            return Err(self.internal_failure(
-                                request.format(),
-                                "fatal paint mask preflight committed unexpectedly",
-                                "/elements",
-                            ));
-                        }
                         if mask_pixels > surface_limit {
                             let diagnostic = ElementLocalCrossing {
                                 code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
@@ -1081,7 +1506,7 @@ impl RenderSession {
                             }
                             continue;
                         }
-                        self.transact(request, mask_context, mask_delta)?;
+                        paint_mask_pixels = Some(mask_pixels);
                     }
                     if let Some(fallback_pixels) =
                         plan.fallback_surface_area(index).ok_or_else(|| {
@@ -1158,29 +1583,58 @@ impl RenderSession {
                         }
                         self.transact(request, raster_context, raster_delta)?;
                     }
-                    let vector_work = plan
-                        .vector_coverage_area(index)
-                        .ok_or_else(|| {
-                            self.internal_failure(
-                                request.format(),
-                                "PNG vector coverage source is missing",
-                                "/elements",
+                    let image_projection = plan.image_projection_area(index).ok_or_else(|| {
+                        self.internal_failure(
+                            request.format(),
+                            "PNG image projection source is missing",
+                            "/elements",
+                        )
+                    })?;
+                    let (projection_work, composite_work, projection_event) =
+                        if let Some(area) = image_projection {
+                            (
+                                area.saturating_mul(12),
+                                area.saturating_mul(4),
+                                "image_bilinear_projection_samples",
                             )
-                        })?
-                        .saturating_mul(16);
+                        } else {
+                            (
+                                plan.vector_coverage_area(index)
+                                    .ok_or_else(|| {
+                                        self.internal_failure(
+                                            request.format(),
+                                            "PNG vector coverage source is missing",
+                                            "/elements",
+                                        )
+                                    })?
+                                    .saturating_mul(16),
+                                0,
+                                "vector_coverage_samples",
+                            )
+                        };
+                    let mask_work = paint_mask_pixels.unwrap_or(0).saturating_mul(8);
+                    let raster_work = projection_work
+                        .saturating_add(mask_work)
+                        .saturating_add(composite_work);
                     let context = ResourceContext::new(
                         ResourcePhase::ProjectionAndFallback,
-                        "vector_coverage_samples",
+                        projection_event,
                         json_pointer,
                     )
                     .with_element_id(element_id)
                     .with_local_owner(element_id);
-                    let delta = ResourceDelta {
-                        total_work_units: vector_work,
+                    let combined_delta = ResourceDelta {
+                        rasterized_pixels: paint_mask_pixels.unwrap_or(0),
+                        total_work_units: raster_work,
                         ..ResourceDelta::default()
                     };
-                    if self.meter.would_cross_fatal(delta) {
-                        self.charge_work(request, context, vector_work)?;
+                    if self.meter.would_cross_fatal(combined_delta) {
+                        self.transact(request, context, combined_delta)?;
+                        return Err(self.internal_failure(
+                            request.format(),
+                            "fatal PNG element raster preflight committed unexpectedly",
+                            "/elements",
+                        ));
                     }
                     let element_work = plan
                         .base_element_work_units(index)
@@ -1191,7 +1645,7 @@ impl RenderSession {
                                 "/elements",
                             )
                         })?
-                        .saturating_add(vector_work);
+                        .saturating_add(raster_work);
                     let element_work_limit = request.resource_limits().max_element_work_units();
                     if element_work > element_work_limit {
                         let diagnostic = ElementLocalCrossing {
@@ -1232,7 +1686,38 @@ impl RenderSession {
                             ));
                         }
                     } else {
-                        self.charge_work(request, context, vector_work)?;
+                        if let Some(mask_pixels) = paint_mask_pixels {
+                            self.transact(
+                                request,
+                                ResourceContext::new(
+                                    ResourcePhase::ProjectionAndFallback,
+                                    "paint_mask_samples",
+                                    json_pointer,
+                                )
+                                .with_element_id(element_id)
+                                .with_local_owner(element_id)
+                                .with_record(ResourceRecordKind::RasterMaskSurface),
+                                ResourceDelta {
+                                    rasterized_pixels: mask_pixels,
+                                    total_work_units: mask_work,
+                                    ..ResourceDelta::default()
+                                },
+                            )?;
+                        }
+                        self.charge_work(request, context, projection_work)?;
+                        if composite_work != 0 {
+                            self.charge_work(
+                                request,
+                                ResourceContext::new(
+                                    ResourcePhase::ProjectionAndFallback,
+                                    "image_composite_samples",
+                                    json_pointer,
+                                )
+                                .with_element_id(element_id)
+                                .with_local_owner(element_id),
+                                composite_work,
+                            )?;
+                        }
                     }
                 }
 
@@ -1261,6 +1746,7 @@ impl RenderSession {
                     rgba_bytes,
                     || plan.encode(),
                 )?;
+                self.release_semantic_working(request, semantic_working, true)?;
                 if paint_mask_bytes != 0 {
                     self.release_working(request, paint_mask_surface, paint_mask_bytes)?;
                 }
@@ -1293,7 +1779,42 @@ impl RenderSession {
                 let plan = PdfPlan::new(resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_PDF_FAILED, error)
                 })?;
-                self.release_semantic_working(request, semantic_working)?;
+                self.release_semantic_working(request, semantic_working, false)?;
+                let image_resource_pixels =
+                    plan.image_resource_pixel_counts().map_err(|error| {
+                        self.format_failure(request, ErrorCode::ENCODE_PDF_FAILED, error)
+                    })?;
+                let mut image_resource_working = Vec::new();
+                image_resource_working
+                    .try_reserve_exact(image_resource_pixels.len())
+                    .map_err(|_| {
+                        self.memory_failure(request, "format_planning", "pdf_image_resources")
+                    })?;
+                for pixels in image_resource_pixels {
+                    let rgb_bytes = 256_u64.saturating_add(pixels.saturating_mul(3));
+                    let alpha_bytes = 256_u64.saturating_add(pixels);
+                    self.acquire_working(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::FormatPlanning,
+                            "pdf_image_rgb_format_resource",
+                            "",
+                        )
+                        .with_record(ResourceRecordKind::PdfImageRgbFormatResource),
+                        rgb_bytes,
+                    )?;
+                    self.acquire_working(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::FormatPlanning,
+                            "pdf_image_alpha_format_resource",
+                            "",
+                        )
+                        .with_record(ResourceRecordKind::PdfImageAlphaFormatResource),
+                        alpha_bytes,
+                    )?;
+                    image_resource_working.push((rgb_bytes, alpha_bytes));
+                }
                 let workspace = ResourceContext::new(
                     ResourcePhase::EncodingAndOutcomeAssembly,
                     "pdf_stream_workspace",
@@ -1304,6 +1825,29 @@ impl RenderSession {
                 self.measure_and_emit_output(request, ErrorCode::ENCODE_PDF_FAILED, 0, || {
                     plan.encode()
                 })?;
+                self.release_semantic_working(request, semantic_working, true)?;
+                for (rgb_bytes, alpha_bytes) in image_resource_working {
+                    self.release_working(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::EncodingAndOutcomeAssembly,
+                            "pdf_image_rgb_format_resource",
+                            "",
+                        )
+                        .with_record(ResourceRecordKind::PdfImageRgbFormatResource),
+                        rgb_bytes,
+                    )?;
+                    self.release_working(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::EncodingAndOutcomeAssembly,
+                            "pdf_image_alpha_format_resource",
+                            "",
+                        )
+                        .with_record(ResourceRecordKind::PdfImageAlphaFormatResource),
+                        alpha_bytes,
+                    )?;
+                }
                 self.release_working(request, workspace, workspace_bytes)?;
                 for index in 0..plan.source_count() {
                     let (element_id, json_pointer) = plan.source(index).ok_or_else(|| {
@@ -2628,8 +3172,13 @@ impl RenderSession {
         &mut self,
         request: &RenderRequest,
         records: &[SemanticWorkingRecord],
+        asset_records: bool,
     ) -> Result<(), RenderError> {
         for record in records {
+            let is_asset = matches!(record.event, "semantic_png_source" | "decoded_png_rgba");
+            if is_asset != asset_records {
+                continue;
+            }
             self.release_working(
                 request,
                 ResourceContext::new(
@@ -3002,6 +3551,143 @@ fn relationship_frame_target(
         crate::relationships::RelationshipKind::Frame,
         relationships,
     )
+}
+
+fn semantic_identity_hex(identity: &[u8; 32]) -> Result<String, std::collections::TryReserveError> {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut encoded = String::new();
+    encoded.try_reserve_exact(64)?;
+    for byte in identity {
+        encoded.push(char::from(HEX[usize::from(byte >> 4)]));
+        encoded.push(char::from(HEX[usize::from(byte & 0x0f)]));
+    }
+    Ok(encoded)
+}
+
+fn relationship_asset_authorities(
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+) -> Result<Vec<(usize, asset::Authority)>, std::collections::TryReserveError> {
+    let mut authorities = Vec::new();
+    authorities.try_reserve_exact(relationships.edges.len())?;
+    for edge in &relationships.edges {
+        if edge.kind != crate::relationships::RelationshipKind::Asset {
+            continue;
+        }
+        let Some(node) = relationships.nodes.get(edge.source) else {
+            continue;
+        };
+        let authority = match edge.target {
+            crate::relationships::RelationshipTarget::Asset {
+                authority: crate::relationships::AssetAuthority::SceneFile(_),
+                ..
+            } => asset::Authority::Scene,
+            crate::relationships::RelationshipTarget::Asset {
+                authority: crate::relationships::AssetAuthority::Supplemental,
+                ..
+            } => asset::Authority::Supplemental,
+            crate::relationships::RelationshipTarget::Asset {
+                authority: crate::relationships::AssetAuthority::Missing,
+                ..
+            } => asset::Authority::Missing,
+            _ => continue,
+        };
+        authorities.push((node.source_index, authority));
+    }
+    authorities.sort_unstable_by_key(|(source_index, _)| *source_index);
+    authorities.dedup_by_key(|(source_index, _)| *source_index);
+    Ok(authorities)
+}
+
+fn asset_failure_location(
+    scene: &SceneDocument,
+    supplemental: &crate::SupplementalAssets,
+    file_id: &str,
+    authority: asset::Authority,
+) -> Result<(String, u64, u64, String), std::collections::TryReserveError> {
+    match authority {
+        asset::Authority::Scene => {
+            let source_index = (0..scene.file_record_count())
+                .find(|index| {
+                    scene
+                        .file_record_at(*index)
+                        .is_some_and(|record| record.key() == file_id)
+                })
+                .unwrap_or(usize::MAX);
+            let record_pointer = crate::scene::pointer_child("/files", file_id)?;
+            let data_position = scene
+                .file_record_at(source_index)
+                .and_then(|record| record.member_position("dataURL"))
+                .and_then(|position| u64::try_from(position).ok())
+                .unwrap_or(u64::MAX);
+            Ok((
+                crate::scene::pointer_child(&record_pointer, "dataURL")?,
+                scene.source_owner_order("files", source_index),
+                data_position,
+                try_owned(file_id)?,
+            ))
+        }
+        asset::Authority::Supplemental => Ok((
+            String::new(),
+            supplemental_source_order(scene, supplemental, file_id),
+            0,
+            try_owned(file_id)?,
+        )),
+        asset::Authority::Missing => Ok((String::new(), u64::MAX, u64::MAX, try_owned(file_id)?)),
+    }
+}
+
+fn asset_claim_location(
+    scene: &SceneDocument,
+    supplemental: &crate::SupplementalAssets,
+    file_id: &str,
+    authority: asset::Authority,
+    field: &str,
+) -> Result<(String, u64, u64, String), std::collections::TryReserveError> {
+    match authority {
+        asset::Authority::Scene => {
+            let source_index = (0..scene.file_record_count())
+                .find(|index| {
+                    scene
+                        .file_record_at(*index)
+                        .is_some_and(|record| record.key() == file_id)
+                })
+                .unwrap_or(usize::MAX);
+            let pointer = crate::scene::pointer_child(
+                &crate::scene::pointer_child("/files", file_id)?,
+                field,
+            )?;
+            let source_position = scene
+                .file_record_at(source_index)
+                .and_then(|record| record.member_position(field))
+                .and_then(|position| u64::try_from(position).ok())
+                .unwrap_or(u64::MAX);
+            Ok((
+                pointer,
+                scene.source_owner_order("files", source_index),
+                source_position,
+                try_owned(file_id)?,
+            ))
+        }
+        asset::Authority::Supplemental => Ok((
+            String::new(),
+            supplemental_source_order(scene, supplemental, file_id),
+            0,
+            try_owned(file_id)?,
+        )),
+        asset::Authority::Missing => unreachable!("missing assets have no media claim"),
+    }
+}
+
+fn supplemental_source_order(
+    scene: &SceneDocument,
+    supplemental: &crate::SupplementalAssets,
+    file_id: &str,
+) -> u64 {
+    let rank = supplemental
+        .iter()
+        .position(|(candidate, _)| candidate == file_id)
+        .unwrap_or(usize::MAX);
+    scene.source_owner_order("files", scene.file_record_count().saturating_add(rank))
 }
 
 fn relationship_element_target(
@@ -3429,6 +4115,7 @@ impl ResolvedScene {
 
     fn elements(
         mut outlines: Vec<(NormalizedElement, Option<GeneratedGeometry>)>,
+        images: ResolvedImageInputs,
         fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
         relationships: crate::relationships::ResolvedRelationshipGraph,
         frame_rendering: EffectiveFrameRendering,
@@ -3776,6 +4463,65 @@ impl ResolvedScene {
                 }));
                 continue;
             }
+            if let NormalizedElementKind::Image(image) = &source.kind {
+                if let Some(asset) = images.assets.get(&source.source.source_index()) {
+                    let source_rect = image.crop.map_or(
+                        ResolvedImageSourceRect {
+                            x: 0.0,
+                            y: 0.0,
+                            width: f64::from(asset.width),
+                            height: f64::from(asset.height),
+                        },
+                        |crop| ResolvedImageSourceRect {
+                            x: crop.x * f64::from(asset.width) / crop.natural_width,
+                            y: crop.y * f64::from(asset.height) / crop.natural_height,
+                            width: crop.width * f64::from(asset.width) / crop.natural_width,
+                            height: crop.height * f64::from(asset.height) / crop.natural_height,
+                        },
+                    );
+                    elements.push(ResolvedElement::Image(ResolvedImage {
+                        source_order: source.source_order,
+                        source: source.source,
+                        asset: std::sync::Arc::clone(asset),
+                        frame_clips,
+                        transform: ResolvedTransform {
+                            translation_x: source.x - min_x + request.padding(),
+                            translation_y: source.y - min_y + request.padding(),
+                            angle_radians: source.angle,
+                            center_x: source.width / 2.0,
+                            center_y: source.height / 2.0,
+                        },
+                        opacity: source.opacity / 100.0 * frame_opacity,
+                        source_rect,
+                        scale: image.scale,
+                        link: source.link,
+                        width: source.width,
+                        height: source.height,
+                    }));
+                } else if let Some((_, status)) = images
+                    .fallbacks
+                    .iter()
+                    .find(|(source_index, _)| *source_index == source.source.source_index())
+                {
+                    elements.push(ResolvedElement::ImageFallback(ResolvedImageFallback {
+                        source_order: source.source_order,
+                        source: source.source,
+                        status: *status,
+                        frame_clips,
+                        transform: ResolvedTransform {
+                            translation_x: source.x - min_x + request.padding(),
+                            translation_y: source.y - min_y + request.padding(),
+                            angle_radians: source.angle,
+                            center_x: source.width / 2.0,
+                            center_y: source.height / 2.0,
+                        },
+                        opacity: source.opacity / 100.0 * frame_opacity,
+                        width: source.width,
+                        height: source.height,
+                    }));
+                }
+                continue;
+            }
             let Some(geometry) = geometry else {
                 continue;
             };
@@ -4080,6 +4826,10 @@ impl ResolvedScene {
             }
             ResolvedElement::Frame(frame) => (Some(frame.source.id()), frame.source.pointer()),
             ResolvedElement::Text(text) => (Some(text.source.id()), text.source.pointer()),
+            ResolvedElement::Image(image) => (Some(image.source.id()), image.source.pointer()),
+            ResolvedElement::ImageFallback(image) => {
+                (Some(image.source.id()), image.source.pointer())
+            }
             ResolvedElement::Fallback(fallback) => (
                 fallback.source.id.as_deref(),
                 fallback.source.pointer.as_str(),
@@ -4104,6 +4854,8 @@ enum ResolvedElement {
     Freedraw(ResolvedFreedraw),
     Frame(ResolvedFrame),
     Text(ResolvedTextElement),
+    Image(ResolvedImage),
+    ImageFallback(ResolvedImageFallback),
     Fallback(ResolvedFallback),
 }
 
@@ -4114,6 +4866,8 @@ impl ResolvedElement {
             Self::Freedraw(freedraw) => freedraw.source_order,
             Self::Frame(frame) => frame.source_order,
             Self::Text(text) => text.source_order,
+            Self::Image(image) => image.source_order,
+            Self::ImageFallback(image) => image.source_order,
             Self::Fallback(fallback) => fallback.source_order,
         }
     }
@@ -4127,6 +4881,53 @@ impl ResolvedElement {
             _ => (false, self.source_order(), 0),
         }
     }
+}
+
+struct ResolvedImageAsset {
+    identity: [u8; 32],
+    source_png: std::sync::Arc<Vec<u8>>,
+    width: u32,
+    height: u32,
+    rgba: Option<std::sync::Arc<Vec<u8>>>,
+    premultiplied_rgba: Option<std::sync::Arc<Vec<u8>>>,
+}
+
+struct ResolvedImageInputs {
+    assets: std::collections::BTreeMap<usize, std::sync::Arc<ResolvedImageAsset>>,
+    fallbacks: Vec<(usize, crate::normalization::NormalizedImageStatus)>,
+}
+
+struct ResolvedImage {
+    source_order: u64,
+    source: NormalizedElementSource,
+    asset: std::sync::Arc<ResolvedImageAsset>,
+    frame_clips: Vec<ResolvedClip>,
+    transform: ResolvedTransform,
+    opacity: f64,
+    source_rect: ResolvedImageSourceRect,
+    scale: [i8; 2],
+    link: Option<String>,
+    width: f64,
+    height: f64,
+}
+
+struct ResolvedImageFallback {
+    source_order: u64,
+    source: NormalizedElementSource,
+    status: crate::normalization::NormalizedImageStatus,
+    frame_clips: Vec<ResolvedClip>,
+    transform: ResolvedTransform,
+    opacity: f64,
+    width: f64,
+    height: f64,
+}
+
+#[derive(Clone, Copy)]
+struct ResolvedImageSourceRect {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
 }
 
 struct ResolvedTextElement {
@@ -4426,6 +5227,125 @@ fn known_element_replaced_diagnostic(
                 .then(|| try_owned("renderer.known-element-unavailable.v1"))
                 .transpose()?,
         })),
+        order: DiagnosticOrder::default(),
+    })
+}
+
+fn image_asset_failure_diagnostic(
+    failure: asset::ResolveError,
+    format: OutputFormat,
+    asset_id: &str,
+    element_id: &str,
+    json_pointer: &str,
+    status: crate::normalization::NormalizedImageStatus,
+    limits: &crate::ResourceLimits,
+) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
+    let (code, message, resource) = match failure {
+        asset::ResolveError::Malformed => (
+            DiagnosticCode::ASSET_MALFORMED_FILE_RECORD,
+            "referenced authoritative file payload was malformed",
+            None,
+        ),
+        asset::ResolveError::Unsupported => (
+            DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT,
+            "referenced image payload was not a supported static PNG",
+            None,
+        ),
+        asset::ResolveError::DecodeFailed => (
+            DiagnosticCode::IMAGE_DECODE_FAILED,
+            "referenced static PNG payload could not be decoded",
+            None,
+        ),
+        asset::ResolveError::Missing => {
+            unreachable!("missing assets are diagnosed by normalization")
+        }
+        asset::ResolveError::AssetBytes { attempted } => (
+            DiagnosticCode::RESOURCE_ASSET_BYTES_EXCEEDED,
+            "asset payload occurrence exceeded its byte ceiling",
+            Some((
+                "max_asset_bytes",
+                limits.max_asset_bytes(),
+                attempted,
+                ValueKind::Bytes,
+            )),
+        ),
+        asset::ResolveError::Dimensions { attempted } => (
+            DiagnosticCode::RESOURCE_IMAGE_DIMENSIONS_EXCEEDED,
+            "static PNG dimensions exceeded the local image ceiling",
+            Some((
+                "max_raster_dimension",
+                u64::from(limits.max_raster_dimension()),
+                attempted,
+                ValueKind::Pixels,
+            )),
+        ),
+        asset::ResolveError::Pixels { attempted } => (
+            DiagnosticCode::RESOURCE_IMAGE_PIXELS_EXCEEDED,
+            "static PNG pixels exceeded the local asset ceiling",
+            Some((
+                "max_decoded_pixels_per_asset",
+                limits.max_decoded_pixels_per_asset(),
+                attempted,
+                ValueKind::Pixels,
+            )),
+        ),
+        asset::ResolveError::AssetWork { attempted } => (
+            DiagnosticCode::RESOURCE_ASSET_WORK_EXCEEDED,
+            "static PNG intrinsic work exceeded the local asset ceiling",
+            Some((
+                "max_asset_work_units",
+                limits.max_asset_work_units(),
+                attempted,
+                ValueKind::WorkUnits,
+            )),
+        ),
+        asset::ResolveError::Memory => unreachable!("memory failure is fatal before diagnostics"),
+    };
+    let (recovery, recipe_id) = match format {
+        OutputFormat::Png => (
+            Recovery::Placeholder,
+            Some(match status {
+                crate::normalization::NormalizedImageStatus::Error => "official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9",
+                crate::normalization::NormalizedImageStatus::Pending
+                | crate::normalization::NormalizedImageStatus::Saved => "official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d",
+            }),
+        ),
+        OutputFormat::Svg | OutputFormat::Pdf => (Recovery::Omitted, None),
+    };
+    let mut effects = Vec::new();
+    effects.try_reserve_exact(1)?;
+    effects.push(DiagnosticEffect::Visual);
+    Ok(CompatibilityDiagnostic {
+        code,
+        severity: DiagnosticSeverity::Warning,
+        format,
+        effects,
+        element_id: Some(try_owned(element_id)?),
+        json_pointer: try_owned(json_pointer)?,
+        message: try_owned(message)?,
+        details: Some(Box::new(
+            if let Some((field, configured, attempted, value_kind)) = resource {
+                ErrorDetails::ResourceLimit {
+                    field,
+                    configured: ResourceValue::Integer(configured),
+                    value_kind,
+                    measurement: Measurement::Attempted {
+                        value: ResourceValue::Integer(attempted),
+                    },
+                    recovery: Some(recovery),
+                }
+            } else {
+                ErrorDetails::Asset {
+                    asset_id: try_owned(asset_id)?,
+                    claimed_media_type: None,
+                    validated_media_type: matches!(failure, asset::ResolveError::DecodeFailed)
+                        .then(|| try_owned("image/png"))
+                        .transpose()?,
+                    recovery,
+                    recipe_id: recipe_id.map(try_owned).transpose()?,
+                }
+            },
+        )),
         order: DiagnosticOrder::default(),
     })
 }

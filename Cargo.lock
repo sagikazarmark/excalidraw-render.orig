@@ -298,9 +298,9 @@ dependencies = [
 
 [[package]]
 name = "crc32fast"
-version = "1.5.0"
+version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9481c1c90cbf2ac953f07c8d4a58aa3945c425b7185c9154d67a65e4230da511"
+checksum = "a97769d94ddab943e4510d138150169a2758b5ef3eb191a9ee688de3e23ef7b3"
 dependencies = [
  "cfg-if",
 ]
@@ -490,12 +490,15 @@ name = "excalidraw-render"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64",
+ "crc32fast",
  "csscolorparser",
  "cssparser",
  "cssparser-color",
  "euclid",
  "excalidraw-render-assets-base",
  "excalidraw-render-compare",
+ "moxcms",
  "png",
  "resvg",
  "roughr",
@@ -504,6 +507,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "svg2pdf",
+ "svgtypes 0.15.3",
  "tiny-skia",
  "usvg",
  "wuff",
@@ -928,6 +932,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "moxcms"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aee701c0ffba6cc991c0fefda5ff5fca1bd2f2f4a928ffba9f825b9afceedbc3"
+dependencies = [
+ "num-traits",
+ "pxfm",
+]
+
+[[package]]
 name = "num"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1237,6 +1251,12 @@ checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
 ]
+
+[[package]]
+name = "pxfm"
+version = "0.1.30"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d55d956fa96f5ec02be2e13af0e20391a5aa83d6a074e3ad368959d0fab299ea"
 
 [[package]]
 name = "quote"

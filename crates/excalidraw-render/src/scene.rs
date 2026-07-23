@@ -650,6 +650,20 @@ impl<'a> FileRecordSource<'a> {
         source_field(members, "created", json_u64)
     }
 
+    pub(crate) fn data_url(&self) -> SourceField<&str> {
+        let JsonValue::Object(members) = self.value else {
+            return SourceField::Invalid;
+        };
+        source_field(members, "dataURL", json_string)
+    }
+
+    pub(crate) fn mime_type(&self) -> SourceField<&str> {
+        let JsonValue::Object(members) = self.value else {
+            return SourceField::Invalid;
+        };
+        source_field(members, "mimeType", json_string)
+    }
+
     pub(crate) fn member_position(&self, key: &str) -> Option<usize> {
         let JsonValue::Object(members) = self.value else {
             return None;

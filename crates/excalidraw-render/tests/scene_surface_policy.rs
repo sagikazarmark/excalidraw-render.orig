@@ -154,14 +154,19 @@ fn revision_1_element_policy_applies_kind_specific_inherited_participation() {
         .expect("known unavailable image uses its compatibility fallback");
 
     let diagnostics = non_replacement_diagnostics(&outcome);
-    let [diagnostic] = diagnostics.as_slice() else {
-        panic!("only the unmatched image property participates");
+    let [diagnostic, unsupported_asset] = diagnostics.as_slice() else {
+        panic!("the unmatched property and sniffed supplemental payload participate");
     };
     assert_eq!(
         diagnostic.code(),
         DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY
     );
     assert_eq!(diagnostic.json_pointer(), "/elements/0/unknown");
+    assert_eq!(
+        unsupported_asset.code(),
+        DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT
+    );
+    assert_eq!(unsupported_asset.json_pointer(), "");
 }
 
 #[test]
@@ -367,11 +372,16 @@ fn revision_1_scene_file_remains_authoritative_over_supplement() {
         .render(&scene, &request)
         .expect("known unavailable image retains an artifact");
     let diagnostics = non_replacement_diagnostics(&outcome);
-    let [diagnostic] = diagnostics.as_slice() else {
-        panic!("the participating asset conflict is one occurrence");
+    let [diagnostic, unsupported_asset] = diagnostics.as_slice() else {
+        panic!("the conflict and authoritative payload sniff are retained");
     };
     assert_eq!(diagnostic.code(), DiagnosticCode::ASSET_SUPPLEMENT_CONFLICT);
     assert_eq!(diagnostic.json_pointer(), "/files/asset");
+    assert_eq!(
+        unsupported_asset.code(),
+        DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT
+    );
+    assert_eq!(unsupported_asset.json_pointer(), "/files/asset/dataURL");
 }
 
 #[test]
@@ -469,6 +479,7 @@ fn revision_1_recognized_nested_record_keeps_unknown_children_separate() {
                 DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
                 "/elements/0/crop/secondUnknown",
             ),
+            (DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT, ""),
         ]
     );
 }

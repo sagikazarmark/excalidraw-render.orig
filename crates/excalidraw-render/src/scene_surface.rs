@@ -1212,6 +1212,7 @@ pub(crate) fn classify_referenced_files(
                                 JsonValue::String(media_type) => Some(media_type.as_ref()),
                                 _ => None,
                             },
+                            None,
                         )?
                     } else if let Some(diagnostic) =
                         manifested_field_diagnostic(&field.invalid, format, &member_pointer, None)?
@@ -1406,11 +1407,12 @@ fn asset_diagnostic(
     })
 }
 
-fn asset_media_type_diagnostic(
+pub(crate) fn asset_media_type_diagnostic(
     format: OutputFormat,
     asset_id: &str,
     json_pointer: &str,
     claimed_media_type: Option<&str>,
+    validated_media_type: Option<&str>,
 ) -> Result<CompatibilityDiagnostic, TryReserveError> {
     Ok(CompatibilityDiagnostic {
         code: DiagnosticCode::ASSET_MEDIA_TYPE_MISMATCH,
@@ -1419,11 +1421,15 @@ fn asset_media_type_diagnostic(
         effects: owned_effects(&[DiagnosticEffect::InputRepair])?,
         element_id: None,
         json_pointer: try_owned(json_pointer)?,
-        message: try_owned("asset media type was outside the revision-1 admitted domain")?,
+        message: try_owned(if validated_media_type.is_some() {
+            "asset media type did not match the validated payload type"
+        } else {
+            "asset media type was outside the revision-1 admitted domain"
+        })?,
         details: Some(Box::new(ErrorDetails::Asset {
             asset_id: try_owned(asset_id)?,
             claimed_media_type: claimed_media_type.map(try_owned).transpose()?,
-            validated_media_type: None,
+            validated_media_type: validated_media_type.map(try_owned).transpose()?,
             recovery: Recovery::Repaired,
             recipe_id: None,
         })),

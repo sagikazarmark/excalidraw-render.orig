@@ -110,6 +110,18 @@ enum PdfElement {
         width: f64,
         height: f64,
     },
+    Image {
+        source: NormalizedElementSource,
+        asset: std::sync::Arc<super::ResolvedImageAsset>,
+        frame_clips: Vec<super::ResolvedClip>,
+        transform: super::ResolvedTransform,
+        opacity: f64,
+        link: Option<String>,
+        width: f64,
+        height: f64,
+        source_rect: super::ResolvedImageSourceRect,
+        scale: [i8; 2],
+    },
     Fallback {
         source: super::FallbackSource,
         label: Option<super::text::ResolvedLabel>,
@@ -130,6 +142,17 @@ struct PdfGlyphMapping {
 }
 
 impl PdfPlan {
+    pub(super) fn image_resource_pixel_counts(&self) -> Result<Vec<u64>, FormatEncodeError> {
+        self.image_resources()?
+            .iter()
+            .map(|asset| {
+                u64::from(asset.width)
+                    .checked_mul(u64::from(asset.height))
+                    .ok_or_else(pdf_size_error)
+            })
+            .collect()
+    }
+
     pub(super) fn new(
         scene: ResolvedScene,
         request: &RenderRequest,
@@ -226,6 +249,21 @@ impl PdfPlan {
                         height: text.height,
                     });
                 }
+                ResolvedElement::Image(image) => {
+                    elements.push(PdfElement::Image {
+                        source: image.source,
+                        asset: image.asset,
+                        frame_clips: image.frame_clips,
+                        transform: image.transform,
+                        opacity: image.opacity,
+                        link: image.link,
+                        width: image.width,
+                        height: image.height,
+                        source_rect: image.source_rect,
+                        scale: image.scale,
+                    });
+                }
+                ResolvedElement::ImageFallback(_) => {}
                 ResolvedElement::Fallback(fallback) => {
                     elements.push(PdfElement::Fallback {
                         source: fallback.source,
@@ -257,10 +295,15 @@ impl PdfPlan {
 
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
         let opacity_resources = self.opacity_resources()?;
+        let image_resources = self.image_resources()?;
         let fallback_mappings = self.fallback_glyph_mappings()?;
         let official_mappings = self.official_glyph_mappings()?;
-        let content =
-            self.encode_content(&opacity_resources, &fallback_mappings, &official_mappings)?;
+        let content = self.encode_content(
+            &opacity_resources,
+            &image_resources,
+            &fallback_mappings,
+            &official_mappings,
+        )?;
         let fallback_forms = self.encode_fallback_forms(&fallback_mappings)?;
         let xmp = self
             .mandatory_manifest
@@ -290,9 +333,15 @@ impl PdfPlan {
             .and_then(|count| count.checked_add(link_count))
             .and_then(|count| count.checked_add(fallback_forms.len()))
             .ok_or_else(pdf_size_error)?;
-        let metadata_object = xmp
-            .as_ref()
-            .map(|_| FIRST_EXT_GSTATE_OBJECT + opacity_resources.len());
+        let metadata_object = if xmp.is_some() {
+            Some(
+                FIRST_EXT_GSTATE_OBJECT
+                    .checked_add(opacity_resources.len())
+                    .ok_or_else(pdf_size_error)?,
+            )
+        } else {
+            None
+        };
         let first_link_object = FIRST_EXT_GSTATE_OBJECT
             .checked_add(opacity_resources.len())
             .and_then(|object| object.checked_add(usize::from(xmp.is_some())))
@@ -300,22 +349,42 @@ impl PdfPlan {
         let first_fallback_form_object = first_link_object
             .checked_add(link_count)
             .ok_or_else(pdf_size_error)?;
+        let after_fallback_forms = first_fallback_form_object
+            .checked_add(fallback_forms.len())
+            .ok_or_else(pdf_size_error)?;
         let fallback_font_object = self
             .fallback_font_sfnt
             .as_ref()
-            .map(|_| first_fallback_form_object + fallback_forms.len());
-        let fallback_font_object_count = usize::from(fallback_font_object.is_some()) * 6;
-        let official_font_object = (!self.official_fonts.is_empty()).then_some(
-            first_fallback_form_object + fallback_forms.len() + fallback_font_object_count,
-        );
+            .map(|_| after_fallback_forms);
+        let fallback_font_object_count = usize::from(fallback_font_object.is_some())
+            .checked_mul(6)
+            .ok_or_else(pdf_size_error)?;
+        let official_font_object = if self.official_fonts.is_empty() {
+            None
+        } else {
+            Some(
+                after_fallback_forms
+                    .checked_add(fallback_font_object_count)
+                    .ok_or_else(pdf_size_error)?,
+            )
+        };
         let official_font_object_count = self
             .official_fonts
             .len()
             .checked_mul(6)
             .ok_or_else(pdf_size_error)?;
+        let first_image_object = after_fallback_forms
+            .checked_add(fallback_font_object_count)
+            .and_then(|object| object.checked_add(official_font_object_count))
+            .ok_or_else(pdf_size_error)?;
+        let image_object_count = image_resources
+            .len()
+            .checked_mul(2)
+            .ok_or_else(pdf_size_error)?;
         let object_count = object_count
             .checked_add(fallback_font_object_count)
             .and_then(|count| count.checked_add(official_font_object_count))
+            .and_then(|count| count.checked_add(image_object_count))
             .ok_or_else(pdf_size_error)?;
         let page_width = format_pdf_number(self.page_width, "PDF page width")?;
         let page_height = format_pdf_number(self.page_height, "PDF page height")?;
@@ -330,8 +399,11 @@ impl PdfPlan {
                     .and_then(|extra| capacity.checked_add(extra))
             })
             .and_then(|capacity| {
-                xmp.as_ref()
-                    .map_or(Some(capacity), |xmp| capacity.checked_add(xmp.len() + 128))
+                xmp.as_ref().map_or(Some(capacity), |xmp| {
+                    xmp.len()
+                        .checked_add(128)
+                        .and_then(|extra| capacity.checked_add(extra))
+                })
             })
             .and_then(|capacity| {
                 link_count
@@ -340,21 +412,40 @@ impl PdfPlan {
             })
             .and_then(|capacity| {
                 fallback_forms.iter().try_fold(capacity, |capacity, form| {
-                    capacity.checked_add(form.len().saturating_add(256))
+                    form.len()
+                        .checked_add(256)
+                        .and_then(|extra| capacity.checked_add(extra))
                 })
             })
             .and_then(|capacity| {
                 self.fallback_font_sfnt
                     .as_ref()
                     .map_or(Some(capacity), |font| {
-                        capacity.checked_add(font.len().saturating_add(16_384))
+                        font.len()
+                            .checked_add(16_384)
+                            .and_then(|extra| capacity.checked_add(extra))
                     })
             })
             .and_then(|capacity| {
                 self.official_fonts
                     .iter()
                     .try_fold(capacity, |capacity, font| {
-                        capacity.checked_add(font.sfnt.len().saturating_add(16_384))
+                        font.sfnt
+                            .len()
+                            .checked_add(16_384)
+                            .and_then(|extra| capacity.checked_add(extra))
+                    })
+            })
+            .and_then(|capacity| {
+                image_resources
+                    .iter()
+                    .try_fold(capacity, |capacity, asset| {
+                        usize::try_from(asset.width)
+                            .ok()?
+                            .checked_mul(usize::try_from(asset.height).ok()?)
+                            .and_then(|pixels| pixels.checked_mul(4))
+                            .and_then(|bytes| bytes.checked_add(1_024))
+                            .and_then(|extra| capacity.checked_add(extra))
                     })
             })
             .and_then(|capacity| {
@@ -413,20 +504,29 @@ impl PdfPlan {
                     pdf,
                     " /GS{} {} 0 R",
                     index + 1,
-                    FIRST_EXT_GSTATE_OBJECT + index
+                    checked_object(FIRST_EXT_GSTATE_OBJECT, index, 1)?
                 )
                 .map_err(write_error)?;
             }
             pdf.extend_from_slice(b" >>\n");
         }
-        if !fallback_forms.is_empty() {
+        if !fallback_forms.is_empty() || !image_resources.is_empty() {
             pdf.extend_from_slice(b"/XObject <<");
             for index in 0..fallback_forms.len() {
                 write!(
                     pdf,
                     " /FB{} {} 0 R",
                     index + 1,
-                    first_fallback_form_object + index
+                    checked_object(first_fallback_form_object, index, 1)?
+                )
+                .map_err(write_error)?;
+            }
+            for index in 0..image_resources.len() {
+                write!(
+                    pdf,
+                    " /Im{} {} 0 R",
+                    index,
+                    checked_object(first_image_object, index, 2)?
                 )
                 .map_err(write_error)?;
             }
@@ -440,7 +540,7 @@ impl PdfPlan {
                         pdf,
                         " /F{} {} 0 R",
                         index + 2,
-                        official_font_object + index * 6
+                        checked_object(official_font_object, index, 6)?
                     )
                     .map_err(write_error)?;
                 }
@@ -453,7 +553,7 @@ impl PdfPlan {
                     pdf,
                     " /F{} {} 0 R",
                     index + 2,
-                    official_font_object + index * 6
+                    checked_object(official_font_object, index, 6)?
                 )
                 .map_err(write_error)?;
             }
@@ -463,7 +563,8 @@ impl PdfPlan {
         if link_count != 0 {
             pdf.extend_from_slice(b"/Annots [");
             for index in 0..link_count {
-                write!(pdf, " {} 0 R", first_link_object + index).map_err(write_error)?;
+                write!(pdf, " {} 0 R", checked_object(first_link_object, index, 1)?)
+                    .map_err(write_error)?;
             }
             pdf.extend_from_slice(b" ]\n");
         }
@@ -498,7 +599,11 @@ impl PdfPlan {
 
         for (index, opacity) in opacity_resources.iter().copied().enumerate() {
             let opacity = format_pdf_number(opacity, "PDF opacity")?;
-            begin_object(&mut pdf, &mut offsets, FIRST_EXT_GSTATE_OBJECT + index)?;
+            begin_object(
+                &mut pdf,
+                &mut offsets,
+                checked_object(FIRST_EXT_GSTATE_OBJECT, index, 1)?,
+            )?;
             write!(
                 pdf,
                 "<<\n/Type /ExtGState\n/CA {opacity}\n/ca {opacity}\n/BM /Normal\n>>\nendobj\n"
@@ -596,12 +701,71 @@ impl PdfPlan {
                 self.write_font_objects(
                     &mut pdf,
                     &mut offsets,
-                    first_object + index * 6,
+                    checked_object(first_object, index, 6)?,
                     &font.sfnt,
                     font.pdf_name,
                     &official_mappings[index],
                 )?;
             }
+        }
+        for (index, asset) in image_resources.iter().enumerate() {
+            let image_object = checked_object(first_image_object, index, 2)?;
+            let mask_object = image_object.checked_add(1).ok_or_else(pdf_size_error)?;
+            let pixel_count = usize::try_from(asset.width)
+                .ok()
+                .and_then(|width| width.checked_mul(usize::try_from(asset.height).ok()?))
+                .ok_or_else(pdf_size_error)?;
+            let mut rgb = Vec::new();
+            let mut alpha = Vec::new();
+            let rgb_bytes = pixel_count.checked_mul(3).ok_or_else(pdf_size_error)?;
+            rgb.try_reserve_exact(rgb_bytes)
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "format_resource",
+                    subject: "pdf_image_rgb",
+                })?;
+            alpha.try_reserve_exact(pixel_count).map_err(|_| {
+                FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "format_resource",
+                    subject: "pdf_image_alpha",
+                }
+            })?;
+            let rgba = asset.rgba.as_deref().ok_or_else(|| {
+                FormatEncodeError::Encoding("PDF image has no normalized pixel resource".to_owned())
+            })?;
+            for pixel in rgba.chunks_exact(4) {
+                rgb.extend_from_slice(&pixel[..3]);
+                alpha.push(pixel[3]);
+            }
+            begin_object(&mut pdf, &mut offsets, image_object)?;
+            write!(
+                pdf,
+                concat!(
+                    "<<\n/Type /XObject\n/Subtype /Image\n/Width {}\n/Height {}\n",
+                    "/ColorSpace /CS1\n/BitsPerComponent 8\n/SMask {} 0 R\n/Length {}\n",
+                    ">>\nstream\n"
+                ),
+                asset.width,
+                asset.height,
+                mask_object,
+                rgb.len()
+            )
+            .map_err(write_error)?;
+            pdf.extend_from_slice(&rgb);
+            pdf.extend_from_slice(b"\nendstream\nendobj\n");
+            begin_object(&mut pdf, &mut offsets, mask_object)?;
+            write!(
+                pdf,
+                concat!(
+                    "<<\n/Type /XObject\n/Subtype /Image\n/Width {}\n/Height {}\n",
+                    "/ColorSpace /DeviceGray\n/BitsPerComponent 8\n/Length {}\n>>\nstream\n"
+                ),
+                asset.width,
+                asset.height,
+                alpha.len()
+            )
+            .map_err(write_error)?;
+            pdf.extend_from_slice(&alpha);
+            pdf.extend_from_slice(b"\nendstream\nendobj\n");
         }
 
         let xref_offset = pdf.len();
@@ -628,6 +792,7 @@ impl PdfPlan {
             PdfElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
             PdfElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
             PdfElement::Text { source, .. } => (Some(source.id()), source.pointer()),
+            PdfElement::Image { source, .. } => (Some(source.id()), source.pointer()),
             PdfElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -722,11 +887,11 @@ impl PdfPlan {
         base_font: &str,
         mappings: &[PdfGlyphMapping],
     ) -> Result<(), FormatEncodeError> {
-        let cid_font_object = font_object + 1;
-        let descriptor_object = font_object + 2;
-        let font_file_object = font_object + 3;
-        let to_unicode_object = font_object + 4;
-        let cid_to_gid_object = font_object + 5;
+        let cid_font_object = font_object.checked_add(1).ok_or_else(pdf_size_error)?;
+        let descriptor_object = font_object.checked_add(2).ok_or_else(pdf_size_error)?;
+        let font_file_object = font_object.checked_add(3).ok_or_else(pdf_size_error)?;
+        let to_unicode_object = font_object.checked_add(4).ok_or_else(pdf_size_error)?;
+        let cid_to_gid_object = font_object.checked_add(5).ok_or_else(pdf_size_error)?;
         let face = rustybuzz::ttf_parser::Face::parse(font, 0).map_err(|_| {
             FormatEncodeError::Encoding("PDF fallback font is not a valid sfnt".to_owned())
         })?;
@@ -928,6 +1093,7 @@ impl PdfPlan {
                 }
                 PdfElement::Frame { opacity, .. } => retain(*opacity),
                 PdfElement::Text { color, opacity, .. } => retain(*opacity * color.alpha()),
+                PdfElement::Image { opacity, .. } => retain(*opacity),
                 PdfElement::Fallback { opacity, .. } => retain(*opacity),
             }
         }
@@ -994,9 +1160,38 @@ impl PdfPlan {
         Ok(forms)
     }
 
+    fn image_resources(
+        &self,
+    ) -> Result<Vec<std::sync::Arc<super::ResolvedImageAsset>>, FormatEncodeError> {
+        let mut resources = Vec::new();
+        resources
+            .try_reserve_exact(self.elements.len())
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_workspace",
+                subject: "pdf_image_resources",
+            })?;
+        for element in &self.elements {
+            let PdfElement::Image { asset, .. } = element else {
+                continue;
+            };
+            if resources
+                .iter()
+                .any(|candidate: &std::sync::Arc<super::ResolvedImageAsset>| {
+                    candidate.identity == asset.identity
+                })
+            {
+                continue;
+            }
+            resources.push(std::sync::Arc::clone(asset));
+        }
+        resources.sort_unstable_by_key(|asset| asset.identity);
+        Ok(resources)
+    }
+
     fn encode_content(
         &self,
         opacity_resources: &[f64],
+        image_resources: &[std::sync::Arc<super::ResolvedImageAsset>],
         fallback_mappings: &[PdfGlyphMapping],
         official_mappings: &[Vec<PdfGlyphMapping>],
     ) -> Result<String, FormatEncodeError> {
@@ -1039,6 +1234,7 @@ impl PdfPlan {
                     size.saturating_add(line.text.len().saturating_mul(4))
                         .saturating_add(line.glyphs.len().saturating_mul(96))
                 }),
+                PdfElement::Image { .. } => 512,
                 PdfElement::Fallback { label, .. } => label.as_ref().map_or(1_024, |label| {
                     label
                         .path
@@ -1496,6 +1692,98 @@ impl PdfPlan {
                     }
                     content.push_str("Q\n");
                 }
+                PdfElement::Image {
+                    source,
+                    asset,
+                    frame_clips,
+                    transform,
+                    opacity,
+                    width,
+                    height,
+                    source_rect,
+                    scale,
+                    ..
+                } => {
+                    if source.id().is_empty() || source.pointer().is_empty() {
+                        return Err(FormatEncodeError::Encoding(
+                            "PDF image lost its source identity".to_owned(),
+                        ));
+                    }
+                    let resource = image_resources
+                        .iter()
+                        .position(|candidate| candidate.identity == asset.identity)
+                        .ok_or_else(|| {
+                            FormatEncodeError::Encoding(
+                                "PDF image resource has no semantic owner".to_owned(),
+                            )
+                        })?;
+                    let (sin, cos) = if transform.angle_radians == 0.0 {
+                        (0.0, 1.0)
+                    } else {
+                        (transform.angle_radians.sin(), transform.angle_radians.cos())
+                    };
+                    let offset_x = transform.translation_x + transform.center_x
+                        - cos * transform.center_x
+                        + sin * transform.center_y;
+                    let offset_y = transform.translation_y + transform.center_y
+                        - sin * transform.center_x
+                        - cos * transform.center_y;
+                    content.push_str("q\n");
+                    for frame_clip in frame_clips {
+                        push_transformed_clip(&mut content, frame_clip)?;
+                    }
+                    push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    if *opacity != 1.0 {
+                        push_opacity_resource(&mut content, opacity_resources, *opacity)?;
+                    }
+                    push_pdf_number(&mut content, 0.0, "PDF image clip x")?;
+                    content.push(' ');
+                    push_pdf_number(&mut content, 0.0, "PDF image clip y")?;
+                    content.push(' ');
+                    push_pdf_number(&mut content, *width, "PDF image clip width")?;
+                    content.push(' ');
+                    push_pdf_number(&mut content, *height, "PDF image clip height")?;
+                    content.push_str(" re\nW\nn\n");
+                    let base_scale_x = *width / source_rect.width;
+                    let base_scale_y = *height / source_rect.height;
+                    let (image_scale_x, image_offset_x) = if scale[0] < 0 {
+                        (
+                            -f64::from(asset.width) * base_scale_x,
+                            *width + source_rect.x * base_scale_x,
+                        )
+                    } else {
+                        (
+                            f64::from(asset.width) * base_scale_x,
+                            -source_rect.x * base_scale_x,
+                        )
+                    };
+                    let (image_scale_y, image_offset_y) = if scale[1] < 0 {
+                        (
+                            -f64::from(asset.height) * base_scale_y,
+                            *height + source_rect.y * base_scale_y,
+                        )
+                    } else {
+                        (
+                            f64::from(asset.height) * base_scale_y,
+                            -source_rect.y * base_scale_y,
+                        )
+                    };
+                    push_matrix(
+                        &mut content,
+                        image_scale_x,
+                        0.0,
+                        0.0,
+                        image_scale_y,
+                        image_offset_x,
+                        image_offset_y,
+                    )?;
+                    writeln!(content, "/Im{resource} Do").map_err(|_| {
+                        FormatEncodeError::Encoding(
+                            "failed to write PDF image invocation".to_owned(),
+                        )
+                    })?;
+                    content.push_str("Q\n");
+                }
                 PdfElement::Fallback {
                     source,
                     label,
@@ -1603,6 +1891,14 @@ impl PdfElement {
                 ..
             }
             | Self::Text {
+                link: Some(link),
+                width,
+                height,
+                transform,
+                frame_clips,
+                ..
+            }
+            | Self::Image {
                 link: Some(link),
                 width,
                 height,
@@ -2585,6 +2881,13 @@ fn begin_object(
 
 fn pdf_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("PDF plan exceeds serializer capacity".to_owned())
+}
+
+fn checked_object(first: usize, index: usize, stride: usize) -> Result<usize, FormatEncodeError> {
+    index
+        .checked_mul(stride)
+        .and_then(|offset| first.checked_add(offset))
+        .ok_or_else(pdf_size_error)
 }
 
 fn point_dimension(logical: f64) -> Result<f64, FormatEncodeError> {

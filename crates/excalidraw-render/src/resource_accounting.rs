@@ -16,6 +16,10 @@ pub(crate) struct ResourceDelta {
     pub(crate) scene_bytes: u64,
     pub(crate) elements: u64,
     #[serde(skip_serializing_if = "is_zero")]
+    pub(crate) asset_entries: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub(crate) asset_bytes: u64,
+    #[serde(skip_serializing_if = "is_zero")]
     #[serde(rename = "relationship_depth")]
     pub(crate) observed_relationship_depth: u64,
     #[serde(skip_serializing_if = "is_zero")]
@@ -24,6 +28,8 @@ pub(crate) struct ResourceDelta {
     pub(crate) text_scalars: u64,
     #[serde(skip_serializing_if = "is_zero")]
     pub(crate) rasterized_pixels: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub(crate) decoded_pixels: u64,
     pub(crate) diagnostics: u64,
     pub(crate) working_bytes: u64,
     pub(crate) output_bytes: u64,
@@ -35,6 +41,10 @@ struct ResourceCounters {
     scene_bytes: u64,
     elements: u64,
     #[serde(skip_serializing_if = "is_zero")]
+    asset_entries: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    asset_bytes: u64,
+    #[serde(skip_serializing_if = "is_zero")]
     relationship_depth: u64,
     #[serde(skip_serializing_if = "is_zero")]
     geometry_segments: u64,
@@ -42,6 +52,8 @@ struct ResourceCounters {
     text_scalars: u64,
     #[serde(skip_serializing_if = "is_zero")]
     rasterized_pixels: u64,
+    #[serde(skip_serializing_if = "is_zero")]
+    decoded_pixels: u64,
     diagnostics: u64,
     working_bytes: u64,
     output_bytes: u64,
@@ -97,6 +109,16 @@ impl<'a> ResourceContext<'a> {
         self
     }
 
+    pub(crate) const fn with_semantic_identity(mut self, identity: &'a str) -> Self {
+        self.semantic_identity = Some(identity);
+        self
+    }
+
+    pub(crate) const fn with_sharing_key(mut self, sharing_key: &'a str) -> Self {
+        self.sharing_key = Some(sharing_key);
+        self
+    }
+
     pub(crate) fn try_failure_location(self) -> Result<ResourceFailureLocation, TryReserveError> {
         Ok(ResourceFailureLocation {
             json_pointer: try_owned(self.json_pointer)?,
@@ -115,6 +137,8 @@ pub(crate) struct ResourceFailureLocation {
 pub(crate) enum ResourcePhase {
     Admission,
     JsonTraversalAndNormalization,
+    AuthorityReferenceCensus,
+    IntrinsicAssets,
     SharedSemanticResolution,
     FormatPlanning,
     ProjectionAndFallback,
@@ -132,6 +156,8 @@ pub(crate) enum ResourceRecordKind {
     RequestDerivedBuiltInBlob,
     RasterColorSurface,
     RasterMaskSurface,
+    PdfImageRgbFormatResource,
+    PdfImageAlphaFormatResource,
     #[allow(dead_code)]
     Diagnostic,
     SvgSerializerWorkspace,
@@ -235,6 +261,8 @@ impl ResourceMeter {
         AttemptedCounters {
             scene_bytes: Attempted::new(self.counters.scene_bytes, delta.scene_bytes),
             elements: Attempted::new(self.counters.elements, delta.elements),
+            asset_entries: Attempted::new(self.counters.asset_entries, delta.asset_entries),
+            asset_bytes: Attempted::new(self.counters.asset_bytes, delta.asset_bytes),
             relationship_depth: Attempted::observed(delta.observed_relationship_depth),
             geometry_segments: Attempted::new(
                 self.counters.geometry_segments,
@@ -245,6 +273,7 @@ impl ResourceMeter {
                 self.counters.rasterized_pixels,
                 delta.rasterized_pixels,
             ),
+            decoded_pixels: Attempted::new(self.counters.decoded_pixels, delta.decoded_pixels),
             diagnostics: Attempted::new(self.counters.diagnostics, delta.diagnostics),
             working_bytes: Attempted::new(self.counters.working_bytes, delta.working_bytes),
             output_bytes: Attempted::new(self.counters.output_bytes, delta.output_bytes),
@@ -332,10 +361,13 @@ impl ResourceMeter {
 struct AttemptedCounters {
     scene_bytes: Attempted,
     elements: Attempted,
+    asset_entries: Attempted,
+    asset_bytes: Attempted,
     relationship_depth: Attempted,
     geometry_segments: Attempted,
     text_scalars: Attempted,
     rasterized_pixels: Attempted,
+    decoded_pixels: Attempted,
     diagnostics: Attempted,
     working_bytes: Attempted,
     output_bytes: Attempted,
@@ -347,10 +379,13 @@ impl AttemptedCounters {
         Some(ResourceCounters {
             scene_bytes: self.scene_bytes.exact()?,
             elements: self.elements.exact()?,
+            asset_entries: self.asset_entries.exact()?,
+            asset_bytes: self.asset_bytes.exact()?,
             relationship_depth: self.relationship_depth.exact()?,
             geometry_segments: self.geometry_segments.exact()?,
             text_scalars: self.text_scalars.exact()?,
             rasterized_pixels: self.rasterized_pixels.exact()?,
+            decoded_pixels: self.decoded_pixels.exact()?,
             diagnostics: self.diagnostics.exact()?,
             working_bytes: self.working_bytes.exact()?,
             output_bytes: self.output_bytes.exact()?,
@@ -366,9 +401,12 @@ fn fatal_crossing(
     [
         (LimitKind::SceneBytes, attempted.scene_bytes),
         (LimitKind::Elements, attempted.elements),
+        (LimitKind::AssetEntries, attempted.asset_entries),
+        (LimitKind::TotalAssetBytes, attempted.asset_bytes),
         (LimitKind::RelationshipDepth, attempted.relationship_depth),
         (LimitKind::TotalGeometry, attempted.geometry_segments),
         (LimitKind::TotalText, attempted.text_scalars),
+        (LimitKind::TotalDecodedPixels, attempted.decoded_pixels),
         (
             LimitKind::TotalRasterizedPixels,
             attempted.rasterized_pixels,
@@ -391,6 +429,12 @@ fn attempted_counters_for_trace(
         elements: attempted
             .elements
             .trace_value(u64::from(limits.max_elements())),
+        asset_entries: attempted
+            .asset_entries
+            .trace_value(u64::from(limits.max_asset_entries())),
+        asset_bytes: attempted
+            .asset_bytes
+            .trace_value(limits.max_total_asset_bytes()),
         relationship_depth: attempted
             .relationship_depth
             .trace_value(u64::from(limits.max_relationship_depth())),
@@ -403,6 +447,9 @@ fn attempted_counters_for_trace(
         rasterized_pixels: attempted
             .rasterized_pixels
             .trace_value(limits.max_total_rasterized_pixels()),
+        decoded_pixels: attempted
+            .decoded_pixels
+            .trace_value(limits.max_total_decoded_pixels()),
         diagnostics: attempted
             .diagnostics
             .trace_value(u64::from(limits.max_diagnostics())),
@@ -482,10 +529,13 @@ impl Attempted {
 enum LimitKind {
     SceneBytes,
     Elements,
+    AssetEntries,
+    TotalAssetBytes,
     RelationshipDepth,
     TotalGeometry,
     TotalText,
     TotalRasterizedPixels,
+    TotalDecodedPixels,
     Diagnostics,
     WorkingBytes,
     OutputBytes,
@@ -497,10 +547,13 @@ impl LimitKind {
         match self {
             Self::SceneBytes => limits.max_scene_bytes(),
             Self::Elements => u64::from(limits.max_elements()),
+            Self::AssetEntries => u64::from(limits.max_asset_entries()),
+            Self::TotalAssetBytes => limits.max_total_asset_bytes(),
             Self::RelationshipDepth => u64::from(limits.max_relationship_depth()),
             Self::TotalGeometry => limits.max_total_geometry_segments(),
             Self::TotalText => limits.max_total_text_scalars(),
             Self::TotalRasterizedPixels => limits.max_total_rasterized_pixels(),
+            Self::TotalDecodedPixels => limits.max_total_decoded_pixels(),
             Self::Diagnostics => u64::from(limits.max_diagnostics()),
             Self::WorkingBytes => limits.max_working_bytes(),
             Self::OutputBytes => limits.max_output_bytes(),
@@ -538,6 +591,18 @@ impl LimitKind {
                 value_kind: ValueKind::Count,
                 message: "element count limit exceeded",
             },
+            Self::AssetEntries => LimitMetadata {
+                code: ErrorCode::RESOURCE_ASSET_COUNT_EXCEEDED,
+                field: "max_asset_entries",
+                value_kind: ValueKind::Count,
+                message: "asset payload occurrence limit exceeded",
+            },
+            Self::TotalAssetBytes => LimitMetadata {
+                code: ErrorCode::RESOURCE_TOTAL_ASSET_BYTES_EXCEEDED,
+                field: "max_total_asset_bytes",
+                value_kind: ValueKind::Bytes,
+                message: "total asset byte limit exceeded",
+            },
             Self::RelationshipDepth => LimitMetadata {
                 code: ErrorCode::RESOURCE_RELATIONSHIP_DEPTH_EXCEEDED,
                 field: "max_relationship_depth",
@@ -561,6 +626,12 @@ impl LimitKind {
                 field: "max_total_rasterized_pixels",
                 value_kind: ValueKind::Pixels,
                 message: "total rasterized pixel limit exceeded",
+            },
+            Self::TotalDecodedPixels => LimitMetadata {
+                code: ErrorCode::RESOURCE_TOTAL_DECODED_PIXELS_EXCEEDED,
+                field: "max_total_decoded_pixels",
+                value_kind: ValueKind::Pixels,
+                message: "total decoded pixel limit exceeded",
             },
             Self::Diagnostics => LimitMetadata {
                 code: ErrorCode::RESOURCE_DIAGNOSTIC_COUNT_EXCEEDED,

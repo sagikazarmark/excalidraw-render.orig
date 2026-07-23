@@ -1,7 +1,8 @@
 use crate::{color::CanonicalColor, RenderRequest};
 use tiny_skia::{
-    BlendMode, Color, FillRule, IntSize, LineCap, LineJoin, Mask, Paint, PathBuilder, PathStroker,
-    PixmapMut, PixmapPaint, Shader, Stroke, StrokeDash, Transform,
+    BlendMode, Color, FillRule, FilterQuality, IntSize, LineCap, LineJoin, Mask, Paint,
+    PathBuilder, PathStroker, PixmapMut, PixmapPaint, PixmapRef, Rect, Shader, Stroke, StrokeDash,
+    Transform,
 };
 
 use super::{
@@ -14,6 +15,7 @@ pub(super) struct PngPlan {
     height: u32,
     background: Option<[u8; 4]>,
     fallback_colors: super::FallbackColors,
+    image_fallback_background: CanonicalColor,
     elements: Vec<PngElement>,
 }
 
@@ -70,6 +72,28 @@ enum PngElement {
         base_element_work_units: u64,
         render: bool,
     },
+    Image {
+        source: NormalizedElementSource,
+        asset: std::sync::Arc<super::ResolvedImageAsset>,
+        frame_clips: Vec<PngFrameClip>,
+        transform: PngTransform,
+        width: f64,
+        height: f64,
+        source_rect: super::ResolvedImageSourceRect,
+        scale: [i8; 2],
+        opacity: f64,
+        render: bool,
+    },
+    ImageFallback {
+        source: NormalizedElementSource,
+        status: crate::normalization::NormalizedImageStatus,
+        frame_clips: Vec<PngFrameClip>,
+        transform: PngTransform,
+        width: f64,
+        height: f64,
+        opacity: f64,
+        render: bool,
+    },
     Fallback {
         source: super::FallbackSource,
         label: Option<super::text::ResolvedLabel>,
@@ -122,7 +146,9 @@ impl PngElement {
             Self::RoughOutline { frame_clips, .. }
             | Self::Freedraw { frame_clips, .. }
             | Self::Frame { frame_clips, .. }
-            | Self::Text { frame_clips, .. } => frame_clips,
+            | Self::Text { frame_clips, .. }
+            | Self::Image { frame_clips, .. }
+            | Self::ImageFallback { frame_clips, .. } => frame_clips,
             Self::Fallback { .. } => &[],
         }
     }
@@ -130,6 +156,24 @@ impl PngElement {
     fn label_mask(&self) -> Option<PngLabelMask> {
         match self {
             Self::RoughOutline { label_mask, .. } => *label_mask,
+            _ => None,
+        }
+    }
+
+    fn image_clip(&self) -> Option<(f64, f64, PngTransform)> {
+        match self {
+            Self::Image {
+                width,
+                height,
+                transform,
+                ..
+            } => Some((*width, *height, *transform)),
+            Self::ImageFallback {
+                width,
+                height,
+                transform,
+                ..
+            } => Some((*width, *height, *transform)),
             _ => None,
         }
     }
@@ -204,6 +248,49 @@ impl PngTransform {
         self.e += self.a * x + self.c * y;
         self.f += self.b * x + self.d * y;
         self
+    }
+
+    fn raster_image_transform(
+        self,
+        multiplier: u32,
+        source: super::ResolvedImageSourceRect,
+        width: f64,
+        height: f64,
+        scale: [i8; 2],
+    ) -> Result<Transform, FormatEncodeError> {
+        let base_scale_x = width / source.width;
+        let base_scale_y = height / source.height;
+        let (scale_x, offset_x) = if scale[0] < 0 {
+            (-base_scale_x, width + source.x * base_scale_x)
+        } else {
+            (base_scale_x, -source.x * base_scale_x)
+        };
+        let (scale_y, offset_y) = if scale[1] < 0 {
+            (-base_scale_y, height + source.y * base_scale_y)
+        } else {
+            (base_scale_y, -source.y * base_scale_y)
+        };
+        let multiplier = f64::from(multiplier);
+        let transform = Transform::from_row(
+            finite_f32(self.a * scale_x * multiplier, "PNG image transform a")?,
+            finite_f32(self.b * scale_x * multiplier, "PNG image transform b")?,
+            finite_f32(self.c * scale_y * multiplier, "PNG image transform c")?,
+            finite_f32(self.d * scale_y * multiplier, "PNG image transform d")?,
+            finite_f32(
+                (self.a * offset_x + self.c * offset_y + self.e) * multiplier,
+                "PNG image transform e",
+            )?,
+            finite_f32(
+                (self.b * offset_x + self.d * offset_y + self.f) * multiplier,
+                "PNG image transform f",
+            )?,
+        );
+        if !transform.is_valid() {
+            return Err(FormatEncodeError::Encoding(
+                "PNG image transform is not invertible".to_owned(),
+            ));
+        }
+        Ok(transform)
     }
 }
 
@@ -298,6 +385,32 @@ impl PngPlan {
                         render: true,
                     });
                 }
+                ResolvedElement::Image(image) => {
+                    elements.push(PngElement::Image {
+                        source: image.source,
+                        asset: image.asset,
+                        frame_clips: project_frame_clips(image.frame_clips, scale)?,
+                        transform: PngTransform::new(&image.transform, scale),
+                        width: image.width,
+                        height: image.height,
+                        source_rect: image.source_rect,
+                        scale: image.scale,
+                        opacity: image.opacity,
+                        render: true,
+                    });
+                }
+                ResolvedElement::ImageFallback(image) => {
+                    elements.push(PngElement::ImageFallback {
+                        source: image.source,
+                        status: image.status,
+                        frame_clips: project_frame_clips(image.frame_clips, scale)?,
+                        transform: PngTransform::new(&image.transform, scale),
+                        width: image.width,
+                        height: image.height,
+                        opacity: image.opacity,
+                        render: true,
+                    });
+                }
                 ResolvedElement::Fallback(fallback) => {
                     let visual_commands: u64 = if fallback.width >= 2.0 && fallback.height >= 2.0 {
                         9
@@ -333,6 +446,10 @@ impl PngPlan {
             height,
             background,
             fallback_colors: scene.fallback_colors,
+            image_fallback_background: match request.color_mode() {
+                crate::ColorMode::Light => CanonicalColor::from_rgb8(0xe7, 0xe7, 0xe7),
+                crate::ColorMode::Dark => CanonicalColor::from_rgb8(0x2e, 0x2e, 0x2e),
+            },
             elements,
         })
     }
@@ -380,6 +497,7 @@ impl PngPlan {
                     raster_height,
                     element.frame_clips(),
                     element.label_mask(),
+                    element.image_clip(),
                     SUBPIXEL_SCALE,
                 )?;
                 let paint_mask = paint_mask.as_ref();
@@ -624,6 +742,139 @@ impl PngPlan {
                             );
                         }
                     }
+                    PngElement::Image {
+                        source,
+                        asset,
+                        transform,
+                        width,
+                        height,
+                        source_rect,
+                        scale,
+                        opacity,
+                        render,
+                        ..
+                    } => {
+                        if !render {
+                            continue;
+                        }
+                        if source.id().is_empty() || source.pointer().is_empty() {
+                            return Err(FormatEncodeError::Encoding(
+                                "PNG image lost its source identity".to_owned(),
+                            ));
+                        }
+                        let pixels = asset.premultiplied_rgba.as_deref().ok_or_else(|| {
+                            FormatEncodeError::Encoding(
+                                "PNG image has no normalized pixel resource".to_owned(),
+                            )
+                        })?;
+                        let pixmap = PixmapRef::from_bytes(pixels, asset.width, asset.height)
+                            .ok_or_else(png_size_error)?;
+                        let raster_transform = transform.raster_image_transform(
+                            SUBPIXEL_SCALE,
+                            *source_rect,
+                            *width,
+                            *height,
+                            *scale,
+                        )?;
+                        surface.draw_pixmap(
+                            0,
+                            0,
+                            pixmap,
+                            &PixmapPaint {
+                                opacity: finite_f32(*opacity, "PNG image opacity")?,
+                                quality: FilterQuality::Bilinear,
+                                ..PixmapPaint::default()
+                            },
+                            raster_transform,
+                            paint_mask,
+                        );
+                    }
+                    PngElement::ImageFallback {
+                        source,
+                        status,
+                        transform,
+                        width,
+                        height,
+                        opacity,
+                        render,
+                        ..
+                    } => {
+                        if !render {
+                            continue;
+                        }
+                        if source.id().is_empty() || source.pointer().is_empty() {
+                            return Err(FormatEncodeError::Encoding(
+                                "PNG image fallback lost its source identity".to_owned(),
+                            ));
+                        }
+                        let rect = Rect::from_xywh(
+                            0.0,
+                            0.0,
+                            finite_f32(*width, "PNG image fallback width")?,
+                            finite_f32(*height, "PNG image fallback height")?,
+                        )
+                        .ok_or_else(png_size_error)?;
+                        surface.fill_path(
+                            &PathBuilder::from_rect(rect),
+                            &solid_paint(self.image_fallback_background, *opacity)?,
+                            FillRule::Winding,
+                            transform.raster_transform(SUBPIXEL_SCALE)?,
+                            paint_mask,
+                        );
+                        let size = width.min(*height).min(width.min(*height) * 0.4).min(100.0);
+                        if size <= 0.0 {
+                            continue;
+                        }
+                        let icon_transform =
+                            transform.raster_transform(SUBPIXEL_SCALE)?.pre_translate(
+                                finite_f32((*width - size) / 2.0, "PNG image fallback icon x")?,
+                                finite_f32((*height - size) / 2.0, "PNG image fallback icon y")?,
+                            );
+                        let icon_paint =
+                            solid_paint(CanonicalColor::from_rgb8(0x88, 0x88, 0x88), *opacity)?;
+                        match status {
+                            crate::normalization::NormalizedImageStatus::Error => {
+                                let icon_transform = icon_transform.pre_scale(
+                                    finite_f32(size / 668.0, "PNG error icon scale")?,
+                                    finite_f32(size / 668.0, "PNG error icon scale")?,
+                                );
+                                let image = svg_path(OFFICIAL_IMAGE_ERROR_PATH)?;
+                                surface.fill_path(
+                                    &image,
+                                    &icon_paint,
+                                    FillRule::Winding,
+                                    icon_transform.pre_concat(Transform::from_row(
+                                        0.81709, 0.0, 0.0, 0.81709, 124.825, 145.825,
+                                    )),
+                                    paint_mask,
+                                );
+                                let ban = svg_path(OFFICIAL_IMAGE_ERROR_BAN_PATH)?;
+                                surface.fill_path(
+                                    &ban,
+                                    &icon_paint,
+                                    FillRule::Winding,
+                                    icon_transform.pre_concat(Transform::from_row(
+                                        0.30366, 0.0, 0.0, 0.30366, 506.822, 60.065,
+                                    )),
+                                    paint_mask,
+                                );
+                            }
+                            crate::normalization::NormalizedImageStatus::Pending
+                            | crate::normalization::NormalizedImageStatus::Saved => {
+                                let icon = svg_path(OFFICIAL_IMAGE_PATH)?;
+                                surface.fill_path(
+                                    &icon,
+                                    &icon_paint,
+                                    FillRule::Winding,
+                                    icon_transform.pre_scale(
+                                        finite_f32(size / 512.0, "PNG image icon scale")?,
+                                        finite_f32(size / 512.0, "PNG image icon scale")?,
+                                    ),
+                                    paint_mask,
+                                );
+                            }
+                        }
+                    }
                     PngElement::Fallback {
                         source,
                         label,
@@ -830,6 +1081,19 @@ impl PngPlan {
                 self.width,
                 self.height,
             ),
+            PngElement::Image { .. } => 0,
+            PngElement::ImageFallback {
+                width,
+                height,
+                transform,
+                ..
+            } => conservative_fallback_coverage_area(
+                *width,
+                *height,
+                *transform,
+                self.width,
+                self.height,
+            ),
             PngElement::Fallback {
                 width,
                 height,
@@ -842,6 +1106,24 @@ impl PngPlan {
                 self.width,
                 self.height,
             ),
+        })
+    }
+
+    pub(super) fn image_projection_area(&self, index: usize) -> Option<Option<u64>> {
+        self.elements.get(index).map(|element| match element {
+            PngElement::Image {
+                width,
+                height,
+                transform,
+                ..
+            } => Some(conservative_fallback_coverage_area(
+                *width,
+                *height,
+                *transform,
+                self.width,
+                self.height,
+            )),
+            _ => None,
         })
     }
 
@@ -860,6 +1142,8 @@ impl PngPlan {
                 base_element_work_units,
                 ..
             } => base_element_work_units.saturating_add(8),
+            PngElement::Image { .. } => 8,
+            PngElement::ImageFallback { .. } => 8,
             PngElement::Fallback {
                 base_element_work_units,
                 ..
@@ -873,6 +1157,8 @@ impl PngPlan {
             PngElement::Freedraw { .. } => None,
             PngElement::Frame { .. } => None,
             PngElement::Text { .. } => None,
+            PngElement::Image { .. } => None,
+            PngElement::ImageFallback { .. } => None,
             PngElement::Fallback {
                 width,
                 height,
@@ -904,6 +1190,24 @@ impl PngPlan {
             {
                 Some(u64::from(self.width).saturating_mul(u64::from(self.height)))
             }
+            PngElement::Image {
+                width,
+                height,
+                transform,
+                ..
+            }
+            | PngElement::ImageFallback {
+                width,
+                height,
+                transform,
+                ..
+            } => Some(conservative_fallback_coverage_area(
+                *width,
+                *height,
+                *transform,
+                self.width,
+                self.height,
+            )),
             _ => None,
         })
     }
@@ -918,15 +1222,17 @@ impl PngPlan {
                     | PngElement::Text { frame_clips, .. }
                     if !frame_clips.is_empty()
                 )
+                || matches!(element, PngElement::Image { .. } | PngElement::ImageFallback { .. })
         })
     }
 
     pub(super) fn maximum_paint_mask_surface_area(&self) -> u64 {
-        if self.has_paint_masks() {
-            u64::from(self.width).saturating_mul(u64::from(self.height))
-        } else {
-            0
-        }
+        self.elements
+            .iter()
+            .enumerate()
+            .filter_map(|(index, _)| self.paint_mask_surface_area(index).flatten())
+            .max()
+            .unwrap_or(0)
     }
 
     pub(super) fn source_count(&self) -> usize {
@@ -939,6 +1245,8 @@ impl PngPlan {
             PngElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
             PngElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
             PngElement::Text { source, .. } => (Some(source.id()), source.pointer()),
+            PngElement::Image { source, .. } => (Some(source.id()), source.pointer()),
+            PngElement::ImageFallback { source, .. } => (Some(source.id()), source.pointer()),
             PngElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -958,6 +1266,14 @@ impl PngPlan {
                 true
             }
             Some(PngElement::Text { render, .. }) => {
+                *render = false;
+                true
+            }
+            Some(PngElement::Image { render, .. }) => {
+                *render = false;
+                true
+            }
+            Some(PngElement::ImageFallback { render, .. }) => {
                 *render = false;
                 true
             }
@@ -1379,9 +1695,10 @@ fn png_paint_mask(
     height: u32,
     clips: &[PngFrameClip],
     label_mask: Option<PngLabelMask>,
+    image_clip: Option<(f64, f64, PngTransform)>,
     multiplier: u32,
 ) -> Result<Option<Mask>, FormatEncodeError> {
-    if clips.is_empty() && label_mask.is_none() {
+    if clips.is_empty() && label_mask.is_none() && image_clip.is_none() {
         return Ok(None);
     }
     let mask_bytes = usize::try_from(width)
@@ -1431,7 +1748,171 @@ fn png_paint_mask(
             clip.transform.raster_transform(multiplier)?,
         );
     }
+    if let Some((width, height, transform)) = image_clip {
+        let rect = Rect::from_xywh(
+            0.0,
+            0.0,
+            finite_f32(width, "PNG image clip width")?,
+            finite_f32(height, "PNG image clip height")?,
+        )
+        .ok_or_else(png_size_error)?;
+        mask.intersect_path(
+            &PathBuilder::from_rect(rect),
+            FillRule::Winding,
+            true,
+            transform.raster_transform(multiplier)?,
+        );
+    }
     Ok(Some(mask))
+}
+
+const OFFICIAL_IMAGE_PATH: &str = "M464 448H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h416c26.51 0 48 21.49 48 48v288c0 26.51-21.49 48-48 48zM112 120c-30.928 0-56 25.072-56 56s25.072 56 56 56 56-25.072 56-56-25.072-56-56-56zM64 384h384V272l-87.515-87.515c-4.686-4.686-12.284-4.686-16.971 0L208 320l-55.515-55.515c-4.686-4.686-12.284-4.686-16.971 0L64 336v48z";
+const OFFICIAL_IMAGE_ERROR_PATH: &str = "M464 448H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h416c26.51 0 48 21.49 48 48v288c0 26.51-21.49 48-48 48ZM112 120c-30.928 0-56 25.072-56 56s25.072 56 56 56 56-25.072 56-56-25.072-56-56-56ZM64 384h384V272l-87.515-87.515c-4.686-4.686-12.284-4.686-16.971 0L208 320l-55.515-55.515c-4.686-4.686-12.284-4.686-16.971 0L64 336v48Z";
+const OFFICIAL_IMAGE_ERROR_BAN_PATH: &str = "M256 8C119.034 8 8 119.033 8 256c0 136.967 111.034 248 248 248s248-111.034 248-248S392.967 8 256 8Zm130.108 117.892c65.448 65.448 70 165.481 20.677 235.637L150.47 105.216c70.204-49.356 170.226-44.735 235.638 20.676ZM125.892 386.108c-65.448-65.448-70-165.481-20.677-235.637L361.53 406.784c-70.203 49.356-170.226 44.736-235.638-20.676Z";
+
+fn svg_path(data: &str) -> Result<tiny_skia::Path, FormatEncodeError> {
+    use svgtypes::PathSegment;
+
+    let mut builder = PathBuilder::new();
+    let mut current = (0.0, 0.0);
+    let mut start = (0.0, 0.0);
+    let mut cubic_control = None;
+    let mut quadratic_control = None;
+    let point = |abs: bool, x: f64, y: f64, current: (f64, f64)| {
+        if abs {
+            (x, y)
+        } else {
+            (current.0 + x, current.1 + y)
+        }
+    };
+    for segment in svgtypes::PathParser::from(data) {
+        let segment = segment.map_err(|_| {
+            FormatEncodeError::Encoding("official image fallback path is invalid".to_owned())
+        })?;
+        match segment {
+            PathSegment::MoveTo { abs, x, y } => {
+                current = point(abs, x, y, current);
+                start = current;
+                builder.move_to(
+                    finite_f32(current.0, "PNG fallback move x")?,
+                    finite_f32(current.1, "PNG fallback move y")?,
+                );
+                cubic_control = None;
+                quadratic_control = None;
+            }
+            PathSegment::LineTo { abs, x, y } => {
+                current = point(abs, x, y, current);
+                builder.line_to(
+                    finite_f32(current.0, "PNG fallback line x")?,
+                    finite_f32(current.1, "PNG fallback line y")?,
+                );
+                cubic_control = None;
+                quadratic_control = None;
+            }
+            PathSegment::HorizontalLineTo { abs, x } => {
+                current.0 = if abs { x } else { current.0 + x };
+                builder.line_to(
+                    finite_f32(current.0, "PNG fallback horizontal x")?,
+                    finite_f32(current.1, "PNG fallback horizontal y")?,
+                );
+                cubic_control = None;
+                quadratic_control = None;
+            }
+            PathSegment::VerticalLineTo { abs, y } => {
+                current.1 = if abs { y } else { current.1 + y };
+                builder.line_to(
+                    finite_f32(current.0, "PNG fallback vertical x")?,
+                    finite_f32(current.1, "PNG fallback vertical y")?,
+                );
+                cubic_control = None;
+                quadratic_control = None;
+            }
+            PathSegment::CurveTo {
+                abs,
+                x1,
+                y1,
+                x2,
+                y2,
+                x,
+                y,
+            } => {
+                let control_1 = point(abs, x1, y1, current);
+                let control_2 = point(abs, x2, y2, current);
+                let end = point(abs, x, y, current);
+                builder.cubic_to(
+                    finite_f32(control_1.0, "PNG fallback cubic control x")?,
+                    finite_f32(control_1.1, "PNG fallback cubic control y")?,
+                    finite_f32(control_2.0, "PNG fallback cubic control x")?,
+                    finite_f32(control_2.1, "PNG fallback cubic control y")?,
+                    finite_f32(end.0, "PNG fallback cubic x")?,
+                    finite_f32(end.1, "PNG fallback cubic y")?,
+                );
+                current = end;
+                cubic_control = Some(control_2);
+                quadratic_control = None;
+            }
+            PathSegment::SmoothCurveTo { abs, x2, y2, x, y } => {
+                let control_1 = cubic_control.map_or(current, |control: (f64, f64)| {
+                    (2.0 * current.0 - control.0, 2.0 * current.1 - control.1)
+                });
+                let control_2 = point(abs, x2, y2, current);
+                let end = point(abs, x, y, current);
+                builder.cubic_to(
+                    finite_f32(control_1.0, "PNG fallback smooth control x")?,
+                    finite_f32(control_1.1, "PNG fallback smooth control y")?,
+                    finite_f32(control_2.0, "PNG fallback smooth control x")?,
+                    finite_f32(control_2.1, "PNG fallback smooth control y")?,
+                    finite_f32(end.0, "PNG fallback smooth x")?,
+                    finite_f32(end.1, "PNG fallback smooth y")?,
+                );
+                current = end;
+                cubic_control = Some(control_2);
+                quadratic_control = None;
+            }
+            PathSegment::Quadratic { abs, x1, y1, x, y } => {
+                let control = point(abs, x1, y1, current);
+                let end = point(abs, x, y, current);
+                builder.quad_to(
+                    finite_f32(control.0, "PNG fallback quadratic control x")?,
+                    finite_f32(control.1, "PNG fallback quadratic control y")?,
+                    finite_f32(end.0, "PNG fallback quadratic x")?,
+                    finite_f32(end.1, "PNG fallback quadratic y")?,
+                );
+                current = end;
+                quadratic_control = Some(control);
+                cubic_control = None;
+            }
+            PathSegment::SmoothQuadratic { abs, x, y } => {
+                let control = quadratic_control.map_or(current, |control: (f64, f64)| {
+                    (2.0 * current.0 - control.0, 2.0 * current.1 - control.1)
+                });
+                let end = point(abs, x, y, current);
+                builder.quad_to(
+                    finite_f32(control.0, "PNG fallback smooth quadratic control x")?,
+                    finite_f32(control.1, "PNG fallback smooth quadratic control y")?,
+                    finite_f32(end.0, "PNG fallback smooth quadratic x")?,
+                    finite_f32(end.1, "PNG fallback smooth quadratic y")?,
+                );
+                current = end;
+                quadratic_control = Some(control);
+                cubic_control = None;
+            }
+            PathSegment::ClosePath { .. } => {
+                builder.close();
+                current = start;
+                cubic_control = None;
+                quadratic_control = None;
+            }
+            PathSegment::EllipticalArc { .. } => {
+                return Err(FormatEncodeError::Encoding(
+                    "official image fallback unexpectedly contains an arc".to_owned(),
+                ));
+            }
+        }
+    }
+    builder.finish().ok_or_else(|| {
+        FormatEncodeError::Encoding("official image fallback path is empty".to_owned())
+    })
 }
 
 fn solid_paint(color: CanonicalColor, opacity: f64) -> Result<Paint<'static>, FormatEncodeError> {

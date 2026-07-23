@@ -90,6 +90,18 @@ enum SvgElement {
         width: f64,
         height: f64,
     },
+    Image {
+        source: NormalizedElementSource,
+        asset: std::sync::Arc<super::ResolvedImageAsset>,
+        frame_clips: Vec<super::ResolvedClip>,
+        transform: super::ResolvedTransform,
+        opacity: f64,
+        source_rect: super::ResolvedImageSourceRect,
+        scale: [i8; 2],
+        link: Option<String>,
+        width: f64,
+        height: f64,
+    },
     Fallback {
         source: super::FallbackSource,
         clip_index: usize,
@@ -114,6 +126,7 @@ impl SvgElement {
             | Self::Freedraw { frame_clips, .. }
             | Self::Frame { frame_clips, .. }
             | Self::Text { frame_clips, .. }
+            | Self::Image { frame_clips, .. }
             | Self::Fallback { frame_clips, .. } => frame_clips,
         }
     }
@@ -320,6 +333,21 @@ impl SvgPlan {
                         height: text.height,
                     });
                 }
+                ResolvedElement::Image(image) => {
+                    elements.push(SvgElement::Image {
+                        source: image.source,
+                        asset: image.asset,
+                        frame_clips: image.frame_clips,
+                        transform: image.transform,
+                        opacity: image.opacity,
+                        source_rect: image.source_rect,
+                        scale: image.scale,
+                        link: image.link,
+                        width: image.width,
+                        height: image.height,
+                    });
+                }
+                ResolvedElement::ImageFallback(_) => {}
                 ResolvedElement::Fallback(fallback) => {
                     elements.push(SvgElement::Fallback {
                         source: fallback.source,
@@ -443,6 +471,17 @@ impl SvgPlan {
                     }
                     capacity =
                         checked_capacity_add(capacity, text.lines.len().saturating_mul(192))?;
+                }
+                SvgElement::Image { asset, .. } => {
+                    let encoded = asset
+                        .source_png
+                        .len()
+                        .checked_add(2)
+                        .and_then(|length| length.checked_div(3))
+                        .and_then(|groups| groups.checked_mul(4))
+                        .and_then(|length| length.checked_add(512))
+                        .ok_or_else(svg_size_error)?;
+                    capacity = checked_capacity_add(capacity, encoded)?;
                 }
                 SvgElement::Fallback { label, .. } => {
                     if let Some(label) = label {
@@ -956,6 +995,117 @@ impl SvgPlan {
                     }
                     svg.push_str("</text></g>");
                 }
+                SvgElement::Image {
+                    source,
+                    asset,
+                    transform,
+                    opacity,
+                    link,
+                    width,
+                    height,
+                    source_rect,
+                    scale,
+                    ..
+                } => {
+                    if source.id().is_empty() || source.pointer().is_empty() {
+                        return Err(FormatEncodeError::Encoding(
+                            "SVG image lost its source identity".to_owned(),
+                        ));
+                    }
+                    svg.push_str("<g transform=\"translate(");
+                    push_svg_number(&mut svg, transform.translation_x, "SVG image translation x")?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, transform.translation_y, "SVG image translation y")?;
+                    svg.push_str(") rotate(");
+                    push_svg_number(
+                        &mut svg,
+                        180.0 * transform.angle_radians / std::f64::consts::PI,
+                        "SVG image rotation",
+                    )?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, transform.center_x, "SVG image center x")?;
+                    svg.push(' ');
+                    push_svg_number(&mut svg, transform.center_y, "SVG image center y")?;
+                    svg.push_str(")\"");
+                    if *opacity != 1.0 {
+                        svg.push_str(" opacity=\"");
+                        push_svg_number(&mut svg, *opacity, "SVG image opacity")?;
+                        svg.push('"');
+                    }
+                    svg.push('>');
+                    push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
+                    let transformed = *scale != [1, 1]
+                        || source_rect.x != 0.0
+                        || source_rect.y != 0.0
+                        || source_rect.width != f64::from(asset.width)
+                        || source_rect.height != f64::from(asset.height);
+                    if *scale != [1, 1] {
+                        svg.push_str("<g transform=\"translate(");
+                        push_svg_number(
+                            &mut svg,
+                            if scale[0] < 0 { *width } else { 0.0 },
+                            "SVG image flip translation x",
+                        )?;
+                        svg.push(' ');
+                        push_svg_number(
+                            &mut svg,
+                            if scale[1] < 0 { *height } else { 0.0 },
+                            "SVG image flip translation y",
+                        )?;
+                        svg.push_str(") scale(");
+                        write!(svg, "{} {}", scale[0], scale[1]).map_err(|_| {
+                            FormatEncodeError::Encoding(
+                                "failed to write SVG image flip scale".to_owned(),
+                            )
+                        })?;
+                        svg.push_str(")\">");
+                    }
+                    if transformed {
+                        svg.push_str("<svg width=\"");
+                        push_svg_number(&mut svg, *width, "SVG cropped image width")?;
+                        svg.push_str("\" height=\"");
+                        push_svg_number(&mut svg, *height, "SVG cropped image height")?;
+                        svg.push_str("\" viewBox=\"");
+                        push_svg_number(&mut svg, source_rect.x, "SVG image crop x")?;
+                        svg.push(' ');
+                        push_svg_number(&mut svg, source_rect.y, "SVG image crop y")?;
+                        svg.push(' ');
+                        push_svg_number(&mut svg, source_rect.width, "SVG image crop width")?;
+                        svg.push(' ');
+                        push_svg_number(&mut svg, source_rect.height, "SVG image crop height")?;
+                        svg.push_str("\" preserveAspectRatio=\"none\" overflow=\"hidden\">");
+                    }
+                    svg.push_str("<image href=\"data:image/png;base64,");
+                    push_base64(&mut svg, &asset.source_png)?;
+                    svg.push_str("\" width=\"");
+                    push_svg_number(
+                        &mut svg,
+                        if transformed {
+                            f64::from(asset.width)
+                        } else {
+                            *width
+                        },
+                        "SVG image width",
+                    )?;
+                    svg.push_str("\" height=\"");
+                    push_svg_number(
+                        &mut svg,
+                        if transformed {
+                            f64::from(asset.height)
+                        } else {
+                            *height
+                        },
+                        "SVG image height",
+                    )?;
+                    svg.push_str("\"/>");
+                    if transformed {
+                        svg.push_str("</svg>");
+                    }
+                    if *scale != [1, 1] {
+                        svg.push_str("</g>");
+                    }
+                    svg.push_str("</g>");
+                }
                 SvgElement::Fallback {
                     source,
                     clip_index,
@@ -1098,6 +1248,7 @@ impl SvgPlan {
             SvgElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Text { source, .. } => (Some(source.id()), source.pointer()),
+            SvgElement::Image { source, .. } => (Some(source.id()), source.pointer()),
             SvgElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
         })
     }
@@ -1110,6 +1261,7 @@ impl SvgElement {
             | Self::Freedraw { link, .. }
             | Self::Frame { link, .. }
             | Self::Text { link, .. }
+            | Self::Image { link, .. }
             | Self::Fallback { link, .. } => link.as_deref(),
         }
     }

@@ -195,6 +195,15 @@ pub(crate) fn resolve<E>(
     aliases.sort_unstable_by(|left, right| left.0.cmp(&right.0).then_with(|| left.1.cmp(&right.1)));
     aliases.dedup_by(|left, right| left.0 == right.0);
 
+    let mut scene_file_ids = Vec::new();
+    scene_file_ids.try_reserve_exact(scene.file_record_count())?;
+    for index in 0..scene.file_record_count() {
+        if let Some(record) = scene.file_record_at(index) {
+            scene_file_ids.push(record.key());
+        }
+    }
+    scene_file_ids.sort_unstable();
+
     let mut candidates = Vec::new();
     for (source, node) in nodes.iter().enumerate() {
         let Some(JsonValue::Object(members)) = scene.element_value(node.source_index) else {
@@ -209,6 +218,7 @@ pub(crate) fn resolve<E>(
             },
             &aliases,
             files,
+            &scene_file_ids,
             supplemental_assets,
             &mut candidates,
         )?;
@@ -333,6 +343,7 @@ fn collect_element_candidates(
     owner: CandidateOwner,
     aliases: &[(String, usize)],
     files: &[NormalizedFileRecord],
+    scene_file_ids: &[&str],
     supplemental_assets: &SupplementalAssets,
     candidates: &mut Vec<Candidate>,
 ) -> Result<(), TryReserveError> {
@@ -412,8 +423,11 @@ fn collect_element_candidates(
             "fileId",
             owner,
             RelationshipKind::Asset,
-            files,
-            supplemental_assets,
+            TerminalAssetSources {
+                files,
+                scene_file_ids,
+                supplemental_assets,
+            },
             candidates,
         )?;
     }
@@ -422,8 +436,11 @@ fn collect_element_candidates(
         "link",
         owner,
         RelationshipKind::Link,
-        files,
-        supplemental_assets,
+        TerminalAssetSources {
+            files,
+            scene_file_ids,
+            supplemental_assets,
+        },
         candidates,
     )?;
     Ok(())
@@ -576,13 +593,19 @@ fn push_bound_element_candidate(
     )
 }
 
+#[derive(Clone, Copy)]
+struct TerminalAssetSources<'a> {
+    files: &'a [NormalizedFileRecord],
+    scene_file_ids: &'a [&'a str],
+    supplemental_assets: &'a SupplementalAssets,
+}
+
 fn collect_terminal(
     members: &[crate::scene::JsonMember],
     field: &str,
     owner: CandidateOwner,
     kind: RelationshipKind,
-    files: &[NormalizedFileRecord],
-    supplemental_assets: &SupplementalAssets,
+    asset_sources: TerminalAssetSources<'_>,
     candidates: &mut Vec<Candidate>,
 ) -> Result<(), TryReserveError> {
     let Some(JsonValue::String(value)) = member_value(members, field) else {
@@ -593,19 +616,23 @@ fn collect_terminal(
     }
     let target = match kind {
         RelationshipKind::Asset => {
-            let authority = files
-                .iter()
-                .position(|file| file.key == value.as_ref())
-                .map_or_else(
-                    || {
-                        if supplemental_assets.get(value).is_some() {
-                            AssetAuthority::Supplemental
-                        } else {
-                            AssetAuthority::Missing
-                        }
-                    },
-                    AssetAuthority::SceneFile,
-                );
+            let authority = if asset_sources
+                .scene_file_ids
+                .binary_search(&value.as_ref())
+                .is_ok()
+            {
+                AssetAuthority::SceneFile(
+                    asset_sources
+                        .files
+                        .iter()
+                        .position(|file| file.key == value.as_ref())
+                        .unwrap_or(usize::MAX),
+                )
+            } else if asset_sources.supplemental_assets.get(value).is_some() {
+                AssetAuthority::Supplemental
+            } else {
+                AssetAuthority::Missing
+            };
             CandidateTarget::Asset(try_owned(value)?, authority)
         }
         RelationshipKind::Link if crate::scene_surface::safe_link(value) => {
