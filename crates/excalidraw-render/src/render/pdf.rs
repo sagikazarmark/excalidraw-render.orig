@@ -39,8 +39,8 @@ const SRGB_TRC: [u16; 256] = [
     60396, 60955, 61517, 62082, 62650, 63221, 63795, 64372, 64952, 65535,
 ];
 
-// This focused direct serializer is the controlled backend approved for #44;
-// broader PDF operation qualification remains outside this outline slice.
+// Project-owned content is lowered directly; the bounded svg2pdf adapter below
+// is confined to sanitized nested-SVG Form chunks.
 pub(super) struct PdfPlan {
     logical_width: f64,
     logical_height: f64,
@@ -3566,7 +3566,9 @@ fn canonicalize_pdf_text(bytes: &[u8], output: &mut Vec<u8>) {
             {
                 break;
             }
-            run.push(lines.next().expect("peeked PDF line exists"));
+            if let Some(next) = lines.next() {
+                run.push(next);
+            }
         }
         run.sort_unstable();
         for line in run {

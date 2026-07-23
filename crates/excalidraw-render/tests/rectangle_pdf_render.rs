@@ -1,6 +1,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+
+mod common;
+
+use common::pdf_harness::{assert_structure, render_viewer};
 
 use excalidraw_render::{
     ErrorCode, OutputFormat, PdfOptions, PdfRasterFallback, RenderErrorCategory, RenderOutcome,
@@ -341,14 +344,12 @@ fn approved_rectangle_passes_both_canonical_pdf_visual_gates() {
         ),
     ] {
         let output = format!("target/{stem}-{viewer}.rgba");
-        let status = Command::new("bash")
-            .current_dir(&root)
-            .args([script, "render", &candidate, &output, "200", "120"])
-            .status()
-            .unwrap_or_else(|error| panic!("launch canonical {viewer} viewer: {error}"));
-        assert!(status.success(), "canonical {viewer} viewer failed");
-        let candidate = CanonicalRgba8::new(200, 120, fs::read(root.join(output)).unwrap())
-            .expect("canonical PDF viewer output is valid");
+        let candidate = CanonicalRgba8::new(
+            200,
+            120,
+            render_viewer(&root, viewer, script, &candidate, &output, 200, 120),
+        )
+        .expect("canonical PDF viewer output is valid");
         let report = compare(
             &reference,
             &candidate,
@@ -383,19 +384,12 @@ fn approved_rectangle_passes_both_canonical_pdf_visual_gates() {
     }
 
     let structure_output = format!("target/{stem}-structure.json");
-    let structure_status = Command::new("bash")
-        .current_dir(&root)
-        .args([
-            "tools/pdf-harness/run-structure.sh",
-            "inspect",
-            &candidate,
-            "tests/conformance/cases/focused/rectangle-outline/expected-pdf-structure.json",
-            "pass",
-            &structure_output,
-        ])
-        .status()
-        .expect("launch canonical PDF structural inspector");
-    assert!(structure_status.success(), "PDF structural gate failed");
+    assert_structure(
+        &root,
+        &candidate,
+        "tests/conformance/cases/focused/rectangle-outline/expected-pdf-structure.json",
+        &structure_output,
+    );
 }
 
 fn pixel_delta_summary(reference: &[u8], candidate: &[u8]) -> std::collections::BTreeMap<i16, u64> {

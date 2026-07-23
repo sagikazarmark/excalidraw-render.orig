@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use excalidraw_render::{
     license_bundle, DiagnosticCode, OutputFormat, RenderRequest, Renderer, SceneDocument,
 };
@@ -16,6 +17,11 @@ const EXPECTED_REPORT: &[u8] =
 const LICENSE_BUNDLE_SHA256: &str =
     "a3236318603e4035951ad166ad827ef9fd3a98d9eeae9996e804aa6048d20077";
 const FALLBACK_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"future","type":"future","x":0,"y":0,"width":200,"height":60,"angle":0.2,"opacity":40,"updated":1},null],"appState":{},"files":{}}"#;
+const TEXT_SCENE: &[u8] =
+    include_bytes!("../../conformance/cases/focused/excalifont-text/scene.excalidraw");
+const SOURCE_IMAGE_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/png","dataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=","created":1}}}"#;
+const NATIVE_NESTED_SVG_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIj48c3RvcCBzdG9wLWNvbG9yPSIjZjAwIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDBmIi8+PC9saW5lYXJHcmFkaWVudD48Y2xpcFBhdGggaWQ9ImMiPjxjaXJjbGUgY3g9IjEwIiBjeT0iNSIgcj0iNSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCIgZmlsbD0idXJsKCNnKSIgY2xpcC1wYXRoPSJ1cmwoI2MpIi8+PC9zdmc+","created":1}}}"##;
+const RASTER_FALLBACK_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCI+PGRlZnM+PGZpbHRlciBpZD0iYmx1ciIgeD0iMCIgeT0iMCIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMSIvPjwvZmlsdGVyPjwvZGVmcz48cmVjdCB3aWR0aD0iMjAiIGhlaWdodD0iMTAiIGZpbGw9IiMwMGZmMDAiIGZpbHRlcj0idXJsKCNibHVyKSIvPjwvc3ZnPg==","created":1}}}"##;
 const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
     (
         OutputFormat::Svg,
@@ -29,8 +35,84 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
     ),
     (
         OutputFormat::Pdf,
-        "42a499315a51de73083be0ce4dc6d9c95009d9d501e15920c27b29211558cc52",
+        "255af458e3d0f21dff334dfac5329702f3c9c6b2f8c2d1f804b8dbebca2f272b",
         "737130c9efaa38327d3fe31ecdeddc35ad72a01ea8dc7c11e3a57942c4867247",
+    ),
+];
+const PDF_RISK_SET: &[(&str, &[u8], &str, &str)] = &[
+    (
+        "selectable-text",
+        TEXT_SCENE,
+        "f91353d32aa938ca0255660d8078e5067c7f0c6ac83f59c21001e0acfb50e642",
+        "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+    ),
+    (
+        "source-image",
+        SOURCE_IMAGE_SCENE,
+        "720658af87ff8f784d304cc462784a439ffcda57d7c4f909747877843caf5788",
+        "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+    ),
+    (
+        "native-nested-svg",
+        NATIVE_NESTED_SVG_SCENE,
+        "52119410fe97ab23d16471edd2bdcc0fc5d08e39a04c4d69f07c3365475d9a36",
+        "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
+    ),
+    (
+        "isolated-raster-fallback",
+        RASTER_FALLBACK_SCENE,
+        "a65af342a74440b56a3a22abd06c99e2948a10df5b7cbb51b410143a10e9b90f",
+        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
+    ),
+];
+const PDF_FALLBACK_FAMILIES: &[(&str, &str, &str, &str)] = &[
+    (
+        "blur",
+        r#"<feGaussianBlur stdDeviation="1"/>"#,
+        "a65af342a74440b56a3a22abd06c99e2948a10df5b7cbb51b410143a10e9b90f",
+        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
+    ),
+    (
+        "convolution",
+        r#"<feConvolveMatrix order="3" kernelMatrix="0 -1 0 -1 5 -1 0 -1 0"/>"#,
+        "2ce05131423f4b568c5fd20865662b9f3baddad3bcf7da71a2e1109c86a47339",
+        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
+    ),
+    (
+        "morphology",
+        r#"<feMorphology operator="dilate" radius="1"/>"#,
+        "2ce05131423f4b568c5fd20865662b9f3baddad3bcf7da71a2e1109c86a47339",
+        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
+    ),
+    (
+        "displacement",
+        r#"<feTurbulence baseFrequency="0.1" numOctaves="1" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>"#,
+        "9d210c1760b455276fe1230b1688a712c967424a5ba5b2d752bb100c0ce98745",
+        "a39664c294a12af60d1c206a0772a78ee73fccc76833b995d02cfdec127433c7",
+    ),
+    (
+        "turbulence",
+        r#"<feTurbulence baseFrequency="0.1" numOctaves="1"/>"#,
+        "55fa1734c32a1728575c916556d7ca5b307cbd4fff896f789ee86ee4dd7cc871",
+        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
+    ),
+    (
+        "lighting",
+        r#"<feDiffuseLighting surfaceScale="2"><feDistantLight azimuth="45" elevation="60"/></feDiffuseLighting>"#,
+        "517123d65c95f1d4b3fd989d11df1fb5564a1e6c66a6301ec763937adbd0e108",
+        "130660f6f7c8091d99e2976c06043b1fa657c21159e98104dd50c5cd2128c14b",
+    ),
+    (
+        "post-composite-color",
+        r#"<feColorMatrix type="saturate" values="0.5"/>"#,
+        "b7fbce430f1393a8e3f8510498a831bcf1d19bee374ecbcddff5f8b5b3901f20",
+        "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
+    ),
+    (
+        "filter-blend",
+        r#"<feBlend in="SourceGraphic" in2="SourceGraphic" mode="overlay"/>"#,
+        "2ce05131423f4b568c5fd20865662b9f3baddad3bcf7da71a2e1109c86a47339",
+        "7867f55c810c54ffd7d671366bad5db3de847cf44fecae17fd93323df6b56c31",
     ),
 ];
 
@@ -130,6 +212,70 @@ fn packaged_public_facade_renders_fallbacks_with_cross_target_stable_bytes() {
             *report_sha256,
             "{} fallback report changed",
             format.as_str()
+        );
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn packaged_public_facade_preserves_pdf_risk_set_bytes_across_targets() {
+    for (name, scene_bytes, artifact_sha256, report_sha256) in PDF_RISK_SET {
+        let scene = SceneDocument::parse(scene_bytes).expect("the PDF risk-set scene is admitted");
+        let request = RenderRequest::builder(OutputFormat::Pdf)
+            .build()
+            .expect("the PDF request is valid");
+        let first = Renderer::new()
+            .render(&scene, &request)
+            .expect("the PDF risk-set scene renders");
+        let second = Renderer::new()
+            .render(&scene, &request)
+            .expect("the PDF risk-set scene renders repeatedly");
+        let report = serde_json::to_vec(first.report()).expect("the report serializes");
+        let actual_artifact_sha256 = format!("{:x}", Sha256::digest(first.artifact().bytes()));
+        let actual_report_sha256 = format!("{:x}", Sha256::digest(&report));
+        assert_eq!(first.artifact().bytes(), second.artifact().bytes(), "{name}");
+        assert_eq!(first.report(), second.report(), "{name}");
+        assert_eq!(
+            actual_artifact_sha256,
+            *artifact_sha256,
+            "{name} PDF artifact changed"
+        );
+        assert_eq!(
+            actual_report_sha256,
+            *report_sha256,
+            "{name} PDF report changed"
+        );
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn packaged_public_facade_preserves_every_pdf_fallback_family_across_targets() {
+    for (name, primitives, artifact_sha256, report_sha256) in PDF_FALLBACK_FAMILIES {
+        let nested = format!(
+            r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect" x="0" y="0" width="100%" height="100%">{primitives}</filter></defs><rect width="20" height="10" fill="#00ff00" filter="url(#effect)"/></svg>"##
+        );
+        let encoded = base64::engine::general_purpose::STANDARD.encode(nested);
+        let source = format!(
+            r#"{{"type":"excalidraw","version":2,"elements":[{{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}}],"appState":{{}},"files":{{"asset":{{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,{encoded}","created":1}}}}}}"#
+        );
+        let scene = SceneDocument::parse(source.as_bytes()).expect("fallback-family scene is admitted");
+        let request = RenderRequest::builder(OutputFormat::Pdf)
+            .build()
+            .expect("fallback-family request is valid");
+        let outcome = Renderer::new()
+            .render(&scene, &request)
+            .expect("fallback-family scene renders");
+        let report = serde_json::to_vec(outcome.report()).expect("fallback report serializes");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
+            *artifact_sha256,
+            "{name} PDF artifact changed"
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&report)),
+            *report_sha256,
+            "{name} PDF report changed"
         );
     }
 }
