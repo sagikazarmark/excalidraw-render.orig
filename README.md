@@ -1,8 +1,7 @@
 # excalidraw-render
 
-This repository currently contains a small proof-of-concept pure-Rust CLI. Its
-supported element set, defaults, and fallback behavior are not the product
-contract.
+This repository contains a pure-Rust rendering library and native CLI targeting
+compatibility revision 1 of the approved static-renderer contract.
 
 The approved implementation target is the
 [Excalidraw Static Renderer Specification](docs/renderer-spec-v1.md): a
@@ -16,20 +15,20 @@ dependency.
 cargo build --release -p excalidraw-render-cli
 ```
 
-The workspace now separates the future supported Rust library package,
-`excalidraw-render`, from the native `excalidraw-render-cli` package. They share
-one lockstep version. The current CLI still uses proof-of-concept rendering
-internals while the approved public library facade is implemented; those
-internals are not the compatibility revision 1 contract.
+The workspace separates the supported `excalidraw-render` Rust library from the
+native `excalidraw-render-cli` package. They share one lockstep version, and the
+CLI is a thin adapter over the public library facade.
 
 ## Run
 
 ```text
-excalidraw-render <input.excalidraw> -o <output.{svg|png|pdf}> [--scale <f32>] [--padding <f32>]
+excalidraw-render [OPTIONS] <INPUT> --output <OUTPUT>
 ```
 
-`--scale` affects PNG output only. Its default is `1.0`; the default padding is
-`20.0` pixels on each side.
+`INPUT` and `OUTPUT` may be `-` for standard input and artifact standard output.
+The output format is inferred from a recognized path extension or selected with
+`--format`; the default padding is 10 logical pixels. Run
+`excalidraw-render --help` for the complete request and reporting controls.
 
 ```sh
 target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.svg
