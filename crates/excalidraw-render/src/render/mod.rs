@@ -1209,7 +1209,12 @@ impl RenderSession {
                     continue;
                 }
                 if matches!(&source.kind, NormalizedElementKind::Text(_)) {
-                    if self.preflight_official_text(&source, request, &mut semantic_working)? {
+                    if self.preflight_official_text(
+                        &source,
+                        request,
+                        &mut semantic_working,
+                        &mut fallbacks,
+                    )? {
                         outlines.push((source, None));
                     }
                     continue;
@@ -1297,6 +1302,7 @@ impl RenderSession {
                 // Coordinate and already-spent work admission must precede any Rough allocation.
                 let mut local_crossing =
                     outline_local_crossing(&source, request, 0, base_element_work_units);
+                let mut rejected_geometry_segments = 0;
                 let geometry = if has_outline && local_crossing.is_none() {
                     let max_size = source.width.max(source.height);
                     let min_size = source.width.min(source.height);
@@ -1360,7 +1366,12 @@ impl RenderSession {
                                 "rough_outline",
                             ));
                         }
-                        Err(rough::GenerationError::Limit { kind, attempted }) => {
+                        Err(rough::GenerationError::Limit {
+                            kind,
+                            attempted,
+                            geometry_segments,
+                        }) => {
+                            rejected_geometry_segments = geometry_segments;
                             local_crossing =
                                 Some(generation_local_crossing(kind, attempted, request));
                             None
@@ -1369,9 +1380,11 @@ impl RenderSession {
                 } else {
                     None
                 };
-                let geometry_segments = geometry.as_ref().map_or(0, |geometry| {
-                    u64::try_from(geometry.operation_count()).unwrap_or(u64::MAX)
-                });
+                let geometry_segments = geometry
+                    .as_ref()
+                    .map_or(rejected_geometry_segments, |geometry| {
+                        u64::try_from(geometry.operation_count()).unwrap_or(u64::MAX)
+                    });
                 let geometry_work_units = geometry_segments * 32;
                 let geometry_working_bytes = if geometry.is_some() {
                     128 + geometry_segments * 64
@@ -1427,14 +1440,41 @@ impl RenderSession {
                 }
                 let include_outline = has_outline && local_crossing.is_none();
                 let semantic_working_bytes = if let Some(crossing) = local_crossing {
+                    self.commit_local_rejection_observation(
+                        request,
+                        geometry_context,
+                        ResourceDelta {
+                            geometry_segments,
+                            ..ResourceDelta::default()
+                        },
+                    )?;
                     let source_position = crossing
                         .pointer_field
                         .map_or(u64::MAX, |field| source.source.coordinate_position(field));
+                    let replacement = if source.width > 0.0 && source.height > 0.0 {
+                        let fallback = known_element_fallback(&source).map_err(|_| {
+                            self.memory_failure(
+                                request,
+                                "semantic_geometry",
+                                "known_element_fallback",
+                            )
+                        })?;
+                        fallback_fits_local_limits(&fallback, request.resource_limits())
+                            .then_some(fallback)
+                    } else {
+                        None
+                    };
+                    let can_replace = replacement.is_some();
                     let diagnostic = crossing
-                        .diagnostic(
+                        .diagnostic_with_recovery(
                             request.format(),
                             Some(source.source.id()),
                             source.source.pointer(),
+                            if can_replace {
+                                Recovery::Placeholder
+                            } else {
+                                Recovery::Omitted
+                            },
                         )
                         .map_err(|_| {
                             self.memory_failure(request, "compatibility_report", "local_recovery")
@@ -1450,6 +1490,19 @@ impl RenderSession {
                             source_position: Some(source_position),
                         },
                     )?;
+                    if let Some(fallback) = replacement {
+                        fallbacks.try_reserve(1).map_err(|_| {
+                            self.memory_failure(request, "semantic_geometry", "fallback_list")
+                        })?;
+                        fallbacks.push(fallback);
+                    } else {
+                        self.charge_local_omission(
+                            request,
+                            Some(source.source.id()),
+                            source.source.pointer(),
+                            "outline_local_omission",
+                        )?;
+                    }
                     source.normalized_working_bytes
                 } else if has_outline {
                     self.transact(request, geometry_context, geometry_delta)?;
@@ -2539,6 +2592,14 @@ impl RenderSession {
                     None
                 };
                 if let Some(crossing) = local_crossing {
+                    self.commit_local_rejection_observation(
+                        request,
+                        context,
+                        ResourceDelta {
+                            geometry_segments,
+                            ..ResourceDelta::default()
+                        },
+                    )?;
                     let diagnostic = crossing
                         .diagnostic(
                             request.format(),
@@ -2739,15 +2800,15 @@ impl RenderSession {
             let clip_segments = fallback.frame_clips.iter().fold(0_u64, |total, clip| {
                 total.saturating_add(u64::try_from(clip.path.operations.len()).unwrap_or(u64::MAX))
             });
-            let geometry_segments = fallback
+            let mut geometry_segments = fallback
                 .geometry_command_count()
                 .saturating_add(clip_segments);
-            let glyphs = fallback.label.as_ref().map_or(0, |label| label.glyph_count);
-            let working_bytes = 128_u64.saturating_add(geometry_segments.saturating_mul(64));
-            let total_work_units = geometry_segments
+            let mut glyphs = fallback.label.as_ref().map_or(0, |label| label.glyph_count);
+            let mut working_bytes = 128_u64.saturating_add(geometry_segments.saturating_mul(64));
+            let mut total_work_units = geometry_segments
                 .saturating_mul(32)
                 .saturating_add(glyphs.saturating_mul(32));
-            let delta = ResourceDelta {
+            let mut delta = ResourceDelta {
                 geometry_segments,
                 working_bytes,
                 total_work_units,
@@ -2805,38 +2866,89 @@ impl RenderSession {
                 None
             };
             if let Some(crossing) = local_crossing {
-                let diagnostic = crossing
-                    .diagnostic(
-                        request.format(),
-                        fallback.source.id.as_deref(),
-                        &fallback.source.pointer,
-                    )
-                    .map_err(|_| {
-                        self.memory_failure(
-                            request,
-                            "compatibility_report",
-                            "fallback_local_recovery",
-                        )
-                    })?;
-                self.retain_diagnostic_with_owner(
+                self.commit_local_rejection_observation(
                     request,
-                    ResourcePhase::SharedSemanticResolution,
-                    "fallback_local_resource_recovery",
-                    diagnostic,
-                    DiagnosticOwnership {
-                        local_owner: fallback.source.id.as_deref(),
-                        source_order: Some(fallback.source_order),
-                        source_position: Some(0),
+                    context,
+                    ResourceDelta {
+                        geometry_segments,
+                        ..ResourceDelta::default()
                     },
                 )?;
-                self.charge_local_omission(
-                    request,
-                    fallback.source.id.as_deref(),
-                    &fallback.source.pointer,
-                    "fallback_local_omission",
-                )?;
-                fallback.render = false;
-                continue;
+                if self.has_resource_fallback_origin(fallback) && fallback.label.is_some() {
+                    fallback.label = None;
+                    geometry_segments = fallback
+                        .geometry_command_count()
+                        .saturating_add(clip_segments);
+                    glyphs = 0;
+                    working_bytes = 128_u64.saturating_add(geometry_segments.saturating_mul(64));
+                    total_work_units = geometry_segments.saturating_mul(32);
+                    if geometry_segments
+                        <= u64::from(
+                            request
+                                .resource_limits()
+                                .max_geometry_segments_per_element(),
+                        )
+                        && total_work_units <= request.resource_limits().max_element_work_units()
+                    {
+                        delta = ResourceDelta {
+                            geometry_segments,
+                            working_bytes,
+                            total_work_units,
+                            ..ResourceDelta::default()
+                        };
+                    } else if self.omit_failed_resource_fallback(fallback) {
+                        self.charge_local_omission(
+                            request,
+                            fallback.source.id.as_deref(),
+                            &fallback.source.pointer,
+                            "fallback_local_omission",
+                        )?;
+                        fallback.render = false;
+                        continue;
+                    }
+                } else if self.omit_failed_resource_fallback(fallback) {
+                    self.charge_local_omission(
+                        request,
+                        fallback.source.id.as_deref(),
+                        &fallback.source.pointer,
+                        "fallback_local_omission",
+                    )?;
+                    fallback.render = false;
+                    continue;
+                } else {
+                    let diagnostic = crossing
+                        .diagnostic(
+                            request.format(),
+                            fallback.source.id.as_deref(),
+                            &fallback.source.pointer,
+                        )
+                        .map_err(|_| {
+                            self.memory_failure(
+                                request,
+                                "compatibility_report",
+                                "fallback_local_recovery",
+                            )
+                        })?;
+                    self.retain_diagnostic_with_owner(
+                        request,
+                        ResourcePhase::SharedSemanticResolution,
+                        "fallback_local_resource_recovery",
+                        diagnostic,
+                        DiagnosticOwnership {
+                            local_owner: fallback.source.id.as_deref(),
+                            source_order: Some(fallback.source_order),
+                            source_position: Some(0),
+                        },
+                    )?;
+                    self.charge_local_omission(
+                        request,
+                        fallback.source.id.as_deref(),
+                        &fallback.source.pointer,
+                        "fallback_local_omission",
+                    )?;
+                    fallback.render = false;
+                    continue;
+                }
             }
             self.retain_fallback_font_diagnostics(request, fallback)?;
             self.transact(request, context, delta)?;
@@ -3165,6 +3277,14 @@ impl RenderSession {
             None
         };
         if let Some(crossing) = local_crossing {
+            self.commit_local_rejection_observation(
+                request,
+                context,
+                ResourceDelta {
+                    geometry_segments,
+                    ..ResourceDelta::default()
+                },
+            )?;
             let diagnostic = crossing
                 .diagnostic(
                     request.format(),
@@ -3237,6 +3357,7 @@ impl RenderSession {
         source: &NormalizedElement,
         request: &RenderRequest,
         semantic_working: &mut Vec<SemanticWorkingRecord>,
+        fallbacks: &mut Vec<crate::scene_surface::SurfaceFallback>,
     ) -> Result<bool, RenderError> {
         let NormalizedElementKind::Text(text) = &source.kind else {
             return Err(self.internal_failure(
@@ -3311,11 +3432,33 @@ impl RenderSession {
             None
         };
         if let Some(crossing) = crossing {
+            self.commit_local_rejection_observation(
+                request,
+                context,
+                ResourceDelta {
+                    text_scalars,
+                    ..ResourceDelta::default()
+                },
+            )?;
+            let replacement = if source.width > 0.0 && source.height > 0.0 {
+                let fallback = known_element_fallback(source).map_err(|_| {
+                    self.memory_failure(request, "semantic_geometry", "known_element_fallback")
+                })?;
+                fallback_fits_local_limits(&fallback, request.resource_limits()).then_some(fallback)
+            } else {
+                None
+            };
+            let can_replace = replacement.is_some();
             let diagnostic = crossing
-                .diagnostic(
+                .diagnostic_with_recovery(
                     request.format(),
                     Some(source.source.id()),
                     source.source.pointer(),
+                    if can_replace {
+                        Recovery::Placeholder
+                    } else {
+                        Recovery::Omitted
+                    },
                 )
                 .map_err(|_| {
                     self.memory_failure(request, "compatibility_report", "text_preflight_recovery")
@@ -3331,12 +3474,19 @@ impl RenderSession {
                     source_position: Some(0),
                 },
             )?;
-            self.charge_local_omission(
-                request,
-                Some(source.source.id()),
-                source.source.pointer(),
-                "text_preflight_local_omission",
-            )?;
+            if let Some(fallback) = replacement {
+                fallbacks.try_reserve(1).map_err(|_| {
+                    self.memory_failure(request, "semantic_geometry", "fallback_list")
+                })?;
+                fallbacks.push(fallback);
+            } else {
+                self.charge_local_omission(
+                    request,
+                    Some(source.source.id()),
+                    source.source.pointer(),
+                    "text_preflight_local_omission",
+                )?;
+            }
             return Ok(false);
         }
         self.transact(request, context, delta)?;
@@ -3481,6 +3631,57 @@ impl RenderSession {
         Ok(())
     }
 
+    fn omit_failed_resource_fallback(&mut self, fallback: &ResolvedFallback) -> bool {
+        let original = self.report.diagnostics.iter_mut().find(|diagnostic| {
+            diagnostic.element_id() == fallback.source.id.as_deref()
+                && diagnostic.json_pointer() == fallback.source.pointer
+                && matches!(
+                    diagnostic.code(),
+                    DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
+                        | DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
+                        | DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED
+                )
+                && matches!(
+                    diagnostic.details(),
+                    Some(ErrorDetails::ResourceLimit {
+                        recovery: Some(Recovery::Placeholder),
+                        ..
+                    })
+                )
+        });
+        let Some(original) = original else {
+            return false;
+        };
+        let Some(details) = original.details.as_mut() else {
+            return false;
+        };
+        let ErrorDetails::ResourceLimit { recovery, .. } = details.as_mut() else {
+            return false;
+        };
+        *recovery = Some(Recovery::Omitted);
+        true
+    }
+
+    fn has_resource_fallback_origin(&self, fallback: &ResolvedFallback) -> bool {
+        self.report.diagnostics.iter().any(|diagnostic| {
+            diagnostic.element_id() == fallback.source.id.as_deref()
+                && diagnostic.json_pointer() == fallback.source.pointer
+                && matches!(
+                    diagnostic.code(),
+                    DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
+                        | DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
+                        | DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED
+                )
+                && matches!(
+                    diagnostic.details(),
+                    Some(ErrorDetails::ResourceLimit {
+                        recovery: Some(Recovery::Placeholder),
+                        ..
+                    })
+                )
+        })
+    }
+
     fn preflight_fallback_text(
         &mut self,
         fallbacks: &mut [crate::scene_surface::SurfaceFallback],
@@ -3541,6 +3742,14 @@ impl RenderSession {
                 ));
             }
             if text_scalars > u64::from(request.resource_limits().max_text_scalars_per_element()) {
+                self.commit_local_rejection_observation(
+                    request,
+                    context,
+                    ResourceDelta {
+                        text_scalars,
+                        ..ResourceDelta::default()
+                    },
+                )?;
                 let diagnostic = ElementLocalCrossing {
                     code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
                     field: "max_text_scalars_per_element",
@@ -3551,7 +3760,7 @@ impl RenderSession {
                     attempted: ResourceValue::Integer(text_scalars),
                     pointer_field: None,
                     message:
-                        "compatibility fallback omitted because its label exceeds the text limit",
+                        "compatibility fallback label omitted because it exceeds the text limit",
                 }
                 .diagnostic(
                     request.format(),
@@ -3578,7 +3787,7 @@ impl RenderSession {
                     &fallback.json_pointer,
                     "fallback_text_local_omission",
                 )?;
-                fallbacks[index].paint = false;
+                fallbacks[index].label.clear();
                 index = index.saturating_add(1);
                 continue;
             }
@@ -3973,6 +4182,27 @@ impl RenderSession {
             }
         };
         match self.meter.transact(context, delta) {
+            Ok(()) => Ok(()),
+            Err(crossing) => Err(self.resource_failure(request, crossing, failure_location)),
+        }
+    }
+
+    fn commit_local_rejection_observation(
+        &mut self,
+        request: &RenderRequest,
+        context: ResourceContext<'_>,
+        delta: ResourceDelta,
+    ) -> Result<(), RenderError> {
+        let failure_location = match context.try_failure_location() {
+            Ok(location) => location,
+            Err(_) => {
+                return Err(self.memory_failure(request, "resource_failure", "source_location"));
+            }
+        };
+        match self
+            .meter
+            .commit_local_rejection_observation(context, delta)
+        {
             Ok(()) => Ok(()),
             Err(crossing) => Err(self.resource_failure(request, crossing, failure_location)),
         }
@@ -7277,6 +7507,16 @@ impl ElementLocalCrossing {
         element_id: Option<&str>,
         element_pointer: &str,
     ) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
+        self.diagnostic_with_recovery(format, element_id, element_pointer, Recovery::Omitted)
+    }
+
+    fn diagnostic_with_recovery(
+        self,
+        format: OutputFormat,
+        element_id: Option<&str>,
+        element_pointer: &str,
+        recovery: Recovery,
+    ) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
         let mut effects = Vec::new();
         effects.try_reserve_exact(1)?;
         effects.push(DiagnosticEffect::Visual);
@@ -7298,7 +7538,7 @@ impl ElementLocalCrossing {
                 measurement: Measurement::Attempted {
                     value: self.attempted,
                 },
-                recovery: Some(Recovery::Omitted),
+                recovery: Some(recovery),
             })),
             order: DiagnosticOrder::default(),
         })
@@ -7417,6 +7657,26 @@ fn generation_local_crossing(
 
 fn logical_aligned_bytes(bytes: u64) -> u64 {
     bytes.saturating_add(63) / 64 * 64
+}
+
+fn fallback_fits_local_limits(
+    fallback: &crate::scene_surface::SurfaceFallback,
+    limits: &crate::ResourceLimits,
+) -> bool {
+    let coordinate_limit = limits.max_coordinate_magnitude();
+    if [fallback.x, fallback.y, fallback.width, fallback.height]
+        .into_iter()
+        .any(|value| value.abs() > coordinate_limit)
+    {
+        return false;
+    }
+    let geometry_segments = if fallback.width >= 2.0 && fallback.height >= 2.0 {
+        9_u64
+    } else {
+        5
+    };
+    geometry_segments <= u64::from(limits.max_geometry_segments_per_element())
+        && geometry_segments.saturating_mul(32) <= limits.max_element_work_units()
 }
 
 fn artifact_retention_delta(output_bytes: u64, codec_emission_work: u64) -> ResourceDelta {
@@ -7745,6 +8005,42 @@ mod tests {
             "json_traversal_and_normalization"
         );
         assert_eq!(trace["entries"][0]["event"], "normalization_diagnostic");
+    }
+
+    #[test]
+    fn local_recovery_trace_commits_only_the_aggregate_observation() {
+        let source = br##"{
+            "type":"excalidraw","version":2,
+            "elements":[{"id":"text","type":"text","x":0,"y":0,"width":100,"height":30,"strokeColor":"#000000","opacity":100,"fontSize":20,"fontFamily":5,"text":"ab","textAlign":"left","verticalAlign":"top","lineHeight":1.2,"updated":1}],
+            "appState":{},"files":{}
+        }"##;
+        let scene = SceneDocument::parse(source).expect("text vector is valid");
+        let limits = ResourceLimits::builder()
+            .max_text_scalars_per_element(1)
+            .build()
+            .expect("local text limit is valid");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .resource_limits(limits)
+            .build()
+            .expect("request is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+
+        let (result, trace) = render_with_trace(profile, &scene, &request);
+        result.expect("local text exhaustion is recoverable");
+        let trace: serde_json::Value = serde_json::from_slice(&trace).expect("trace is valid JSON");
+        let rejection = trace["entries"]
+            .as_array()
+            .expect("trace entries are an array")
+            .iter()
+            .find(|entry| entry["decision"] == "rejected_local")
+            .expect("local rejection is represented in the trace");
+
+        assert_eq!(rejection["event"], "text_scalar_and_run_preflight");
+        assert_eq!(rejection["deltas"]["text_scalars"], 2);
+        assert_eq!(rejection["deltas"]["working_bytes"], 0);
+        assert_eq!(rejection["deltas"]["total_work_units"], 0);
+        assert_eq!(rejection["after"]["text_scalars"], 2);
     }
 
     #[test]

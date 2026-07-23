@@ -266,11 +266,13 @@ fn pdf_rectangle_resource_crossings_are_atomic_and_locally_recoverable() {
     let content = std::str::from_utf8(stream_data(outcome.artifact().bytes(), b"4 0 obj"))
         .expect("PDF content is ASCII");
     assert!(content.contains("0 0 200 120 re\nf\n"));
-    assert!(!content.lines().any(|line| line.ends_with(" m")));
-    assert!(!content.lines().any(|line| line.ends_with(" c")));
-    let [diagnostic] = outcome.report().diagnostics() else {
-        panic!("local PDF crossing retains exactly one diagnostic");
-    };
+    assert!(content.contains("[6 4] 0 d"));
+    let diagnostic = outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .find(|diagnostic| diagnostic.code().as_str() == "resource.element-complexity-replaced")
+        .expect("local PDF crossing retains its resource diagnostic");
     assert_eq!(
         diagnostic.code().as_str(),
         "resource.element-complexity-replaced"
@@ -281,7 +283,7 @@ fn pdf_rectangle_resource_crossings_are_atomic_and_locally_recoverable() {
         descriptor["details"]["field"],
         "max_geometry_segments_per_element"
     );
-    assert_eq!(descriptor["details"]["recovery"], "omitted");
+    assert_eq!(descriptor["details"]["recovery"], "placeholder");
 
     let aggregate = ResourceLimits::builder()
         .max_geometry_segments_per_element(15)

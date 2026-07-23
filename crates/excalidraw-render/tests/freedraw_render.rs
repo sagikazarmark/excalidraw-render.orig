@@ -106,7 +106,14 @@ fn freedraw_geometry_limit_uses_the_exact_generated_command_count() {
         .render(&scene, &request(55))
         .expect("the exact move, quadratic, line, and close count is admitted");
     let outcome = Renderer::new().render(&scene, &request(54)).unwrap();
-    let diagnostic = outcome.report().diagnostics().first().unwrap();
+    let diagnostic = outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .find(|diagnostic| {
+            diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
+        })
+        .unwrap();
     assert_eq!(
         diagnostic.code(),
         DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED

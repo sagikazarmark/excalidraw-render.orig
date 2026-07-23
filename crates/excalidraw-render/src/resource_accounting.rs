@@ -207,6 +207,23 @@ impl ResourceMeter {
         context: ResourceContext<'_>,
         delta: ResourceDelta,
     ) -> Result<(), ResourceCrossing> {
+        self.transact_with_decision(context, delta, TraceDecision::Committed)
+    }
+
+    pub(crate) fn commit_local_rejection_observation(
+        &mut self,
+        context: ResourceContext<'_>,
+        delta: ResourceDelta,
+    ) -> Result<(), ResourceCrossing> {
+        self.transact_with_decision(context, delta, TraceDecision::RejectedLocal)
+    }
+
+    fn transact_with_decision(
+        &mut self,
+        context: ResourceContext<'_>,
+        delta: ResourceDelta,
+        committed_decision: TraceDecision,
+    ) -> Result<(), ResourceCrossing> {
         let before = self.counters;
         let attempted = self.attempted(delta);
 
@@ -236,7 +253,7 @@ impl ResourceMeter {
                 committed,
                 committed,
                 TraceMeasurementForm::Exact,
-                TraceDecision::Committed,
+                committed_decision,
                 None,
             );
             Ok(())
@@ -285,7 +302,10 @@ impl ResourceMeter {
             elements: Attempted::new(self.counters.elements, delta.elements),
             asset_entries: Attempted::new(self.counters.asset_entries, delta.asset_entries),
             asset_bytes: Attempted::new(self.counters.asset_bytes, delta.asset_bytes),
-            relationship_depth: Attempted::observed(delta.observed_relationship_depth),
+            relationship_depth: Attempted::observed(
+                self.counters.relationship_depth,
+                delta.observed_relationship_depth,
+            ),
             geometry_segments: Attempted::new(
                 self.counters.geometry_segments,
                 delta.geometry_segments,
@@ -512,8 +532,8 @@ impl Attempted {
             .map_or(Self::Overflow, Self::Exact)
     }
 
-    const fn observed(value: u64) -> Self {
-        Self::Exact(value)
+    const fn observed(current: u64, value: u64) -> Self {
+        Self::Exact(if current > value { current } else { value })
     }
 
     fn crosses(self, configured: u64) -> bool {

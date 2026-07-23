@@ -1,6 +1,8 @@
 use std::io::Cursor;
 
-use excalidraw_render::{OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument};
+use excalidraw_render::{
+    DiagnosticCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
+};
 use png::{Decoder, Transformations};
 use sha2::{Digest, Sha256};
 
@@ -248,9 +250,14 @@ fn rounded_solid_fill_geometry_budget_counts_only_retained_operations() {
     assert!(equality.report().is_empty());
 
     let crossing = Renderer::new().render(&scene, &request(40)).unwrap();
-    let [diagnostic] = crossing.report().diagnostics() else {
-        panic!("the first retained operation crossing has one diagnostic");
-    };
+    let diagnostic = crossing
+        .report()
+        .diagnostics()
+        .iter()
+        .find(|diagnostic| {
+            diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
+        })
+        .expect("the first retained operation crossing has a resource diagnostic");
     let descriptor = serde_json::to_value(diagnostic).unwrap();
     assert_eq!(descriptor["details"]["configured"], 40);
     assert_eq!(descriptor["details"]["measurement"]["value"], 41);

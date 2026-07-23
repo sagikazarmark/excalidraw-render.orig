@@ -13,6 +13,7 @@ pub(super) enum GenerationError {
     Limit {
         kind: GenerationLimit,
         attempted: u64,
+        geometry_segments: u64,
     },
     Memory,
 }
@@ -70,6 +71,7 @@ impl GenerationBudget {
             return Err(GenerationError::Limit {
                 kind: GenerationLimit::WorkUnits,
                 attempted,
+                geometry_segments: self.operations,
             });
         }
         self.work = work;
@@ -85,8 +87,9 @@ impl GenerationBudget {
                     self.base_work_units
                         .saturating_add(attempted.saturating_mul(32))
                 } else {
-                    attempted
+                    self.operation_limit
                 },
+                geometry_segments: self.operation_limit,
             });
         }
         self.operations = attempted;
@@ -1055,6 +1058,7 @@ fn sample_bezier(
         return Err(GenerationError::Limit {
             kind: GenerationLimit::WorkUnits,
             attempted: budget.work_limit.saturating_add(1),
+            geometry_segments: budget.operations,
         });
     }
     sample_bezier(&[points[0], q1, r1, center], tolerance, output, budget)?;
@@ -1461,6 +1465,7 @@ fn core_ellipse_points(
             return Err(GenerationError::Limit {
                 kind: GenerationLimit::WorkUnits,
                 attempted: budget.work_limit.saturating_add(1),
+                geometry_segments: budget.operations,
             });
         }
         angle = next;
@@ -1494,6 +1499,7 @@ fn core_ellipse_stroke(
             return Err(GenerationError::Limit {
                 kind: GenerationLimit::WorkUnits,
                 attempted: budget.work_limit.saturating_add(1),
+                geometry_segments: budget.operations,
             });
         }
         angle = next;
@@ -1549,6 +1555,7 @@ fn ellipse_stroke(
             return Err(GenerationError::Limit {
                 kind: GenerationLimit::WorkUnits,
                 attempted: budget.work_limit.saturating_add(1),
+                geometry_segments: budget.operations,
             });
         }
         angle = next;
@@ -1902,6 +1909,7 @@ fn hachure_lines(
             return Err(GenerationError::Limit {
                 kind: GenerationLimit::WorkUnits,
                 attempted: budget.work_limit.saturating_add(1),
+                geometry_segments: budget.operations,
             });
         }
         y = next_y;

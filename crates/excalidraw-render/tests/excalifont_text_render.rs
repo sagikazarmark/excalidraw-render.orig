@@ -314,9 +314,14 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
         .build()
         .expect("text scalar crossing profile is valid");
     let crossing = render_svg_with_limits(&scene, crossing_limits);
-    let [diagnostic] = crossing.report().diagnostics() else {
-        panic!("the local text crossing has one diagnostic");
-    };
+    let diagnostic = crossing
+        .report()
+        .diagnostics()
+        .iter()
+        .find(|diagnostic| {
+            diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
+        })
+        .expect("the local text crossing diagnostic is retained");
     assert_eq!(
         diagnostic.code(),
         DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
@@ -339,11 +344,12 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
                 "configured":17,
                 "measurement":{"kind":"attempted","value":18},
                 "value_kind":"count",
-                "recovery":"omitted"
+                "recovery":"placeholder"
             }
         })
     );
     let crossing_svg = std::str::from_utf8(crossing.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(crossing_svg.contains("fill=\"#f1f3f5\""));
     assert!(!crossing_svg.contains("font-family=\"Excalifont\""));
     assert!(!crossing_svg.contains("@font-face{font-family:'Excalifont'"));
 
@@ -385,9 +391,12 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
             .build()
             .expect("work crossing profile is valid"),
     );
-    let [diagnostic] = work_crossing.report().diagnostics() else {
-        panic!("the shaping-work crossing has one diagnostic");
-    };
+    let diagnostic = work_crossing
+        .report()
+        .diagnostics()
+        .iter()
+        .find(|diagnostic| diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED)
+        .expect("the shaping-work diagnostic is retained");
     assert_eq!(
         diagnostic.code(),
         DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED

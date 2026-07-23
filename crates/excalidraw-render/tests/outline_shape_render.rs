@@ -141,7 +141,10 @@ fn outline_geometry_accounting_uses_each_generated_operation_count() {
         .report()
         .diagnostics()
         .iter()
-        .find(|diagnostic| diagnostic.element_id() == Some("rounded-rectangle"))
+        .find(|diagnostic| {
+            diagnostic.element_id() == Some("rounded-rectangle")
+                && diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
+        })
         .expect("the first local operation crossing is diagnosed");
     let descriptor = serde_json::to_value(diagnostic).unwrap();
     assert_eq!(descriptor["details"]["configured"], 31);
@@ -291,13 +294,13 @@ fn huge_finite_pattern_generation_recovers_locally_in_every_format() {
             .build()
             .unwrap();
         let outcome = Renderer::new().render(&scene, &request).unwrap();
-        let diagnostics = outcome.report().diagnostics();
-        assert_eq!(diagnostics.len(), 1, "unexpected {format:?} report");
-        assert_eq!(
-            diagnostics[0].code(),
-            DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
-        );
-        assert_eq!(diagnostics[0].element_id(), Some("tall-hachure"));
+        let diagnostic = outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .find(|diagnostic| diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED)
+            .expect("the local work crossing is diagnosed");
+        assert_eq!(diagnostic.element_id(), Some("tall-hachure"));
     }
 }
 
@@ -359,12 +362,12 @@ fn pathological_curve_subdivision_recovers_locally_in_every_format() {
             .build()
             .unwrap();
         let outcome = Renderer::new().render(&scene, &request).unwrap();
-        let diagnostics = outcome.report().diagnostics();
-        assert_eq!(diagnostics.len(), 1, "unexpected {format:?} report");
-        assert_eq!(
-            diagnostics[0].code(),
-            DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
-        );
-        assert_eq!(diagnostics[0].element_id(), Some("subdivision"));
+        let diagnostic = outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .find(|diagnostic| diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED)
+            .expect("the local work crossing is diagnosed");
+        assert_eq!(diagnostic.element_id(), Some("subdivision"));
     }
 }

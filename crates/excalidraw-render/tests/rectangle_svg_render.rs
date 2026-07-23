@@ -174,7 +174,7 @@ fn rough_operations_are_admitted_atomically_at_the_geometry_boundary() {
 }
 
 #[test]
-fn local_rectangle_limits_omit_only_the_outline_and_report_the_recovery() {
+fn local_rectangle_limits_use_the_exact_available_recovery() {
     let cases = [
         (
             ResourceLimits::builder()
@@ -183,6 +183,7 @@ fn local_rectangle_limits_omit_only_the_outline_and_report_the_recovery() {
                 .expect("local geometry limits are valid"),
             "resource.element-complexity-replaced",
             "max_geometry_segments_per_element",
+            "placeholder",
         ),
         (
             ResourceLimits::builder()
@@ -191,6 +192,7 @@ fn local_rectangle_limits_omit_only_the_outline_and_report_the_recovery() {
                 .expect("local work limits are valid"),
             "resource.element-work-exceeded",
             "max_element_work_units",
+            "placeholder",
         ),
         (
             ResourceLimits::builder()
@@ -199,20 +201,27 @@ fn local_rectangle_limits_omit_only_the_outline_and_report_the_recovery() {
                 .expect("local coordinate limits are valid"),
             "resource.coordinate-range-exceeded",
             "max_coordinate_magnitude",
+            "omitted",
         ),
     ];
 
-    for (limits, expected_code, expected_field) in cases {
+    for (limits, expected_code, expected_field, expected_recovery) in cases {
         let outcome = render_approved_svg_with_limits(limits);
         let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-        assert!(!svg.contains("<path "));
-        let [diagnostic] = outcome.report().diagnostics() else {
-            panic!("local crossing retains exactly one diagnostic");
-        };
+        assert_eq!(
+            svg.contains("fill=\"#f1f3f5\""),
+            expected_recovery == "placeholder"
+        );
+        let diagnostic = outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .find(|diagnostic| diagnostic.code().as_str() == expected_code)
+            .expect("the local resource diagnostic is retained");
         assert_eq!(diagnostic.code().as_str(), expected_code);
         let descriptor = serde_json::to_value(diagnostic).expect("diagnostic serializes");
         assert_eq!(descriptor["details"]["field"], expected_field);
-        assert_eq!(descriptor["details"]["recovery"], "omitted");
+        assert_eq!(descriptor["details"]["recovery"], expected_recovery);
     }
 }
 

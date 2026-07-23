@@ -644,7 +644,8 @@ fn fallback_label_text_is_preflighted_at_aggregate_and_local_boundaries() {
         .expect("local fallback exhaustion retains source-sized artifact bounds");
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains("viewBox=\"0 0 220 80\""));
-    assert!(!svg.contains("fill=\"#f1f3f5\""));
+    assert!(svg.contains("fill=\"#f1f3f5\""));
+    assert!(!svg.contains("Unsupported: future"));
     assert!(outcome.report().diagnostics().iter().any(|diagnostic| {
         diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
     }));

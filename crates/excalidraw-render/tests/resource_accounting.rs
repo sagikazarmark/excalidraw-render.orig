@@ -343,6 +343,70 @@ fn scene_bytes_precede_total_work_at_the_same_source_event() {
     );
 }
 
+#[test]
+fn locally_rejected_geometry_still_participates_in_the_aggregate_limit() {
+    let source = br##"{
+        "type":"excalidraw","version":2,
+        "elements":[
+            {"id":"first","type":"rectangle","x":0,"y":0,"width":100,"height":100,"strokeColor":"#000000","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":1,"strokeStyle":"solid","roughness":1,"opacity":100,"angle":0,"seed":1,"updated":1},
+            {"id":"second","type":"rectangle","x":120,"y":0,"width":100,"height":100,"strokeColor":"#000000","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":1,"strokeStyle":"solid","roughness":1,"opacity":100,"angle":0,"seed":1,"updated":1}
+        ],
+        "appState":{},"files":{}
+    }"##;
+    let scene = SceneDocument::parse(source).expect("two rectangles are valid");
+    let limits = ResourceLimits::builder()
+        .max_geometry_segments_per_element(15)
+        .max_total_geometry_segments(31)
+        .build()
+        .expect("local and aggregate geometry limits are valid");
+    let request = request_with_limits(OutputFormat::Svg, limits);
+
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("the second local rejection crosses the aggregate geometry limit");
+
+    assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_GEOMETRY_EXCEEDED);
+    assert_eq!(error.element_id(), Some("second"));
+    assert_eq!(error.json_pointer(), "/elements/1");
+    assert_eq!(error.report().diagnostics().len(), 1);
+    assert_eq!(
+        error.report().diagnostics()[0].code().as_str(),
+        "resource.element-complexity-replaced"
+    );
+}
+
+#[test]
+fn locally_rejected_text_still_participates_in_the_aggregate_limit() {
+    let source = br##"{
+        "type":"excalidraw","version":2,
+        "elements":[
+            {"id":"first","type":"text","x":0,"y":0,"width":100,"height":30,"strokeColor":"#000000","opacity":100,"fontSize":20,"fontFamily":5,"text":"ab","textAlign":"left","verticalAlign":"top","lineHeight":1.2,"updated":1},
+            {"id":"second","type":"text","x":0,"y":40,"width":100,"height":30,"strokeColor":"#000000","opacity":100,"fontSize":20,"fontFamily":5,"text":"cd","textAlign":"left","verticalAlign":"top","lineHeight":1.2,"updated":1}
+        ],
+        "appState":{},"files":{}
+    }"##;
+    let scene = SceneDocument::parse(source).expect("two text elements are valid");
+    let limits = ResourceLimits::builder()
+        .max_text_scalars_per_element(1)
+        .max_total_text_scalars(3)
+        .build()
+        .expect("local and aggregate text limits are valid");
+    let request = request_with_limits(OutputFormat::Svg, limits);
+
+    let error = Renderer::new()
+        .render(&scene, &request)
+        .expect_err("the second local rejection crosses the aggregate text limit");
+
+    assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_TEXT_EXCEEDED);
+    assert_eq!(error.element_id(), Some("second"));
+    assert_eq!(error.json_pointer(), "/elements/1");
+    assert_eq!(error.report().diagnostics().len(), 1);
+    assert_eq!(
+        error.report().diagnostics()[0].code().as_str(),
+        "resource.element-complexity-replaced"
+    );
+}
+
 fn request_with_limits(format: OutputFormat, limits: ResourceLimits) -> RenderRequest {
     RenderRequest::builder(format)
         .resource_limits(limits)
