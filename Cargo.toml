@@ -29,6 +29,7 @@ cssparser = "=0.37.0"
 cssparser-color = "=0.5.0"
 crc32fast = "=1.4.2"
 gif = { version = "=0.14.2", default-features = false, features = ["std"] }
+image-webp = "=0.2.4"
 jsonschema = { version = "=0.33.0", default-features = false }
 moxcms = { version = "=0.9.0", default-features = false }
 png = "=0.17.16"

@@ -9,7 +9,7 @@
     "crate": "excalidraw-render-compare",
     "publish": false,
     "sources": [
-      { "path": "Cargo.toml", "sha256": "b418333d2d57a475872288933cfde311712c7bf1fc28fd3e32f9c7a58ab5b258" },
+      { "path": "Cargo.toml", "sha256": "e3d0a2387c9857bcf083fba22a709d2e9ebbc93c5c80dc4de5c156f92c75d25d" },
       { "path": "crates/excalidraw-render-compare/Cargo.toml", "sha256": "7fcc6d436689ebcf1e351af2dc4f0801a8ebb45380fe091b6723945df3a494c8" },
       { "path": "crates/excalidraw-render-compare/src/lib.rs", "sha256": "59f84c68a787c76ef19f2b95688201e926f0816637f247b9aa8c9ed2578bd312" },
       { "path": "crates/excalidraw-render-compare/src/comparison.rs", "sha256": "5988dd5f973171facf1ccc9712bef2e68e47af8f3947cd3213f21b1b320fb807" },
@@ -19,7 +19,7 @@
   },
   "lockfile": {
     "path": "Cargo.lock",
-    "sha256": "c02f3114ac21e6694321ce659c16e72488588dd42efdfea67526b7e6fafd6843"
+    "sha256": "592168f3d7b7da41f8716b8e5006bffabc01feb57edb8f2b3b96e97292b8496a"
   },
   "features": [],
   "pixelmatch": {

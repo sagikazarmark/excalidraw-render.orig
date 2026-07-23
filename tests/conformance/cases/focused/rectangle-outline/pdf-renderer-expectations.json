@@ -1,6 +1,6 @@
 {
   "approval": {
-    "approval_subject_sha256": "sha256:00c15ed21b155f53e6dd7691d3b0551f80be3707e6bfe71d48bd2314a3b50f0c",
+    "approval_subject_sha256": "sha256:be6bdeeb5ec9019d5dfbf411fd1f1dc533cde5d0622d5b3b0f59da1657d2d714",
     "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5056917122",
     "approved_at": "2026-07-23",
     "approved_by": "sagikazarmark"
@@ -78,7 +78,7 @@
     },
     {
       "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
-      "sha256": "5692fccf59a912d3c03c37e7f7b6ba02c1aa25990b08e2816a406ec63b927fe4"
+      "sha256": "eff1f7d5a165a2bc2eb6a6a2ab8c75c4ffc3d6dfaae508ad32301fa13fc0808e"
     }
   ],
   "format": "pdf",

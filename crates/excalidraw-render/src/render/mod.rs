@@ -5440,6 +5440,11 @@ fn image_asset_failure_diagnostic(
             "referenced GIF payload could not be decoded",
             None,
         ),
+        asset::ResolveError::WebPDecodeFailed => (
+            DiagnosticCode::IMAGE_DECODE_FAILED,
+            "referenced WebP payload could not be decoded",
+            None,
+        ),
         asset::ResolveError::Missing => {
             unreachable!("missing assets are diagnosed by normalization")
         }
@@ -5526,6 +5531,7 @@ fn image_asset_failure_diagnostic(
                         asset::ResolveError::DecodeFailed => Some(try_owned("image/png")?),
                         asset::ResolveError::JpegDecodeFailed => Some(try_owned("image/jpeg")?),
                         asset::ResolveError::GifDecodeFailed => Some(try_owned("image/gif")?),
+                        asset::ResolveError::WebPDecodeFailed => Some(try_owned("image/webp")?),
                         _ => None,
                     },
                     recovery,
