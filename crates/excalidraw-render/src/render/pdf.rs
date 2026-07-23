@@ -49,7 +49,8 @@ pub(super) struct PdfPlan {
     page_height: f64,
     background: Option<CanonicalColor>,
     fallback_colors: super::FallbackColors,
-    mandatory_manifest: Option<String>,
+    mandatory_notices: Option<String>,
+    metadata: Option<super::metadata::ArtifactMetadata>,
     fallback_font_sfnt: Option<Vec<u8>>,
     official_fonts: Vec<super::ResolvedFont>,
     elements: Vec<PdfElement>,
@@ -331,7 +332,8 @@ impl PdfPlan {
             page_height,
             background,
             fallback_colors: scene.fallback_colors,
-            mandatory_manifest: scene.mandatory_manifest,
+            mandatory_notices: scene.mandatory_notices,
+            metadata: None,
             fallback_font_sfnt: scene.fallback_font_sfnt,
             official_fonts: scene.official_fonts,
             elements,
@@ -341,6 +343,15 @@ impl PdfPlan {
 
     pub(super) fn raster_closures(&self) -> &[PdfRasterClosure] {
         &self.raster_closures
+    }
+
+    pub(super) fn take_mandatory_notices(&mut self) -> Option<String> {
+        self.mandatory_notices.take()
+    }
+
+    pub(super) fn set_metadata(&mut self, metadata: super::metadata::ArtifactMetadata) {
+        self.metadata = Some(metadata);
+        self.mandatory_notices = None;
     }
 
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
@@ -359,10 +370,16 @@ impl PdfPlan {
         )?;
         let fallback_forms = self.encode_fallback_forms(&fallback_mappings)?;
         let xmp = self
-            .mandatory_manifest
-            .as_deref()
+            .metadata
+            .as_ref()
+            .and_then(super::metadata::ArtifactMetadata::manifest)
             .map(xmp_metadata)
             .transpose()?;
+        let embedded_scene = self
+            .metadata
+            .as_ref()
+            .and_then(super::metadata::ArtifactMetadata::canonical_scene);
+        let attachment_object_count = usize::from(embedded_scene.is_some()) * 2;
         let mut link_count = 0_usize;
         for element in &self.elements {
             if let Some((_, width, height, transform, frame_clips)) = element.link_geometry() {
@@ -383,6 +400,7 @@ impl PdfPlan {
         let object_count = 6_usize
             .checked_add(opacity_resources.len())
             .and_then(|count| count.checked_add(usize::from(xmp.is_some())))
+            .and_then(|count| count.checked_add(attachment_object_count))
             .and_then(|count| count.checked_add(link_count))
             .and_then(|count| count.checked_add(fallback_forms.len()))
             .ok_or_else(pdf_size_error)?;
@@ -395,9 +413,19 @@ impl PdfPlan {
         } else {
             None
         };
-        let first_link_object = FIRST_EXT_GSTATE_OBJECT
+        let first_attachment_object = FIRST_EXT_GSTATE_OBJECT
             .checked_add(opacity_resources.len())
             .and_then(|object| object.checked_add(usize::from(xmp.is_some())))
+            .ok_or_else(pdf_size_error)?;
+        let attachment_filespec_object = embedded_scene
+            .map(|_| {
+                first_attachment_object
+                    .checked_add(1)
+                    .ok_or_else(pdf_size_error)
+            })
+            .transpose()?;
+        let first_link_object = first_attachment_object
+            .checked_add(attachment_object_count)
             .ok_or_else(pdf_size_error)?;
         let first_fallback_form_object = first_link_object
             .checked_add(link_count)
@@ -475,6 +503,14 @@ impl PdfPlan {
                 })
             })
             .and_then(|capacity| {
+                embedded_scene.map_or(Some(capacity), |scene| {
+                    scene
+                        .len()
+                        .checked_add(1_024)
+                        .and_then(|extra| capacity.checked_add(extra))
+                })
+            })
+            .and_then(|capacity| {
                 link_count
                     .checked_mul(512)
                     .and_then(|extra| capacity.checked_add(extra))
@@ -548,6 +584,13 @@ impl PdfPlan {
         .map_err(write_error)?;
         if let Some(metadata_object) = metadata_object {
             writeln!(pdf, "/Metadata {metadata_object} 0 R").map_err(write_error)?;
+        }
+        if let Some(filespec) = attachment_filespec_object {
+            writeln!(
+                pdf,
+                "/Names << /EmbeddedFiles << /Names [(scene.excalidraw) {filespec} 0 R] >> >>\n/AF [{filespec} 0 R]"
+            )
+            .map_err(write_error)?;
         }
         pdf.extend_from_slice(b">>\nendobj\n");
 
@@ -692,6 +735,29 @@ impl PdfPlan {
             .map_err(write_error)?;
             pdf.extend_from_slice(xmp.as_bytes());
             pdf.extend_from_slice(b"\nendstream\nendobj\n");
+        }
+        if let (Some(scene), Some(filespec)) = (embedded_scene, attachment_filespec_object) {
+            begin_object(&mut pdf, &mut offsets, first_attachment_object)?;
+            write!(
+                pdf,
+                "<<\n/Type /EmbeddedFile\n/Subtype /application#2Fvnd.excalidraw+json\n/Length {}\n>>\nstream\n",
+                scene.len()
+            )
+            .map_err(write_error)?;
+            pdf.extend_from_slice(scene);
+            pdf.extend_from_slice(b"\nendstream\nendobj\n");
+
+            begin_object(&mut pdf, &mut offsets, filespec)?;
+            write!(
+                pdf,
+                concat!(
+                    "<<\n/Type /Filespec\n/F (scene.excalidraw)\n/UF (scene.excalidraw)\n",
+                    "/AFRelationship /Data\n/Desc (Canonical Excalidraw scene)\n",
+                    "/EF << /F {} 0 R /UF {} 0 R >>\n>>\nendobj\n"
+                ),
+                first_attachment_object, first_attachment_object
+            )
+            .map_err(write_error)?;
         }
         let mut link_index = 0_usize;
         for element in self.elements.iter().rev() {

@@ -1,5 +1,6 @@
 mod asset;
 mod freedraw;
+mod metadata;
 mod pdf;
 mod png;
 mod rough;
@@ -20,7 +21,8 @@ use crate::{
     },
     scene::{OriginalJsonEntryKind, OriginalJsonVisitError},
     Artifact, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode, DiagnosticEffect,
-    DiagnosticSeverity, ErrorCode, ErrorDetails, FiniteValue, Measurement, OutputFormat, Recovery,
+    DiagnosticSeverity, ErrorCode, ErrorDetails, FiniteValue, Measurement,
+    MetadataComponent as ManifestComponent, MetadataOperation, OutputFormat, Recovery,
     ReferenceProfileIdentity, RenderError, RenderErrorCategory, RenderOutcome, RenderRequest,
     ResourceValue, SceneDocument, Sizing, ValueKind,
 };
@@ -102,6 +104,57 @@ struct PendingAnimationDiagnostic {
     local_owner: String,
     source_order: u64,
     working_bytes: u64,
+}
+
+#[derive(Clone, Copy)]
+enum OptionalMetadataComponent {
+    Provenance,
+    DiagnosticSummary,
+    EmbeddedScene,
+}
+
+impl OptionalMetadataComponent {
+    fn requested(self, selection: metadata::MetadataSelection) -> bool {
+        match self {
+            Self::Provenance => selection.provenance,
+            Self::DiagnosticSummary => selection.diagnostic_summary,
+            Self::EmbeddedScene => selection.embedded_scene,
+        }
+    }
+
+    fn enable(self, selection: &mut metadata::MetadataSelection) {
+        match self {
+            Self::Provenance => selection.provenance = true,
+            Self::DiagnosticSummary => selection.diagnostic_summary = true,
+            Self::EmbeddedScene => selection.embedded_scene = true,
+        }
+    }
+
+    const fn event(self) -> &'static str {
+        match self {
+            Self::Provenance => "provenance_metadata_omitted",
+            Self::DiagnosticSummary => "diagnostic_summary_metadata_omitted",
+            Self::EmbeddedScene => "embedded_scene_metadata_omitted",
+        }
+    }
+
+    const fn manifest_component(self) -> ManifestComponent {
+        match self {
+            Self::Provenance => ManifestComponent::Provenance,
+            Self::DiagnosticSummary => ManifestComponent::DiagnosticSummary,
+            Self::EmbeddedScene => ManifestComponent::EmbeddedScene,
+        }
+    }
+
+    const fn serialization_code(self) -> DiagnosticCode {
+        match self {
+            Self::Provenance => DiagnosticCode::METADATA_PROVENANCE_SERIALIZATION_FAILED,
+            Self::DiagnosticSummary => {
+                DiagnosticCode::METADATA_DIAGNOSTIC_SUMMARY_SERIALIZATION_FAILED
+            }
+            Self::EmbeddedScene => DiagnosticCode::METADATA_SCENE_SERIALIZATION_FAILED,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Default)]
@@ -1508,7 +1561,7 @@ impl RenderSession {
             }
         };
         self.account_fallback_semantics(&mut resolved, request, &mut semantic_working)?;
-        let bytes = self.encode(resolved, request, &semantic_working)?;
+        let bytes = self.encode(resolved, scene, request, &semantic_working)?;
 
         Ok(RenderOutcome {
             artifact: Artifact {
@@ -1523,6 +1576,7 @@ impl RenderSession {
     fn encode(
         &mut self,
         resolved: ResolvedScene,
+        scene: &SceneDocument,
         request: &RenderRequest,
         semantic_working: &[SemanticWorkingRecord],
     ) -> Result<Vec<u8>, RenderError> {
@@ -1588,7 +1642,7 @@ impl RenderSession {
         }
         match request.format() {
             OutputFormat::Svg => {
-                let plan = SvgPlan::new(resolved, request).map_err(|error| {
+                let mut plan = SvgPlan::new(resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_SVG_FAILED, error)
                 })?;
                 self.release_semantic_working(request, semantic_working, false)?;
@@ -1600,9 +1654,26 @@ impl RenderSession {
                 )
                 .with_record(ResourceRecordKind::SvgSerializerWorkspace);
                 self.acquire_working(request, workspace, workspace_bytes)?;
-                self.measure_and_emit_output(request, ErrorCode::ENCODE_SVG_FAILED, 0, || {
-                    plan.encode()
-                })?;
+                let mandatory_notices = plan.take_mandatory_notices();
+                let (metadata, measured) = self.select_artifact_metadata(
+                    scene,
+                    request,
+                    mandatory_notices.as_deref(),
+                    ErrorCode::ENCODE_SVG_FAILED,
+                    0,
+                    |metadata| {
+                        plan.set_metadata(metadata.clone());
+                        plan.encode()
+                    },
+                )?;
+                plan.set_metadata(metadata);
+                self.emit_premeasured_output(
+                    request,
+                    ErrorCode::ENCODE_SVG_FAILED,
+                    0,
+                    measured,
+                    || plan.encode(),
+                )?;
                 self.release_semantic_working(request, semantic_working, true)?;
                 self.release_working(request, workspace, workspace_bytes)?;
                 for index in 0..plan.source_count() {
@@ -1967,10 +2038,24 @@ impl RenderSession {
                     ),
                     rgba_bytes,
                 )?;
-                self.measure_and_emit_output(
+                let mandatory_notices = plan.take_mandatory_notices();
+                let (metadata, measured) = self.select_artifact_metadata(
+                    scene,
+                    request,
+                    mandatory_notices.as_deref(),
+                    ErrorCode::ENCODE_PNG_FAILED,
+                    rgba_bytes,
+                    |metadata| {
+                        plan.set_metadata(metadata.clone());
+                        plan.encode()
+                    },
+                )?;
+                plan.set_metadata(metadata);
+                self.emit_premeasured_output(
                     request,
                     ErrorCode::ENCODE_PNG_FAILED,
                     rgba_bytes,
+                    measured,
                     || plan.encode(),
                 )?;
                 self.release_semantic_working(request, semantic_working, true)?;
@@ -2003,7 +2088,7 @@ impl RenderSession {
             }
             OutputFormat::Pdf => {
                 let workspace_bytes = 1_048_576;
-                let plan = PdfPlan::new(resolved, request).map_err(|error| {
+                let mut plan = PdfPlan::new(resolved, request).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_PDF_FAILED, error)
                 })?;
                 let fallback_surface_working =
@@ -2051,9 +2136,26 @@ impl RenderSession {
                 )
                 .with_record(ResourceRecordKind::PdfStreamWorkspace);
                 self.acquire_working(request, workspace, workspace_bytes)?;
-                self.measure_and_emit_output(request, ErrorCode::ENCODE_PDF_FAILED, 0, || {
-                    plan.encode()
-                })?;
+                let mandatory_notices = plan.take_mandatory_notices();
+                let (metadata, measured) = self.select_artifact_metadata(
+                    scene,
+                    request,
+                    mandatory_notices.as_deref(),
+                    ErrorCode::ENCODE_PDF_FAILED,
+                    0,
+                    |metadata| {
+                        plan.set_metadata(metadata.clone());
+                        plan.encode()
+                    },
+                )?;
+                plan.set_metadata(metadata);
+                self.emit_premeasured_output(
+                    request,
+                    ErrorCode::ENCODE_PDF_FAILED,
+                    0,
+                    measured,
+                    || plan.encode(),
+                )?;
                 self.release_semantic_working(request, semantic_working, true)?;
                 for (rgb_bytes, alpha_bytes) in image_resource_working {
                     self.release_working(
@@ -2128,6 +2230,151 @@ impl RenderSession {
         self.staged_output.take().ok_or_else(|| {
             self.internal_failure(request.format(), "accepted output bytes are missing", "")
         })
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn select_artifact_metadata(
+        &mut self,
+        scene: &SceneDocument,
+        request: &RenderRequest,
+        mandatory_notices: Option<&str>,
+        error_code: ErrorCode,
+        codec_emission_work: u64,
+        mut measure: impl FnMut(&metadata::ArtifactMetadata) -> Result<Vec<u8>, FormatEncodeError>,
+    ) -> Result<(metadata::ArtifactMetadata, Vec<u8>), RenderError> {
+        let snapshot = self.report.clone();
+        let requested = metadata::MetadataSelection::requested(request);
+        let mut accepted = metadata::MetadataSelection::default();
+        let baseline = metadata::ArtifactMetadata::build(
+            scene,
+            self.profile,
+            &snapshot,
+            mandatory_notices,
+            accepted,
+        )
+        .map_err(|error| self.format_failure(request, error_code, error))?;
+        let baseline_artifact =
+            measure(&baseline).map_err(|error| self.format_failure(request, error_code, error))?;
+        let baseline_bytes = u64::try_from(baseline_artifact.len()).unwrap_or(u64::MAX);
+        if self
+            .meter
+            .optional_metadata_crossing(artifact_retention_delta(
+                baseline_bytes,
+                codec_emission_work,
+            ))
+            .is_some()
+        {
+            return Ok((baseline, baseline_artifact));
+        }
+        let mut accepted_metadata = baseline;
+        let mut accepted_artifact = baseline_artifact;
+
+        for component in [
+            OptionalMetadataComponent::Provenance,
+            OptionalMetadataComponent::DiagnosticSummary,
+            OptionalMetadataComponent::EmbeddedScene,
+        ] {
+            if !component.requested(requested) {
+                continue;
+            }
+            let mut candidate_selection = accepted;
+            component.enable(&mut candidate_selection);
+            let candidate = match metadata::ArtifactMetadata::build(
+                scene,
+                self.profile,
+                &snapshot,
+                mandatory_notices,
+                candidate_selection,
+            ) {
+                Ok(candidate) => candidate,
+                Err(error @ FormatEncodeError::MemoryUnavailable { .. }) => {
+                    return Err(self.format_failure(request, error_code, error));
+                }
+                Err(FormatEncodeError::Encoding(_)) => {
+                    self.retain_diagnostic(
+                        request,
+                        ResourcePhase::Metadata,
+                        component.event(),
+                        metadata_component_failure_diagnostic(
+                            request.format(),
+                            component,
+                            MetadataOperation::Serialization,
+                        ),
+                    )?;
+                    continue;
+                }
+            };
+            let compression_workspace = u64::from(matches!(
+                component,
+                OptionalMetadataComponent::EmbeddedScene
+            )) * 1_048_576;
+            let scratch_bytes = candidate
+                .scratch_bytes()
+                .saturating_sub(accepted_metadata.scratch_bytes())
+                .saturating_add(compression_workspace);
+            let generation_work = candidate
+                .generation_work()
+                .saturating_sub(accepted_metadata.generation_work());
+            let generation_delta = ResourceDelta {
+                working_bytes: scratch_bytes,
+                total_work_units: generation_work,
+                ..ResourceDelta::default()
+            };
+            if let Some(crossing) = self.meter.optional_metadata_crossing(generation_delta) {
+                self.retain_diagnostic(
+                    request,
+                    ResourcePhase::Metadata,
+                    component.event(),
+                    optional_metadata_omitted_diagnostic(request.format(), crossing),
+                )?;
+                continue;
+            }
+            let generation_context =
+                ResourceContext::new(ResourcePhase::Metadata, component.event(), "");
+            self.transact(request, generation_context, generation_delta)?;
+            let measured = measure(&candidate);
+            self.release_working(request, generation_context, scratch_bytes)?;
+            let candidate_artifact = match measured {
+                Ok(candidate_artifact) => candidate_artifact,
+                Err(error @ FormatEncodeError::MemoryUnavailable { .. }) => {
+                    return Err(self.format_failure(request, error_code, error));
+                }
+                Err(FormatEncodeError::Encoding(_)) => {
+                    self.retain_diagnostic(
+                        request,
+                        ResourcePhase::Metadata,
+                        component.event(),
+                        metadata_component_failure_diagnostic(
+                            request.format(),
+                            component,
+                            MetadataOperation::Embedding,
+                        ),
+                    )?;
+                    continue;
+                }
+            };
+            let output_bytes = u64::try_from(candidate_artifact.len()).unwrap_or(u64::MAX);
+            if let Some(crossing) = self
+                .meter
+                .optional_metadata_crossing(artifact_retention_delta(
+                    output_bytes,
+                    codec_emission_work,
+                ))
+            {
+                self.retain_diagnostic(
+                    request,
+                    ResourcePhase::Metadata,
+                    component.event(),
+                    optional_metadata_omitted_diagnostic(request.format(), crossing),
+                )?;
+            } else {
+                accepted = candidate_selection;
+                accepted_metadata = candidate;
+                accepted_artifact = candidate_artifact;
+            }
+        }
+
+        Ok((accepted_metadata, accepted_artifact))
     }
 
     fn account_fallback_semantics(
@@ -2619,9 +2866,9 @@ impl RenderSession {
         if !has_official_text {
             resolved.official_fonts.clear();
         }
-        resolved.mandatory_manifest = if has_fallback_label || has_official_text {
+        resolved.mandatory_notices = if has_fallback_label || has_official_text {
             Some(
-                text::mandatory_notice_manifest(has_fallback_label, &resolved.official_fonts)
+                text::mandatory_notices_json(has_fallback_label, &resolved.official_fonts)
                     .map_err(|error| match error {
                         text::LabelError::Memory => self.memory_failure(
                             request,
@@ -3581,6 +3828,7 @@ impl RenderSession {
         std::mem::take(&mut self.report)
     }
 
+    #[cfg(test)]
     fn measure_and_emit_output(
         &mut self,
         request: &RenderRequest,
@@ -3589,6 +3837,17 @@ impl RenderSession {
         mut encode: impl FnMut() -> Result<Vec<u8>, FormatEncodeError>,
     ) -> Result<(), RenderError> {
         let measured = encode().map_err(|error| self.format_failure(request, error_code, error))?;
+        self.emit_premeasured_output(request, error_code, codec_emission_work, measured, encode)
+    }
+
+    fn emit_premeasured_output(
+        &mut self,
+        request: &RenderRequest,
+        error_code: ErrorCode,
+        codec_emission_work: u64,
+        measured: Vec<u8>,
+        mut encode: impl FnMut() -> Result<Vec<u8>, FormatEncodeError>,
+    ) -> Result<(), RenderError> {
         let output_bytes = u64::try_from(measured.len()).unwrap_or(u64::MAX);
         self.admit_output(request, output_bytes, codec_emission_work)?;
         drop(measured);
@@ -3929,7 +4188,7 @@ struct ResolvedScene {
     fallback_font_woff2: Option<Vec<u8>>,
     fallback_font_sfnt: Option<Vec<u8>>,
     official_fonts: Vec<ResolvedFont>,
-    mandatory_manifest: Option<String>,
+    mandatory_notices: Option<String>,
     _relationships: crate::relationships::ResolvedRelationshipGraph,
 }
 
@@ -4571,7 +4830,7 @@ impl ResolvedScene {
             fallback_font_woff2: None,
             fallback_font_sfnt: None,
             official_fonts: Vec::new(),
-            mandatory_manifest: None,
+            mandatory_notices: None,
             _relationships: relationships,
         })
     }
@@ -5248,9 +5507,9 @@ impl ResolvedScene {
                 sfnt,
             });
         }
-        let mandatory_manifest = if has_label || has_official_text {
+        let mandatory_notices = if has_label || has_official_text {
             Some(
-                text::mandatory_notice_manifest(has_label, &resolved_fonts).map_err(|error| {
+                text::mandatory_notices_json(has_label, &resolved_fonts).map_err(|error| {
                     match error {
                         text::LabelError::Memory => ResolveSceneError::Memory,
                         text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
@@ -5270,7 +5529,7 @@ impl ResolvedScene {
             fallback_font_woff2,
             fallback_font_sfnt,
             official_fonts: resolved_fonts,
-            mandatory_manifest,
+            mandatory_notices,
             _relationships: relationships,
         }))
     }
@@ -7124,6 +7383,70 @@ fn logical_aligned_bytes(bytes: u64) -> u64 {
     bytes.saturating_add(63) / 64 * 64
 }
 
+fn artifact_retention_delta(output_bytes: u64, codec_emission_work: u64) -> ResourceDelta {
+    ResourceDelta {
+        working_bytes: 512_u64.saturating_add(logical_aligned_bytes(output_bytes)),
+        output_bytes,
+        total_work_units: codec_emission_work.saturating_add(output_bytes),
+        ..ResourceDelta::default()
+    }
+}
+
+fn optional_metadata_omitted_diagnostic(
+    format: OutputFormat,
+    crossing: crate::resource_accounting::OptionalMetadataCrossing,
+) -> CompatibilityDiagnostic {
+    let measurement = match crossing.measurement {
+        Measurement::Attempted { value } => Measurement::Attempted {
+            value: ResourceValue::Integer(value),
+        },
+        Measurement::AtLeast { value } => Measurement::AtLeast {
+            value: ResourceValue::Integer(value),
+        },
+    };
+    CompatibilityDiagnostic {
+        code: DiagnosticCode::RESOURCE_OPTIONAL_METADATA_OMITTED,
+        severity: DiagnosticSeverity::Warning,
+        format,
+        effects: vec![DiagnosticEffect::Metadata],
+        element_id: None,
+        json_pointer: String::new(),
+        message: "optional artifact metadata was omitted because it exceeds a resource limit"
+            .to_owned(),
+        details: Some(Box::new(ErrorDetails::ResourceLimit {
+            field: crossing.field,
+            configured: ResourceValue::Integer(crossing.configured),
+            value_kind: crossing.value_kind,
+            measurement,
+            recovery: Some(Recovery::MetadataOmitted),
+        })),
+        order: DiagnosticOrder::default(),
+    }
+}
+
+fn metadata_component_failure_diagnostic(
+    format: OutputFormat,
+    component: OptionalMetadataComponent,
+    operation: MetadataOperation,
+) -> CompatibilityDiagnostic {
+    let code = component.serialization_code();
+    CompatibilityDiagnostic {
+        code,
+        severity: DiagnosticSeverity::Warning,
+        format,
+        effects: vec![DiagnosticEffect::Metadata],
+        element_id: None,
+        json_pointer: String::new(),
+        message: "optional artifact metadata component could not be retained".to_owned(),
+        details: Some(Box::new(ErrorDetails::Metadata {
+            component: component.manifest_component(),
+            operation,
+            recovery: Recovery::MetadataOmitted,
+        })),
+        order: DiagnosticOrder::default(),
+    }
+}
+
 fn element_owner_index(json_pointer: &str) -> Option<u64> {
     json_pointer
         .strip_prefix("/elements/")?
@@ -7393,7 +7716,7 @@ mod tests {
         let expected_digests = [
             (
                 OutputFormat::Svg,
-                "6c53083b5df3852ac5f6d566047d76e36cc53da008efe0eaed427915b461b5e5",
+                "e314b25a1c82ee51f290fa67e00d53143ca41d8478d57824b494d9306832753a",
             ),
             (
                 OutputFormat::Png,

@@ -595,7 +595,7 @@ fn glyph_cluster_text<'a>(
         .ok_or(LabelError::InvalidFont)
 }
 
-pub(super) fn mandatory_notice_manifest(
+pub(super) fn mandatory_notices_json(
     liberation: bool,
     official: &[super::ResolvedFont],
 ) -> Result<String, LabelError> {
@@ -605,11 +605,8 @@ pub(super) fn mandatory_notice_manifest(
         .find("This Font Software is licensed")
         .map(|index| &full_ofl_notice[index..])
         .ok_or(LabelError::InvalidFont)?;
-    let prefix = concat!(
-        "{\"schema_version\":1,\"provenance\":null,\"diagnostic_summary\":null,",
-        "\"notices\":["
-    );
-    let suffix = "],\"embedded_scene\":null}";
+    let prefix = "[";
+    let suffix = "]";
     let mut manifest = String::new();
     manifest.try_reserve_exact(
         prefix
@@ -619,17 +616,23 @@ pub(super) fn mandatory_notice_manifest(
     )?;
     manifest.push_str(prefix);
     let mut separator = "";
-    if liberation {
-        push_manifest_notice(
-            &mut manifest,
-            &mut separator,
-            LIBERATION_SANS_IDENTITY,
-            full_ofl_notice,
-        );
-    }
-    for font in official {
+    let mut ordered = Vec::new();
+    ordered.try_reserve_exact(official.len())?;
+    ordered.extend(official);
+    ordered.sort_unstable_by_key(|font| font.identity);
+    let mut liberation_pending = liberation;
+    for font in ordered {
         if liberation && font.identity == LIBERATION_SANS_IDENTITY {
             continue;
+        }
+        if liberation_pending && LIBERATION_SANS_IDENTITY < font.identity {
+            push_manifest_notice(
+                &mut manifest,
+                &mut separator,
+                LIBERATION_SANS_IDENTITY,
+                full_ofl_notice,
+            );
+            liberation_pending = false;
         }
         let attribution = match font.family {
             "Cascadia Code" => "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code.",
@@ -658,6 +661,14 @@ pub(super) fn mandatory_notice_manifest(
             &mut separator,
             font.identity,
             &official_notice,
+        );
+    }
+    if liberation_pending {
+        push_manifest_notice(
+            &mut manifest,
+            &mut separator,
+            LIBERATION_SANS_IDENTITY,
+            full_ofl_notice,
         );
     }
     manifest.push_str(suffix);

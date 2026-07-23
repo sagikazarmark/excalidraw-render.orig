@@ -135,6 +135,11 @@ fn mixed_official_families_keep_independent_font_resources() {
                 assert!(svg.contains("font-family:'Cascadia Code'"));
                 assert!(svg.contains("font-family=\"Virgil\""));
                 assert!(svg.contains("font-family=\"Cascadia Code\""));
+                assert!(
+                    svg.find("{\"asset_identity\":\"fonts/Cascadia").unwrap()
+                        < svg.find("{\"asset_identity\":\"fonts/Virgil").unwrap(),
+                    "mandatory notices are sorted by canonical asset identity"
+                );
             }
             OutputFormat::Png => assert!(outcome.artifact().bytes().starts_with(b"\x89PNG")),
             OutputFormat::Pdf => {

@@ -142,6 +142,7 @@ pub(crate) enum ResourcePhase {
     SharedSemanticResolution,
     FormatPlanning,
     ProjectionAndFallback,
+    Metadata,
     EncodingAndOutcomeAssembly,
 }
 
@@ -170,6 +171,13 @@ pub(crate) struct ResourceMeter {
     limits: ResourceLimits,
     counters: ResourceCounters,
     trace: Option<ResourceTrace>,
+}
+
+pub(crate) struct OptionalMetadataCrossing {
+    pub(crate) field: &'static str,
+    pub(crate) configured: u64,
+    pub(crate) value_kind: ValueKind,
+    pub(crate) measurement: Measurement<u64>,
 }
 
 impl ResourceMeter {
@@ -255,6 +263,20 @@ impl ResourceMeter {
 
     pub(crate) fn would_cross_fatal(&self, delta: ResourceDelta) -> bool {
         fatal_crossing(self.attempted(delta), &self.limits).is_some()
+    }
+
+    pub(crate) fn optional_metadata_crossing(
+        &self,
+        delta: ResourceDelta,
+    ) -> Option<OptionalMetadataCrossing> {
+        let (kind, attempted) = fatal_crossing(self.attempted(delta), &self.limits)?;
+        let configured = kind.configured(&self.limits);
+        Some(OptionalMetadataCrossing {
+            field: kind.field(),
+            configured,
+            value_kind: kind.value_kind(),
+            measurement: attempted.measurement(configured),
+        })
     }
 
     fn attempted(&self, delta: ResourceDelta) -> AttemptedCounters {

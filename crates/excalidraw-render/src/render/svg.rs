@@ -16,7 +16,8 @@ pub(super) struct SvgPlan {
     fallback_colors: super::FallbackColors,
     fallback_font_woff2: Option<Vec<u8>>,
     official_fonts: Vec<super::ResolvedFont>,
-    mandatory_manifest: Option<String>,
+    mandatory_notices: Option<String>,
+    metadata: Option<super::metadata::ArtifactMetadata>,
     elements: Vec<SvgElement>,
 }
 
@@ -226,7 +227,7 @@ impl SvgPlan {
         };
         let fallback_font_woff2 = scene.fallback_font_woff2;
         let official_fonts = scene.official_fonts;
-        let mandatory_manifest = scene.mandatory_manifest;
+        let mandatory_notices = scene.mandatory_notices;
         let mut elements = Vec::new();
         elements
             .try_reserve_exact(scene.elements.len())
@@ -378,7 +379,8 @@ impl SvgPlan {
             fallback_colors: scene.fallback_colors,
             fallback_font_woff2,
             official_fonts,
-            mandatory_manifest,
+            mandatory_notices,
+            metadata: None,
             elements,
         })
     }
@@ -408,8 +410,27 @@ impl SvgPlan {
                     .ok_or_else(svg_size_error)?,
             )?;
         }
-        if let Some(manifest) = &self.mandatory_manifest {
+        if let Some(manifest) = self
+            .metadata
+            .as_ref()
+            .and_then(super::metadata::ArtifactMetadata::manifest)
+        {
             capacity = checked_capacity_add(capacity, escaped_capacity(manifest)?)?;
+            capacity = checked_capacity_add(capacity, 256)?;
+        }
+        if let Some(wrapper) = self
+            .metadata
+            .as_ref()
+            .and_then(super::metadata::ArtifactMetadata::scene_wrapper)
+        {
+            capacity = checked_capacity_add(
+                capacity,
+                wrapper
+                    .len()
+                    .saturating_add(2)
+                    .div_ceil(3)
+                    .saturating_mul(4),
+            )?;
             capacity = checked_capacity_add(capacity, 256)?;
         }
         capacity = checked_capacity_add(capacity, usize::from(self.background.is_some()) * 32)?;
@@ -506,14 +527,34 @@ impl SvgPlan {
         svg.push_str("\" height=\"");
         push_svg_number(&mut svg, self.output_height, "scaled SVG height")?;
         svg.push_str("\">");
-        if let Some(manifest) = &self.mandatory_manifest {
+        let scene_wrapper = self
+            .metadata
+            .as_ref()
+            .and_then(super::metadata::ArtifactMetadata::scene_wrapper);
+        let manifest = self
+            .metadata
+            .as_ref()
+            .and_then(super::metadata::ArtifactMetadata::manifest);
+        svg.push_str("<!-- svg-source:excalidraw --><metadata>");
+        if let Some(wrapper) = scene_wrapper {
             svg.push_str(concat!(
-                "<!-- svg-source:excalidraw --><metadata>",
+                "<!-- payload-type:application/vnd.excalidraw+json -->",
+                "<!-- payload-version:2 --><!-- payload-start -->"
+            ));
+            push_base64(&mut svg, wrapper)?;
+            svg.push_str("<!-- payload-end -->");
+        }
+        if let Some(manifest) = manifest {
+            svg.push_str(concat!(
                 "<excalidraw-render:manifest xmlns:excalidraw-render=\"",
                 "urn:excalidraw-render:artifact-manifest:1\">"
             ));
             push_escaped_text(&mut svg, manifest);
-            svg.push_str("</excalidraw-render:manifest></metadata>");
+            svg.push_str("</excalidraw-render:manifest>");
+        }
+        svg.push_str("</metadata>");
+        if self.fallback_font_woff2.is_none() && self.official_fonts.is_empty() {
+            svg.push_str("<defs></defs>");
         }
         if let Some(font) = &self.fallback_font_woff2 {
             svg.push_str(concat!(
@@ -1238,6 +1279,15 @@ impl SvgPlan {
         }
         svg.push_str("</svg>");
         Ok(svg.into_bytes())
+    }
+
+    pub(super) fn set_metadata(&mut self, metadata: super::metadata::ArtifactMetadata) {
+        self.metadata = Some(metadata);
+        self.mandatory_notices = None;
+    }
+
+    pub(super) fn take_mandatory_notices(&mut self) -> Option<String> {
+        self.mandatory_notices.take()
     }
 
     pub(super) fn source_count(&self) -> usize {

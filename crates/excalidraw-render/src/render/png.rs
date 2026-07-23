@@ -16,6 +16,8 @@ pub(super) struct PngPlan {
     background: Option<[u8; 4]>,
     fallback_colors: super::FallbackColors,
     image_fallback_background: CanonicalColor,
+    mandatory_notices: Option<String>,
+    metadata: Option<super::metadata::ArtifactMetadata>,
     elements: Vec<PngElement>,
 }
 
@@ -464,6 +466,8 @@ impl PngPlan {
                 crate::ColorMode::Light => CanonicalColor::from_rgb8(0xe7, 0xe7, 0xe7),
                 crate::ColorMode::Dark => CanonicalColor::from_rgb8(0x2e, 0x2e, 0x2e),
             },
+            mandatory_notices: scene.mandatory_notices,
+            metadata: None,
             elements,
         })
     }
@@ -471,7 +475,16 @@ impl PngPlan {
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
         let mut rgba = self.rasterize()?;
         canonicalize_straight_alpha(&mut rgba)?;
-        encode_rgba(self.width, self.height, &rgba)
+        encode_rgba(self.width, self.height, &rgba, self.metadata.as_ref())
+    }
+
+    pub(super) fn take_mandatory_notices(&mut self) -> Option<String> {
+        self.mandatory_notices.take()
+    }
+
+    pub(super) fn set_metadata(&mut self, metadata: super::metadata::ArtifactMetadata) {
+        self.metadata = Some(metadata);
+        self.mandatory_notices = None;
     }
 
     fn rasterize(&self) -> Result<Vec<u8>, FormatEncodeError> {
@@ -1460,7 +1473,12 @@ fn downsample_rgba(
     Ok(output)
 }
 
-fn encode_rgba(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, FormatEncodeError> {
+fn encode_rgba(
+    width: u32,
+    height: u32,
+    rgba: &[u8],
+    metadata: Option<&super::metadata::ArtifactMetadata>,
+) -> Result<Vec<u8>, FormatEncodeError> {
     const MAX_STORED_BLOCK_BYTES: usize = u16::MAX as usize;
 
     // Stored DEFLATE makes the exact PNG size known before fallible output allocation.
@@ -1486,8 +1504,25 @@ fn encode_rgba(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, FormatEn
         .and_then(|bytes| bytes.checked_add(raw_bytes))
         .and_then(|bytes| bytes.checked_add(4))
         .ok_or_else(png_size_error)?;
+    let metadata_bytes = metadata.map_or(0, |metadata| {
+        metadata
+            .scene_wrapper()
+            .map_or(0, |wrapper| {
+                12_usize
+                    .saturating_add("application/vnd.excalidraw+json".len())
+                    .saturating_add(1)
+                    .saturating_add(wrapper.len())
+            })
+            .saturating_add(metadata.manifest().map_or(0, |manifest| {
+                12_usize
+                    .saturating_add("excalidraw-render:artifact-manifest".len())
+                    .saturating_add(5)
+                    .saturating_add(manifest.len())
+            }))
+    });
     let output_bytes = 8_usize
         .checked_add(12 + 13)
+        .and_then(|bytes| bytes.checked_add(metadata_bytes))
         .and_then(|bytes| bytes.checked_add(12))
         .and_then(|bytes| bytes.checked_add(zlib_bytes))
         .and_then(|bytes| bytes.checked_add(12))
@@ -1547,6 +1582,40 @@ fn encode_rgba(width: u32, height: u32, rgba: &[u8]) -> Result<Vec<u8>, FormatEn
     png.extend_from_slice(&((adler_b << 16) | adler_a).to_be_bytes());
     let idat_crc = crc32(&png[idat_start..]);
     png.extend_from_slice(&idat_crc.to_be_bytes());
+    if let Some(metadata) = metadata {
+        if let Some(wrapper) = metadata.scene_wrapper() {
+            let mut text = Vec::new();
+            text.try_reserve_exact(
+                "application/vnd.excalidraw+json"
+                    .len()
+                    .saturating_add(1)
+                    .saturating_add(wrapper.len()),
+            )
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "metadata",
+                subject: "png_scene_chunk",
+            })?;
+            text.extend_from_slice(b"application/vnd.excalidraw+json\0");
+            text.extend_from_slice(wrapper);
+            append_chunk(&mut png, *b"tEXt", &text)?;
+        }
+        if let Some(manifest) = metadata.manifest() {
+            let mut text = Vec::new();
+            text.try_reserve_exact(
+                "excalidraw-render:artifact-manifest"
+                    .len()
+                    .saturating_add(5)
+                    .saturating_add(manifest.len()),
+            )
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "metadata",
+                subject: "png_manifest_chunk",
+            })?;
+            text.extend_from_slice(b"excalidraw-render:artifact-manifest\0\0\0\0\0");
+            text.extend_from_slice(manifest.as_bytes());
+            append_chunk(&mut png, *b"iTXt", &text)?;
+        }
+    }
     append_chunk(&mut png, *b"IEND", &[])?;
 
     if png.len() != output_bytes {
