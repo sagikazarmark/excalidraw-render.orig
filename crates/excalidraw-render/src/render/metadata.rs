@@ -30,7 +30,7 @@ impl ArtifactMetadata {
         scene: &SceneDocument,
         profile: &ReferenceProfileIdentity,
         report: &CompatibilityReport,
-        mandatory_notices: Option<&str>,
+        mandatory_notices: Option<&super::notices::MandatoryNotices>,
         selection: MetadataSelection,
     ) -> Result<Self, FormatEncodeError> {
         let canonical = selection
@@ -50,11 +50,11 @@ impl ArtifactMetadata {
                 })
             })
             .transpose()?;
-        let notices = mandatory_notices.unwrap_or("[]");
+        let notices = mandatory_notices.map_or("[]", super::notices::MandatoryNotices::as_json);
         let has_manifest = selection.provenance
             || selection.diagnostic_summary
             || selection.embedded_scene
-            || notices != "[]";
+            || mandatory_notices.is_some();
         let manifest = has_manifest
             .then(|| manifest_json(profile, report, notices, scene_digest.as_deref(), selection))
             .transpose()?;

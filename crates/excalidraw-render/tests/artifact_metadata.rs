@@ -1,7 +1,7 @@
 use base64::Engine as _;
 use excalidraw_render::{
-    DiagnosticCode, ErrorDetails, MetadataOptions, OutputFormat, Recovery, RenderRequest, Renderer,
-    ResourceLimits, SceneDocument, SupplementalAssets,
+    DiagnosticCode, ErrorCode, ErrorDetails, MetadataOptions, OutputFormat, Recovery,
+    RenderRequest, Renderer, ResourceLimits, SceneDocument, SupplementalAssets,
 };
 use sha2::{Digest, Sha256};
 
@@ -119,6 +119,192 @@ fn output_exhaustion_omits_only_the_crossing_optional_component() {
     }
 }
 
+#[test]
+fn rasterized_font_glyphs_do_not_create_a_png_notice_manifest() {
+    let scene = SceneDocument::parse(
+        br#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","width":100,"height":30,"fontSize":20,"fontFamily":3,"text":"Code","updated":1}],"appState":{},"files":{}}"#,
+    )
+    .expect("font scene is admitted");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format).build().unwrap();
+        let outcome = Renderer::new().render(&scene, &request).unwrap();
+        let manifest = artifact_manifest(format, outcome.artifact().bytes());
+
+        if format == OutputFormat::Png {
+            assert_eq!(manifest, None, "PNG glyph pixels carry no font notice");
+        } else {
+            let manifest = manifest.expect("embedded font requires a manifest");
+            let manifest: serde_json::Value = serde_json::from_str(&manifest).unwrap();
+            let notices = manifest["notices"].as_array().unwrap();
+            assert_eq!(notices.len(), 1);
+            assert!(notices[0]["asset_identity"]
+                .as_str()
+                .unwrap()
+                .starts_with("fonts/Cascadia/"));
+            assert!(notices[0]["text"]
+                .as_str()
+                .unwrap()
+                .contains("SIL OPEN FONT LICENSE Version 1.1"));
+        }
+    }
+}
+
+#[test]
+fn png_image_placeholders_carry_only_the_rendered_font_awesome_notices() {
+    for (status, expected) in [
+        (
+            "pending",
+            vec![(
+                "font-awesome-free-5.15.4/solid/image@sha256:f3a4dff85d862e91501af10000d758898ca2bc3055ea451423ddedac7f41c1d9",
+                "\"Image\" icon source",
+            )],
+        ),
+        (
+            "error",
+            vec![
+                (
+                    "font-awesome-free-5.15.4/solid/ban@sha256:8b43245cb319c865fdc4ec865967bcd8b4e833c5b9e108adad750d3db3b64ca9",
+                    "\"Ban\" icon source",
+                ),
+                (
+                    "font-awesome-free-5.15.4/solid/image@sha256:f3a4dff85d862e91501af10000d758898ca2bc3055ea451423ddedac7f41c1d9",
+                    "\"Image\" icon source",
+                ),
+            ],
+        ),
+    ] {
+        let source = format!(
+            "{{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{{\"id\":\"image\",\"type\":\"image\",\"width\":20,\"height\":10,\"fileId\":\"missing\",\"status\":\"{status}\",\"updated\":1}}],\"appState\":{{}},\"files\":{{}}}}"
+        );
+        let scene = SceneDocument::parse(source.as_bytes()).expect("image scene is admitted");
+
+        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+            let request = RenderRequest::builder(format).build().unwrap();
+            let outcome = Renderer::new().render(&scene, &request).unwrap();
+            let manifest = artifact_manifest(format, outcome.artifact().bytes());
+
+            if format != OutputFormat::Png {
+                assert_eq!(manifest, None, "unpainted placeholders carry no notice");
+                continue;
+            }
+            let manifest: serde_json::Value =
+                serde_json::from_str(&manifest.expect("painted placeholder requires notices"))
+                    .unwrap();
+            let notices = manifest["notices"].as_array().unwrap();
+            assert_eq!(notices.len(), expected.len());
+            for (notice, (identity, text_fragment)) in notices.iter().zip(&expected) {
+                assert_eq!(notice["asset_identity"], *identity);
+                let text = notice["text"].as_str().unwrap();
+                assert!(text.contains("Font Awesome Free 5.15.4 by @fontawesome"));
+                assert!(text.contains(text_fragment));
+                assert!(text.contains("Licensed under CC BY 4.0"));
+            }
+        }
+    }
+
+    let zero_sized = SceneDocument::parse(
+        br#"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":0,"height":10,"fileId":"missing","status":"error","updated":1}],"appState":{},"files":{}}"#,
+    )
+    .expect("zero-sized image scene is admitted");
+    let request = RenderRequest::builder(OutputFormat::Png).build().unwrap();
+    let outcome = Renderer::new().render(&zero_sized, &request).unwrap();
+    assert_eq!(
+        artifact_manifest(OutputFormat::Png, outcome.artifact().bytes()),
+        None,
+        "a placeholder without icon geometry carries no attribution"
+    );
+
+    let clipped = SceneDocument::parse(
+        br#"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":20,"height":10,"fileId":"missing","status":"error","frameId":"frame","updated":1},{"id":"frame","type":"frame","x":100,"width":10,"height":10,"updated":2}],"appState":{},"files":{}}"#,
+    )
+    .expect("clipped image scene is admitted");
+    let outcome = Renderer::new().render(&clipped, &request).unwrap();
+    assert_eq!(
+        artifact_manifest(OutputFormat::Png, outcome.artifact().bytes()),
+        None,
+        "a fully clipped placeholder carries no attribution"
+    );
+}
+
+#[test]
+fn output_limit_cannot_silently_remove_a_mandatory_notice() {
+    let font_scene = SceneDocument::parse(
+        br#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","width":100,"height":30,"fontSize":20,"fontFamily":3,"text":"Code","updated":1}],"appState":{},"files":{}}"#,
+    )
+    .unwrap();
+    let image_scene = SceneDocument::parse(
+        br#"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":20,"height":10,"fileId":"missing","status":"error","updated":1}],"appState":{},"files":{}}"#,
+    )
+    .unwrap();
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let scene = if format == OutputFormat::Png {
+            &image_scene
+        } else {
+            &font_scene
+        };
+        let unlimited_request = RenderRequest::builder(format).build().unwrap();
+        let unlimited = Renderer::new().render(scene, &unlimited_request).unwrap();
+        let limit = u64::try_from(unlimited.artifact().bytes().len()).unwrap() - 1;
+        let limited_request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(limit)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+
+        let error = Renderer::new().render(scene, &limited_request).unwrap_err();
+        assert_eq!(
+            error.code(),
+            match format {
+                OutputFormat::Svg => ErrorCode::ENCODE_SVG_FAILED,
+                OutputFormat::Png => ErrorCode::ENCODE_PNG_FAILED,
+                OutputFormat::Pdf => ErrorCode::ENCODE_PDF_FAILED,
+                _ => unreachable!(),
+            }
+        );
+        assert!(error.to_string().contains("mandatory notice"));
+    }
+}
+
+fn artifact_manifest(format: OutputFormat, artifact: &[u8]) -> Option<String> {
+    match format {
+        OutputFormat::Svg => {
+            let svg = std::str::from_utf8(artifact).unwrap();
+            svg.split_once("<excalidraw-render:manifest xmlns:excalidraw-render=\"urn:excalidraw-render:artifact-manifest:1\">")
+                .and_then(|(_, rest)| rest.split_once("</excalidraw-render:manifest>"))
+                .map(|(manifest, _)| xml_unescape(manifest))
+        }
+        OutputFormat::Png => optional_png_manifest(artifact),
+        OutputFormat::Pdf => {
+            let pdf = String::from_utf8_lossy(artifact);
+            pdf.split_once("<er:manifest>")
+                .and_then(|(_, rest)| rest.split_once("</er:manifest>"))
+                .map(|(manifest, _)| xml_unescape(manifest))
+        }
+        _ => unreachable!(),
+    }
+}
+
+fn optional_png_manifest(png: &[u8]) -> Option<String> {
+    let mut offset = 8;
+    while offset < png.len() {
+        let length = u32::from_be_bytes(png[offset..offset + 4].try_into().unwrap()) as usize;
+        let kind = &png[offset + 4..offset + 8];
+        let data = &png[offset + 8..offset + 8 + length];
+        if kind == b"iTXt" && data.starts_with(b"excalidraw-render:artifact-manifest\0") {
+            let keyword_end = data.iter().position(|byte| *byte == 0).unwrap();
+            return Some(String::from_utf8(data[keyword_end + 5..].to_vec()).unwrap());
+        }
+        offset += 12 + length;
+    }
+    None
+}
+
 fn manifest_without_scene(format: OutputFormat, artifact: &[u8]) -> String {
     match format {
         OutputFormat::Svg => {
@@ -225,18 +411,7 @@ fn extract_png(png: &[u8]) -> (String, Vec<u8>) {
 }
 
 fn extract_png_manifest(png: &[u8]) -> String {
-    let mut offset = 8;
-    while offset < png.len() {
-        let length = u32::from_be_bytes(png[offset..offset + 4].try_into().unwrap()) as usize;
-        let kind = &png[offset + 4..offset + 8];
-        let data = &png[offset + 8..offset + 8 + length];
-        if kind == b"iTXt" && data.starts_with(b"excalidraw-render:artifact-manifest\0") {
-            let keyword_end = data.iter().position(|byte| *byte == 0).unwrap();
-            return String::from_utf8(data[keyword_end + 5..].to_vec()).unwrap();
-        }
-        offset += 12 + length;
-    }
-    panic!("PNG manifest exists")
+    optional_png_manifest(png).expect("PNG manifest exists")
 }
 
 fn png_has_chunk_keyword(png: &[u8], kind: &[u8; 4], keyword: &[u8]) -> bool {

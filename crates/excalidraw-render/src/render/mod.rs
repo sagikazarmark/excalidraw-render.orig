@@ -1,6 +1,7 @@
 mod asset;
 mod freedraw;
 mod metadata;
+mod notices;
 mod pdf;
 mod png;
 mod rough;
@@ -1508,7 +1509,11 @@ impl RenderSession {
                             "/appState/viewBackgroundColor",
                         ));
                     }
-                    Err(ResolveSceneError::Memory | ResolveSceneError::InvalidFallbackFont) => {
+                    Err(
+                        ResolveSceneError::Memory
+                        | ResolveSceneError::InvalidFallbackFont
+                        | ResolveSceneError::InvalidMandatoryNotice,
+                    ) => {
                         return Err(self.internal_failure(
                             request.format(),
                             "empty scene resolution reached an impossible failure",
@@ -1545,6 +1550,15 @@ impl RenderSession {
                             request.format(),
                             "the sealed fallback font could not be resolved",
                             "/elements",
+                        ));
+                    }
+                    Err(ResolveSceneError::InvalidMandatoryNotice) => {
+                        return Err(self.format_failure(
+                            request,
+                            format_error_code(request.format()),
+                            FormatEncodeError::Encoding(
+                                "the mandatory font notice could not be resolved".to_owned(),
+                            ),
                         ));
                     }
                     Err(ResolveSceneError::InvalidColor) => {
@@ -1658,7 +1672,7 @@ impl RenderSession {
                 let (metadata, measured) = self.select_artifact_metadata(
                     scene,
                     request,
-                    mandatory_notices.as_deref(),
+                    mandatory_notices.as_ref(),
                     ErrorCode::ENCODE_SVG_FAILED,
                     0,
                     |metadata| {
@@ -2038,11 +2052,13 @@ impl RenderSession {
                     ),
                     rgba_bytes,
                 )?;
-                let mandatory_notices = plan.take_mandatory_notices();
+                let mandatory_notices = plan.mandatory_notices().map_err(|error| {
+                    self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error)
+                })?;
                 let (metadata, measured) = self.select_artifact_metadata(
                     scene,
                     request,
-                    mandatory_notices.as_deref(),
+                    mandatory_notices.as_ref(),
                     ErrorCode::ENCODE_PNG_FAILED,
                     rgba_bytes,
                     |metadata| {
@@ -2140,7 +2156,7 @@ impl RenderSession {
                 let (metadata, measured) = self.select_artifact_metadata(
                     scene,
                     request,
-                    mandatory_notices.as_deref(),
+                    mandatory_notices.as_ref(),
                     ErrorCode::ENCODE_PDF_FAILED,
                     0,
                     |metadata| {
@@ -2237,7 +2253,7 @@ impl RenderSession {
         &mut self,
         scene: &SceneDocument,
         request: &RenderRequest,
-        mandatory_notices: Option<&str>,
+        mandatory_notices: Option<&notices::MandatoryNotices>,
         error_code: ErrorCode,
         codec_emission_work: u64,
         mut measure: impl FnMut(&metadata::ArtifactMetadata) -> Result<Vec<u8>, FormatEncodeError>,
@@ -2264,6 +2280,15 @@ impl RenderSession {
             ))
             .is_some()
         {
+            if mandatory_notices.is_some() {
+                return Err(self.format_failure(
+                    request,
+                    error_code,
+                    FormatEncodeError::Encoding(
+                        "mandatory notice cannot be retained in the artifact".to_owned(),
+                    ),
+                ));
+            }
             return Ok((baseline, baseline_artifact));
         }
         let mut accepted_metadata = baseline;
@@ -2875,10 +2900,12 @@ impl RenderSession {
                             "artifact_manifest",
                             "font_notice_manifest",
                         ),
-                        text::LabelError::InvalidFont => self.internal_failure(
-                            request.format(),
-                            "the mandatory font notice could not be resolved",
-                            "/elements",
+                        text::LabelError::InvalidFont => self.format_failure(
+                            request,
+                            format_error_code(request.format()),
+                            FormatEncodeError::Encoding(
+                                "the mandatory font notice could not be resolved".to_owned(),
+                            ),
                         ),
                     })?,
             )
@@ -4188,7 +4215,7 @@ struct ResolvedScene {
     fallback_font_woff2: Option<Vec<u8>>,
     fallback_font_sfnt: Option<Vec<u8>>,
     official_fonts: Vec<ResolvedFont>,
-    mandatory_notices: Option<String>,
+    mandatory_notices: Option<notices::MandatoryNotices>,
     _relationships: crate::relationships::ResolvedRelationshipGraph,
 }
 
@@ -4798,8 +4825,17 @@ fn resolve_frame_opacity(
 enum ResolveSceneError {
     Memory,
     InvalidFallbackFont,
+    InvalidMandatoryNotice,
     InvalidColor,
     UnboundedGeometry,
+}
+
+fn format_error_code(format: OutputFormat) -> ErrorCode {
+    match format {
+        OutputFormat::Svg => ErrorCode::ENCODE_SVG_FAILED,
+        OutputFormat::Png => ErrorCode::ENCODE_PNG_FAILED,
+        OutputFormat::Pdf => ErrorCode::ENCODE_PDF_FAILED,
+    }
 }
 
 impl From<std::collections::TryReserveError> for ResolveSceneError {
@@ -5512,7 +5548,7 @@ impl ResolvedScene {
                 text::mandatory_notices_json(has_label, &resolved_fonts).map_err(|error| {
                     match error {
                         text::LabelError::Memory => ResolveSceneError::Memory,
-                        text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+                        text::LabelError::InvalidFont => ResolveSceneError::InvalidMandatoryNotice,
                     }
                 })?,
             )

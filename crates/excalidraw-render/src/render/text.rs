@@ -598,9 +598,8 @@ fn glyph_cluster_text<'a>(
 pub(super) fn mandatory_notices_json(
     liberation: bool,
     official: &[super::ResolvedFont],
-) -> Result<String, LabelError> {
+) -> Result<super::notices::MandatoryNotices, LabelError> {
     let full_ofl_notice = liberation_sans_notice().ok_or(LabelError::InvalidFont)?;
-    let excalifont_attribution = "Copyright (c) 2024 by Excalidraw. Excalifont is derived from Virgil by Your Own Font Foundry, with modifications by Jan Filipek / DizajnDesign. Excalifont and Virgil provenance is retained together.";
     let ofl_start = full_ofl_notice
         .find("This Font Software is licensed")
         .map(|index| &full_ofl_notice[index..])
@@ -634,27 +633,26 @@ pub(super) fn mandatory_notices_json(
             );
             liberation_pending = false;
         }
-        let attribution = match font.family {
-            "Cascadia Code" => "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code.",
-            "Comic Shanns" => comic_shanns_notice().ok_or(LabelError::InvalidFont)?,
-            "Excalifont" => excalifont_attribution,
-            "Liberation Sans" => "Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine. Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.",
-            "Lilita One" => "Copyright (c) 2011 Juan Montoreano (juan@remolacha.biz), with Reserved Font Name Lilita.",
-            "Nunito" => "Copyright 2014 The Nunito Project Authors (https://github.com/googlefonts/nunito).",
-            "Virgil" => "Virgil by Your Own Font Foundry, with Reserved Font Name Virgil.",
-            _ => return Err(LabelError::InvalidFont),
-        };
+        let provenance = crate::catalog::manifested_font_attribution(font.identity)
+            .map_err(|_| LabelError::InvalidFont)?;
         let mut official_notice = String::new();
-        official_notice.try_reserve_exact(
-            attribution
-                .len()
-                .saturating_add(2)
-                .saturating_add(ofl_start.len()),
-        )?;
-        official_notice.push_str(attribution);
-        if font.family != "Comic Shanns" {
+        if provenance.license_identity == "font.comic-shanns.mit" {
+            let notice = comic_shanns_notice().ok_or(LabelError::InvalidFont)?;
+            official_notice.try_reserve_exact(notice.len())?;
+            official_notice.push_str(notice);
+        } else if provenance.license_identity.ends_with(".ofl-1.1") {
+            official_notice.try_reserve_exact(
+                provenance
+                    .text
+                    .len()
+                    .saturating_add(2)
+                    .saturating_add(ofl_start.len()),
+            )?;
+            official_notice.push_str(&provenance.text);
             official_notice.push_str("\n\n");
             official_notice.push_str(ofl_start);
+        } else {
+            return Err(LabelError::InvalidFont);
         }
         push_manifest_notice(
             &mut manifest,
@@ -672,7 +670,7 @@ pub(super) fn mandatory_notices_json(
         );
     }
     manifest.push_str(suffix);
-    Ok(manifest)
+    Ok(super::notices::MandatoryNotices::from_json(manifest))
 }
 
 fn push_manifest_notice(
@@ -709,7 +707,7 @@ fn liberation_sans_notice() -> Option<&'static str> {
     tail.get(..end)
 }
 
-fn push_json_string_content(output: &mut String, value: &str) {
+pub(super) fn push_json_string_content(output: &mut String, value: &str) {
     for character in value.chars() {
         match character {
             '"' => output.push_str("\\\""),

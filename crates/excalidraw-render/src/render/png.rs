@@ -16,7 +16,6 @@ pub(super) struct PngPlan {
     background: Option<[u8; 4]>,
     fallback_colors: super::FallbackColors,
     image_fallback_background: CanonicalColor,
-    mandatory_notices: Option<String>,
     metadata: Option<super::metadata::ArtifactMetadata>,
     elements: Vec<PngElement>,
 }
@@ -143,6 +142,89 @@ fn project_frame_clips(
 }
 
 impl PngElement {
+    fn painted_font_awesome_status(
+        &self,
+        surface_width: u32,
+        surface_height: u32,
+    ) -> Option<crate::normalization::NormalizedImageStatus> {
+        match self {
+            Self::ImageFallback {
+                status,
+                frame_clips,
+                transform,
+                width,
+                height,
+                opacity,
+                render: true,
+                ..
+            } if *width > 0.0 && *height > 0.0 && *opacity > 0.0 => {
+                let (mut left, mut top, mut right, mut bottom) = fallback_coverage_bounds(
+                    *width,
+                    *height,
+                    *transform,
+                    surface_width,
+                    surface_height,
+                );
+                for clip in frame_clips {
+                    let bounds = clip.path.cubic_bounds()?;
+                    let points = [
+                        Point {
+                            x: bounds.0,
+                            y: bounds.1,
+                        },
+                        Point {
+                            x: bounds.2,
+                            y: bounds.1,
+                        },
+                        Point {
+                            x: bounds.2,
+                            y: bounds.3,
+                        },
+                        Point {
+                            x: bounds.0,
+                            y: bounds.3,
+                        },
+                    ]
+                    .map(|point| clip.transform.map_point(point));
+                    let clip_left = points
+                        .iter()
+                        .map(|point| point.x)
+                        .fold(f64::INFINITY, f64::min)
+                        .floor()
+                        .clamp(0.0, f64::from(surface_width))
+                        as u32;
+                    let clip_top = points
+                        .iter()
+                        .map(|point| point.y)
+                        .fold(f64::INFINITY, f64::min)
+                        .floor()
+                        .clamp(0.0, f64::from(surface_height))
+                        as u32;
+                    let clip_right = points
+                        .iter()
+                        .map(|point| point.x)
+                        .fold(f64::NEG_INFINITY, f64::max)
+                        .ceil()
+                        .clamp(0.0, f64::from(surface_width))
+                        as u32;
+                    let clip_bottom = points
+                        .iter()
+                        .map(|point| point.y)
+                        .fold(f64::NEG_INFINITY, f64::max)
+                        .ceil()
+                        .clamp(0.0, f64::from(surface_height))
+                        as u32;
+                    left = left.max(clip_left);
+                    top = top.max(clip_top);
+                    right = right.min(clip_right);
+                    bottom = bottom.min(clip_bottom);
+                }
+                (left < right && top < bottom).then_some(*status)
+            }
+            _ => None,
+        }
+    }
+
     fn frame_clips(&self) -> &[PngFrameClip] {
         match self {
             Self::RoughOutline { frame_clips, .. }
@@ -466,7 +548,6 @@ impl PngPlan {
                 crate::ColorMode::Light => CanonicalColor::from_rgb8(0xe7, 0xe7, 0xe7),
                 crate::ColorMode::Dark => CanonicalColor::from_rgb8(0x2e, 0x2e, 0x2e),
             },
-            mandatory_notices: scene.mandatory_notices,
             metadata: None,
             elements,
         })
@@ -478,13 +559,44 @@ impl PngPlan {
         encode_rgba(self.width, self.height, &rgba, self.metadata.as_ref())
     }
 
-    pub(super) fn take_mandatory_notices(&mut self) -> Option<String> {
-        self.mandatory_notices.take()
+    pub(super) fn mandatory_notices(
+        &self,
+    ) -> Result<Option<super::notices::MandatoryNotices>, FormatEncodeError> {
+        let has_image_fallback = self.elements.iter().any(|element| {
+            element
+                .painted_font_awesome_status(self.width, self.height)
+                .is_some()
+        });
+        let has_error_image_fallback = self.elements.iter().any(|element| {
+            element.painted_font_awesome_status(self.width, self.height)
+                == Some(crate::normalization::NormalizedImageStatus::Error)
+        });
+        let fallback_kinds: &[&str] = if has_error_image_fallback {
+            &["image", "image-error"]
+        } else {
+            &["image"]
+        };
+        has_image_fallback
+            .then(|| {
+                super::notices::MandatoryNotices::for_fallbacks(
+                    fallback_kinds,
+                    crate::OutputFormat::Png,
+                )
+            })
+            .transpose()
+            .map_err(|error| match error {
+                super::notices::NoticeError::Memory => FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "artifact_manifest",
+                    subject: "font_awesome_notice_manifest",
+                },
+                super::notices::NoticeError::InvalidProvenance => FormatEncodeError::Encoding(
+                    "the mandatory Font Awesome notice could not be resolved".to_owned(),
+                ),
+            })
     }
 
     pub(super) fn set_metadata(&mut self, metadata: super::metadata::ArtifactMetadata) {
         self.metadata = Some(metadata);
-        self.mandatory_notices = None;
     }
 
     fn rasterize(&self) -> Result<Vec<u8>, FormatEncodeError> {

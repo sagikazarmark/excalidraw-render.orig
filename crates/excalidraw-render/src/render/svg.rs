@@ -16,7 +16,7 @@ pub(super) struct SvgPlan {
     fallback_colors: super::FallbackColors,
     fallback_font_woff2: Option<Vec<u8>>,
     official_fonts: Vec<super::ResolvedFont>,
-    mandatory_notices: Option<String>,
+    mandatory_notices: Option<super::notices::MandatoryNotices>,
     metadata: Option<super::metadata::ArtifactMetadata>,
     elements: Vec<SvgElement>,
 }
@@ -1286,7 +1286,7 @@ impl SvgPlan {
         self.mandatory_notices = None;
     }
 
-    pub(super) fn take_mandatory_notices(&mut self) -> Option<String> {
+    pub(super) fn take_mandatory_notices(&mut self) -> Option<super::notices::MandatoryNotices> {
         self.mandatory_notices.take()
     }
 

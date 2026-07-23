@@ -49,7 +49,7 @@ pub(super) struct PdfPlan {
     page_height: f64,
     background: Option<CanonicalColor>,
     fallback_colors: super::FallbackColors,
-    mandatory_notices: Option<String>,
+    mandatory_notices: Option<super::notices::MandatoryNotices>,
     metadata: Option<super::metadata::ArtifactMetadata>,
     fallback_font_sfnt: Option<Vec<u8>>,
     official_fonts: Vec<super::ResolvedFont>,
@@ -345,7 +345,7 @@ impl PdfPlan {
         &self.raster_closures
     }
 
-    pub(super) fn take_mandatory_notices(&mut self) -> Option<String> {
+    pub(super) fn take_mandatory_notices(&mut self) -> Option<super::notices::MandatoryNotices> {
         self.mandatory_notices.take()
     }
 
