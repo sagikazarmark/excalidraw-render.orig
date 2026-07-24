@@ -1,0 +1,33 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "elements": [
+    {
+      "id": "image-1",
+      "type": "image",
+      "x": 0,
+      "y": 0,
+      "width": 10,
+      "height": 10,
+      "angle": 0,
+      "opacity": 100,
+      "fileId": "black-pixel",
+      "status": "saved",
+      "scale": [1, 1],
+      "seed": 707,
+      "updated": 1,
+      "isDeleted": false
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff"
+  },
+  "files": {
+    "black-pixel": {
+      "id": "black-pixel",
+      "mimeType": "image/png",
+      "dataURL": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "created": 1
+    }
+  }
+}

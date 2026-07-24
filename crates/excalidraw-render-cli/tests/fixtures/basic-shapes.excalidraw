@@ -99,15 +99,21 @@
       "points": [[0, 50], [65, 0], [130, 40]]
     },
     {
-      "id": "unsupported-text",
+      "id": "text-1",
       "type": "text",
       "x": 1000,
       "y": 1000,
       "width": 500,
       "height": 100,
-      "text": "This unsupported element must be skipped",
+      "angle": 0,
+      "text": "Text rendered by the complete CLI",
       "fontSize": 32,
+      "fontFamily": 5,
+      "lineHeight": 1.25,
       "strokeColor": "#000000",
+      "opacity": 100,
+      "seed": 606,
+      "updated": 1,
       "isDeleted": false
     }
   ],

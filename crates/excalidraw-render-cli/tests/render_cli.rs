@@ -322,11 +322,46 @@ fn renders_fixture_to_svg_png_and_pdf_deterministically() {
     let svg_text = String::from_utf8(svg_bytes).expect("SVG is UTF-8");
     assert!(svg_text.contains(r#"width="1510" height="1110""#));
     assert!(svg_text.starts_with("<svg "));
+    assert!(svg_text.contains(r#"data-source-text="Text rendered by the complete CLI""#));
 
     let pixmap = tiny_skia::Pixmap::decode_png(&png_bytes).expect("decode PNG output");
     assert_eq!(pixmap.width(), 3020);
     assert_eq!(pixmap.height(), 2220);
     assert!(pdf_bytes.starts_with(b"%PDF-"));
+    let pdf_text = String::from_utf8_lossy(&pdf_bytes);
+    assert!(pdf_text.contains("/BaseFont /Excalifont"));
+
+    fs::remove_dir_all(temp).expect("remove test temp directory");
+}
+
+#[test]
+fn preserves_embedded_images_across_cli_formats() {
+    let temp = temp_directory_named("embedded-image");
+    let fixture =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/embedded-image.excalidraw");
+    let svg = temp.join("image.svg");
+    let png = temp.join("image.png");
+    let pdf = temp.join("image.pdf");
+
+    run(&fixture, &svg, &[]);
+    run(&fixture, &png, &[]);
+    run(&fixture, &pdf, &[]);
+
+    let svg = fs::read_to_string(svg).expect("read SVG image output");
+    assert!(svg.contains("data:image/png;base64,"));
+    assert!(svg.contains(r#"width="10" height="10""#));
+
+    let png = tiny_skia::Pixmap::load_png(png).expect("decode PNG image output");
+    assert_eq!((png.width(), png.height()), (30, 30));
+    assert_eq!(
+        png.pixel(15, 15).expect("center pixel").demultiply(),
+        tiny_skia::ColorU8::from_rgba(0, 0, 0, 255)
+    );
+
+    let pdf = fs::read(pdf).expect("read PDF image output");
+    let pdf = String::from_utf8_lossy(&pdf);
+    assert!(pdf.contains("/Subtype /Image"));
+    assert!(pdf.contains("/Im0 Do"));
 
     fs::remove_dir_all(temp).expect("remove test temp directory");
 }

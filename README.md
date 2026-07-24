@@ -29,6 +29,9 @@ excalidraw-render [OPTIONS] <INPUT> --output <OUTPUT>
 The output format is inferred from a recognized path extension or selected with
 `--format`; the default padding is 10 logical pixels. Run
 `excalidraw-render --help` for the complete request and reporting controls.
+For large scenes, prefer `--max-dimension <value>` for PNG and PDF output;
+the default scale of 1 preserves the full logical dimensions and may exceed the
+raster-surface or PDF page-size limits.
 
 ```sh
 target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.svg

@@ -1963,7 +1963,9 @@ impl PdfPlan {
                             -source_rect.x * base_scale_x,
                         )
                     };
-                    let (image_scale_y, image_offset_y) = if scale[1] < 0 {
+                    // svg2pdf Forms already invert SVG's Y axis; compensate in our Y-down scene.
+                    let flip_y = (scale[1] < 0) != asset.sanitized_svg.is_some();
+                    let (image_scale_y, image_offset_y) = if flip_y {
                         (
                             -f64::from(asset.height) * base_scale_y,
                             *height + source_rect.y * base_scale_y,

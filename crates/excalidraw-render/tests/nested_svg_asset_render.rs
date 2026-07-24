@@ -30,6 +30,7 @@ fn basic_nested_svg_renders_in_svg_png_and_pdf() {
     let pdf = String::from_utf8_lossy(&render(&scene, OutputFormat::Pdf)).into_owned();
     assert!(pdf.starts_with("%PDF-1.7"));
     assert!(pdf.contains("/Svg0 Do"));
+    assert!(pdf.contains("20 0 0 -10 0 10 cm\n/Svg0 Do"));
     assert!(pdf.contains("/Subtype /Form"));
     assert!(!pdf.contains("/Subtype /Image"));
 }

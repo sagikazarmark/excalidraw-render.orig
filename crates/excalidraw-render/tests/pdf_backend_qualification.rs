@@ -59,7 +59,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
         .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "1429384e7a5bbce5450ccc666127628b61da2ffcacf531d20d5afc05d4fa10d9"
+        "a19ac4b3ee3b066910dcfe76baa2715f94fbb5a676aa261b66a7efd7cbde4a06"
     );
 
     let pdf = String::from_utf8_lossy(first.artifact().bytes());
@@ -98,7 +98,7 @@ fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
     assert_eq!(first.report(), second.report());
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "a65af342a74440b56a3a22abd06c99e2948a10df5b7cbb51b410143a10e9b90f"
+        "fca49caf756b24b7191d5773ba083af96979650eb830cc1d48c96d32b2f93d28"
     );
     let [diagnostic] = first.report().diagnostics() else {
         panic!("one isolated closure produces one diagnostic");
@@ -210,7 +210,7 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
     assert_eq!(outcome.report(), repeated.report());
     assert_eq!(
         format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
-        "3c22ea6adeb3d32e2d8c3bd125858ef40ed8846ccd4ee9d4324ea6297ecedc25"
+        "ddc239fdeea14a6cfc72d7c8eadbdfd2130647a4cec5f5afd9fdbeb3e61af4b5"
     );
     assert!(outcome.report().diagnostics().is_empty());
     for structure in [

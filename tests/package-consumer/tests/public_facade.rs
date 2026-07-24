@@ -55,13 +55,13 @@ const PDF_RISK_SET: &[(&str, &[u8], &str, &str)] = &[
     (
         "native-nested-svg",
         NATIVE_NESTED_SVG_SCENE,
-        "52119410fe97ab23d16471edd2bdcc0fc5d08e39a04c4d69f07c3365475d9a36",
+        "1c2a27e1a1f2af9c2eb6814d447a403c3069c03918e57dec8e87b9f06df61eb7",
         "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
     ),
     (
         "isolated-raster-fallback",
         RASTER_FALLBACK_SCENE,
-        "a65af342a74440b56a3a22abd06c99e2948a10df5b7cbb51b410143a10e9b90f",
+        "fca49caf756b24b7191d5773ba083af96979650eb830cc1d48c96d32b2f93d28",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
 ];
@@ -69,49 +69,49 @@ const PDF_FALLBACK_FAMILIES: &[(&str, &str, &str, &str)] = &[
     (
         "blur",
         r#"<feGaussianBlur stdDeviation="1"/>"#,
-        "a65af342a74440b56a3a22abd06c99e2948a10df5b7cbb51b410143a10e9b90f",
+        "fca49caf756b24b7191d5773ba083af96979650eb830cc1d48c96d32b2f93d28",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "convolution",
         r#"<feConvolveMatrix order="3" kernelMatrix="0 -1 0 -1 5 -1 0 -1 0"/>"#,
-        "2ce05131423f4b568c5fd20865662b9f3baddad3bcf7da71a2e1109c86a47339",
+        "16dc9cf785d79522c0a6202464886cce34fdbdfb402b706c18e63bf646ea78b0",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "morphology",
         r#"<feMorphology operator="dilate" radius="1"/>"#,
-        "2ce05131423f4b568c5fd20865662b9f3baddad3bcf7da71a2e1109c86a47339",
+        "16dc9cf785d79522c0a6202464886cce34fdbdfb402b706c18e63bf646ea78b0",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "displacement",
         r#"<feTurbulence baseFrequency="0.1" numOctaves="1" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>"#,
-        "9d210c1760b455276fe1230b1688a712c967424a5ba5b2d752bb100c0ce98745",
+        "295f0cb00ac7ad55a8cfb5955d6b1482486fb0520139e6386a5218b6892d6984",
         "a39664c294a12af60d1c206a0772a78ee73fccc76833b995d02cfdec127433c7",
     ),
     (
         "turbulence",
         r#"<feTurbulence baseFrequency="0.1" numOctaves="1"/>"#,
-        "55fa1734c32a1728575c916556d7ca5b307cbd4fff896f789ee86ee4dd7cc871",
+        "cd3b355a69f4a6c0ec1be30955bdc4e7efbff7ac800b2ea04c9bc6758a1f70df",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "lighting",
         r#"<feDiffuseLighting surfaceScale="2"><feDistantLight azimuth="45" elevation="60"/></feDiffuseLighting>"#,
-        "517123d65c95f1d4b3fd989d11df1fb5564a1e6c66a6301ec763937adbd0e108",
+        "582a0ea6832f735c7f3788c3ab828cddd6fb7e9ec14cdb95267520dc5e5c5a3f",
         "130660f6f7c8091d99e2976c06043b1fa657c21159e98104dd50c5cd2128c14b",
     ),
     (
         "post-composite-color",
         r#"<feColorMatrix type="saturate" values="0.5"/>"#,
-        "b7fbce430f1393a8e3f8510498a831bcf1d19bee374ecbcddff5f8b5b3901f20",
+        "cbf36a25edfd96f08697c1fa2612612d6e0e2c127e2fb313c23ff2d0eb6e6e88",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "filter-blend",
         r#"<feBlend in="SourceGraphic" in2="SourceGraphic" mode="overlay"/>"#,
-        "2ce05131423f4b568c5fd20865662b9f3baddad3bcf7da71a2e1109c86a47339",
+        "16dc9cf785d79522c0a6202464886cce34fdbdfb402b706c18e63bf646ea78b0",
         "7867f55c810c54ffd7d671366bad5db3de847cf44fecae17fd93323df6b56c31",
     ),
 ];
