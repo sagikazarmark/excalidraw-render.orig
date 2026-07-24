@@ -29,6 +29,10 @@ const EXCALIFONT_BASIC_LATIN_LENGTH: usize = 24_956;
 const EXCALIFONT_BASIC_LATIN_SFNT_SHA256: &str =
     "a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb";
 const EXCALIFONT_BASIC_LATIN_SFNT_LENGTH: usize = 61_948;
+const NOTO_EMOJI_SHA256: &str = "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634";
+const NOTO_EMOJI_LENGTH: usize = 862_680;
+const XIAOLAI_ORDER_SHA256: &str =
+    "c2cbbbfa669404795527e06cf596ab4b1b851f9bb993c608c8ab9c3c2aabe9d3";
 
 const ARTIFACTS: &[(&str, &str, &str)] = &[
     (
@@ -455,6 +459,14 @@ pub fn verify() -> Result<(), String> {
     verify_catalog_identity(&catalog, &scene_surface)?;
     let excalifont_source = verify_assets(&root, &catalog)?;
     verify_predecoded_excalifont(&root, &excalifont_source)?;
+    verify_noto_emoji(&root)?;
+    let xiaolai_order =
+        root.join("crates/excalidraw-render-assets-base/catalog/order/Xiaolai-index.ts");
+    let order_bytes = fs::read(&xiaolai_order)
+        .map_err(|error| format!("failed to read {}: {error}", xiaolai_order.display()))?;
+    if sha256(&order_bytes) != XIAOLAI_ORDER_SHA256 {
+        return Err("pinned Xiaolai declaration order digest is invalid".to_owned());
+    }
 
     let generated_path = base.join("src/generated/revision_1.rs");
     let generated = fs::read_to_string(&generated_path)
@@ -579,6 +591,41 @@ fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String
         .map_err(|error| format!("failed to verify Excalifont transformation: {error}"))?;
     if decoded != sfnt {
         return Err("checked-in Excalifont sfnt differs from the recorded decode".to_owned());
+    }
+    Ok(())
+}
+
+fn verify_noto_emoji(root: &Path) -> Result<(), String> {
+    let path =
+        root.join("crates/excalidraw-render-assets-base/catalog/fallback/NotoEmoji-Regular.ttf");
+    let sfnt =
+        fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    if sfnt.len() != NOTO_EMOJI_LENGTH || sha256(&sfnt) != NOTO_EMOJI_SHA256 {
+        return Err("checked-in Noto Emoji 3.003 fallback digest is invalid".to_owned());
+    }
+    let face = rustybuzz::Face::from_slice(&sfnt, 0)
+        .ok_or_else(|| "checked-in Noto Emoji fallback is not a valid sfnt".to_owned())?;
+    if face.units_per_em() != 1_000
+        || face.glyph_index('\u{1f600}').is_none()
+        || face.glyph_index('A').is_some()
+    {
+        return Err("checked-in Noto Emoji fallback metrics or mappings are invalid".to_owned());
+    }
+    let metadata_path = path.with_extension("ttf.json");
+    let metadata_bytes = fs::read(&metadata_path)
+        .map_err(|error| format!("failed to read {}: {error}", metadata_path.display()))?;
+    verify_canonical_json_bytes(&metadata_bytes, "Noto Emoji transformation record")?;
+    let metadata: Value = serde_json::from_slice(&metadata_bytes)
+        .map_err(|error| format!("invalid Noto Emoji transformation record: {error}"))?;
+    if metadata["approval"]["exact_output_bytes_reviewed"] != true
+        || metadata["comparison"]["version"] != "Version 3.003"
+        || metadata["source"]["sha256"] != NOTO_EMOJI_SHA256
+        || metadata["source"]["length"] != NOTO_EMOJI_LENGTH
+        || metadata["output"]["sha256"] != NOTO_EMOJI_SHA256
+        || metadata["output"]["length"] != NOTO_EMOJI_LENGTH
+        || metadata["transformation"]["identity"] != "identity.byte-exact.v1"
+    {
+        return Err("Noto Emoji transformation record is stale".to_owned());
     }
     Ok(())
 }

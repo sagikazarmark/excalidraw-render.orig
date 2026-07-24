@@ -26,6 +26,7 @@ pdf-writer.workspace = true
 resvg.workspace = true
 roxmltree.workspace = true
 rustybuzz.workspace = true
+unicode-bidi.workspace = true
 svgtypes.workspace = true
 svg2pdf.workspace = true
 tiny-skia.workspace = true

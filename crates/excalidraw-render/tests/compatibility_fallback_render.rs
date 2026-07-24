@@ -748,6 +748,35 @@ fn generated_labels_report_controlled_font_substitution_and_missing_glyphs() {
 }
 
 #[test]
+fn embeddable_labels_use_noto_for_emoji_occurrences() {
+    let scene = SceneDocument::parse(
+        r##"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"embed","type":"embeddable","x":0,"y":0,"width":260,"height":80,"strokeColor":"#1e1e1e","backgroundColor":"#a5d8ff","link":"https://example.com/😀","seed":1,"updated":1}],
+        "appState":{},"files":{}
+    }"##
+        .as_bytes(),
+    )
+    .expect("emoji embeddable label is admitted");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let outcome = render(&scene, format);
+        assert!(outcome.report().diagnostics().iter().any(|diagnostic| {
+            diagnostic.code() == DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED
+        }));
+        assert!(!outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .any(|diagnostic| { diagnostic.code() == DiagnosticCode::FONT_MISSING_GLYPH }));
+        if format == OutputFormat::Svg {
+            let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+            assert!(svg.contains("font-family=\"Noto Emoji\""));
+        }
+    }
+}
+
+#[test]
 fn resource_specific_omission_never_uses_the_generic_known_element_box() {
     let scene = SceneDocument::parse(br#"{
         "type":"excalidraw","version":2,

@@ -18,9 +18,11 @@ pub(super) struct FallbackFont {
 
 pub(super) struct OfficialFont {
     source_family: i32,
+    catalog_family: &'static str,
     family: &'static str,
     pdf_name: &'static str,
     identity: &'static str,
+    svg_mime: &'static str,
     woff2: Vec<u8>,
     sfnt: Vec<u8>,
 }
@@ -34,6 +36,9 @@ pub(super) struct ResolvedText {
     pub(super) scalar_count: u64,
     pub(super) line_break_steps: u64,
     pub(super) missing_codepoints: Vec<u32>,
+    pub(super) noto_emoji_substituted: bool,
+    pub(super) fallback_probes: u64,
+    fallback_resources: u64,
     pub(super) prepaid_glyphs: u64,
     pub(super) prepaid_line_break_steps: u64,
 }
@@ -70,6 +75,16 @@ pub(super) struct ResolvedLabel {
     pub(super) glyph_count: u64,
     pub(super) missing_codepoints: Vec<u32>,
     pub(super) glyphs: Vec<ResolvedGlyph>,
+    pub(super) runs: Vec<ResolvedTextRun>,
+}
+
+pub(super) struct ResolvedTextRun {
+    pub(super) font_index: usize,
+    pub(super) font_family: &'static str,
+    pub(super) display_text: String,
+    pub(super) glyph_start: usize,
+    pub(super) glyph_end: usize,
+    pub(super) rtl: bool,
 }
 
 pub(super) struct ResolvedGlyph {
@@ -245,6 +260,7 @@ impl FallbackFont {
             glyph_count: u64::try_from(glyphs.glyph_infos().len()).unwrap_or(u64::MAX),
             missing_codepoints,
             glyphs: resolved_glyphs,
+            runs: Vec::new(),
         }))
     }
 }
@@ -306,9 +322,11 @@ impl OfficialFont {
         rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
         Ok(Self {
             source_family: font_family,
+            catalog_family,
             family,
             pdf_name,
             identity: record.identity,
+            svg_mime: "font/woff2",
             woff2,
             sfnt,
         })
@@ -393,6 +411,9 @@ impl OfficialFont {
             scalar_count: u64::try_from(text.chars().count()).unwrap_or(u64::MAX),
             line_break_steps,
             missing_codepoints,
+            noto_emoji_substituted: false,
+            fallback_probes: 0,
+            fallback_resources: 0,
             prepaid_glyphs: u64::try_from(
                 text.chars().filter(|character| *character != '\n').count(),
             )
@@ -448,19 +469,478 @@ impl OfficialFont {
         Ok(wrapped)
     }
 
-    pub(super) fn into_parts(self) -> (&'static str, &'static str, &'static str, Vec<u8>, Vec<u8>) {
+    pub(super) fn into_parts(
+        self,
+    ) -> (
+        &'static str,
+        &'static str,
+        &'static str,
+        &'static str,
+        Vec<u8>,
+        Vec<u8>,
+    ) {
         (
             self.family,
             self.pdf_name,
             self.identity,
+            self.svg_mime,
             self.woff2,
             self.sfnt,
         )
     }
 
+    fn supports(&self, character: char) -> bool {
+        rustybuzz::Face::from_slice(&self.sfnt, 0)
+            .and_then(|face| face.glyph_index(character))
+            .is_some()
+    }
+
+    fn advance(&self, text: &str, font_size: f64) -> Result<f64, LabelError> {
+        let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let units = shape_text(&face, text)
+            .glyph_positions()
+            .iter()
+            .fold(0_i64, |sum, position| {
+                sum.saturating_add(i64::from(position.x_advance))
+            });
+        Ok(units as f64 * font_size / f64::from(face.units_per_em()))
+    }
+
+    fn load_catalog_record(
+        source_family: i32,
+        catalog_family: &'static str,
+        family: &'static str,
+        pdf_name: &'static str,
+        record: &'static excalidraw_render_assets_base::AssetRecord,
+    ) -> Result<Self, LabelError> {
+        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+            .map_err(|_| LabelError::InvalidFont)?
+            .ok_or(LabelError::InvalidFont)?;
+        let sfnt = wuff::decompress_woff2(asset.bytes()).map_err(|_| LabelError::InvalidFont)?;
+        rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let mut woff2 = Vec::new();
+        woff2.try_reserve_exact(asset.bytes().len())?;
+        woff2.extend_from_slice(asset.bytes());
+        Ok(Self {
+            source_family,
+            catalog_family,
+            family,
+            pdf_name,
+            identity: record.identity,
+            svg_mime: "font/woff2",
+            woff2,
+            sfnt,
+        })
+    }
+
+    fn load_noto_emoji(character: char) -> Result<Option<Self>, LabelError> {
+        let asset = excalidraw_render_assets_base::load_noto_emoji_sfnt()
+            .map_err(|_| LabelError::InvalidFont)?;
+        let face = rustybuzz::Face::from_slice(asset.bytes(), 0).ok_or(LabelError::InvalidFont)?;
+        if face.glyph_index(character).is_none() {
+            return Ok(None);
+        }
+        let mut sfnt = Vec::new();
+        sfnt.try_reserve_exact(asset.bytes().len())?;
+        sfnt.extend_from_slice(asset.bytes());
+        Ok(Some(Self {
+            source_family: 1_000,
+            catalog_family: "NotoEmoji",
+            family: "Noto Emoji",
+            pdf_name: "NotoEmoji",
+            identity: concat!(
+                "scripts/woff2/assets/NotoEmoji-Regular.ttf@sha256:",
+                "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634"
+            ),
+            svg_mime: "font/ttf",
+            woff2: sfnt.clone(),
+            sfnt,
+        }))
+    }
+
     pub(super) fn matches_family(&self, font_family: i32) -> bool {
         self.source_family == font_family
             || matches!((self.source_family, font_family), (2, 9) | (9, 2))
+    }
+}
+
+pub(super) fn layout_with_fallbacks(
+    primary_index: usize,
+    fonts: &mut Vec<OfficialFont>,
+    text: &str,
+    layout: TextLayout<'_>,
+) -> Result<(ResolvedText, bool), LabelError> {
+    let primary = fonts.get(primary_index).ok_or(LabelError::InvalidFont)?;
+    let primary_face =
+        rustybuzz::Face::from_slice(&primary.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+    let text_align = ResolvedTextAlign::from_normalized(layout.text_align);
+    let line_step = layout.font_size * layout.line_height;
+    let scale = layout.font_size / f64::from(primary_face.units_per_em());
+    let first_baseline = line_step / 2.0
+        + f64::from(primary_face.ascender() + primary_face.descender()) * scale / 2.0;
+    let mut lines = Vec::new();
+    let mut missing_codepoints = Vec::new();
+    let mut used_noto = false;
+    let mut fallback_probes = 0_u64;
+    let mut resolved_characters = Vec::<(char, usize, char, bool, bool, u64)>::new();
+    let mut line_break_steps = 0_u64;
+
+    for (line_index, source_line) in text.split_inclusive('\n').enumerate() {
+        let has_newline = source_line.ends_with('\n');
+        let source_content = source_line.strip_suffix('\n').unwrap_or(source_line);
+        let baseline = first_baseline + line_index as f64 * line_step;
+        let mut selections = Vec::<(usize, bool, usize, char)>::new();
+        let mut line_missing = Vec::<(usize, u32)>::new();
+        selections.try_reserve_exact(source_content.chars().count())?;
+        let bidi = unicode_bidi::BidiInfo::new(source_content, None);
+        let visual_ranges = if let Some(paragraph) = bidi.paragraphs.first() {
+            let (levels, ranges) = bidi.visual_runs(paragraph, paragraph.range.clone());
+            ranges
+                .into_iter()
+                .map(|range| {
+                    let rtl = levels.get(range.start).is_some_and(|level| level.is_rtl());
+                    (range, rtl)
+                })
+                .collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        };
+        if visual_ranges.is_empty() {
+            for (offset, character) in source_content.char_indices() {
+                let (font_index, display, noto, missing) = resolve_character_cached(
+                    primary_index,
+                    fonts,
+                    character,
+                    &mut resolved_characters,
+                    &mut fallback_probes,
+                )?;
+                selections.push((0, false, font_index, display));
+                used_noto |= noto;
+                if missing {
+                    line_missing.try_reserve(1)?;
+                    line_missing.push((offset, u32::from(character)));
+                }
+            }
+        } else {
+            for (bidi_run, (range, rtl)) in visual_ranges.into_iter().enumerate() {
+                let run_text = source_content
+                    .get(range.clone())
+                    .ok_or(LabelError::InvalidFont)?;
+                for (offset, character) in run_text.char_indices() {
+                    let (font_index, display, noto, missing) = resolve_character_cached(
+                        primary_index,
+                        fonts,
+                        character,
+                        &mut resolved_characters,
+                        &mut fallback_probes,
+                    )?;
+                    selections.push((bidi_run, rtl, font_index, display));
+                    used_noto |= noto;
+                    if missing {
+                        line_missing.try_reserve(1)?;
+                        line_missing
+                            .push((range.start.saturating_add(offset), u32::from(character)));
+                    }
+                }
+            }
+        }
+        line_missing.sort_unstable_by_key(|(offset, _)| *offset);
+        missing_codepoints.try_reserve(line_missing.len())?;
+        missing_codepoints.extend(line_missing.into_iter().map(|(_, codepoint)| codepoint));
+
+        let mut grouped = Vec::<(usize, bool, usize, String)>::new();
+        for (bidi_run, rtl, font_index, character) in selections {
+            if let Some((last_bidi_run, _, last_index, run_text)) = grouped.last_mut() {
+                if *last_bidi_run == bidi_run && *last_index == font_index {
+                    run_text.push(character);
+                    continue;
+                }
+            }
+            grouped.try_reserve(1)?;
+            let mut run_text = String::new();
+            run_text.try_reserve(character.len_utf8())?;
+            run_text.push(character);
+            grouped.push((bidi_run, rtl, font_index, run_text));
+        }
+
+        let mut total_advance = 0.0;
+        for (_, _, font_index, run_text) in &grouped {
+            total_advance += fonts
+                .get(*font_index)
+                .ok_or(LabelError::InvalidFont)?
+                .advance(run_text, layout.font_size)?;
+        }
+        let line_origin = match text_align {
+            ResolvedTextAlign::Left => 0.0,
+            ResolvedTextAlign::Center => (layout.width - total_advance) / 2.0,
+            ResolvedTextAlign::Right => layout.width - total_advance,
+        };
+        let mut pen_x = line_origin;
+        let mut operations = Vec::new();
+        let mut glyphs = Vec::new();
+        let mut runs = Vec::new();
+        let mut display_text = String::new();
+        for (_, rtl, font_index, run_text) in grouped {
+            let font = fonts.get(font_index).ok_or(LabelError::InvalidFont)?;
+            let face = rustybuzz::Face::from_slice(&font.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+            let mut run = shape_official_line(
+                &face,
+                &run_text,
+                &run_text,
+                layout.width,
+                layout.font_size,
+                baseline,
+                ResolvedTextAlign::Left,
+            )?;
+            shift_label_x(&mut run, pen_x);
+            let glyph_start = glyphs.len();
+            operations.try_reserve(run.path.operations.len())?;
+            operations.extend(run.path.operations);
+            glyphs.try_reserve(run.glyphs.len())?;
+            glyphs.extend(run.glyphs);
+            let glyph_end = glyphs.len();
+            display_text.try_reserve(run_text.len())?;
+            display_text.push_str(&run_text);
+            runs.try_reserve(1)?;
+            runs.push(ResolvedTextRun {
+                font_index,
+                font_family: font.family,
+                display_text: run_text.clone(),
+                glyph_start,
+                glyph_end,
+                rtl,
+            });
+            pen_x += font.advance(&run_text, layout.font_size)?;
+        }
+        let mut owned_source = try_owned(source_content)?;
+        if has_newline {
+            owned_source.push('\n');
+        }
+        lines.try_reserve(1)?;
+        lines.push(ResolvedLabel {
+            text: owned_source,
+            display_text,
+            baseline,
+            path: LabelPath { operations },
+            glyph_count: u64::try_from(glyphs.len()).unwrap_or(u64::MAX),
+            missing_codepoints: Vec::new(),
+            glyphs,
+            runs,
+        });
+        line_break_steps = line_break_steps.saturating_add(1);
+    }
+    if text.is_empty() || text.ends_with('\n') {
+        lines.try_reserve(1)?;
+        lines.push(ResolvedLabel {
+            text: String::new(),
+            display_text: String::new(),
+            baseline: first_baseline + lines.len() as f64 * line_step,
+            path: LabelPath {
+                operations: Vec::new(),
+            },
+            glyph_count: 0,
+            missing_codepoints: Vec::new(),
+            glyphs: Vec::new(),
+            runs: Vec::new(),
+        });
+        line_break_steps = line_break_steps.saturating_add(1);
+    }
+    let mut fallback_indexes = Vec::new();
+    for run in lines.iter().flat_map(|line| &line.runs) {
+        if run.font_index != primary_index && !fallback_indexes.contains(&run.font_index) {
+            fallback_indexes.push(run.font_index);
+        }
+    }
+    Ok((
+        ResolvedText {
+            font_index: primary_index,
+            font_family: fonts
+                .get(primary_index)
+                .ok_or(LabelError::InvalidFont)?
+                .family,
+            font_size: layout.font_size,
+            text_align,
+            lines,
+            scalar_count: u64::try_from(text.chars().count()).unwrap_or(u64::MAX),
+            line_break_steps,
+            missing_codepoints,
+            noto_emoji_substituted: used_noto,
+            fallback_probes,
+            fallback_resources: u64::try_from(fallback_indexes.len()).unwrap_or(u64::MAX),
+            prepaid_glyphs: u64::try_from(
+                text.chars().filter(|character| *character != '\n').count(),
+            )
+            .unwrap_or(u64::MAX),
+            prepaid_line_break_steps: u64::try_from(text.split('\n').count()).unwrap_or(u64::MAX),
+        },
+        used_noto,
+    ))
+}
+
+pub(super) fn contains_bidirectional_text(text: &str) -> bool {
+    unicode_bidi::BidiInfo::new(text, None).has_rtl()
+}
+
+fn resolve_character_font(
+    primary_index: usize,
+    fonts: &mut Vec<OfficialFont>,
+    character: char,
+    fallback_probes: &mut u64,
+) -> Result<(usize, char, bool, bool), LabelError> {
+    let primary = fonts.get(primary_index).ok_or(LabelError::InvalidFont)?;
+    if primary.supports(character) {
+        return Ok((primary_index, character, false, false));
+    }
+    let source_family = primary.source_family;
+    let catalog_family = primary.catalog_family;
+    let family = primary.family;
+    let pdf_name = primary.pdf_name;
+    if let Some(index) = select_catalog_font(
+        fonts,
+        source_family,
+        catalog_family,
+        family,
+        pdf_name,
+        character,
+        fallback_probes,
+    )? {
+        return Ok((index, character, false, false));
+    }
+    if source_family == 5 {
+        if let Some(index) = select_catalog_font(
+            fonts,
+            100,
+            "Xiaolai",
+            "Xiaolai",
+            "Xiaolai",
+            character,
+            fallback_probes,
+        )? {
+            return Ok((index, character, false, false));
+        }
+    }
+    for (index, font) in fonts.iter().enumerate() {
+        if font.catalog_family == "NotoEmoji" {
+            *fallback_probes = fallback_probes.saturating_add(1);
+            if font.supports(character) {
+                return Ok((index, character, true, false));
+            }
+        }
+    }
+    *fallback_probes = fallback_probes.saturating_add(1);
+    if let Some(font) = OfficialFont::load_noto_emoji(character)? {
+        fonts.try_reserve(1)?;
+        fonts.push(font);
+        return Ok((fonts.len() - 1, character, true, false));
+    }
+    let replacement = select_catalog_font(
+        fonts,
+        9,
+        "Liberation",
+        "Liberation Sans",
+        "LiberationSans",
+        '?',
+        fallback_probes,
+    )?
+    .ok_or(LabelError::InvalidFont)?;
+    Ok((replacement, '?', false, true))
+}
+
+fn resolve_character_cached(
+    primary_index: usize,
+    fonts: &mut Vec<OfficialFont>,
+    character: char,
+    cache: &mut Vec<(char, usize, char, bool, bool, u64)>,
+    fallback_probes: &mut u64,
+) -> Result<(usize, char, bool, bool), LabelError> {
+    if let Some((_, font_index, display, noto, missing, probes)) =
+        cache.iter().find(|(cached, ..)| *cached == character)
+    {
+        *fallback_probes = fallback_probes.saturating_add(*probes);
+        return Ok((*font_index, *display, *noto, *missing));
+    }
+    let probes_before = *fallback_probes;
+    let resolved = resolve_character_font(primary_index, fonts, character, fallback_probes)?;
+    let probes = fallback_probes.saturating_sub(probes_before);
+    cache.try_reserve(1)?;
+    cache.push((
+        character, resolved.0, resolved.1, resolved.2, resolved.3, probes,
+    ));
+    Ok(resolved)
+}
+
+fn select_catalog_font(
+    fonts: &mut Vec<OfficialFont>,
+    source_family: i32,
+    catalog_family: &'static str,
+    family: &'static str,
+    pdf_name: &'static str,
+    character: char,
+    fallback_probes: &mut u64,
+) -> Result<Option<usize>, LabelError> {
+    let mut records = Vec::new();
+    for record in excalidraw_render_assets_base::revision_1()
+        .assets
+        .iter()
+        .filter(|record| record.family == catalog_family)
+    {
+        records.try_reserve(1)?;
+        records.push(record);
+    }
+    records.sort_unstable_by_key(|record| {
+        excalidraw_render_assets_base::font_face_order(catalog_family, record.upstream_path)
+            .unwrap_or(usize::MAX)
+    });
+    for record in records {
+        *fallback_probes = fallback_probes.saturating_add(1);
+        if let Some(index) = fonts
+            .iter()
+            .position(|font| font.identity == record.identity)
+        {
+            if fonts[index].supports(character) {
+                return Ok(Some(index));
+            }
+            continue;
+        }
+        let font = OfficialFont::load_catalog_record(
+            source_family,
+            catalog_family,
+            family,
+            pdf_name,
+            record,
+        )?;
+        if font.supports(character) {
+            fonts.try_reserve(1)?;
+            fonts.push(font);
+            return Ok(Some(fonts.len() - 1));
+        }
+    }
+    Ok(None)
+}
+
+fn shift_label_x(label: &mut ResolvedLabel, delta: f64) {
+    for operation in &mut label.path.operations {
+        match operation {
+            LabelPathOperation::Move { x, .. } | LabelPathOperation::Line { x, .. } => *x += delta,
+            LabelPathOperation::Quadratic { control_x, x, .. } => {
+                *control_x += delta;
+                *x += delta;
+            }
+            LabelPathOperation::Cubic {
+                control_1_x,
+                control_2_x,
+                x,
+                ..
+            } => {
+                *control_1_x += delta;
+                *control_2_x += delta;
+                *x += delta;
+            }
+            LabelPathOperation::Close => {}
+        }
+    }
+    for glyph in &mut label.glyphs {
+        glyph.x += delta;
     }
 }
 
@@ -480,6 +960,58 @@ impl ResolvedText {
         self.lines.iter().fold(0_u64, |total, line| {
             total.saturating_add(u64::try_from(line.path.operations.len()).unwrap_or(u64::MAX))
         })
+    }
+
+    pub(super) fn run_count(&self) -> u64 {
+        self.lines.iter().fold(0_u64, |total, line| {
+            total.saturating_add(if line.runs.is_empty() {
+                1
+            } else {
+                u64::try_from(line.runs.len()).unwrap_or(u64::MAX)
+            })
+        })
+    }
+
+    pub(super) fn fallback_resource_count(&self) -> u64 {
+        self.fallback_resources
+    }
+
+    pub(super) fn retain_font_indices(&self, indexes: &mut Vec<usize>) {
+        if self.lines.iter().all(|line| line.runs.is_empty()) {
+            if !indexes.contains(&self.font_index) {
+                indexes.push(self.font_index);
+            }
+            return;
+        }
+        for run in self.lines.iter().flat_map(|line| &line.runs) {
+            if !indexes.contains(&run.font_index) {
+                indexes.push(run.font_index);
+            }
+        }
+    }
+
+    pub(super) fn remap_font_indices(
+        &mut self,
+        mapping: &[Option<usize>],
+    ) -> Result<(), LabelError> {
+        let remapped_primary = mapping.get(self.font_index).copied().flatten();
+        for run in self.lines.iter_mut().flat_map(|line| &mut line.runs) {
+            run.font_index = mapping
+                .get(run.font_index)
+                .copied()
+                .flatten()
+                .ok_or(LabelError::InvalidFont)?;
+        }
+        self.font_index = remapped_primary
+            .or_else(|| {
+                self.lines
+                    .iter()
+                    .flat_map(|line| &line.runs)
+                    .next()
+                    .map(|run| run.font_index)
+            })
+            .ok_or(LabelError::InvalidFont)?;
+        Ok(())
     }
 }
 
@@ -578,6 +1110,7 @@ fn shape_official_line(
         glyph_count: u64::try_from(glyphs.glyph_infos().len()).unwrap_or(u64::MAX),
         missing_codepoints,
         glyphs: resolved_glyphs,
+        runs: Vec::new(),
     })
 }
 
@@ -653,6 +1186,11 @@ pub(super) fn mandatory_notices_json(
             );
             liberation_pending = false;
         }
+        if font.family == "Noto Emoji" {
+            let notice = noto_emoji_notice().ok_or(LabelError::InvalidFont)?;
+            push_manifest_notice(&mut manifest, &mut separator, font.identity, notice);
+            continue;
+        }
         let provenance = crate::catalog::manifested_font_attribution(font.identity)
             .map_err(|_| LabelError::InvalidFont)?;
         let mut official_notice = String::new();
@@ -725,6 +1263,13 @@ fn liberation_sans_notice() -> Option<&'static str> {
     let tail = bundle.get(start..)?;
     let end = tail.find(END)?;
     tail.get(..end)
+}
+
+fn noto_emoji_notice() -> Option<&'static str> {
+    const START: &str = "noto-emoji.ofl-full\n";
+    let bundle = excalidraw_render_assets_base::license_bundle();
+    let start = bundle.find(START)?.checked_add(START.len())?;
+    bundle.get(start..)
 }
 
 pub(super) fn push_json_string_content(output: &mut String, value: &str) {

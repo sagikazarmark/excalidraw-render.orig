@@ -180,6 +180,132 @@ fn comic_shanns_carries_its_mit_notice_without_ofl_terms() {
     assert!(!svg.contains("SIL OPEN FONT LICENSE"));
 }
 
+#[test]
+fn excalifont_uses_ordered_cjk_and_emoji_fallbacks_in_every_format() {
+    let scene = text_scene(5, "A\u{4e2d}\u{1f600}");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("request is valid");
+        let first = Renderer::new()
+            .render(&scene, &request)
+            .expect("mixed-range text renders");
+        let second = Renderer::new()
+            .render(&scene, &request)
+            .expect("repeated mixed-range rendering succeeds");
+
+        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+        assert_eq!(first.report(), second.report());
+        let [diagnostic] = first.report().diagnostics() else {
+            panic!("emoji substitution has one occurrence diagnostic");
+        };
+        assert_eq!(
+            diagnostic.code(),
+            DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED
+        );
+        assert_eq!(diagnostic.element_id(), Some("text"));
+
+        match format {
+            OutputFormat::Svg => {
+                let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
+                assert!(svg.contains("font-family:'Excalifont'"));
+                assert!(svg.contains("font-family:'Xiaolai'"));
+                assert!(svg.contains("font-family:'Noto Emoji'"));
+                assert!(svg.contains("font-family=\"Xiaolai\""));
+                assert!(svg.contains("font-family=\"Noto Emoji\""));
+            }
+            OutputFormat::Png => assert!(first.artifact().bytes().starts_with(b"\x89PNG")),
+            OutputFormat::Pdf => {
+                let pdf = String::from_utf8_lossy(first.artifact().bytes());
+                assert!(pdf.contains("/BaseFont /Excalifont"));
+                assert!(pdf.contains("/BaseFont /Xiaolai"));
+                assert!(pdf.contains("/BaseFont /NotoEmoji"));
+                assert!(pdf.contains("/ActualText <FEFF00414E2DD83DDE00>"));
+            }
+            _ => unreachable!("this test covers revision 1 formats"),
+        }
+    }
+}
+
+#[test]
+fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
+    let scene = text_scene(9, "abc \u{5d0}\u{5d1}\u{5d2} 123");
+
+    let svg_request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("SVG request is valid");
+    let svg_outcome = Renderer::new()
+        .render(&scene, &svg_request)
+        .expect("bidirectional SVG renders");
+    let svg = std::str::from_utf8(svg_outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg_outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .all(|diagnostic| diagnostic.code() == DiagnosticCode::FONT_MISSING_GLYPH));
+    assert!(svg.contains("direction=\"rtl\""));
+    assert!(svg.contains("direction=\"ltr\""));
+
+    let pdf_request = RenderRequest::builder(OutputFormat::Pdf)
+        .build()
+        .expect("PDF request is valid");
+    let first = Renderer::new()
+        .render(&scene, &pdf_request)
+        .expect("bidirectional PDF renders");
+    let second = Renderer::new()
+        .render(&scene, &pdf_request)
+        .expect("repeated bidirectional PDF renders");
+    assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+    let pdf = String::from_utf8_lossy(first.artifact().bytes());
+    assert!(pdf.contains("/ActualText <FEFF006100620063002005D005D105D20020003100320033>"));
+}
+
+#[test]
+fn one_family_can_select_multiple_unicode_range_chunks() {
+    let scene = SceneDocument::parse(
+        "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[\
+            {\"id\":\"mixed\",\"type\":\"text\",\"width\":160,\"height\":40,\"fontSize\":20,\"fontFamily\":5,\"text\":\"AЖ\",\"updated\":1},\
+            {\"id\":\"latin\",\"type\":\"text\",\"x\":180,\"width\":160,\"height\":40,\"fontSize\":20,\"fontFamily\":5,\"text\":\"Latin\",\"updated\":2}\
+        ],\"appState\":{},\"files\":{}}"
+            .as_bytes(),
+    )
+    .expect("multi-range scene is admitted");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("SVG request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("multiple chunks from one family render");
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+
+    assert!(outcome.report().is_empty());
+    assert!(svg.matches("font-family:'Excalifont'").count() >= 2);
+    assert!(svg.contains("font-family=\"Excalifont\""));
+    assert!(svg.contains("AЖ"));
+}
+
+#[test]
+fn codepoints_missing_from_the_complete_fallback_chain_use_replacement_glyphs() {
+    let scene = text_scene(5, "A\u{10ffff}");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("SVG request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("missing glyph remains meaningful");
+    let [diagnostic] = outcome.report().diagnostics() else {
+        panic!("one missing scalar has one diagnostic");
+    };
+    assert_eq!(diagnostic.code(), DiagnosticCode::FONT_MISSING_GLYPH);
+    assert_eq!(diagnostic.element_id(), Some("text"));
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("data-source-text=\"A\u{10ffff}\""));
+    assert!(svg.contains(">A</tspan>"));
+    assert!(svg.contains(">?</tspan>"));
+    assert!(svg.contains("font-family=\"Liberation Sans\""));
+}
+
 fn text_scene(font_family: i32, text: &str) -> SceneDocument {
     let source = format!(
         "{{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{{\"id\":\"text\",\"type\":\"text\",\"width\":160,\"height\":40,\"fontSize\":20,\"fontFamily\":{font_family},\"text\":{},\"updated\":1}}],\"appState\":{{}},\"files\":{{}}}}",

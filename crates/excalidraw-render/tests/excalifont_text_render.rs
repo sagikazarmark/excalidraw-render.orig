@@ -410,20 +410,16 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
 }
 
 #[test]
-fn unsupported_excalifont_chunk_text_is_diagnosed_and_never_host_falls_back() {
+fn excalifont_cjk_text_uses_bundled_xiaolai_without_host_fallback() {
     let scene = text_scene("漢漢A", 60.0, 30.0);
     let outcome = render_svg_with_limits(&scene, ResourceLimits::default());
-    assert_eq!(outcome.report().diagnostics().len(), 2);
-    for diagnostic in outcome.report().diagnostics() {
-        assert_eq!(diagnostic.code(), DiagnosticCode::FONT_MISSING_GLYPH);
-        assert_eq!(diagnostic.element_id(), Some("text"));
-        assert_eq!(diagnostic.json_pointer(), "/elements/0");
-    }
+    assert!(outcome.report().is_empty());
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains("data-source-text=\"漢漢A\""));
-    assert!(svg.contains(">??A</tspan>"));
-    assert!(!svg.contains(">漢漢A</tspan>"));
+    assert!(svg.contains(">漢漢</tspan>"));
+    assert!(svg.contains(">A</tspan>"));
     assert!(svg.contains("@font-face{font-family:'Excalifont'"));
+    assert!(svg.contains("@font-face{font-family:'Xiaolai'"));
 
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
@@ -433,7 +429,7 @@ fn unsupported_excalifont_chunk_text_is_diagnosed_and_never_host_falls_back() {
         .expect("replacement glyph remains meaningful PDF text");
     let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
     assert!(pdf.contains("/ActualText <FEFF6F226F220041>"));
-    assert!(pdf.contains("<003F>"));
+    assert!(pdf.contains("/BaseFont /Xiaolai"));
 }
 
 #[test]

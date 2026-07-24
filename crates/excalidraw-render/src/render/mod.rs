@@ -2772,6 +2772,7 @@ impl RenderSession {
                             .saturating_sub(text.text.prepaid_glyphs)
                             .saturating_mul(32),
                     )
+                    .saturating_add(text.text.fallback_probes.saturating_mul(32))
                     .saturating_add(geometry_segments.saturating_mul(32));
                 let total_work_units = text_scalars
                     .saturating_mul(32)
@@ -2779,13 +2780,15 @@ impl RenderSession {
                     .saturating_add(text.text.prepaid_line_break_steps.saturating_mul(32))
                     .saturating_add(remaining_work_units);
                 text.base_element_work_units = total_work_units;
-                let path_headers = u64::try_from(text.text.lines.len())
-                    .unwrap_or(u64::MAX)
+                let path_headers = text
+                    .text
+                    .run_count()
                     .saturating_add(u64::try_from(text.frame_clips.len()).unwrap_or(u64::MAX));
                 let working_bytes = glyphs
                     .saturating_mul(64)
                     .saturating_add(line_break_steps.saturating_mul(32))
                     .saturating_add(path_headers.saturating_mul(128))
+                    .saturating_add(text.text.fallback_resource_count().saturating_mul(256))
                     .saturating_add(geometry_segments.saturating_mul(64));
                 let delta = ResourceDelta {
                     geometry_segments,
@@ -2884,6 +2887,34 @@ impl RenderSession {
                     )?;
                     text.render = false;
                     continue;
+                }
+                if text.text.noto_emoji_substituted {
+                    let diagnostic = fallback_font_diagnostic(
+                        DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED,
+                        DiagnosticSeverity::Info,
+                        request.format(),
+                        Some(text.source.id()),
+                        text.source.pointer(),
+                        None,
+                    )
+                    .map_err(|_| {
+                        self.memory_failure(
+                            request,
+                            "compatibility_report",
+                            "text_emoji_font_substitution",
+                        )
+                    })?;
+                    self.retain_diagnostic_with_owner(
+                        request,
+                        ResourcePhase::SharedSemanticResolution,
+                        "text_emoji_font_substitution",
+                        diagnostic,
+                        DiagnosticOwnership {
+                            local_owner: Some(text.source.id()),
+                            source_order: Some(text.source_order),
+                            source_position: Some(0),
+                        },
+                    )?;
                 }
                 for codepoint in &text.text.missing_codepoints {
                     let diagnostic = official_missing_glyph_diagnostic(
@@ -3490,14 +3521,13 @@ impl RenderSession {
             .saturating_add(line_break_steps)
             .saturating_add(geometry_segments)
             .saturating_mul(32);
+        let total_work_units =
+            total_work_units.saturating_add(label.fallback_probes.saturating_mul(32));
         let working_bytes = glyphs
             .saturating_mul(64)
             .saturating_add(line_break_steps.saturating_mul(32))
-            .saturating_add(
-                u64::try_from(label.lines.len())
-                    .unwrap_or(u64::MAX)
-                    .saturating_mul(128),
-            )
+            .saturating_add(label.run_count().saturating_mul(128))
+            .saturating_add(label.fallback_resource_count().saturating_mul(256))
             .saturating_add(geometry_segments.saturating_mul(64));
         let delta = ResourceDelta {
             geometry_segments,
@@ -3604,6 +3634,34 @@ impl RenderSession {
             outline.generated_label = None;
             outline.generated_label_color = None;
             return Ok(());
+        }
+        if label.noto_emoji_substituted {
+            let diagnostic = fallback_font_diagnostic(
+                DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED,
+                DiagnosticSeverity::Info,
+                request.format(),
+                Some(outline.source.id()),
+                outline.source.pointer(),
+                None,
+            )
+            .map_err(|_| {
+                self.memory_failure(
+                    request,
+                    "compatibility_report",
+                    "embeddable_label_emoji_font_substitution",
+                )
+            })?;
+            self.retain_diagnostic_with_owner(
+                request,
+                ResourcePhase::SharedSemanticResolution,
+                "embeddable_label_emoji_font_substitution",
+                diagnostic,
+                DiagnosticOwnership {
+                    local_owner: Some(outline.source.id()),
+                    source_order: Some(outline.source_order),
+                    source_position: Some(0),
+                },
+            )?;
         }
         for codepoint in &label.missing_codepoints {
             let diagnostic = official_missing_glyph_diagnostic(
@@ -4758,6 +4816,7 @@ struct ResolvedFont {
     family: &'static str,
     pdf_name: &'static str,
     identity: &'static str,
+    svg_mime: &'static str,
     woff2: Vec<u8>,
     sfnt: Vec<u8>,
 }
@@ -5731,6 +5790,26 @@ impl ResolvedScene {
                         text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
                     })?;
                 laid_out.font_index = font_index;
+                if !laid_out.missing_codepoints.is_empty()
+                    || text::contains_bidirectional_text(&text_source.text)
+                {
+                    laid_out = text::layout_with_fallbacks(
+                        font_index,
+                        &mut official_fonts,
+                        &text_source.text,
+                        text::TextLayout {
+                            width: source.width,
+                            font_size: text_source.font_size,
+                            line_height: text_source.line_height,
+                            text_align: &text_source.text_align,
+                        },
+                    )
+                    .map_err(|error| match error {
+                        text::LabelError::Memory => ResolveSceneError::Memory,
+                        text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+                    })?
+                    .0;
+                }
                 elements.push(ResolvedElement::Text(ResolvedTextElement {
                     source_order: source.source_order,
                     source: source.source,
@@ -5889,6 +5968,28 @@ impl ResolvedScene {
                                     }
                                 })?;
                             laid_out.font_index = font_index;
+                            if !laid_out.missing_codepoints.is_empty()
+                                || text::contains_bidirectional_text(&wrapped_label)
+                            {
+                                laid_out = text::layout_with_fallbacks(
+                                    font_index,
+                                    &mut official_fonts,
+                                    &wrapped_label,
+                                    text::TextLayout {
+                                        width: source.width,
+                                        font_size,
+                                        line_height: 1.15,
+                                        text_align: "center",
+                                    },
+                                )
+                                .map_err(|error| match error {
+                                    text::LabelError::Memory => ResolveSceneError::Memory,
+                                    text::LabelError::InvalidFont => {
+                                        ResolveSceneError::InvalidFallbackFont
+                                    }
+                                })?
+                                .0;
+                            }
                             let line_count = laid_out.lines.len() as f64;
                             let offset_y = (source.height - line_count * font_size * 1.15) / 2.0;
                             let label_color =
@@ -6061,6 +6162,7 @@ impl ResolvedScene {
         } else {
             (None, None)
         };
+        prune_unused_official_fonts(&mut elements, &mut official_fonts)?;
         let has_official_text = elements.iter().any(|element| match element {
             ResolvedElement::Text(_) => true,
             ResolvedElement::Outline(outline) => outline.generated_label.is_some(),
@@ -6069,11 +6171,12 @@ impl ResolvedScene {
         let mut resolved_fonts = Vec::new();
         resolved_fonts.try_reserve_exact(official_fonts.len())?;
         for font in official_fonts {
-            let (family, pdf_name, identity, woff2, sfnt) = font.into_parts();
+            let (family, pdf_name, identity, svg_mime, woff2, sfnt) = font.into_parts();
             resolved_fonts.push(ResolvedFont {
                 family,
                 pdf_name,
                 identity,
+                svg_mime,
                 woff2,
                 sfnt,
             });
@@ -6140,6 +6243,52 @@ impl ResolvedScene {
             Sizing::MaxDimension(_) => 1.0,
         }
     }
+}
+
+fn prune_unused_official_fonts(
+    elements: &mut [ResolvedElement],
+    fonts: &mut Vec<text::OfficialFont>,
+) -> Result<(), ResolveSceneError> {
+    let mut used = Vec::new();
+    for element in elements.iter() {
+        match element {
+            ResolvedElement::Text(text) => text.text.retain_font_indices(&mut used),
+            ResolvedElement::Outline(outline) => {
+                if let Some(label) = &outline.generated_label {
+                    label.retain_font_indices(&mut used);
+                }
+            }
+            _ => {}
+        }
+    }
+    used.sort_unstable();
+    let mut mapping = Vec::new();
+    mapping.try_reserve_exact(fonts.len())?;
+    mapping.resize(fonts.len(), None);
+    let mut retained = Vec::new();
+    retained.try_reserve_exact(used.len())?;
+    for (old_index, font) in fonts.drain(..).enumerate() {
+        if used.binary_search(&old_index).is_ok() {
+            mapping[old_index] = Some(retained.len());
+            retained.push(font);
+        }
+    }
+    *fonts = retained;
+    for element in elements {
+        let text = match element {
+            ResolvedElement::Text(text) => Some(&mut text.text),
+            ResolvedElement::Outline(outline) => outline.generated_label.as_mut(),
+            _ => None,
+        };
+        if let Some(text) = text {
+            text.remap_font_indices(&mapping)
+                .map_err(|error| match error {
+                    text::LabelError::Memory => ResolveSceneError::Memory,
+                    text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+                })?;
+        }
+    }
+    Ok(())
 }
 
 enum ResolvedElement {

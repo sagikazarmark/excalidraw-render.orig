@@ -580,9 +580,17 @@ impl SvgPlan {
         for font in &self.official_fonts {
             svg.push_str("<defs><style>@font-face{font-family:'");
             svg.push_str(font.family);
-            svg.push_str("';font-style:normal;font-weight:400;src:url(data:font/woff2;base64,");
+            svg.push_str("';font-style:normal;font-weight:400;src:url(data:");
+            svg.push_str(font.svg_mime);
+            svg.push_str(";base64,");
             push_base64(&mut svg, &font.woff2)?;
-            svg.push_str(") format('woff2')}</style></defs>");
+            svg.push_str(") format('");
+            svg.push_str(if font.svg_mime == "font/ttf" {
+                "truetype"
+            } else {
+                "woff2"
+            });
+            svg.push_str("')}</style></defs>");
         }
         if let Some(background) = &self.background {
             svg.push_str("<rect x=\"0\" y=\"0\" width=\"");
@@ -736,6 +744,51 @@ impl SvgPlan {
                         push_svg_number(&mut svg, label.font_size, "SVG embeddable font size")?;
                         svg.push_str("\">");
                         for line in &label.lines {
+                            if !line.runs.is_empty() {
+                                for run in &line.runs {
+                                    let glyphs = line
+                                        .glyphs
+                                        .get(run.glyph_start..run.glyph_end)
+                                        .ok_or_else(|| {
+                                            FormatEncodeError::Encoding(
+                                                "SVG embeddable run has invalid glyph bounds"
+                                                    .to_owned(),
+                                            )
+                                        })?;
+                                    svg.push_str("<tspan font-family=\"");
+                                    push_escaped_attribute(&mut svg, run.font_family);
+                                    svg.push_str(if run.rtl {
+                                        "\" direction=\"rtl\" x=\""
+                                    } else {
+                                        "\" direction=\"ltr\" x=\""
+                                    });
+                                    for (index, glyph) in glyphs.iter().enumerate() {
+                                        if index != 0 {
+                                            svg.push(' ');
+                                        }
+                                        push_svg_number(
+                                            &mut svg,
+                                            glyph.x,
+                                            "SVG embeddable run glyph x",
+                                        )?;
+                                    }
+                                    svg.push_str("\" y=\"");
+                                    for (index, glyph) in glyphs.iter().enumerate() {
+                                        if index != 0 {
+                                            svg.push(' ');
+                                        }
+                                        push_svg_number(
+                                            &mut svg,
+                                            glyph.y + generated_label_offset_y,
+                                            "SVG embeddable run glyph y",
+                                        )?;
+                                    }
+                                    svg.push_str("\">");
+                                    push_escaped_text(&mut svg, &run.display_text);
+                                    svg.push_str("</tspan>");
+                                }
+                                continue;
+                            }
                             svg.push_str("<tspan x=\"");
                             for (index, glyph) in line.glyphs.iter().enumerate() {
                                 if index != 0 {
@@ -1025,13 +1078,49 @@ impl SvgPlan {
                     svg.push_str(text_anchor);
                     svg.push_str("\">");
                     for line in &text.lines {
-                        svg.push_str("<tspan x=\"");
-                        push_svg_number(&mut svg, line_x, "SVG text line anchor x")?;
-                        svg.push_str("\" y=\"");
-                        push_svg_number(&mut svg, line.baseline, "SVG text line baseline")?;
-                        svg.push_str("\">");
-                        push_escaped_text(&mut svg, &line.display_text);
-                        svg.push_str("</tspan>");
+                        if line.runs.is_empty() {
+                            svg.push_str("<tspan x=\"");
+                            push_svg_number(&mut svg, line_x, "SVG text line anchor x")?;
+                            svg.push_str("\" y=\"");
+                            push_svg_number(&mut svg, line.baseline, "SVG text line baseline")?;
+                            svg.push_str("\">");
+                            push_escaped_text(&mut svg, &line.display_text);
+                            svg.push_str("</tspan>");
+                        } else {
+                            for run in &line.runs {
+                                let glyphs = line
+                                    .glyphs
+                                    .get(run.glyph_start..run.glyph_end)
+                                    .ok_or_else(|| {
+                                        FormatEncodeError::Encoding(
+                                            "SVG text run has invalid glyph bounds".to_owned(),
+                                        )
+                                    })?;
+                                svg.push_str("<tspan font-family=\"");
+                                push_escaped_attribute(&mut svg, run.font_family);
+                                svg.push_str(if run.rtl {
+                                    "\" direction=\"rtl\" text-anchor=\"start\" x=\""
+                                } else {
+                                    "\" direction=\"ltr\" text-anchor=\"start\" x=\""
+                                });
+                                for (index, glyph) in glyphs.iter().enumerate() {
+                                    if index != 0 {
+                                        svg.push(' ');
+                                    }
+                                    push_svg_number(&mut svg, glyph.x, "SVG text run glyph x")?;
+                                }
+                                svg.push_str("\" y=\"");
+                                for (index, glyph) in glyphs.iter().enumerate() {
+                                    if index != 0 {
+                                        svg.push(' ');
+                                    }
+                                    push_svg_number(&mut svg, glyph.y, "SVG text run glyph y")?;
+                                }
+                                svg.push_str("\">");
+                                push_escaped_text(&mut svg, &run.display_text);
+                                svg.push_str("</tspan>");
+                            }
+                        }
                         if line.text.ends_with('\n') {
                             svg.push('\n');
                         }

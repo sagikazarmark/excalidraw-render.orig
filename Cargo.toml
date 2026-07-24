@@ -43,6 +43,7 @@ serde_json = "=1.0.141"
 sha1 = "=0.10.6"
 sha2 = "=0.10.9"
 rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
+unicode-bidi = "=0.3.18"
 svg2pdf = { version = "=0.13.0", default-features = false, features = ["filters", "image", "text"] }
 svgtypes = "=0.15.3"
 tiny-skia = { version = "=0.11.4", default-features = false, features = ["png-format", "std"] }

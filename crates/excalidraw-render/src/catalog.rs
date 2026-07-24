@@ -99,6 +99,7 @@ pub(crate) fn manifested_font_attribution(
         "Lilita" => "Lilita",
         "Nunito" => "Nunito",
         "Virgil" => "Virgil",
+        "Xiaolai" => "Xiaolai SC",
         _ => return Err(()),
     };
     let line = excalidraw_render_assets_base::license_bundle()

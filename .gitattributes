@@ -6,3 +6,4 @@
 *.txt text eol=lf
 LICENSE-* text eol=lf
 crates/excalidraw-render-assets-base/license-parts/CC-BY-4.0.txt whitespace=-blank-at-eof
+crates/excalidraw-render-assets-base/catalog/order/Xiaolai-index.ts whitespace=-trailing-space

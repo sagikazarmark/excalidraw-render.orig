@@ -173,6 +173,77 @@ pub fn load_excalifont_basic_latin_sfnt() -> Result<VerifiedAsset, AssetIntegrit
     })
 }
 
+const NOTO_EMOJI_SFNT_IDENTITY: &str = concat!(
+    "scripts/woff2/assets/NotoEmoji-Regular.ttf@sha256:",
+    "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634"
+);
+const NOTO_EMOJI_SFNT: &[u8] = include_bytes!("../catalog/fallback/NotoEmoji-Regular.ttf");
+
+/// Loads the digest-verified Noto Emoji 3.003 fallback input.
+pub fn load_noto_emoji_sfnt() -> Result<VerifiedAsset, AssetIntegrityError> {
+    if NOTO_EMOJI_SFNT.len() != 862_680
+        || sha256(NOTO_EMOJI_SFNT)
+            != "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634"
+    {
+        return Err(AssetIntegrityError {
+            asset_identity: NOTO_EMOJI_SFNT_IDENTITY,
+            segment_identity: None,
+        });
+    }
+    Ok(VerifiedAsset {
+        bytes: NOTO_EMOJI_SFNT.to_vec(),
+    })
+}
+
+/// Returns the pinned upstream declaration order for one official font face.
+pub fn font_face_order(family: &str, upstream_path: &str) -> Option<usize> {
+    let file_name = upstream_path.rsplit('/').next()?;
+    let ordered: &[&str] = match family {
+        "ComicShanns" => &[
+            "ComicShanns-Regular-279a7b317d12eb88de06167bd672b4b4.woff2",
+            "ComicShanns-Regular-fcb0fc02dcbee4c9846b3e2508668039.woff2",
+            "ComicShanns-Regular-dc6a8806fa96795d7b3be5026f989a17.woff2",
+            "ComicShanns-Regular-6e066e8de2ac57ea9283adb9c24d7f0c.woff2",
+        ],
+        "Excalifont" => &[
+            "Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
+            "Excalifont-Regular-be310b9bcd4f1a43f571c46df7809174.woff2",
+            "Excalifont-Regular-b9dcf9d2e50a1eaf42fc664b50a3fd0d.woff2",
+            "Excalifont-Regular-41b173a47b57366892116a575a43e2b6.woff2",
+            "Excalifont-Regular-3f2c5db56cc93c5a6873b1361d730c16.woff2",
+            "Excalifont-Regular-349fac6ca4700ffec595a7150a0d1e1d.woff2",
+            "Excalifont-Regular-623ccf21b21ef6b3a0d87738f77eb071.woff2",
+        ],
+        "Lilita" => &[
+            "Lilita-Regular-i7dPIFZ9Zz-WBtRtedDbYE98RXi4EwSsbg.woff2",
+            "Lilita-Regular-i7dPIFZ9Zz-WBtRtedDbYEF8RXi4EwQ.woff2",
+        ],
+        "Nunito" => &[
+            "Nunito-Regular-XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTk3j6zbXWjgevT5.woff2",
+            "Nunito-Regular-XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTA3j6zbXWjgevT5.woff2",
+            "Nunito-Regular-XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTs3j6zbXWjgevT5.woff2",
+            "Nunito-Regular-XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTo3j6zbXWjgevT5.woff2",
+            "Nunito-Regular-XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTQ3j6zbXWjgeg.woff2",
+        ],
+        "Xiaolai" => return xiaolai_face_order(file_name),
+        "Cascadia" | "Liberation" | "Virgil" => return Some(0),
+        _ => return None,
+    };
+    ordered.iter().position(|candidate| *candidate == file_name)
+}
+
+fn xiaolai_face_order(file_name: &str) -> Option<usize> {
+    const SOURCE: &str = include_str!("../catalog/order/Xiaolai-index.ts");
+    SOURCE
+        .lines()
+        .filter_map(|line| {
+            line.strip_prefix("import _")?
+                .split_once(" from \"./")
+                .map(|(_, tail)| tail.trim_end_matches("\";"))
+        })
+        .position(|candidate| candidate == file_name)
+}
+
 /// Returns the checked-in transformation record for the predecoded sfnt bytes.
 pub const fn excalifont_basic_latin_sfnt_transformation() -> PredecodedFontTransformation {
     PredecodedFontTransformation {

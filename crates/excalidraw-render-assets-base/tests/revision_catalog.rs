@@ -92,3 +92,43 @@ fn predecoded_excalifont_basic_latin_sfnt_is_checked_in_and_digest_verified() {
         .expect("transformation metadata is UTF-8")
         .contains("all 14 SFNT tables and declared checksums are identical"));
 }
+
+#[test]
+fn noto_emoji_3003_fallback_is_digest_verified_and_parseable() {
+    let asset = excalidraw_render_assets_base::load_noto_emoji_sfnt()
+        .expect("approved Noto Emoji fallback verifies");
+    assert_eq!(asset.bytes().len(), 862_680);
+    let face = rustybuzz::Face::from_slice(asset.bytes(), 0).expect("Noto Emoji is valid SFNT");
+    assert_eq!(face.units_per_em(), 1_000);
+    assert!(face.glyph_index('\u{1f600}').is_some());
+    assert!(face.glyph_index('A').is_none());
+
+    let metadata = include_str!("../catalog/fallback/NotoEmoji-Regular.ttf.json");
+    assert!(metadata.contains("Version 3.003"));
+    assert!(metadata.contains("0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634"));
+}
+
+#[test]
+fn every_official_face_has_a_unique_pinned_family_order() {
+    let catalog = excalidraw_render_assets_base::revision_1();
+    for family in [
+        "Cascadia",
+        "ComicShanns",
+        "Excalifont",
+        "Liberation",
+        "Lilita",
+        "Nunito",
+        "Virgil",
+        "Xiaolai",
+    ] {
+        let mut orders = Vec::new();
+        for asset in catalog.assets.iter().filter(|asset| asset.family == family) {
+            let order = excalidraw_render_assets_base::font_face_order(family, asset.upstream_path)
+                .unwrap_or_else(|| panic!("{family} face {} has an order", asset.upstream_path));
+            assert!(!orders.contains(&order), "{family} order {order} is unique");
+            orders.push(order);
+        }
+        orders.sort_unstable();
+        assert_eq!(orders, (0..orders.len()).collect::<Vec<_>>());
+    }
+}

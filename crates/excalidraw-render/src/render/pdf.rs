@@ -1161,19 +1161,52 @@ impl PdfPlan {
                 subject: "pdf_text_font_mappings",
             })?;
         for font_index in 0..self.official_fonts.len() {
-            all_mappings.push(glyph_mappings(
-                self.elements.iter().flat_map(|element| match element {
-                    PdfElement::Text { text, .. } if text.font_index == font_index => {
-                        text.lines.as_slice()
-                    }
-                    PdfElement::RoughOutline {
+            let mut mappings = Vec::new();
+            for element in &self.elements {
+                let text = match element {
+                    PdfElement::Text { text, .. }
+                    | PdfElement::RoughOutline {
                         generated_label: Some(text),
                         ..
-                    } if text.font_index == font_index => text.lines.as_slice(),
-                    _ => &[],
-                }),
-                "pdf_text_glyph_mappings",
-            )?);
+                    } => text,
+                    _ => continue,
+                };
+                for line in &text.lines {
+                    if line.runs.is_empty() {
+                        if text.font_index == font_index {
+                            for glyph in &line.glyphs {
+                                retain_glyph_mapping(
+                                    &mut mappings,
+                                    glyph,
+                                    "pdf_text_glyph_mappings",
+                                )?;
+                            }
+                        }
+                    } else {
+                        for run in &line.runs {
+                            if run.font_index != font_index {
+                                continue;
+                            }
+                            let glyphs = line
+                                .glyphs
+                                .get(run.glyph_start..run.glyph_end)
+                                .ok_or_else(|| {
+                                    FormatEncodeError::Encoding(
+                                        "PDF text run has invalid glyph bounds".to_owned(),
+                                    )
+                                })?;
+                            for glyph in glyphs {
+                                retain_glyph_mapping(
+                                    &mut mappings,
+                                    glyph,
+                                    "pdf_text_glyph_mappings",
+                                )?;
+                            }
+                        }
+                    }
+                }
+            }
+            all_mappings.push(mappings);
         }
         Ok(all_mappings)
     }
@@ -1643,39 +1676,34 @@ impl PdfPlan {
                         for line in &label.lines {
                             content.push_str("/Span << /ActualText <FEFF");
                             push_utf16be_hex(&mut content, &line.text)?;
-                            content.push_str("> >> BDC\nBT\n/F");
-                            write!(content, "{} ", label.font_index + 2).map_err(|_| {
-                                FormatEncodeError::Encoding(
-                                    "failed to write PDF embeddable font resource".to_owned(),
-                                )
-                            })?;
-                            push_pdf_number(
-                                &mut content,
-                                label.font_size,
-                                "PDF embeddable font size",
-                            )?;
-                            content.push_str(" Tf\n");
-                            for glyph in &line.glyphs {
-                                content.push_str("1 0 0 -1 ");
-                                push_pdf_number(&mut content, glyph.x, "PDF embeddable glyph x")?;
-                                content.push(' ');
-                                push_pdf_number(&mut content, glyph.y, "PDF embeddable glyph y")?;
-                                content.push_str(" Tm\n<");
-                                let mappings =
-                                    official_mappings.get(label.font_index).ok_or_else(|| {
-                                        FormatEncodeError::Encoding(format!(
-                                            "PDF embeddable references font {} of {} resources",
-                                            label.font_index,
-                                            official_mappings.len()
-                                        ))
-                                    })?;
-                                let code = glyph_mapping_code(mappings, glyph)?;
-                                write!(content, "{code:04X}").map_err(|_| {
-                                    FormatEncodeError::Encoding(
-                                        "failed to write PDF embeddable glyph ID".to_owned(),
-                                    )
-                                })?;
-                                content.push_str("> Tj\n");
+                            content.push_str("> >> BDC\nBT\n");
+                            if line.runs.is_empty() {
+                                push_pdf_text_run(
+                                    &mut content,
+                                    label.font_index,
+                                    label.font_size,
+                                    &line.glyphs,
+                                    official_mappings,
+                                )?;
+                            } else {
+                                for run in &line.runs {
+                                    let glyphs = line
+                                        .glyphs
+                                        .get(run.glyph_start..run.glyph_end)
+                                        .ok_or_else(|| {
+                                            FormatEncodeError::Encoding(
+                                                "PDF embeddable run has invalid glyph bounds"
+                                                    .to_owned(),
+                                            )
+                                        })?;
+                                    push_pdf_text_run(
+                                        &mut content,
+                                        run.font_index,
+                                        label.font_size,
+                                        glyphs,
+                                        official_mappings,
+                                    )?;
+                                }
                             }
                             content.push_str("ET\nEMC\n");
                         }
@@ -1850,33 +1878,33 @@ impl PdfPlan {
                     for line in &text.lines {
                         content.push_str("/Span << /ActualText <FEFF");
                         push_utf16be_hex(&mut content, &line.text)?;
-                        content.push_str("> >> BDC\nBT\n/F");
-                        write!(content, "{} ", text.font_index + 2).map_err(|_| {
-                            FormatEncodeError::Encoding(
-                                "failed to write PDF text font resource".to_owned(),
-                            )
-                        })?;
-                        push_pdf_number(&mut content, text.font_size, "PDF text font size")?;
-                        content.push_str(" Tf\n");
-                        for glyph in &line.glyphs {
-                            content.push_str("1 0 0 -1 ");
-                            push_pdf_number(&mut content, glyph.x, "PDF text glyph x")?;
-                            content.push(' ');
-                            push_pdf_number(&mut content, glyph.y, "PDF text glyph y")?;
-                            content.push_str(" Tm\n<");
-                            let mappings =
-                                official_mappings.get(text.font_index).ok_or_else(|| {
-                                    FormatEncodeError::Encoding(
-                                        "PDF text references an unknown font resource".to_owned(),
-                                    )
-                                })?;
-                            let code = glyph_mapping_code(mappings, glyph)?;
-                            write!(content, "{code:04X}").map_err(|_| {
-                                FormatEncodeError::Encoding(
-                                    "failed to write PDF text glyph ID".to_owned(),
-                                )
-                            })?;
-                            content.push_str("> Tj\n");
+                        content.push_str("> >> BDC\nBT\n");
+                        if line.runs.is_empty() {
+                            push_pdf_text_run(
+                                &mut content,
+                                text.font_index,
+                                text.font_size,
+                                &line.glyphs,
+                                official_mappings,
+                            )?;
+                        } else {
+                            for run in &line.runs {
+                                let glyphs = line
+                                    .glyphs
+                                    .get(run.glyph_start..run.glyph_end)
+                                    .ok_or_else(|| {
+                                        FormatEncodeError::Encoding(
+                                            "PDF text run has invalid glyph bounds".to_owned(),
+                                        )
+                                    })?;
+                                push_pdf_text_run(
+                                    &mut content,
+                                    run.font_index,
+                                    text.font_size,
+                                    glyphs,
+                                    official_mappings,
+                                )?;
+                            }
                         }
                         content.push_str("ET\nEMC\n");
                     }
@@ -2134,40 +2162,81 @@ fn glyph_mappings<'a>(
     let mut mappings = Vec::new();
     for label in labels {
         for glyph in &label.glyphs {
-            if mappings.iter().any(|mapping: &PdfGlyphMapping| {
-                mapping.glyph_id == glyph.id && mapping.unicode == glyph.unicode
-            }) {
-                continue;
-            }
-            let code = u16::try_from(mappings.len().saturating_add(1)).map_err(|_| {
-                FormatEncodeError::Encoding(
-                    "PDF font requires more deterministic character codes than Identity-H supports"
-                        .to_owned(),
-                )
-            })?;
-            let mut unicode = Vec::new();
-            unicode
-                .try_reserve_exact(glyph.unicode.len())
-                .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                    subject_kind: "format_workspace",
-                    subject,
-                })?;
-            unicode.extend_from_slice(&glyph.unicode);
-            mappings
-                .try_reserve(1)
-                .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                    subject_kind: "format_workspace",
-                    subject,
-                })?;
-            mappings.push(PdfGlyphMapping {
-                code,
-                glyph_id: glyph.id,
-                advance_1000: glyph.advance_1000,
-                unicode,
-            });
+            retain_glyph_mapping(&mut mappings, glyph, subject)?;
         }
     }
     Ok(mappings)
+}
+
+fn retain_glyph_mapping(
+    mappings: &mut Vec<PdfGlyphMapping>,
+    glyph: &super::text::ResolvedGlyph,
+    subject: &'static str,
+) -> Result<(), FormatEncodeError> {
+    if mappings
+        .iter()
+        .any(|mapping| mapping.glyph_id == glyph.id && mapping.unicode == glyph.unicode)
+    {
+        return Ok(());
+    }
+    let code = u16::try_from(mappings.len().saturating_add(1)).map_err(|_| {
+        FormatEncodeError::Encoding(
+            "PDF font requires more deterministic character codes than Identity-H supports"
+                .to_owned(),
+        )
+    })?;
+    let mut unicode = Vec::new();
+    unicode
+        .try_reserve_exact(glyph.unicode.len())
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_workspace",
+            subject,
+        })?;
+    unicode.extend_from_slice(&glyph.unicode);
+    mappings
+        .try_reserve(1)
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_workspace",
+            subject,
+        })?;
+    mappings.push(PdfGlyphMapping {
+        code,
+        glyph_id: glyph.id,
+        advance_1000: glyph.advance_1000,
+        unicode,
+    });
+    Ok(())
+}
+
+fn push_pdf_text_run(
+    content: &mut String,
+    font_index: usize,
+    font_size: f64,
+    glyphs: &[super::text::ResolvedGlyph],
+    official_mappings: &[Vec<PdfGlyphMapping>],
+) -> Result<(), FormatEncodeError> {
+    content.push_str("/F");
+    write!(content, "{} ", font_index + 2).map_err(|_| {
+        FormatEncodeError::Encoding("failed to write PDF text font resource".to_owned())
+    })?;
+    push_pdf_number(content, font_size, "PDF text font size")?;
+    content.push_str(" Tf\n");
+    let mappings = official_mappings.get(font_index).ok_or_else(|| {
+        FormatEncodeError::Encoding("PDF text references an unknown font resource".to_owned())
+    })?;
+    for glyph in glyphs {
+        content.push_str("1 0 0 -1 ");
+        push_pdf_number(content, glyph.x, "PDF text glyph x")?;
+        content.push(' ');
+        push_pdf_number(content, glyph.y, "PDF text glyph y")?;
+        content.push_str(" Tm\n<");
+        let code = glyph_mapping_code(mappings, glyph)?;
+        write!(content, "{code:04X}").map_err(|_| {
+            FormatEncodeError::Encoding("failed to write PDF text glyph ID".to_owned())
+        })?;
+        content.push_str("> Tj\n");
+    }
+    Ok(())
 }
 
 pub(super) fn page_dimensions(
