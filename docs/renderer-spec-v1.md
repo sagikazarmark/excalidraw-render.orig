@@ -4,9 +4,9 @@ Document version: `1.0.0`
 
 Compatibility revision: `1`
 
-Status: Approved implementation handoff
+Status: Implementation update awaiting maintainer approval
 
-Approval: [immutable approval record](renderer-spec-v1.approval.json)
+Approval: Required after the revision-1 frame-export expansion
 
 ## 1. Authority
 
@@ -43,9 +43,9 @@ spellings, but prose and new APIs MUST use the canonical terms.
 ## 2. Product Contract
 
 The product is a self-contained pure-Rust renderer of local Excalidraw scene
-documents. It produces whole-scene static SVG and PNG with format-specific
-perceptual parity to the pinned reference renderer, plus vector-first PDF whose
-visual authority is the official SVG reference evidence.
+documents. It produces scene exports and frame exports as static SVG and PNG
+with format-specific perceptual parity to the pinned reference renderer, plus
+vector-first PDF whose visual authority is the official SVG reference evidence.
 
 The production library MUST:
 
@@ -63,7 +63,6 @@ The production library MUST:
 
 The following are outside this specification:
 
-- Individual-frame exports.
 - Browser bindings, web APIs, web UI, npm packages, JavaScript glue, a stable
   C-style WASM ABI, WASI, or a published raw WASM module.
 - Interactive editor overlays, viewport state, collaboration, and editing.
@@ -138,13 +137,21 @@ manifest-listed assets. The profile MUST locally serve and hash all 230 official
 rendering WOFF2 files and 48 fontconfig-visible container font files. The four
 Assistant UI faces remain excluded.
 
-Every evidence invocation MUST explicitly provide background inclusion,
+Every scene-export evidence invocation MUST explicitly provide background inclusion,
 background color, padding, dark mode, embedded-scene choice, all four frame
 controls, and exactly one sizing mode. `quality` MUST be omitted. Live
 embeddables MUST be off, SVG font inlining and image reuse MUST be on, and
 separate-frame export MUST be off. Elements MUST already have stable identity,
 ordering, seed, version, nonce, and update fields before the official restore
 path processes them.
+
+Frame exports use a target-scoped revision-1 reference profile that inherits the
+pinned release, browser environment, and asset identities while binding a
+separate frame-capable wrapper and invocation. The scene reference profile and
+its digest remain immutable. A frame invocation supplies one live `frame` or
+`magicframe` source occurrence as `exportingFrame`, forces zero padding, frame
+rendering enabled, frame names and outlines disabled, and uses the reference
+renderer's format-specific clipping behavior.
 
 ## 4. Scene Admission and Preservation
 
@@ -272,9 +279,15 @@ Renderer::profile_identity(CompatibilityRevision)
 Renderer::selected_profile_identity(&self) -> &'static ReferenceProfileIdentity
 Renderer::render(&self, &SceneDocument, &RenderRequest)
     -> Result<RenderOutcome, RenderError>
+Renderer::render_frame(&self, FrameRef, &FrameRenderRequest)
+    -> Result<RenderOutcome, RenderError>
+Renderer::render_frames(&self, &SceneDocument, FrameRefs, &FrameRenderRequest)
+    -> Result<FrameRenderCursor, FrameBatchError>
 
 RenderRequest::builder(OutputFormat) -> RenderRequestBuilder
 RenderRequestBuilder::build() -> Result<RenderRequest, RequestError>
+FrameRenderRequest::builder(OutputFormat) -> FrameRenderRequestBuilder
+FrameRenderRequestBuilder::build() -> Result<FrameRenderRequest, RequestError>
 ```
 
 `SceneDocument` is opaque, immutable, cloneable, and `Send + Sync`.
@@ -298,8 +311,22 @@ from list order. Every revision retained in the semver-major line
 remains selectable. Exact reproduction requires both package release and
 compatibility revision; a profile digest is discoverable but not a selector.
 
-One request produces exactly one `OutputFormat`: `Svg`, `Png`, or `Pdf`, spelled
+One target request produces exactly one `OutputFormat`: `Svg`, `Png`, or `Pdf`, spelled
 `svg`, `png`, and `pdf` in serialized forms.
+
+`SceneDocument::frames()` discovers every live ordinary and magic frame source
+occurrence in source order. A borrowed `FrameRef` exposes its one-based frame
+ordinal, kind, and optional source string name while keeping source occurrence
+identity opaque. Frame requests expose background, sizing, color, metadata,
+supplemental assets, resource limits, and PDF controls, but expose neither
+padding nor whole-scene frame controls.
+
+The lazy frame cursor validates one-scene ownership, rejects duplicate targets,
+sorts targets by frame ordinal, permits an empty target list, and yields one
+complete target result at a time without stopping after a target error. Scene-
+global diagnostics are exposed separately from target diagnostics. Every frame
+has an independent semantic resource ledger; physical cache sharing MUST NOT
+change target bytes, reports, first crossings, or failures.
 
 | Request setting | Contract |
 | --- | --- |
@@ -371,6 +398,48 @@ matching asset. The CLI has no resource override, preset, config file,
 environment override, hidden override, schema selector, backend selector, or
 extension map. Every render uses `ResourceLimits::default()`.
 
+The frame export command is:
+
+```text
+excalidraw-render frames [OPTIONS] <INPUT> --output <DIRECTORY> --format <svg|png|pdf>
+```
+
+Frame artifact output is always a directory and cannot be `-`; input may still
+be stdin. The exact token `frames` is reserved as a subcommand, while a scene
+file with that basename remains addressable as `./frames` or after `--`. The
+frame command reuses applicable background, sizing, color, metadata, asset, PDF,
+report, revision, and force controls. It does not accept padding or whole-scene
+frame controls. Its additional controls are one `--name-regex <REGEX>`, positive
+`--max-frames <N>` up to 16384 with default 256, and `--allow-partial`.
+
+The optional name regex uses Unicode-aware linear-time Rust regex search,
+case-sensitive by default. It is applied only to nonempty source string names.
+Selection enumerates live frames, filters names, fails with exit 1 on no match,
+enforces the selected-frame cap, then derives source-ordered portable filenames.
+The basename is an NFC-normalized Unicode letter/number slug or `frame-N` using
+the unfiltered frame ordinal. Reserved device names gain `_`; components are at
+most 120 UTF-8 bytes with an eight-hex SHA-256 truncation suffix; normalized
+case-insensitive collisions gain `-2`, `-3`, and later suffixes.
+
+A missing output directory is created only for publication. Existing
+directories and unrelated entries are preserved. Existing selected destinations
+fail unless `--force`, which replaces only selected paths. Default mode evaluates
+all targets and stages all successful artifacts before publication; any handled
+preflight, render, or staging failure publishes none. Multi-path commit failure
+is reported honestly as possibly partial. `--allow-partial` instead publishes
+independent successes after frame-local render, collision, staging, or delivery
+failures and exits 1 when any target failed.
+
+Frame JSON reporting uses a dedicated schema-1 batch envelope with frame profile
+identity, format, overall and delivery status, scene-global diagnostics once,
+and one ordinal-ordered entry per selected frame. Each entry contains target
+identity, source name, intended path, artifact descriptor, target diagnostics,
+error, and delivery state. Its top-level member order is `schema_version`,
+`status`, `renderer_version`, `compatibility_revision`, `excalidraw_release`,
+`reference_profile_digest`, `format`, `delivery_state`, `diagnostics`, `frames`.
+Frame-entry member order is `ordinal`, `kind`, `name`, `output_path`, `artifact`,
+`error`, `diagnostics`, `delivery_state`. Human clean success remains silent.
+
 The CLI selects one failure in this order:
 
 1. Deterministic report-mode preparse.
@@ -439,9 +508,24 @@ scaled pixel dimensions as the reference wrapper does. Maximum dimension is
 downscale-only and never upscales. It applies to PNG and PDF; the official SVG
 maximum-dimension invocation is a no-transform operation.
 
-Whole-scene bounds, paint order, clipping, masking, frames, bound text, links,
+Scene-export bounds, paint order, clipping, masking, frames, bound text, links,
 dark mode, application state, and embedded files participate according to the
-scene-surface manifest. Separate-frame export is not supported.
+scene-surface manifest.
+
+A frame export targets one live ordinary or magic frame and always uses the
+rotation-aware frame AABB as its zero-padding viewport. The target frame name and
+outline do not paint, even when persisted frame rendering is disabled. Candidate
+elements are selected by inclusive rotated-AABB overlap, followed by one-hop
+binding closure and immediate membership filtering: unframed elements and
+direct target members may participate, while elements assigned to another frame
+do not. Nested grandchildren are not recursively owned by an outer frame. SVG
+uses the reference rectangular target clip, PNG relies on its cropped canvas,
+and PDF applies equivalent vector-first visible semantics.
+
+Frame artifact manifests use schema 2 and add a target block containing kind,
+ordinal, and the source name when present. Target identity alone does not force
+a manifest. Existing scene manifests remain byte-identical schema 1. Embedded
+scene metadata remains the complete canonicalized original scene document.
 
 Element colors use the CSS grammar recognized by the pinned Chromium profile and
 serialize as canonical sRGB plus alpha. Invalid colors emit `color.invalid` and
@@ -831,8 +915,8 @@ Excalidraw release, and profile digest. Recoverable repair, replacement,
 omission, local loss, or optional-metadata failure returns that outcome.
 `RenderError` never contains partial artifact bytes.
 
-The four typed library failures are `SceneParseError`, `RequestError`,
-`UnsupportedRevisionError`, and `RenderError`. They implement
+The five typed library failures are `SceneParseError`, `RequestError`,
+`FrameBatchError`, `UnsupportedRevisionError`, and `RenderError`. They implement
 `std::error::Error`, typed accessors, and `descriptor() -> ErrorDescriptor`.
 Descriptors, diagnostics, reports, compatibility identity, and stable views
 implement `serde::Serialize`. Opaque scene documents, artifacts, outcomes,
@@ -859,7 +943,7 @@ Schema-1 errors have this exact member order and explicit nulls:
 
 ```json
 {
-  "family": "scene_parse | request | unsupported_revision | render | cli",
+  "family": "scene_parse | request | frame_batch | unsupported_revision | render | cli",
   "category": "input | resource_limit | no_meaningful_artifact | encoding | internal | null",
   "code": "stable.code",
   "message": "human explanation",
@@ -1096,6 +1180,14 @@ request.invalid-resource-limit
 revision.unsupported
 ```
 
+Frame-batch construction codes use family `frame_batch` and null details:
+
+```text
+frame-batch.foreign-target
+frame-batch.duplicate-target
+frame-batch.shared-preparation-failed
+```
+
 Non-resource render codes are:
 
 ```text
@@ -1135,7 +1227,10 @@ revision 1. Resource failures use these exact code-to-field mappings:
 CLI-native codes are `cli.invalid-arguments`, `cli.format-required`,
 `cli.format-mismatch`, `cli.invalid-asset-option`,
 `cli.asset-mime-without-asset`, `cli.path-conflict`,
-`cli.destination-exists`, `cli.input-read-failed`, `cli.asset-read-failed`,
+`cli.destination-exists`, `cli.invalid-name-regex`,
+`cli.invalid-output-directory`, `cli.frame-no-match`,
+`cli.frame-limit-exceeded`, `cli.invalid-frame-selection`,
+`cli.input-read-failed`, `cli.asset-read-failed`,
 `cli.output-write-failed`, `cli.report-write-failed`, and
 `cli.memory-unavailable`. The CLI reuses precise library codes when applicable
 and never substitutes a generic code.
@@ -2348,10 +2443,13 @@ regenerate affected evidence, classify all changes, prove two-process stability,
 make renderer behavior and diagnostics conform, obtain explicit approval, and
 activate atomically with conformance and release documentation.
 
-A contract-relevant visual, structural, dimensional, admitted-input, or
-diagnostic change creates the next monotonic compatibility revision. A new
-reference profile can retain a revision only when no contract-relevant behavior
-changes. Reproducibility failure alone never authorizes refreshed evidence.
+A contract-relevant change to an existing valid renderer request creates the
+next monotonic compatibility revision. A revision MAY add a disjoint export
+target in place when every pre-existing request retains artifact bytes,
+diagnostics, profile identity, and failure behavior. Target-scoped reference
+profiles may share a revision when their scopes are disjoint or have no
+contract-relevant differences where they overlap. Reproducibility failure alone
+never authorizes refreshed evidence.
 
 Exactly one reference-evidence tree MUST be active. Superseded evidence remains
 recoverable through immutable history, release tags, and archived release
@@ -2373,9 +2471,12 @@ the required fallback or release block.
 
 ## 18. Approval and Completion
 
-This document resolves the final map ticket. Its exact bytes are bound by the
-adjacent approval record and the matching approval comment on
+The original scene-export contract was approved through
 [Publish and approve the canonical renderer specification](https://github.com/sagikazarmark/excalidraw-render.orig/issues/26).
+The frame-export amendment is specified by
+[Export Excalidraw frames as separate artifacts](https://github.com/sagikazarmark/excalidraw-render.orig/issues/97).
+Changing these bytes invalidates the original adjacent approval subject; a new
+maintainer approval is required before release.
 
 The specification is implementation-ready when all of these remain true:
 

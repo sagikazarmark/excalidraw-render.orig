@@ -18,7 +18,7 @@ pub(crate) enum RelationshipKind {
     Link,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[allow(dead_code)]
 pub(crate) struct RelationshipNode {
     pub(crate) id: String,
@@ -29,7 +29,7 @@ pub(crate) struct RelationshipNode {
     pub(crate) hit_bounds: Option<[f64; 4]>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[allow(dead_code)]
 pub(crate) enum RelationshipTarget {
     Element(usize),
@@ -44,7 +44,7 @@ pub(crate) enum RelationshipTarget {
     },
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 #[allow(dead_code)]
 pub(crate) enum AssetAuthority {
     SceneFile(usize),
@@ -52,7 +52,7 @@ pub(crate) enum AssetAuthority {
     Missing,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[allow(dead_code)]
 pub(crate) struct RelationshipEdge {
     pub(crate) source: usize,
@@ -62,7 +62,7 @@ pub(crate) struct RelationshipEdge {
     pub(crate) source_position: u64,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct ResolvedRelationshipGraph {
     pub(crate) nodes: Vec<RelationshipNode>,
     pub(crate) edges: Vec<RelationshipEdge>,
@@ -85,7 +85,7 @@ pub(crate) enum RelationshipEvent<'a> {
     Traversal(RelationshipTraversal<'a>),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct RemovedCycle {
     pub(crate) element_id: String,
     pub(crate) json_pointer: String,
@@ -93,6 +93,7 @@ pub(crate) struct RemovedCycle {
     pub(crate) source_position: u64,
 }
 
+#[derive(Clone)]
 pub(crate) struct RelationshipOutcome {
     pub(crate) graph: ResolvedRelationshipGraph,
     pub(crate) removed_cycles: Vec<RemovedCycle>,

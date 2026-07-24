@@ -484,6 +484,122 @@ pub struct RenderRequestBuilder {
     pdf_options_supplied: bool,
 }
 
+/// A validated one-format frame render request.
+#[derive(Clone, Debug)]
+pub struct FrameRenderRequest {
+    inner: RenderRequest,
+}
+
+impl FrameRenderRequest {
+    /// Starts a validated frame request builder for exactly one output format.
+    pub fn builder(format: OutputFormat) -> FrameRenderRequestBuilder {
+        FrameRenderRequestBuilder {
+            inner: RenderRequest::builder(format)
+                .padding(0.0)
+                .frame_options(FrameOptions::new(true, true, false, false)),
+        }
+    }
+
+    /// Returns the single selected output format.
+    pub const fn format(&self) -> OutputFormat {
+        self.inner.format()
+    }
+
+    /// Returns whether the scene background is included.
+    pub const fn include_background(&self) -> bool {
+        self.inner.include_background()
+    }
+
+    /// Returns the selected output sizing behavior.
+    pub const fn sizing(&self) -> Sizing {
+        self.inner.sizing()
+    }
+
+    /// Returns the selected color mode.
+    pub const fn color_mode(&self) -> ColorMode {
+        self.inner.color_mode()
+    }
+
+    /// Returns the optional metadata controls.
+    pub const fn metadata_options(&self) -> &MetadataOptions {
+        self.inner.metadata_options()
+    }
+
+    /// Returns the owned supplemental assets.
+    pub const fn supplemental_assets(&self) -> &SupplementalAssets {
+        self.inner.supplemental_assets()
+    }
+
+    /// Returns the semantic resource ceilings applied to this frame.
+    pub const fn resource_limits(&self) -> &ResourceLimits {
+        self.inner.resource_limits()
+    }
+
+    /// Returns PDF-specific options for a PDF request.
+    pub const fn pdf_options(&self) -> Option<&PdfOptions> {
+        self.inner.pdf_options()
+    }
+
+    pub(crate) const fn as_render_request(&self) -> &RenderRequest {
+        &self.inner
+    }
+}
+
+/// Builder for a validated one-format frame render request.
+#[derive(Clone, Debug)]
+pub struct FrameRenderRequestBuilder {
+    inner: RenderRequestBuilder,
+}
+
+impl FrameRenderRequestBuilder {
+    /// Selects whether the scene background is included.
+    pub fn include_background(mut self, include: bool) -> Self {
+        self.inner = self.inner.include_background(include);
+        self
+    }
+
+    /// Selects explicit scale or downscale-only maximum-dimension sizing.
+    pub fn sizing(mut self, sizing: Sizing) -> Self {
+        self.inner = self.inner.sizing(sizing);
+        self
+    }
+
+    /// Selects light or dark color interpretation.
+    pub fn color_mode(mut self, color_mode: ColorMode) -> Self {
+        self.inner = self.inner.color_mode(color_mode);
+        self
+    }
+
+    /// Replaces all optional artifact metadata controls.
+    pub fn metadata_options(mut self, options: MetadataOptions) -> Self {
+        self.inner = self.inner.metadata_options(options);
+        self
+    }
+
+    /// Replaces all owned supplemental assets.
+    pub fn supplemental_assets(mut self, assets: SupplementalAssets) -> Self {
+        self.inner = self.inner.supplemental_assets(assets);
+        self
+    }
+
+    /// Replaces the validated semantic resource ceilings.
+    pub fn resource_limits(mut self, limits: ResourceLimits) -> Self {
+        self.inner = self.inner.resource_limits(limits);
+        self
+    }
+
+    /// Replaces PDF-specific controls.
+    pub fn pdf_options(mut self, options: PdfOptions) -> Self {
+        self.inner = self.inner.pdf_options(options);
+        self
+    }
+
+    /// Validates and constructs the frame request.
+    pub fn build(self) -> Result<FrameRenderRequest, RequestError> {
+        self.inner.build().map(|inner| FrameRenderRequest { inner })
+    }
+}
+
 impl RenderRequestBuilder {
     /// Selects whether the scene background is included.
     pub fn include_background(mut self, include: bool) -> Self {

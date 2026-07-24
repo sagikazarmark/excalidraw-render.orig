@@ -10,12 +10,16 @@ const CASE_ID: &str = "focused.rectangle-outline.v1";
 const CASE_RELATIVE_PATH: &str = "tests/conformance/cases/focused/rectangle-outline";
 const TYPOGRAPHY_CASE_ID: &str = "focused.excalifont-text.v1";
 const TYPOGRAPHY_CASE_RELATIVE_PATH: &str = "tests/conformance/cases/focused/excalifont-text";
+const FRAME_CASE_ID: &str = "focused.frame-export.v1";
+const FRAME_CASE_RELATIVE_PATH: &str = "tests/conformance/cases/focused/frame-export";
 const MANIFEST_SCHEMA: &str = "excalidraw-render/conformance-case/rectangle-reference/v1";
 const APPROVAL_SCHEMA: &str = "excalidraw-render/conformance-approval-subject/v1";
 const EMPTY_REPORT: &[u8] = br#"{"schema_version":1,"diagnostics":[]}"#;
 const PROFILE_DIGEST: &str = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 const ASSET_DIGEST: &str = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
 const SURFACE_DIGEST: &str = "d7dadf8165ef3e42a025e68ec0c1f0f67cc63c7c745199e85442e6938c0c5ade";
+const FRAME_PROFILE_DIGEST: &str =
+    "63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e";
 
 pub fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -26,6 +30,9 @@ pub fn repo_root() -> PathBuf {
 
 pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
     let loaded = load(case_id)?;
+    if case_id == FRAME_CASE_ID {
+        return verify_frame(&loaded, require_approval);
+    }
     if case_id == TYPOGRAPHY_CASE_ID {
         return verify_typography(&loaded, require_approval);
     }
@@ -97,6 +104,305 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
         Value::Null if require_approval => return Err("case has no approval record".to_owned()),
         Value::Null => {}
         approval => verify_approval(approval, &subject)?,
+    }
+    Ok(())
+}
+
+fn verify_frame(loaded: &LoadedCase, require_approval: bool) -> Result<(), String> {
+    verify_manifest_digest(loaded)?;
+    let manifest = object(&loaded.manifest, "frame manifest")?;
+    verify_exact_keys(
+        manifest,
+        &[
+            "approval",
+            "case_id",
+            "compatibility_revision",
+            "expected_report",
+            "options",
+            "originating_issue",
+            "profile",
+            "provenance",
+            "scene",
+            "schema",
+            "targets",
+        ],
+        "frame manifest",
+    )?;
+    if loaded.manifest["schema"] != json!("excalidraw-render/frame-conformance-case/v1")
+        || loaded.manifest["case_id"] != json!(FRAME_CASE_ID)
+        || loaded.manifest["compatibility_revision"] != json!(1)
+        || loaded.manifest["originating_issue"]
+            != json!("https://github.com/sagikazarmark/excalidraw-render.orig/issues/97")
+        || loaded.manifest["options"]
+            != json!({
+                "exportBackground": true,
+                "exportEmbedScene": false,
+                "exportScale": 1,
+                "exportWithDarkMode": false,
+                "maxWidthOrHeight": null,
+                "viewBackgroundColor": "#ffffff"
+            })
+    {
+        return Err("frame conformance identity or invocation is stale".to_owned());
+    }
+    let profile = object(&loaded.manifest["profile"], "frame profile")?;
+    verify_exact_keys(profile, &["digest", "path"], "frame profile")?;
+    if profile["digest"] != json!(format!("sha256:{FRAME_PROFILE_DIGEST}"))
+        || profile["path"] != json!("tests/oracle/reference-profiles/revision-1-frame.json")
+    {
+        return Err("frame conformance profile identity is stale".to_owned());
+    }
+    let profile_bytes = fs::read(repo_root().join(profile["path"].as_str().unwrap()))
+        .map_err(|error| format!("failed to read frame profile: {error}"))?;
+    if sha256(&profile_bytes) != FRAME_PROFILE_DIGEST {
+        return Err("frame conformance profile bytes are stale".to_owned());
+    }
+
+    let mut referenced = Vec::new();
+    collect_frame_descriptors(loaded, &mut referenced)?;
+    if fs::read(loaded.root.join("expected-report.json"))
+        .map_err(|error| format!("failed to read frame expected report: {error}"))?
+        != EMPTY_REPORT
+    {
+        return Err("frame expected report is not the canonical empty report".to_owned());
+    }
+    let scene: Value = serde_json::from_slice(
+        &fs::read(loaded.root.join("scene.excalidraw"))
+            .map_err(|error| format!("failed to read frame scene: {error}"))?,
+    )
+    .map_err(|error| format!("invalid frame scene: {error}"))?;
+    if scene["type"] != json!("excalidraw")
+        || scene["version"] != json!(2)
+        || scene["appState"]["frameRendering"]["enabled"] != json!(false)
+    {
+        return Err("frame conformance scene does not exercise the declared target".to_owned());
+    }
+    verify_frame_coverage(&scene)?;
+    verify_frame_targets(loaded, &scene)?;
+    verify_frame_provenance(loaded)?;
+    let subject = subject_digest(&loaded.manifest, referenced)?;
+    match &loaded.manifest["approval"] {
+        Value::Null if require_approval => Err("frame case has no approval record".to_owned()),
+        Value::Null => Ok(()),
+        approval => verify_approval_for_issue(approval, &subject, "97"),
+    }
+}
+
+fn collect_frame_descriptors(
+    loaded: &LoadedCase,
+    referenced: &mut Vec<Value>,
+) -> Result<(), String> {
+    verify_descriptor(&loaded.root, &loaded.manifest["scene"], referenced)?;
+    verify_descriptor(
+        &loaded.root,
+        &loaded.manifest["expected_report"],
+        referenced,
+    )?;
+    verify_descriptor(&loaded.root, &loaded.manifest["provenance"], referenced)?;
+    let targets = loaded.manifest["targets"]
+        .as_array()
+        .ok_or_else(|| "frame targets must be an array".to_owned())?;
+    for target in targets {
+        for format in ["png", "svg"] {
+            verify_descriptor(
+                &loaded.root,
+                &target["outputs"][format]["artifact"],
+                referenced,
+            )?;
+            verify_descriptor(
+                &loaded.root,
+                &target["outputs"][format]["raw_raster"],
+                referenced,
+            )?;
+        }
+    }
+    Ok(())
+}
+
+fn verify_frame_targets(loaded: &LoadedCase, scene: &Value) -> Result<(), String> {
+    let frames = scene["elements"]
+        .as_array()
+        .ok_or_else(|| "frame scene elements must be an array".to_owned())?
+        .iter()
+        .filter(|element| {
+            element["isDeleted"] != json!(true)
+                && matches!(element["type"].as_str(), Some("frame" | "magicframe"))
+        })
+        .collect::<Vec<_>>();
+    let targets = loaded.manifest["targets"]
+        .as_array()
+        .filter(|targets| targets.len() == frames.len() && targets.len() == 7)
+        .ok_or_else(|| "frame manifest must bind all seven live reference targets".to_owned())?;
+    for (index, (target, frame)) in targets.iter().zip(frames).enumerate() {
+        verify_exact_keys(
+            object(target, "frame target")?,
+            &["frame_kind", "frame_name", "frame_ordinal", "outputs"],
+            "frame target",
+        )?;
+        if target["frame_ordinal"] != json!(index + 1)
+            || target["frame_kind"] != frame["type"]
+            || target["frame_name"] != frame.get("name").cloned().unwrap_or(Value::Null)
+        {
+            return Err("frame target identity does not match source order".to_owned());
+        }
+        verify_exact_keys(
+            object(&target["outputs"], "frame outputs")?,
+            &["png", "svg"],
+            "frame outputs",
+        )?;
+        for format in ["png", "svg"] {
+            let output = &target["outputs"][format];
+            verify_exact_keys(
+                object(output, "frame format output")?,
+                &["artifact", "raw_raster"],
+                "frame format output",
+            )?;
+            let artifact = object(&output["artifact"], "frame artifact")?;
+            let raw = object(&output["raw_raster"], "frame raw raster")?;
+            let width = u32_field(artifact, "width")?;
+            let height = u32_field(artifact, "height")?;
+            if raw["width"] != json!(width)
+                || raw["height"] != json!(height)
+                || raw["layout"] != json!("top-left-row-major")
+                || raw["pixel_format"] != json!("straight-alpha-srgb-rgba8")
+                || raw["byte_length"]
+                    != json!(u64::from(width)
+                        .saturating_mul(u64::from(height))
+                        .saturating_mul(4))
+            {
+                return Err(format!(
+                    "frame {} {format} raster shape is stale",
+                    index + 1
+                ));
+            }
+            let bytes =
+                fs::read(descriptor_path(&loaded.root, &output["artifact"])?).map_err(|error| {
+                    format!(
+                        "failed to read frame {} {format} artifact: {error}",
+                        index + 1
+                    )
+                })?;
+            if format == "png" {
+                if artifact["media_type"] != json!("image/png") {
+                    return Err("frame PNG media type is stale".to_owned());
+                }
+                if png_dimensions(&bytes)? != (width, height) {
+                    return Err(format!("frame {} PNG dimensions are stale", index + 1));
+                }
+            } else {
+                if artifact["media_type"] != json!("image/svg+xml") {
+                    return Err("frame SVG media type is stale".to_owned());
+                }
+                let (svg_width, svg_height) = svg_f64_dimensions(&bytes)?;
+                if svg_width.round() != f64::from(width) || svg_height.round() != f64::from(height)
+                {
+                    return Err(format!("frame {} SVG dimensions are stale", index + 1));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn verify_frame_coverage(scene: &Value) -> Result<(), String> {
+    let elements = scene["elements"]
+        .as_array()
+        .ok_or_else(|| "frame scene elements must be an array".to_owned())?;
+    let by_id = |id: &str| {
+        elements
+            .iter()
+            .find(|element| element["id"] == json!(id))
+            .ok_or_else(|| format!("frame coverage element {id:?} is missing"))
+    };
+    let target = by_id("target-frame")?;
+    let edge = by_id("edge-contact")?;
+    let outside = by_id("outside-direct-member")?;
+    let inner = by_id("inner-magic")?;
+    let grandchild = by_id("nested-grandchild")?;
+    let rotated = by_id("rotated-frame")?;
+    let empty = by_id("empty-frame")?;
+    let container = by_id("binding-container")?;
+    let text = by_id("bound-text")?;
+    let linked = by_id("linked-member")?;
+    let deleted = by_id("deleted-frame")?;
+    if edge["x"].as_f64()
+        != target["x"]
+            .as_f64()
+            .zip(target["width"].as_f64())
+            .map(|(x, width)| x + width)
+        || outside["frameId"] != json!("target-frame")
+        || outside["x"].as_f64().is_none_or(|x| x <= 120.0)
+        || inner["type"] != json!("magicframe")
+        || inner["frameId"] != json!("outer-frame")
+        || !inner.get("name").is_none()
+        || grandchild["frameId"] != json!("inner-magic")
+        || rotated["angle"].as_f64().is_none_or(|angle| angle == 0.0)
+        || empty["name"] != json!("")
+        || container["boundElements"][0]["id"] != json!("bound-text")
+        || text["containerId"] != json!("binding-container")
+        || linked["frameId"] != json!("binding-frame")
+        || linked["link"] != json!("https://example.com/frame")
+        || deleted["isDeleted"] != json!(true)
+    {
+        return Err("frame conformance semantic coverage is stale".to_owned());
+    }
+    Ok(())
+}
+
+fn verify_frame_provenance(loaded: &LoadedCase) -> Result<(), String> {
+    let provenance: Value = serde_json::from_slice(
+        &fs::read(loaded.root.join("evidence/provenance.json"))
+            .map_err(|error| format!("failed to read frame provenance: {error}"))?,
+    )
+    .map_err(|error| format!("invalid frame provenance: {error}"))?;
+    if provenance["schema"] != json!("excalidraw-render/frame-reference-evidence-provenance/v1")
+        || provenance["case_id"] != json!(FRAME_CASE_ID)
+        || provenance["frame_reference_profile_digest"]
+            != json!(format!("sha256:{FRAME_PROFILE_DIGEST}"))
+    {
+        return Err("frame provenance identity is stale".to_owned());
+    }
+    verify_repo_descriptor(&provenance["generator"], "frame generator")?;
+    verify_repo_descriptor(&provenance["runner"], "frame runner")?;
+    let runs = provenance["runs"]
+        .as_array()
+        .filter(|runs| runs.len() == 2)
+        .ok_or_else(|| "frame provenance must contain two runs".to_owned())?;
+    if runs[0]["requests"] != runs[1]["requests"] {
+        return Err("frame provenance request sets differ".to_owned());
+    }
+    let targets = loaded.manifest["targets"]
+        .as_array()
+        .ok_or_else(|| "frame targets must be an array".to_owned())?;
+    if runs.iter().any(|run| {
+        run["targets"]
+            .as_array()
+            .is_none_or(|run_targets| run_targets.len() != targets.len())
+    }) {
+        return Err("frame provenance target count is stale".to_owned());
+    }
+    for (index, target) in targets.iter().enumerate() {
+        let first = &runs[0]["targets"][index];
+        let second = &runs[1]["targets"][index];
+        if first != second || first["ordinal"] != target["frame_ordinal"] {
+            return Err(format!("frame {} provenance is not repeatable", index + 1));
+        }
+        for format in ["png", "svg"] {
+            if first["outputs"][format]["artifact_sha256"]
+                != target["outputs"][format]["artifact"]["sha256"]
+                || first["outputs"][format]["raw_raster_sha256"]
+                    != target["outputs"][format]["raw_raster"]["sha256"]
+                || first["outputs"][format]["width"]
+                    != target["outputs"][format]["artifact"]["width"]
+                || first["outputs"][format]["height"]
+                    != target["outputs"][format]["artifact"]["height"]
+            {
+                return Err(format!(
+                    "frame {} {format} provenance does not match evidence",
+                    index + 1
+                ));
+            }
+        }
     }
     Ok(())
 }
@@ -360,6 +666,10 @@ pub fn approval_subject(case_id: &str) -> Result<String, String> {
     verify(case_id, false)?;
     let loaded = load(case_id)?;
     let mut referenced = Vec::new();
+    if case_id == FRAME_CASE_ID {
+        collect_frame_descriptors(&loaded, &mut referenced)?;
+        return subject_digest(&loaded.manifest, referenced);
+    }
     verify_descriptor(&loaded.root, &loaded.manifest["scene"], &mut referenced)?;
     verify_descriptor(
         &loaded.root,
@@ -404,6 +714,8 @@ pub fn record_approval(
     });
     if case_id == TYPOGRAPHY_CASE_ID {
         verify_approval_for_issue(&approval, &subject, "58")?;
+    } else if case_id == FRAME_CASE_ID {
+        verify_approval_for_issue(&approval, &subject, "97")?;
     } else {
         verify_approval(&approval, &subject)?;
     }
@@ -430,6 +742,7 @@ fn load(case_id: &str) -> Result<LoadedCase, String> {
     let relative = match case_id {
         CASE_ID => CASE_RELATIVE_PATH,
         TYPOGRAPHY_CASE_ID => TYPOGRAPHY_CASE_RELATIVE_PATH,
+        FRAME_CASE_ID => FRAME_CASE_RELATIVE_PATH,
         _ => return Err(format!("unknown conformance case {case_id:?}")),
     };
     let root = repo_root().join(relative);
@@ -1412,6 +1725,22 @@ fn svg_dimensions(bytes: &[u8]) -> Result<(u32, u32), String> {
     ))
 }
 
+fn svg_f64_dimensions(bytes: &[u8]) -> Result<(f64, f64), String> {
+    let text = std::str::from_utf8(bytes).map_err(|error| format!("SVG is not UTF-8: {error}"))?;
+    let start = text
+        .find("<svg")
+        .ok_or_else(|| "SVG root is missing".to_owned())?;
+    let end = text[start..]
+        .find('>')
+        .map(|offset| start + offset)
+        .ok_or_else(|| "SVG root is incomplete".to_owned())?;
+    let root = &text[start..=end];
+    Ok((
+        svg_f64_attribute(root, "width")?,
+        svg_f64_attribute(root, "height")?,
+    ))
+}
+
 fn svg_u32_attribute(root: &str, name: &str) -> Result<u32, String> {
     let marker = format!(r#"{name}=""#);
     let value = root
@@ -1422,4 +1751,20 @@ fn svg_u32_attribute(root: &str, name: &str) -> Result<u32, String> {
     value
         .parse()
         .map_err(|_| format!("SVG {name} is not an integer: {value}"))
+}
+
+fn svg_f64_attribute(root: &str, name: &str) -> Result<f64, String> {
+    let marker = format!(r#"{name}=""#);
+    let value = root
+        .split_once(&marker)
+        .and_then(|(_, tail)| tail.split_once('"'))
+        .map(|(value, _)| value)
+        .ok_or_else(|| format!("SVG root has no {name}"))?;
+    let value: f64 = value
+        .parse()
+        .map_err(|_| format!("SVG {name} is not numeric: {value}"))?;
+    if !value.is_finite() || value <= 0.0 {
+        return Err(format!("SVG {name} is not positive and finite"));
+    }
+    Ok(value)
 }

@@ -41,6 +41,23 @@ container host fonts, browser settings, and evidence invocation rules.
 The smoke fixture is profile validation, not approved conformance evidence.
 Conformance cases and their review protocol belong to the conformance corpus.
 
+Frame export uses a sibling target-scoped wrapper so the approved scene wrapper
+and profile digest remain immutable. Rebuild and verify its browser bundle and
+checked profile without touching the scene bundle with:
+
+```sh
+bash tools/reference-oracle/run-frame-profile.sh verify
+```
+
+After an explicitly reviewed frame-wrapper change, regenerate the frame profile
+with `bash tools/reference-oracle/run-frame-profile.sh update`.
+
+The checked frame profile and digest are
+`tests/oracle/reference-profiles/revision-1-frame.json` and
+`revision-1-frame.sha256`. The profile binds the frame HTML, browser entry,
+build configuration, conformance generator and runner, every generated bundle
+file, zero-padding invocation, and the immutable scene profile it extends.
+
 The repository `xtask` owns explicit conformance generation, read-only
 reproduction, and ordinary offline verification:
 
@@ -48,6 +65,8 @@ reproduction, and ordinary offline verification:
 cargo run --locked -p xtask -- conformance generate focused.rectangle-outline.v1
 cargo run --locked -p xtask -- conformance reproduce focused.rectangle-outline.v1
 cargo run --locked -p xtask -- conformance verify focused.rectangle-outline.v1
+cargo run --locked -p xtask -- conformance reproduce focused.frame-export.v1
+cargo run --locked -p xtask -- conformance approval-subject focused.frame-export.v1
 ```
 
 Generation and reproduction use the same pinned container and frozen wrapper as

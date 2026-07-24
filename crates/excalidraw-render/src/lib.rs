@@ -8,6 +8,7 @@ mod backends;
 mod catalog;
 mod color;
 mod compatibility;
+mod frame;
 #[cfg(not(target_arch = "wasm32"))]
 mod model;
 mod normalization;
@@ -29,14 +30,18 @@ pub use compatibility::{
     ResourceMeasurement, ResourceValue, UnsupportedRevisionError, ValueKind,
     DEFAULT_COMPATIBILITY_REVISION,
 };
+pub use frame::{
+    FrameBatchError, FrameBatchErrorKind, FrameKind, FrameRef, FrameRefs, FrameRenderCursor,
+    FrameRenderEntry,
+};
 pub use outcome::{
     Artifact, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode, DiagnosticEffect,
     DiagnosticSeverity, RenderError, RenderErrorCategory, RenderOutcome,
 };
 pub use request::{
-    ColorMode, FrameOptions, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback,
-    RenderRequest, RenderRequestBuilder, RequestError, Sizing, SupplementalAsset,
-    SupplementalAssets, SupplementalAssetsBuilder,
+    ColorMode, FrameOptions, FrameRenderRequest, FrameRenderRequestBuilder, MetadataOptions,
+    OutputFormat, PdfOptions, PdfRasterFallback, RenderRequest, RenderRequestBuilder, RequestError,
+    Sizing, SupplementalAsset, SupplementalAssets, SupplementalAssetsBuilder,
 };
 pub use resource_limits::{ResourceLimits, ResourceLimitsBuilder};
 pub use scene::{SceneDocument, SceneParseError};

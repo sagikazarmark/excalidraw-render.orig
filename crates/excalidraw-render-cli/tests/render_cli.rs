@@ -3,6 +3,8 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
+use excalidraw_render::{CompatibilityRevision, Renderer};
+
 #[test]
 fn standalone_commands_expose_revision_identity_and_exact_licenses() {
     let revisions = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
@@ -303,6 +305,20 @@ fn rejects_existing_and_nonexistent_path_aliases_without_modifying_sources() {
             alias.to_str().unwrap(),
             "--format=svg",
             "--force",
+            "--report-format=json",
+        ],
+        2,
+        "cli.path-conflict",
+    );
+    assert_eq!(fs::read(&input).unwrap(), original);
+
+    assert_failure(
+        &[
+            "frames",
+            input.to_str().unwrap(),
+            "--output",
+            input.to_str().unwrap(),
+            "--format=svg",
             "--report-format=json",
         ],
         2,
@@ -665,6 +681,320 @@ fn preserves_embedded_images_across_cli_formats() {
     let pdf = String::from_utf8_lossy(&pdf);
     assert!(pdf.contains("/Subtype /Image"));
     assert!(pdf.contains("/Im0 Do"));
+
+    fs::remove_dir_all(temp).expect("remove test temp directory");
+}
+
+#[test]
+fn frames_command_filters_names_and_writes_one_deterministically_named_artifact_per_frame() {
+    let temp = temp_directory_named("frames-command");
+    let input = temp.join("scene.excalidraw");
+    let output = temp.join("frames");
+    fs::write(
+        &input,
+        br##"{
+            "type":"excalidraw","version":2,
+            "elements":[
+                {"id":"one","type":"frame","name":"Road Map","x":0,"y":0,"width":40,"height":30,"updated":1},
+                {"id":"one-child","type":"rectangle","x":5,"y":5,"width":10,"height":10,"frameId":"one","strokeColor":"#e03131","backgroundColor":"#e03131","fillStyle":"solid","roughness":0,"updated":1},
+                {"id":"two","type":"frame","name":"Road Map","x":50,"y":0,"width":40,"height":30,"updated":1},
+                {"id":"two-child","type":"rectangle","x":55,"y":5,"width":10,"height":10,"frameId":"two","strokeColor":"#1971c2","backgroundColor":"#1971c2","fillStyle":"solid","roughness":0,"updated":1},
+                {"id":"three","type":"magicframe","name":null,"x":100,"y":0,"width":40,"height":30,"updated":1}
+            ],
+            "appState":{},"files":{}
+        }"##,
+    )
+    .expect("write frame scene");
+
+    let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .arg("--output")
+        .arg(&output)
+        .args(["--format", "svg", "--report-format", "json"])
+        .output()
+        .expect("run frame export");
+    assert!(
+        result.status.success(),
+        "frame export failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(result.stdout.is_empty());
+    assert!(output.join("Road-Map.svg").is_file());
+    assert!(output.join("Road-Map-2.svg").is_file());
+    assert!(output.join("frame-3.svg").is_file());
+    let report: serde_json::Value =
+        serde_json::from_slice(&result.stderr).expect("frame batch JSON report");
+    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["status"], "success");
+    assert_eq!(report["format"], "svg");
+    assert_eq!(report["frames"].as_array().map(Vec::len), Some(3));
+    assert_eq!(report["frames"][0]["ordinal"], 1);
+    assert_eq!(
+        report["frames"][0]["output_path"],
+        output.join("Road-Map.svg").to_string_lossy().as_ref()
+    );
+    assert_eq!(
+        report["reference_profile_digest"],
+        Renderer::frame_profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("frame profile")
+            .profile_digest()
+    );
+
+    let no_match_output = temp.join("no-match");
+    let no_match = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .arg("--output")
+        .arg(&no_match_output)
+        .args(["--format", "svg", "--name-regex", "^Missing$"])
+        .output()
+        .expect("run no-match frame export");
+    assert_eq!(no_match.status.code(), Some(1));
+    assert!(!no_match_output.exists());
+    assert!(String::from_utf8_lossy(&no_match.stderr).contains("cli.frame-no-match"));
+
+    fs::remove_dir_all(temp).expect("remove test temp directory");
+}
+
+#[test]
+fn frame_filenames_use_unicode_case_folding_and_preserve_long_name_hashes() {
+    let temp = temp_directory_named("frame-portable-filenames");
+    let input = temp.join("scene.excalidraw");
+    let output = temp.join("frames");
+    let long_name = "A".repeat(140);
+    let scene = format!(
+        r##"{{
+            "type":"excalidraw","version":2,
+            "elements":[
+                {{"id":"one","type":"frame","name":"Straße","x":0,"y":0,"width":20,"height":20,"updated":1}},
+                {{"id":"two","type":"frame","name":"STRASSE","x":30,"y":0,"width":20,"height":20,"updated":1}},
+                {{"id":"three","type":"frame","name":"{long_name}","x":60,"y":0,"width":20,"height":20,"updated":1}},
+                {{"id":"four","type":"frame","name":"{long_name}","x":90,"y":0,"width":20,"height":20,"updated":1}}
+            ],
+            "appState":{{}},"files":{{}}
+        }}"##
+    );
+    fs::write(&input, scene).expect("write portable filename scene");
+
+    let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .arg("--output")
+        .arg(&output)
+        .args(["--format", "svg"])
+        .output()
+        .expect("run portable filename export");
+    assert!(
+        result.status.success(),
+        "frame export failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.join("Straße.svg").is_file());
+    assert!(output.join("STRASSE-2.svg").is_file());
+
+    let long_names = fs::read_dir(&output)
+        .expect("read frame output directory")
+        .map(|entry| {
+            entry
+                .expect("read frame output entry")
+                .file_name()
+                .into_string()
+                .expect("portable filename is UTF-8")
+        })
+        .filter(|name| name.starts_with('A'))
+        .collect::<Vec<_>>();
+    assert_eq!(long_names.len(), 2);
+    let pattern =
+        regex::Regex::new(r"-([0-9a-f]{8})(?:-2)?\.svg$").expect("long-name suffix regex is valid");
+    let hashes = long_names
+        .iter()
+        .map(|name| {
+            assert!(
+                name.len() <= 124,
+                "filename exceeds component limit: {name}"
+            );
+            pattern
+                .captures(name)
+                .and_then(|captures| captures.get(1))
+                .map(|capture| capture.as_str().to_owned())
+                .expect("long filename retains its hash suffix")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(hashes[0], hashes[1]);
+    assert!(long_names.iter().any(|name| name.ends_with("-2.svg")));
+
+    fs::remove_dir_all(temp).expect("remove test temp directory");
+}
+
+#[test]
+fn frame_batches_are_stage_all_by_default_and_partial_only_when_requested() {
+    let temp = temp_directory_named("frame-publication-policy");
+    let input = temp.join("scene.excalidraw");
+    fs::write(
+        &input,
+        br##"{
+            "type":"excalidraw","version":2,
+            "elements":[
+                {"id":"one","type":"frame","name":"One","x":0,"y":0,"width":40,"height":30,"updated":1},
+                {"id":"one-child","type":"rectangle","x":5,"y":5,"width":10,"height":10,"frameId":"one","strokeColor":"#e03131","backgroundColor":"#e03131","fillStyle":"solid","roughness":0,"updated":1},
+                {"id":"two","type":"frame","name":"Two","x":50,"y":0,"width":40,"height":30,"updated":1},
+                {"id":"two-child","type":"rectangle","x":55,"y":5,"width":10,"height":10,"frameId":"two","strokeColor":"#1971c2","backgroundColor":"#1971c2","fillStyle":"solid","roughness":0,"updated":1}
+            ],
+            "appState":{},"files":{}
+        }"##,
+    )
+    .expect("write frame scene");
+
+    let atomic = temp.join("atomic");
+    fs::create_dir(&atomic).expect("create atomic output");
+    fs::write(atomic.join("One.svg"), b"existing").expect("write collision");
+    let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args(["frames"])
+        .arg(&input)
+        .arg("--output")
+        .arg(&atomic)
+        .args(["--format", "svg", "--report-format", "json"])
+        .output()
+        .expect("run atomic frame export");
+    assert_eq!(result.status.code(), Some(1));
+    assert_eq!(fs::read(atomic.join("One.svg")).unwrap(), b"existing");
+    assert!(!atomic.join("Two.svg").exists());
+    assert_no_staging_files(&atomic);
+    let report: serde_json::Value = serde_json::from_slice(&result.stderr).expect("atomic report");
+    assert_eq!(report["status"], "failure");
+    assert!(report["frames"][0]["artifact"].is_object());
+
+    let partial = temp.join("partial");
+    fs::create_dir(&partial).expect("create partial output");
+    fs::write(partial.join("One.svg"), b"existing").expect("write collision");
+    let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args(["frames"])
+        .arg(&input)
+        .arg("--output")
+        .arg(&partial)
+        .args([
+            "--format",
+            "svg",
+            "--allow-partial",
+            "--report-format",
+            "json",
+        ])
+        .output()
+        .expect("run partial frame export");
+    assert_eq!(result.status.code(), Some(1));
+    assert_eq!(fs::read(partial.join("One.svg")).unwrap(), b"existing");
+    assert!(partial.join("Two.svg").is_file());
+    assert_no_staging_files(&partial);
+    let report: serde_json::Value = serde_json::from_slice(&result.stderr).expect("partial report");
+    assert_eq!(report["status"], "partial");
+    assert_eq!(report["frames"][0]["delivery_state"], "none");
+    assert_eq!(report["frames"][1]["delivery_state"], "complete");
+    assert_eq!(report["frames"][0]["error"]["family"], "cli");
+    assert_eq!(
+        report["frames"][0]["error"]["category"],
+        serde_json::Value::Null
+    );
+    assert_eq!(report["frames"][0]["error"]["details"]["kind"], "delivery");
+    let raw_report = std::str::from_utf8(&result.stderr).expect("frame report is UTF-8");
+    assert!(raw_report
+        .starts_with("{\"schema_version\":1,\"status\":\"partial\",\"renderer_version\":"));
+    assert!(raw_report.contains(
+        "\"error\":{\"family\":\"cli\",\"category\":null,\"code\":\"cli.destination-exists\""
+    ));
+
+    let human = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args(["frames"])
+        .arg(&input)
+        .arg("--output")
+        .arg(&atomic)
+        .args(["--format", "svg"])
+        .output()
+        .expect("run human collision report");
+    assert_eq!(human.status.code(), Some(1));
+    let human = String::from_utf8(human.stderr).expect("human report is UTF-8");
+    assert!(human.contains("cli cli.destination-exists: frame 1 ("));
+    assert!(!human.contains("frame-batch-"));
+
+    let none = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args(["frames"])
+        .arg(&input)
+        .arg("--output")
+        .arg(&atomic)
+        .args(["--format", "svg", "--report-format", "none"])
+        .output()
+        .expect("run suppressed collision report");
+    assert_eq!(none.status.code(), Some(1));
+    let none = String::from_utf8(none.stderr).expect("none report is UTF-8");
+    assert!(none.contains("cli cli.destination-exists: output destination already exists"));
+    assert!(!none.contains("frame-batch-"));
+
+    let missing_asset = temp.join("missing-asset.bin");
+    let precedence = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args(["frames"])
+        .arg(&input)
+        .arg("--output")
+        .arg(&atomic)
+        .args(["--format", "svg", "--report-format", "json", "--asset"])
+        .arg(format!("missing={}", missing_asset.display()))
+        .output()
+        .expect("run collision and missing asset");
+    assert_eq!(precedence.status.code(), Some(2));
+    let precedence: serde_json::Value =
+        serde_json::from_slice(&precedence.stderr).expect("precedence report is JSON");
+    assert_eq!(precedence["error"]["code"], "cli.destination-exists");
+
+    fs::remove_dir_all(temp).expect("remove test temp directory");
+}
+
+#[test]
+fn frame_batch_report_staging_failure_prevents_all_artifact_publication() {
+    let temp = temp_directory_named("frame-report-staging");
+    let input = temp.join("scene.excalidraw");
+    fs::write(
+        &input,
+        br##"{
+            "type":"excalidraw","version":2,
+            "elements":[
+                {"id":"one","type":"frame","name":"One","x":0,"y":0,"width":40,"height":30,"updated":1},
+                {"id":"one-child","type":"rectangle","x":5,"y":5,"width":10,"height":10,"frameId":"one","strokeColor":"#e03131","backgroundColor":"#e03131","fillStyle":"solid","roughness":0,"updated":1}
+            ],
+            "appState":{},"files":{}
+        }"##,
+    )
+    .expect("write frame scene");
+
+    for (mode, allow_partial) in [("default", false), ("partial", true)] {
+        let output = temp.join(format!("{mode}-frames"));
+        let report = temp
+            .join(format!("{mode}-missing-parent"))
+            .join("report.json");
+        let mut command = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"));
+        command
+            .arg("frames")
+            .arg(&input)
+            .arg("--output")
+            .arg(&output)
+            .args(["--format", "svg", "--report-format", "json"])
+            .arg("--report-output")
+            .arg(&report);
+        if allow_partial {
+            command.arg("--allow-partial");
+        }
+        let result = command.output().expect("run frame report staging failure");
+
+        assert_eq!(result.status.code(), Some(1));
+        assert!(
+            !output.exists(),
+            "{mode} mode published output before report staging"
+        );
+        assert!(!report.exists());
+        let emergency: serde_json::Value =
+            serde_json::from_slice(&result.stderr).expect("emergency JSON report");
+        assert_eq!(emergency["error"]["code"], "cli.report-write-failed");
+        assert_eq!(emergency["error"]["details"]["artifact_state"], "none");
+        assert_no_staging_files(&temp);
+    }
 
     fs::remove_dir_all(temp).expect("remove test temp directory");
 }

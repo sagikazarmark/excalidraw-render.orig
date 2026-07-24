@@ -14,6 +14,7 @@ pub(crate) struct ManifestedFontAttribution {
 #[derive(Debug)]
 pub(crate) struct RevisionCatalog {
     profile: ReferenceProfileIdentity,
+    frame_profile: ReferenceProfileIdentity,
     assets: &'static excalidraw_render_assets_base::RevisionCatalog,
     scene_surface: &'static crate::scene_surface::SceneSurfacePolicy,
 }
@@ -21,6 +22,10 @@ pub(crate) struct RevisionCatalog {
 impl RevisionCatalog {
     pub(crate) const fn profile(&'static self) -> &'static ReferenceProfileIdentity {
         &self.profile
+    }
+
+    pub(crate) const fn frame_profile(&'static self) -> &'static ReferenceProfileIdentity {
+        &self.frame_profile
     }
 
     pub(crate) const fn asset_catalog(
@@ -41,6 +46,11 @@ pub(crate) static REVISION_1: RevisionCatalog = RevisionCatalog {
         CompatibilityRevision::REVISION_1,
         excalidraw_render_assets_base::revision_1().excalidraw_release,
         excalidraw_render_assets_base::revision_1().reference_profile_digest,
+    ),
+    frame_profile: ReferenceProfileIdentity::new(
+        CompatibilityRevision::REVISION_1,
+        excalidraw_render_assets_base::revision_1().excalidraw_release,
+        "sha256:63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e",
     ),
     assets: excalidraw_render_assets_base::revision_1(),
     scene_surface: &crate::scene_surface::SCENE_SURFACE_POLICY,

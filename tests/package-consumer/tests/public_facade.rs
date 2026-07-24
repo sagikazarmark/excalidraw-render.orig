@@ -1,6 +1,7 @@
 use base64::Engine as _;
 use excalidraw_render::{
-    license_bundle, DiagnosticCode, OutputFormat, RenderRequest, Renderer, SceneDocument,
+    license_bundle, DiagnosticCode, FrameRenderRequest, OutputFormat, RenderRequest, Renderer,
+    ResourceLimits, SceneDocument,
 };
 use sha2::{Digest, Sha256};
 
@@ -22,6 +23,7 @@ const TEXT_SCENE: &[u8] =
 const SOURCE_IMAGE_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/png","dataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=","created":1}}}"#;
 const NATIVE_NESTED_SVG_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIj48c3RvcCBzdG9wLWNvbG9yPSIjZjAwIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDBmIi8+PC9saW5lYXJHcmFkaWVudD48Y2xpcFBhdGggaWQ9ImMiPjxjaXJjbGUgY3g9IjEwIiBjeT0iNSIgcj0iNSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCIgZmlsbD0idXJsKCNnKSIgY2xpcC1wYXRoPSJ1cmwoI2MpIi8+PC9zdmc+","created":1}}}"##;
 const RASTER_FALLBACK_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCI+PGRlZnM+PGZpbHRlciBpZD0iYmx1ciIgeD0iMCIgeT0iMCIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMSIvPjwvZmlsdGVyPjwvZGVmcz48cmVjdCB3aWR0aD0iMjAiIGhlaWdodD0iMTAiIGZpbGw9IiMwMGZmMDAiIGZpbHRlcj0idXJsKCNibHVyKSIvPjwvc3ZnPg==","created":1}}}"##;
+const FRAME_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"first-frame","type":"frame","name":"Public One","x":10,"y":20,"width":80,"height":60,"updated":1},{"id":"first-child","type":"rectangle","x":20,"y":30,"width":20,"height":20,"frameId":"first-frame","strokeColor":"#e03131","backgroundColor":"#e03131","fillStyle":"solid","roughness":0,"updated":1},{"id":"second-frame","type":"magicframe","name":"Public Two","x":110,"y":20,"width":50,"height":40,"updated":1},{"id":"second-child","type":"ellipse","x":120,"y":30,"width":20,"height":15,"frameId":"second-frame","strokeColor":"#1971c2","backgroundColor":"#1971c2","fillStyle":"solid","roughness":0,"updated":1}],"appState":{},"files":{}}"##;
 const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
     (
         OutputFormat::Svg,
@@ -150,6 +152,82 @@ fn packaged_public_facade_preserves_artifact_byte_stability() {
         forward_round == reverse_round,
         "repeated render calls or format order changed their bytes"
     );
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn packaged_public_facade_renders_discovered_frames_directly_and_lazily() {
+    let scene = SceneDocument::parse(FRAME_SCENE).expect("the frame scene is admitted");
+    let frames = scene.frames().collect::<Vec<_>>();
+    let renderer = Renderer::new();
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = FrameRenderRequest::builder(format)
+            .build()
+            .expect("the frame request is valid");
+        let direct = frames
+            .iter()
+            .copied()
+            .map(|frame| {
+                renderer
+                    .render_frame(frame, &request)
+                    .expect("the frame renders directly")
+            })
+            .collect::<Vec<_>>();
+        let mut cursor = renderer
+            .render_frames(&scene, frames.iter().rev().copied(), &request)
+            .expect("the lazy frame selection is valid");
+        for (expected_frame, direct) in frames.iter().zip(&direct) {
+            let entry = cursor.next().expect("the lazy result exists");
+            let lazy = entry.result().as_ref().expect("the frame renders lazily");
+
+            assert_eq!(entry.frame().ordinal(), expected_frame.ordinal());
+            assert_eq!(direct.artifact().bytes(), lazy.artifact().bytes());
+            assert_eq!(direct.report(), lazy.report());
+            assert_eq!(direct.profile_digest(), lazy.profile_digest());
+        }
+        assert!(cursor.next().is_none());
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn packaged_public_facade_preserves_direct_and_lazy_frame_errors() {
+    let scene = SceneDocument::parse(FRAME_SCENE).expect("the frame scene is admitted");
+    let frames = scene.frames().collect::<Vec<_>>();
+    let limits = ResourceLimits::builder()
+        .max_elements(1)
+        .build()
+        .expect("the low element limit is valid");
+    let request = FrameRenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(limits)
+        .build()
+        .expect("the frame request is valid");
+    let renderer = Renderer::new();
+
+    let direct = frames
+        .iter()
+        .copied()
+        .map(|frame| {
+            renderer
+                .render_frame(frame, &request)
+                .expect_err("the direct render crosses the element limit")
+        })
+        .collect::<Vec<_>>();
+    let mut cursor = renderer
+        .render_frames(&scene, frames.iter().rev().copied(), &request)
+        .expect("semantic limits do not prevent cursor construction");
+    for (expected_frame, direct) in frames.iter().zip(direct) {
+        let entry = cursor.next().expect("the lazy result exists");
+        let actual_ordinal = entry.frame().ordinal();
+        let lazy = entry
+            .into_result()
+            .expect_err("the lazy render crosses the element limit");
+
+        assert_eq!(actual_ordinal, expected_frame.ordinal());
+        assert_eq!(direct, lazy);
+    }
+    assert!(cursor.next().is_none());
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

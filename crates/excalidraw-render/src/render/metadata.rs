@@ -9,6 +9,16 @@ use crate::{
 
 use super::{FormatEncodeError, MetadataFailure};
 
+#[derive(Clone, Copy)]
+pub(super) enum ManifestTarget<'a> {
+    Scene,
+    Frame {
+        ordinal: u32,
+        kind: crate::FrameKind,
+        name: Option<&'a str>,
+    },
+}
+
 const SCENE_MEDIA_TYPE: &str = "application/vnd.excalidraw+json";
 const WRAPPER_PREFIX: &[u8] =
     b"{\"version\":\"1\",\"encoding\":\"bstring\",\"compressed\":true,\"encoded\":\"";
@@ -64,6 +74,7 @@ impl ArtifactMetadata {
         report: &CompatibilityReport,
         mandatory_notices: Option<&super::notices::MandatoryNotices>,
         selection: MetadataSelection,
+        target: ManifestTarget<'_>,
     ) -> Result<Self, FormatEncodeError> {
         let canonical = selection
             .embedded_scene
@@ -102,7 +113,16 @@ impl ArtifactMetadata {
             || selection.embedded_scene
             || mandatory_notices.is_some();
         let manifest = has_manifest
-            .then(|| manifest_json(profile, report, notices, scene_digest.as_deref(), selection))
+            .then(|| {
+                manifest_json(
+                    profile,
+                    report,
+                    notices,
+                    scene_digest.as_deref(),
+                    selection,
+                    target,
+                )
+            })
             .transpose()
             .map_err(|error| {
                 metadata_failure(
@@ -120,7 +140,8 @@ impl ArtifactMetadata {
                 profile,
                 report,
                 mandatory_notices,
-                selection
+                selection,
+                target,
             ),
             MetadataEstimate {
                 scratch_bytes: metadata.scratch_bytes(),
@@ -136,6 +157,7 @@ impl ArtifactMetadata {
         report: &CompatibilityReport,
         mandatory_notices: Option<&super::notices::MandatoryNotices>,
         selection: MetadataSelection,
+        target: ManifestTarget<'_>,
     ) -> MetadataEstimate {
         let scene = selection
             .embedded_scene
@@ -152,6 +174,7 @@ impl ArtifactMetadata {
                 notices,
                 selection.embedded_scene,
                 selection,
+                target,
             )
         });
         let scene_scratch = scene.map_or(0, |scene| {
@@ -307,8 +330,28 @@ fn manifest_json_len(
     notices: &str,
     has_scene_digest: bool,
     selection: MetadataSelection,
+    target: ManifestTarget<'_>,
 ) -> u64 {
-    let mut len = byte_len("{\"schema_version\":1,\"provenance\":");
+    let mut len = match target {
+        ManifestTarget::Scene => byte_len("{\"schema_version\":1,\"provenance\":"),
+        ManifestTarget::Frame {
+            ordinal,
+            kind,
+            name,
+        } => {
+            let mut len = byte_len("{\"schema_version\":2,\"target\":{\"kind\":\"")
+                .saturating_add(byte_len(kind.as_str()))
+                .saturating_add(byte_len("\",\"ordinal\":"))
+                .saturating_add(decimal_len(u64::from(ordinal)));
+            if let Some(name) = name {
+                len = len
+                    .saturating_add(byte_len(",\"name\":\""))
+                    .saturating_add(json_string_content_len(name))
+                    .saturating_add(1);
+            }
+            len.saturating_add(byte_len("},\"provenance\":"))
+        }
+    };
     if selection.provenance {
         len = len
             .saturating_add(byte_len("{\"renderer_version\":\""))
@@ -404,6 +447,7 @@ fn manifest_json(
     notices: &str,
     scene_digest: Option<&str>,
     selection: MetadataSelection,
+    target: ManifestTarget<'_>,
 ) -> Result<String, FormatEncodeError> {
     let diagnostic_capacity = report
         .diagnostics()
@@ -422,7 +466,25 @@ fn manifest_json(
     manifest
         .try_reserve_exact(capacity)
         .map_err(|_| memory("artifact_manifest"))?;
-    manifest.push_str("{\"schema_version\":1,\"provenance\":");
+    match target {
+        ManifestTarget::Scene => manifest.push_str("{\"schema_version\":1,\"provenance\":"),
+        ManifestTarget::Frame {
+            ordinal,
+            kind,
+            name,
+        } => {
+            manifest.push_str("{\"schema_version\":2,\"target\":{\"kind\":\"");
+            manifest.push_str(kind.as_str());
+            manifest.push_str("\",\"ordinal\":");
+            write!(manifest, "{ordinal}").map_err(|_| metadata_size_error())?;
+            if let Some(name) = name {
+                manifest.push_str(",\"name\":\"");
+                super::text::push_json_string_content(&mut manifest, name);
+                manifest.push('"');
+            }
+            manifest.push_str("},\"provenance\":");
+        }
+    }
     if selection.provenance {
         manifest.push_str("{\"renderer_version\":\"");
         manifest.push_str(env!("CARGO_PKG_VERSION"));
@@ -457,6 +519,16 @@ fn manifest_json(
     }
     manifest.push('}');
     Ok(manifest)
+}
+
+fn json_string_content_len(value: &str) -> u64 {
+    value.chars().fold(0_u64, |len, character| {
+        len.saturating_add(match character {
+            '"' | '\\' | '\u{08}' | '\u{0c}' | '\n' | '\r' | '\t' => 2,
+            character if character < '\u{20}' => 6,
+            character => u64::try_from(character.len_utf8()).unwrap_or(u64::MAX),
+        })
+    })
 }
 
 fn push_diagnostic_summary(

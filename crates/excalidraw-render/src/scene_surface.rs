@@ -99,7 +99,9 @@ pub(crate) struct SurfaceClassification {
     pub(crate) fallbacks: Vec<SurfaceFallback>,
 }
 
+#[derive(Clone)]
 pub(crate) struct SurfaceFallback {
+    pub(crate) source_index: usize,
     pub(crate) source_order: u64,
     pub(crate) element_id: Option<String>,
     pub(crate) json_pointer: String,
@@ -225,6 +227,7 @@ pub(crate) fn classify(
                     let label = fallback_label("Unavailable: ", element_policy.kind)?;
                     fallbacks.try_reserve(1)?;
                     fallbacks.push(surface_fallback(
+                        index,
                         source_order,
                         element_id,
                         &pointer,
@@ -343,6 +346,7 @@ pub(crate) fn classify(
         if let Some(bounds) = bounds {
             fallbacks.try_reserve(1)?;
             fallbacks.push(surface_fallback(
+                index,
                 source_order,
                 element_id,
                 &pointer,
@@ -1484,6 +1488,7 @@ fn recoverable_bounds(members: &[JsonMember]) -> Option<RecoverableBounds> {
 
 #[allow(clippy::too_many_arguments)]
 fn surface_fallback(
+    source_index: usize,
     source_order: u64,
     element_id: Option<&str>,
     json_pointer: &str,
@@ -1494,6 +1499,7 @@ fn surface_fallback(
     bounds: RecoverableBounds,
 ) -> Result<SurfaceFallback, TryReserveError> {
     Ok(SurfaceFallback {
+        source_index,
         source_order,
         element_id: element_id.map(try_owned).transpose()?,
         json_pointer: try_owned(json_pointer)?,

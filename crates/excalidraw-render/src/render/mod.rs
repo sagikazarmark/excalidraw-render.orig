@@ -15,7 +15,7 @@ use crate::{
         NormalizationError, NormalizationEvent, NormalizedElement, NormalizedElementKind,
         NormalizedElementSource,
     },
-    outcome::DiagnosticOrder,
+    outcome::{DiagnosticAttribution, DiagnosticOrder},
     resource_accounting::{
         ResourceContext, ResourceCrossing, ResourceDelta, ResourceMeter, ResourcePhase,
         ResourceRecordKind,
@@ -85,7 +85,498 @@ pub(crate) fn render(
         profile.profile_digest()
     );
     let mut session = RenderSession::new(profile, catalog.scene_surface(), scene, request);
-    session.render(scene, request)
+    session.render(scene, request, None)
+}
+
+pub(crate) fn render_frame(
+    catalog: &'static RevisionCatalog,
+    frame: crate::FrameRef<'_>,
+    request: &crate::FrameRenderRequest,
+) -> Result<RenderOutcome, RenderError> {
+    render_frame_scoped(catalog, frame, request, None).0
+}
+
+pub(crate) fn render_frame_scoped(
+    catalog: &'static RevisionCatalog,
+    frame: crate::FrameRef<'_>,
+    request: &crate::FrameRenderRequest,
+    prepared: Option<&PreparedFrameRender>,
+) -> (
+    Result<RenderOutcome, RenderError>,
+    Vec<CompatibilityDiagnostic>,
+    Vec<CompatibilityDiagnostic>,
+) {
+    let profile = catalog.frame_profile();
+    let target = FrameTarget {
+        source_index: frame.source_index,
+        ordinal: frame.ordinal(),
+        kind: frame.kind(),
+    };
+    let request = request.as_render_request();
+    let mut session = RenderSession::new_target(
+        profile,
+        catalog.scene_surface(),
+        frame.scene,
+        request,
+        RenderTarget::Frame(target),
+    );
+    let result = session.render(frame.scene, request, prepared);
+    let report = match &result {
+        Ok(outcome) => outcome.report(),
+        Err(error) => error.report(),
+    };
+    let global_diagnostics = report
+        .diagnostics()
+        .iter()
+        .filter(|diagnostic| diagnostic.order.attribution == DiagnosticAttribution::SceneGlobal)
+        .cloned()
+        .collect();
+    let target_diagnostics = report
+        .diagnostics()
+        .iter()
+        .filter(|diagnostic| diagnostic.order.attribution == DiagnosticAttribution::Target)
+        .cloned()
+        .collect();
+    (result, global_diagnostics, target_diagnostics)
+}
+
+#[derive(Clone, Copy)]
+enum RenderTarget {
+    Scene,
+    Frame(FrameTarget),
+}
+
+#[derive(Clone, Copy)]
+struct FrameTarget {
+    source_index: usize,
+    ordinal: u32,
+    kind: crate::FrameKind,
+}
+
+#[derive(Clone, Copy)]
+struct FrameViewport {
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
+}
+
+pub(crate) struct PreparedFrameRender {
+    original_json_events: Vec<PreparedOriginalJsonEvent>,
+    normalization_events: Vec<PreparedNormalizationEvent>,
+    normalization: crate::normalization::NormalizationOutcome,
+    relationship_events: Vec<PreparedRelationshipEvent>,
+    relationships: crate::relationships::RelationshipOutcome,
+}
+
+pub(crate) struct FramePreparationError {
+    subject: &'static str,
+}
+
+impl FramePreparationError {
+    const fn failed(subject: &'static str) -> Self {
+        Self { subject }
+    }
+
+    pub(crate) const fn subject(&self) -> &'static str {
+        self.subject
+    }
+}
+
+struct PreparedOriginalJsonEvent {
+    kind: OriginalJsonEntryKind,
+    json_pointer: String,
+    is_element_occurrence: bool,
+}
+
+enum PreparedNormalizationEvent {
+    PreflightRecord {
+        event: &'static str,
+        json_pointer: String,
+        working_bytes: u64,
+        work_units: u64,
+    },
+    CommitRecord {
+        event: &'static str,
+        element_id: Option<String>,
+        local_owner: Option<String>,
+        json_pointer: String,
+        working_bytes: u64,
+        work_units: u64,
+    },
+    Diagnostic {
+        diagnostic: CompatibilityDiagnostic,
+        local_owner: Option<String>,
+        source_order: u64,
+        source_position: u64,
+    },
+}
+
+enum PreparedRelationshipEvent {
+    SearchStep {
+        element_id: String,
+        json_pointer: String,
+        attempted_depth: u32,
+    },
+    Traversal {
+        element_id: String,
+        local_owner: String,
+        json_pointer: String,
+        attempted_depth: u32,
+        retained: bool,
+    },
+}
+
+impl PreparedFrameRender {
+    pub(crate) fn new(
+        profile: &'static ReferenceProfileIdentity,
+        scene_surface: &'static crate::scene_surface::SceneSurfacePolicy,
+        scene: &SceneDocument,
+        request: &RenderRequest,
+    ) -> Result<Self, FramePreparationError> {
+        let mut original_json_events = Vec::new();
+        let traversal = scene.visit_original_json_entries(|entry| {
+            original_json_events
+                .try_reserve(1)
+                .map_err(|_| FramePreparationError::failed("original_json_journal"))?;
+            original_json_events.push(PreparedOriginalJsonEvent {
+                kind: entry.kind,
+                json_pointer: try_owned(entry.json_pointer)
+                    .map_err(|_| FramePreparationError::failed("original_json_journal"))?,
+                is_element_occurrence: entry.is_element_occurrence,
+            });
+            Ok(())
+        });
+        match traversal {
+            Ok(()) => {}
+            Err(OriginalJsonVisitError::Visitor(error)) => return Err(error),
+            Err(OriginalJsonVisitError::MemoryUnavailable { .. }) => {
+                return Err(FramePreparationError::failed("original_json_traversal"));
+            }
+        }
+
+        let mut normalization_events = Vec::new();
+        let normalization = crate::normalization::normalize_scene_with_assets(
+            scene,
+            profile.compatibility_revision(),
+            scene_surface,
+            request.format(),
+            request.supplemental_assets(),
+            false,
+            usize::MAX,
+            |event| PreparedNormalizationEvent::record(&mut normalization_events, event),
+        );
+        let normalization = match normalization {
+            Ok(Some(normalization)) => normalization,
+            Ok(None) => return Err(FramePreparationError::failed("normalization_outcome")),
+            Err(NormalizationError::Observer(error)) => return Err(error),
+            Err(NormalizationError::MemoryUnavailable { .. }) => {
+                return Err(FramePreparationError::failed("normalization"));
+            }
+        };
+
+        let mut relationship_events = Vec::new();
+        let relationships = crate::relationships::resolve(
+            scene,
+            &normalization.elements,
+            &normalization.files,
+            request.supplemental_assets(),
+            |event| PreparedRelationshipEvent::record(&mut relationship_events, event),
+        );
+        let relationships = match relationships {
+            Ok(relationships) => relationships,
+            Err(crate::relationships::RelationshipError::Observer(error)) => return Err(error),
+            Err(crate::relationships::RelationshipError::MemoryUnavailable) => {
+                return Err(FramePreparationError::failed("relationship_resolution"));
+            }
+        };
+
+        Ok(Self {
+            original_json_events,
+            normalization_events,
+            normalization,
+            relationship_events,
+            relationships,
+        })
+    }
+
+    fn normalization_for_target(
+        &self,
+        target: FrameTarget,
+    ) -> Result<crate::normalization::NormalizationOutcome, std::collections::TryReserveError> {
+        let Some(viewport) = frame_target_viewport(&self.normalization.elements, target) else {
+            return Ok(self.normalization.clone());
+        };
+        let participating = frame_participating_sources(
+            &self.normalization.elements,
+            &self.relationships.graph,
+            target,
+            viewport,
+        )?;
+        let target_id = self
+            .normalization
+            .elements
+            .iter()
+            .find(|element| element.source.source_index() == target.source_index)
+            .map(|element| element.source.id())
+            .unwrap_or_default();
+        let mut elements = Vec::new();
+        elements.try_reserve_exact(participating.len())?;
+        elements.extend(
+            self.normalization
+                .elements
+                .iter()
+                .filter(|element| {
+                    participating
+                        .binary_search(&element.source.source_index())
+                        .is_ok()
+                })
+                .cloned(),
+        );
+        let mut fallbacks = Vec::new();
+        fallbacks.try_reserve_exact(self.normalization.fallbacks.len())?;
+        fallbacks.extend(
+            self.normalization
+                .fallbacks
+                .iter()
+                .filter(|fallback| {
+                    participating.binary_search(&fallback.source_index).is_ok()
+                        || fallback_participates_in_frame(fallback, target_id, viewport)
+                })
+                .cloned(),
+        );
+        let mut files = Vec::new();
+        files.try_reserve_exact(self.normalization.files.len())?;
+        files.extend(
+            self.normalization
+                .files
+                .iter()
+                .filter(|file| {
+                    elements.iter().any(|element| match &element.kind {
+                        NormalizedElementKind::Image(image) => {
+                            image.file_id.as_deref() == Some(file.key.as_str())
+                        }
+                        _ => false,
+                    })
+                })
+                .cloned(),
+        );
+        Ok(crate::normalization::NormalizationOutcome {
+            elements,
+            fallbacks,
+            view_background_color: self.normalization.view_background_color.clone(),
+            view_background_working_bytes: self.normalization.view_background_working_bytes,
+            frame_rendering: self.normalization.frame_rendering,
+            files,
+        })
+    }
+}
+
+impl PreparedNormalizationEvent {
+    fn record(
+        events: &mut Vec<Self>,
+        event: NormalizationEvent<'_>,
+    ) -> Result<(), FramePreparationError> {
+        let event = match event {
+            NormalizationEvent::PreflightRecord {
+                event,
+                json_pointer,
+                working_bytes,
+                work_units,
+            } => Self::PreflightRecord {
+                event,
+                json_pointer: try_owned(json_pointer)
+                    .map_err(|_| FramePreparationError::failed("normalization_journal"))?,
+                working_bytes,
+                work_units,
+            },
+            NormalizationEvent::CommitRecord {
+                event,
+                element_id,
+                local_owner,
+                json_pointer,
+                working_bytes,
+                work_units,
+            } => Self::CommitRecord {
+                event,
+                element_id: element_id
+                    .map(try_owned)
+                    .transpose()
+                    .map_err(|_| FramePreparationError::failed("normalization_journal"))?,
+                local_owner: local_owner
+                    .map(try_owned)
+                    .transpose()
+                    .map_err(|_| FramePreparationError::failed("normalization_journal"))?,
+                json_pointer: try_owned(json_pointer)
+                    .map_err(|_| FramePreparationError::failed("normalization_journal"))?,
+                working_bytes,
+                work_units,
+            },
+            NormalizationEvent::Diagnostic {
+                diagnostic,
+                local_owner,
+                source_order,
+                source_position,
+            } => Self::Diagnostic {
+                diagnostic,
+                local_owner: local_owner
+                    .map(try_owned)
+                    .transpose()
+                    .map_err(|_| FramePreparationError::failed("normalization_journal"))?,
+                source_order,
+                source_position,
+            },
+        };
+        events
+            .try_reserve(1)
+            .map_err(|_| FramePreparationError::failed("normalization_journal"))?;
+        events.push(event);
+        Ok(())
+    }
+
+    fn replay(
+        &self,
+        session: &mut RenderSession,
+        request: &RenderRequest,
+    ) -> Result<(), RenderError> {
+        let event = match self {
+            Self::PreflightRecord {
+                event,
+                json_pointer,
+                working_bytes,
+                work_units,
+            } => NormalizationEvent::PreflightRecord {
+                event,
+                json_pointer,
+                working_bytes: *working_bytes,
+                work_units: *work_units,
+            },
+            Self::CommitRecord {
+                event,
+                element_id,
+                local_owner,
+                json_pointer,
+                working_bytes,
+                work_units,
+            } => NormalizationEvent::CommitRecord {
+                event,
+                element_id: element_id.as_deref(),
+                local_owner: local_owner.as_deref(),
+                json_pointer,
+                working_bytes: *working_bytes,
+                work_units: *work_units,
+            },
+            Self::Diagnostic {
+                diagnostic,
+                local_owner,
+                source_order,
+                source_position,
+            } => NormalizationEvent::Diagnostic {
+                diagnostic: diagnostic.clone(),
+                local_owner: local_owner.as_deref(),
+                source_order: *source_order,
+                source_position: *source_position,
+            },
+        };
+        session.observe_normalization_event(request, event)
+    }
+}
+
+impl PreparedRelationshipEvent {
+    fn record(
+        events: &mut Vec<Self>,
+        event: crate::relationships::RelationshipEvent<'_>,
+    ) -> Result<(), FramePreparationError> {
+        let event = match event {
+            crate::relationships::RelationshipEvent::SearchStep {
+                element_id,
+                json_pointer,
+                attempted_depth,
+            } => Self::SearchStep {
+                element_id: try_owned(element_id)
+                    .map_err(|_| FramePreparationError::failed("relationship_journal"))?,
+                json_pointer: try_owned(json_pointer)
+                    .map_err(|_| FramePreparationError::failed("relationship_journal"))?,
+                attempted_depth,
+            },
+            crate::relationships::RelationshipEvent::Traversal(traversal) => Self::Traversal {
+                element_id: try_owned(traversal.element_id)
+                    .map_err(|_| FramePreparationError::failed("relationship_journal"))?,
+                local_owner: try_owned(traversal.local_owner)
+                    .map_err(|_| FramePreparationError::failed("relationship_journal"))?,
+                json_pointer: try_owned(traversal.json_pointer)
+                    .map_err(|_| FramePreparationError::failed("relationship_journal"))?,
+                attempted_depth: traversal.attempted_depth,
+                retained: traversal.retained,
+            },
+        };
+        events
+            .try_reserve(1)
+            .map_err(|_| FramePreparationError::failed("relationship_journal"))?;
+        events.push(event);
+        Ok(())
+    }
+
+    fn replay(
+        &self,
+        session: &mut RenderSession,
+        request: &RenderRequest,
+    ) -> Result<(), RenderError> {
+        match self {
+            Self::SearchStep {
+                element_id,
+                json_pointer,
+                attempted_depth,
+            } => session.observe_relationship_event(
+                request,
+                crate::relationships::RelationshipEvent::SearchStep {
+                    element_id,
+                    json_pointer,
+                    attempted_depth: *attempted_depth,
+                },
+            ),
+            Self::Traversal {
+                element_id,
+                local_owner,
+                json_pointer,
+                attempted_depth,
+                retained,
+            } => session.observe_relationship_event(
+                request,
+                crate::relationships::RelationshipEvent::Traversal(
+                    crate::relationships::RelationshipTraversal {
+                        element_id,
+                        local_owner,
+                        json_pointer,
+                        attempted_depth: *attempted_depth,
+                        retained: *retained,
+                    },
+                ),
+            ),
+        }
+    }
+}
+
+fn manifest_target<'a>(
+    target: RenderTarget,
+    scene: &'a SceneDocument,
+) -> metadata::ManifestTarget<'a> {
+    match target {
+        RenderTarget::Scene => metadata::ManifestTarget::Scene,
+        RenderTarget::Frame(target) => {
+            let name = scene
+                .element_at(target.source_index)
+                .and_then(|source| match source.name {
+                    crate::scene::SourceField::Value(name) => name,
+                    crate::scene::SourceField::Missing | crate::scene::SourceField::Invalid => None,
+                });
+            metadata::ManifestTarget::Frame {
+                ordinal: target.ordinal,
+                kind: target.kind,
+                name,
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -100,7 +591,7 @@ fn render_with_trace(
         scene,
         request,
     );
-    let result = session.render(scene, request);
+    let result = session.render(scene, request, None);
     (result, session.meter.trace_bytes())
 }
 
@@ -116,6 +607,9 @@ struct RenderSession {
     excalifont_glyphs: Vec<u16>,
     excalifont_request_derived_bytes: u64,
     pending_png_animation_diagnostics: Vec<PendingAnimationDiagnostic>,
+    pending_frame_normalization_diagnostics: Vec<PendingNormalizationDiagnostic>,
+    target: RenderTarget,
+    diagnostic_attribution: DiagnosticAttribution,
 }
 
 struct PendingAnimationDiagnostic {
@@ -123,6 +617,13 @@ struct PendingAnimationDiagnostic {
     local_owner: String,
     source_order: u64,
     working_bytes: u64,
+}
+
+struct PendingNormalizationDiagnostic {
+    diagnostic: CompatibilityDiagnostic,
+    local_owner: Option<String>,
+    source_order: u64,
+    source_position: u64,
 }
 
 #[derive(Clone, Copy)]
@@ -188,6 +689,16 @@ impl RenderSession {
         scene: &SceneDocument,
         request: &RenderRequest,
     ) -> Self {
+        Self::new_target(profile, scene_surface, scene, request, RenderTarget::Scene)
+    }
+
+    fn new_target(
+        profile: &'static ReferenceProfileIdentity,
+        scene_surface: &'static crate::scene_surface::SceneSurfacePolicy,
+        scene: &SceneDocument,
+        request: &RenderRequest,
+        target: RenderTarget,
+    ) -> Self {
         Self {
             profile,
             scene_surface,
@@ -200,6 +711,9 @@ impl RenderSession {
             excalifont_glyphs: Vec::new(),
             excalifont_request_derived_bytes: 0,
             pending_png_animation_diagnostics: Vec::new(),
+            pending_frame_normalization_diagnostics: Vec::new(),
+            target,
+            diagnostic_attribution: DiagnosticAttribution::SceneGlobal,
         }
     }
 
@@ -222,6 +736,184 @@ impl RenderSession {
             excalifont_glyphs: Vec::new(),
             excalifont_request_derived_bytes: 0,
             pending_png_animation_diagnostics: Vec::new(),
+            pending_frame_normalization_diagnostics: Vec::new(),
+            target: RenderTarget::Scene,
+            diagnostic_attribution: DiagnosticAttribution::SceneGlobal,
+        }
+    }
+
+    fn observe_original_json_event(
+        &mut self,
+        request: &RenderRequest,
+        kind: OriginalJsonEntryKind,
+        json_pointer: &str,
+        is_element_occurrence: bool,
+    ) -> Result<(), RenderError> {
+        let event = match kind {
+            OriginalJsonEntryKind::Node => "json_node",
+            OriginalJsonEntryKind::Member => "json_member",
+        };
+        self.transact(
+            request,
+            ResourceContext::new(
+                ResourcePhase::JsonTraversalAndNormalization,
+                event,
+                json_pointer,
+            ),
+            ResourceDelta {
+                elements: u64::from(is_element_occurrence),
+                total_work_units: 8,
+                ..ResourceDelta::default()
+            },
+        )
+    }
+
+    fn observe_normalization_event(
+        &mut self,
+        request: &RenderRequest,
+        event: NormalizationEvent<'_>,
+    ) -> Result<(), RenderError> {
+        match event {
+            NormalizationEvent::PreflightRecord {
+                event,
+                json_pointer,
+                working_bytes,
+                work_units,
+            } => {
+                let delta = ResourceDelta {
+                    working_bytes,
+                    total_work_units: work_units,
+                    ..ResourceDelta::default()
+                };
+                if self.meter.would_cross_fatal(delta) {
+                    let context = ResourceContext::new(
+                        ResourcePhase::JsonTraversalAndNormalization,
+                        event,
+                        json_pointer,
+                    );
+                    return match self.transact(request, context, delta) {
+                        Err(error) => Err(error),
+                        Ok(()) => Err(self.internal_failure(
+                            request.format(),
+                            "normalization preflight committed unexpectedly",
+                            "/elements",
+                        )),
+                    };
+                }
+                Ok(())
+            }
+            NormalizationEvent::CommitRecord {
+                event,
+                element_id,
+                local_owner,
+                json_pointer,
+                working_bytes,
+                work_units,
+            } => self.transact(
+                request,
+                ResourceContext::new(
+                    ResourcePhase::JsonTraversalAndNormalization,
+                    event,
+                    json_pointer,
+                )
+                .with_element_id(element_id)
+                .with_local_owner(local_owner),
+                ResourceDelta {
+                    working_bytes,
+                    total_work_units: work_units,
+                    ..ResourceDelta::default()
+                },
+            ),
+            NormalizationEvent::Diagnostic {
+                diagnostic,
+                local_owner,
+                source_order,
+                source_position,
+            } => {
+                if matches!(self.target, RenderTarget::Frame(_)) {
+                    self.pending_frame_normalization_diagnostics
+                        .try_reserve(1)
+                        .map_err(|_| {
+                            self.memory_failure(
+                                request,
+                                "frame_preparation",
+                                "normalization_diagnostic",
+                            )
+                        })?;
+                    let local_owner = local_owner.map(try_owned).transpose().map_err(|_| {
+                        self.memory_failure(request, "frame_preparation", "diagnostic_owner")
+                    })?;
+                    self.pending_frame_normalization_diagnostics.push(
+                        PendingNormalizationDiagnostic {
+                            diagnostic,
+                            local_owner,
+                            source_order,
+                            source_position,
+                        },
+                    );
+                    Ok(())
+                } else {
+                    self.retain_diagnostic_with_owner(
+                        request,
+                        ResourcePhase::JsonTraversalAndNormalization,
+                        "normalization_repair",
+                        diagnostic,
+                        DiagnosticOwnership {
+                            local_owner,
+                            source_order: Some(source_order),
+                            source_position: Some(source_position),
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    fn observe_relationship_event(
+        &mut self,
+        request: &RenderRequest,
+        event: crate::relationships::RelationshipEvent<'_>,
+    ) -> Result<(), RenderError> {
+        match event {
+            crate::relationships::RelationshipEvent::SearchStep {
+                element_id,
+                json_pointer,
+                attempted_depth,
+            } => {
+                let context = ResourceContext::new(
+                    ResourcePhase::AuthorityReferenceCensus,
+                    "relationship_search_step",
+                    json_pointer,
+                )
+                .with_element_id(Some(element_id))
+                .with_local_owner(Some(element_id));
+                let delta = ResourceDelta {
+                    observed_relationship_depth: u64::from(attempted_depth),
+                    total_work_units: crate::relationships::traversal_delta(false).0,
+                    ..ResourceDelta::default()
+                };
+                self.transact(request, context, delta)
+            }
+            crate::relationships::RelationshipEvent::Traversal(traversal) => {
+                let (total_work_units, working_bytes) =
+                    crate::relationships::traversal_delta(traversal.retained);
+                self.transact(
+                    request,
+                    ResourceContext::new(
+                        ResourcePhase::AuthorityReferenceCensus,
+                        "relationship_traversal",
+                        traversal.json_pointer,
+                    )
+                    .with_element_id(Some(traversal.element_id))
+                    .with_local_owner(Some(traversal.local_owner)),
+                    ResourceDelta {
+                        observed_relationship_depth: u64::from(traversal.attempted_depth),
+                        working_bytes,
+                        total_work_units,
+                        ..ResourceDelta::default()
+                    },
+                )
+            }
         }
     }
 
@@ -229,6 +921,7 @@ impl RenderSession {
         &mut self,
         scene: &SceneDocument,
         request: &RenderRequest,
+        prepared: Option<&PreparedFrameRender>,
     ) -> Result<RenderOutcome, RenderError> {
         self.transact(
             request,
@@ -248,206 +941,209 @@ impl RenderSession {
                 ..ResourceDelta::default()
             },
         )?;
-        let traversal = scene.visit_original_json_entries(|entry| {
-            let event = match entry.kind {
-                OriginalJsonEntryKind::Node => "json_node",
-                OriginalJsonEntryKind::Member => "json_member",
-            };
-            self.transact(
-                request,
-                ResourceContext::new(
-                    ResourcePhase::JsonTraversalAndNormalization,
-                    event,
-                    entry.json_pointer,
-                ),
-                ResourceDelta {
-                    elements: u64::from(entry.is_element_occurrence),
-                    total_work_units: 8,
-                    ..ResourceDelta::default()
-                },
-            )
-        });
-        match traversal {
-            Ok(()) => {}
-            Err(OriginalJsonVisitError::Visitor(error)) => return Err(error),
-            Err(OriginalJsonVisitError::MemoryUnavailable { json_pointer }) => {
-                return Err(self.memory_failure_at(
+        if let Some(prepared) = prepared {
+            for event in &prepared.original_json_events {
+                self.observe_original_json_event(
                     request,
-                    "semantic_traversal",
-                    "scene_json_pointer",
-                    None,
-                    json_pointer,
-                ));
+                    event.kind,
+                    &event.json_pointer,
+                    event.is_element_occurrence,
+                )?;
             }
-        }
-
-        let mut semantic_working = Vec::new();
-        let mut resolved = {
-            let normalization = crate::normalization::normalize_scene_with_assets(
-                scene,
-                self.profile.compatibility_revision(),
-                self.scene_surface,
-                request.format(),
-                request.supplemental_assets(),
-                request.frame_options().enabled() && request.frame_options().name(),
-                surface_diagnostic_preflight_limit(request),
-                |event| match event {
-                    NormalizationEvent::PreflightRecord {
-                        event,
-                        json_pointer,
-                        working_bytes,
-                        work_units,
-                    } => {
-                        let delta = ResourceDelta {
-                            working_bytes,
-                            total_work_units: work_units,
-                            ..ResourceDelta::default()
-                        };
-                        if self.meter.would_cross_fatal(delta) {
-                            let context = ResourceContext::new(
-                                ResourcePhase::JsonTraversalAndNormalization,
-                                event,
-                                json_pointer,
-                            );
-                            return match self.transact(request, context, delta) {
-                                Err(error) => Err(error),
-                                Ok(()) => Err(self.internal_failure(
-                                    request.format(),
-                                    "normalization preflight committed unexpectedly",
-                                    "/elements",
-                                )),
-                            };
-                        }
-                        Ok(())
-                    }
-                    NormalizationEvent::CommitRecord {
-                        event,
-                        element_id,
-                        local_owner,
-                        json_pointer,
-                        working_bytes,
-                        work_units,
-                    } => self.transact(
-                        request,
-                        ResourceContext::new(
-                            ResourcePhase::JsonTraversalAndNormalization,
-                            event,
-                            json_pointer,
-                        )
-                        .with_element_id(element_id)
-                        .with_local_owner(local_owner),
-                        ResourceDelta {
-                            working_bytes,
-                            total_work_units: work_units,
-                            ..ResourceDelta::default()
-                        },
-                    ),
-                    NormalizationEvent::Diagnostic {
-                        diagnostic,
-                        local_owner,
-                        source_order,
-                        source_position,
-                    } => self.retain_diagnostic_with_owner(
-                        request,
-                        ResourcePhase::JsonTraversalAndNormalization,
-                        "normalization_repair",
-                        diagnostic,
-                        DiagnosticOwnership {
-                            local_owner,
-                            source_order: Some(source_order),
-                            source_position: Some(source_position),
-                        },
-                    ),
-                },
-            );
-            let normalization = match normalization {
-                Ok(normalization) => normalization,
-                Err(NormalizationError::Observer(error)) => return Err(error),
-                Err(NormalizationError::MemoryUnavailable { source_index }) => {
-                    let json_pointer = source_index
-                        .and_then(|index| crate::scene::pointer_index("/elements", index).ok())
-                        .unwrap_or_default();
+        } else {
+            let traversal = scene.visit_original_json_entries(|entry| {
+                self.observe_original_json_event(
+                    request,
+                    entry.kind,
+                    entry.json_pointer,
+                    entry.is_element_occurrence,
+                )
+            });
+            match traversal {
+                Ok(()) => {}
+                Err(OriginalJsonVisitError::Visitor(error)) => return Err(error),
+                Err(OriginalJsonVisitError::MemoryUnavailable { json_pointer }) => {
                     return Err(self.memory_failure_at(
                         request,
-                        "normalization",
-                        "record",
+                        "semantic_traversal",
+                        "scene_json_pointer",
                         None,
                         json_pointer,
                     ));
                 }
             }
-            .ok_or_else(|| {
-                self.internal_failure(
+        }
+
+        let mut semantic_working = Vec::new();
+        let mut resolved = {
+            let relationship_storage;
+            let (mut normalization, relationships) = if let Some(prepared) = prepared {
+                for event in &prepared.normalization_events {
+                    event.replay(self, request)?;
+                }
+                for event in &prepared.relationship_events {
+                    event.replay(self, request)?;
+                }
+                let target = match self.target {
+                    RenderTarget::Frame(target) => target,
+                    RenderTarget::Scene => unreachable!("prepared rendering is frame-scoped"),
+                };
+                let normalization = prepared.normalization_for_target(target).map_err(|_| {
+                    self.memory_failure(request, "frame_selection", "prepared_target")
+                })?;
+                (normalization, &prepared.relationships)
+            } else {
+                let normalization = crate::normalization::normalize_scene_with_assets(
+                    scene,
+                    self.profile.compatibility_revision(),
+                    self.scene_surface,
                     request.format(),
-                    "nonempty scene is outside the implemented outline slice",
-                    "/elements",
-                )
-            })?;
-            let relationships = crate::relationships::resolve(
-                scene,
-                &normalization.elements,
-                &normalization.files,
-                request.supplemental_assets(),
-                |event| match event {
-                    crate::relationships::RelationshipEvent::SearchStep {
-                        element_id,
-                        json_pointer,
-                        attempted_depth,
-                    } => {
-                        let context = ResourceContext::new(
-                            ResourcePhase::AuthorityReferenceCensus,
-                            "relationship_search_step",
-                            json_pointer,
-                        )
-                        .with_element_id(Some(element_id))
-                        .with_local_owner(Some(element_id));
-                        let delta = ResourceDelta {
-                            observed_relationship_depth: u64::from(attempted_depth),
-                            total_work_units: crate::relationships::traversal_delta(false).0,
-                            ..ResourceDelta::default()
-                        };
-                        self.transact(request, context, delta)
-                    }
-                    crate::relationships::RelationshipEvent::Traversal(traversal) => {
-                        let (total_work_units, working_bytes) =
-                            crate::relationships::traversal_delta(traversal.retained);
-                        self.transact(
+                    request.supplemental_assets(),
+                    matches!(self.target, RenderTarget::Scene)
+                        && request.frame_options().enabled()
+                        && request.frame_options().name(),
+                    if matches!(self.target, RenderTarget::Frame(_)) {
+                        usize::MAX
+                    } else {
+                        surface_diagnostic_preflight_limit(request)
+                    },
+                    |event| self.observe_normalization_event(request, event),
+                );
+                let normalization = match normalization {
+                    Ok(normalization) => normalization,
+                    Err(NormalizationError::Observer(error)) => return Err(error),
+                    Err(NormalizationError::MemoryUnavailable { source_index }) => {
+                        let json_pointer = source_index
+                            .and_then(|index| crate::scene::pointer_index("/elements", index).ok())
+                            .unwrap_or_default();
+                        return Err(self.memory_failure_at(
                             request,
-                            ResourceContext::new(
-                                ResourcePhase::AuthorityReferenceCensus,
-                                "relationship_traversal",
-                                traversal.json_pointer,
-                            )
-                            .with_element_id(Some(traversal.element_id))
-                            .with_local_owner(Some(traversal.local_owner)),
-                            ResourceDelta {
-                                observed_relationship_depth: u64::from(traversal.attempted_depth),
-                                working_bytes,
-                                total_work_units,
-                                ..ResourceDelta::default()
-                            },
-                        )
+                            "normalization",
+                            "record",
+                            None,
+                            json_pointer,
+                        ));
                     }
-                },
-            );
-            let relationships = match relationships {
-                Ok(relationships) => relationships,
-                Err(crate::relationships::RelationshipError::Observer(error)) => return Err(error),
-                Err(crate::relationships::RelationshipError::MemoryUnavailable) => {
-                    return Err(self.memory_failure(
+                }
+                .ok_or_else(|| {
+                    self.internal_failure(
+                        request.format(),
+                        "nonempty scene is outside the implemented outline slice",
+                        "/elements",
+                    )
+                })?;
+                let relationships = crate::relationships::resolve(
+                    scene,
+                    &normalization.elements,
+                    &normalization.files,
+                    request.supplemental_assets(),
+                    |event| self.observe_relationship_event(request, event),
+                );
+                let relationships = match relationships {
+                    Ok(relationships) => relationships,
+                    Err(crate::relationships::RelationshipError::Observer(error)) => {
+                        return Err(error);
+                    }
+                    Err(crate::relationships::RelationshipError::MemoryUnavailable) => {
+                        return Err(self.memory_failure(
+                            request,
+                            "relationship_resolution",
+                            "relationship_graph",
+                        ));
+                    }
+                };
+                relationship_storage = relationships;
+                (normalization, &relationship_storage)
+            };
+            let (frame_viewport, frame_participating_sources, selected_file_ids) = match self.target
+            {
+                RenderTarget::Scene => (None, None, None),
+                RenderTarget::Frame(target) => {
+                    let Some(viewport) = frame_target_viewport(&normalization.elements, target)
+                    else {
+                        self.flush_frame_normalization_diagnostics(
+                            request,
+                            &[target.source_index],
+                            &[],
+                        )?;
+                        self.scope_frame_diagnostics(&[target.source_index]);
+                        self.diagnostic_attribution = DiagnosticAttribution::Target;
+                        return Err(self.internal_failure(
+                            request.format(),
+                            "discovered frame target was not normalized",
+                            "/elements",
+                        ));
+                    };
+                    let target_id = normalization
+                        .elements
+                        .iter()
+                        .find(|element| element.source.source_index() == target.source_index)
+                        .map(|element| element.source.id().to_owned())
+                        .unwrap_or_default();
+                    let participating = frame_participating_sources(
+                        &normalization.elements,
+                        &relationships.graph,
+                        target,
+                        viewport,
+                    )
+                    .map_err(|_| {
+                        self.memory_failure(request, "frame_selection", "participating_elements")
+                    })?;
+                    normalization.elements.retain(|element| {
+                        participating
+                            .binary_search(&element.source.source_index())
+                            .is_ok()
+                    });
+                    normalization.fallbacks.retain(|fallback| {
+                        participating.binary_search(&fallback.source_index).is_ok()
+                            || fallback_participates_in_frame(fallback, &target_id, viewport)
+                    });
+                    let mut diagnostic_sources = participating.clone();
+                    diagnostic_sources.extend(
+                        normalization
+                            .fallbacks
+                            .iter()
+                            .map(|fallback| fallback.source_index),
+                    );
+                    diagnostic_sources.sort_unstable();
+                    diagnostic_sources.dedup();
+                    let mut selected_file_ids = normalization
+                        .elements
+                        .iter()
+                        .filter_map(|element| match &element.kind {
+                            NormalizedElementKind::Image(image) => image.file_id.clone(),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>();
+                    selected_file_ids.sort_unstable();
+                    selected_file_ids.dedup();
+                    normalization
+                        .files
+                        .retain(|record| selected_file_ids.binary_search(&record.key).is_ok());
+                    self.flush_frame_normalization_diagnostics(
                         request,
-                        "relationship_resolution",
-                        "relationship_graph",
-                    ));
+                        &diagnostic_sources,
+                        &selected_file_ids,
+                    )?;
+                    self.scope_frame_diagnostics(&diagnostic_sources);
+                    self.diagnostic_attribution = DiagnosticAttribution::Target;
+                    (Some(viewport), Some(participating), Some(selected_file_ids))
                 }
             };
             let asset_authorities =
                 relationship_asset_authorities(&relationships.graph).map_err(|_| {
                     self.memory_failure(request, "relationship_resolution", "asset_authorities")
                 })?;
-            let occurrence_count = scene
-                .file_record_count()
-                .checked_add(request.supplemental_assets().len())
+            let occurrence_count = selected_file_ids
+                .as_ref()
+                .map_or_else(
+                    || {
+                        scene
+                            .file_record_count()
+                            .checked_add(request.supplemental_assets().len())
+                    },
+                    |selected| selected.len().checked_mul(2),
+                )
                 .ok_or_else(|| {
                     self.memory_failure(request, "asset_admission", "occurrence_count")
                 })?;
@@ -461,6 +1157,13 @@ impl RenderSession {
                 let Some(record) = scene.file_record_at(index) else {
                     continue;
                 };
+                if selected_file_ids.as_ref().is_some_and(|selected| {
+                    selected
+                        .binary_search_by(|file_id| file_id.as_str().cmp(record.key()))
+                        .is_err()
+                }) {
+                    continue;
+                }
                 let crate::scene::SourceField::Value(data_url) = record.data_url() else {
                     continue;
                 };
@@ -507,6 +1210,13 @@ impl RenderSession {
                 ));
             }
             for (file_id, supplemental) in request.supplemental_assets().iter() {
+                if selected_file_ids.as_ref().is_some_and(|selected| {
+                    selected
+                        .binary_search_by(|id| id.as_str().cmp(file_id))
+                        .is_err()
+                }) {
+                    continue;
+                }
                 let bytes = u64::try_from(supplemental.bytes().len()).unwrap_or(u64::MAX);
                 let occurrence_bytes = 256_u64.saturating_add(logical_aligned_bytes(
                     u64::try_from(file_id.len()).unwrap_or(u64::MAX),
@@ -548,6 +1258,20 @@ impl RenderSession {
                 )?;
             }
             for cycle in &relationships.removed_cycles {
+                if frame_participating_sources
+                    .as_ref()
+                    .is_some_and(|participating| {
+                        element_owner_index(&cycle.json_pointer).is_some_and(|source_index| {
+                            usize::try_from(source_index)
+                                .map(|source_index| {
+                                    participating.binary_search(&source_index).is_err()
+                                })
+                                .unwrap_or(true)
+                        })
+                    })
+                {
+                    continue;
+                }
                 let diagnostic = relationship_cycle_diagnostic(
                     request.format(),
                     &cycle.element_id,
@@ -581,11 +1305,23 @@ impl RenderSession {
             let frame_rendering = normalization.frame_rendering;
             let view_background_color = normalization.view_background_color;
             let view_background_working_bytes = normalization.view_background_working_bytes;
-            let effective_frame_rendering = EffectiveFrameRendering {
-                enabled: frame_rendering.enabled && request.frame_options().enabled(),
-                clip: frame_rendering.clip && request.frame_options().clip(),
-                name: frame_rendering.name && request.frame_options().name(),
-                outline: frame_rendering.outline && request.frame_options().outline(),
+            let effective_frame_rendering = match self.target {
+                RenderTarget::Scene => EffectiveFrameRendering {
+                    enabled: frame_rendering.enabled && request.frame_options().enabled(),
+                    clip: frame_rendering.clip && request.frame_options().clip(),
+                    name: frame_rendering.name && request.frame_options().name(),
+                    outline: frame_rendering.outline && request.frame_options().outline(),
+                    rectangular_clip: false,
+                    emit_frame_elements: true,
+                },
+                RenderTarget::Frame(_) => EffectiveFrameRendering {
+                    enabled: true,
+                    clip: request.format() != OutputFormat::Png,
+                    name: false,
+                    outline: false,
+                    rectangular_clip: true,
+                    emit_frame_elements: false,
+                },
             };
             let normalized_files = normalization.files;
             for edge in &relationships.graph.edges {
@@ -1645,7 +2381,7 @@ impl RenderSession {
             self.preflight_fallback_text(&mut fallbacks, request, &mut semantic_working)?;
             semantic_working.sort_unstable_by_key(|record| record.source_order);
             if outlines.is_empty() && fallbacks.is_empty() {
-                match ResolvedScene::empty(relationships.graph, &view_background_color, request) {
+                match ResolvedScene::empty(&view_background_color, request, frame_viewport) {
                     Ok(resolved) => resolved,
                     Err(ResolveSceneError::UnboundedGeometry) => {
                         return Err(self.unbounded_geometry_failure(request.format()));
@@ -1677,10 +2413,11 @@ impl RenderSession {
                         fallbacks: image_fallbacks,
                     },
                     fallbacks,
-                    relationships.graph,
+                    &relationships.graph,
                     effective_frame_rendering,
                     &view_background_color,
                     request,
+                    frame_viewport,
                 ) {
                     Ok(Some(resolved)) => resolved,
                     Ok(None) => {
@@ -2428,6 +3165,7 @@ impl RenderSession {
         mut measure: impl FnMut(&metadata::ArtifactMetadata) -> Result<Vec<u8>, FormatEncodeError>,
     ) -> Result<(metadata::ArtifactMetadata, Vec<u8>), RenderError> {
         let snapshot = self.report.clone();
+        let manifest_target = manifest_target(self.target, scene);
         let requested = metadata::MetadataSelection::requested(request);
         let mut accepted = metadata::MetadataSelection::default();
         let baseline_estimate = metadata::ArtifactMetadata::estimate(
@@ -2436,6 +3174,7 @@ impl RenderSession {
             &snapshot,
             mandatory_notices,
             accepted,
+            manifest_target,
         );
         let baseline_context = ResourceContext::new(
             ResourcePhase::Metadata,
@@ -2469,6 +3208,7 @@ impl RenderSession {
             &snapshot,
             mandatory_notices,
             accepted,
+            manifest_target,
         )
         .map_err(|error| self.format_failure(request, error_code, error))?;
         let baseline_artifact =
@@ -2527,6 +3267,7 @@ impl RenderSession {
                 &snapshot,
                 mandatory_notices,
                 candidate_selection,
+                manifest_target,
             );
             let compression_workspace = u64::from(matches!(
                 component,
@@ -2565,6 +3306,7 @@ impl RenderSession {
                 &snapshot,
                 mandatory_notices,
                 candidate_selection,
+                manifest_target,
             ) {
                 Ok(candidate) => candidate,
                 Err(error @ FormatEncodeError::MemoryUnavailable { .. }) => {
@@ -4386,8 +5128,70 @@ impl RenderSession {
                 .unwrap_or(u64::MAX),
             source_position: ownership.source_position.unwrap_or(u64::MAX),
             retention_ordinal: u64::try_from(self.report.diagnostics.len()).unwrap_or(u64::MAX),
+            attribution: self.diagnostic_attribution,
         };
         self.report.diagnostics.push(diagnostic);
+        Ok(())
+    }
+
+    fn scope_frame_diagnostics(&mut self, participating: &[usize]) {
+        self.report.diagnostics.retain_mut(|diagnostic| {
+            let Some(source_index) = element_owner_index(&diagnostic.json_pointer) else {
+                return true;
+            };
+            let Ok(source_index) = usize::try_from(source_index) else {
+                return false;
+            };
+            if participating.binary_search(&source_index).is_err() {
+                return false;
+            }
+            diagnostic.order.attribution = DiagnosticAttribution::Target;
+            true
+        });
+    }
+
+    fn flush_frame_normalization_diagnostics(
+        &mut self,
+        request: &RenderRequest,
+        participating: &[usize],
+        selected_file_ids: &[String],
+    ) -> Result<(), RenderError> {
+        let pending = std::mem::take(&mut self.pending_frame_normalization_diagnostics);
+        for pending in pending {
+            let element_source = element_owner_index(&pending.diagnostic.json_pointer)
+                .and_then(|source_index| usize::try_from(source_index).ok());
+            if element_source
+                .is_some_and(|source_index| participating.binary_search(&source_index).is_err())
+            {
+                continue;
+            }
+            if pending.diagnostic.json_pointer.starts_with("/files/")
+                && !selected_file_ids.iter().any(|file_id| {
+                    crate::scene::pointer_child("/files", file_id)
+                        .is_ok_and(|pointer| pending.diagnostic.json_pointer.starts_with(&pointer))
+                })
+            {
+                continue;
+            }
+            self.diagnostic_attribution = if element_source.is_some()
+                || pending.diagnostic.json_pointer.starts_with("/files/")
+            {
+                DiagnosticAttribution::Target
+            } else {
+                DiagnosticAttribution::SceneGlobal
+            };
+            self.retain_diagnostic_with_owner(
+                request,
+                ResourcePhase::JsonTraversalAndNormalization,
+                "normalization_repair",
+                pending.diagnostic,
+                DiagnosticOwnership {
+                    local_owner: pending.local_owner.as_deref(),
+                    source_order: Some(pending.source_order),
+                    source_position: Some(pending.source_position),
+                },
+            )?;
+        }
         Ok(())
     }
 
@@ -4809,7 +5613,6 @@ struct ResolvedScene {
     fallback_font_sfnt: Option<Vec<u8>>,
     official_fonts: Vec<ResolvedFont>,
     mandatory_notices: Option<notices::MandatoryNotices>,
-    _relationships: crate::relationships::ResolvedRelationshipGraph,
 }
 
 struct ResolvedFont {
@@ -4827,6 +5630,143 @@ struct EffectiveFrameRendering {
     clip: bool,
     name: bool,
     outline: bool,
+    rectangular_clip: bool,
+    emit_frame_elements: bool,
+}
+
+fn frame_target_viewport(
+    elements: &[NormalizedElement],
+    target: FrameTarget,
+) -> Option<FrameViewport> {
+    let frame = elements
+        .iter()
+        .find(|element| element.source.source_index() == target.source_index)?;
+    if !matches!(
+        frame.kind,
+        NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
+    ) {
+        return None;
+    }
+    let (min_x, min_y, max_x, max_y) = normalized_element_aabb(frame);
+    [min_x, min_y, max_x, max_y]
+        .iter()
+        .all(|value| value.is_finite())
+        .then_some(FrameViewport {
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        })
+}
+
+fn frame_participating_sources(
+    elements: &[NormalizedElement],
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+    target: FrameTarget,
+    viewport: FrameViewport,
+) -> Result<Vec<usize>, std::collections::TryReserveError> {
+    let mut selected = Vec::new();
+    selected.try_reserve_exact(elements.len())?;
+    for element in elements {
+        let (min_x, min_y, max_x, max_y) = normalized_element_aabb(element);
+        if min_x <= viewport.max_x
+            && max_x >= viewport.min_x
+            && min_y <= viewport.max_y
+            && max_y >= viewport.min_y
+        {
+            selected.push(element.source.source_index());
+        }
+    }
+
+    let geometric = selected.clone();
+    for source_index in geometric {
+        let Some(source_node) = relationships
+            .nodes
+            .iter()
+            .position(|node| node.source_index == source_index)
+        else {
+            continue;
+        };
+        for edge in &relationships.edges {
+            if edge.source != source_node
+                || edge.kind != crate::relationships::RelationshipKind::Binding
+            {
+                continue;
+            }
+            let crate::relationships::RelationshipTarget::Element(target_node) = edge.target else {
+                continue;
+            };
+            if let Some(node) = relationships.nodes.get(target_node) {
+                selected.push(node.source_index);
+            }
+        }
+    }
+    selected.sort_unstable();
+    selected.dedup();
+    selected.retain(|source_index| {
+        *source_index == target.source_index
+            || relationship_frame_target(*source_index, relationships)
+                .is_none_or(|parent| parent == target.source_index)
+    });
+    Ok(selected)
+}
+
+fn normalized_element_aabb(source: &NormalizedElement) -> (f64, f64, f64, f64) {
+    let (local_min_x, local_min_y, local_max_x, local_max_y) = source_layout_bounds(source);
+    let center_x = source.x + (local_min_x + local_max_x) / 2.0;
+    let center_y = source.y + (local_min_y + local_max_y) / 2.0;
+    let sin = source.angle.sin();
+    let cos = source.angle.cos();
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    for (x, y) in [
+        (source.x + local_min_x, source.y + local_min_y),
+        (source.x + local_max_x, source.y + local_min_y),
+        (source.x + local_max_x, source.y + local_max_y),
+        (source.x + local_min_x, source.y + local_max_y),
+    ] {
+        let delta_x = x - center_x;
+        let delta_y = y - center_y;
+        let rotated_x = center_x + delta_x * cos - delta_y * sin;
+        let rotated_y = center_y + delta_x * sin + delta_y * cos;
+        min_x = min_x.min(rotated_x);
+        min_y = min_y.min(rotated_y);
+        max_x = max_x.max(rotated_x);
+        max_y = max_y.max(rotated_y);
+    }
+    (min_x, min_y, max_x, max_y)
+}
+
+fn fallback_participates_in_frame(
+    fallback: &crate::scene_surface::SurfaceFallback,
+    target_id: &str,
+    viewport: FrameViewport,
+) -> bool {
+    let mut min_x = f64::INFINITY;
+    let mut min_y = f64::INFINITY;
+    let mut max_x = f64::NEG_INFINITY;
+    let mut max_y = f64::NEG_INFINITY;
+    include_transformed_bounds(
+        fallback.x,
+        fallback.y,
+        fallback.width,
+        fallback.height,
+        fallback.angle,
+        &mut min_x,
+        &mut min_y,
+        &mut max_x,
+        &mut max_y,
+    );
+    min_x <= viewport.max_x
+        && max_x >= viewport.min_x
+        && min_y <= viewport.max_y
+        && max_y >= viewport.min_y
+        && fallback
+            .frame_id
+            .as_deref()
+            .is_none_or(|frame_id| frame_id == target_id)
 }
 
 enum GeneratedGeometry {
@@ -5389,7 +6329,11 @@ fn resolve_frame_clips(
     };
     clips.try_reserve_exact(1)?;
     clips.push(ResolvedClip {
-        path: resolved_frame_outline(frame.width, frame.height)?,
+        path: if rendering.rectangular_clip {
+            resolved_frame_rect(frame.width, frame.height)?
+        } else {
+            resolved_frame_outline(frame.width, frame.height)?
+        },
         transform: ResolvedTransform {
             translation_x: frame.x - min_x + padding,
             translation_y: frame.y - min_y + padding,
@@ -5440,17 +6384,28 @@ impl From<std::collections::TryReserveError> for ResolveSceneError {
 
 impl ResolvedScene {
     fn empty(
-        relationships: crate::relationships::ResolvedRelationshipGraph,
         background_color: &str,
         request: &RenderRequest,
+        viewport: Option<FrameViewport>,
     ) -> Result<Self, ResolveSceneError> {
-        let logical_size = request.padding() * 2.0;
-        if !logical_size.is_finite() {
+        let (logical_width, logical_height) = viewport.map_or_else(
+            || {
+                let logical_size = request.padding() * 2.0;
+                (logical_size.max(1.0), logical_size.max(1.0))
+            },
+            |viewport| {
+                (
+                    viewport.max_x - viewport.min_x + request.padding() * 2.0,
+                    viewport.max_y - viewport.min_y + request.padding() * 2.0,
+                )
+            },
+        );
+        if !logical_width.is_finite() || !logical_height.is_finite() {
             return Err(ResolveSceneError::UnboundedGeometry);
         }
         Ok(Self {
-            logical_width: logical_size.max(1.0),
-            logical_height: logical_size.max(1.0),
+            logical_width: logical_width.max(1.0),
+            logical_height: logical_height.max(1.0),
             include_background: request.include_background(),
             background_color: color::parse_css(background_color)
                 .ok_or(ResolveSceneError::InvalidColor)?
@@ -5461,24 +6416,25 @@ impl ResolvedScene {
             fallback_font_sfnt: None,
             official_fonts: Vec::new(),
             mandatory_notices: None,
-            _relationships: relationships,
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn elements(
         mut outlines: Vec<(NormalizedElement, Option<GeneratedGeometry>)>,
         images: ResolvedImageInputs,
         fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
-        relationships: crate::relationships::ResolvedRelationshipGraph,
+        relationships: &crate::relationships::ResolvedRelationshipGraph,
         frame_rendering: EffectiveFrameRendering,
         background_color: &str,
         request: &RenderRequest,
+        viewport: Option<FrameViewport>,
     ) -> Result<Option<Self>, ResolveSceneError> {
         if outlines.is_empty() && fallbacks.is_empty() {
             return Ok(None);
         }
 
-        let text_placements = resolve_bound_text_placements(&outlines, &relationships)?;
+        let text_placements = resolve_bound_text_placements(&outlines, relationships)?;
         for placement in text_placements {
             let Some((text, _)) = outlines
                 .iter_mut()
@@ -5490,12 +6446,24 @@ impl ResolvedScene {
             text.y = placement.y;
             text.angle = placement.angle;
         }
-        let bound_text_masks = resolve_bound_text_masks(&outlines, &relationships)?;
+        let bound_text_masks = resolve_bound_text_masks(&outlines, relationships)?;
 
-        let mut min_x = f64::INFINITY;
-        let mut min_y = f64::INFINITY;
-        let mut max_x = f64::NEG_INFINITY;
-        let mut max_y = f64::NEG_INFINITY;
+        let (mut min_x, mut min_y, mut max_x, mut max_y) = viewport.map_or(
+            (
+                f64::INFINITY,
+                f64::INFINITY,
+                f64::NEG_INFINITY,
+                f64::NEG_INFINITY,
+            ),
+            |viewport| {
+                (
+                    viewport.min_x,
+                    viewport.min_y,
+                    viewport.max_x,
+                    viewport.max_y,
+                )
+            },
+        );
         for (source, geometry) in &outlines {
             if source.stroke_width < 0.0
                 || source.roughness < 0.0
@@ -5513,8 +6481,11 @@ impl ResolvedScene {
             }
             if frame_rendering.enabled
                 && frame_rendering.clip
-                && relationship_frame_target(source.source.source_index(), &relationships).is_some()
+                && relationship_frame_target(source.source.source_index(), relationships).is_some()
             {
+                continue;
+            }
+            if viewport.is_some() {
                 continue;
             }
             let (local_min_x, mut local_min_y, local_max_x, local_max_y) =
@@ -5572,6 +6543,9 @@ impl ResolvedScene {
             }
         }
         for fallback in &fallbacks {
+            if viewport.is_some() {
+                continue;
+            }
             let is_clipped_child = frame_rendering.enabled
                 && frame_rendering.clip
                 && fallback.element_id.as_deref().is_some_and(|id| {
@@ -5580,7 +6554,7 @@ impl ResolvedScene {
                         .iter()
                         .find(|node| node.id == id)
                         .and_then(|node| {
-                            relationship_frame_target(node.source_index, &relationships)
+                            relationship_frame_target(node.source_index, relationships)
                         })
                         .is_some()
                 });
@@ -5604,7 +6578,7 @@ impl ResolvedScene {
             && max_x == f64::NEG_INFINITY
             && max_y == f64::NEG_INFINITY
         {
-            return Self::empty(relationships, background_color, request).map(Some);
+            return Self::empty(background_color, request, viewport).map(Some);
         }
         let logical_width = max_x - min_x + request.padding() * 2.0;
         let logical_height = max_y - min_y + request.padding() * 2.0;
@@ -5668,7 +6642,7 @@ impl ResolvedScene {
             let frame_clips = resolve_frame_clips(
                 source.source.source_index(),
                 &semantic_frames,
-                &relationships,
+                relationships,
                 frame_rendering,
                 min_x,
                 min_y,
@@ -5677,13 +6651,13 @@ impl ResolvedScene {
             let frame_opacity = resolve_frame_opacity(
                 source.source.source_index(),
                 &semantic_frames,
-                &relationships,
+                relationships,
                 frame_rendering,
             );
             if let NormalizedElementKind::Frame(frame) | NormalizedElementKind::MagicFrame(frame) =
                 &source.kind
             {
-                if frame_rendering.enabled {
+                if frame_rendering.enabled && frame_rendering.emit_frame_elements {
                     let name = if frame_rendering.name {
                         let text = frame.name.as_deref().unwrap_or({
                             if matches!(source.kind, NormalizedElementKind::MagicFrame(_)) {
@@ -5739,13 +6713,13 @@ impl ResolvedScene {
                 let container_source_index = relationship_element_target(
                     source.source.source_index(),
                     crate::relationships::RelationshipKind::Mask,
-                    &relationships,
+                    relationships,
                 );
                 if container_source_index.is_some_and(|container| {
                     !has_reciprocal_bound_text(
                         container,
                         source.source.source_index(),
-                        &relationships,
+                        relationships,
                     )
                 }) {
                     continue;
@@ -6096,7 +7070,7 @@ impl ResolvedScene {
                 resolve_frame_clips(
                     source_index,
                     &semantic_frames,
-                    &relationships,
+                    relationships,
                     frame_rendering,
                     min_x,
                     min_y,
@@ -6128,7 +7102,7 @@ impl ResolvedScene {
                 resolve_frame_opacity(
                     source_index,
                     &semantic_frames,
-                    &relationships,
+                    relationships,
                     frame_rendering,
                 )
             });
@@ -6204,7 +7178,6 @@ impl ResolvedScene {
             fallback_font_sfnt,
             official_fonts: resolved_fonts,
             mandatory_notices,
-            _relationships: relationships,
         }))
     }
 
@@ -6488,6 +7461,18 @@ fn resolved_frame_outline(width: f64, height: f64) -> Result<rough::Path, Resolv
         control_2: point(radius - radius * kappa, 0.0),
         end: point(radius, 0.0),
     });
+    Ok(rough::Path { operations })
+}
+
+fn resolved_frame_rect(width: f64, height: f64) -> Result<rough::Path, ResolveSceneError> {
+    let point = |x, y| rough::Point { x, y };
+    let mut operations = Vec::new();
+    operations.try_reserve_exact(5)?;
+    operations.push(rough::PathOperation::Move(point(0.0, 0.0)));
+    operations.push(rough::PathOperation::Line(point(width, 0.0)));
+    operations.push(rough::PathOperation::Line(point(width, height)));
+    operations.push(rough::PathOperation::Line(point(0.0, height)));
+    operations.push(rough::PathOperation::Line(point(0.0, 0.0)));
     Ok(rough::Path { operations })
 }
 
@@ -7102,6 +8087,7 @@ fn known_element_fallback(
     label.push_str(prefix);
     label.push_str(source.kind_name);
     Ok(crate::scene_surface::SurfaceFallback {
+        source_index: source.source.source_index(),
         source_order: source.source_order,
         element_id: Some(try_owned(source.source.id())?),
         json_pointer: try_owned(source.source.pointer())?,
@@ -8416,7 +9402,7 @@ mod tests {
             .expect("diagnostic is retained");
 
         let error = session
-            .render(&scene, &request)
+            .render(&scene, &request, None)
             .expect_err("output exhaustion is fatal");
 
         assert_eq!(error.code(), ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED);

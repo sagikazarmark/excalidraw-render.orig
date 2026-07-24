@@ -171,6 +171,13 @@ pub(crate) struct DiagnosticOrder {
     pub(crate) owner_index: u64,
     pub(crate) source_position: u64,
     pub(crate) retention_ordinal: u64,
+    pub(crate) attribution: DiagnosticAttribution,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub(crate) enum DiagnosticAttribution {
+    SceneGlobal,
+    Target,
 }
 
 impl Default for DiagnosticOrder {
@@ -179,6 +186,7 @@ impl Default for DiagnosticOrder {
             owner_index: u64::MAX,
             source_position: u64::MAX,
             retention_ordinal: u64::MAX,
+            attribution: DiagnosticAttribution::SceneGlobal,
         }
     }
 }

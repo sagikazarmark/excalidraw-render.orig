@@ -150,6 +150,8 @@ fn no_more_args(mut args: impl Iterator<Item = String>) -> Result<(), String> {
 fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
     let runner = if case_id == "focused.excalifont-text.v1" {
         "tools/reference-oracle/run-typography-conformance.sh"
+    } else if case_id == "focused.frame-export.v1" {
+        "tools/reference-oracle/run-frame-conformance.sh"
     } else {
         "tools/reference-oracle/run-conformance.sh"
     };

@@ -125,9 +125,23 @@ impl Renderer {
             .ok_or(UnsupportedRevisionError { revision })
     }
 
+    /// Returns the frame-export reference profile for a retained revision.
+    pub fn frame_profile_identity(
+        revision: CompatibilityRevision,
+    ) -> Result<&'static ReferenceProfileIdentity, UnsupportedRevisionError> {
+        crate::catalog::for_revision(revision)
+            .map(crate::catalog::RevisionCatalog::frame_profile)
+            .ok_or(UnsupportedRevisionError { revision })
+    }
+
     /// Returns this renderer's selected reference profile identity.
     pub const fn selected_profile_identity(&self) -> &'static ReferenceProfileIdentity {
         self.catalog.profile()
+    }
+
+    /// Returns this renderer's frame-export reference profile identity.
+    pub const fn selected_frame_profile_identity(&self) -> &'static ReferenceProfileIdentity {
+        self.catalog.frame_profile()
     }
 
     /// Renders one admitted scene into the request's selected output format.
@@ -137,6 +151,25 @@ impl Renderer {
         request: &RenderRequest,
     ) -> Result<RenderOutcome, RenderError> {
         crate::render::render(self.catalog, scene, request)
+    }
+
+    /// Renders one discovered frame using reference frame-export semantics.
+    pub fn render_frame(
+        &self,
+        frame: crate::FrameRef<'_>,
+        request: &crate::FrameRenderRequest,
+    ) -> Result<RenderOutcome, RenderError> {
+        crate::render::render_frame(self.catalog, frame, request)
+    }
+
+    /// Starts lazy source-ordered rendering for selected frames.
+    pub fn render_frames<'scene, 'request>(
+        &self,
+        scene: &'scene SceneDocument,
+        frames: impl IntoIterator<Item = crate::FrameRef<'scene>>,
+        request: &'request crate::FrameRenderRequest,
+    ) -> Result<crate::FrameRenderCursor<'scene, 'request>, crate::FrameBatchError> {
+        crate::FrameRenderCursor::new(self.catalog, scene, frames, request)
     }
 }
 
@@ -200,6 +233,8 @@ pub enum ErrorFamily {
     Request,
     /// Rendering failed after request validation.
     Render,
+    /// A lazy frame batch could not be constructed.
+    FrameBatch,
     /// A requested compatibility revision is not retained.
     UnsupportedRevision,
 }
@@ -211,6 +246,7 @@ impl ErrorFamily {
             Self::SceneParse => "scene_parse",
             Self::Request => "request",
             Self::Render => "render",
+            Self::FrameBatch => "frame_batch",
             Self::UnsupportedRevision => "unsupported_revision",
         }
     }
@@ -308,6 +344,16 @@ impl ErrorCode {
     pub const RESOURCE_TOTAL_WORK_EXCEEDED: Self = Self("resource.total-work-exceeded");
     /// A required physical allocation was unavailable.
     pub const RESOURCE_MEMORY_UNAVAILABLE: Self = Self("resource.memory-unavailable");
+
+    /// A selected frame belongs to another scene document.
+    pub const FRAME_BATCH_FOREIGN_TARGET: Self = Self("frame-batch.foreign-target");
+
+    /// The same frame occurrence was selected more than once.
+    pub const FRAME_BATCH_DUPLICATE_TARGET: Self = Self("frame-batch.duplicate-target");
+
+    /// Shared target-neutral frame preparation could not be completed.
+    pub const FRAME_BATCH_SHARED_PREPARATION_FAILED: Self =
+        Self("frame-batch.shared-preparation-failed");
 
     /// The scene-document bytes are not valid UTF-8.
     pub const SCENE_INVALID_UTF8: Self = Self("scene.invalid-utf8");
@@ -803,6 +849,19 @@ impl ErrorDescriptor {
             element_id,
             json_pointer: Some(json_pointer),
             details,
+        }
+    }
+
+    pub(crate) fn frame_batch(code: ErrorCode, message: String) -> Self {
+        Self {
+            family: ErrorFamily::FrameBatch,
+            category: None,
+            code,
+            message,
+            format: None,
+            element_id: None,
+            json_pointer: None,
+            details: None,
         }
     }
 

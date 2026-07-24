@@ -21,6 +21,7 @@ const SCALAR_REFERENCE_FIELD_COUNT: u64 = 10;
 const GENERATED_ID_BYTES: usize = "generated-".len() + 64;
 pub(crate) const NORMALIZATION_WORK_UNITS: u64 = NORMALIZED_FIELD_COUNT * 8;
 
+#[derive(Clone)]
 pub(crate) struct NormalizedElement {
     pub(crate) source: NormalizedElementSource,
     pub(crate) source_order: u64,
@@ -49,7 +50,7 @@ pub(crate) struct NormalizedElement {
     pub(crate) direct_outline_compatible: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum NormalizedElementKind {
     Rectangle,
     Diamond,
@@ -63,7 +64,7 @@ pub(crate) enum NormalizedElementKind {
     Embeddable { iframe: bool, label: String },
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct NormalizedText {
     pub(crate) font_size: f64,
     pub(crate) font_family: i32,
@@ -85,7 +86,7 @@ pub(crate) enum NormalizedLinearKind {
     Arrow,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct NormalizedLinear {
     pub(crate) kind: NormalizedLinearKind,
     pub(crate) points: Vec<[f64; 2]>,
@@ -98,7 +99,7 @@ pub(crate) struct NormalizedLinear {
     pub(crate) geometry_available: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct NormalizedBinding {
     pub(crate) element_id: String,
     pub(crate) focus: f64,
@@ -106,7 +107,7 @@ pub(crate) struct NormalizedBinding {
     pub(crate) fixed_point: Option<[f64; 2]>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct NormalizedFreedraw {
     pub(crate) points: Vec<[f64; 2]>,
     pub(crate) pressures: Vec<f64>,
@@ -122,7 +123,7 @@ pub(crate) enum NormalizedImageStatus {
     Error,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct NormalizedImage {
     pub(crate) file_id: Option<String>,
     pub(crate) status: NormalizedImageStatus,
@@ -140,7 +141,7 @@ pub(crate) struct NormalizedImageCrop {
     pub(crate) natural_height: f64,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct NormalizedFrame {
     pub(crate) name: Option<String>,
 }
@@ -153,7 +154,7 @@ pub(crate) struct NormalizedFrameRendering {
     pub(crate) outline: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct NormalizedFileRecord {
     pub(crate) key: String,
     pub(crate) id: String,
@@ -164,6 +165,7 @@ pub(crate) struct NormalizedFileRecord {
     normalization_work_units: u64,
 }
 
+#[derive(Clone)]
 pub(crate) struct NormalizedElementSource {
     source_index: usize,
     id: String,
@@ -196,6 +198,7 @@ impl NormalizedElementSource {
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct NormalizationOutcome {
     pub(crate) elements: Vec<NormalizedElement>,
     pub(crate) fallbacks: Vec<crate::scene_surface::SurfaceFallback>,

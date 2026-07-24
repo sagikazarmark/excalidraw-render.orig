@@ -13,11 +13,11 @@ The renderer from the pinned official Excalidraw release whose SVG and PNG outpu
 _Avoid_: Real thing, upstream latest
 
 **Reference profile**:
-The immutable identity of the reference renderer and all environment-dependent inputs that jointly determine its evidence. Each profile has a content digest.
+The immutable identity of the reference renderer and all environment-dependent inputs that jointly determine evidence for one static-export target scope. Each profile has a content digest.
 _Avoid_: Baseline, version pin
 
 **Compatibility revision**:
-A monotonic identifier for a materially distinct static-export promise. Multiple reference profiles may share a compatibility revision only when they have no contract-relevant differences.
+A monotonic identifier for a static-export promise. A revision may add a new export target in place, but the artifacts, diagnostics, and failure behavior of every previously valid renderer request remain immutable; target-scoped reference profiles may share a revision when their scopes are disjoint or have no contract-relevant differences where they overlap.
 _Avoid_: Excalidraw version, package version
 
 **Reference evidence**:
@@ -37,7 +37,7 @@ Deterministic preprocessing that reproduces the rendering-affecting behavior of 
 _Avoid_: Full restore emulation, input cleanup
 
 **Artifact byte stability**:
-The guarantee that one renderer release produces identical artifact bytes for identical scene documents and render options across supported native and WASM targets.
+The guarantee that one renderer release produces identical artifact bytes for identical scene documents, export targets, and render options across supported native and WASM targets.
 _Avoid_: Reference byte identity, per-platform determinism
 
 **Canonicalized original scene document**:
@@ -45,7 +45,7 @@ The deterministic preservation-first JSON projection of an admitted scene docume
 _Avoid_: Original bytes, normalized rendering view
 
 **Artifact manifest**:
-The versioned format-neutral JSON metadata carried by a static export to describe requested provenance, the frozen pre-metadata diagnostic summary, applicable notices, and an embedded canonicalized original scene document. SVG, PNG, and PDF use different carriers for the same manifest contract.
+The versioned format-neutral JSON metadata carried by a static export to describe its export target, requested provenance, frozen pre-metadata diagnostic summary, applicable notices, and an embedded canonicalized original scene document. A frame export identifies its frame ordinal, kind, and optional source name; SVG, PNG, and PDF use different carriers for the same manifest contract.
 _Avoid_: Compatibility report, format-specific metadata schema
 
 **Compatibility exception**:
@@ -53,11 +53,35 @@ An explicit, diagnosed, and tested departure from reference behavior required by
 _Avoid_: Silent divergence, implementation limitation
 
 **Static export**:
-A whole-scene SVG, PNG, or PDF representation without interactive editor overlays or viewport state. Frames and their clipping behavior remain part of the scene; exporting one frame separately does not.
+A deterministic SVG, PNG, or PDF representation of either a whole scene or one frame, without interactive editor overlays or viewport state.
 _Avoid_: Editor snapshot, canvas rendering
 
+**Scene export**:
+A static export of the complete scene. Frames and their clipping behavior remain part of the exported scene.
+_Avoid_: Full export, normal render
+
+**Frame export**:
+A static export targeted at one live ordinary or magic frame, cropped and populated according to the reference renderer's frame-export behavior even when persisted frame rendering is disabled. A nested frame is independently eligible for its own frame export.
+_Avoid_: Frame screenshot, recursive member export
+
+**Frame export batch**:
+An ordinal-ordered collection containing at most one frame export for each selected live frame in a scene document. Nested frames remain independent targets; by default, no artifact is intentionally published unless every target has a complete artifact and viable destination, while partial publication may be explicitly requested.
+_Avoid_: Multi-frame export, frame archive
+
+**Frame ordinal**:
+The one-based source-order position of a live ordinary or magic frame among all such frames in its scene document, before filtering. It provides stable discovery order and the fallback name `frame-N` when the frame has no non-empty display name.
+_Avoid_: Frame index, match number
+
+**Frame name filter**:
+An optional case-sensitive regular-expression search over non-empty frame display names. Unnamed frames are selected only when no frame name filter is present.
+_Avoid_: Frame selector, filename pattern
+
+**Frame output basename**:
+A portable filename component of at most 120 UTF-8 bytes, derived from a frame's non-empty display name or its frame ordinal when no usable name remains. Basenames preserve NFC-normalized readable Unicode and source case, prefix an underscore for reserved device names, use an eight-hex SHA-256 suffix when truncated, and gain source-ordered numeric suffixes when their normalized case-insensitive forms collide.
+_Avoid_: Raw frame name, frame ID
+
 **Meaningful artifact**:
-A static export produced from a safe, complete, and non-misleading whole-scene plan. A valid empty scene and a scene whose local losses are fully represented by compatibility placeholders, omissions, and diagnostics remain meaningful; merely producing encodable bytes does not make an artifact meaningful.
+A static export produced from a safe, complete, and non-misleading plan for its target. A valid empty scene or frame and a target whose local losses are fully represented by compatibility placeholders, omissions, and diagnostics remain meaningful; merely producing encodable bytes does not make an artifact meaningful.
 _Avoid_: Nonempty output, any valid image
 
 **Vector-first PDF**:
@@ -81,7 +105,7 @@ The versioned collection of focused, real-world, adversarial, and regression sce
 _Avoid_: Golden tests, fixture folder
 
 **Semantic resource accounting**:
-A compatibility-revision-specific ledger that charges canonical scene, asset, geometry, text, pixel, work, output, diagnostic, and logical-live-record events rather than implementation allocations, passes, caches, or backend operations. The same scene document, request, compatibility revision, and limits have the same ledger and resource outcome across conforming implementations and targets.
+A compatibility-revision-specific ledger that charges canonical scene, asset, geometry, text, pixel, work, output, diagnostic, and logical-live-record events rather than implementation allocations, passes, caches, or backend operations. The same scene document, export target, request, compatibility revision, and limits have the same ledger and resource outcome across conforming implementations and targets; each target in a frame export batch has an independent ledger.
 _Avoid_: Allocator accounting, backend work metering
 
 **Asset payload occurrence**:

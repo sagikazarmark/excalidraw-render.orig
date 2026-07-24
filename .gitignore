@@ -2,6 +2,7 @@
 /tests/package-consumer/target/
 /tools/svg-viewer-rust/target/
 /tools/reference-oracle/dist/
+/tools/reference-oracle/frame-dist/
 /tools/reference-oracle/node_modules/
 /tools/pdf-harness/pdfjs/node_modules/
 **/__pycache__/

@@ -131,6 +131,15 @@ impl SceneDocument {
         })
     }
 
+    /// Discovers live ordinary and magic frame occurrences in source order.
+    pub fn frames(&self) -> crate::FrameRefs<'_> {
+        crate::FrameRefs::new(self)
+    }
+
+    pub(crate) fn same_identity(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self._root, &other._root)
+    }
+
     #[allow(dead_code)]
     pub(crate) fn canonicalized_original_bytes(&self) -> Result<Vec<u8>, TryReserveError> {
         let mut bytes = Vec::new();

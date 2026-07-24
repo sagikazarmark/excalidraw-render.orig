@@ -11,6 +11,8 @@ const SOURCE_COMMIT: &str = "a2ec2889babf7d2295469c6d90ebe77fae57df84";
 const NPM_INTEGRITY: &str =
     "sha512-6i5Gt7IDTOH//qa0Z315Ly5iVRhjWpu2whrlQFqkuwrkKUWgRsMk0P5qdE7bpyDpai7jeLeWYkyj1eVAfni1lw==";
 const PROFILE_DIGEST: &str = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
+const FRAME_PROFILE_DIGEST: &str =
+    "63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e";
 const ASSET_MANIFEST_DIGEST: &str =
     "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
 const SCENE_SURFACE_DIGEST: &str =
@@ -39,6 +41,11 @@ const ARTIFACTS: &[(&str, &str, &str)] = &[
         "tests/oracle/reference-profiles/revision-1.json",
         PROFILE_DIGEST,
         "reference-profile.json",
+    ),
+    (
+        "tests/oracle/reference-profiles/revision-1-frame.json",
+        FRAME_PROFILE_DIGEST,
+        "reference-frame-profile.json",
     ),
     (
         "tests/oracle/reference-profiles/revision-1-assets.json",
@@ -351,11 +358,13 @@ pub fn import(source_root: &str) -> Result<(), String> {
         write_if_changed(&incorporated.join(packaged_name), &bytes)?;
     }
     let schema_path = base.join("catalog/revision-catalog-v1.schema.json");
-    let schema: Value = serde_json::from_slice(
+    let mut schema: Value = serde_json::from_slice(
         &fs::read(&schema_path)
             .map_err(|error| format!("failed to read {}: {error}", schema_path.display()))?,
     )
     .map_err(|error| format!("invalid revision catalog schema: {error}"))?;
+    schema["properties"]["incorporatedArtifacts"]["minItems"] = json!(ARTIFACTS.len());
+    schema["properties"]["incorporatedArtifacts"]["maxItems"] = json!(ARTIFACTS.len());
     let schema_bytes = serde_json::to_vec(&schema)
         .map_err(|error| format!("failed to canonicalize revision catalog schema: {error}"))?;
     write_if_changed(&schema_path, &schema_bytes)?;
@@ -433,6 +442,11 @@ pub fn verify() -> Result<(), String> {
             ));
         }
     }
+    let frame_profile = read_canonical_json(
+        &root.join("tests/oracle/reference-profiles/revision-1-frame.json"),
+        "frame reference profile",
+    )?;
+    verify_frame_reference_profile(&root, &frame_profile)?;
 
     let scene_surface = read_canonical_json(
         &root.join("tests/oracle/scene-surfaces/revision-1.json"),
@@ -1831,6 +1845,127 @@ fn verify_references<'a>(
             }
         }
         _ => {}
+    }
+    Ok(())
+}
+
+fn verify_frame_reference_profile(root: &Path, profile: &Value) -> Result<(), String> {
+    if profile["schema"] != json!("excalidraw-render/frame-reference-profile/v1")
+        || profile["compatibilityRevision"] != json!(REVISION)
+        || profile["excalidrawRelease"] != json!(EXCALIDRAW_RELEASE)
+        || profile["exportTarget"] != json!("frame")
+        || profile["baseSceneReferenceProfile"]["digest"]
+            != json!(format!("sha256:{PROFILE_DIGEST}"))
+        || profile["baseSceneReferenceProfile"]["path"]
+            != json!("tests/oracle/reference-profiles/revision-1.json")
+    {
+        return Err("frame reference profile identity is stale".to_owned());
+    }
+    let invocation = &profile["referenceInvocation"];
+    if invocation["api"] != json!({"png": "exportToBlob", "svg": "exportToSvg"})
+        || invocation["exportingFrame"] != json!("live source-order frame occurrence")
+        || invocation["frameRendering"]
+            != json!({"clip": true, "enabled": true, "name": false, "outline": false})
+        || invocation["padding"] != json!(0)
+        || invocation["sizing"]
+            != json!("exactly one of exportScale or maxWidthOrHeight is non-null")
+    {
+        return Err("frame reference invocation is stale".to_owned());
+    }
+
+    let expected_reference_paths = BTreeSet::from([
+        "tools/reference-oracle/frame-index.html",
+        "tools/reference-oracle/package-lock.json",
+        "tools/reference-oracle/run-frame-conformance.sh",
+        "tools/reference-oracle/run-frame-profile.sh",
+        "tools/reference-oracle/scripts/canonical-json.mjs",
+        "tools/reference-oracle/scripts/frame-conformance-case.mjs",
+        "tools/reference-oracle/scripts/frame-profile.mjs",
+        "tools/reference-oracle/src/frame-browser-entry.js",
+        "tools/reference-oracle/vite.frame.config.mjs",
+    ]);
+    let reference_files = profile["referenceFiles"]["files"]
+        .as_array()
+        .ok_or_else(|| "frame referenceFiles.files must be an array".to_owned())?;
+    verify_frame_file_records(
+        root,
+        reference_files,
+        &profile["referenceFiles"]["recordsSha256"],
+        "frame reference file",
+        true,
+    )?;
+    let actual_reference_paths = reference_files
+        .iter()
+        .map(|record| string(record, "path", "frame reference file"))
+        .collect::<Result<BTreeSet<_>, _>>()?;
+    if actual_reference_paths != expected_reference_paths {
+        return Err("frame reference file set is stale".to_owned());
+    }
+
+    if profile["browserBundle"]["root"] != json!("tools/reference-oracle/frame-dist") {
+        return Err("frame browser bundle root is stale".to_owned());
+    }
+    let bundle_files = profile["browserBundle"]["files"]
+        .as_array()
+        .ok_or_else(|| "frame browserBundle.files must be an array".to_owned())?;
+    if bundle_files.is_empty() {
+        return Err("frame browser bundle has no files".to_owned());
+    }
+    verify_frame_file_records(
+        &root.join("tools/reference-oracle/frame-dist"),
+        bundle_files,
+        &profile["browserBundle"]["recordsSha256"],
+        "frame browser bundle file",
+        false,
+    )
+}
+
+fn verify_frame_file_records(
+    root: &Path,
+    records: &[Value],
+    expected_records_digest: &Value,
+    description: &str,
+    verify_files: bool,
+) -> Result<(), String> {
+    let records_bytes = serde_json::to_vec(records)
+        .map_err(|error| format!("failed to canonicalize {description} records: {error}"))?;
+    if expected_records_digest != &json!(sha256(&records_bytes)) {
+        return Err(format!("{description} record digest is stale"));
+    }
+    let mut previous = None;
+    for record in records {
+        let path = string(record, "path", description)?;
+        if previous.is_some_and(|previous| previous >= path) {
+            return Err(format!(
+                "{description} records are not uniquely path ordered"
+            ));
+        }
+        previous = Some(path);
+        let relative = Path::new(path);
+        if relative.is_absolute()
+            || relative
+                .components()
+                .any(|component| !matches!(component, std::path::Component::Normal(_)))
+        {
+            return Err(format!("{description} has an unsafe path {path:?}"));
+        }
+        let byte_length = integer(record, "bytes", description)?;
+        let digest = string(record, "sha256", description)?;
+        if byte_length == 0
+            || digest.len() != 64
+            || !digest
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        {
+            return Err(format!("{description} {path} has an invalid byte record"));
+        }
+        if verify_files {
+            let bytes = fs::read(root.join(relative))
+                .map_err(|error| format!("failed to read {description} {path}: {error}"))?;
+            if byte_length != bytes.len() as u64 || digest != sha256(&bytes) {
+                return Err(format!("{description} {path} does not match its record"));
+            }
+        }
     }
     Ok(())
 }

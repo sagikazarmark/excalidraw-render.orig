@@ -6038,13 +6038,18 @@ pub static REVISION_1: RevisionCatalog = RevisionCatalog {
         source_commit: "a2ec2889babf7d2295469c6d90ebe77fae57df84",
         npm_integrity: "sha512-6i5Gt7IDTOH//qa0Z315Ly5iVRhjWpu2whrlQFqkuwrkKUWgRsMk0P5qdE7bpyDpai7jeLeWYkyj1eVAfni1lw==",
         reference_profile_digest: "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71",
-        catalog_sha256: "712790824faa7987fd1553782fcfe30223633afaaa5316af3626602b71b5b626",
+        catalog_sha256: "d1c0a87249d3be0cd3d6d62bc44a3dc89e3d95b498f1bb28470b7f1e4f13cbcc",
     catalog_json: include_bytes!("../../catalog/revision-1.json"),
     incorporated_artifacts: &[
         IncorporatedArtifact {
             repository_path: "tests/oracle/reference-profiles/revision-1.json",
             sha256: "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71",
             bytes: include_bytes!("../../catalog/incorporated/reference-profile.json"),
+        },
+        IncorporatedArtifact {
+            repository_path: "tests/oracle/reference-profiles/revision-1-frame.json",
+            sha256: "63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e",
+            bytes: include_bytes!("../../catalog/incorporated/reference-frame-profile.json"),
         },
         IncorporatedArtifact {
             repository_path: "tests/oracle/reference-profiles/revision-1-assets.json",

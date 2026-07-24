@@ -33,7 +33,10 @@ jobs:
       - name: Verify sealed revision catalog
         run: cargo run --locked -p xtask -- catalog verify
       - name: Package library
-        run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare
+        run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
+      - name: Check packaged CLI against packaged renderer
+        shell: bash
+        run: bash tests/package-consumer/check-packaged-cli.sh "${{ matrix.target }}"
       - name: Execute packaged public facade
         working-directory: tests/package-consumer
         run: cargo test --locked --release --target ${{ matrix.target }} --test public_facade
@@ -62,7 +65,7 @@ jobs:
       - name: Verify sealed revision catalog
         run: cargo run --locked -p xtask -- catalog verify
       - name: Package library
-        run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare
+        run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
       - name: Execute packaged public facade in Chromium
         working-directory: tests/package-consumer
         env:

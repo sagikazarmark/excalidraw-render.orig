@@ -558,10 +558,7 @@ impl SvgPlan {
             svg.push_str("<!-- payload-end -->");
         }
         if let Some(manifest) = manifest {
-            svg.push_str(concat!(
-                "<excalidraw-render:manifest xmlns:excalidraw-render=\"",
-                "urn:excalidraw-render:artifact-manifest:1\">"
-            ));
+            svg.push_str("<excalidraw-render:manifest xmlns:excalidraw-render=\"urn:excalidraw-render:artifact-manifest:1\">");
             push_escaped_text(&mut svg, manifest);
             svg.push_str("</excalidraw-render:manifest>");
         }
