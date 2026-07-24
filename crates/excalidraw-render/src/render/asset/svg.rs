@@ -284,6 +284,125 @@ fn local_removal_count(document: &roxmltree::Document<'_>) -> usize {
 fn is_allowed_svg_node(node: &roxmltree::Node<'_, '_>) -> bool {
     node.tag_name().namespace() == Some("http://www.w3.org/2000/svg")
         && allowed_element(node.tag_name().name())
+        && (node.tag_name().name() != "style" || safe_static_style_node(*node))
+}
+
+fn safe_static_style_node(node: roxmltree::Node<'_, '_>) -> bool {
+    let mut text = None;
+    for child in node.children() {
+        if !child.is_text() || text.is_some() {
+            return false;
+        }
+        text = child.text();
+    }
+    text.is_none_or(safe_static_stylesheet)
+}
+
+fn safe_static_stylesheet(stylesheet: &str) -> bool {
+    if stylesheet.contains(['@', '\\'])
+        || stylesheet.contains("/*")
+        || stylesheet.contains("*/")
+        || unsafe_attribute("style", "style", None, stylesheet)
+    {
+        return false;
+    }
+
+    let mut rest = stylesheet.trim();
+    while !rest.is_empty() {
+        let Some((selector, after_selector)) = rest.split_once('{') else {
+            return false;
+        };
+        let Some((declarations, after_declarations)) = after_selector.split_once('}') else {
+            return false;
+        };
+        if selector.trim().is_empty() || selector.contains([':', '}']) || declarations.contains('{')
+        {
+            return false;
+        }
+        for declaration in declarations.split(';') {
+            let declaration = declaration.trim();
+            if declaration.is_empty() {
+                continue;
+            }
+            let Some((property, value)) = declaration.split_once(':') else {
+                return false;
+            };
+            let property = property.trim();
+            if property.is_empty()
+                || !property
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+                || !allowed_static_style_property(property)
+                || value.trim().is_empty()
+            {
+                return false;
+            }
+        }
+        rest = after_declarations.trim();
+    }
+    true
+}
+
+fn allowed_static_style_property(property: &str) -> bool {
+    matches!(
+        property.to_ascii_lowercase().as_str(),
+        "alignment-baseline"
+            | "baseline-shift"
+            | "clip-path"
+            | "clip-rule"
+            | "color"
+            | "color-interpolation"
+            | "color-interpolation-filters"
+            | "direction"
+            | "display"
+            | "dominant-baseline"
+            | "fill"
+            | "fill-opacity"
+            | "fill-rule"
+            | "filter"
+            | "flood-color"
+            | "flood-opacity"
+            | "font"
+            | "font-family"
+            | "font-size"
+            | "font-size-adjust"
+            | "font-stretch"
+            | "font-style"
+            | "font-variant"
+            | "font-weight"
+            | "image-rendering"
+            | "isolation"
+            | "letter-spacing"
+            | "lighting-color"
+            | "marker"
+            | "marker-end"
+            | "marker-mid"
+            | "marker-start"
+            | "mask"
+            | "mix-blend-mode"
+            | "opacity"
+            | "overflow"
+            | "paint-order"
+            | "shape-rendering"
+            | "stop-color"
+            | "stop-opacity"
+            | "stroke"
+            | "stroke-dasharray"
+            | "stroke-dashoffset"
+            | "stroke-linecap"
+            | "stroke-linejoin"
+            | "stroke-miterlimit"
+            | "stroke-opacity"
+            | "stroke-width"
+            | "text-anchor"
+            | "text-decoration"
+            | "text-rendering"
+            | "unicode-bidi"
+            | "vector-effect"
+            | "visibility"
+            | "word-spacing"
+            | "writing-mode"
+    )
 }
 
 fn remove_dtd_and_entities(text: &str) -> Result<(String, Vec<Removal>), ResolveError> {
@@ -389,8 +508,7 @@ fn serialize_node(
         return Ok(());
     }
     let name = node.tag_name().name();
-    let svg_namespace = node.tag_name().namespace() == Some("http://www.w3.org/2000/svg");
-    if !svg_namespace || !allowed_element(name) {
+    if !is_allowed_svg_node(&node) {
         removals.push(Removal {
             node_ordinal: ordinal,
             attribute_ordinal: None,
@@ -799,6 +917,7 @@ fn allowed_element(name: &str) -> bool {
         "svg"
             | "g"
             | "defs"
+            | "style"
             | "symbol"
             | "use"
             | "title"
@@ -1223,15 +1342,24 @@ fn escape_attribute(output: &mut String, value: &str) {
 }
 
 fn viewer_options() -> Result<usvg::Options<'static>, ResolveError> {
-    let font = excalidraw_render_assets_base::load_excalifont_basic_latin_sfnt()
+    let excalifont = excalidraw_render_assets_base::load_excalifont_basic_latin_sfnt()
         .map_err(|_| ResolveError::SvgDecodeFailed)?;
+    let (_, liberation_sans) = crate::render::text::FallbackFont::load()
+        .map_err(|_| ResolveError::SvgDecodeFailed)?
+        .into_parts();
     let mut options = usvg::Options {
         resources_dir: None,
-        font_family: "Excalifont".to_owned(),
+        font_family: "Liberation Sans".to_owned(),
         ..usvg::Options::default()
     };
     let mut fontdb = usvg::fontdb::Database::new();
-    fontdb.load_font_data(font.bytes().to_vec());
+    fontdb.load_font_data(excalifont.bytes().to_vec());
+    fontdb.load_font_data(liberation_sans);
+    fontdb.set_serif_family("Liberation Sans");
+    fontdb.set_sans_serif_family("Liberation Sans");
+    fontdb.set_cursive_family("Liberation Sans");
+    fontdb.set_fantasy_family("Liberation Sans");
+    fontdb.set_monospace_family("Liberation Sans");
     options.fontdb = Arc::new(fontdb);
     options.image_href_resolver = usvg::ImageHrefResolver {
         resolve_data: Box::new(|media_type, bytes, options| match media_type {

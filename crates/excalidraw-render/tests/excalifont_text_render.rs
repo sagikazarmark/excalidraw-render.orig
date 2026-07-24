@@ -73,32 +73,34 @@ fn excalifont_text_renders_semantically_and_deterministically_in_every_format() 
                     svg.contains("font.excalifont.ofl-1.1")
                         || svg.contains("Excalifont and Virgil provenance is retained together")
                 );
-                assert!(svg.contains("font-family=\"Excalifont\" font-size=\"20\""));
+                assert!(svg.contains(
+                    "font-family=\"Excalifont\" font-size=\"20\" text-anchor=\"middle\""
+                ));
                 assert_eq!(svg.matches("<text data-source-text=").count(), 1);
                 assert_eq!(svg.matches("<tspan ").count(), 2);
                 let first_text = svg
                     .split("<tspan x=\"")
                     .nth(1)
                     .expect("text line is emitted");
-                let shaped_x = first_text
+                let line_x = first_text
                     .split('"')
                     .next()
-                    .expect("text has shaped x positions");
-                let shaped_y = first_text
+                    .expect("text has a line anchor");
+                let line_y = first_text
                     .split(" y=\"")
                     .nth(1)
                     .and_then(|value| value.split('"').next())
-                    .expect("text has shaped y positions");
-                assert_eq!(shaped_x.split_whitespace().count(), 13);
-                assert_eq!(shaped_y.split_whitespace().count(), 13);
+                    .expect("text has a line baseline");
+                assert_eq!(line_x, "45");
+                assert_eq!(line_y.split_whitespace().count(), 1);
                 assert!(svg.contains(">One two three</tspan>\n<tspan"));
                 assert!(svg.contains(">Four</tspan></text>"));
                 assert_eq!(svg_source_text(svg), "One two three\nFour");
                 assert!(!svg.contains("Unavailable: text"));
-                assert_eq!(first.artifact().bytes().len(), 39_267);
+                assert_eq!(first.artifact().bytes().len(), 38_959);
                 assert_eq!(
                     artifact_sha256(&first),
-                    "be2e0b84f280141e1b50525648890fdea7a22d697149cd04120b1d8cb92d5085"
+                    "b808f3bfde706cc7c8cc29aa16b95d5f7594e185194f97e8be35982c827167d8"
                 );
             }
             OutputFormat::Png => {
@@ -382,7 +384,7 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
     assert!(work_equality.report().is_empty());
     assert_eq!(
         artifact_sha256(&work_equality),
-        "be2e0b84f280141e1b50525648890fdea7a22d697149cd04120b1d8cb92d5085"
+        "b808f3bfde706cc7c8cc29aa16b95d5f7594e185194f97e8be35982c827167d8"
     );
     let work_crossing = render_svg_with_limits(
         &scene,
@@ -435,16 +437,33 @@ fn unsupported_excalifont_chunk_text_is_diagnosed_and_never_host_falls_back() {
 }
 
 #[test]
-fn basic_latin_svg_positions_every_character_when_ligatures_would_normally_form() {
-    let scene = text_scene("office", 100.0, 30.0);
-    let outcome = render_svg_with_limits(&scene, ResourceLimits::default());
-    assert!(outcome.report().is_empty());
-    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-    let first_text = svg.split("<tspan x=\"").nth(1).expect("text is emitted");
-    let shaped_x = first_text.split('"').next().expect("x positions terminate");
-    assert_eq!(shaped_x.split_whitespace().count(), 6);
-    assert!(svg.contains(">office</tspan>"));
-    assert_eq!(svg_source_text(svg), "office");
+fn basic_latin_svg_leaves_line_shaping_and_alignment_to_the_viewer() {
+    for (alignment, anchor_x, text_anchor) in [
+        ("left", "0", "start"),
+        ("center", "50", "middle"),
+        ("right", "100", "end"),
+    ] {
+        let source = format!(
+            "{{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{{\"id\":\"text\",\"type\":\"text\",\"width\":100,\"height\":30,\"fontSize\":20,\"fontFamily\":5,\"text\":\"office\",\"textAlign\":\"{alignment}\",\"updated\":1}}],\"appState\":{{}},\"files\":{{}}}}"
+        );
+        let scene = SceneDocument::parse(source.as_bytes()).expect("text scene is admitted");
+        let outcome = render_svg_with_limits(&scene, ResourceLimits::default());
+        assert!(outcome.report().is_empty());
+        let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+        let first_text = svg.split("<tspan x=\"").nth(1).expect("text is emitted");
+        let line_x = first_text.split('"').next().expect("line x terminates");
+        let line_y = first_text
+            .split(" y=\"")
+            .nth(1)
+            .and_then(|value| value.split('"').next())
+            .expect("line y terminates");
+
+        assert_eq!(line_x, anchor_x);
+        assert_eq!(line_y.split_whitespace().count(), 1);
+        assert!(svg.contains(&format!("text-anchor=\"{text_anchor}\"")));
+        assert!(svg.contains(">office</tspan>"));
+        assert_eq!(svg_source_text(svg), "office");
+    }
 }
 
 #[test]

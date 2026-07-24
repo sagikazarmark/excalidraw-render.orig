@@ -29,12 +29,30 @@ pub(super) struct ResolvedText {
     pub(super) font_index: usize,
     pub(super) font_family: &'static str,
     pub(super) font_size: f64,
+    pub(super) text_align: ResolvedTextAlign,
     pub(super) lines: Vec<ResolvedLabel>,
     pub(super) scalar_count: u64,
     pub(super) line_break_steps: u64,
     pub(super) missing_codepoints: Vec<u32>,
     pub(super) prepaid_glyphs: u64,
     pub(super) prepaid_line_break_steps: u64,
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum ResolvedTextAlign {
+    Left,
+    Center,
+    Right,
+}
+
+impl ResolvedTextAlign {
+    fn from_normalized(value: &str) -> Self {
+        match value {
+            "center" => Self::Center,
+            "right" => Self::Right,
+            _ => Self::Left,
+        }
+    }
 }
 
 pub(super) struct TextLayout<'a> {
@@ -302,6 +320,7 @@ impl OfficialFont {
         layout: TextLayout<'_>,
     ) -> Result<ResolvedText, LabelError> {
         let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let text_align = ResolvedTextAlign::from_normalized(layout.text_align);
         let mut display_text = String::new();
         display_text.try_reserve_exact(text.len())?;
         let mut missing_codepoints = Vec::new();
@@ -362,13 +381,14 @@ impl OfficialFont {
                 layout.width,
                 layout.font_size,
                 baseline,
-                layout.text_align,
+                text_align,
             )?);
         }
         Ok(ResolvedText {
             font_index: 0,
             font_family: self.family,
             font_size: layout.font_size,
+            text_align,
             lines,
             scalar_count: u64::try_from(text.chars().count()).unwrap_or(u64::MAX),
             line_break_steps,
@@ -470,7 +490,7 @@ fn shape_official_line(
     width: f64,
     font_size: f64,
     baseline: f64,
-    text_align: &str,
+    text_align: ResolvedTextAlign,
 ) -> Result<ResolvedLabel, LabelError> {
     let glyphs = shape_text(face, display_text);
     let scale = font_size / f64::from(face.units_per_em());
@@ -482,9 +502,9 @@ fn shape_official_line(
         }) as f64
         * scale;
     let origin_x = match text_align {
-        "center" => (width - advance) / 2.0,
-        "right" => width - advance,
-        _ => 0.0,
+        ResolvedTextAlign::Center => (width - advance) / 2.0,
+        ResolvedTextAlign::Right => width - advance,
+        ResolvedTextAlign::Left => 0.0,
     };
     let mut operations = Vec::new();
     operations.try_reserve(glyphs.glyph_infos().len().saturating_mul(32))?;

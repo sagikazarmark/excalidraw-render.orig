@@ -1203,6 +1203,76 @@ fn nested_bmp_preserves_direct_svg_bytes_and_normalizes_png_and_pdf() {
     assert!(pdf.contains("/Subtype /Form"));
 }
 
+#[test]
+fn unavailable_nested_sans_text_uses_a_deterministic_fallback_in_png_and_pdf() {
+    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40"><rect width="80" height="40" fill="#326ce5"/><text x="4" y="31" style="font-family:Sans;font-size:32px;fill:#ffffff">ABC</text></svg>"##;
+    let scene = image_scene(nested, 80, 40);
+
+    let png = render(&scene, OutputFormat::Png);
+    let decoder = png::Decoder::new(Cursor::new(png));
+    let mut reader = decoder.read_info().expect("artifact is PNG");
+    let mut rgba = vec![0; reader.output_buffer_size()];
+    reader.next_frame(&mut rgba).expect("PNG frame decodes");
+    let white_text_pixels = (12..48)
+        .flat_map(|y| (12..88).map(move |x| (x, y)))
+        .filter(|(x, y)| {
+            let [red, green, blue, _] = pixel(&rgba, 100, *x, *y);
+            red > 220 && green > 220 && blue > 220
+        })
+        .count();
+    assert!(
+        white_text_pixels > 100,
+        "fallback glyphs must remain visible, got {white_text_pixels} white pixels"
+    );
+
+    let pdf = String::from_utf8_lossy(&render(&scene, OutputFormat::Pdf)).into_owned();
+    assert!(pdf.contains("/Subtype /Form"));
+    assert!(
+        pdf.contains(" c\n"),
+        "fallback glyphs must remain as vector outlines"
+    );
+}
+
+#[test]
+fn safe_class_styles_preserve_nested_opacity_and_layer_order() {
+    let inline = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" style="fill:#ff0000;opacity:0.5"/><rect x="10" width="10" height="10" style="fill:#0000ff;opacity:0.5"/></svg>"##;
+    let inline_scene = image_scene(inline, 20, 10);
+    let inline_png = render(&inline_scene, OutputFormat::Png);
+    let decoder = png::Decoder::new(Cursor::new(inline_png));
+    let mut reader = decoder.read_info().expect("inline control is PNG");
+    let mut rgba = vec![0; reader.output_buffer_size()];
+    reader
+        .next_frame(&mut rgba)
+        .expect("inline control frame decodes");
+    assert_rgb_near(pixel(&rgba, 40, 15, 15), [255, 128, 128, 255]);
+    assert_rgb_near(pixel(&rgba, 40, 25, 15), [128, 64, 191, 255]);
+
+    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><style>.back{fill:#ff0000;opacity:0.5}.front{fill:#0000ff;opacity:0.5}</style></defs><rect class="back" width="20" height="10"/><rect class="front" x="10" width="10" height="10"/></svg>"##;
+    let scene = image_scene(nested, 20, 10);
+
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .build()
+        .expect("PNG request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("safe class styles render");
+    let decoder = png::Decoder::new(Cursor::new(outcome.artifact().bytes()));
+    let mut reader = decoder.read_info().expect("artifact is PNG");
+    let mut rgba = vec![0; reader.output_buffer_size()];
+    reader.next_frame(&mut rgba).expect("PNG frame decodes");
+    assert_rgb_near(pixel(&rgba, 40, 15, 15), [255, 128, 128, 255]);
+    assert_rgb_near(pixel(&rgba, 40, 25, 15), [128, 64, 191, 255]);
+    assert!(outcome.report().diagnostics().is_empty());
+
+    let svg = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(&svg).expect("artifact SVG is UTF-8");
+    assert!(embedded_svg(svg).contains("<style>"));
+
+    let pdf = String::from_utf8_lossy(&render(&scene, OutputFormat::Pdf)).into_owned();
+    assert!(pdf.contains("/Subtype /Form"));
+    assert!(pdf.contains("/ca 0.5"));
+}
+
 fn image_scene(svg: &[u8], width: u32, height: u32) -> SceneDocument {
     let encoded = base64::engine::general_purpose::STANDARD.encode(svg);
     let json = format!(
@@ -1270,4 +1340,13 @@ fn pixel(rgba: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
     rgba[(y * width + x) * 4..(y * width + x + 1) * 4]
         .try_into()
         .expect("pixel exists")
+}
+
+fn assert_rgb_near(actual: [u8; 4], expected: [u8; 4]) {
+    for (actual_channel, expected_channel) in actual.into_iter().zip(expected) {
+        assert!(
+            actual_channel.abs_diff(expected_channel) <= 1,
+            "pixel {actual:?} differs from {expected:?}"
+        );
+    }
 }

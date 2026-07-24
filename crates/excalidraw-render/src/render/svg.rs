@@ -1016,30 +1016,19 @@ impl SvgPlan {
                     push_escaped_attribute(&mut svg, text.font_family);
                     svg.push_str("\" font-size=\"");
                     push_svg_number(&mut svg, text.font_size, "SVG text font size")?;
+                    let (line_x, text_anchor) = match text.text_align {
+                        super::text::ResolvedTextAlign::Left => (0.0, "start"),
+                        super::text::ResolvedTextAlign::Center => (*width / 2.0, "middle"),
+                        super::text::ResolvedTextAlign::Right => (*width, "end"),
+                    };
+                    svg.push_str("\" text-anchor=\"");
+                    svg.push_str(text_anchor);
                     svg.push_str("\">");
                     for line in &text.lines {
                         svg.push_str("<tspan x=\"");
-                        if line.glyphs.is_empty() {
-                            svg.push('0');
-                        } else {
-                            for (index, glyph) in line.glyphs.iter().enumerate() {
-                                if index != 0 {
-                                    svg.push(' ');
-                                }
-                                push_svg_number(&mut svg, glyph.x, "SVG shaped glyph x")?;
-                            }
-                        }
+                        push_svg_number(&mut svg, line_x, "SVG text line anchor x")?;
                         svg.push_str("\" y=\"");
-                        if line.glyphs.is_empty() {
-                            push_svg_number(&mut svg, line.baseline, "SVG text line baseline")?;
-                        } else {
-                            for (index, glyph) in line.glyphs.iter().enumerate() {
-                                if index != 0 {
-                                    svg.push(' ');
-                                }
-                                push_svg_number(&mut svg, glyph.y, "SVG shaped glyph y")?;
-                            }
-                        }
+                        push_svg_number(&mut svg, line.baseline, "SVG text line baseline")?;
                         svg.push_str("\">");
                         push_escaped_text(&mut svg, &line.display_text);
                         svg.push_str("</tspan>");

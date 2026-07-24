@@ -120,6 +120,31 @@ fn one_way_container_reference_does_not_create_an_arrow_mask_or_label() {
     assert!(!svg.contains("data-source-text=\"Hidden\""));
 }
 
+#[test]
+fn arrow_binding_does_not_turn_standalone_text_into_a_bound_label() {
+    let scene = SceneDocument::parse(br##"{
+        "type":"excalidraw","version":2,
+        "elements":[
+            {"id":"label","type":"text","x":0,"y":0,"width":100,"height":20,"containerId":null,"boundElements":[{"id":"arrow","type":"arrow"}],"fontSize":16,"fontFamily":5,"text":"Standalone","lineHeight":1.25,"updated":1},
+            {"id":"arrow","type":"arrow","x":120,"y":10,"width":80,"height":0,"points":[[0,0],[80,0]],"startBinding":{"elementId":"label","focus":0,"gap":1},"roughness":0,"updated":1}
+        ],
+        "appState":{},"files":{}
+    }"##)
+    .expect("arrow-bound standalone text scene is admitted");
+
+    let svg = render_svg(&scene);
+    assert_eq!(
+        svg.matches("<text data-source-text=\"Standalone\"").count(),
+        1
+    );
+    let text_group = svg
+        .split("<text data-source-text=\"Standalone\"")
+        .next()
+        .and_then(|prefix| prefix.rsplit("<g transform=\"").next())
+        .expect("standalone text is emitted");
+    assert!(text_group.starts_with("translate(10 10)"));
+}
+
 fn render_svg(scene: &SceneDocument) -> String {
     String::from_utf8(render(scene, OutputFormat::Svg)).expect("SVG is UTF-8")
 }

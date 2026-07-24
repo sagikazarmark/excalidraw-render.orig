@@ -5026,7 +5026,7 @@ fn resolve_bound_text_placements(
         };
         let Some(container_index) = relationship_element_target(
             text.source.source_index(),
-            crate::relationships::RelationshipKind::Binding,
+            crate::relationships::RelationshipKind::Mask,
             relationships,
         ) else {
             continue;
@@ -5679,7 +5679,7 @@ impl ResolvedScene {
                 }
                 let container_source_index = relationship_element_target(
                     source.source.source_index(),
-                    crate::relationships::RelationshipKind::Binding,
+                    crate::relationships::RelationshipKind::Mask,
                     &relationships,
                 );
                 if container_source_index.is_some_and(|container| {
