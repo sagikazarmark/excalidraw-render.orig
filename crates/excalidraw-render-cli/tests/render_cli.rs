@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -253,6 +253,23 @@ fn validation_uses_normative_failure_order_and_stable_exit_statuses() {
         "cli.asset-read-failed",
     );
 
+    let ordered_asset_failure = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .args([
+            fixture.to_str().unwrap(),
+            "-o",
+            temp.join("ordered-asset.svg").to_str().unwrap(),
+            "--asset",
+            "z=missing-z",
+            "--asset",
+            "a=missing-a",
+            "--report-format=json",
+        ])
+        .output()
+        .expect("run ordered asset failure");
+    let ordered_asset_failure: serde_json::Value =
+        serde_json::from_slice(&ordered_asset_failure.stderr).expect("JSON asset failure");
+    assert_eq!(ordered_asset_failure["error"]["details"]["asset_id"], "a");
+
     let none = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
         .args([
             missing.to_str().unwrap(),
@@ -268,6 +285,292 @@ fn validation_uses_normative_failure_order_and_stable_exit_statuses() {
     assert!(String::from_utf8_lossy(&none.stderr).contains("cli cli.input-read-failed:"));
 
     fs::remove_dir_all(temp).expect("remove test temp directory");
+}
+
+#[test]
+fn rejects_existing_and_nonexistent_path_aliases_without_modifying_sources() {
+    let temp = temp_directory_named("path-aliases");
+    let input = temp.join("input.excalidraw");
+    fs::copy(corpus_scene("basic-shapes.excalidraw"), &input).expect("copy scene input");
+    let alias = temp.join("input-alias.excalidraw");
+    fs::hard_link(&input, &alias).expect("create input hard link");
+    let original = fs::read(&input).expect("read original scene");
+
+    assert_failure(
+        &[
+            input.to_str().unwrap(),
+            "-o",
+            alias.to_str().unwrap(),
+            "--format=svg",
+            "--force",
+            "--report-format=json",
+        ],
+        2,
+        "cli.path-conflict",
+    );
+    assert_eq!(fs::read(&input).unwrap(), original);
+
+    let output = temp.join("future.svg");
+    let report_alias = temp.join("nested").join("..").join("future.svg");
+    assert_failure(
+        &[
+            input.to_str().unwrap(),
+            "-o",
+            output.to_str().unwrap(),
+            "--report-output",
+            report_alias.to_str().unwrap(),
+            "--report-format=json",
+        ],
+        2,
+        "cli.path-conflict",
+    );
+    assert!(!output.exists());
+
+    fs::remove_dir_all(temp).expect("remove path-alias temp directory");
+}
+
+#[cfg(unix)]
+#[test]
+fn treats_dangling_symlink_destinations_as_existing_paths() {
+    use std::os::unix::fs::symlink;
+
+    let temp = temp_directory_named("dangling-destination");
+    let output = temp.join("result.svg");
+    symlink(temp.join("missing-target"), &output).expect("create dangling destination symlink");
+
+    assert_failure(
+        &[
+            corpus_scene("basic-shapes.excalidraw").to_str().unwrap(),
+            "-o",
+            output.to_str().unwrap(),
+            "--report-format=json",
+        ],
+        2,
+        "cli.destination-exists",
+    );
+
+    fs::remove_dir_all(temp).expect("remove dangling-destination temp directory");
+}
+
+#[test]
+fn rejects_scene_and_asset_payloads_beyond_fixed_transport_bounds() {
+    let temp = temp_directory_named("bounded-reads");
+    let oversized_scene = temp.join("oversized.excalidraw");
+    fs::File::create(&oversized_scene)
+        .and_then(|file| file.set_len(67_108_865))
+        .expect("create oversized sparse scene");
+    assert_failure(
+        &[
+            oversized_scene.to_str().unwrap(),
+            "-o",
+            temp.join("scene.svg").to_str().unwrap(),
+            "--report-format=json",
+        ],
+        1,
+        "scene.input-too-large",
+    );
+
+    let oversized_asset = temp.join("oversized.asset");
+    fs::File::create(&oversized_asset)
+        .and_then(|file| file.set_len(33_554_433))
+        .expect("create oversized sparse asset");
+    assert_failure(
+        &[
+            corpus_scene("basic-shapes.excalidraw").to_str().unwrap(),
+            "-o",
+            temp.join("asset.svg").to_str().unwrap(),
+            "--asset",
+            &format!("asset={}", oversized_asset.display()),
+            "--report-format=json",
+        ],
+        1,
+        "resource.asset-bytes-exceeded",
+    );
+
+    fs::remove_dir_all(temp).expect("remove bounded-reads temp directory");
+}
+
+#[test]
+fn stages_both_paths_before_delivery_and_cleans_temporary_files() {
+    let temp = temp_directory_named("staging");
+    let output = temp.join("result.svg");
+    let unavailable_report = temp.join("missing-parent").join("report.json");
+    let result = render_command(&output)
+        .args([
+            "--report-output",
+            unavailable_report.to_str().unwrap(),
+            "--report-format=json",
+        ])
+        .output()
+        .expect("run report staging failure");
+
+    assert_eq!(result.status.code(), Some(1));
+    assert!(!output.exists(), "artifact must not precede report staging");
+    let report: serde_json::Value =
+        serde_json::from_slice(&result.stderr).expect("emergency JSON report");
+    assert_eq!(report["error"]["code"], "cli.report-write-failed");
+    assert_eq!(report["error"]["details"]["artifact_state"], "none");
+    assert_no_staging_files(&temp);
+
+    fs::remove_dir_all(temp).expect("remove staging temp directory");
+}
+
+#[test]
+fn delivers_artifact_before_report_and_emits_complete_emergency_json() {
+    let temp = temp_directory_named("report-delivery");
+    let output = temp.join("result.svg");
+    let report_destination = temp.join("report.json");
+    fs::create_dir(&report_destination).expect("create undeliverable report destination");
+    let result = render_command(&output)
+        .args([
+            "--report-output",
+            report_destination.to_str().unwrap(),
+            "--report-format=json",
+            "--force",
+        ])
+        .output()
+        .expect("run report delivery failure");
+
+    assert_eq!(result.status.code(), Some(1));
+    assert!(fs::read(&output)
+        .expect("delivered artifact")
+        .starts_with(b"<svg "));
+    let report: serde_json::Value =
+        serde_json::from_slice(&result.stderr).expect("canonical emergency JSON report");
+    assert_eq!(report["status"], "failure");
+    assert_eq!(report["artifact"], serde_json::Value::Null);
+    assert_eq!(report["error"]["code"], "cli.report-write-failed");
+    assert_eq!(report["error"]["details"]["artifact_state"], "complete");
+    assert!(result.stderr.ends_with(b"\n"));
+    assert_eq!(
+        result.stderr.iter().filter(|&&byte| byte == b'\n').count(),
+        1
+    );
+    assert_no_staging_files(&temp);
+
+    fs::remove_dir_all(temp).expect("remove report-delivery temp directory");
+}
+
+#[test]
+fn failed_non_json_report_delivery_emits_one_emergency_line() {
+    let temp = temp_directory_named("non-json-emergency");
+    let input = temp.join("diagnosed.excalidraw");
+    fs::write(
+        &input,
+        br#"{"type":"excalidraw","version":2,"elements":[{"id":"unknown","type":"future","x":0,"y":0,"width":100,"height":50,"updated":1}],"appState":{},"files":{}}"#,
+    )
+    .expect("write diagnosed scene");
+    let output = temp.join("result.svg");
+    let report_destination = temp.join("report.txt");
+    fs::create_dir(&report_destination).expect("create undeliverable report destination");
+    let result = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg(&input)
+        .arg("-o")
+        .arg(&output)
+        .args([
+            "--report-output",
+            report_destination.to_str().unwrap(),
+            "--report-format=human",
+            "--force",
+        ])
+        .output()
+        .expect("run non-JSON report delivery failure");
+
+    assert_eq!(result.status.code(), Some(1));
+    assert!(output.exists());
+    assert_eq!(
+        result.stderr.iter().filter(|&&byte| byte == b'\n').count(),
+        1
+    );
+    assert!(String::from_utf8_lossy(&result.stderr).contains("cli.report-write-failed"));
+
+    fs::remove_dir_all(temp).expect("remove non-JSON emergency temp directory");
+}
+
+#[test]
+fn stdout_failure_before_first_byte_reports_that_no_artifact_bytes_escaped() {
+    let temp = temp_directory_named("closed-stdout");
+    let report_path = temp.join("report.json");
+    let mut command = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"));
+    command
+        .arg(corpus_scene("basic-shapes.excalidraw"))
+        .args([
+            "-o",
+            "-",
+            "--format=svg",
+            "--report-output",
+            report_path.to_str().unwrap(),
+            "--report-format=json",
+        ])
+        .stderr(Stdio::piped());
+    #[cfg(unix)]
+    command.stdout(Stdio::from(
+        fs::OpenOptions::new()
+            .write(true)
+            .open("/dev/full")
+            .expect("open always-failing stdout"),
+    ));
+    #[cfg(not(unix))]
+    command.stdout(Stdio::piped());
+    let child = command.spawn().expect("spawn renderer with closed stdout");
+    #[cfg(not(unix))]
+    let mut child = child;
+    #[cfg(not(unix))]
+    drop(child.stdout.take().expect("take stdout pipe"));
+    let result = child.wait_with_output().expect("wait for stdout failure");
+
+    assert_eq!(result.status.code(), Some(1));
+    assert!(result.stderr.is_empty());
+    let report: serde_json::Value =
+        serde_json::from_slice(&fs::read(&report_path).expect("read stdout failure report"))
+            .expect("JSON stdout failure report");
+    assert_eq!(report["error"]["code"], "cli.output-write-failed");
+    assert_eq!(report["error"]["details"]["artifact_state"], "none");
+    assert_no_staging_files(&temp);
+
+    fs::remove_dir_all(temp).expect("remove closed-stdout temp directory");
+}
+
+#[test]
+fn interrupted_stdout_after_bytes_escape_reports_possibly_partial() {
+    let temp = temp_directory_named("partial-stdout");
+    let report_path = temp.join("report.json");
+    let mut child = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg(corpus_scene("basic-shapes.excalidraw"))
+        .args([
+            "-o",
+            "-",
+            "--format=pdf",
+            "--report-output",
+            report_path.to_str().unwrap(),
+            "--report-format=json",
+        ])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn renderer with interrupted stdout");
+    let mut stdout = child.stdout.take().expect("take stdout pipe");
+    let mut first_byte = [0_u8; 1];
+    stdout
+        .read_exact(&mut first_byte)
+        .expect("receive one artifact byte");
+    drop(stdout);
+    let result = child
+        .wait_with_output()
+        .expect("wait for partial stdout failure");
+
+    assert_eq!(result.status.code(), Some(1));
+    assert!(result.stderr.is_empty());
+    let report: serde_json::Value =
+        serde_json::from_slice(&fs::read(&report_path).expect("read partial failure report"))
+            .expect("JSON partial stdout failure report");
+    assert_eq!(report["error"]["code"], "cli.output-write-failed");
+    assert_eq!(
+        report["error"]["details"]["artifact_state"],
+        "possibly_partial"
+    );
+
+    fs::remove_dir_all(temp).expect("remove partial-stdout temp directory");
 }
 
 fn assert_failure(args: &[&str], exit: i32, code: &str) {
@@ -412,6 +715,34 @@ fn run(input: &Path, output: &Path, extra_args: &[&str]) {
         result.status.success(),
         "renderer failed: {}",
         String::from_utf8_lossy(&result.stderr)
+    );
+}
+
+fn render_command(output: &Path) -> Command {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"));
+    command
+        .arg(corpus_scene("basic-shapes.excalidraw"))
+        .arg("-o")
+        .arg(output);
+    command
+}
+
+fn corpus_scene(name: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures")
+        .join(name)
+}
+
+fn assert_no_staging_files(directory: &Path) {
+    let staging_files = fs::read_dir(directory)
+        .expect("read temp directory")
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_name().to_string_lossy().ends_with(".tmp"))
+        .map(|entry| entry.path())
+        .collect::<Vec<_>>();
+    assert!(
+        staging_files.is_empty(),
+        "staging files remain: {staging_files:?}"
     );
 }
 

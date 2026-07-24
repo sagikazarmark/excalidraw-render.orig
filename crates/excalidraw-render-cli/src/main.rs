@@ -480,7 +480,7 @@ fn run_standalone(cli: &Cli) -> u8 {
             )
         }
     };
-    if report_output(cli) != "stderr" && Path::new(report_output(cli)).exists() {
+    if report_output(cli) != "stderr" && path_entry_exists(Path::new(report_output(cli))) {
         return emit_failure(
             cli,
             None,
@@ -878,6 +878,10 @@ fn lexical_absolute(path: &Path) -> PathBuf {
     normalized
 }
 
+fn path_entry_exists(path: &Path) -> bool {
+    fs::symlink_metadata(path).is_ok()
+}
+
 fn check_destinations(output: &str, report: &str, force: bool) -> Result<(), Failure> {
     for (role, path) in [
         (DeliveryRole::Output, output),
@@ -888,7 +892,7 @@ fn check_destinations(output: &str, report: &str, force: bool) -> Result<(), Fai
         {
             continue;
         }
-        if Path::new(path).exists() && !force {
+        if path_entry_exists(Path::new(path)) && !force {
             return Err(Failure::cli(
                 "cli.destination-exists",
                 format!("{} destination already exists", role.as_str()),
@@ -1114,7 +1118,9 @@ fn deliver_success(
                 ),
             );
         }
-    } else if let Err(operation) = write_stream(&mut io::stdout().lock(), &artifact) {
+    } else if let Err((operation, artifact_state)) =
+        write_stream_tracked(&mut io::stdout().lock(), &artifact)
+    {
         return emit_failure(
             cli,
             Some(identity),
@@ -1123,7 +1129,7 @@ fn deliver_success(
                 DeliveryRole::Output,
                 operation,
                 output,
-                DeliveryState::PossiblyPartial,
+                artifact_state,
                 diagnostics.clone(),
             ),
         );
@@ -1189,12 +1195,12 @@ fn emit_failure(
             DeliveryState::None,
             diagnostics,
         );
-        let emergency_mode = if cli.report_format == ReportFormat::Json {
-            ReportFormat::Json
-        } else {
-            ReportFormat::Human
-        };
-        let emergency = failure_report_bytes(emergency_mode, identity, format, fallback);
+        let emergency = failure_report_bytes(
+            emergency_report_format(cli.report_format),
+            identity,
+            format,
+            fallback,
+        );
         let _ = write_stream(&mut io::stderr().lock(), &emergency);
         return EXIT_OPERATIONAL;
     }
@@ -1205,12 +1211,20 @@ fn report_output(cli: &Cli) -> &str {
     cli.report_output.as_deref().unwrap_or("stderr")
 }
 
+fn emergency_report_format(format: ReportFormat) -> ReportFormat {
+    if format == ReportFormat::Json {
+        ReportFormat::Json
+    } else {
+        ReportFormat::None
+    }
+}
+
 fn report_destination_is_safe(cli: &Cli) -> bool {
     let report = report_output(cli);
     if report == "-" {
         return false;
     }
-    if report == "stderr" || (Path::new(report).exists() && !cli.force) {
+    if report == "stderr" || (path_entry_exists(Path::new(report)) && !cli.force) {
         return report == "stderr";
     }
     if cli
@@ -1322,11 +1336,7 @@ fn emergency_report_failure(
         diagnostics,
     );
     let bytes = failure_report_bytes(
-        if cli.report_format == ReportFormat::Json {
-            ReportFormat::Json
-        } else {
-            ReportFormat::Human
-        },
+        emergency_report_format(cli.report_format),
         Some(identity),
         Some(format),
         failure,
@@ -1370,8 +1380,43 @@ fn write_stdout(bytes: &[u8]) -> u8 {
 }
 
 fn write_stream(writer: &mut impl Write, bytes: &[u8]) -> Result<(), CliOperation> {
-    writer.write_all(bytes).map_err(|_| CliOperation::Write)?;
-    writer.flush().map_err(|_| CliOperation::Flush)
+    write_stream_tracked(writer, bytes).map_err(|(operation, _)| operation)
+}
+
+fn write_stream_tracked(
+    writer: &mut impl Write,
+    mut bytes: &[u8],
+) -> Result<(), (CliOperation, DeliveryState)> {
+    let mut wrote_bytes = false;
+    let state = |wrote_bytes| {
+        if wrote_bytes {
+            DeliveryState::PossiblyPartial
+        } else {
+            DeliveryState::None
+        }
+    };
+    while !bytes.is_empty() {
+        match writer.write(bytes) {
+            Ok(0) => {
+                return Err((CliOperation::Write, state(wrote_bytes)));
+            }
+            Ok(written) => {
+                wrote_bytes = true;
+                bytes = &bytes[written..];
+            }
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            Err(_) => {
+                return Err((CliOperation::Write, state(wrote_bytes)));
+            }
+        }
+    }
+    loop {
+        match writer.flush() {
+            Ok(()) => return Ok(()),
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => {}
+            Err(_) => return Err((CliOperation::Flush, state(wrote_bytes))),
+        }
+    }
 }
 
 struct StagedFile {
@@ -1424,9 +1469,13 @@ impl StagedFile {
             fs::rename(&self.temporary, &self.destination).map_err(|_| CliOperation::Replace)?;
         } else {
             fs::hard_link(&self.temporary, &self.destination).map_err(|_| CliOperation::Create)?;
-            let _ = fs::remove_file(&self.temporary);
+            if fs::remove_file(&self.temporary).is_ok() {
+                self.temporary.clear();
+            }
         }
-        self.temporary.clear();
+        if self.replace {
+            self.temporary.clear();
+        }
         Ok(())
     }
 }
