@@ -1,0 +1,901 @@
+use excalidraw_render_assets_base::{FontSubsetTableAction, FONT_SUBSET_TABLE_RULES_V1};
+use skera::{subset_font, Plan, SubsetFlags};
+use std::num::NonZeroUsize;
+use write_fonts::from_obj::FromTableRef;
+use write_fonts::read::{
+    collections::IntSet,
+    types::{GlyphId, NameId, Tag},
+    FontRef, TableProvider,
+};
+use write_fonts::tables::glyf::{GlyfLocaBuilder, Glyph};
+use write_fonts::FontBuilder;
+
+const SUBSET_FLAGS: SubsetFlags = SubsetFlags::SUBSET_FLAGS_DEFAULT;
+const ENCODER_THREADS: Option<NonZeroUsize> = None;
+
+#[derive(Debug)]
+pub(super) struct Error {
+    pub(super) stage: crate::SvgFontSubsetStage,
+}
+
+pub(super) struct Derived {
+    pub(super) woff2: Vec<u8>,
+    pub(super) decoded_sfnt_bytes: usize,
+    pub(super) subset_sfnt_bytes: usize,
+    pub(super) subset_tables: usize,
+}
+
+pub(super) fn derive(
+    source_woff2: &[u8],
+    scalars: &[u32],
+    effective_alias: &str,
+    semantic_identity: &str,
+) -> Result<Derived, Error> {
+    let source_sfnt = wuff::decompress_woff2(source_woff2).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Decode,
+    })?;
+    let font = FontRef::new(&source_sfnt).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Plan,
+    })?;
+    validate_source_profile(&font)?;
+
+    let input_glyphs = IntSet::<GlyphId>::empty();
+    let input_unicodes = scalars.iter().copied().collect::<IntSet<u32>>();
+    let drop_tables = FONT_SUBSET_TABLE_RULES_V1
+        .iter()
+        .filter(|rule| rule.action == FontSubsetTableAction::Drop)
+        .map(|rule| Tag::new(&rule.tag))
+        .collect::<IntSet<Tag>>();
+    let layout_scripts = IntSet::<Tag>::all();
+    let layout_features = IntSet::<Tag>::all();
+    let name_ids = (0_u16..=6)
+        .chain([13, 14])
+        .map(NameId::new)
+        .collect::<IntSet<NameId>>();
+    let name_languages = [0x0409_u16].into_iter().collect::<IntSet<u16>>();
+    let plan = Plan::new(
+        &input_glyphs,
+        &input_unicodes,
+        &font,
+        SUBSET_FLAGS,
+        &drop_tables,
+        &layout_scripts,
+        &layout_features,
+        &name_ids,
+        &name_languages,
+    );
+    let subset_sfnt = subset_font(&font, &plan).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    let subset_sfnt = rewrite_names(&subset_sfnt, effective_alias, semantic_identity)?;
+    let subset_sfnt = normalize_simple_glyph_overlap(&subset_sfnt)?;
+
+    let subset_woff2 = ttf2woff2::encode_with_options(
+        &subset_sfnt,
+        ttf2woff2::EncodeOptions {
+            quality: ttf2woff2::BrotliQuality::from(11),
+            transform_glyf_loca: true,
+            threads: ENCODER_THREADS,
+        },
+    )
+    .map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Encode,
+    })?;
+    let decoded = wuff::decompress_woff2(&subset_woff2).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    let decoded_font = FontRef::new(&decoded).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    validate_checksums(&subset_sfnt)?;
+    validate_checksums(&decoded)?;
+    validate_canonical_agreement(&subset_sfnt, &decoded)?;
+    validate_table_policy(&font, &decoded_font)?;
+    validate_mappings_and_metrics(&source_sfnt, &decoded, scalars)?;
+    validate_names(&source_sfnt, &decoded, effective_alias, semantic_identity)?;
+    Ok(Derived {
+        woff2: subset_woff2,
+        decoded_sfnt_bytes: source_sfnt.len(),
+        subset_sfnt_bytes: subset_sfnt.len(),
+        subset_tables: decoded_font.table_directory().table_records().len(),
+    })
+}
+
+fn rewrite_names(sfnt: &[u8], alias: &str, identity: &str) -> Result<Vec<u8>, Error> {
+    let font = FontRef::new(sfnt).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    let source_name = font.data_for_tag(Tag::new(b"name")).ok_or(Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    let prefix = identity.get(..32).ok_or(Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    let postscript_alias = alias.replace(' ', "-");
+    let rewritten = [
+        (1_u16, alias.to_owned()),
+        (2, "Regular".to_owned()),
+        (3, format!("excalidraw-render;{alias};{identity}")),
+        (4, format!("{alias} Regular {prefix}")),
+        (6, format!("{postscript_alias}-Regular-{prefix}")),
+    ];
+    let mut records = Vec::<(u16, Vec<u8>)>::new();
+    for name_id in [0_u16, 1, 2, 3, 4, 5, 6, 13, 14] {
+        let bytes = if let Some((_, value)) = rewritten.iter().find(|(id, _)| *id == name_id) {
+            utf16be(value)
+        } else if let Some(bytes) = english_name(source_name.as_bytes(), name_id) {
+            bytes.to_vec()
+        } else {
+            continue;
+        };
+        records.push((name_id, bytes));
+    }
+    let count = u16::try_from(records.len()).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    let string_offset = 6_usize
+        .checked_add(records.len().checked_mul(12).ok_or(Error {
+            stage: crate::SvgFontSubsetStage::Sfnt,
+        })?)
+        .ok_or(Error {
+            stage: crate::SvgFontSubsetStage::Sfnt,
+        })?;
+    let mut table = Vec::new();
+    let strings_len = records
+        .iter()
+        .try_fold(0_usize, |total, (_, bytes)| total.checked_add(bytes.len()))
+        .ok_or(Error {
+            stage: crate::SvgFontSubsetStage::Sfnt,
+        })?;
+    table
+        .try_reserve_exact(string_offset.checked_add(strings_len).ok_or(Error {
+            stage: crate::SvgFontSubsetStage::Sfnt,
+        })?)
+        .map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Sfnt,
+        })?;
+    table.extend_from_slice(&0_u16.to_be_bytes());
+    table.extend_from_slice(&count.to_be_bytes());
+    table.extend_from_slice(
+        &u16::try_from(string_offset)
+            .map_err(|_| Error {
+                stage: crate::SvgFontSubsetStage::Sfnt,
+            })?
+            .to_be_bytes(),
+    );
+    let mut offset = 0_usize;
+    for (name_id, bytes) in &records {
+        table.extend_from_slice(&3_u16.to_be_bytes());
+        table.extend_from_slice(&1_u16.to_be_bytes());
+        table.extend_from_slice(&0x0409_u16.to_be_bytes());
+        table.extend_from_slice(&name_id.to_be_bytes());
+        table.extend_from_slice(
+            &u16::try_from(bytes.len())
+                .map_err(|_| Error {
+                    stage: crate::SvgFontSubsetStage::Sfnt,
+                })?
+                .to_be_bytes(),
+        );
+        table.extend_from_slice(
+            &u16::try_from(offset)
+                .map_err(|_| Error {
+                    stage: crate::SvgFontSubsetStage::Sfnt,
+                })?
+                .to_be_bytes(),
+        );
+        offset = offset.checked_add(bytes.len()).ok_or(Error {
+            stage: crate::SvgFontSubsetStage::Sfnt,
+        })?;
+    }
+    for (_, bytes) in records {
+        table.extend_from_slice(&bytes);
+    }
+    let mut builder = FontBuilder::new();
+    builder.add_raw(Tag::new(b"name"), table);
+    builder.copy_missing_tables(font);
+    let rewritten = builder.build();
+    FontRef::new(&rewritten).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    Ok(rewritten)
+}
+
+fn english_name(table: &[u8], name_id: u16) -> Option<&[u8]> {
+    let count = usize::from(u16::from_be_bytes(table.get(2..4)?.try_into().ok()?));
+    let strings = usize::from(u16::from_be_bytes(table.get(4..6)?.try_into().ok()?));
+    for index in 0..count {
+        let start = 6_usize.checked_add(index.checked_mul(12)?)?;
+        let record = table.get(start..start.checked_add(12)?)?;
+        let platform = u16::from_be_bytes(record.get(0..2)?.try_into().ok()?);
+        let language = u16::from_be_bytes(record.get(4..6)?.try_into().ok()?);
+        let candidate_id = u16::from_be_bytes(record.get(6..8)?.try_into().ok()?);
+        if platform != 3 || language != 0x0409 || candidate_id != name_id {
+            continue;
+        }
+        let length = usize::from(u16::from_be_bytes(record.get(8..10)?.try_into().ok()?));
+        let offset = usize::from(u16::from_be_bytes(record.get(10..12)?.try_into().ok()?));
+        let value_start = strings.checked_add(offset)?;
+        return table.get(value_start..value_start.checked_add(length)?);
+    }
+    None
+}
+
+fn utf16be(value: &str) -> Vec<u8> {
+    value
+        .encode_utf16()
+        .flat_map(u16::to_be_bytes)
+        .collect::<Vec<_>>()
+}
+
+fn validate_names(source: &[u8], sfnt: &[u8], alias: &str, identity: &str) -> Result<(), Error> {
+    let source = FontRef::new(source).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    let source_table = source.data_for_tag(Tag::new(b"name")).ok_or(Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    let font = FontRef::new(sfnt).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    let table = font.data_for_tag(Tag::new(b"name")).ok_or(Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    for (name_id, expected) in [
+        (1_u16, alias.to_owned()),
+        (2, "Regular".to_owned()),
+        (3, format!("excalidraw-render;{alias};{identity}")),
+        (4, format!("{alias} Regular {}", &identity[..32])),
+        (
+            6,
+            format!("{}-Regular-{}", alias.replace(' ', "-"), &identity[..32]),
+        ),
+    ] {
+        if english_name(table.as_bytes(), name_id) != Some(utf16be(&expected).as_slice()) {
+            return Err(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            });
+        }
+    }
+    for name_id in [0_u16, 5, 13, 14] {
+        if let Some(expected) = english_name(source_table.as_bytes(), name_id) {
+            if english_name(table.as_bytes(), name_id) != Some(expected) {
+                return Err(Error {
+                    stage: crate::SvgFontSubsetStage::Validate,
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_mappings_and_metrics(
+    source: &[u8],
+    subset: &[u8],
+    scalars: &[u32],
+) -> Result<(), Error> {
+    let source = rustybuzz::Face::from_slice(source, 0).ok_or(Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    let subset = rustybuzz::Face::from_slice(subset, 0).ok_or(Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    if source.units_per_em() != subset.units_per_em()
+        || source.ascender() != subset.ascender()
+        || source.descender() != subset.descender()
+        || source.line_gap() != subset.line_gap()
+    {
+        return Err(Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        });
+    }
+    let mut retained_text = String::new();
+    for scalar in scalars {
+        let Some(character) = char::from_u32(*scalar) else {
+            return Err(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            });
+        };
+        if let Some(source_glyph) = source.glyph_index(character) {
+            let subset_glyph = subset.glyph_index(character).ok_or(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            })?;
+            if source.glyph_hor_advance(source_glyph) != subset.glyph_hor_advance(subset_glyph) {
+                return Err(Error {
+                    stage: crate::SvgFontSubsetStage::Validate,
+                });
+            }
+            let mut source_outline = Outline::default();
+            let mut subset_outline = Outline::default();
+            let source_bounds = source.outline_glyph(source_glyph, &mut source_outline);
+            let subset_bounds = subset.outline_glyph(subset_glyph, &mut subset_outline);
+            if source_bounds != subset_bounds || source_outline != subset_outline {
+                return Err(Error {
+                    stage: crate::SvgFontSubsetStage::Validate,
+                });
+            }
+            retained_text.push(character);
+        }
+    }
+    validate_shaping_probe(&source, &subset, &retained_text, None)?;
+    for character in retained_text.chars() {
+        let mut repeated = String::new();
+        repeated
+            .try_reserve(character.len_utf8() * 3)
+            .map_err(|_| Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            })?;
+        repeated.extend([character, character, character]);
+        validate_shaping_probe(
+            &source,
+            &subset,
+            &repeated,
+            Some(rustybuzz::Direction::LeftToRight),
+        )?;
+        validate_shaping_probe(
+            &source,
+            &subset,
+            &repeated,
+            Some(rustybuzz::Direction::RightToLeft),
+        )?;
+    }
+    for probe in ["fi", "fl", "ffi", "office", "لا"] {
+        if probe
+            .chars()
+            .all(|character| retained_text.contains(character))
+        {
+            validate_shaping_probe(&source, &subset, probe, None)?;
+        }
+    }
+    Ok(())
+}
+
+fn validate_shaping_probe(
+    source: &rustybuzz::Face<'_>,
+    subset: &rustybuzz::Face<'_>,
+    text: &str,
+    direction: Option<rustybuzz::Direction>,
+) -> Result<(), Error> {
+    let shape = |face: &rustybuzz::Face<'_>| {
+        let mut buffer = rustybuzz::UnicodeBuffer::new();
+        buffer.push_str(text);
+        if let Some(direction) = direction {
+            buffer.set_direction(direction);
+        }
+        buffer.guess_segment_properties();
+        rustybuzz::shape(face, &[], buffer)
+    };
+    let source_shape = shape(source);
+    let subset_shape = shape(subset);
+    if source_shape.glyph_infos().len() != subset_shape.glyph_infos().len()
+        || source_shape
+            .glyph_infos()
+            .iter()
+            .zip(subset_shape.glyph_infos())
+            .any(|(source, subset)| source.cluster != subset.cluster)
+        || source_shape
+            .glyph_positions()
+            .iter()
+            .zip(subset_shape.glyph_positions())
+            .any(|(source, subset)| {
+                source.x_advance != subset.x_advance
+                    || source.y_advance != subset.y_advance
+                    || source.x_offset != subset.x_offset
+                    || source.y_offset != subset.y_offset
+            })
+    {
+        return Err(Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        });
+    }
+    for (source_info, subset_info) in source_shape
+        .glyph_infos()
+        .iter()
+        .zip(subset_shape.glyph_infos())
+    {
+        let source_id = u16::try_from(source_info.glyph_id).map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        })?;
+        let subset_id = u16::try_from(subset_info.glyph_id).map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        })?;
+        let mut source_outline = Outline::default();
+        let mut subset_outline = Outline::default();
+        let source_bounds = source.outline_glyph(
+            rustybuzz::ttf_parser::GlyphId(source_id),
+            &mut source_outline,
+        );
+        let subset_bounds = subset.outline_glyph(
+            rustybuzz::ttf_parser::GlyphId(subset_id),
+            &mut subset_outline,
+        );
+        if source_bounds != subset_bounds || source_outline != subset_outline {
+            return Err(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            });
+        }
+    }
+    Ok(())
+}
+
+fn validate_source_profile(font: &FontRef<'_>) -> Result<(), Error> {
+    for record in font.table_directory().table_records() {
+        if table_rule(record.tag()).is_none() {
+            return Err(Error {
+                stage: crate::SvgFontSubsetStage::Plan,
+            });
+        }
+    }
+    for rule in FONT_SUBSET_TABLE_RULES_V1 {
+        if rule.required && font.data_for_tag(Tag::new(&rule.tag)).is_none() {
+            return Err(Error {
+                stage: crate::SvgFontSubsetStage::Plan,
+            });
+        }
+    }
+    let glyph_count = usize::from(
+        font.maxp()
+            .map_err(|_| Error {
+                stage: crate::SvgFontSubsetStage::Plan,
+            })?
+            .num_glyphs(),
+    );
+    let loca = font.loca(None).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Plan,
+    })?;
+    let glyf = font.glyf().map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Plan,
+    })?;
+    if loca.len() != glyph_count || !loca.all_offsets_are_ascending() {
+        return Err(Error {
+            stage: crate::SvgFontSubsetStage::Plan,
+        });
+    }
+    for glyph_id in 0..glyph_count {
+        let glyph_id = u32::try_from(glyph_id).map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Plan,
+        })?;
+        let glyph = loca
+            .get_glyf(GlyphId::new(glyph_id), &glyf)
+            .map_err(|_| Error {
+                stage: crate::SvgFontSubsetStage::Plan,
+            })?;
+        if let Some(write_fonts::read::tables::glyf::Glyph::Composite(composite)) = glyph {
+            for component in composite.components() {
+                if usize::from(component.glyph.to_u16()) >= glyph_count
+                    || loca
+                        .get_glyf(GlyphId::new(component.glyph.to_u32()), &glyf)
+                        .map_err(|_| Error {
+                            stage: crate::SvgFontSubsetStage::Plan,
+                        })?
+                        .is_none()
+                {
+                    return Err(Error {
+                        stage: crate::SvgFontSubsetStage::Plan,
+                    });
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_table_policy(source: &FontRef<'_>, subset: &FontRef<'_>) -> Result<(), Error> {
+    for record in subset.table_directory().table_records() {
+        if table_rule(record.tag()).is_none() {
+            return Err(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            });
+        }
+    }
+    for rule in FONT_SUBSET_TABLE_RULES_V1 {
+        let tag = Tag::new(&rule.tag);
+        let source_data = source.data_for_tag(tag);
+        let subset_data = subset.data_for_tag(tag);
+        match rule.action {
+            FontSubsetTableAction::Drop if subset_data.is_some() => {
+                return Err(Error {
+                    stage: crate::SvgFontSubsetStage::Validate,
+                });
+            }
+            FontSubsetTableAction::PassThrough
+                if subset_data.map(|data| data.as_bytes())
+                    != source_data.map(|data| data.as_bytes()) =>
+            {
+                return Err(Error {
+                    stage: crate::SvgFontSubsetStage::Validate,
+                });
+            }
+            _ => {}
+        }
+        if rule.required && subset_data.is_none() {
+            return Err(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            });
+        }
+    }
+    Ok(())
+}
+
+fn table_rule(tag: Tag) -> Option<&'static excalidraw_render_assets_base::FontSubsetTableRule> {
+    FONT_SUBSET_TABLE_RULES_V1
+        .iter()
+        .find(|rule| Tag::new(&rule.tag) == tag)
+}
+
+fn canonicalize_sfnt(sfnt: &[u8]) -> Result<Vec<u8>, Error> {
+    let font = FontRef::new(sfnt).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    let mut builder = FontBuilder::new();
+    builder.copy_missing_tables(font);
+    Ok(builder.build())
+}
+
+fn validate_canonical_agreement(generated: &[u8], decoded: &[u8]) -> Result<(), Error> {
+    let generated = canonicalize_sfnt(generated)?;
+    let decoded = canonicalize_sfnt(decoded)?;
+    let generated = FontRef::new(&generated).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    let decoded = FontRef::new(&decoded).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    })?;
+    let generated_tags = generated
+        .table_directory()
+        .table_records()
+        .iter()
+        .map(|record| record.tag())
+        .collect::<Vec<_>>();
+    let decoded_tags = decoded
+        .table_directory()
+        .table_records()
+        .iter()
+        .map(|record| record.tag())
+        .collect::<Vec<_>>();
+    if generated_tags != decoded_tags {
+        return Err(Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        });
+    }
+    if canonical_glyf_loca(&generated)? != canonical_glyf_loca(&decoded)? {
+        return Err(Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        });
+    }
+    for tag in generated_tags {
+        if tag == Tag::new(b"glyf") || tag == Tag::new(b"loca") {
+            continue;
+        }
+        let generated_data = generated.data_for_tag(tag).ok_or(Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        })?;
+        let decoded_data = decoded.data_for_tag(tag).ok_or(Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        })?;
+        if tag == Tag::new(b"head") {
+            let mut generated_head = generated_data.as_bytes().to_vec();
+            let mut decoded_head = decoded_data.as_bytes().to_vec();
+            generated_head
+                .get_mut(8..12)
+                .ok_or(Error {
+                    stage: crate::SvgFontSubsetStage::Validate,
+                })?
+                .fill(0);
+            decoded_head
+                .get_mut(8..12)
+                .ok_or(Error {
+                    stage: crate::SvgFontSubsetStage::Validate,
+                })?
+                .fill(0);
+            if generated_head != decoded_head {
+                return Err(Error {
+                    stage: crate::SvgFontSubsetStage::Validate,
+                });
+            }
+        } else if generated_data.as_bytes() != decoded_data.as_bytes() {
+            return Err(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            });
+        }
+    }
+    Ok(())
+}
+
+fn canonical_glyf_loca(font: &FontRef<'_>) -> Result<(Vec<u8>, Vec<u8>), Error> {
+    let (glyf, loca) = rebuild_glyf_loca(font, false, crate::SvgFontSubsetStage::Validate)?;
+    Ok((
+        write_fonts::dump_table(&glyf).map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        })?,
+        write_fonts::dump_table(&loca).map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        })?,
+    ))
+}
+
+fn normalize_simple_glyph_overlap(sfnt: &[u8]) -> Result<Vec<u8>, Error> {
+    let font = FontRef::new(sfnt).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    let (glyf, loca) = rebuild_glyf_loca(&font, true, crate::SvgFontSubsetStage::Sfnt)?;
+    if i16::from(loca.format() as u8)
+        != font
+            .head()
+            .map_err(|_| Error {
+                stage: crate::SvgFontSubsetStage::Sfnt,
+            })?
+            .index_to_loc_format()
+    {
+        return Err(Error {
+            stage: crate::SvgFontSubsetStage::Sfnt,
+        });
+    }
+    let mut builder = FontBuilder::new();
+    builder.add_table(&glyf).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    builder.add_table(&loca).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    builder.copy_missing_tables(font);
+    Ok(builder.build())
+}
+
+fn rebuild_glyf_loca(
+    font: &FontRef<'_>,
+    clear_simple_overlap: bool,
+    stage: crate::SvgFontSubsetStage,
+) -> Result<
+    (
+        write_fonts::tables::glyf::Glyf,
+        write_fonts::tables::loca::Loca,
+    ),
+    Error,
+> {
+    let glyf = font.glyf().map_err(|_| Error { stage })?;
+    let loca = font.loca(None).map_err(|_| Error { stage })?;
+    let glyph_count = font.maxp().map_err(|_| Error { stage })?.num_glyphs();
+    let mut builder = GlyfLocaBuilder::new();
+    for glyph_id in 0..glyph_count {
+        let glyph_ref = loca
+            .get_glyf(GlyphId::new(u32::from(glyph_id)), &glyf)
+            .map_err(|_| Error { stage })?;
+        if let Some(write_fonts::read::tables::glyf::Glyph::Composite(composite)) = &glyph_ref {
+            for component in composite.components() {
+                if component.glyph.to_u32() >= u32::from(glyph_count)
+                    || loca
+                        .get_glyf(GlyphId::new(component.glyph.to_u32()), &glyf)
+                        .map_err(|_| Error { stage })?
+                        .is_none()
+                {
+                    return Err(Error { stage });
+                }
+            }
+        }
+        let mut glyph = glyph_ref
+            .map(|glyph| Glyph::from_table_ref(&glyph))
+            .unwrap_or(Glyph::Empty);
+        if clear_simple_overlap {
+            if let Glyph::Simple(simple) = &mut glyph {
+                simple.overlaps = false;
+            }
+        }
+        builder.add_glyph(&glyph).map_err(|_| Error { stage })?;
+    }
+    let (glyf, loca, _) = builder.build();
+    Ok((glyf, loca))
+}
+
+#[derive(Default, PartialEq)]
+struct Outline(Vec<OutlineCommand>);
+
+#[derive(PartialEq)]
+enum OutlineCommand {
+    Move(f32, f32),
+    Line(f32, f32),
+    Quad(f32, f32, f32, f32),
+    Curve(f32, f32, f32, f32, f32, f32),
+    Close,
+}
+
+impl rustybuzz::ttf_parser::OutlineBuilder for Outline {
+    fn move_to(&mut self, x: f32, y: f32) {
+        self.0.push(OutlineCommand::Move(x, y));
+    }
+
+    fn line_to(&mut self, x: f32, y: f32) {
+        self.0.push(OutlineCommand::Line(x, y));
+    }
+
+    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
+        self.0.push(OutlineCommand::Quad(x1, y1, x, y));
+    }
+
+    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
+        self.0.push(OutlineCommand::Curve(x1, y1, x2, y2, x, y));
+    }
+
+    fn close(&mut self) {
+        self.0.push(OutlineCommand::Close);
+    }
+}
+
+fn validate_checksums(sfnt: &[u8]) -> Result<(), Error> {
+    if sfnt.len() % 4 != 0
+        || sfnt.chunks_exact(4).fold(0_u32, |sum, word| {
+            sum.wrapping_add(u32::from_be_bytes(word.try_into().unwrap_or([0; 4])))
+        }) != 0xb1b0_afba
+    {
+        return Err(Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        });
+    }
+    let count = usize::from(u16::from_be_bytes(
+        sfnt.get(4..6)
+            .and_then(|bytes| bytes.try_into().ok())
+            .ok_or(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            })?,
+    ));
+    for index in 0..count {
+        let start = 12_usize
+            .checked_add(index.checked_mul(16).ok_or(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            })?)
+            .ok_or(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            })?;
+        let record = sfnt.get(start..start + 16).ok_or(Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        })?;
+        let is_head = record.get(0..4) == Some(b"head");
+        let expected = u32::from_be_bytes(record[4..8].try_into().map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        })?);
+        let offset = usize::try_from(u32::from_be_bytes(record[8..12].try_into().map_err(
+            |_| Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            },
+        )?))
+        .map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        })?;
+        let length = usize::try_from(u32::from_be_bytes(record[12..16].try_into().map_err(
+            |_| Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            },
+        )?))
+        .map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Validate,
+        })?;
+        let data = sfnt
+            .get(
+                offset..offset.checked_add(length).ok_or(Error {
+                    stage: crate::SvgFontSubsetStage::Validate,
+                })?,
+            )
+            .ok_or(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            })?;
+        if table_checksum(data, is_head) != expected {
+            return Err(Error {
+                stage: crate::SvgFontSubsetStage::Validate,
+            });
+        }
+    }
+    Ok(())
+}
+
+fn table_checksum(data: &[u8], zero_adjustment: bool) -> u32 {
+    let mut sum = 0_u32;
+    for (index, chunk) in data.chunks(4).enumerate() {
+        let mut word = [0_u8; 4];
+        word[..chunk.len()].copy_from_slice(chunk);
+        if zero_adjustment && index == 2 {
+            word = [0; 4];
+        }
+        sum = sum.wrapping_add(u32::from_be_bytes(word));
+    }
+    sum
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn manifested_zero_subset_flags_disable_every_skera_option() {
+        for flag in [
+            SubsetFlags::SUBSET_FLAGS_NO_HINTING,
+            SubsetFlags::SUBSET_FLAGS_RETAIN_GIDS,
+            SubsetFlags::SUBSET_FLAGS_DESUBROUTINIZE,
+            SubsetFlags::SUBSET_FLAGS_NAME_LEGACY,
+            SubsetFlags::SUBSET_FLAGS_SET_OVERLAPS_FLAG,
+            SubsetFlags::SUBSET_FLAGS_PASSTHROUGH_UNRECOGNIZED,
+            SubsetFlags::SUBSET_FLAGS_NOTDEF_OUTLINE,
+            SubsetFlags::SUBSET_FLAGS_GLYPH_NAMES,
+            SubsetFlags::SUBSET_FLAGS_NO_PRUNE_UNICODE_RANGES,
+            SubsetFlags::SUBSET_FLAGS_NO_LAYOUT_CLOSURE,
+            SubsetFlags::SUBSET_FLAGS_OPTIMIZE_IUP_DELTAS,
+            SubsetFlags::SUBSET_FLAGS_NO_BIDI_CLOSURE,
+        ] {
+            assert!(!SUBSET_FLAGS.contains(flag));
+        }
+        assert_eq!(ENCODER_THREADS, None);
+    }
+
+    #[test]
+    fn malformed_woff2_sources_return_typed_failures_without_panicking() {
+        let record = &excalidraw_render_assets_base::revision_1().assets[0];
+        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+            .expect("qualified source verifies")
+            .expect("qualified source exists");
+        let mut bad_signature = asset.bytes().to_vec();
+        bad_signature[0] ^= 0xff;
+        for malformed in [
+            &[][..],
+            &asset.bytes()[..4],
+            &asset.bytes()[..asset.bytes().len() / 2],
+            bad_signature.as_slice(),
+        ] {
+            let result = std::panic::catch_unwind(|| {
+                derive(malformed, &[u32::from('A')], "Test", &"0".repeat(64))
+            });
+            let failure = result.expect("malformed source handling does not panic");
+            let error = match failure {
+                Ok(_) => panic!("malformed WOFF2 is rejected"),
+                Err(error) => error,
+            };
+            assert_eq!(error.stage, crate::SvgFontSubsetStage::Decode);
+        }
+    }
+
+    #[test]
+    fn malformed_generated_sfnt_validation_is_bounded_and_typed() {
+        for malformed in [&[][..], &[0, 1, 0, 0][..], &[0; 12][..], &[0; 64][..]] {
+            assert_eq!(
+                validate_checksums(malformed)
+                    .expect_err("malformed sfnt is rejected")
+                    .stage,
+                crate::SvgFontSubsetStage::Validate
+            );
+        }
+    }
+
+    #[test]
+    fn every_official_chunk_produces_repeatable_valid_woff2() {
+        for record in excalidraw_render_assets_base::revision_1().assets {
+            let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
+                record.family,
+                record.upstream_path,
+            )
+            .unwrap_or_else(|| panic!("{} has qualified ranges", record.upstream_path));
+            let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+                .expect("qualified source verifies")
+                .expect("qualified source exists");
+            let sfnt = wuff::decompress_woff2(asset.bytes()).expect("qualified source decodes");
+            let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("qualified source parses");
+            let scalar = ranges
+                .iter()
+                .flat_map(|(start, end)| *start..=*end)
+                .find(|scalar| {
+                    char::from_u32(*scalar)
+                        .is_some_and(|character| face.glyph_index(character).is_some())
+                })
+                .unwrap_or_else(|| panic!("{} declares a mapped scalar", record.upstream_path));
+            let alias = match record.family {
+                "Cascadia" => "ExcalidrawRender-3",
+                "Liberation" => "ExcalidrawRender-9",
+                "Lilita" => "ExcalidrawRender-7",
+                "Virgil" => "ExcalidrawRender-1",
+                "ComicShanns" => "Comic Shanns",
+                family => family,
+            };
+            let first = derive(asset.bytes(), &[scalar], alias, &"0".repeat(64))
+                .unwrap_or_else(|error| panic!("{} subsets at {:?}", record.upstream_path, error));
+            let second = derive(asset.bytes(), &[scalar], alias, &"0".repeat(64))
+                .unwrap_or_else(|error| panic!("{} repeats at {:?}", record.upstream_path, error));
+            assert_eq!(first.woff2, second.woff2, "{}", record.upstream_path);
+        }
+    }
+}

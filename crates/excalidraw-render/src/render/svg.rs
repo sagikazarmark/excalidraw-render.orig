@@ -14,8 +14,7 @@ pub(super) struct SvgPlan {
     output_height: f64,
     background: Option<CanonicalColor>,
     fallback_colors: super::FallbackColors,
-    fallback_font_woff2: Option<Vec<u8>>,
-    official_fonts: Vec<super::ResolvedFont>,
+    font_bundle: super::svg_fonts::Bundle,
     mandatory_notices: Option<super::notices::MandatoryNotices>,
     metadata: Option<super::metadata::ArtifactMetadata>,
     elements: Vec<SvgElement>,
@@ -220,14 +219,13 @@ impl SvgPlan {
     pub(super) fn new(
         scene: ResolvedScene,
         request: &RenderRequest,
+        mut font_bundle: super::svg_fonts::Bundle,
     ) -> Result<Self, FormatEncodeError> {
         let scale = match request.sizing() {
             Sizing::Scale(scale) => scale,
             Sizing::MaxDimension(_) => 1.0,
         };
-        let fallback_font_woff2 = scene.fallback_font_woff2;
-        let official_fonts = scene.official_fonts;
-        let mandatory_notices = scene.mandatory_notices;
+        let mandatory_notices = font_bundle.take_mandatory_notices();
         let mut elements = Vec::new();
         elements
             .try_reserve_exact(scene.elements.len())
@@ -377,8 +375,7 @@ impl SvgPlan {
             output_height: scene.logical_height * scale,
             background: scene.include_background.then_some(scene.background_color),
             fallback_colors: scene.fallback_colors,
-            fallback_font_woff2,
-            official_fonts,
+            font_bundle,
             mandatory_notices,
             metadata: None,
             elements,
@@ -387,29 +384,12 @@ impl SvgPlan {
 
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
         let mut capacity = 256_usize;
-        if let Some(font) = &self.fallback_font_woff2 {
-            capacity = checked_capacity_add(
-                capacity,
-                font.len()
-                    .checked_add(2)
-                    .and_then(|length| length.checked_div(3))
-                    .and_then(|groups| groups.checked_mul(4))
-                    .and_then(|encoded| encoded.checked_add(256))
-                    .ok_or_else(svg_size_error)?,
-            )?;
-        }
-        for font in &self.official_fonts {
-            capacity = checked_capacity_add(
-                capacity,
-                font.woff2
-                    .len()
-                    .checked_add(2)
-                    .and_then(|length| length.checked_div(3))
-                    .and_then(|groups| groups.checked_mul(4))
-                    .and_then(|encoded| encoded.checked_add(256))
-                    .ok_or_else(svg_size_error)?,
-            )?;
-        }
+        capacity = checked_capacity_add(
+            capacity,
+            self.font_bundle
+                .encoded_capacity()
+                .ok_or_else(svg_size_error)?,
+        )?;
         if let Some(manifest) = self
             .metadata
             .as_ref()
@@ -563,32 +543,7 @@ impl SvgPlan {
             svg.push_str("</excalidraw-render:manifest>");
         }
         svg.push_str("</metadata>");
-        if self.fallback_font_woff2.is_none() && self.official_fonts.is_empty() {
-            svg.push_str("<defs></defs>");
-        }
-        if let Some(font) = &self.fallback_font_woff2 {
-            svg.push_str(concat!(
-                "<defs><style>@font-face{font-family:'Liberation Sans';font-style:normal;",
-                "font-weight:400;src:url(data:font/woff2;base64,"
-            ));
-            push_base64(&mut svg, font)?;
-            svg.push_str(") format('woff2')}</style></defs>");
-        }
-        for font in &self.official_fonts {
-            svg.push_str("<defs><style>@font-face{font-family:'");
-            svg.push_str(font.family);
-            svg.push_str("';font-style:normal;font-weight:400;src:url(data:");
-            svg.push_str(font.svg_mime);
-            svg.push_str(";base64,");
-            push_base64(&mut svg, &font.woff2)?;
-            svg.push_str(") format('");
-            svg.push_str(if font.svg_mime == "font/ttf" {
-                "truetype"
-            } else {
-                "woff2"
-            });
-            svg.push_str("')}</style></defs>");
-        }
+        self.font_bundle.write(&mut svg, push_base64)?;
         if let Some(background) = &self.background {
             svg.push_str("<rect x=\"0\" y=\"0\" width=\"");
             push_svg_number(&mut svg, self.logical_width, "SVG background width")?;
@@ -737,7 +692,7 @@ impl SvgPlan {
                                 "failed to write SVG embeddable label color".to_owned(),
                             )
                         })?;
-                        svg.push_str("\" font-family=\"Liberation Sans\" font-size=\"");
+                        svg.push_str("\" font-family=\"ExcalidrawRender-9\" font-size=\"");
                         push_svg_number(&mut svg, label.font_size, "SVG embeddable font size")?;
                         svg.push_str("\">");
                         for line in &label.lines {
@@ -753,7 +708,10 @@ impl SvgPlan {
                                             )
                                         })?;
                                     svg.push_str("<tspan font-family=\"");
-                                    push_escaped_attribute(&mut svg, run.font_family);
+                                    push_escaped_attribute(
+                                        &mut svg,
+                                        super::svg_fonts::Bundle::effective_family(run.font_family),
+                                    );
                                     svg.push_str(if run.rtl {
                                         "\" direction=\"rtl\" x=\""
                                     } else {
@@ -1006,7 +964,9 @@ impl SvgPlan {
                                 )?;
                             }
                         }
-                        svg.push_str("\" font-family=\"Liberation Sans\" font-size=\"14\" fill=\"");
+                        svg.push_str(
+                            "\" font-family=\"ExcalidrawRender-9\" font-size=\"14\" fill=\"",
+                        );
                         svg.push_str(if *magic { "#7affd7" } else { "#1b1b1f" });
                         svg.push_str("\">");
                         push_escaped_text(&mut svg, &name.display_text);
@@ -1063,7 +1023,10 @@ impl SvgPlan {
                         FormatEncodeError::Encoding("failed to write SVG text color".to_owned())
                     })?;
                     svg.push_str("\" font-family=\"");
-                    push_escaped_attribute(&mut svg, text.font_family);
+                    push_escaped_attribute(
+                        &mut svg,
+                        super::svg_fonts::Bundle::effective_family(text.font_family),
+                    );
                     svg.push_str("\" font-size=\"");
                     push_svg_number(&mut svg, text.font_size, "SVG text font size")?;
                     let (line_x, text_anchor) = match text.text_align {
@@ -1094,7 +1057,10 @@ impl SvgPlan {
                                         )
                                     })?;
                                 svg.push_str("<tspan font-family=\"");
-                                push_escaped_attribute(&mut svg, run.font_family);
+                                push_escaped_attribute(
+                                    &mut svg,
+                                    super::svg_fonts::Bundle::effective_family(run.font_family),
+                                );
                                 svg.push_str(if run.rtl {
                                     "\" direction=\"rtl\" text-anchor=\"start\" x=\""
                                 } else {
@@ -1349,7 +1315,7 @@ impl SvgPlan {
                                 )
                             })?;
                         svg.push_str(concat!(
-                            "\" font-family=\"Liberation Sans\" font-size=\"14\" ",
+                            "\" font-family=\"ExcalidrawRender-9\" font-size=\"14\" ",
                             "text-anchor=\"middle\" dominant-baseline=\"central\">"
                         ));
                         push_escaped_text(&mut svg, label);

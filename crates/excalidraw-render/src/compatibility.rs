@@ -299,6 +299,8 @@ impl ErrorCode {
     pub const RENDER_NO_MEANINGFUL_ARTIFACT: Self = Self("render.no-meaningful-artifact");
     /// SVG encoding failed.
     pub const ENCODE_SVG_FAILED: Self = Self("encode.svg-failed");
+    /// A required direct-SVG font subset could not be produced or validated.
+    pub const ENCODE_SVG_FONT_SUBSET_FAILED: Self = Self("encode.svg-font-subset-failed");
     /// PNG encoding failed.
     pub const ENCODE_PNG_FAILED: Self = Self("encode.png-failed");
     /// PDF encoding failed.
@@ -480,6 +482,15 @@ pub enum ErrorDetails {
         /// Required substitution recovery.
         recovery: Recovery,
     },
+    /// Identifies a fatal direct-SVG font subset operation.
+    SvgFontSubsetFailure {
+        /// First failed subset pipeline stage.
+        stage: SvgFontSubsetStage,
+        /// Resolved bundled family being derived.
+        resolved_family: String,
+        /// Official source chunk identity.
+        asset_identity: String,
+    },
     /// Identifies an optional metadata component failure.
     Metadata {
         /// Metadata component being processed.
@@ -511,6 +522,23 @@ pub enum ErrorDetails {
         /// Canonical nested paths that caused the closure.
         causes: Vec<NestedPath>,
     },
+}
+
+/// Stable stage vocabulary for a direct-SVG font subset failure.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[non_exhaustive]
+#[serde(rename_all = "snake_case")]
+pub enum SvgFontSubsetStage {
+    /// WOFF2 source decoding failed.
+    Decode,
+    /// Subset planning failed.
+    Plan,
+    /// Subset sfnt construction failed.
+    Sfnt,
+    /// WOFF2 encoding failed.
+    Encode,
+    /// Generated font validation failed.
+    Validate,
 }
 
 /// Stable recovery applied after diagnosed compatibility loss.
@@ -972,6 +1000,18 @@ mod tests {
                 concat!(
                     "{\"kind\":\"missing_glyph\",\"codepoint\":1114111,",
                     "\"recovery\":\"substituted\"}"
+                ),
+            ),
+            (
+                ErrorDetails::SvgFontSubsetFailure {
+                    stage: SvgFontSubsetStage::Validate,
+                    resolved_family: "Excalifont".to_owned(),
+                    asset_identity: "fonts/Excalifont/chunk.woff2@sha256:abc".to_owned(),
+                },
+                concat!(
+                    "{\"kind\":\"svg_font_subset_failure\",\"stage\":\"validate\",",
+                    "\"resolved_family\":\"Excalifont\",",
+                    "\"asset_identity\":\"fonts/Excalifont/chunk.woff2@sha256:abc\"}"
                 ),
             ),
             (

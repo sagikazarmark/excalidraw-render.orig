@@ -1,19 +1,21 @@
 # Excalidraw Static Renderer Specification
 
-Document version: `1.0.0`
+Document version: `1.1.0`
 
 Compatibility revision: `1`
 
-Status: Implementation update awaiting maintainer approval
+Status: Draft amendment approved; implementation and qualification pending
 
-Approval: Required after the revision-1 frame-export expansion
+Approval: Revision-1 frame-export and SVG-font-subsetting decisions approved; final evidence approval required before publication
 
 ## 1. Authority
 
-This document is the normative, implementation-ready contract for compatibility
-revision 1 of `excalidraw-render`. It supersedes conflicting wording in research
-notes, issue bodies, resolution comments, the current MVP, and the repository
-README. Those sources remain rationale and evidence, not parallel specifications.
+This document is the normative approved design contract for compatibility
+revision 1 of `excalidraw-render`. It becomes implementation-ready when the
+closed artifacts required by Section 18 are incorporated. It supersedes
+conflicting wording in research notes, issue bodies, resolution comments, the
+current MVP, and the repository README. Those sources remain rationale and
+evidence, not parallel specifications.
 
 The keywords MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are normative.
 
@@ -87,6 +89,16 @@ Compatibility revision 1 is bound to official Excalidraw `v0.18.1`:
 The source commit and npm integrity MUST both match. A material mismatch blocks
 adoption. Excalidraw envelope version `2` is not an Excalidraw release or a
 compatibility revision.
+
+A compatibility revision is `draft` until the first package containing that
+revision is published. A draft revision has no released compatibility promise
+and MAY change through ordinary reviewed specification, manifest, evidence, and
+implementation updates. First publication is the immutability boundary: the
+published revision becomes `retained`, and its valid-request artifact bytes,
+diagnostics, failures, profile identity, asset policy, and semantic resource
+traces MUST NOT change. A contract-relevant change after that boundary creates a
+new monotonic revision. Revision 1 remains draft because no package containing it
+has been published.
 
 ### 3.1 Normative Artifacts
 
@@ -577,9 +589,13 @@ and diagnostics in the scene-surface manifest.
 
 ### 8.3 Typography
 
-SVG embeds only required, unmodified official Unicode-range font chunks. PNG
-uses deterministic shaping and controlled glyph-outline rasterization. No
-format consults installed fonts or OS text services.
+Direct scene and frame SVG exports embed request-derived subsets of required
+official Unicode-range WOFF2 chunks under the contract below. PNG and PDF font
+artifacts, typography, diagnostics, failures, notices, and resource ledgers are
+unchanged. Text and fonts inside sanitized nested SVG are unchanged and do not
+participate in direct-export subsetting. PNG uses deterministic shaping and
+controlled glyph-outline rasterization. No format consults installed fonts or
+OS text services.
 
 Liberation Sans and Noto Emoji replace local-only Helvetica/Arial and Segoe UI
 Emoji behavior for user text and generated labels, with one informational
@@ -587,12 +603,135 @@ substitution diagnostic per affected occurrence. Missing codepoints use the
 bundled deterministic replacement glyph at defined metrics and identify the
 element and codepoint.
 
+#### 8.3.1 Semantic Demand and Face Selection
+
+The Excalidraw adapter MUST collect first-use-ordered Unicode scalar values from
+the compatibility-normalized `originalText` of every live target text occurrence
+that survives local recovery, followed by every visibly emitted generated label
+in deterministic emission order. Omitted text and omitted labels contribute
+nothing. Deduplication preserves first use. Values are grouped by resolved
+bundled family; source family IDs `2` and `9` resolve to the same Liberation
+family demand, while occurrence diagnostics remain source-ID-specific.
+
+The revision binds an exact CJK scalar table equivalent to the pinned Chromium
+149 predicate. If any scalar in Excalifont demand belongs to that table, the
+adapter copies the complete Excalifont scalar set to Xiaolai and prepends Xiaolai
+to resolved family order. The table bytes, digest, and selected-codepoint classes
+MUST be frozen in the compatibility asset manifest before release.
+
+For each resolved family in canonical fallback order, `svg_fonts` compares every
+unique scalar with every official face's declared Unicode range and selects each
+intersecting WOFF2 chunk in pinned face order. Every selected chunk receives the
+complete ordered family scalar set, not only its range intersection. A used
+non-WOFF2 fallback, including Noto Emoji, remains complete and is emitted once;
+it is never subset. Only qualified, digest-verified built-in assets participate.
+Custom fonts and a public subset interface are forbidden.
+
+#### 8.3.2 Subset Profile, Names, and Identity
+
+Subset output is renderer-owned cross-target bytes with semantic parity; it is
+not required or permitted to claim Excalidraw WOFF2 byte identity. The revision
+MUST pin the complete profile and its digest. The profile is HarfBuzz-like: keep
+all layout scripts and features, ordinary layout and TrueType composite closure,
+hinting, and glyph renumbering; do not pin variation axes. Drop `morx`, `mort`,
+`kerx`, legacy `kern`, `JSTF`, `DSIG`, `EBDT`, `EBLC`, `EBSC`, `SVG `, `PCLT`,
+`LTSH`, and Graphite tables. Pass through `gasp`, `fpgm`, `prep`, and `VDMX`.
+Clear `OVERLAP_SIMPLE` while rebuilding canonical `glyf`/`loca`; this is an
+explicit profile normalization applied before WOFF2 encoding, not an encoder
+side effect.
+Every other table occurring in the sealed font corpus MUST have an explicit
+keep, subset, rewrite, pass-through, or drop classification in a frozen manifest;
+dependency defaults and unknown-table defaults MUST NOT decide output.
+
+Retain English name records for IDs `0` through `6`, `13`, and `14`. Copyright,
+version, license description, and license URL remain semantically unchanged.
+Family, full, unique, and PostScript identities are rewritten deterministically.
+An OFL subset is a Modified Version. Reserved Font Name families use these CSS
+aliases and primary OpenType family names:
+
+| Source family | Required alias |
+| --- | --- |
+| Virgil | `ExcalidrawRender-1` |
+| Cascadia Code | `ExcalidrawRender-3` |
+| Lilita | `ExcalidrawRender-7` |
+| Liberation | `ExcalidrawRender-9` |
+
+The licensing and compatibility rationale is recorded in
+[ADR 0001](adr/0001-treat-font-subsets-as-modified-versions.md).
+
+Non-Reserved-Font-Name families retain their canonical family names. The same
+effective alias MUST be used by SVG text, CSS, and primary OpenType names.
+
+Subset semantic identity is SHA-256 over this exact preimage, where digests are
+their 32 raw bytes and asset identity is UTF-8:
+
+```text
+UTF-8("excalidraw-render:svg-font-subset:v1")
+NUL
+u64-le(compatibility revision)
+full 32-byte subset-profile digest
+u64-le(source asset identity byte length)
+source asset identity
+source asset digest
+u64-le(unique scalar count)
+u32-le(first scalar) ... u32-le(last scalar)
+```
+
+The full 64-digit lowercase digest appears in the mandatory subset notice and
+name ID `3` as `excalidraw-render;<effective-alias>;<full-digest>`. Name ID `1`
+is the effective alias, ID `2` is `Regular`, ID `4` is
+`<effective-alias> Regular <digest-prefix>`, and ID `6` is
+`<postscript-alias>-Regular-<digest-prefix>`. `digest-prefix` is the first 128
+digest bits as 32 lowercase hexadecimal digits; `postscript-alias` replaces each
+ASCII space in the effective alias with `-`. IDs `0`, `5`, `13`, and `14` retain
+their approved source text. Identity is computed and semantically deduplicated
+before decode or subset work.
+
+#### 8.3.3 Derivation and Validation
+
+The decoder is pinned `wuff 0.2.8`. The sfnt subset adapter MUST first qualify
+`skera 0.5.1`; otherwise a pinned controlled fork is required. The encoder MUST
+first qualify `ttf2woff2 0.13.2`; otherwise a pinned controlled fork is required.
+WOFF2 encoding uses quality 11, `glyf`/`loca` transformation, one thread, and no
+metadata or private block. Families and faces are processed sequentially in
+canonical order.
+
+Every generated WOFF2 MUST be decoded and parsed before use. Validation checks
+container and sfnt structure, checksums, the frozen table policy, required
+`cmap`, layout and composite closure, metrics, names, and legal records. It also
+requires byte equality after the generated sfnt and WOFF2-decoded sfnt are each
+canonicalized by the same renderer-owned serializer to tag-sorted tables,
+recomputed table and font checksums, canonical `head.checkSumAdjustment`, and
+zero alignment padding. Raw sfnt reconstruction bytes need not be identical.
+Any decode, plan, sfnt construction, encode, or validation failure is fatal
+`encode.svg-font-subset-failed`, with stage, resolved family, and source asset
+identity. There is no complete-chunk fallback, partial family, partial SVG, or
+success diagnostic.
+
 ### 8.4 SVG
 
 SVG MUST be semantic and self-contained. It preserves selectable text, safe
 anchors, logical transforms and bounds, clipping, masks, frame appearance,
 paint order, accepted images, required fonts, deterministic IDs, notices,
 metadata, and deterministic serialization.
+
+`<defs>` contains exactly one font style element, `<style class="style-fonts">`,
+when direct-export fonts are used. It contains one `@font-face` declaration for
+each selected subset chunk and used unchanged fallback in canonical
+fallback/family/face order. A declaration contains only the effective
+`font-family` and data-URL `src`; selected subsets use WOFF2 and unchanged
+fallbacks retain their manifested format. Range and source-family properties are
+not emitted. CSS, data URL, base64, declaration, and style serialization are
+canonical. All selected chunks and used unchanged fallbacks share this one style
+block; no second font style element is emitted. The artifact manifest carries
+one complete applicable OFL or MIT license text per canonical license identity
+and distinct mandatory subset notices in canonical subset-identity order.
+
+Request-scoped and frame-batch physical caches MAY retain qualified source
+decodes and identical derived bytes. Each SVG target nevertheless derives the
+same semantic demands and replays the same complete semantic resource transcript
+as an uncached render; cache hits cannot change bytes, reports, first crossings,
+failures, or release points.
 
 An owned typed serializer controls namespace and attribute order, number
 formatting, IDs, embedded assets, escaping, links, and bytes. A backend tree
@@ -761,9 +900,10 @@ The implementation MUST use one-way layers:
 5. Build a typed format-specific projection plan.
 6. Encode artifact bytes.
 
-Compatibility revision 1 is a sealed bundle binding the reference profile,
+Compatibility revision 1 is a draft bundle binding the reference profile,
 defaults, normalization, compatibility algorithms, asset catalog, and projection
-policies. Later revisions add bundles rather than scatter version checks.
+policies. First publication seals and retains that complete bundle; later
+revisions add bundles rather than scatter version checks.
 
 Each render owns a request-scoped session containing semantic resource
 accounting, an ordered diagnostic sink, scene-local asset state, and
@@ -785,6 +925,23 @@ No observable order may depend on hash iteration.
 
 SVG, PNG, and PDF have separate typed plans. A universal display list,
 scattered backend conditionals, and serialized-SVG pivot are forbidden.
+
+Direct SVG font work uses two package-private deep modules and one thin adapter.
+`font_subset` exposes request-scoped derivation from one qualified chunk and
+ordered scalar set under its hidden frozen profile and concrete resource account;
+it owns decode-plan-sfnt-encode-validation and knows no SVG or scene type. `svg_fonts`
+consumes typed semantic family demand and owns family/range selection, bundling,
+measurement, CSS/data-URL writing, and its resource transcript; it knows no
+Excalidraw scene type. The Excalidraw adapter owns `originalText`, generated-label
+collection, resolved source families, omission and local-recovery decisions, and
+the CJK rule, then bridges typed demand inward. Dependencies are strictly
+adapter to `svg_fonts` to `font_subset`; reverse or lateral scene dependencies
+are forbidden. Transcript ownership is `svg_fonts` for family/range/CSS/bundle
+events and `font_subset` for decode/plan/sfnt/encode/validate events.
+
+These modules remain inside the renderer until a real second production caller
+or an independently owned and published fork justifies extraction. There is no
+backend trait, public font option, or public subsetting API.
 
 The current MVP is evidence only, not a migration constraint. Its permissive
 model, discarded fields, local defaults, approximate geometry, SVG pivot,
@@ -814,22 +971,26 @@ using a platform decoder or weakening compatibility. `usvg`/`resvg` can process
 only sanitized bounded nested SVG under deny-all resource access.
 
 Compatibility revision 1 ships all 230 byte-identical official rendering WOFF2
-files across eight families, exact Liberation Sans and Noto Emoji fallback
-inputs, reviewed lossless predecoded sfnt equivalents, retained deprecated
-families, and exact Font Awesome fallback paths. The asset manifest's lengths
-and digests are authoritative. Assistant remains excluded.
+source files across eight families, exact Liberation Sans and Noto Emoji
+fallback inputs, qualified decoder inputs, retained deprecated families, and
+exact Font Awesome fallback paths. The asset manifest's source lengths and
+digests are authoritative. Assistant remains excluded. Direct SVG may derive
+only the deterministic subsets and rewritten identities specified in Section
+8.3; the source assets remain unchanged.
 
 Installed fonts, network fallback, system font services, official nested
-HarfBuzz/WOFF2 WASM helpers, runtime subsetting, merging, and renaming are
-forbidden. Each predecoded sfnt records source and output digests, pinned tool,
-invocation, table/name/metric/license comparison, reviewer, and date. Any
-content, metric, table, or name change needs new approval.
+HarfBuzz/WOFF2 WASM helpers, custom-font subsetting, merging, and unspecified
+renaming are forbidden. Each qualified source decode and subset toolchain records
+source, intermediate, and output digests; exact versions and invocation; complete
+profile and corpus-table-manifest digest; table/name/metric/license comparison;
+workspace bounds; reviewer; and date. Any unprofiled content, metric, table, or
+name change needs new approval.
 
 Reserved Font Names `Virgil`, `Cascadia Code`, `Lilita`, and `Liberation` remain
-only on exact official bytes and approved lossless decoding equivalents.
-Excalifont remains exact official content and carries Excalifont and Virgil
-provenance. Noto Emoji `3.003` uses the exact manifested path/hash without a
-stronger historical-origin claim.
+only on exact official source bytes and approved lossless decoding equivalents;
+generated Modified Versions use the Section 8.3 aliases. Excalifont source
+content carries Excalifont and Virgil provenance. Noto Emoji `3.003` uses the
+exact manifested path/hash without a stronger historical-origin claim.
 
 Fonts are OFL-1.1 except MIT-licensed Comic Shanns. Font Awesome geometry is CC
 BY 4.0. Copied or ported Excalidraw, Rough.js, Perfect Freehand, and
@@ -897,7 +1058,8 @@ alone is insufficient. `rust-version` equals the official stable compiler. The
 first release promises no explicit native deployment floor beyond the target OS
 ABI; release notes record toolchain and immutable builder identity.
 
-SVG carries complete notices for embedded fonts and rendered Font Awesome
+SVG carries the Section 8.3 complete license texts and distinct subset notices,
+plus complete notices for unchanged embedded fallbacks and rendered Font Awesome
 fallbacks. PNG carries Font Awesome attribution in deterministic `iTXt` only
 when that geometry appears; rasterized font glyphs alone carry no OFL notice.
 Official reference evidence remains byte-identical and carries notices in
@@ -981,8 +1143,9 @@ null. CLI-preserved library errors preserve the library pointer.
 Every render error has an admitted scene. Source-owned failures point to the
 narrowest owner; scene/output-global failures use root. PDF fallback failures
 point to the outermost causative effect node, with nested identity in details.
-Mandatory-notice carrier failure uses root. The pointer belongs to the earliest
-canonical failed transaction, never later speculative work.
+SVG font-subset and mandatory-notice carrier failures use root. The pointer
+belongs to the earliest canonical failed transaction, never later speculative
+work.
 
 Diagnostic pointer rules include:
 
@@ -1045,6 +1208,7 @@ members and kinds are invalid.
 {"kind":"resource_limit","field":<string>,"configured":<number>,"value_kind":<value-kind>,"measurement":<measurement>,"recovery":<recovery|null>}
 {"kind":"memory_unavailable","subject_kind":<string>,"subject":<string>}
 {"kind":"missing_glyph","codepoint":<integer>,"recovery":"substituted"}
+{"kind":"svg_font_subset_failure","stage":<svg-font-subset-stage>,"resolved_family":<string>,"asset_identity":<string>}
 {"kind":"metadata","component":<string>,"operation":<string>,"recovery":"metadata_omitted"}
 {"kind":"nested_source","asset_chain":[<asset-chain-entry>],"paths":[<nested-path>],"recovery":<recovery>}
 {"kind":"pdf_raster_fallback","recovery":<"rasterized"|null>,"logical_bounds":<logical-bounds|null>,"pixel_width":<integer|null>,"pixel_height":<integer|null>,"causes":[<nested-path>]}
@@ -1062,6 +1226,7 @@ asset-chain-entry = {"asset_id":<string|null>,"occurrence":<nonnegative integer>
 nested-path = {"segments":[{"kind":<nested-segment-kind>,"ordinal":<nonnegative integer>,"name":<string|null>}]}
 logical-bounds = {"x":<finite number>,"y":<finite number>,"width":<finite number>,"height":<finite number>}
 cli-path-entry = {"role":<"input"|"asset"|"output"|"report">,"asset_id":<string|null>,"path":<string>}
+svg-font-subset-stage = <"decode"|"plan"|"sfnt"|"encode"|"validate">
 ```
 
 Nested segment kinds are `node`, `attribute`, `css_rule`, `css_declaration`,
@@ -1098,7 +1263,8 @@ Detail bindings are fixed, not producer-selected:
 | `scene.parse-memory-exceeded` | `parse_limit`, `max_parse_working_bytes`, bytes |
 | Every `request.*` | `request_value`; canonical rejected field and applicable asset/option |
 | `revision.unsupported` | `revision` with parsed requested revision |
-| `scene.unbounded-geometry`, encoder/internal failures | null |
+| `scene.unbounded-geometry`, encoder/internal failures other than `encode.svg-font-subset-failed` | null |
+| `encode.svg-font-subset-failed` | `svg_font_subset_failure`; first failed stage, resolved family, source asset identity |
 | Fatal PDF fallback | `pdf_raster_fallback`, null recovery, first closure |
 | `resource.memory-unavailable` | `memory_unavailable`; no semantic limit measurement |
 | Other fatal resources | `resource_limit`, null recovery, mapping in Section 11.2 |
@@ -1196,6 +1362,7 @@ pdf.raster-fallback-forbidden
 pdf.raster-fallback-unisolatable
 render.no-meaningful-artifact
 encode.svg-failed
+encode.svg-font-subset-failed
 encode.png-failed
 encode.pdf-failed
 render.internal-failure
@@ -1359,8 +1526,10 @@ populated as soon as selected. Artifact descriptors contain no bytes.
 Revision-discovery schema 1 contains schema version, renderer version, and
 increasing revision entries with compatibility revision, Excalidraw release,
 profile digest, and default flag in that order. An incompatible shape or new
-detail kind requires a new report schema; a new stable code can remain in schema
-1 only with null details or an existing detail kind.
+detail kind after first publication requires a new report schema; a new stable
+code can then remain in schema 1 only with null details or an existing detail
+kind. The unpublished schema 1 defined here already includes
+`svg_font_subset_failure`.
 
 ## 12. Artifact Manifest
 
@@ -1397,8 +1566,15 @@ JSON:
 
 Unrequested, omitted, or failed provenance, summary, and embedded scene are
 literal null. `notices` is always an array, sorted by canonical asset identity,
-and does not deduplicate equal notice text. `by_severity` always contains info
-then warning. `by_code` contains positive counts sorted by stable-code bytes.
+and deduplicates complete license texts by canonical license identity; the
+license notice object's `asset_identity` is that canonical license identity.
+Every subset identity still contributes one distinct existing-schema notice object:
+its `asset_identity` is the full subset semantic identity, and its canonical
+`text` contains source identity and digest, profile digest, output digest and
+length, effective alias, and transformation statement; OFL output is identified
+as a Modified Version. Equal subset notice text is not deduplicated.
+`by_severity` always contains info then warning. `by_code` contains positive
+counts sorted by stable-code bytes.
 
 The manifest exists when an optional component survives or a mandatory notice
 applies; otherwise it is absent. Schema 1 is closed and caller-unselectable.
@@ -1705,6 +1881,66 @@ The revision-1 work ledger is:
 | 32 | Each font fallback probe |
 | 32 | Each glyph-outline command |
 
+Direct SVG font subsetting adds these canonical events for each target. First,
+all family-scalar-set events occur in resolved family order. Then each candidate
+face produces one considered event in pinned face order and, when selected, an
+immediately following selected event. Only after every family completes
+selection are selected chunks derived in `(family order, face order)`. An event
+that does not apply is absent rather than represented by a zero transaction.
+
+| Event | Required semantic ingredients |
+| --- | --- |
+| `svg_font_family_scalar_set` | Every unique first-use scalar and its ordered `u32` storage |
+| `svg_font_chunk_considered` | For every candidate face in pinned order, the complete Cartesian product of first-use-ordered family scalars and normalized declared ranges in source order |
+| `svg_font_chunk_selected` | One selected source identity/order record when at least one considered pair intersects |
+| `svg_font_dependency_envelope` | Before the first opaque dependency call, the frozen conservative work and live-record envelope for every selected chunk in derivation order |
+| `svg_font_woff2_decode` | Exact compressed input bytes, manifested decoded maximum, exact decoded sfnt bytes, and every decoded table record |
+| `svg_font_subset_plan` | Profile/table-manifest records, every requested scalar, and every closure glyph charged before expansion |
+| `svg_font_subset_sfnt` | Exact generated sfnt bytes and table records |
+| `svg_font_woff2_encode` | Exact sfnt input, conservative qualified quality-11 workspace, and exact generated WOFF2 bytes |
+| `svg_font_validate` | Exact generated WOFF2 decode/parse bytes, table records, closure, metrics, names, legal records, and sfnt-agreement comparisons |
+| `svg_font_css_data_url` | Exact WOFF2, base64, declaration, style-block, and resulting SVG output bytes |
+
+Each ingredient pays every applicable existing per-byte, scalar, glyph, table,
+format-plan, retained-output, working-byte, and total-work row. Source compressed
+bytes and immutable catalog storage remain excluded from working bytes, but work
+over them is charged. Decoded and generated variable bytes use the existing
+request-derived built-in blob record `256 + A(n)`; selected chunks use built-in
+selection state; scalar, range, table, and closure entries use built-in
+glyph/range or format-plan records as applicable. Exact checked arithmetic is
+mandatory. Pinned dependencies that do not expose incremental budget hooks run
+under one revision-defined conservative dependency envelope. For a selected
+chunk, let `S` be its exact compressed byte length, `D` its manifested decoded
+sfnt length, `U` the family scalar count, `T = D / 16`, `G = 65,535`,
+`F = 256 * D`, `W = 2 * D`, and `E = 8 MiB`. `F` is the maximum
+adapter-produced sfnt and adapter workspace, `W` is the maximum generated WOFF2,
+`E` is the quality-11 encoder workspace, `T` is the sfnt table-record ceiling,
+and `G` is the TrueType glyph ceiling. The per-chunk work envelope is:
+
+```text
+(S + D + 8T)
++ (32U + 32G)
++ (F + 8T)
++ (F + W)
++ (W + F + 32G)
++ (W + 4 * ceil(W / 3))
+```
+
+The live envelope is the sum of retained `256 + A(W)` records for all selected
+chunks plus the maximum, over one sequentially active chunk, of
+`256 + A(D) + 256 + A(F) + E + 64 * (U + G)`. The envelope formulas and
+constants are compatibility semantics rather than measurements of allocator
+behavior. Qualification MUST prove that every admitted sealed chunk and
+selected-codepoint class remains within them. Exceeding `F`, `W`, `T`, or `G`
+after an accepted envelope is an internal qualification failure, never a larger
+late resource transaction.
+
+All `svg_font_chunk_considered` work for every candidate face in a family is
+charged before that family's first selected-chunk derivation. The semantic charge
+does not short-circuit after an intersection; physical range indexing may vary
+only if it preserves the complete candidate/scalar/range transactions and first
+crossing.
+
 Codec measurement and retained emission are two semantic passes even when
 physically fused. Dependencies must prove untrusted-dependent loops are bounded
 by prepaid semantic events.
@@ -1766,9 +2002,33 @@ Occurrence admission, relationships, per-reference projection, masking,
 compositing, repeated nested occurrences, plan references, surfaces, fallback,
 diagnostics, optional metadata occurrences, and output octets never share.
 
-Before work, determine an exact delta or permitted lower bound, evaluate every
-applicable limit, reserve accepted work/records, and perform only covered work.
-A rejected transaction commits no work, output, local count, or record.
+SVG family scalar and selection records are acquired before selection work. The
+dependency envelope is acquired after selection and before the first selected
+chunk is decoded; it covers all opaque decode, closure, subset, encode, and
+validation dependency work. The exact stage events that follow are observations
+validated against the accepted envelope and do not add work or working bytes.
+Family scalar and selection records release after bundle measurement; the
+dependency envelope and generated WOFF2 records release after serializer
+emission; output remains through outcome handoff. Failure releases all live
+records in reverse dependency order. A physical cache hit replays and charges
+this same sequence and these same boundaries; it is not `shared_intrinsic` in a
+target's semantic trace.
+
+For an SVG containing subsets, measurement first reserves the complete final
+output buffer. Encoding then commits output runs in ordinary serializer order,
+including font declarations with their base64 data URLs, notices, and remaining
+SVG bytes.
+At each transaction, working-byte crossing precedes output-byte crossing, which
+precedes total-work crossing. No subset, complete chunk, or partial artifact is
+retained after a rejected fatal transaction. Existing default and absolute
+resource limits are unchanged.
+
+Before work, determine an exact delta, a permitted lower bound, or the canonical
+SVG-font dependency envelope, evaluate every applicable limit, reserve accepted
+work/records, and perform only covered work. A rejected transaction commits no
+work, output, local count, or record. An accepted dependency envelope is not
+refunded when exact stage measurements are smaller; this keeps first crossing
+and cache transcripts independent of dependency allocation details.
 `at_least = limit + 1` is allowed only for bounded streaming stopped one unit
 after the ceiling or checked overflow.
 
@@ -1915,6 +2175,23 @@ pull request for parsing, normalization idempotence, bounded geometry, stable
 order, repeated rendering, and panic resistance. Parser, normalization,
 image/SVG, and renderer fuzzing runs at least nightly. Confirmed failures become
 permanent minimized regressions.
+
+SVG font subsetting is a release-blocking matrix over all 230 source chunks and
+every manifested selected-codepoint class. It includes exact fixtures for text
+and generated-label collection, first-use order, omission and local recovery,
+CJK propagation, family/range selection, layout and composite closure, names,
+Reserved Font Name aliases, semantic identity, complete licenses, distinct
+notices, CSS, and cache transcript replay. Malformed generated/source structures
+and fuzz cases MUST return typed failures without panic, trap, unbounded
+allocation, whole-chunk fallback, or partial output.
+
+Repeated artifacts and canonical resource traces MUST be exact on every
+supported native target and executed `wasm32-unknown-unknown`, including cold,
+warm, request-cache, and frame-batch-cache paths. Canonical Chromium and the
+controlled pure-Rust viewer each compare source chunks with generated subsets
+for shaping, glyph choice, metrics, line layout, selectable text, and rasterized
+typography. Both viewers MUST pass independently; source-vs-subset semantic
+parity, not Excalidraw subset bytes, is authoritative.
 
 Every variant first passes exact dimensions and complete report comparison. SVG
 semantic checks cover declared consumer-visible semantics rather than official
@@ -2064,13 +2341,14 @@ pure-Rust decoders and revision-1 frame/orientation/color conversion, then
 supplies a deterministic in-memory PNG. Nested SVG remains sanitized SVG.
 
 Each artifact gets a fresh empty font database. The viewer parses every embedded
-`@font-face` and WOFF2 data URL; verifies payload hash, family, style, weight,
-stretch, Unicode range, and media type against the asset catalog; maps the exact
-identity to its reviewed sfnt; loads only artifact-declared faces in catalog
-order; rejects duplicate `(family, stretch, style, weight)` tuples; and maps
-every generic family explicitly to Liberation Sans. Catalog order is also
-fallback order. If Liberation Sans is absent, no ambient replacement is added.
-Full-catalog preload, scanning, aliases, host fallback, shared
+`@font-face` and WOFF2 data URL; verifies canonical CSS, effective alias, subset
+identity, payload hash, source/profile/output notice fields, and media type;
+decodes and validates the generated font under Section 8.3; and loads only
+artifact-declared faces in canonical fallback/family/face order. It rejects
+duplicate effective face tuples and maps every generic family explicitly to the
+artifact's Liberation alias. An unchanged non-WOFF2 fallback is matched to its
+manifested complete bytes. If Liberation is absent, no ambient replacement is
+added. Full-catalog preload, scanning, undeclared aliases, host fallback, shared
 databases, and any other face are forbidden.
 
 Premultiplied output sets RGB zero at alpha zero; otherwise each channel is
@@ -2299,6 +2577,13 @@ additional native live heap is at most 64 KiB and WASM growth at most two 64-KiB
 pages. SVG/PDF size fails above both 10% and 4 KiB; PNG above both 10% and 64
 KiB. Savings elsewhere do not offset growth.
 
+In addition, focused Latin, multi-chunk, and complete-CJK direct SVG fixtures
+containing subsets MUST each be more than 20% and 4 KiB smaller than a
+same-revision control embedding the selected complete chunks. A full-intersection fixture, whose family demand intersects
+every declared range, is exempt from this reduction threshold but not
+correctness or ordinary size gates. No representative-corpus direct SVG may grow
+against its same-revision complete-chunk control.
+
 Scaling subtracts matched empty median. A nonpositive or sub-quantum net value
 clamps only to monotonic-clock quantum divided by batch count for time, one byte
 for native heap/artifact size, or one 64-KiB page for WASM linear memory. Every
@@ -2443,13 +2728,16 @@ regenerate affected evidence, classify all changes, prove two-process stability,
 make renderer behavior and diagnostics conform, obtain explicit approval, and
 activate atomically with conformance and release documentation.
 
-A contract-relevant change to an existing valid renderer request creates the
-next monotonic compatibility revision. A revision MAY add a disjoint export
-target in place when every pre-existing request retains artifact bytes,
-diagnostics, profile identity, and failure behavior. Target-scoped reference
-profiles may share a revision when their scopes are disjoint or have no
-contract-relevant differences where they overlap. Reproducibility failure alone
-never authorizes refreshed evidence.
+Before first publication, a draft revision MAY incorporate reviewed
+contract-relevant changes, including disjoint export targets, by updating its
+complete specification, profile, manifests, evidence, approvals, and expected
+bytes together. First publication of any package containing the revision makes
+it retained. After that point, every contract-relevant change, including a new
+target, creates the next monotonic compatibility revision; the retained bundle
+and all valid pre-existing request behavior remain immutable. Target-scoped
+reference profiles may share a draft revision when their scopes are disjoint or
+have no contract-relevant differences where they overlap. Reproducibility
+failure alone never authorizes refreshed retained evidence.
 
 Exactly one reference-evidence tree MUST be active. Superseded evidence remains
 recoverable through immutable history, release tags, and archived release
@@ -2475,6 +2763,8 @@ The original scene-export contract was approved through
 [Publish and approve the canonical renderer specification](https://github.com/sagikazarmark/excalidraw-render.orig/issues/26).
 The frame-export amendment is specified by
 [Export Excalidraw frames as separate artifacts](https://github.com/sagikazarmark/excalidraw-render.orig/issues/97).
+The direct-SVG font-subsetting amendment is specified by
+[Add Excalidraw-compatible per-glyph SVG font subsetting](https://github.com/sagikazarmark/excalidraw-render.orig/issues/96).
 Changing these bytes invalidates the original adjacent approval subject; a new
 maintainer approval is required before release.
 
@@ -2523,3 +2813,4 @@ specification. They do not override its normalized wording.
 - [Define public outcomes and serialized contracts](https://github.com/sagikazarmark/excalidraw-render.orig/issues/16)
 - [Define the conformance comparison and approval protocol](https://github.com/sagikazarmark/excalidraw-render.orig/issues/21)
 - [Materialize the compatibility revision 1 scene-surface manifest](https://github.com/sagikazarmark/excalidraw-render.orig/issues/29)
+- [Add Excalidraw-compatible per-glyph SVG font subsetting](https://github.com/sagikazarmark/excalidraw-render.orig/issues/96)

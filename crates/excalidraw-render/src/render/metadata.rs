@@ -696,7 +696,9 @@ fn metadata_failure(
     operation: MetadataOperation,
 ) -> FormatEncodeError {
     match error {
-        FormatEncodeError::MemoryUnavailable { .. } => error,
+        FormatEncodeError::MemoryUnavailable { .. } | FormatEncodeError::SvgFontSubset { .. } => {
+            error
+        }
         FormatEncodeError::Encoding(_) | FormatEncodeError::Metadata(_) => {
             FormatEncodeError::Metadata(MetadataFailure {
                 code,

@@ -23,6 +23,8 @@ const SCENE_SURFACE_EVIDENCE_DIGEST: &str =
     "29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb";
 const RAW_SHARD_LIMIT: usize = 8 * 1024 * 1024;
 const CATALOG_SCHEMA: &str = "excalidraw-render/revision-catalog/v1";
+const CATALOG_SCHEMA_DIGEST: &str =
+    "053acdd51de993a5a9a8ba4a8a3bc4bd02255744bfc620e3c58545dda21586e0";
 const EXCALIFONT_BASIC_LATIN_PATH: &str =
     "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2";
 const EXCALIFONT_BASIC_LATIN_SHA256: &str =
@@ -35,37 +37,80 @@ const NOTO_EMOJI_SHA256: &str = "0ed584d111778b259f205a40807d78131de02a5b04dad4e
 const NOTO_EMOJI_LENGTH: usize = 862_680;
 const XIAOLAI_ORDER_SHA256: &str =
     "c2cbbbfa669404795527e06cf596ab4b1b851f9bb993c608c8ab9c3c2aabe9d3";
+const SVG_FONT_SUBSET_PROFILE_DIGEST: &str =
+    "37caac0a16cb0e0a0d56f526e57c7c0a42ae230d460b2442174847b51ad2b6a3";
+const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
+    "fc4e8ce56cb7bf4bca9dfd6f3495c9ae9f5440a5818aa3e6f645d5303265ff85";
 
-const ARTIFACTS: &[(&str, &str, &str)] = &[
-    (
+struct IncorporatedArtifactSource {
+    repository_path: &'static str,
+    digest: &'static str,
+    packaged_name: &'static str,
+    canonical_json: bool,
+}
+
+const fn artifact(
+    repository_path: &'static str,
+    digest: &'static str,
+    packaged_name: &'static str,
+    canonical_json: bool,
+) -> IncorporatedArtifactSource {
+    IncorporatedArtifactSource {
+        repository_path,
+        digest,
+        packaged_name,
+        canonical_json,
+    }
+}
+
+const ARTIFACTS: &[IncorporatedArtifactSource] = &[
+    artifact(
         "tests/oracle/reference-profiles/revision-1.json",
         PROFILE_DIGEST,
         "reference-profile.json",
+        true,
     ),
-    (
+    artifact(
         "tests/oracle/reference-profiles/revision-1-frame.json",
         FRAME_PROFILE_DIGEST,
         "reference-frame-profile.json",
+        true,
     ),
-    (
+    artifact(
         "tests/oracle/reference-profiles/revision-1-assets.json",
         ASSET_MANIFEST_DIGEST,
         "reference-assets.json",
+        true,
     ),
-    (
+    artifact(
         "tests/oracle/scene-surfaces/revision-1.json",
         SCENE_SURFACE_DIGEST,
         "scene-surface.json",
+        true,
     ),
-    (
+    artifact(
         "tests/oracle/scene-surfaces/scene-surface-v1.schema.json",
         SCENE_SURFACE_SCHEMA_DIGEST,
         "scene-surface.schema.json",
+        true,
     ),
-    (
+    artifact(
         "tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json",
         SCENE_SURFACE_EVIDENCE_DIGEST,
         "scene-surface-evidence.json",
+        true,
+    ),
+    artifact(
+        "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json",
+        SVG_FONT_SUBSET_PROFILE_DIGEST,
+        "svg-font-subset-profile.json",
+        true,
+    ),
+    artifact(
+        "tests/oracle/compatibility-artifacts/revision-1-chromium-149-cjk-scalars.bin",
+        CHROMIUM_149_CJK_SCALARS_DIGEST,
+        "chromium-149-cjk-scalars.bin",
+        false,
     ),
 ];
 
@@ -345,33 +390,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
     }
 
     let base = root.join("crates/excalidraw-render-assets-base");
-    let incorporated = base.join("catalog/incorporated");
-    fs::create_dir_all(&incorporated)
-        .map_err(|error| format!("failed to create catalog directory: {error}"))?;
-    for (repository_path, expected_digest, packaged_name) in ARTIFACTS {
-        verify_authoritative_sidecar(&root, repository_path, expected_digest)?;
-        let bytes = read_verified(
-            &root.join(repository_path),
-            expected_digest,
-            repository_path,
-        )?;
-        write_if_changed(&incorporated.join(packaged_name), &bytes)?;
-    }
-    let schema_path = base.join("catalog/revision-catalog-v1.schema.json");
-    let mut schema: Value = serde_json::from_slice(
-        &fs::read(&schema_path)
-            .map_err(|error| format!("failed to read {}: {error}", schema_path.display()))?,
-    )
-    .map_err(|error| format!("invalid revision catalog schema: {error}"))?;
-    schema["properties"]["incorporatedArtifacts"]["minItems"] = json!(ARTIFACTS.len());
-    schema["properties"]["incorporatedArtifacts"]["maxItems"] = json!(ARTIFACTS.len());
-    let schema_bytes = serde_json::to_vec(&schema)
-        .map_err(|error| format!("failed to canonicalize revision catalog schema: {error}"))?;
-    write_if_changed(&schema_path, &schema_bytes)?;
-    write_digest_sidecar(
-        &base.join("catalog/revision-catalog-v1.schema.sha256"),
-        &schema_bytes,
-    )?;
+    materialize_incorporated_artifacts(&root, &base)?;
 
     for (index, bytes) in shards.iter().enumerate() {
         let data_path = root.join(format!(
@@ -421,24 +440,129 @@ pub fn import(source_root: &str) -> Result<(), String> {
     verify()
 }
 
+pub fn materialize() -> Result<(), String> {
+    let root = crate::conformance::repo_root();
+    let base = root.join("crates/excalidraw-render-assets-base");
+    materialize_incorporated_artifacts(&root, &base)?;
+
+    let scene_surface = read_canonical_json(
+        &root.join("tests/oracle/scene-surfaces/revision-1.json"),
+        "scene-surface manifest",
+    )?;
+    verify_scene_surface(&root, &scene_surface)?;
+    let reference_assets = read_canonical_json(
+        &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
+        "reference asset manifest",
+    )?;
+    let catalog = expected_catalog(&reference_assets, &scene_surface)?;
+    let catalog_bytes = serde_json::to_vec(&catalog)
+        .map_err(|error| format!("failed to serialize revision catalog: {error}"))?;
+    write_if_changed(&base.join("catalog/revision-1.json"), &catalog_bytes)?;
+    write_digest_sidecar(&base.join("catalog/revision-1.sha256"), &catalog_bytes)?;
+
+    let generated = generate_rust(&catalog, &scene_surface, &catalog_bytes)?;
+    write_if_changed(
+        &base.join("src/generated/revision_1.rs"),
+        generated.as_bytes(),
+    )?;
+    verify()
+}
+
+fn materialize_incorporated_artifacts(root: &Path, base: &Path) -> Result<(), String> {
+    let incorporated = base.join("catalog/incorporated");
+    fs::create_dir_all(&incorporated)
+        .map_err(|error| format!("failed to create catalog directory: {error}"))?;
+    verify_incorporated_inventory(&incorporated)?;
+    for artifact in ARTIFACTS {
+        verify_authoritative_sidecar(root, artifact.repository_path, artifact.digest)?;
+        let bytes = read_verified(
+            &root.join(artifact.repository_path),
+            artifact.digest,
+            artifact.repository_path,
+        )?;
+        write_if_changed(&incorporated.join(artifact.packaged_name), &bytes)?;
+    }
+
+    let schema_path = base.join("catalog/revision-catalog-v1.schema.json");
+    let mut schema: Value = serde_json::from_slice(
+        &fs::read(&schema_path)
+            .map_err(|error| format!("failed to read {}: {error}", schema_path.display()))?,
+    )
+    .map_err(|error| format!("invalid revision catalog schema: {error}"))?;
+    schema["properties"]["incorporatedArtifacts"]["minItems"] = json!(ARTIFACTS.len());
+    schema["properties"]["incorporatedArtifacts"]["maxItems"] = json!(ARTIFACTS.len());
+    let schema_bytes = serde_json::to_vec(&schema)
+        .map_err(|error| format!("failed to canonicalize revision catalog schema: {error}"))?;
+    if sha256(&schema_bytes) != CATALOG_SCHEMA_DIGEST {
+        return Err("revision catalog schema differs from its pinned materialization".to_owned());
+    }
+    write_if_changed(&schema_path, &schema_bytes)?;
+    write_digest_sidecar(
+        &base.join("catalog/revision-catalog-v1.schema.sha256"),
+        &schema_bytes,
+    )
+}
+
+fn verify_incorporated_inventory(incorporated: &Path) -> Result<(), String> {
+    let expected = ARTIFACTS
+        .iter()
+        .map(|artifact| artifact.packaged_name)
+        .collect::<BTreeSet<_>>();
+    for entry in fs::read_dir(incorporated)
+        .map_err(|error| format!("failed to read {}: {error}", incorporated.display()))?
+    {
+        let entry = entry.map_err(|error| {
+            format!(
+                "failed to read incorporated artifact in {}: {error}",
+                incorporated.display()
+            )
+        })?;
+        let name = entry.file_name();
+        let name = name.to_str().ok_or_else(|| {
+            format!(
+                "incorporated artifact name is not UTF-8: {}",
+                entry.path().display()
+            )
+        })?;
+        if !entry
+            .file_type()
+            .map_err(|error| format!("failed to inspect {}: {error}", entry.path().display()))?
+            .is_file()
+            || !expected.contains(name)
+        {
+            return Err(format!(
+                "unexpected incorporated artifact: {}",
+                entry.path().display()
+            ));
+        }
+    }
+    Ok(())
+}
+
 pub fn verify() -> Result<(), String> {
     let root = crate::conformance::repo_root();
     let base = root.join("crates/excalidraw-render-assets-base");
+    verify_incorporated_inventory(&base.join("catalog/incorporated"))?;
 
-    for (repository_path, expected_digest, packaged_name) in ARTIFACTS {
-        verify_authoritative_sidecar(&root, repository_path, expected_digest)?;
+    for artifact in ARTIFACTS {
+        verify_authoritative_sidecar(&root, artifact.repository_path, artifact.digest)?;
         let authoritative = read_verified(
-            &root.join(repository_path),
-            expected_digest,
-            repository_path,
+            &root.join(artifact.repository_path),
+            artifact.digest,
+            artifact.repository_path,
         )?;
-        verify_canonical_json_bytes(&authoritative, repository_path)?;
-        let packaged_path = base.join("catalog/incorporated").join(packaged_name);
+        if artifact.canonical_json {
+            verify_canonical_json_bytes(&authoritative, artifact.repository_path)?;
+        }
+        let packaged_path = base
+            .join("catalog/incorporated")
+            .join(artifact.packaged_name);
         let packaged = fs::read(&packaged_path)
             .map_err(|error| format!("failed to read {}: {error}", packaged_path.display()))?;
         if packaged != authoritative {
             return Err(format!(
-                "packaged incorporated artifact differs from {repository_path}"
+                "packaged incorporated artifact differs from {}",
+                artifact.repository_path
             ));
         }
     }
@@ -699,9 +823,9 @@ fn build_catalog(assets: &[ImportedAsset], scene_surface: &Value) -> Result<Valu
         "compatibilityRevision": REVISION,
         "excalidrawRelease": EXCALIDRAW_RELEASE,
         "fallbackRecipeIdentities": fallback_ids,
-        "incorporatedArtifacts": ARTIFACTS.iter().map(|(path, digest, _)| json!({
-            "path": path,
-            "sha256": digest,
+        "incorporatedArtifacts": ARTIFACTS.iter().map(|artifact| json!({
+            "path": artifact.repository_path,
+            "sha256": artifact.digest,
         })).collect::<Vec<_>>(),
         "licenseIdentities": license_identities(),
         "noticeIdentities": notice_ids,
@@ -800,7 +924,7 @@ fn generate_rust(
     catalog_bytes: &[u8],
 ) -> Result<String, String> {
     let mut output = String::from(
-        "// Generated by `cargo run --locked -p xtask -- catalog import`; do not edit.\n\n",
+        "// Generated by `cargo run --locked -p xtask -- catalog import` or `catalog materialize`; do not edit.\n\n",
     );
     output.push_str("#[rustfmt::skip]\npub static ASSETS: [AssetRecord; 230] = [\n");
     let assets = catalog["assets"]
@@ -936,12 +1060,13 @@ fn generate_rust(
     rust_field(&mut output, "catalog_sha256", &sha256(catalog_bytes));
     output.push_str("    catalog_json: include_bytes!(\"../../catalog/revision-1.json\"),\n");
     output.push_str("    incorporated_artifacts: &[\n");
-    for (repository_path, digest, packaged_name) in ARTIFACTS {
+    for artifact in ARTIFACTS {
         output.push_str("        IncorporatedArtifact {\n");
-        rust_field_indented(&mut output, "repository_path", repository_path, 12);
-        rust_field_indented(&mut output, "sha256", digest, 12);
+        rust_field_indented(&mut output, "repository_path", artifact.repository_path, 12);
+        rust_field_indented(&mut output, "sha256", artifact.digest, 12);
         output.push_str(&format!(
-            "            bytes: include_bytes!(\"../../catalog/incorporated/{packaged_name}\"),\n"
+            "            bytes: include_bytes!(\"../../catalog/incorporated/{}\"),\n",
+            artifact.packaged_name
         ));
         output.push_str("        },\n");
     }
@@ -1184,6 +1309,9 @@ fn verify_catalog_schema(base: &Path, catalog: &Value) -> Result<(), String> {
         &base.join("catalog/revision-catalog-v1.schema.sha256"),
         &schema_bytes,
     )?;
+    if sha256(&schema_bytes) != CATALOG_SCHEMA_DIGEST {
+        return Err("revision catalog schema digest is not pinned".to_owned());
+    }
     let schema: Value = serde_json::from_slice(&schema_bytes)
         .map_err(|error| format!("invalid revision catalog schema: {error}"))?;
     jsonschema::draft202012::meta::validate(&schema)

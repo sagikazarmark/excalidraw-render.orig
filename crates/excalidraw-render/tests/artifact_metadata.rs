@@ -202,15 +202,28 @@ fn rasterized_font_glyphs_do_not_create_a_png_notice_manifest() {
             let manifest = manifest.expect("embedded font requires a manifest");
             let manifest: serde_json::Value = serde_json::from_str(&manifest).unwrap();
             let notices = manifest["notices"].as_array().unwrap();
-            assert_eq!(notices.len(), 1);
-            assert!(notices[0]["asset_identity"]
-                .as_str()
-                .unwrap()
-                .starts_with("fonts/Cascadia/"));
-            assert!(notices[0]["text"]
-                .as_str()
-                .unwrap()
-                .contains("SIL OPEN FONT LICENSE Version 1.1"));
+            if format == OutputFormat::Svg {
+                assert_eq!(notices.len(), 2);
+                assert_eq!(notices[0]["asset_identity"], "font.cascadia-code.ofl-1.1");
+                assert!(notices[0]["text"]
+                    .as_str()
+                    .unwrap()
+                    .contains("SIL OPEN FONT LICENSE Version 1.1"));
+                assert!(notices[1]["asset_identity"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("svg-font-subset@sha256:"));
+                assert!(notices[1]["text"]
+                    .as_str()
+                    .unwrap()
+                    .contains("names rewritten for compatibility revision 1"));
+            } else {
+                assert_eq!(notices.len(), 1);
+                assert!(notices[0]["asset_identity"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("fonts/Cascadia/"));
+            }
         }
     }
 }

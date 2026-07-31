@@ -2,7 +2,9 @@ use std::collections::BTreeMap;
 
 use excalidraw_render_assets_base::{
     excalifont_basic_latin_sfnt_transformation, load_asset, load_excalifont_basic_latin_sfnt,
-    revision_1, RAW_SHARD_LIMIT,
+    revision_1, FontSubsetTableAction, CJK_SCALAR_COUNT_V1, CJK_SCALAR_RANGES_V1,
+    CJK_SCALAR_TABLE_BYTES_V1, CJK_SCALAR_TABLE_SHA256_V1, FONT_SUBSET_PROFILE_SETTINGS_V1,
+    FONT_SUBSET_TABLE_RULES_V1, RAW_SHARD_LIMIT,
 };
 use sha2::{Digest, Sha256};
 
@@ -27,6 +29,10 @@ fn every_catalog_asset_reassembles_and_verifies_before_use() {
             .expect("every catalog path resolves");
         assert_eq!(verified.bytes().len(), asset.complete_length);
         assert_eq!(&verified.bytes()[..4], b"wOF2");
+        assert!(
+            excalidraw_render_assets_base::font_face_decoded_length(asset.upstream_path)
+                .is_some_and(|length| length > 0)
+        );
         assert!(asset.segments.iter().all(|segment| {
             segment.bytes.len() <= RAW_SHARD_LIMIT && segment.order < asset.segments.len()
         }));
@@ -130,5 +136,144 @@ fn every_official_face_has_a_unique_pinned_family_order() {
         }
         orders.sort_unstable();
         assert_eq!(orders, (0..orders.len()).collect::<Vec<_>>());
+    }
+}
+
+#[test]
+fn every_official_face_exposes_its_pinned_declared_unicode_ranges() {
+    let catalog = excalidraw_render_assets_base::revision_1();
+    for asset in catalog.assets {
+        let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
+            asset.family,
+            asset.upstream_path,
+        )
+        .unwrap_or_else(|| panic!("{} has declared ranges", asset.upstream_path));
+        assert!(!ranges.is_empty());
+        assert!(ranges.iter().all(|(start, end)| start <= end));
+    }
+
+    let latin = excalidraw_render_assets_base::font_face_unicode_ranges(
+        "Excalifont",
+        "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
+    )
+    .expect("Excalifont Latin ranges");
+    assert!(latin
+        .iter()
+        .any(|(start, end)| *start <= u32::from('A') && u32::from('A') <= *end));
+    assert!(!latin
+        .iter()
+        .any(|(start, end)| *start <= u32::from('Ж') && u32::from('Ж') <= *end));
+}
+
+#[test]
+fn svg_font_subset_profile_classifies_each_table_once() {
+    let mut tags = FONT_SUBSET_TABLE_RULES_V1
+        .iter()
+        .map(|rule| rule.tag)
+        .collect::<Vec<_>>();
+    tags.sort_unstable();
+    tags.dedup();
+
+    assert_eq!(tags.len(), FONT_SUBSET_TABLE_RULES_V1.len());
+    assert!(FONT_SUBSET_PROFILE_SETTINGS_V1
+        .starts_with(b"excalidraw-render:svg-font-subset-profile:v1\n"));
+    let digest = excalidraw_render_assets_base::font_subset_profile_digest_v1()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    assert_eq!(
+        digest,
+        "09c6aae78e279b175e13a047935cad9675e2409406964bcd72dbc24033d293dd"
+    );
+}
+
+#[test]
+fn chromium_149_cjk_scalar_table_bytes_and_classes_are_frozen() {
+    assert_eq!(&CJK_SCALAR_TABLE_BYTES_V1[..8], b"ER-CJK1\0");
+    assert_eq!(CJK_SCALAR_RANGES_V1.len(), 63);
+    assert_eq!(
+        CJK_SCALAR_RANGES_V1
+            .iter()
+            .map(|(start, end)| end - start + 1)
+            .sum::<u32>(),
+        CJK_SCALAR_COUNT_V1
+    );
+    assert_eq!(
+        format!("{:x}", Sha256::digest(CJK_SCALAR_TABLE_BYTES_V1)),
+        CJK_SCALAR_TABLE_SHA256_V1
+    );
+    assert!(CJK_SCALAR_RANGES_V1
+        .windows(2)
+        .all(|ranges| ranges[0].1 < ranges[1].0));
+    for scalar in [
+        0x4e2d,
+        0x3042,
+        0x30a2,
+        0xac00,
+        u32::from('〃'),
+        u32::from('（'),
+        u32::from('。'),
+        u32::from('￥'),
+        0x31350,
+        0x33479,
+    ] {
+        assert!(excalidraw_render_assets_base::is_cjk_scalar_v1(scalar));
+    }
+    for scalar in [u32::from('A'), 0x2ff0, 0xd800, 0x10ffff] {
+        assert!(!excalidraw_render_assets_base::is_cjk_scalar_v1(scalar));
+    }
+}
+
+#[test]
+fn svg_font_compatibility_artifacts_are_incorporated_into_revision_1() {
+    let catalog = revision_1();
+    let profile = catalog
+        .incorporated_artifacts
+        .iter()
+        .find(|artifact| {
+            artifact.repository_path
+                == "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json"
+        })
+        .expect("the SVG font subset profile is incorporated");
+    let cjk = catalog
+        .incorporated_artifacts
+        .iter()
+        .find(|artifact| {
+            artifact.repository_path
+                == "tests/oracle/compatibility-artifacts/revision-1-chromium-149-cjk-scalars.bin"
+        })
+        .expect("the Chromium CJK table is incorporated");
+
+    assert_eq!(catalog.incorporated_artifacts.len(), 8);
+    assert_eq!(cjk.bytes, CJK_SCALAR_TABLE_BYTES_V1);
+    assert_eq!(cjk.sha256, CJK_SCALAR_TABLE_SHA256_V1);
+
+    let profile: serde_json::Value =
+        serde_json::from_slice(profile.bytes).expect("the subset profile is JSON");
+    assert_eq!(
+        profile["settingsPreimage"],
+        std::str::from_utf8(FONT_SUBSET_PROFILE_SETTINGS_V1)
+            .expect("the profile settings are UTF-8")
+    );
+    assert_eq!(
+        profile["semanticDigest"],
+        "sha256:09c6aae78e279b175e13a047935cad9675e2409406964bcd72dbc24033d293dd"
+    );
+    let rules = profile["tableRules"]
+        .as_array()
+        .expect("the table rules are an array");
+    assert_eq!(rules.len(), FONT_SUBSET_TABLE_RULES_V1.len());
+    for (actual, expected) in rules.iter().zip(FONT_SUBSET_TABLE_RULES_V1) {
+        assert_eq!(actual["tag"], std::str::from_utf8(&expected.tag).unwrap());
+        assert_eq!(actual["required"], expected.required);
+        assert_eq!(
+            actual["action"],
+            match expected.action {
+                FontSubsetTableAction::Subset => "subset",
+                FontSubsetTableAction::Rewrite => "rewrite",
+                FontSubsetTableAction::PassThrough => "pass_through",
+                FontSubsetTableAction::Drop => "drop",
+            }
+        );
     }
 }

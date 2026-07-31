@@ -162,6 +162,7 @@ pub(crate) enum ResourceRecordKind {
     #[allow(dead_code)]
     Diagnostic,
     SvgSerializerWorkspace,
+    SvgFontSubsetWorkspace,
     PngEncoderWorkspace,
     PdfStreamWorkspace,
     OutputBuffer,

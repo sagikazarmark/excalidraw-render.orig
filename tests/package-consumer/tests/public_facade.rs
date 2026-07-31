@@ -27,7 +27,7 @@ const FRAME_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"i
 const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
     (
         OutputFormat::Svg,
-        "796a5cd9d9089e8f12bf53292e928559f7dd97ea91c4cbc7dccdab09de2ffb88",
+        "b2f6d15745a5c9639b970594d06d6485643e723ab62cd29c7ecf6d8bae790ffb",
         "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
     ),
     (
@@ -152,6 +152,30 @@ fn packaged_public_facade_preserves_artifact_byte_stability() {
         forward_round == reverse_round,
         "repeated render calls or format order changed their bytes"
     );
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn packaged_svg_font_subsets_are_cross_target_stable() {
+    let scene = SceneDocument::parse(TEXT_SCENE).expect("the typography scene is admitted");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("the SVG request is valid");
+    let first = Renderer::new()
+        .render(&scene, &request)
+        .expect("the typography SVG renders");
+    let second = Renderer::new()
+        .render(&scene, &request)
+        .expect("the typography SVG renders repeatedly");
+    let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
+
+    assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+    assert_eq!(
+        format!("{:x}", Sha256::digest(first.artifact().bytes())),
+        "9c949f06cd9b951e5c978e1a0dfe3adcc3020810c3e684ca6eb6b9b24c1fa7ae"
+    );
+    assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
+    assert!(svg.contains("svg-font-subset@sha256:"));
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

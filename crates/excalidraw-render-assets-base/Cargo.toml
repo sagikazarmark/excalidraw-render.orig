@@ -23,4 +23,5 @@ sha2.workspace = true
 
 [dev-dependencies]
 rustybuzz.workspace = true
+serde_json.workspace = true
 wuff.workspace = true

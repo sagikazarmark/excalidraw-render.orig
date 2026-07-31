@@ -38,6 +38,11 @@ fn run_catalog(mut args: impl Iterator<Item = String>) -> Result<(), String> {
             catalog::import(&source_root)?;
             println!("imported compatibility revision 1 catalog");
         }
+        Some("materialize") => {
+            no_more_args(args)?;
+            catalog::materialize()?;
+            println!("materialized compatibility revision 1 catalog");
+        }
         Some("import-license-sources") => {
             let source_root = required_arg(&mut args, "local license source path")?;
             no_more_args(args)?;
@@ -170,7 +175,7 @@ fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
 fn usage() -> String {
     concat!(
         "usage: cargo run --locked -p xtask -- ",
-        "catalog <import <local-dist-prod>|import-license-sources <local-path>|verify> | ",
+        "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify> | ",
         "conformance <generate|reproduce|verify|approval-subject|record-approval|",
         "verify-svg-viewers|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",

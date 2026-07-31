@@ -27,7 +27,7 @@ pub use compatibility::{
     AssetChainEntry, CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, ErrorFamily,
     FiniteValue, LogicalBounds, Measurement, MetadataComponent, MetadataOperation, NestedPath,
     NestedPathSegment, NestedSegmentKind, Recovery, ReferenceProfileIdentity, Renderer,
-    ResourceMeasurement, ResourceValue, UnsupportedRevisionError, ValueKind,
+    ResourceMeasurement, ResourceValue, SvgFontSubsetStage, UnsupportedRevisionError, ValueKind,
     DEFAULT_COMPATIBILITY_REVISION,
 };
 pub use frame::{

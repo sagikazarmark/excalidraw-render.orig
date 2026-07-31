@@ -69,6 +69,7 @@ pub(crate) struct NormalizedText {
     pub(crate) font_size: f64,
     pub(crate) font_family: i32,
     pub(crate) text: String,
+    pub(crate) original_text: String,
     pub(crate) text_align: String,
     pub(crate) vertical_align: String,
     pub(crate) line_height: f64,
@@ -1795,6 +1796,11 @@ fn normalize_element_kind(
                 SourceField::Value(text) => text,
                 SourceField::Missing | SourceField::Invalid => "",
             };
+            let original_text = match (format, source.original_text) {
+                (OutputFormat::Svg, SourceField::Value(original_text)) => original_text,
+                (OutputFormat::Svg, SourceField::Missing | SourceField::Invalid) => text,
+                (OutputFormat::Png | OutputFormat::Pdf, _) => "",
+            };
             Ok((
                 NormalizedElementKind::Text(NormalizedText {
                     font_size: manifested_value(source.font_size, 20.0, |value| value > 0.0),
@@ -1802,6 +1808,7 @@ fn normalize_element_kind(
                         matches!(value, 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9)
                     }),
                     text: try_owned(text)?,
+                    original_text: try_owned(original_text)?,
                     text_align: try_owned(manifested_value(source.text_align, "left", |value| {
                         matches!(value, "left" | "center" | "right")
                     }))?,

@@ -1246,7 +1246,7 @@ fn push_manifest_notice(
     *separator = ",";
 }
 
-fn comic_shanns_notice() -> Option<&'static str> {
+pub(super) fn comic_shanns_notice() -> Option<&'static str> {
     const START: &str = "Comic Shanns MIT license\n==============================================================================\n\n";
     const END: &str = "\n\n==============================================================================\nSIL Open Font License 1.1";
     let bundle = excalidraw_render_assets_base::license_bundle();
@@ -1255,7 +1255,7 @@ fn comic_shanns_notice() -> Option<&'static str> {
     tail.get(..tail.find(END)?)
 }
 
-fn liberation_sans_notice() -> Option<&'static str> {
+pub(super) fn liberation_sans_notice() -> Option<&'static str> {
     const START: &str = "liberation-sans.ofl-full\n";
     const END: &str = "\n\nnoto-emoji.ofl-full\n";
     let bundle = excalidraw_render_assets_base::license_bundle();
@@ -1265,7 +1265,7 @@ fn liberation_sans_notice() -> Option<&'static str> {
     tail.get(..end)
 }
 
-fn noto_emoji_notice() -> Option<&'static str> {
+pub(super) fn noto_emoji_notice() -> Option<&'static str> {
     const START: &str = "noto-emoji.ofl-full\n";
     let bundle = excalidraw_render_assets_base::license_bundle();
     let start = bundle.find(START)?.checked_add(START.len())?;
