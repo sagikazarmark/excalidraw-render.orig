@@ -104,10 +104,11 @@ impl Bundle {
 pub(super) fn build(
     demand: Demand,
     unchanged_fonts: &[UnchangedFont<'_>],
+    payload: super::SvgFontPayload,
 ) -> Result<Bundle, BuildError> {
     let mut resources = Vec::new();
     let mut licenses = BTreeMap::<String, &'static str>::new();
-    let mut subset_notices = Vec::<(String, String)>::new();
+    let mut resource_notices = Vec::<(String, String)>::new();
     for family in demand.families {
         if family.scalars.is_empty() || family.family == "Noto Emoji" {
             continue;
@@ -148,80 +149,87 @@ pub(super) fn build(
                     family: family.family,
                     asset_identity: record.identity,
                 })?;
-            let semantic_identity =
-                semantic_identity(record, &family.scalars).ok_or(BuildError {
-                    stage: crate::SvgFontSubsetStage::Plan,
-                    family: family.family,
-                    asset_identity: record.identity,
-                })?;
-            let derived = font_subset::derive(
-                asset.bytes(),
-                &family.scalars,
-                Bundle::effective_family(family.family),
-                &semantic_identity,
-            )
-            .map_err(|error| BuildError {
-                stage: error.stage,
-                family: family.family,
-                asset_identity: record.identity,
-            })?;
-            let provenance =
-                crate::catalog::manifested_font_attribution(record.identity).map_err(|_| {
-                    BuildError {
-                        stage: crate::SvgFontSubsetStage::Validate,
+            let effective_alias = Bundle::effective_family(family.family);
+            match payload {
+                super::SvgFontPayload::Subset => {
+                    let semantic_identity =
+                        semantic_identity(record, &family.scalars).ok_or(BuildError {
+                            stage: crate::SvgFontSubsetStage::Plan,
+                            family: family.family,
+                            asset_identity: record.identity,
+                        })?;
+                    let derived = font_subset::derive(
+                        asset.bytes(),
+                        &family.scalars,
+                        effective_alias,
+                        &semantic_identity,
+                    )
+                    .map_err(|error| BuildError {
+                        stage: error.stage,
                         family: family.family,
                         asset_identity: record.identity,
-                    }
-                })?;
-            let license = if provenance.license_identity == "font.comic-shanns.mit" {
-                super::text::comic_shanns_notice()
-            } else if provenance.license_identity.ends_with(".ofl-1.1") {
-                super::text::liberation_sans_notice().and_then(|notice| {
-                    notice
-                        .find("This Font Software is licensed")
-                        .and_then(|start| notice.get(start..))
-                })
-            } else {
-                None
+                    })?;
+                    let (provenance, license) = notice_inputs(record, family.family)?;
+                    licenses
+                        .entry(provenance.license_identity.clone())
+                        .or_insert(license);
+                    let output_digest = format!("{:x}", Sha256::digest(&derived.woff2));
+                    let profile_digest = encode_hex_32(
+                        &excalidraw_render_assets_base::font_subset_profile_digest_v1(),
+                    );
+                    resource_notices.push((
+                        format!("svg-font-subset@sha256:{semantic_identity}"),
+                        format!(
+                            "Derived font subset of {}. {} Modified Version under {}. Transformation: Unicode and required layout/glyph closure subset; names rewritten for compatibility revision 1. Effective alias: {}. Subset profile SHA-256: {}. Semantic subset identity: {}. Output WOFF2: {} bytes, SHA-256 {}.",
+                            record.identity,
+                            provenance.text,
+                            provenance.license_identity,
+                            effective_alias,
+                            profile_digest,
+                            semantic_identity,
+                            derived.woff2.len(),
+                            output_digest,
+                        ),
+                    ));
+                    resources.push(Resource {
+                        family: effective_alias,
+                        mime: "font/woff2",
+                        metrics: Some(SubsetMetrics {
+                            asset_identity: record.identity,
+                            decoded_sfnt_bytes: derived.decoded_sfnt_bytes,
+                            subset_sfnt_bytes: derived.subset_sfnt_bytes,
+                            subset_woff2_bytes: derived.woff2.len(),
+                            subset_tables: derived.subset_tables,
+                        }),
+                        bytes: derived.woff2,
+                    });
+                }
+                #[cfg(test)]
+                super::SvgFontPayload::CompleteChunks => {
+                    let (provenance, license) = notice_inputs(record, family.family)?;
+                    let notice = if provenance.license_identity.ends_with(".ofl-1.1") {
+                        format!("{}\n\n{}", provenance.text, license)
+                    } else {
+                        license.to_owned()
+                    };
+                    resource_notices.push((record.identity.to_owned(), notice));
+                    let mut bytes = Vec::new();
+                    bytes
+                        .try_reserve_exact(asset.bytes().len())
+                        .map_err(|_| BuildError {
+                            stage: crate::SvgFontSubsetStage::Encode,
+                            family: family.family,
+                            asset_identity: record.identity,
+                        })?;
+                    bytes.extend_from_slice(asset.bytes());
+                    resources.push(Resource {
+                        family: effective_alias,
+                        mime: "font/woff2",
+                        bytes,
+                        metrics: None,
+                    });
+                }
             }
-            .ok_or(BuildError {
-                stage: crate::SvgFontSubsetStage::Validate,
-                family: family.family,
-                asset_identity: record.identity,
-            })?;
-            licenses
-                .entry(provenance.license_identity.clone())
-                .or_insert(license);
-            let effective_alias = Bundle::effective_family(family.family);
-            let output_digest = format!("{:x}", Sha256::digest(&derived.woff2));
-            let profile_digest =
-                encode_hex_32(&excalidraw_render_assets_base::font_subset_profile_digest_v1());
-            subset_notices.push((
-                format!("svg-font-subset@sha256:{semantic_identity}"),
-                format!(
-                    "Derived font subset of {}. {} Modified Version under {}. Transformation: Unicode and required layout/glyph closure subset; names rewritten for compatibility revision 1. Effective alias: {}. Subset profile SHA-256: {}. Semantic subset identity: {}. Output WOFF2: {} bytes, SHA-256 {}.",
-                    record.identity,
-                    provenance.text,
-                    provenance.license_identity,
-                    effective_alias,
-                    profile_digest,
-                    semantic_identity,
-                    derived.woff2.len(),
-                    output_digest,
-                ),
-            ));
-            resources.push(Resource {
-                family: effective_alias,
-                mime: "font/woff2",
-                metrics: Some(SubsetMetrics {
-                    asset_identity: record.identity,
-                    decoded_sfnt_bytes: derived.decoded_sfnt_bytes,
-                    subset_sfnt_bytes: derived.subset_sfnt_bytes,
-                    subset_woff2_bytes: derived.woff2.len(),
-                    subset_tables: derived.subset_tables,
-                }),
-                bytes: derived.woff2,
-            });
         }
     }
     for unchanged in unchanged_fonts {
@@ -254,14 +262,14 @@ pub(super) fn build(
             }
         }
     }
-    subset_notices.sort_unstable_by(|left, right| left.0.cmp(&right.0));
-    let mandatory_notices = (!licenses.is_empty() || !subset_notices.is_empty()).then(|| {
+    resource_notices.sort_unstable_by(|left, right| left.0.cmp(&right.0));
+    let mandatory_notices = (!licenses.is_empty() || !resource_notices.is_empty()).then(|| {
         let mut json = String::from("[");
         let mut separator = "";
         for (identity, text) in licenses {
             push_notice(&mut json, &mut separator, &identity, text);
         }
-        for (identity, text) in subset_notices {
+        for (identity, text) in resource_notices {
             push_notice(&mut json, &mut separator, &identity, &text);
         }
         json.push(']');
@@ -271,6 +279,35 @@ pub(super) fn build(
         resources,
         mandatory_notices,
     })
+}
+
+fn notice_inputs(
+    record: &excalidraw_render_assets_base::AssetRecord,
+    family: &'static str,
+) -> Result<(crate::catalog::ManifestedFontAttribution, &'static str), BuildError> {
+    let provenance =
+        crate::catalog::manifested_font_attribution(record.identity).map_err(|_| BuildError {
+            stage: crate::SvgFontSubsetStage::Validate,
+            family,
+            asset_identity: record.identity,
+        })?;
+    let license = if provenance.license_identity == "font.comic-shanns.mit" {
+        super::text::comic_shanns_notice()
+    } else if provenance.license_identity.ends_with(".ofl-1.1") {
+        super::text::liberation_sans_notice().and_then(|notice| {
+            notice
+                .find("This Font Software is licensed")
+                .and_then(|start| notice.get(start..))
+        })
+    } else {
+        None
+    }
+    .ok_or(BuildError {
+        stage: crate::SvgFontSubsetStage::Validate,
+        family,
+        asset_identity: record.identity,
+    })?;
+    Ok((provenance, license))
 }
 
 fn push_notice(json: &mut String, separator: &mut &'static str, identity: &str, text: &str) {

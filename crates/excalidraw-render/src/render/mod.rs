@@ -82,6 +82,15 @@ pub(crate) fn render(
     scene: &SceneDocument,
     request: &RenderRequest,
 ) -> Result<RenderOutcome, RenderError> {
+    render_with_svg_font_payload(catalog, scene, request, SvgFontPayload::Subset)
+}
+
+fn render_with_svg_font_payload(
+    catalog: &'static RevisionCatalog,
+    scene: &SceneDocument,
+    request: &RenderRequest,
+    svg_font_payload: SvgFontPayload,
+) -> Result<RenderOutcome, RenderError> {
     let profile = catalog.profile();
     debug_assert_eq!(
         catalog.asset_catalog().compatibility_revision,
@@ -92,7 +101,7 @@ pub(crate) fn render(
         profile.profile_digest()
     );
     let mut session = RenderSession::new(profile, catalog.scene_surface(), scene, request);
-    session.render(scene, request, None)
+    session.render(scene, request, None, svg_font_payload)
 }
 
 pub(crate) fn render_frame(
@@ -127,7 +136,7 @@ pub(crate) fn render_frame_scoped(
         request,
         RenderTarget::Frame(target),
     );
-    let result = session.render(frame.scene, request, prepared);
+    let result = session.render(frame.scene, request, prepared, SvgFontPayload::Subset);
     let report = match &result {
         Ok(outcome) => outcome.report(),
         Err(error) => error.report(),
@@ -598,7 +607,7 @@ fn render_with_trace(
         scene,
         request,
     );
-    let result = session.render(scene, request, None);
+    let result = session.render(scene, request, None, SvgFontPayload::Subset);
     (result, session.meter.trace_bytes())
 }
 
@@ -617,6 +626,13 @@ struct RenderSession {
     pending_frame_normalization_diagnostics: Vec<PendingNormalizationDiagnostic>,
     target: RenderTarget,
     diagnostic_attribution: DiagnosticAttribution,
+}
+
+#[derive(Clone, Copy)]
+enum SvgFontPayload {
+    Subset,
+    #[cfg(test)]
+    CompleteChunks,
 }
 
 struct PendingAnimationDiagnostic {
@@ -929,6 +945,7 @@ impl RenderSession {
         scene: &SceneDocument,
         request: &RenderRequest,
         prepared: Option<&PreparedFrameRender>,
+        svg_font_payload: SvgFontPayload,
     ) -> Result<RenderOutcome, RenderError> {
         self.transact(
             request,
@@ -2467,7 +2484,13 @@ impl RenderSession {
             }
         };
         self.account_fallback_semantics(&mut resolved, request, &mut semantic_working)?;
-        let bytes = self.encode(resolved, scene, request, &semantic_working)?;
+        let bytes = self.encode(
+            resolved,
+            scene,
+            request,
+            &semantic_working,
+            svg_font_payload,
+        )?;
 
         Ok(RenderOutcome {
             artifact: Artifact {
@@ -2485,6 +2508,7 @@ impl RenderSession {
         scene: &SceneDocument,
         request: &RenderRequest,
         semantic_working: &[SemanticWorkingRecord],
+        svg_font_payload: SvgFontPayload,
     ) -> Result<Vec<u8>, RenderError> {
         match request.format() {
             OutputFormat::Svg => self.validate_svg_dimensions(&resolved, request)?,
@@ -2560,7 +2584,7 @@ impl RenderSession {
                             return Err(error);
                         }
                     };
-                let font_bundle = match build_svg_font_bundle(&resolved, demand) {
+                let font_bundle = match build_svg_font_bundle(&resolved, demand, svg_font_payload) {
                     Ok(bundle) => bundle,
                     Err(error) => {
                         release_svg_font_encoding_records(
@@ -5840,6 +5864,7 @@ fn svg_font_demand(scene: &ResolvedScene) -> Result<svg_fonts::Demand, FormatEnc
 fn build_svg_font_bundle(
     scene: &ResolvedScene,
     demand: svg_fonts::Demand,
+    payload: SvgFontPayload,
 ) -> Result<svg_fonts::Bundle, FormatEncodeError> {
     let unchanged = scene
         .official_fonts
@@ -5851,10 +5876,12 @@ fn build_svg_font_bundle(
             bytes: &font.woff2,
         })
         .collect::<Vec<_>>();
-    svg_fonts::build(demand, &unchanged).map_err(|error| FormatEncodeError::SvgFontSubset {
-        stage: error.stage,
-        resolved_family: error.family,
-        asset_identity: error.asset_identity,
+    svg_fonts::build(demand, &unchanged, payload).map_err(|error| {
+        FormatEncodeError::SvgFontSubset {
+            stage: error.stage,
+            resolved_family: error.family,
+            asset_identity: error.asset_identity,
+        }
     })
 }
 
@@ -9963,12 +9990,217 @@ mod tests {
         CompatibilityDiagnostic, CompatibilityRevision, DiagnosticCode, DiagnosticEffect,
         DiagnosticSeverity, Renderer, ResourceLimits,
     };
+    use base64::Engine as _;
     use serde_json::json;
     use std::fs;
     use std::path::Path;
 
     const EMPTY_SCENE: &[u8] =
         br#"{"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}}"#;
+
+    #[test]
+    fn focused_latin_svg_font_subset_beats_same_revision_complete_chunk_control() {
+        let scene = SceneDocument::parse(
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","x":20,"y":30,"width":90,"height":72,"angle":0.125,"strokeColor":"#1e66f5","opacity":70,"fontSize":20,"fontFamily":5,"text":"One two three\nFour","textAlign":"center","verticalAlign":"middle","lineHeight":1.2,"frameId":null,"updated":1}],"appState":{},"files":{}}"##,
+        )
+        .expect("focused Latin scene is admitted");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("SVG request is valid");
+
+        let candidate = Renderer::new()
+            .render(&scene, &request)
+            .expect("focused Latin candidate renders");
+        let control = render_with_svg_font_payload(
+            &crate::catalog::REVISION_1,
+            &scene,
+            &request,
+            SvgFontPayload::CompleteChunks,
+        )
+        .expect("focused Latin complete-chunk control renders");
+
+        assert_eq!(candidate.report(), control.report());
+        assert_focused_svg_font_savings(&candidate, &control);
+    }
+
+    #[test]
+    fn multi_chunk_svg_font_subsets_beat_same_revision_complete_chunk_control() {
+        let scene = SceneDocument::parse(
+            br#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","width":160,"height":40,"fontSize":20,"fontFamily":5,"text":"A","originalText":"A\u0416","updated":1}],"appState":{},"files":{}}"#,
+        )
+        .expect("multi-chunk scene is admitted");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("SVG request is valid");
+
+        let candidate = Renderer::new()
+            .render(&scene, &request)
+            .expect("multi-chunk candidate renders");
+        let control = render_with_svg_font_payload(
+            &crate::catalog::REVISION_1,
+            &scene,
+            &request,
+            SvgFontPayload::CompleteChunks,
+        )
+        .expect("multi-chunk complete-chunk control renders");
+
+        assert_eq!(candidate.report(), control.report());
+        let candidate_svg =
+            std::str::from_utf8(candidate.artifact().bytes()).expect("SVG is UTF-8");
+        let control_svg = std::str::from_utf8(control.artifact().bytes()).expect("SVG is UTF-8");
+        assert_eq!(candidate_svg.matches("font-family:'Excalifont'").count(), 2);
+        assert_eq!(control_svg.matches("font-family:'Excalifont'").count(), 2);
+        assert_focused_svg_font_savings(&candidate, &control);
+    }
+
+    #[test]
+    fn complete_cjk_svg_font_subsets_beat_same_revision_complete_chunk_control() {
+        let scene = SceneDocument::parse(
+            br#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","width":60,"height":30,"fontSize":20,"fontFamily":5,"text":"\u6f22\u6f22A","updated":1}],"appState":{},"files":{}}"#,
+        )
+        .expect("complete-CJK scene is admitted");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("SVG request is valid");
+
+        let candidate = Renderer::new()
+            .render(&scene, &request)
+            .expect("complete-CJK candidate renders");
+        let control = render_with_svg_font_payload(
+            &crate::catalog::REVISION_1,
+            &scene,
+            &request,
+            SvgFontPayload::CompleteChunks,
+        )
+        .expect("complete-CJK complete-chunk control renders");
+
+        assert_eq!(candidate.report(), control.report());
+        for artifact in [&candidate, &control] {
+            let svg = std::str::from_utf8(artifact.artifact().bytes()).expect("SVG is UTF-8");
+            let xiaolai = svg
+                .find("font-family:'Xiaolai'")
+                .expect("Xiaolai chunk is selected");
+            let excalifont = svg
+                .find("font-family:'Excalifont'")
+                .expect("Excalifont Latin chunk is selected");
+            assert!(xiaolai < excalifont);
+        }
+        assert_focused_svg_font_savings(&candidate, &control);
+    }
+
+    #[test]
+    fn full_intersection_svg_font_subset_does_not_grow_against_complete_chunk_control() {
+        let scene = SceneDocument::parse(
+            br#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","width":160,"height":40,"fontSize":20,"fontFamily":5,"text":"A","originalText":"A\u0100\u0416\u03b1\u02c7\u0462\u0300","updated":1}],"appState":{},"files":{}}"#,
+        )
+        .expect("full-intersection scene is admitted");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("SVG request is valid");
+
+        let candidate = Renderer::new()
+            .render(&scene, &request)
+            .expect("full-intersection candidate renders");
+        let repeated = Renderer::new()
+            .render(&scene, &request)
+            .expect("full-intersection candidate renders repeatedly");
+        let control = render_with_svg_font_payload(
+            &crate::catalog::REVISION_1,
+            &scene,
+            &request,
+            SvgFontPayload::CompleteChunks,
+        )
+        .expect("full-intersection complete-chunk control renders");
+
+        assert_eq!(candidate.artifact().bytes(), repeated.artifact().bytes());
+        assert_eq!(candidate.report(), control.report());
+        assert_eq!(
+            candidate.compatibility_revision(),
+            CompatibilityRevision::REVISION_1
+        );
+        assert_eq!(
+            control.compatibility_revision(),
+            CompatibilityRevision::REVISION_1
+        );
+        let candidate_svg =
+            std::str::from_utf8(candidate.artifact().bytes()).expect("SVG is UTF-8");
+        let control_svg = std::str::from_utf8(control.artifact().bytes()).expect("SVG is UTF-8");
+        assert_eq!(candidate_svg.matches("font-family:'Excalifont'").count(), 7);
+        assert_eq!(control_svg.matches("font-family:'Excalifont'").count(), 7);
+        assert!(candidate_svg.contains("svg-font-subset@sha256:"));
+        assert!(!control_svg.contains("svg-font-subset@sha256:"));
+        assert!(candidate.artifact().bytes().len() <= control.artifact().bytes().len());
+
+        let mut expected_records = excalidraw_render_assets_base::revision_1()
+            .assets
+            .iter()
+            .filter(|record| record.family == "Excalifont")
+            .collect::<Vec<_>>();
+        expected_records.sort_unstable_by_key(|record| {
+            excalidraw_render_assets_base::font_face_order("Excalifont", record.upstream_path)
+                .expect("Excalifont chunk has a pinned order")
+        });
+        let expected = expected_records
+            .into_iter()
+            .map(|record| {
+                excalidraw_render_assets_base::load_asset(record.upstream_path)
+                    .expect("official Excalifont chunk is readable")
+                    .expect("official Excalifont chunk is present")
+                    .bytes()
+                    .to_vec()
+            })
+            .collect::<Vec<_>>();
+        let actual = embedded_test_woff2(control_svg);
+        assert_eq!(actual.len(), expected.len());
+        for (index, (actual, expected)) in actual.iter().zip(&expected).enumerate() {
+            assert!(
+                actual == expected,
+                "complete-chunk control payload {index} differs from its official source"
+            );
+        }
+    }
+
+    fn assert_focused_svg_font_savings(candidate: &RenderOutcome, control: &RenderOutcome) {
+        assert_eq!(
+            candidate.compatibility_revision(),
+            CompatibilityRevision::REVISION_1
+        );
+        assert_eq!(
+            control.compatibility_revision(),
+            CompatibilityRevision::REVISION_1
+        );
+        let candidate_len = candidate.artifact().bytes().len();
+        let control_len = control.artifact().bytes().len();
+        let savings = control_len.checked_sub(candidate_len).unwrap_or_else(|| {
+            panic!(
+                "subset artifact grew: candidate={candidate_len} bytes, control={control_len} bytes"
+            )
+        });
+        assert!(
+            savings > 4 * 1_024,
+            "subset saved only {savings} bytes: candidate={candidate_len}, control={control_len}"
+        );
+        assert!(
+            candidate_len * 5 < control_len * 4,
+            "subset was not more than 20% smaller: candidate={candidate_len}, control={control_len}"
+        );
+    }
+
+    fn embedded_test_woff2(svg: &str) -> Vec<Vec<u8>> {
+        const PREFIX: &str = "data:font/woff2;base64,";
+        let mut fonts = Vec::new();
+        let mut remaining = svg;
+        while let Some((_, tail)) = remaining.split_once(PREFIX) {
+            let (encoded, rest) = tail.split_once(')').expect("font data URL terminates");
+            fonts.push(
+                base64::engine::general_purpose::STANDARD
+                    .decode(encoded)
+                    .expect("font data URL is valid base64"),
+            );
+            remaining = rest;
+        }
+        fonts
+    }
 
     #[test]
     fn focused_pdf_expectations_are_approval_bound() {
@@ -10161,7 +10393,7 @@ mod tests {
             .expect("diagnostic is retained");
 
         let error = session
-            .render(&scene, &request, None)
+            .render(&scene, &request, None, SvgFontPayload::Subset)
             .expect_err("output exhaustion is fatal");
 
         assert_eq!(error.code(), ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED);

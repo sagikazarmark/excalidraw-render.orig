@@ -98,8 +98,6 @@ fn excalifont_text_renders_semantically_and_deterministically_in_every_format() 
                 assert_eq!(svg_source_text(svg), "One two three\nFour");
                 assert!(!svg.contains("Unavailable: text"));
                 assert_eq!(first.artifact().bytes().len(), 9_211);
-                assert!(38_959 - first.artifact().bytes().len() > 4 * 1_024);
-                assert!(first.artifact().bytes().len() * 5 < 38_959 * 4);
                 assert_eq!(
                     artifact_sha256(&first),
                     "5ebf7bd99d98062f8f61a3dc570ccfddc321ec1550deb6331bdb4a3e0709b7da"
