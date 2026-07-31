@@ -800,6 +800,49 @@ fn table_checksum(data: &[u8], zero_adjustment: bool) -> u32 {
 }
 
 #[cfg(test)]
+pub(crate) fn assert_every_official_chunk_derives_repeatably() {
+    let records = excalidraw_render_assets_base::revision_1().assets;
+    assert_eq!(
+        records.len(),
+        230,
+        "revision 1 has 230 official font chunks"
+    );
+    for record in records {
+        let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
+            record.family,
+            record.upstream_path,
+        )
+        .unwrap_or_else(|| panic!("{} has qualified ranges", record.upstream_path));
+        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+            .expect("qualified source verifies")
+            .expect("qualified source exists");
+        let sfnt = wuff::decompress_woff2(asset.bytes()).expect("qualified source decodes");
+        let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("qualified source parses");
+        let scalar = ranges
+            .iter()
+            .flat_map(|(start, end)| *start..=*end)
+            .find(|scalar| {
+                char::from_u32(*scalar)
+                    .is_some_and(|character| face.glyph_index(character).is_some())
+            })
+            .unwrap_or_else(|| panic!("{} declares a mapped scalar", record.upstream_path));
+        let alias = match record.family {
+            "Cascadia" => "ExcalidrawRender-3",
+            "Liberation" => "ExcalidrawRender-9",
+            "Lilita" => "ExcalidrawRender-7",
+            "Virgil" => "ExcalidrawRender-1",
+            "ComicShanns" => "Comic Shanns",
+            family => family,
+        };
+        let first = derive(asset.bytes(), &[scalar], alias, &"0".repeat(64))
+            .unwrap_or_else(|error| panic!("{} subsets at {:?}", record.upstream_path, error));
+        let second = derive(asset.bytes(), &[scalar], alias, &"0".repeat(64))
+            .unwrap_or_else(|error| panic!("{} repeats at {:?}", record.upstream_path, error));
+        assert_eq!(first.woff2, second.woff2, "{}", record.upstream_path);
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -864,38 +907,6 @@ mod tests {
 
     #[test]
     fn every_official_chunk_produces_repeatable_valid_woff2() {
-        for record in excalidraw_render_assets_base::revision_1().assets {
-            let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
-                record.family,
-                record.upstream_path,
-            )
-            .unwrap_or_else(|| panic!("{} has qualified ranges", record.upstream_path));
-            let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
-                .expect("qualified source verifies")
-                .expect("qualified source exists");
-            let sfnt = wuff::decompress_woff2(asset.bytes()).expect("qualified source decodes");
-            let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("qualified source parses");
-            let scalar = ranges
-                .iter()
-                .flat_map(|(start, end)| *start..=*end)
-                .find(|scalar| {
-                    char::from_u32(*scalar)
-                        .is_some_and(|character| face.glyph_index(character).is_some())
-                })
-                .unwrap_or_else(|| panic!("{} declares a mapped scalar", record.upstream_path));
-            let alias = match record.family {
-                "Cascadia" => "ExcalidrawRender-3",
-                "Liberation" => "ExcalidrawRender-9",
-                "Lilita" => "ExcalidrawRender-7",
-                "Virgil" => "ExcalidrawRender-1",
-                "ComicShanns" => "Comic Shanns",
-                family => family,
-            };
-            let first = derive(asset.bytes(), &[scalar], alias, &"0".repeat(64))
-                .unwrap_or_else(|error| panic!("{} subsets at {:?}", record.upstream_path, error));
-            let second = derive(asset.bytes(), &[scalar], alias, &"0".repeat(64))
-                .unwrap_or_else(|error| panic!("{} repeats at {:?}", record.upstream_path, error));
-            assert_eq!(first.woff2, second.woff2, "{}", record.upstream_path);
-        }
+        assert_every_official_chunk_derives_repeatably();
     }
 }

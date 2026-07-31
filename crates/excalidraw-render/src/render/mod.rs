@@ -1,5 +1,7 @@
 mod asset;
 mod font_subset;
+#[cfg(all(test, target_arch = "wasm32"))]
+pub(crate) use font_subset::assert_every_official_chunk_derives_repeatably;
 mod freedraw;
 mod metadata;
 mod notices;

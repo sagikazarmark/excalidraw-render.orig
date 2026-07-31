@@ -46,6 +46,18 @@ pub use request::{
 pub use resource_limits::{ResourceLimits, ResourceLimitsBuilder};
 pub use scene::{SceneDocument, SceneParseError};
 
+#[cfg(all(test, target_arch = "wasm32"))]
+pub mod wasm_tests {
+    use wasm_bindgen_test::wasm_bindgen_test;
+
+    wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
+
+    #[wasm_bindgen_test]
+    fn all_official_font_chunks_derive_repeatably_in_wasm() {
+        crate::render::assert_every_official_chunk_derives_repeatably();
+    }
+}
+
 /// Returns the complete package-wide license and attribution bundle.
 pub const fn license_bundle() -> &'static str {
     include_str!("../LICENSE-BUNDLE.txt")
