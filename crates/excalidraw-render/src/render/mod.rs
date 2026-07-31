@@ -7,6 +7,10 @@ mod metadata;
 mod notices;
 mod pdf;
 mod png;
+#[cfg(test)]
+mod resource_trace_qualification;
+#[cfg(all(test, target_arch = "wasm32"))]
+pub(crate) use resource_trace_qualification::assert_font_subset_resource_trace_matrix;
 mod rough;
 mod svg;
 mod svg_fonts;
@@ -31,6 +35,7 @@ use crate::{
     RenderErrorCategory, RenderOutcome, RenderRequest, ResourceValue, SceneDocument, Sizing,
     ValueKind,
 };
+use std::sync::{Arc, Mutex};
 
 use self::{pdf::PdfPlan, png::PngPlan, svg::SvgPlan};
 
@@ -138,6 +143,9 @@ pub(crate) fn render_frame_scoped(
         request,
         RenderTarget::Frame(target),
     );
+    if let Some(prepared) = prepared {
+        session.font_subset_session = Arc::clone(&prepared.font_subset_session);
+    }
     let result = session.render(frame.scene, request, prepared, SvgFontPayload::Subset);
     let report = match &result {
         Ok(outcome) => outcome.report(),
@@ -179,12 +187,15 @@ struct FrameViewport {
     max_y: f64,
 }
 
+type SharedFontSubsetSession = Arc<Mutex<font_subset::Session>>;
+
 pub(crate) struct PreparedFrameRender {
     original_json_events: Vec<PreparedOriginalJsonEvent>,
     normalization_events: Vec<PreparedNormalizationEvent>,
     normalization: crate::normalization::NormalizationOutcome,
     relationship_events: Vec<PreparedRelationshipEvent>,
     relationships: crate::relationships::RelationshipOutcome,
+    font_subset_session: SharedFontSubsetSession,
 }
 
 pub(crate) struct FramePreparationError {
@@ -315,6 +326,7 @@ impl PreparedFrameRender {
             normalization,
             relationship_events,
             relationships,
+            font_subset_session: Arc::new(Mutex::new(font_subset::Session::new())),
         })
     }
 
@@ -613,6 +625,69 @@ fn render_with_trace(
     (result, session.meter.trace_bytes())
 }
 
+#[cfg(test)]
+fn new_font_subset_cache() -> SharedFontSubsetSession {
+    Arc::new(Mutex::new(font_subset::Session::new()))
+}
+
+#[cfg(test)]
+fn render_with_trace_and_font_subset_cache(
+    profile: &'static ReferenceProfileIdentity,
+    scene: &SceneDocument,
+    request: &RenderRequest,
+    cache: &SharedFontSubsetSession,
+) -> (Result<RenderOutcome, RenderError>, Vec<u8>) {
+    let mut session = RenderSession::new_with_trace(
+        profile,
+        crate::catalog::REVISION_1.scene_surface(),
+        scene,
+        request,
+    );
+    session.font_subset_session = Arc::clone(cache);
+    let result = session.render(scene, request, None, SvgFontPayload::Subset);
+    (result, session.meter.trace_bytes())
+}
+
+#[cfg(test)]
+fn font_subset_cache_stats(cache: &SharedFontSubsetSession) -> (usize, usize) {
+    cache
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .stats()
+}
+
+#[cfg(test)]
+fn render_frame_with_trace(
+    catalog: &'static RevisionCatalog,
+    frame: crate::FrameRef<'_>,
+    request: &crate::FrameRenderRequest,
+    prepared: Option<&PreparedFrameRender>,
+) -> (Result<RenderOutcome, RenderError>, Vec<u8>) {
+    let profile = catalog.frame_profile();
+    let request = request.as_render_request();
+    let mut session =
+        RenderSession::new_with_trace(profile, catalog.scene_surface(), frame.scene, request);
+    session.target = RenderTarget::Frame(FrameTarget {
+        source_index: frame.source_index,
+        ordinal: frame.ordinal(),
+        kind: frame.kind(),
+    });
+    if let Some(prepared) = prepared {
+        session.font_subset_session = Arc::clone(&prepared.font_subset_session);
+    }
+    let result = session.render(frame.scene, request, prepared, SvgFontPayload::Subset);
+    (result, session.meter.trace_bytes())
+}
+
+#[cfg(test)]
+fn prepared_font_subset_cache_stats(prepared: &PreparedFrameRender) -> (usize, usize) {
+    prepared
+        .font_subset_session
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+        .stats()
+}
+
 struct RenderSession {
     profile: &'static ReferenceProfileIdentity,
     scene_surface: &'static crate::scene_surface::SceneSurfacePolicy,
@@ -628,6 +703,7 @@ struct RenderSession {
     pending_frame_normalization_diagnostics: Vec<PendingNormalizationDiagnostic>,
     target: RenderTarget,
     diagnostic_attribution: DiagnosticAttribution,
+    font_subset_session: SharedFontSubsetSession,
 }
 
 #[derive(Clone, Copy)]
@@ -739,6 +815,7 @@ impl RenderSession {
             pending_frame_normalization_diagnostics: Vec::new(),
             target,
             diagnostic_attribution: DiagnosticAttribution::SceneGlobal,
+            font_subset_session: Arc::new(Mutex::new(font_subset::Session::new())),
         }
     }
 
@@ -764,6 +841,7 @@ impl RenderSession {
             pending_frame_normalization_diagnostics: Vec::new(),
             target: RenderTarget::Scene,
             diagnostic_attribution: DiagnosticAttribution::SceneGlobal,
+            font_subset_session: Arc::new(Mutex::new(font_subset::Session::new())),
         }
     }
 
@@ -2586,7 +2664,14 @@ impl RenderSession {
                             return Err(error);
                         }
                     };
-                let font_bundle = match build_svg_font_bundle(&resolved, demand, svg_font_payload) {
+                let font_bundle = {
+                    let mut subset_session = self
+                        .font_subset_session
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
+                    build_svg_font_bundle(&resolved, demand, svg_font_payload, &mut subset_session)
+                };
+                let font_bundle = match font_bundle {
                     Ok(bundle) => bundle,
                     Err(error) => {
                         release_svg_font_encoding_records(
@@ -5867,6 +5952,7 @@ fn build_svg_font_bundle(
     scene: &ResolvedScene,
     demand: svg_fonts::Demand,
     payload: SvgFontPayload,
+    subset_session: &mut font_subset::Session,
 ) -> Result<svg_fonts::Bundle, FormatEncodeError> {
     let unchanged = scene
         .official_fonts
@@ -5878,7 +5964,7 @@ fn build_svg_font_bundle(
             bytes: &font.woff2,
         })
         .collect::<Vec<_>>();
-    svg_fonts::build(demand, &unchanged, payload).map_err(|error| {
+    svg_fonts::build(demand, &unchanged, payload, subset_session).map_err(|error| {
         FormatEncodeError::SvgFontSubset {
             stage: error.stage,
             resolved_family: error.family,

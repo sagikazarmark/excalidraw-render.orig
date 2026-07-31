@@ -1,6 +1,7 @@
 use super::font_subset;
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 pub(super) struct Demand {
     pub(super) families: Vec<FamilyDemand>,
@@ -25,7 +26,7 @@ pub(super) struct Bundle {
 struct Resource {
     family: &'static str,
     mime: &'static str,
-    bytes: Vec<u8>,
+    bytes: Arc<[u8]>,
     metrics: Option<SubsetMetrics>,
 }
 
@@ -83,7 +84,7 @@ impl Bundle {
             output.push_str("';src:url(data:");
             output.push_str(resource.mime);
             output.push_str(";base64,");
-            write_base64(output, &resource.bytes)?;
+            write_base64(output, resource.bytes.as_ref())?;
             output.push_str(")}");
         }
         output.push_str("</style></defs>");
@@ -105,6 +106,7 @@ pub(super) fn build(
     demand: Demand,
     unchanged_fonts: &[UnchangedFont<'_>],
     payload: super::SvgFontPayload,
+    subset_session: &mut font_subset::Session,
 ) -> Result<Bundle, BuildError> {
     let mut resources = Vec::new();
     let mut licenses = BTreeMap::<String, &'static str>::new();
@@ -158,22 +160,24 @@ pub(super) fn build(
                             family: family.family,
                             asset_identity: record.identity,
                         })?;
-                    let derived = font_subset::derive(
-                        asset.bytes(),
-                        &family.scalars,
-                        effective_alias,
-                        &semantic_identity,
-                    )
-                    .map_err(|error| BuildError {
-                        stage: error.stage,
-                        family: family.family,
-                        asset_identity: record.identity,
-                    })?;
+                    let derived = subset_session
+                        .derive(
+                            record.identity,
+                            asset.bytes(),
+                            &family.scalars,
+                            effective_alias,
+                            &semantic_identity,
+                        )
+                        .map_err(|error| BuildError {
+                            stage: error.stage,
+                            family: family.family,
+                            asset_identity: record.identity,
+                        })?;
                     let (provenance, license) = notice_inputs(record, family.family)?;
                     licenses
                         .entry(provenance.license_identity.clone())
                         .or_insert(license);
-                    let output_digest = format!("{:x}", Sha256::digest(&derived.woff2));
+                    let output_digest = format!("{:x}", Sha256::digest(derived.woff2.as_ref()));
                     let profile_digest = encode_hex_32(
                         &excalidraw_render_assets_base::font_subset_profile_digest_v1(),
                     );
@@ -225,7 +229,7 @@ pub(super) fn build(
                     resources.push(Resource {
                         family: effective_alias,
                         mime: "font/woff2",
-                        bytes,
+                        bytes: bytes.into(),
                         metrics: None,
                     });
                 }
@@ -235,7 +239,7 @@ pub(super) fn build(
     for unchanged in unchanged_fonts {
         if resources.iter().any(|resource| {
             resource.family == Bundle::effective_family(unchanged.family)
-                && resource.bytes == unchanged.bytes
+                && resource.bytes.as_ref() == unchanged.bytes
         }) {
             continue;
         }
@@ -251,7 +255,7 @@ pub(super) fn build(
         resources.push(Resource {
             family: Bundle::effective_family(unchanged.family),
             mime: unchanged.mime,
-            bytes,
+            bytes: bytes.into(),
             metrics: None,
         });
         if unchanged.family == "Noto Emoji" {

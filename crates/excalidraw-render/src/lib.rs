@@ -56,6 +56,11 @@ pub mod wasm_tests {
     fn all_official_font_chunks_derive_repeatably_in_wasm() {
         crate::render::assert_every_official_chunk_derives_repeatably();
     }
+
+    #[wasm_bindgen_test]
+    fn font_subset_resource_trace_matrix_in_wasm() {
+        crate::render::assert_font_subset_resource_trace_matrix();
+    }
 }
 
 /// Returns the complete package-wide license and attribution bundle.

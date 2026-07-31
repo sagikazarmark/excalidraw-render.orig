@@ -1,6 +1,8 @@
 use excalidraw_render_assets_base::{FontSubsetTableAction, FONT_SUBSET_TABLE_RULES_V1};
 use skera::{subset_font, Plan, SubsetFlags};
+use std::collections::VecDeque;
 use std::num::NonZeroUsize;
+use std::sync::Arc;
 use write_fonts::from_obj::FromTableRef;
 use write_fonts::read::{
     collections::IntSet,
@@ -12,17 +14,82 @@ use write_fonts::FontBuilder;
 
 const SUBSET_FLAGS: SubsetFlags = SubsetFlags::SUBSET_FLAGS_DEFAULT;
 const ENCODER_THREADS: Option<NonZeroUsize> = None;
+const MAX_CACHE_ENTRIES: usize = 230;
 
 #[derive(Debug)]
 pub(super) struct Error {
     pub(super) stage: crate::SvgFontSubsetStage,
 }
 
+#[derive(Clone)]
 pub(super) struct Derived {
-    pub(super) woff2: Vec<u8>,
+    pub(super) woff2: Arc<[u8]>,
     pub(super) decoded_sfnt_bytes: usize,
     pub(super) subset_sfnt_bytes: usize,
     pub(super) subset_tables: usize,
+}
+
+#[derive(Eq, PartialEq)]
+struct CacheKey {
+    asset_identity: &'static str,
+    effective_alias: String,
+    semantic_identity: String,
+}
+
+#[derive(Default)]
+pub(super) struct Session {
+    derived: VecDeque<(CacheKey, Derived)>,
+    #[cfg(test)]
+    hits: usize,
+    #[cfg(test)]
+    misses: usize,
+}
+
+impl Session {
+    pub(super) fn new() -> Self {
+        Self::default()
+    }
+
+    pub(super) fn derive(
+        &mut self,
+        asset_identity: &'static str,
+        source_woff2: &[u8],
+        scalars: &[u32],
+        effective_alias: &str,
+        semantic_identity: &str,
+    ) -> Result<Derived, Error> {
+        let key = CacheKey {
+            asset_identity,
+            effective_alias: effective_alias.to_owned(),
+            semantic_identity: semantic_identity.to_owned(),
+        };
+        if let Some((_, derived)) = self.derived.iter().find(|(candidate, _)| candidate == &key) {
+            #[cfg(test)]
+            {
+                self.hits = self.hits.saturating_add(1);
+            }
+            return Ok(derived.clone());
+        }
+        #[cfg(test)]
+        {
+            self.misses = self.misses.saturating_add(1);
+        }
+        let derived = derive(source_woff2, scalars, effective_alias, semantic_identity)?;
+        self.retain(key, derived.clone());
+        Ok(derived)
+    }
+
+    fn retain(&mut self, key: CacheKey, derived: Derived) {
+        if self.derived.len() >= MAX_CACHE_ENTRIES {
+            self.derived.pop_front();
+        }
+        self.derived.push_back((key, derived));
+    }
+
+    #[cfg(test)]
+    pub(super) const fn stats(&self) -> (usize, usize) {
+        (self.hits, self.misses)
+    }
 }
 
 pub(super) fn derive(
@@ -70,7 +137,7 @@ pub(super) fn derive(
     let subset_sfnt = rewrite_names(&subset_sfnt, effective_alias, semantic_identity)?;
     let subset_sfnt = normalize_simple_glyph_overlap(&subset_sfnt)?;
 
-    let subset_woff2 = ttf2woff2::encode_with_options(
+    let subset_woff2: Arc<[u8]> = ttf2woff2::encode_with_options(
         &subset_sfnt,
         ttf2woff2::EncodeOptions {
             quality: ttf2woff2::BrotliQuality::from(11),
@@ -80,7 +147,8 @@ pub(super) fn derive(
     )
     .map_err(|_| Error {
         stage: crate::SvgFontSubsetStage::Encode,
-    })?;
+    })?
+    .into();
     let decoded = wuff::decompress_woff2(&subset_woff2).map_err(|_| Error {
         stage: crate::SvgFontSubsetStage::Validate,
     })?;
@@ -865,6 +933,30 @@ mod tests {
             assert!(!SUBSET_FLAGS.contains(flag));
         }
         assert_eq!(ENCODER_THREADS, None);
+    }
+
+    #[test]
+    fn subset_cache_evicts_in_insertion_order() {
+        let mut session = Session::new();
+        for index in 0..=MAX_CACHE_ENTRIES {
+            session.retain(
+                CacheKey {
+                    asset_identity: "test-font",
+                    effective_alias: "Test".to_owned(),
+                    semantic_identity: format!("{index:03}"),
+                },
+                Derived {
+                    woff2: Arc::from([u8::try_from(index % 256).unwrap_or_default()]),
+                    decoded_sfnt_bytes: 0,
+                    subset_sfnt_bytes: 0,
+                    subset_tables: 0,
+                },
+            );
+        }
+
+        assert_eq!(session.derived.len(), MAX_CACHE_ENTRIES);
+        assert_eq!(session.derived.front().unwrap().0.semantic_identity, "001");
+        assert_eq!(session.derived.back().unwrap().0.semantic_identity, "230");
     }
 
     #[test]

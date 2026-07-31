@@ -32,6 +32,8 @@ jobs:
         run: bash tests/package-consumer/install-rust-toolchain.sh "${{ matrix.target }}" "$RUNNER_TEMP/rust"
       - name: Verify sealed revision catalog
         run: cargo run --locked -p xtask -- catalog verify
+      - name: Execute font qualification
+        run: cargo test --locked --release --target ${{ matrix.target }} -p excalidraw-render --lib font_subset
       - name: Package library
         run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
       - name: Check packaged CLI against packaged renderer
@@ -66,7 +68,7 @@ jobs:
         run: cargo run --locked -p xtask -- catalog verify
       - name: Package library
         run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
-      - name: Execute all font chunks in Chromium
+      - name: Execute font qualification in Chromium
         env:
           FONTCONFIG_FILE: ${{ github.workspace }}/tests/package-consumer/fontconfig.xml
           WASM_BINDGEN_TEST_TIMEOUT: "1800"
@@ -80,7 +82,7 @@ jobs:
             CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner \
             cargo test --locked --release -p excalidraw-render --lib \
               --target wasm32-unknown-unknown \
-              all_official_font_chunks_derive_repeatably_in_wasm
+              wasm_tests
       - name: Execute packaged public facade in Chromium
         working-directory: tests/package-consumer
         env:
