@@ -351,7 +351,7 @@ impl SvgPlan {
                     elements.push(SvgElement::Fallback {
                         source: fallback.source,
                         clip_index: fallback_index,
-                        label: fallback.label.map(|label| label.text),
+                        label: fallback.label.map(|label| label.display_text),
                         link: fallback.link,
                         frame_clips: fallback.frame_clips,
                         width: fallback.width,

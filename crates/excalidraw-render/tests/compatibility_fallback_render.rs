@@ -729,6 +729,9 @@ fn generated_labels_report_controlled_font_substitution_and_missing_glyphs() {
     .expect("Unicode fallback label is admitted");
 
     let outcome = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(!svg.contains("future😀"));
+    assert!(svg.contains("future?"));
     assert!(outcome.report().diagnostics().iter().any(|diagnostic| {
         diagnostic.code() == DiagnosticCode::FONT_LIBERATION_SANS_SUBSTITUTED
     }));

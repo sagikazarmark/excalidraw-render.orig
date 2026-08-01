@@ -176,7 +176,19 @@ impl FallbackFont {
         height: f64,
     ) -> Result<Option<ResolvedLabel>, LabelError> {
         let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
-        let glyphs = shape_text(&face, text);
+        let mut display_text = String::new();
+        display_text.try_reserve_exact(text.len())?;
+        let mut missing_codepoints = Vec::new();
+        for character in text.chars() {
+            if face.glyph_index(character).is_some() {
+                display_text.push(character);
+            } else {
+                display_text.push('?');
+                missing_codepoints.try_reserve(1)?;
+                missing_codepoints.push(u32::from(character));
+            }
+        }
+        let glyphs = shape_text(&face, &display_text);
         let advance_units = glyphs
             .glyph_positions()
             .iter()
@@ -194,7 +206,6 @@ impl FallbackFont {
         let mut operations = Vec::new();
         let estimated_operations = glyphs.glyph_infos().len().saturating_mul(32);
         operations.try_reserve(estimated_operations)?;
-        let mut missing_codepoints = Vec::new();
         let mut pen_x = 0_i64;
         let mut pen_y = 0_i64;
         let mut resolved_glyphs = Vec::new();
@@ -211,12 +222,9 @@ impl FallbackFont {
             };
             let glyph_id = u16::try_from(info.glyph_id).map_err(|_| LabelError::InvalidFont)?;
             let cluster = usize::try_from(info.cluster).map_err(|_| LabelError::InvalidFont)?;
-            let cluster_text = glyph_cluster_text(&glyphs, text, cluster)?;
+            let cluster_text = glyph_cluster_text(&glyphs, &display_text, cluster)?;
             if glyph_id == 0 {
-                if let Some(codepoint) = cluster_text.chars().next().map(u32::from) {
-                    missing_codepoints.try_reserve(1)?;
-                    missing_codepoints.push(codepoint);
-                }
+                return Err(LabelError::InvalidFont);
             }
             let mut unicode = Vec::new();
             unicode.try_reserve_exact(cluster_text.encode_utf16().count())?;
@@ -254,7 +262,7 @@ impl FallbackFont {
         owned_text.push_str(text);
         Ok(Some(ResolvedLabel {
             text: owned_text,
-            display_text: try_owned(text)?,
+            display_text,
             baseline,
             path: LabelPath { operations },
             glyph_count: u64::try_from(glyphs.glyph_infos().len()).unwrap_or(u64::MAX),
