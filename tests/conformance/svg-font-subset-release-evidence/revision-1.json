@@ -6,7 +6,7 @@
     "sha256": "c08ee3f16b077cb38b88a9812f8719f7fb8edae2fe450f2c3b8b4c9910b5f084",
     "successfulCells": 762
   },
-  "decision": "pending_approval_and_target_aggregation",
+  "decision": "pending_target_aggregation",
   "fuzzRegressions": {
     "path": "crates/excalidraw-render/tests/qualification/font-subset-fuzz-regressions.json",
     "sha256": "48ce706327a5b18676da8e65c03f30fb16ae80a26b3514c521e593adc8781551"
@@ -55,7 +55,7 @@
     "approvalSubject": "sha256:e301a4df2f01edd6cdb9c759f6b610b9130996e128b809726a44a0e47e12337e",
     "executions": 643,
     "path": "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json",
-    "sha256": "0fa2fa340b3bd78467e381e79d86e2dad16e849e21feb55042c230afe2b5e65c",
-    "status": "pending_maintainer_approval"
+    "sha256": "35b9f3294cf6c838f2a525f911c289c206a42407ba9b4ff7ffcb7194bb725bde",
+    "status": "approved"
   }
 }
