@@ -4,6 +4,7 @@ use base64::Engine;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
+use write_fonts::read::tables::cmap::CmapIterLimits;
 use write_fonts::read::{types::GlyphId, FontRef, TableProvider};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -514,23 +515,86 @@ fn layout_probe(face: &rustybuzz::Face<'_>, font: &FontRef<'_>) -> Option<Vec<u3
     if font.gsub().is_err() && font.gpos().is_err() {
         return None;
     }
-    [
+    let manifested = [
         "office", "ffi", "fl", "AV", "To", "Ta", "Wa", "Yo", "لا", "سلام",
-    ]
-    .iter()
-    .find(|probe| {
+    ];
+    if let Some(probe) = manifested.iter().find(|probe| {
         probe
             .chars()
             .all(|character| face.glyph_index(character).is_some())
             && probe_exercises_layout(face, probe)
-    })
-    .map(|probe| {
-        let mut scalars = Vec::new();
-        for scalar in probe.chars().map(u32::from) {
-            push_scalar(&mut scalars, scalar);
+    }) {
+        return Some(probe_scalars(probe));
+    }
+
+    const MAX_LAYOUT_CANDIDATES: usize = 48;
+    let referenced = font_subset::layout_glyph_ids(font)?;
+    let cmap = font.cmap().ok()?;
+    let (_, _, subtable) = cmap.best_subtable()?;
+    let mapped = subtable
+        .iter_with_limits(CmapIterLimits::default_for_font(font))
+        .filter_map(|(scalar, glyph)| {
+            u16::try_from(glyph.to_u32())
+                .ok()
+                .filter(|glyph| {
+                    referenced
+                        .get(usize::from(*glyph))
+                        .copied()
+                        .unwrap_or(false)
+                })
+                .filter(|_| qualification_character(scalar).is_some())
+                .map(|_| scalar)
+        })
+        .collect::<Vec<_>>();
+    let candidates = (0..mapped.len().min(MAX_LAYOUT_CANDIDATES))
+        .filter_map(|index| {
+            let sampled = if mapped.len() <= MAX_LAYOUT_CANDIDATES {
+                index
+            } else {
+                index * (mapped.len() - 1) / (MAX_LAYOUT_CANDIDATES - 1)
+            };
+            mapped.get(sampled).copied()
+        })
+        .filter_map(char::from_u32)
+        .collect::<Vec<_>>();
+
+    for character in &candidates {
+        let probe = character.to_string();
+        if probe_exercises_layout(face, &probe) {
+            return Some(probe_scalars(&probe));
         }
-        scalars
-    })
+        let probe = [*character, *character].iter().collect::<String>();
+        if probe_exercises_layout(face, &probe) {
+            return Some(probe_scalars(&probe));
+        }
+    }
+    for first in &candidates {
+        for second in &candidates {
+            let probe = [*first, *second].iter().collect::<String>();
+            if probe_exercises_layout(face, &probe) {
+                return Some(probe_scalars(&probe));
+            }
+        }
+    }
+    for window in candidates.windows(3) {
+        let probe = window.iter().collect::<String>();
+        if probe_exercises_layout(face, &probe) {
+            return Some(probe_scalars(&probe));
+        }
+        let probe = window.iter().rev().collect::<String>();
+        if probe_exercises_layout(face, &probe) {
+            return Some(probe_scalars(&probe));
+        }
+    }
+    None
+}
+
+fn probe_scalars(probe: &str) -> Vec<u32> {
+    let mut scalars = Vec::new();
+    for scalar in probe.chars().map(u32::from) {
+        push_scalar(&mut scalars, scalar);
+    }
+    scalars
 }
 
 fn probe_exercises_layout(face: &rustybuzz::Face<'_>, probe: &str) -> bool {
@@ -554,7 +618,13 @@ fn probe_exercises_layout(face: &rustybuzz::Face<'_>, probe: &str) -> bool {
     shaped
         .glyph_positions()
         .iter()
-        .any(|position| position.y_advance != 0 || position.x_offset != 0 || position.y_offset != 0)
+        .zip(mapped)
+        .any(|(position, glyph)| {
+            position.x_advance != i32::from(face.glyph_hor_advance(glyph).unwrap_or_default())
+                || position.y_advance != 0
+                || position.x_offset != 0
+                || position.y_offset != 0
+        })
 }
 
 fn canonical_trace_sha256(
@@ -817,7 +887,7 @@ fn class_definitions() -> Vec<ClassDefinition> {
         "first source-mapped scalar above U+FFFF",
         "first source-mapped scalar with a nonzero canonical combining class",
         "first source-mapped scalar whose TrueType glyph is composite",
-        "first complete manifested shaping probe whose default GSUB/GPOS shaping changes glyph choice, count, vertical advance, or offset",
+        "first complete bounded shaping probe whose default GSUB/GPOS shaping changes glyph choice, count, horizontal or vertical advance, or offset",
     ]
     .into_iter()
     .zip(CLASS_IDS)
@@ -1186,6 +1256,54 @@ fn json_bytes(value: &serde_json::Value) -> Vec<u8> {
     let mut bytes = serde_json::to_vec(value).expect("qualification JSON serializes");
     bytes.push(b'\n');
     bytes
+}
+
+#[test]
+fn layout_probe_detects_horizontal_advance_only_gpos() {
+    for record in excalidraw_render_assets_base::revision_1()
+        .assets
+        .iter()
+        .filter(|record| record.family == "Liberation")
+    {
+        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+            .expect("Liberation source verifies")
+            .expect("Liberation source exists");
+        let sfnt = wuff::decompress_woff2(asset.bytes()).expect("Liberation source decodes");
+        let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("Liberation source parses");
+        for probe in ["AV", "To", "Ta", "Wa", "Yo"] {
+            let mapped = probe
+                .chars()
+                .filter_map(|character| face.glyph_index(character))
+                .collect::<Vec<_>>();
+            if mapped.len() != probe.chars().count() {
+                continue;
+            }
+            let mut buffer = rustybuzz::UnicodeBuffer::new();
+            buffer.push_str(probe);
+            buffer.guess_segment_properties();
+            let shaped = rustybuzz::shape(&face, &[], buffer);
+            let glyphs_unchanged = shaped.glyph_infos().len() == mapped.len()
+                && shaped
+                    .glyph_infos()
+                    .iter()
+                    .zip(&mapped)
+                    .all(|(info, glyph)| info.glyph_id == u32::from(glyph.0));
+            let positions = shaped.glyph_positions();
+            let horizontal_advance_changed =
+                positions.iter().zip(&mapped).any(|(position, glyph)| {
+                    position.x_advance
+                        != i32::from(face.glyph_hor_advance(*glyph).unwrap_or_default())
+                });
+            let no_other_positioning = positions.iter().all(|position| {
+                position.y_advance == 0 && position.x_offset == 0 && position.y_offset == 0
+            });
+            if glyphs_unchanged && horizontal_advance_changed && no_other_positioning {
+                assert!(probe_exercises_layout(&face, probe));
+                return;
+            }
+        }
+    }
+    panic!("manifest contains advance-only GPOS evidence");
 }
 
 #[test]

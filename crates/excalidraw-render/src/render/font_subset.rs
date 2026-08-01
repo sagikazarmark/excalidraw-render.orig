@@ -11,11 +11,14 @@ use write_fonts::read::{
     FontRef, TableProvider,
 };
 use write_fonts::tables::glyf::{Contour, GlyfLocaBuilder, Glyph, SimpleGlyph};
+use write_fonts::validate::Validate;
 use write_fonts::FontBuilder;
 
 const SUBSET_FLAGS: SubsetFlags = SubsetFlags::SUBSET_FLAGS_DEFAULT;
 const ENCODER_THREADS: Option<NonZeroUsize> = NonZeroUsize::new(1);
 const MAX_CACHE_ENTRIES: usize = 230;
+const MAX_LAYOUT_TRAVERSAL_DEPTH: usize = 64;
+const MAX_LAYOUT_TRAVERSAL_NODES: usize = 1_000_000;
 
 #[derive(Debug)]
 pub(super) struct Error {
@@ -162,6 +165,7 @@ pub(super) fn derive(
     validate_checksums(&decoded)?;
     validate_canonical_agreement(&subset_sfnt, &decoded)?;
     validate_table_policy(&font, &decoded_font)?;
+    validate_layout_closure(&decoded_font)?;
     validate_mappings_and_metrics(&source_sfnt, &decoded, scalars)?;
     validate_names(&source_sfnt, &decoded, effective_alias, semantic_identity)?;
     Ok(Derived {
@@ -476,7 +480,209 @@ fn validate_mappings_and_metrics(
             validate_shaping_probe(&source, &subset, probe, None)?;
         }
     }
+    let retained = retained_text.chars().collect::<Vec<_>>();
+    for chunk in retained.chunks(32).filter(|chunk| chunk.len() > 1) {
+        let probe = chunk.iter().collect::<String>();
+        validate_shaping_probe(&source, &subset, &probe, None)?;
+    }
+    for width in 2..=4 {
+        for window in retained.windows(width) {
+            let probe = window.iter().collect::<String>();
+            validate_shaping_probe(&source, &subset, &probe, None)?;
+        }
+    }
     Ok(())
+}
+
+fn validate_layout_closure(font: &FontRef<'_>) -> Result<(), Error> {
+    let glyph_count = u32::from(font.maxp().map_err(|_| validate_error())?.num_glyphs());
+    let mut glyphs = Vec::new();
+    glyphs
+        .try_reserve_exact(usize::try_from(glyph_count).map_err(|_| validate_error())?)
+        .map_err(|_| validate_error())?;
+    glyphs.resize(
+        usize::try_from(glyph_count).map_err(|_| validate_error())?,
+        false,
+    );
+    let mut budget = MAX_LAYOUT_TRAVERSAL_NODES;
+
+    if font.data_for_tag(Tag::new(b"GSUB")).is_some() {
+        let table = font.gsub().map_err(|_| validate_error())?;
+        validate_layout_table(&table, glyph_count, &mut glyphs, &mut budget, 0)?;
+        let owned = write_fonts::tables::gsub::Gsub::from_table_ref(&table);
+        owned.validate().map_err(|_| validate_error())?;
+        write_fonts::dump_table(&owned).map_err(|_| validate_error())?;
+        validate_single_substitution_deltas(&table, glyph_count)?;
+    }
+    if font.data_for_tag(Tag::new(b"GPOS")).is_some() {
+        let table = font.gpos().map_err(|_| validate_error())?;
+        validate_layout_table(&table, glyph_count, &mut glyphs, &mut budget, 0)?;
+        let owned = write_fonts::tables::gpos::Gpos::from_table_ref(&table);
+        owned.validate().map_err(|_| validate_error())?;
+        write_fonts::dump_table(&owned).map_err(|_| validate_error())?;
+    }
+    if font.data_for_tag(Tag::new(b"GDEF")).is_some() {
+        let table = font.gdef().map_err(|_| validate_error())?;
+        validate_layout_table(&table, glyph_count, &mut glyphs, &mut budget, 0)?;
+        let owned = write_fonts::tables::gdef::Gdef::from_table_ref(&table);
+        owned.validate().map_err(|_| validate_error())?;
+        write_fonts::dump_table(&owned).map_err(|_| validate_error())?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+pub(super) fn layout_glyph_ids(font: &FontRef<'_>) -> Option<Vec<bool>> {
+    let glyph_count = u32::from(font.maxp().ok()?.num_glyphs());
+    let mut glyphs = vec![false; usize::try_from(glyph_count).ok()?];
+    let mut budget = MAX_LAYOUT_TRAVERSAL_NODES;
+    if font.data_for_tag(Tag::new(b"GSUB")).is_some() {
+        validate_layout_table(&font.gsub().ok()?, glyph_count, &mut glyphs, &mut budget, 0).ok()?;
+    }
+    if font.data_for_tag(Tag::new(b"GPOS")).is_some() {
+        validate_layout_table(&font.gpos().ok()?, glyph_count, &mut glyphs, &mut budget, 0).ok()?;
+    }
+    if font.data_for_tag(Tag::new(b"GDEF")).is_some() {
+        validate_layout_table(&font.gdef().ok()?, glyph_count, &mut glyphs, &mut budget, 0).ok()?;
+    }
+    Some(glyphs)
+}
+
+fn validate_layout_table<'a>(
+    table: &(dyn write_fonts::read::traversal::SomeTable<'a> + 'a),
+    glyph_count: u32,
+    glyphs: &mut [bool],
+    budget: &mut usize,
+    depth: usize,
+) -> Result<(), Error> {
+    if depth > MAX_LAYOUT_TRAVERSAL_DEPTH {
+        return Err(validate_error());
+    }
+    let validates_class_range = table.type_name() == "ClassDefFormat1";
+    let mut class_start = None;
+    let mut class_count = None;
+    for field in table.iter() {
+        if validates_class_range {
+            match (&field.name, &field.value) {
+                (&"start_glyph_id", write_fonts::read::traversal::FieldType::GlyphId16(glyph)) => {
+                    class_start = Some(glyph.to_u32());
+                }
+                (&"class_value_array", write_fonts::read::traversal::FieldType::Array(array)) => {
+                    class_count = Some(array.len());
+                }
+                _ => {}
+            }
+        }
+        validate_layout_field(field.value, glyph_count, glyphs, budget, depth)?;
+    }
+    if let (Some(start), Some(count)) = (class_start, class_count) {
+        let end = start
+            .checked_add(u32::try_from(count).map_err(|_| validate_error())?)
+            .ok_or_else(validate_error)?;
+        if end > glyph_count {
+            return Err(validate_error());
+        }
+    }
+    Ok(())
+}
+
+fn validate_layout_field<'a>(
+    field: write_fonts::read::traversal::FieldType<'a>,
+    glyph_count: u32,
+    glyphs: &mut [bool],
+    budget: &mut usize,
+    depth: usize,
+) -> Result<(), Error> {
+    *budget = budget.checked_sub(1).ok_or_else(validate_error)?;
+    use write_fonts::read::traversal::FieldType;
+    match field {
+        FieldType::GlyphId16(glyph) => {
+            if glyph.to_u32() >= glyph_count {
+                return Err(validate_error());
+            }
+            *glyphs
+                .get_mut(usize::from(glyph.to_u16()))
+                .ok_or_else(validate_error)? = true;
+        }
+        FieldType::GlyphId24(glyph) if glyph.to_u32() >= glyph_count => {
+            return Err(validate_error());
+        }
+        FieldType::GlyphId24(_) => {}
+        FieldType::ResolvedOffset(offset) => {
+            let target = offset.target.map_err(|_| validate_error())?;
+            validate_layout_table(target.as_ref(), glyph_count, glyphs, budget, depth + 1)?;
+        }
+        FieldType::ArrayOffset(offset) => {
+            let target = offset.target.map_err(|_| validate_error())?;
+            validate_layout_array(target.as_ref(), glyph_count, glyphs, budget, depth + 1)?;
+        }
+        FieldType::Record(record) => {
+            validate_layout_table(&record, glyph_count, glyphs, budget, depth + 1)?;
+        }
+        FieldType::Array(array) => {
+            validate_layout_array(array.as_ref(), glyph_count, glyphs, budget, depth + 1)?;
+        }
+        FieldType::BareOffset(offset) if offset.to_u32() != 0 => {
+            return Err(validate_error());
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+fn validate_layout_array<'a>(
+    array: &(dyn write_fonts::read::traversal::SomeArray<'a> + 'a),
+    glyph_count: u32,
+    glyphs: &mut [bool],
+    budget: &mut usize,
+    depth: usize,
+) -> Result<(), Error> {
+    if depth > MAX_LAYOUT_TRAVERSAL_DEPTH || array.len() > *budget {
+        return Err(validate_error());
+    }
+    for index in 0..array.len() {
+        let field = array.get(index).ok_or_else(validate_error)?;
+        validate_layout_field(field, glyph_count, glyphs, budget, depth)?;
+    }
+    Ok(())
+}
+
+fn validate_single_substitution_deltas(
+    gsub: &write_fonts::read::tables::gsub::Gsub<'_>,
+    glyph_count: u32,
+) -> Result<(), Error> {
+    use write_fonts::read::tables::gsub::{SingleSubst, SubstitutionSubtables};
+    for lookup in gsub
+        .lookup_list()
+        .map_err(|_| validate_error())?
+        .lookups()
+        .iter()
+    {
+        let lookup = lookup.map_err(|_| validate_error())?;
+        let SubstitutionSubtables::Single(subtables) =
+            lookup.subtables().map_err(|_| validate_error())?
+        else {
+            continue;
+        };
+        for subtable in subtables.iter() {
+            if let SingleSubst::Format1(single) = subtable.map_err(|_| validate_error())? {
+                let delta = i32::from(single.delta_glyph_id());
+                for glyph in single.coverage().map_err(|_| validate_error())?.iter() {
+                    let substitute = (i32::from(glyph.to_u16()) + delta) & 0xffff;
+                    if u32::try_from(substitute).map_err(|_| validate_error())? >= glyph_count {
+                        return Err(validate_error());
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+const fn validate_error() -> Error {
+    Error {
+        stage: crate::SvgFontSubsetStage::Validate,
+    }
 }
 
 fn validate_shaping_probe(
@@ -1037,6 +1243,49 @@ mod tests {
             assert_eq!(
                 validate_checksums(malformed)
                     .expect_err("malformed sfnt is rejected")
+                    .stage,
+                crate::SvgFontSubsetStage::Validate
+            );
+        }
+    }
+
+    #[test]
+    fn malformed_layout_closure_returns_a_typed_validate_failure() {
+        let record = excalidraw_render_assets_base::revision_1()
+            .assets
+            .iter()
+            .find(|record| record.family == "Liberation")
+            .expect("Liberation source is manifested");
+        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+            .expect("Liberation source verifies")
+            .expect("Liberation source exists");
+        let derived = derive(
+            asset.bytes(),
+            &[u32::from('A')],
+            "ExcalidrawRender-9",
+            &"0".repeat(64),
+        )
+        .expect("fixture subset derives");
+        let sfnt = wuff::decompress_woff2(&derived.woff2).expect("fixture subset decodes");
+
+        let outside_maxp = [
+            0x00, 0x01, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+            0xff, 0xff, 0x00, 0x01, 0x00, 0x01,
+        ];
+        let unresolved_offset = [
+            0x00, 0x01, 0x00, 0x00, 0x7f, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        for malformed_gdef in [&outside_maxp[..], &unresolved_offset[..]] {
+            let font = FontRef::new(&sfnt).expect("fixture sfnt parses");
+            let mut builder = FontBuilder::new();
+            builder.add_raw(Tag::new(b"GDEF"), malformed_gdef.to_vec());
+            builder.copy_missing_tables(font);
+            let malformed = builder.build();
+            let malformed = FontRef::new(&malformed).expect("outer malformed sfnt parses");
+
+            assert_eq!(
+                validate_layout_closure(&malformed)
+                    .expect_err("broken layout closure is rejected")
                     .stage,
                 crate::SvgFontSubsetStage::Validate
             );
