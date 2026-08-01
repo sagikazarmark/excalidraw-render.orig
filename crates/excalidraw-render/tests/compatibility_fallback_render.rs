@@ -84,7 +84,7 @@ fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
         "stroke-width=\"2\"/>"
     )));
     assert!(svg.contains(concat!(
-        "<text x=\"120\" y=\"50\" fill=\"#495057\" font-family=\"Liberation Sans\" ",
+        "<text x=\"120\" y=\"50\" fill=\"#495057\" font-family=\"ExcalidrawRender-9\" ",
         "font-size=\"14\" text-anchor=\"middle\" dominant-baseline=\"central\">",
         "Unsupported: future&lt;&amp;</text>"
     )));
@@ -187,7 +187,7 @@ fn compatibility_labels_use_full_ellipsis_or_omitted_fit_behavior() {
     assert!(svg.contains(">Unsupported: future</text>"));
     assert!(svg.contains(">…</text>"));
     assert!(svg.contains("<excalidraw-render:manifest xmlns:excalidraw-render=\"urn:excalidraw-render:artifact-manifest:1\">"));
-    assert!(svg.contains("Digitized data copyright (c) 2010 Google Corporation\\n"));
+    assert!(svg.contains("Modified Version under font.liberation-sans.ofl-1.1."));
 
     let png = render(&scene, OutputFormat::Png);
     let (_, _, rgba) = decode_png(png.artifact().bytes());
@@ -399,7 +399,7 @@ fn iframe_and_embeddable_render_the_official_offline_shell_in_the_final_pass() {
         svg.rfind("data-source-text=\"IFrame element\"").unwrap() > svg.find("#ff0000").unwrap()
     );
     assert!(svg.contains("<a href=\"https://example.com/embed\">"));
-    assert!(svg.contains("Liberation Sans"));
+    assert!(svg.contains("ExcalidrawRender-9"));
 
     let png = render(&scene, OutputFormat::Png);
     let (_, _, rgba) = decode_png(png.artifact().bytes());

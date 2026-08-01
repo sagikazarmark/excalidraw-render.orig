@@ -205,7 +205,7 @@ fn renderer_owned_fallback_colors_follow_dark_mode() {
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains("fill=\"#1a1c1e\""));
     assert!(svg.contains("stroke=\"#6e747b\""));
-    assert!(svg.contains("fill=\"#a4aab0\" font-family=\"Liberation Sans\""));
+    assert!(svg.contains("fill=\"#a4aab0\" font-family=\"ExcalidrawRender-9\""));
 
     let png = render_dark(source, OutputFormat::Png);
     let (_, _, rgba) = decode_png(png.artifact().bytes());
