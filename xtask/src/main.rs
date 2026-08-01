@@ -1,6 +1,8 @@
 mod catalog;
 mod conformance;
 mod pdf_viewers;
+mod svg_font_subset_runner;
+mod svg_font_subsets;
 mod svg_viewers;
 
 use std::env;
@@ -87,6 +89,45 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             svg_viewers::verify(true)?;
             println!("verified canonical SVG viewer qualification");
+        }
+        Some("verify-svg-font-subsets") => {
+            no_more_args(args)?;
+            svg_font_subsets::verify()?;
+            println!("verified canonical SVG font subset viewer qualification");
+        }
+        Some("svg-font-subset-approval-subject") => {
+            no_more_args(args)?;
+            println!("sha256:{}", svg_font_subsets::approval_subject()?);
+        }
+        Some("record-svg-font-subset-approval") => {
+            let approved_by = required_arg(&mut args, "GitHub identity")?;
+            let approved_at = required_arg(&mut args, "approval date")?;
+            let approval_url = required_arg(&mut args, "approval URL")?;
+            let expected_subject = required_arg(&mut args, "approval subject")?;
+            no_more_args(args)?;
+            svg_font_subsets::record_approval(
+                &approved_by,
+                &approved_at,
+                &approval_url,
+                &expected_subject,
+            )?;
+            println!("recorded SVG font subset viewer evidence approval");
+        }
+        Some("generate-svg-font-subset-rust-report") => {
+            let inputs = required_arg(&mut args, "viewer input manifest")?;
+            let viewer = required_arg(&mut args, "canonical pure-Rust viewer executable")?;
+            let output = required_arg(&mut args, "viewer report path")?;
+            no_more_args(args)?;
+            svg_font_subset_runner::generate(&inputs, &viewer, &output)?;
+            println!("generated pure-Rust SVG font subset viewer report");
+        }
+        Some("materialize-svg-font-subset-evidence") => {
+            let inputs = required_arg(&mut args, "viewer input manifest")?;
+            let chromium = required_arg(&mut args, "Chromium viewer report")?;
+            let pure_rust = required_arg(&mut args, "pure-Rust viewer report")?;
+            no_more_args(args)?;
+            svg_font_subsets::materialize(&inputs, &chromium, &pure_rust)?;
+            println!("materialized SVG font subset viewer evidence");
         }
         Some("svg-viewer-approval-subject") => {
             no_more_args(args)?;
@@ -177,7 +218,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify> | ",
         "conformance <generate|reproduce|verify|approval-subject|record-approval|",
-        "verify-svg-viewers|svg-viewer-approval-subject|record-svg-viewer-approval|",
+        "verify-svg-viewers|verify-svg-font-subsets|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"
     )

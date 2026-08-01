@@ -6,10 +6,11 @@ use std::sync::Arc;
 use write_fonts::from_obj::FromTableRef;
 use write_fonts::read::{
     collections::IntSet,
+    tables::glyf::CurvePoint,
     types::{GlyphId, NameId, Tag},
     FontRef, TableProvider,
 };
-use write_fonts::tables::glyf::{GlyfLocaBuilder, Glyph};
+use write_fonts::tables::glyf::{Contour, GlyfLocaBuilder, Glyph, SimpleGlyph};
 use write_fonts::FontBuilder;
 
 const SUBSET_FLAGS: SubsetFlags = SubsetFlags::SUBSET_FLAGS_DEFAULT;
@@ -137,6 +138,7 @@ pub(super) fn derive(
     let subset_sfnt = ensure_required_cmap(&subset_sfnt)?;
     let subset_sfnt = rewrite_names(&subset_sfnt, effective_alias, semantic_identity)?;
     let subset_sfnt = normalize_simple_glyph_overlap(&subset_sfnt)?;
+    let subset_sfnt = ensure_nonempty_glyf(&subset_sfnt)?;
 
     let subset_woff2: Arc<[u8]> = ttf2woff2::encode_with_options(
         &subset_sfnt,
@@ -179,6 +181,53 @@ fn ensure_required_cmap(sfnt: &[u8]) -> Result<Vec<u8>, Error> {
     }
     let mut builder = FontBuilder::new();
     builder.add_raw(Tag::new(b"cmap"), vec![0, 0, 0, 0]);
+    builder.copy_missing_tables(font);
+    Ok(builder.build())
+}
+
+fn ensure_nonempty_glyf(sfnt: &[u8]) -> Result<Vec<u8>, Error> {
+    let font = FontRef::new(sfnt).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    let glyf = font.data_for_tag(Tag::new(b"glyf")).ok_or(Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    if !glyf.as_bytes().is_empty() {
+        return Ok(sfnt.to_vec());
+    }
+    // Chromium OTS rejects a zero-length glyf table even when every retained
+    // glyph is empty (for example, a subset containing only U+0020). Encode an
+    // outline-free simple .notdef glyph so WOFF2 glyf transformation retains a
+    // structurally nonempty table without changing any selected visible glyph.
+    let notdef = Glyph::Simple(SimpleGlyph {
+        contours: vec![Contour::from(vec![CurvePoint::on_curve(0, 0)])],
+        ..SimpleGlyph::default()
+    });
+    let glyph_count = font
+        .maxp()
+        .map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Sfnt,
+        })?
+        .num_glyphs();
+    let mut glyf_loca = GlyfLocaBuilder::new();
+    for glyph_id in 0..glyph_count {
+        let glyph = if glyph_id == 0 {
+            notdef.clone()
+        } else {
+            Glyph::Empty
+        };
+        glyf_loca.add_glyph(&glyph).map_err(|_| Error {
+            stage: crate::SvgFontSubsetStage::Sfnt,
+        })?;
+    }
+    let (glyf, loca, _) = glyf_loca.build();
+    let mut builder = FontBuilder::new();
+    builder.add_table(&glyf).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    builder.add_table(&loca).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
     builder.copy_missing_tables(font);
     Ok(builder.build())
 }
@@ -927,6 +976,33 @@ mod tests {
         assert_eq!(session.derived.len(), MAX_CACHE_ENTRIES);
         assert_eq!(session.derived.front().unwrap().0.semantic_identity, "001");
         assert_eq!(session.derived.back().unwrap().0.semantic_identity, "230");
+    }
+
+    #[test]
+    fn whitespace_only_subsets_keep_a_browser_admissible_glyf_table() {
+        let record = excalidraw_render_assets_base::revision_1()
+            .assets
+            .iter()
+            .find(|record| record.family == "Liberation")
+            .expect("Liberation source is manifested");
+        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+            .expect("Liberation source verifies")
+            .expect("Liberation source exists");
+        let derived = derive(
+            asset.bytes(),
+            &[u32::from(' ')],
+            "ExcalidrawRender-9",
+            &"0".repeat(64),
+        )
+        .expect("whitespace-only subset derives");
+        let sfnt = wuff::decompress_woff2(&derived.woff2).expect("subset decodes");
+        let font = FontRef::new(&sfnt).expect("subset sfnt parses");
+
+        assert!(
+            font.data_for_tag(Tag::new(b"glyf"))
+                .is_some_and(|table| !table.as_bytes().is_empty()),
+            "Chromium OTS rejects zero-length glyf tables"
+        );
     }
 
     #[test]

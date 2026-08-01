@@ -1,7 +1,9 @@
 use super::{font_subset, svg_fonts};
+#[cfg(not(target_arch = "wasm32"))]
+use base64::Engine;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use write_fonts::read::{types::GlyphId, FontRef, TableProvider};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -826,6 +828,366 @@ fn class_definitions() -> Vec<ClassDefinition> {
     .collect()
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+fn materialize_viewer_inputs() {
+    use std::fs;
+    use std::path::PathBuf;
+
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let output = root.join("target/svg-font-subset-viewer-qualification");
+    if output.exists() {
+        fs::remove_dir_all(&output).expect("stale viewer qualification inputs can be removed");
+    }
+    fs::create_dir_all(output.join("inputs"))
+        .expect("viewer qualification input directory can be created");
+
+    let corpus: Corpus = serde_json::from_slice(include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/qualification/font-subset-corpus.json"
+    )))
+    .expect("the font subset qualification corpus is valid JSON");
+    let catalog = excalidraw_render_assets_base::revision_1();
+    assert_eq!(corpus.sources.len(), catalog.assets.len());
+    let mut executions = BTreeMap::<String, serde_json::Value>::new();
+
+    for (source, record) in corpus.sources.iter().zip(catalog.assets) {
+        assert_eq!(source.source_identity, record.identity);
+        assert_eq!(source.upstream_path, record.upstream_path);
+        assert_eq!(source.source_sha256, record.complete_sha256);
+        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+            .expect("qualified source verifies")
+            .expect("qualified source exists");
+        for cell in &source.cells {
+            if cell.status != CellStatus::Success {
+                continue;
+            }
+            let scalars = cell
+                .ordered_scalars
+                .as_deref()
+                .expect("success has scalars");
+            let identity = cell
+                .semantic_subset_identity
+                .as_deref()
+                .expect("success has semantic identity");
+            let coverage = serde_json::json!({
+                "class": cell.class,
+                "ordered_scalars": scalars,
+                "source_identity": source.source_identity,
+            });
+            if let Some(execution) = executions.get_mut(identity) {
+                execution["coverage"]
+                    .as_array_mut()
+                    .expect("execution coverage is an array")
+                    .push(coverage);
+                continue;
+            }
+
+            let derived =
+                font_subset::derive(asset.bytes(), scalars, &source.effective_alias, identity)
+                    .unwrap_or_else(|error| {
+                        panic!(
+                            "{} {} viewer subset derives at {:?}",
+                            record.upstream_path, cell.class, error.stage
+                        )
+                    });
+            let source_sfnt =
+                wuff::decompress_woff2(asset.bytes()).expect("qualified source decodes");
+            let subset_sfnt =
+                wuff::decompress_woff2(derived.woff2.as_ref()).expect("qualified subset decodes");
+            let mapped_scalars = scalars
+                .iter()
+                .copied()
+                .filter(|scalar| {
+                    char::from_u32(*scalar).is_some_and(|character| {
+                        rustybuzz::Face::from_slice(&source_sfnt, 0)
+                            .is_some_and(|face| face.glyph_index(character).is_some())
+                    })
+                })
+                .collect::<Vec<_>>();
+            assert!(
+                !mapped_scalars.is_empty(),
+                "successful cell has mapped text"
+            );
+
+            let case_dir = output.join("inputs").join(identity);
+            fs::create_dir_all(&case_dir).expect("viewer case directory can be created");
+            let source_woff2_path = case_dir.join("source.woff2");
+            let subset_woff2_path = case_dir.join("subset.woff2");
+            let source_sfnt_path = case_dir.join("source.sfnt");
+            let subset_sfnt_path = case_dir.join("subset.sfnt");
+            fs::write(&source_woff2_path, asset.bytes()).expect("source WOFF2 can be staged");
+            fs::write(&subset_woff2_path, derived.woff2.as_ref())
+                .expect("subset WOFF2 can be staged");
+            fs::write(&source_sfnt_path, &source_sfnt).expect("source sfnt can be staged");
+            fs::write(&subset_sfnt_path, &subset_sfnt).expect("subset sfnt can be staged");
+
+            let family = format!("Qualification-{}", &identity[..16]);
+            let (source_family, source_properties) = fontdb_face(&source_sfnt);
+            let (subset_family, subset_properties) = fontdb_face(&subset_sfnt);
+            assert_eq!(
+                source_properties, subset_properties,
+                "subset preserves face properties"
+            );
+            let lines = qualification_lines(&mapped_scalars);
+            let width = 384_u32;
+            let height = 24_u32
+                .checked_add(
+                    u32::try_from(lines.len())
+                        .expect("line count is a u32")
+                        .checked_mul(28)
+                        .expect("line height does not overflow"),
+                )
+                .expect("SVG height does not overflow");
+            let source_svg = qualification_svg(
+                &family,
+                asset.bytes(),
+                &lines,
+                width,
+                height,
+                identity,
+                &source_properties,
+            );
+            let subset_svg = qualification_svg(
+                &family,
+                derived.woff2.as_ref(),
+                &lines,
+                width,
+                height,
+                identity,
+                &source_properties,
+            );
+            fs::write(case_dir.join("source.svg"), source_svg.as_bytes())
+                .expect("source SVG can be staged");
+            fs::write(case_dir.join("subset.svg"), subset_svg.as_bytes())
+                .expect("subset SVG can be staged");
+
+            let source_assets = qualification_assets(
+                &root,
+                asset.bytes(),
+                &source_sfnt_path,
+                &source_sfnt,
+                &family,
+                &source_family,
+                &source_properties,
+            );
+            let subset_assets = qualification_assets(
+                &root,
+                derived.woff2.as_ref(),
+                &subset_sfnt_path,
+                &subset_sfnt,
+                &family,
+                &subset_family,
+                &subset_properties,
+            );
+            write_json(&case_dir.join("source.assets.json"), &source_assets);
+            write_json(&case_dir.join("subset.assets.json"), &subset_assets);
+
+            let relative = |name: &str| {
+                format!("target/svg-font-subset-viewer-qualification/inputs/{identity}/{name}")
+            };
+            executions.insert(
+                identity.to_owned(),
+                serde_json::json!({
+                    "coverage": [coverage],
+                    "dimensions": {
+                        "byte_length": u64::from(width) * u64::from(height) * 4,
+                        "height": height,
+                        "layout": "top-left-row-major",
+                        "pixel_format": "straight-alpha-srgb-rgba8",
+                        "width": width,
+                    },
+                    "effective_alias": source.effective_alias,
+                    "mapped_scalars": mapped_scalars,
+                    "semantic_subset_identity": identity,
+                    "source_assets": relative("source.assets.json"),
+                    "source_assets_sha256": sha256(&json_bytes(&source_assets)),
+                    "source_sfnt": relative("source.sfnt"),
+                    "source_sfnt_sha256": sha256(&source_sfnt),
+                    "source_svg": relative("source.svg"),
+                    "source_svg_sha256": sha256(source_svg.as_bytes()),
+                    "source_woff2": relative("source.woff2"),
+                    "source_woff2_sha256": sha256(asset.bytes()),
+                    "subset_assets": relative("subset.assets.json"),
+                    "subset_assets_sha256": sha256(&json_bytes(&subset_assets)),
+                    "subset_sfnt": relative("subset.sfnt"),
+                    "subset_sfnt_sha256": sha256(&subset_sfnt),
+                    "subset_svg": relative("subset.svg"),
+                    "subset_svg_sha256": sha256(subset_svg.as_bytes()),
+                    "subset_woff2": relative("subset.woff2"),
+                    "subset_woff2_sha256": sha256(derived.woff2.as_ref()),
+                }),
+            );
+        }
+    }
+
+    let cases = serde_json::json!({
+        "cases": executions.into_values().collect::<Vec<_>>(),
+        "corpus_sha256": sha256(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/qualification/font-subset-corpus.json"
+        ))),
+        "schema": "excalidraw-render/svg-font-subset-viewer-inputs/v1",
+        "subset_profile_sha256": PROFILE_SHA256,
+    });
+    write_json(&output.join("inputs.json"), &cases);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn qualification_lines(scalars: &[u32]) -> Vec<String> {
+    scalars
+        .chunks(12)
+        .map(|line| {
+            line.iter()
+                .map(|scalar| char::from_u32(*scalar).expect("manifested scalar is Unicode"))
+                .collect()
+        })
+        .collect()
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn qualification_svg(
+    family: &str,
+    woff2: &[u8],
+    lines: &[String],
+    width: u32,
+    height: u32,
+    identity: &str,
+    properties: &FaceProperties,
+) -> String {
+    let encoded = base64::engine::general_purpose::STANDARD.encode(woff2);
+    let mut text = String::new();
+    for (index, line) in lines.iter().enumerate() {
+        let y = 24 + u32::try_from(index).expect("line index is a u32") * 28;
+        text.push_str(&format!(
+            "<tspan x=\"12\" y=\"{y}\">{}</tspan>",
+            xml_escape(line)
+        ));
+    }
+    format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\"><style>@font-face{{font-family:'{family}';font-style:{};font-weight:{};font-stretch:{};src:url(data:font/woff2;base64,{encoded}) format(woff2);unicode-range:U+0-10FFFF}}</style><text data-semantic-subset-identity=\"{identity}\" font-family=\"{family}\" font-style=\"{}\" font-weight=\"{}\" font-stretch=\"{}\" font-size=\"20\" fill=\"#111111\">{text}</text></svg>",
+        properties.style,
+        properties.weight,
+        properties.stretch,
+        properties.style,
+        properties.weight,
+        properties.stretch,
+    )
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug, Eq, PartialEq)]
+struct FaceProperties {
+    stretch: &'static str,
+    style: &'static str,
+    weight: u16,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn fontdb_face(sfnt: &[u8]) -> (String, FaceProperties) {
+    use std::sync::Arc;
+
+    let mut database = usvg::fontdb::Database::new();
+    let ids = database.load_font_source(usvg::fontdb::Source::Binary(Arc::new(sfnt.to_vec())));
+    let face = ids
+        .iter()
+        .filter_map(|id| database.face(*id))
+        .find(|face| face.index == 0)
+        .expect("qualified sfnt has face index zero");
+    let stretch = match face.stretch {
+        usvg::fontdb::Stretch::UltraCondensed => "ultra-condensed",
+        usvg::fontdb::Stretch::ExtraCondensed => "extra-condensed",
+        usvg::fontdb::Stretch::Condensed => "condensed",
+        usvg::fontdb::Stretch::SemiCondensed => "semi-condensed",
+        usvg::fontdb::Stretch::Normal => "normal",
+        usvg::fontdb::Stretch::SemiExpanded => "semi-expanded",
+        usvg::fontdb::Stretch::Expanded => "expanded",
+        usvg::fontdb::Stretch::ExtraExpanded => "extra-expanded",
+        usvg::fontdb::Stretch::UltraExpanded => "ultra-expanded",
+    };
+    let style = match face.style {
+        usvg::fontdb::Style::Normal => "normal",
+        usvg::fontdb::Style::Italic => "italic",
+        usvg::fontdb::Style::Oblique => "oblique",
+    };
+    (
+        face.families
+            .first()
+            .map(|(family, _)| family.clone())
+            .expect("qualified font has a family name"),
+        FaceProperties {
+            stretch,
+            style,
+            weight: face.weight.0,
+        },
+    )
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn qualification_assets(
+    root: &std::path::Path,
+    woff2: &[u8],
+    sfnt_path: &std::path::Path,
+    sfnt: &[u8],
+    css_family: &str,
+    sfnt_family: &str,
+    properties: &FaceProperties,
+) -> serde_json::Value {
+    let relative = |path: &std::path::Path| {
+        path.strip_prefix(root)
+            .expect("qualification input is under repository root")
+            .to_string_lossy()
+            .replace('\\', "/")
+    };
+    serde_json::json!({
+        "fonts": [{
+            "css": {
+                "family": css_family,
+                "stretch": properties.stretch,
+                "style": properties.style,
+                "unicode_range": ["U+0-10FFFF"],
+                "weight": properties.weight,
+            },
+            "sfnt": {
+                "face_index": 0,
+                "family": sfnt_family,
+                "media_type": "font/ttf",
+                "path": relative(sfnt_path),
+                "sha256": sha256(sfnt),
+                "stretch": properties.stretch,
+                "style": properties.style,
+                "weight": properties.weight,
+            },
+            "source": {
+                "media_type": "font/woff2",
+                "sha256": sha256(woff2),
+            }
+        }],
+        "images": [],
+        "schema": "excalidraw-render/svg-viewer-asset-declaration/v1",
+    })
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn xml_escape(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn write_json(path: &std::path::Path, value: &serde_json::Value) {
+    std::fs::write(path, json_bytes(value)).expect("qualification JSON can be written");
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn json_bytes(value: &serde_json::Value) -> Vec<u8> {
+    let mut bytes = serde_json::to_vec(value).expect("qualification JSON serializes");
+    bytes.push(b'\n');
+    bytes
+}
+
 #[test]
 fn complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces() {
     assert_complete_font_subset_qualification_corpus();
@@ -850,4 +1212,11 @@ fn materialize_complete_font_subset_qualification_corpus() {
         format!("{}\n", sha256(&bytes)),
     )
     .expect("corpus sidecar can be written");
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+#[ignore = "explicitly materializes canonical viewer qualification inputs"]
+fn materialize_complete_font_subset_viewer_inputs() {
+    materialize_viewer_inputs();
 }

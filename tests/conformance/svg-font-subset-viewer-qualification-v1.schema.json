@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sagikazarmark/excalidraw-render.orig/blob/main/tests/conformance/svg-font-subset-viewer-qualification-v1.schema.json",
+  "title": "excalidraw-render dual-viewer SVG font subset qualification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["approval", "schema", "id", "originating_issue", "compatibility_revision", "corpus", "subset_profile", "viewer_profiles", "viewer_reports", "input_manifest_sha256", "implementation", "reproduction_commands", "executions", "decision"],
+  "properties": {
+    "approval": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["approved_at", "approved_by", "approval_subject_sha256", "approval_url"],
+          "properties": {
+            "approved_at": { "type": "string", "format": "date" },
+            "approved_by": { "type": "string", "minLength": 1 },
+            "approval_subject_sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+            "approval_url": { "type": "string", "format": "uri" }
+          }
+        }
+      ]
+    },
+    "schema": { "$ref": "#/$defs/schemaDescriptor" },
+    "id": { "const": "svg-font-subsets.dual-viewer.revision-1.v1" },
+    "input_manifest_sha256": { "$ref": "#/$defs/sha256" },
+    "originating_issue": { "const": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/99" },
+    "compatibility_revision": { "const": 1 },
+    "corpus": { "$ref": "#/$defs/fileDescriptor" },
+    "subset_profile": { "$ref": "#/$defs/fileDescriptor" },
+    "viewer_profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chromium", "pure_rust"],
+      "properties": {
+        "chromium": { "$ref": "#/$defs/fileDescriptor" },
+        "pure_rust": { "$ref": "#/$defs/fileDescriptor" }
+      }
+    },
+    "viewer_reports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chromium", "pure_rust"],
+      "properties": {
+        "chromium": { "$ref": "#/$defs/fileDescriptor" },
+        "pure_rust": { "$ref": "#/$defs/fileDescriptor" }
+      }
+    },
+    "implementation": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/fileDescriptor" }
+    },
+    "reproduction_commands": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "bash tools/svg-font-subset-qualification.sh generate" },
+        { "const": "bash tools/svg-font-subset-qualification.sh reproduce" }
+      ],
+      "items": false
+    },
+    "executions": {
+      "type": "array",
+      "minItems": 634,
+      "maxItems": 634,
+      "items": { "$ref": "#/$defs/execution" }
+    },
+    "decision": { "const": "pass" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "fileDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "schemaDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": { "const": "excalidraw-render/conformance-svg-font-subset-viewer-qualification/v1" },
+        "path": { "const": "tests/conformance/svg-font-subset-viewer-qualification-v1.schema.json" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_identity", "class", "ordered_scalars"],
+      "properties": {
+        "source_identity": { "type": "string", "minLength": 1 },
+        "class": { "enum": ["mapped-scalar", "range-boundary", "full-intersection", "non-bmp", "combining-mark", "composite-closure", "layout-closure-heavy"] },
+        "ordered_scalars": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 0, "maximum": 1114111 }
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["semantic_subset_identity", "source_assets_sha256", "source_sfnt_sha256", "source_svg_sha256", "source_woff2_sha256", "subset_assets_sha256", "subset_sfnt_sha256", "subset_svg_sha256", "subset_woff2_sha256", "coverage", "chromium_decision", "pure_rust_decision", "decision"],
+      "properties": {
+        "semantic_subset_identity": { "$ref": "#/$defs/sha256" },
+        "source_assets_sha256": { "$ref": "#/$defs/sha256" },
+        "source_sfnt_sha256": { "$ref": "#/$defs/sha256" },
+        "source_svg_sha256": { "$ref": "#/$defs/sha256" },
+        "source_woff2_sha256": { "$ref": "#/$defs/sha256" },
+        "subset_assets_sha256": { "$ref": "#/$defs/sha256" },
+        "subset_sfnt_sha256": { "$ref": "#/$defs/sha256" },
+        "subset_svg_sha256": { "$ref": "#/$defs/sha256" },
+        "subset_woff2_sha256": { "$ref": "#/$defs/sha256" },
+        "coverage": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/coverage" } },
+        "chromium_decision": { "const": "pass" },
+        "pure_rust_decision": { "const": "pass" },
+        "decision": { "const": "pass" }
+      }
+    }
+  }
+}
