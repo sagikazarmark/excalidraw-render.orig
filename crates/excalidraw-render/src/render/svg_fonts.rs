@@ -1,6 +1,7 @@
 use super::font_subset;
 use sha2::{Digest, Sha256};
-use std::collections::BTreeMap;
+use std::collections::{hash_map::DefaultHasher, BTreeMap, HashSet, TryReserveError};
+use std::hash::BuildHasherDefault;
 use std::sync::Arc;
 
 pub(super) struct Demand {
@@ -10,6 +11,44 @@ pub(super) struct Demand {
 pub(super) struct FamilyDemand {
     pub(super) family: &'static str,
     pub(super) scalars: Vec<u32>,
+    scalar_membership: HashSet<u32, BuildHasherDefault<DefaultHasher>>,
+}
+
+impl FamilyDemand {
+    pub(super) fn new(family: &'static str) -> Self {
+        Self {
+            family,
+            scalars: Vec::new(),
+            scalar_membership: HashSet::default(),
+        }
+    }
+
+    pub(super) fn from_scalars(
+        family: &'static str,
+        scalars: &[u32],
+    ) -> Result<Self, TryReserveError> {
+        let mut demand = Self::new(family);
+        demand.scalars.try_reserve_exact(scalars.len())?;
+        demand.scalar_membership.try_reserve(scalars.len())?;
+        for scalar in scalars {
+            if demand.scalar_membership.insert(*scalar) {
+                demand.scalars.push(*scalar);
+            }
+        }
+        Ok(demand)
+    }
+
+    pub(super) fn add_text(&mut self, text: &str) -> Result<(), TryReserveError> {
+        let scalar_count = text.chars().count();
+        self.scalars.try_reserve(scalar_count)?;
+        self.scalar_membership.try_reserve(scalar_count)?;
+        for scalar in text.chars().map(u32::from) {
+            if self.scalar_membership.insert(scalar) {
+                self.scalars.push(scalar);
+            }
+        }
+        Ok(())
+    }
 }
 
 pub(super) struct UnchangedFont<'a> {

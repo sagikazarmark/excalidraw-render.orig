@@ -663,10 +663,11 @@ fn render_font_subset_qualification_trace(
     );
     let result = (|| {
         let demand = svg_fonts::Demand {
-            families: vec![svg_fonts::FamilyDemand {
-                family,
-                scalars: scalars.to_vec(),
-            }],
+            families: vec![
+                svg_fonts::FamilyDemand::from_scalars(family, scalars).map_err(|_| {
+                    session.memory_failure(&request, "svg_font_demand", "family_scalar_set")
+                })?,
+            ],
         };
         let selection = account_svg_font_selection(&mut session, &request, &demand)?;
         let envelope = account_svg_font_dependency_envelope(&mut session, &request, &demand)?;
@@ -6051,27 +6052,18 @@ fn svg_font_demand(scene: &ResolvedScene) -> Result<svg_fonts::Demand, FormatEnc
     if let Some(excalifont) = families.iter().find(|family| {
         family.family == "Excalifont" && family.scalars.iter().any(|scalar| is_cjk(*scalar))
     }) {
-        let mut scalars = Vec::new();
-        scalars
-            .try_reserve_exact(excalifont.scalars.len())
+        let xiaolai = svg_fonts::FamilyDemand::from_scalars("Xiaolai", &excalifont.scalars)
             .map_err(|_| FormatEncodeError::MemoryUnavailable {
                 subject_kind: "svg_font_demand",
                 subject: "xiaolai_scalar_set",
             })?;
-        scalars.extend_from_slice(&excalifont.scalars);
         families
             .try_reserve(1)
             .map_err(|_| FormatEncodeError::MemoryUnavailable {
                 subject_kind: "svg_font_demand",
                 subject: "xiaolai_family",
             })?;
-        families.insert(
-            0,
-            svg_fonts::FamilyDemand {
-                family: "Xiaolai",
-                scalars,
-            },
-        );
+        families.insert(0, xiaolai);
     }
     Ok(svg_fonts::Demand { families })
 }
@@ -6593,25 +6585,15 @@ fn add_svg_font_text(
                 subject_kind: "svg_font_demand",
                 subject: "family_set",
             })?;
-        families.push(svg_fonts::FamilyDemand {
-            family,
-            scalars: Vec::new(),
-        });
+        families.push(svg_fonts::FamilyDemand::new(family));
         families.len() - 1
     };
-    for character in text.chars() {
-        let scalar = u32::from(character);
-        if !families[index].scalars.contains(&scalar) {
-            families[index].scalars.try_reserve(1).map_err(|_| {
-                FormatEncodeError::MemoryUnavailable {
-                    subject_kind: "svg_font_demand",
-                    subject: "family_scalar_set",
-                }
-            })?;
-            families[index].scalars.push(scalar);
-        }
-    }
-    Ok(())
+    families[index]
+        .add_text(text)
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "svg_font_demand",
+            subject: "family_scalar_set",
+        })
 }
 
 const fn resolved_family(font_family: i32) -> &'static str {
