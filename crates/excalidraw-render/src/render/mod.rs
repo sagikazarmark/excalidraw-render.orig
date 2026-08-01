@@ -10367,6 +10367,52 @@ mod tests {
         }
     }
 
+    #[test]
+    fn representative_direct_svg_corpus_does_not_grow_against_complete_chunk_controls() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let corpus: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/qualification/svg-font-subset-size-corpus.json"
+        )))
+        .expect("representative SVG font subset size corpus is JSON");
+        assert_eq!(
+            corpus["schema"],
+            "excalidraw-render/svg-font-subset-size-corpus/v1"
+        );
+        let cases = corpus["cases"]
+            .as_array()
+            .expect("representative size corpus cases are an array");
+        assert!(!cases.is_empty());
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("SVG request is valid");
+        for case in cases {
+            let id = case["id"].as_str().expect("size case has an ID");
+            let path = case["scene"].as_str().expect("size case has a scene path");
+            let scene_bytes = fs::read(root.join(path))
+                .unwrap_or_else(|error| panic!("failed to read size case {id}: {error}"));
+            let scene = SceneDocument::parse(&scene_bytes)
+                .unwrap_or_else(|error| panic!("failed to parse size case {id}: {error}"));
+            let candidate = Renderer::new()
+                .render(&scene, &request)
+                .unwrap_or_else(|error| panic!("subset size case {id} failed: {error}"));
+            let control = render_with_svg_font_payload(
+                &crate::catalog::REVISION_1,
+                &scene,
+                &request,
+                SvgFontPayload::CompleteChunks,
+            )
+            .unwrap_or_else(|error| panic!("complete-chunk size case {id} failed: {error}"));
+            assert_eq!(candidate.report(), control.report(), "size case {id}");
+            assert!(
+                candidate.artifact().bytes().len() <= control.artifact().bytes().len(),
+                "representative size case {id} grew: candidate={}, control={}",
+                candidate.artifact().bytes().len(),
+                control.artifact().bytes().len(),
+            );
+        }
+    }
+
     fn assert_focused_svg_font_savings(candidate: &RenderOutcome, control: &RenderOutcome) {
         assert_eq!(
             candidate.compatibility_revision(),

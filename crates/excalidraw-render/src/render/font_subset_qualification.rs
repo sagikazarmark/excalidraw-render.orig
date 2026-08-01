@@ -18,7 +18,7 @@ const PACKAGED_CORPUS_PATH: &str =
 const CORPUS_SCHEMA: &str = "excalidraw-render/svg-font-subset-qualification-corpus/v1";
 const SOURCE_MANIFEST_SHA256: &str =
     "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const PROFILE_SHA256: &str = "c79d0f7905709f5177a2ec8cd502be2eed9dd0c35806dfae06642e6cf4dd4ff5";
+const PROFILE_SHA256: &str = "49015dfb91f9e89fcf1e7f3e16fd892e4c1715f5d49b6488d67037b7aac21c23";
 const CLASS_IDS: [&str; 8] = [
     "mapped-scalar",
     "range-boundary",
@@ -56,6 +56,8 @@ struct SourceQualification {
     upstream_path: String,
     source_sha256: String,
     effective_alias: String,
+    license_identity: String,
+    reserved_font_names: Vec<String>,
     cells: Vec<QualificationCell>,
 }
 
@@ -72,6 +74,8 @@ struct QualificationCell {
     generated_woff2_sha256: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     canonical_resource_trace_sha256: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    transformation_notice_sha256: Option<String>,
     expected_validation_outcome: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     reason: Option<String>,
@@ -127,6 +131,15 @@ pub(crate) fn assert_complete_font_subset_qualification_corpus() {
         assert_eq!(source.upstream_path, record.upstream_path);
         assert_eq!(source.source_sha256, record.complete_sha256);
         assert_eq!(source.effective_alias, effective_alias(record.family));
+        assert_eq!(source.license_identity, record.license_identity);
+        assert_eq!(
+            source.reserved_font_names,
+            record
+                .reserved_font_names
+                .iter()
+                .map(|name| (*name).to_owned())
+                .collect::<Vec<_>>()
+        );
         assert!(source_identities.insert(source.source_identity.as_str()));
         assert_eq!(source.cells.len(), CLASS_IDS.len());
 
@@ -211,11 +224,25 @@ fn assert_cell(
                 cell.canonical_resource_trace_sha256.as_deref(),
                 Some(trace_sha256.as_str())
             );
+            let notice = svg_fonts::subset_notice(
+                record,
+                family_name(record.family),
+                &source.effective_alias,
+                &semantic_identity,
+                &derived,
+            )
+            .unwrap_or_else(|error| panic!("qualified subset notice failed at {:?}", error.stage));
+            assert_eq!(notice.license_identity, source.license_identity);
+            assert_eq!(
+                cell.transformation_notice_sha256.as_deref(),
+                Some(sha256(notice.resource_text.as_bytes()).as_str())
+            );
         }
         CellStatus::NotSelected => {
             assert_eq!(cell.expected_validation_outcome, "not_selected");
             assert!(cell.semantic_subset_identity.is_none());
             assert!(cell.generated_woff2_sha256.is_none());
+            assert!(cell.transformation_notice_sha256.is_none());
             let scalars = expected
                 .scalars
                 .as_deref()
@@ -232,6 +259,7 @@ fn assert_cell(
             assert!(cell.semantic_subset_identity.is_none());
             assert!(cell.generated_woff2_sha256.is_none());
             assert!(cell.canonical_resource_trace_sha256.is_none());
+            assert!(cell.transformation_notice_sha256.is_none());
             assert_eq!(cell.reason.as_deref(), expected.reason);
         }
     }
@@ -736,6 +764,20 @@ fn effective_alias(family: &str) -> &str {
     }
 }
 
+fn family_name(family: &str) -> &'static str {
+    match family {
+        "Cascadia" => "Cascadia Code",
+        "ComicShanns" => "Comic Shanns",
+        "Liberation" => "Liberation Sans",
+        "Lilita" => "Lilita One",
+        "Excalifont" => "Excalifont",
+        "Nunito" => "Nunito",
+        "Virgil" => "Virgil",
+        "Xiaolai" => "Xiaolai",
+        _ => panic!("unknown qualification source family"),
+    }
+}
+
 fn stage_name(stage: crate::SvgFontSubsetStage) -> &'static str {
     match stage {
         crate::SvgFontSubsetStage::Decode => "decode",
@@ -767,6 +809,12 @@ fn build_corpus() -> Corpus {
             upstream_path: record.upstream_path.to_owned(),
             source_sha256: record.complete_sha256.to_owned(),
             effective_alias: alias.to_owned(),
+            license_identity: record.license_identity.to_owned(),
+            reserved_font_names: record
+                .reserved_font_names
+                .iter()
+                .map(|name| (*name).to_owned())
+                .collect(),
             cells,
         });
     }
@@ -819,6 +867,14 @@ fn materialize_cell(
                 });
             let output_sha256 = sha256(derived.woff2.as_ref());
             let trace_sha256 = canonical_trace_sha256(record, &scalars, Some(&derived));
+            let notice = svg_fonts::subset_notice(
+                record,
+                family_name(record.family),
+                alias,
+                &semantic_identity,
+                &derived,
+            )
+            .unwrap_or_else(|error| panic!("qualified subset notice failed at {:?}", error.stage));
             QualificationCell {
                 class: class.to_owned(),
                 status: CellStatus::Success,
@@ -826,6 +882,7 @@ fn materialize_cell(
                 semantic_subset_identity: Some(semantic_identity),
                 generated_woff2_sha256: Some(output_sha256),
                 canonical_resource_trace_sha256: Some(trace_sha256),
+                transformation_notice_sha256: Some(sha256(notice.resource_text.as_bytes())),
                 expected_validation_outcome: "valid".to_owned(),
                 reason: None,
             }
@@ -841,6 +898,7 @@ fn materialize_cell(
                 ordered_scalars: Some(scalars),
                 semantic_subset_identity: None,
                 generated_woff2_sha256: None,
+                transformation_notice_sha256: None,
                 expected_validation_outcome: "not_selected".to_owned(),
                 reason: None,
             }
@@ -852,6 +910,7 @@ fn materialize_cell(
             semantic_subset_identity: None,
             generated_woff2_sha256: None,
             canonical_resource_trace_sha256: None,
+            transformation_notice_sha256: None,
             expected_validation_outcome: "not_applicable".to_owned(),
             reason: classified.reason.map(str::to_owned),
         },

@@ -83,6 +83,13 @@ pub(super) struct BuildError {
     pub(super) asset_identity: &'static str,
 }
 
+pub(super) struct SubsetNotice {
+    pub(super) license_identity: String,
+    pub(super) license: &'static str,
+    pub(super) resource_identity: String,
+    pub(super) resource_text: String,
+}
+
 impl Bundle {
     pub(super) fn take_mandatory_notices(&mut self) -> Option<super::notices::MandatoryNotices> {
         self.mandatory_notices.take()
@@ -199,29 +206,17 @@ pub(super) fn build(
                             family: family.family,
                             asset_identity: record.identity,
                         })?;
-                    let (provenance, license) = notice_inputs(record, family.family)?;
+                    let notice = subset_notice(
+                        record,
+                        family.family,
+                        effective_alias,
+                        &semantic_identity,
+                        &derived,
+                    )?;
                     licenses
-                        .entry(provenance.license_identity.clone())
-                        .or_insert(license);
-                    let output_digest = format!("{:x}", Sha256::digest(derived.woff2.as_ref()));
-                    let profile_digest = encode_hex_32(
-                        &excalidraw_render_assets_base::font_subset_profile_digest_v1(),
-                    );
-                    resource_notices.push((
-                        format!("svg-font-subset@sha256:{semantic_identity}"),
-                        format!(
-                            "Derived font subset of {}. Source SHA-256: {}. {} Modified Version under {}. Transformation: Unicode and required layout/glyph closure subset; names rewritten for compatibility revision 1. Effective alias: {}. Subset profile SHA-256: {}. Semantic subset identity: {}. Output WOFF2: {} bytes, SHA-256 {}.",
-                            record.identity,
-                            record.complete_sha256,
-                            provenance.text,
-                            provenance.license_identity,
-                            effective_alias,
-                            profile_digest,
-                            semantic_identity,
-                            derived.woff2.len(),
-                            output_digest,
-                        ),
-                    ));
+                        .entry(notice.license_identity)
+                        .or_insert(notice.license);
+                    resource_notices.push((notice.resource_identity, notice.resource_text));
                     resources.push(Resource {
                         family: effective_alias,
                         mime: "font/woff2",
@@ -309,6 +304,36 @@ pub(super) fn build(
     Ok(Bundle {
         resources,
         mandatory_notices,
+    })
+}
+
+pub(super) fn subset_notice(
+    record: &excalidraw_render_assets_base::AssetRecord,
+    family: &'static str,
+    effective_alias: &str,
+    semantic_identity: &str,
+    derived: &font_subset::Derived,
+) -> Result<SubsetNotice, BuildError> {
+    let (provenance, license) = notice_inputs(record, family)?;
+    let output_digest = format!("{:x}", Sha256::digest(derived.woff2.as_ref()));
+    let profile_digest =
+        encode_hex_32(&excalidraw_render_assets_base::font_subset_profile_digest_v1());
+    Ok(SubsetNotice {
+        license_identity: provenance.license_identity.clone(),
+        license,
+        resource_identity: format!("svg-font-subset@sha256:{semantic_identity}"),
+        resource_text: format!(
+            "Derived font subset of {}. Source SHA-256: {}. {} Modified Version under {}. Transformation: Unicode and required layout/glyph closure subset; names rewritten for compatibility revision 1. Effective alias: {}. Subset profile SHA-256: {}. Semantic subset identity: {}. Output WOFF2: {} bytes, SHA-256 {}.",
+            record.identity,
+            record.complete_sha256,
+            provenance.text,
+            provenance.license_identity,
+            effective_alias,
+            profile_digest,
+            semantic_identity,
+            derived.woff2.len(),
+            output_digest,
+        ),
     })
 }
 

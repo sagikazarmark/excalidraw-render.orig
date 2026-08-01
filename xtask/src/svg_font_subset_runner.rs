@@ -22,9 +22,9 @@ pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> 
     let cases = inputs["cases"]
         .as_array()
         .ok_or_else(|| "viewer input cases must be an array".to_owned())?;
-    if cases.len() != 634 {
+    if cases.len() != 643 {
         return Err(format!(
-            "expected 634 viewer input cases, got {}",
+            "expected 643 viewer input cases, got {}",
             cases.len()
         ));
     }

@@ -42,9 +42,9 @@ const SVG_FONT_SUBSET_PROFILE_DIGEST: &str =
 const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
     "fc4e8ce56cb7bf4bca9dfd6f3495c9ae9f5440a5818aa3e6f645d5303265ff85";
 const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST: &str =
-    "5b96d68e542a24f9bbc75e95473ce009cf7a108ae52fa896d75ee5edcd8a07c8";
+    "c08ee3f16b077cb38b88a9812f8719f7fb8edae2fe450f2c3b8b4c9910b5f084";
 const SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST: &str =
-    "a12bcf35a6fba556ce8f7342132a144d6b7494535d016e399f431e126043765c";
+    "ce363772d9fed5b960e50bffc9f67d5ce85d6bdeddb433aeaa37ea4643b883f6";
 
 struct IncorporatedArtifactSource {
     repository_path: &'static str,
@@ -447,6 +447,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
 pub fn materialize() -> Result<(), String> {
     let root = crate::conformance::repo_root();
     let base = root.join("crates/excalidraw-render-assets-base");
+    materialize_svg_font_subset_qualification_schema(&root)?;
     materialize_svg_font_subset_profile(&root)?;
     materialize_incorporated_artifacts(&root, &base)?;
 
@@ -471,6 +472,38 @@ pub fn materialize() -> Result<(), String> {
         generated.as_bytes(),
     )?;
     verify()
+}
+
+fn materialize_svg_font_subset_qualification_schema(root: &Path) -> Result<(), String> {
+    let path = root.join(
+        "tests/oracle/compatibility-artifacts/svg-font-subset-qualification-corpus-v1.schema.json",
+    );
+    let mut schema: Value = serde_json::from_slice(
+        &fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?,
+    )
+    .map_err(|error| format!("invalid SVG font subset qualification schema: {error}"))?;
+    schema["$defs"]["cell"]["properties"]["transformationNoticeSha256"] =
+        json!({"$ref": "#/$defs/sha256"});
+    schema["$defs"]["source"]["properties"]["licenseIdentity"] =
+        json!({"minLength": 1, "type": "string"});
+    schema["$defs"]["source"]["properties"]["reservedFontNames"] = json!({
+        "items": {"minLength": 1, "type": "string"},
+        "type": "array",
+        "uniqueItems": true,
+    });
+    let required = schema["$defs"]["source"]["required"]
+        .as_array_mut()
+        .ok_or_else(|| "SVG font subset source schema has no required array".to_owned())?;
+    for field in ["licenseIdentity", "reservedFontNames"] {
+        if !required.iter().any(|value| value == field) {
+            required.push(json!(field));
+        }
+    }
+    let bytes = serde_json::to_vec(&schema).map_err(|error| {
+        format!("failed to serialize SVG font subset qualification schema: {error}")
+    })?;
+    write_if_changed(&path, &bytes)?;
+    write_digest_sidecar(&path.with_extension("sha256"), &bytes)
 }
 
 fn materialize_svg_font_subset_profile(root: &Path) -> Result<(), String> {
@@ -1435,7 +1468,7 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
         || corpus["originatingIssue"] != json!(98)
         || corpus["sourceManifestSha256"] != json!(ASSET_MANIFEST_DIGEST)
         || corpus["subsetProfileSha256"]
-            != json!("c79d0f7905709f5177a2ec8cd502be2eed9dd0c35806dfae06642e6cf4dd4ff5")
+            != json!("49015dfb91f9e89fcf1e7f3e16fd892e4c1715f5d49b6488d67037b7aac21c23")
     {
         return Err("font subset qualification corpus identity is invalid".to_owned());
     }

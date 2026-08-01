@@ -39,7 +39,7 @@ async function main() {
   const inputBytes = readFileSync(inputsPath);
   const inputs = JSON.parse(inputBytes.toString("utf8"));
   if (inputs.schema !== "excalidraw-render/svg-font-subset-viewer-inputs/v1"
-      || !Array.isArray(inputs.cases) || inputs.cases.length !== 634) {
+      || !Array.isArray(inputs.cases) || inputs.cases.length !== 643) {
     throw new Error("invalid SVG font subset viewer input manifest");
   }
   inputs.cases.forEach(validateCase);

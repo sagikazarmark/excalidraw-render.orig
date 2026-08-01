@@ -27,6 +27,7 @@ const REQUIRED_CHECKS: [&str; 7] = [
 ];
 
 pub fn materialize(inputs: &str, chromium: &str, pure_rust: &str) -> Result<(), String> {
+    materialize_schema()?;
     let destination = repo_root().join("tests/conformance/svg-font-subset-viewer-qualification");
     fs::create_dir_all(&destination)
         .map_err(|error| format!("failed to create {}: {error}", destination.display()))?;
@@ -132,6 +133,20 @@ pub fn materialize(inputs: &str, chromium: &str, pure_rust: &str) -> Result<(), 
     )
     .map_err(|error| format!("failed to write qualification digest: {error}"))?;
     Ok(())
+}
+
+fn materialize_schema() -> Result<(), String> {
+    let path =
+        repo_root().join("tests/conformance/svg-font-subset-viewer-qualification-v1.schema.json");
+    let mut schema: Value = serde_json::from_slice(
+        &fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?,
+    )
+    .map_err(|error| format!("invalid SVG font subset viewer schema: {error}"))?;
+    schema["properties"]["executions"]["minItems"] = json!(643);
+    schema["properties"]["executions"]["maxItems"] = json!(643);
+    let bytes = canonical_bytes(&schema)?;
+    fs::write(&path, [&bytes[..], b"\n"].concat())
+        .map_err(|error| format!("failed to write {}: {error}", path.display()))
 }
 
 fn report_decisions(report: &Value, viewer: &str) -> Result<BTreeMap<String, String>, String> {
@@ -314,9 +329,9 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
     }
     if manifest["corpus"]["path"] != json!(CORPUS_PATH)
         || manifest["corpus"]["sha256"]
-            != json!("5b96d68e542a24f9bbc75e95473ce009cf7a108ae52fa896d75ee5edcd8a07c8")
+            != json!("c08ee3f16b077cb38b88a9812f8719f7fb8edae2fe450f2c3b8b4c9910b5f084")
         || manifest["subset_profile"]["sha256"]
-            != json!("8efda16840ffa56b89d039fe6288fd4a4f793310e5b75d7496fe3bebb876f1a8")
+            != json!("19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d")
         || manifest["viewer_profiles"]["chromium"]["sha256"]
             != json!("be1664b3ad79c09b99680ff5e8ca0e56a98fce703c94a13e19e889097c90426b")
         || manifest["viewer_profiles"]["pure_rust"]["sha256"]
@@ -390,9 +405,9 @@ fn expected_cells() -> Result<BTreeMap<(String, String), ExpectedCell>, String> 
             }
         }
     }
-    if expected.len() != 748 {
+    if expected.len() != 762 {
         return Err(format!(
-            "font subset corpus has {} successful cells, expected 748",
+            "font subset corpus has {} successful cells, expected 762",
             expected.len()
         ));
     }
@@ -449,9 +464,9 @@ fn verify_execution_coverage<'a>(
     if actual != expected.keys().cloned().collect::<BTreeSet<_>>() {
         return Err("qualification does not cover every successful corpus cell".to_owned());
     }
-    if executions.len() != 634 {
+    if executions.len() != 643 {
         return Err(format!(
-            "qualification has {} semantic executions, expected 634",
+            "qualification has {} semantic executions, expected 643",
             executions.len()
         ));
     }
