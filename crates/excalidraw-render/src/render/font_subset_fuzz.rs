@@ -15,7 +15,7 @@ const MAX_SOURCE_WOFF2_BYTES: usize = 100_000;
 const MAX_DECODED_SFNT_BYTES: usize = 10_000_000;
 const MAX_DERIVED_WOFF2_BYTES: usize = 1_000_000;
 const REGRESSION_SCHEMA: &str = "excalidraw-render/svg-font-subset-fuzz-regressions/v1";
-const PROFILE_SHA256: &str = "c79d0f7905709f5177a2ec8cd502be2eed9dd0c35806dfae06642e6cf4dd4ff5";
+const PROFILE_SHA256: &str = "49015dfb91f9e89fcf1e7f3e16fd892e4c1715f5d49b6488d67037b7aac21c23";
 const REQUIRED_RISKS: [Risk; 7] = [
     Risk::MalformedSourceWoff2,
     Risk::MalformedGeneratedSfnt,
@@ -54,7 +54,15 @@ struct RegressionCorpus {
     source_sha256: String,
     fixed_seed_hex: String,
     bounds: Bounds,
+    public_facade_cases: Vec<PublicFacadeCase>,
     cases: Vec<RegressionCase>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PublicFacadeCase {
+    id: String,
+    scene_json: String,
 }
 
 #[derive(Deserialize)]
@@ -489,6 +497,7 @@ pub(crate) fn assert_font_subset_fuzz_regression_corpus() {
     let context = Context::new();
     assert_eq!(corpus.source_identity, context.record.identity);
     assert_eq!(corpus.source_sha256, context.record.complete_sha256);
+    assert_public_facade_cases(&corpus.public_facade_cases);
     let mut ids = BTreeSet::new();
     let mut risks = BTreeSet::new();
     for case in corpus.cases {
@@ -538,6 +547,35 @@ pub(crate) fn assert_font_subset_fuzz_regression_corpus() {
         REQUIRED_RISKS.into_iter().collect(),
         "the regression corpus does not cover every required risk"
     );
+}
+
+fn assert_public_facade_cases(cases: &[PublicFacadeCase]) {
+    assert!(!cases.is_empty());
+    for case in cases {
+        let scene =
+            crate::SceneDocument::parse(case.scene_json.as_bytes()).unwrap_or_else(|error| {
+                panic!("{} public-facade scene failed to parse: {error}", case.id)
+            });
+        let request = crate::RenderRequest::builder(crate::OutputFormat::Svg)
+            .build()
+            .expect("public-facade SVG request is valid");
+        let first = crate::Renderer::new()
+            .render(&scene, &request)
+            .unwrap_or_else(|error| panic!("{} public-facade render failed: {error}", case.id));
+        let second = crate::Renderer::new()
+            .render(&scene, &request)
+            .unwrap_or_else(|error| panic!("{} repeated render failed: {error}", case.id));
+        assert_eq!(
+            first.artifact().bytes(),
+            second.artifact().bytes(),
+            "{}",
+            case.id
+        );
+        assert_eq!(first.report(), second.report(), "{}", case.id);
+        let svg =
+            std::str::from_utf8(first.artifact().bytes()).expect("public-facade SVG is UTF-8");
+        assert!(svg.contains("svg-font-subset@sha256:"), "{}", case.id);
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]

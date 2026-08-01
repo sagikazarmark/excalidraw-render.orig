@@ -9,7 +9,7 @@
   "decision": "pending_approval_and_target_aggregation",
   "fuzzRegressions": {
     "path": "crates/excalidraw-render/tests/qualification/font-subset-fuzz-regressions.json",
-    "sha256": "11d7ceb6053af37882f862fae60ae1afe3758942cb0bd23507dd5f8a97e20480"
+    "sha256": "48ce706327a5b18676da8e65c03f30fb16ae80a26b3514c521e593adc8781551"
   },
   "id": "svg-font-subsets.release-evidence.revision-1.v1",
   "licensing": {

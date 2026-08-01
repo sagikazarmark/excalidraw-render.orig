@@ -3,7 +3,13 @@
   "compatibilityRevision": 1,
   "originatingIssue": 100,
   "broaderFuzzIssue": 83,
-  "subsetProfileSha256": "c79d0f7905709f5177a2ec8cd502be2eed9dd0c35806dfae06642e6cf4dd4ff5",
+  "publicFacadeCases": [
+    {
+      "id": "closure-heavy-office",
+      "sceneJson": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"fuzz-office\",\"type\":\"text\",\"width\":160,\"height\":40,\"fontSize\":20,\"fontFamily\":2,\"text\":\"office\",\"updated\":1}],\"appState\":{},\"files\":{}}"
+    }
+  ],
+  "subsetProfileSha256": "49015dfb91f9e89fcf1e7f3e16fd892e4c1715f5d49b6488d67037b7aac21c23",
   "sourceIdentity": "fonts/Liberation/LiberationSans-Regular.woff2@sha256:006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8",
   "sourceSha256": "006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8",
   "fixedSeedHex": "6a09e667f3bcc908",
@@ -44,7 +50,7 @@
       "partialOutput": false,
       "expected": {
         "kind": "valid",
-        "woff2_sha256": "dcad65a1deac09e780435b0e3595d2fe01daa07d6ae4605c172bdd8199f4d7a7"
+        "woff2_sha256": "4a7622fbee81bd4d69aade7481d9e4b815ef735c655f19e29c6eafb2bc2c2732"
       }
     },
     {
@@ -56,7 +62,7 @@
       "partialOutput": false,
       "expected": {
         "kind": "valid",
-        "woff2_sha256": "dcad65a1deac09e780435b0e3595d2fe01daa07d6ae4605c172bdd8199f4d7a7"
+        "woff2_sha256": "4a7622fbee81bd4d69aade7481d9e4b815ef735c655f19e29c6eafb2bc2c2732"
       }
     },
     {
@@ -131,7 +137,7 @@
       "partialOutput": false,
       "expected": {
         "kind": "valid",
-        "woff2_sha256": "dcad65a1deac09e780435b0e3595d2fe01daa07d6ae4605c172bdd8199f4d7a7"
+        "woff2_sha256": "4a7622fbee81bd4d69aade7481d9e4b815ef735c655f19e29c6eafb2bc2c2732"
       }
     }
   ]
