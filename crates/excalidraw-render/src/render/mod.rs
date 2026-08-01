@@ -1,7 +1,13 @@
 mod asset;
 mod font_subset;
 #[cfg(test)]
+mod font_subset_fuzz;
+#[cfg(test)]
 mod font_subset_qualification;
+#[cfg(all(test, target_arch = "wasm32"))]
+pub(crate) use font_subset_fuzz::{
+    assert_font_subset_fuzz_regression_corpus, assert_font_subset_fuzz_smoke,
+};
 #[cfg(all(test, target_arch = "wasm32"))]
 pub(crate) use font_subset_qualification::assert_complete_font_subset_qualification_corpus;
 mod freedraw;

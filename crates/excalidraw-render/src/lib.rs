@@ -58,6 +58,16 @@ pub mod wasm_tests {
     }
 
     #[wasm_bindgen_test]
+    fn font_subset_fuzz_regression_corpus_in_wasm() {
+        crate::render::assert_font_subset_fuzz_regression_corpus();
+    }
+
+    #[wasm_bindgen_test]
+    fn font_subset_fuzz_fixed_seed_smoke_in_wasm() {
+        crate::render::assert_font_subset_fuzz_smoke();
+    }
+
+    #[wasm_bindgen_test]
     fn font_subset_resource_trace_matrix_in_wasm() {
         crate::render::assert_font_subset_resource_trace_matrix();
     }

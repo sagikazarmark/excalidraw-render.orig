@@ -573,6 +573,7 @@ dependencies = [
  "euclid",
  "excalidraw-render-assets-base",
  "excalidraw-render-compare",
+ "excalidraw-render-skera",
  "excalidraw-render-ttf2woff2",
  "gif 0.14.2",
  "image-webp",
@@ -587,7 +588,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "skera",
  "svg2pdf",
  "svgtypes 0.15.3",
  "tiny-skia",
@@ -653,6 +653,14 @@ dependencies = [
  "serde_json",
  "sha1",
  "sha2",
+]
+
+[[package]]
+name = "excalidraw-render-skera"
+version = "0.1.0"
+dependencies = [
+ "skera",
+ "write-fonts 0.51.0",
 ]
 
 [[package]]

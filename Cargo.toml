@@ -7,6 +7,7 @@ members = [
     "crates/excalidraw-render-assets-data-001",
     "crates/excalidraw-render-cli",
     "crates/excalidraw-render-compare",
+    "crates/skera-safe",
     "crates/ttf2woff2-deterministic",
     "xtask",
 ]
@@ -45,7 +46,7 @@ serde = { version = "=1.0.219", features = ["derive"] }
 serde_json = "=1.0.141"
 sha1 = "=0.10.6"
 sha2 = "=0.10.9"
-skera = { version = "=0.5.1", default-features = false }
+skera = { package = "excalidraw-render-skera", path = "crates/skera-safe", version = "=0.1.0" }
 rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
 unicode-bidi = "=0.3.18"
 unicode-normalization = "=0.1.24"

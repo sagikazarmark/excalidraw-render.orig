@@ -1,0 +1,13 @@
+[package]
+name = "excalidraw-render-skera"
+version.workspace = true
+edition.workspace = true
+description = "Panic-safe adapter for the renderer's pinned font subsetter"
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+skera-upstream = { package = "skera", version = "=0.5.1", default-features = false }
+write-fonts.workspace = true

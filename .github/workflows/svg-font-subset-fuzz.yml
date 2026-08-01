@@ -1,0 +1,60 @@
+name: SVG font subset fuzz
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: Fixed-seed native expansion
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
+      - name: Execute bounded font subset fuzz expansion
+        env:
+          EXCALIDRAW_FONT_SUBSET_FUZZ_CASES: "4096"
+        run: >-
+          cargo test --locked --release -p excalidraw-render --lib
+          render::font_subset_fuzz::nightly_font_subset_fuzz_is_bounded_and_deterministic
+          -- --ignored --exact
+
+  browser-wasm-regressions:
+    name: Bounded smoke in Chromium
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh wasm32-unknown-unknown "$RUNNER_TEMP/rust"
+      - name: Install pinned Chromium and ChromeDriver
+        shell: bash
+        run: bash tests/package-consumer/install-browser-tools.sh "$RUNNER_TEMP/browser"
+      - name: Install pinned WASM test runner
+        shell: bash
+        run: bash tests/package-consumer/install-wasm-test-runner.sh "$RUNNER_TEMP/wasm-test-runner"
+      - name: Execute font subset fuzz smoke
+        env:
+          FONTCONFIG_FILE: ${{ github.workspace }}/tests/package-consumer/fontconfig.xml
+          WASM_BINDGEN_TEST_TIMEOUT: "1800"
+          WASM_BINDGEN_TEST_WEBDRIVER_JSON: ${{ github.workspace }}/tests/package-consumer/webdriver.json
+        shell: bash
+        run: |
+          chrome="$(jq -er '.browser.tools.chromium.binary' tests/package-consumer/tool-manifest.json)"
+          driver="$(jq -er '.browser.tools.chromedriver.binary' tests/package-consumer/tool-manifest.json)"
+          PATH="$RUNNER_TEMP/browser/$(dirname "$chrome"):$PATH" \
+            CHROMEDRIVER="$RUNNER_TEMP/browser/$driver" \
+            CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner \
+            cargo test --locked --release -p excalidraw-render --lib \
+              --target wasm32-unknown-unknown \
+              wasm_tests::font_subset_fuzz_

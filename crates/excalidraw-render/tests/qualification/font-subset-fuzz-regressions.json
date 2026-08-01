@@ -1,0 +1,138 @@
+{
+  "schema": "excalidraw-render/svg-font-subset-fuzz-regressions/v1",
+  "compatibilityRevision": 1,
+  "originatingIssue": 100,
+  "broaderFuzzIssue": 83,
+  "subsetProfileSha256": "c79d0f7905709f5177a2ec8cd502be2eed9dd0c35806dfae06642e6cf4dd4ff5",
+  "sourceIdentity": "fonts/Liberation/LiberationSans-Regular.woff2@sha256:006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8",
+  "sourceSha256": "006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8",
+  "fixedSeedHex": "6a09e667f3bcc908",
+  "bounds": {
+    "maxInputBytes": 4096,
+    "maxScalars": 64,
+    "maxMutations": 16,
+    "maxNameTableBytes": 256,
+    "maxSourceWoff2Bytes": 100000,
+    "maxDecodedSfntBytes": 10000000,
+    "maxDerivedWoff2Bytes": 1000000
+  },
+  "cases": [
+    {
+      "id": "empty-source",
+      "risk": "malformed-source-woff2",
+      "inputHex": "00",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": { "kind": "failure", "stage": "decode" }
+    },
+    {
+      "id": "short-source",
+      "risk": "malformed-source-woff2",
+      "inputHex": "010000",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": { "kind": "failure", "stage": "decode" }
+    },
+    {
+      "id": "closure-heavy-office",
+      "risk": "closure-heavy-scalars",
+      "inputHex": "02",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": {
+        "kind": "valid",
+        "woff2_sha256": "dcad65a1deac09e780435b0e3595d2fe01daa07d6ae4605c172bdd8199f4d7a7"
+      }
+    },
+    {
+      "id": "rewritten-name-and-legal-records",
+      "risk": "name-legal-records",
+      "inputHex": "03",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": {
+        "kind": "valid",
+        "woff2_sha256": "dcad65a1deac09e780435b0e3595d2fe01daa07d6ae4605c172bdd8199f4d7a7"
+      }
+    },
+    {
+      "id": "truncated-name-record-array",
+      "risk": "name-legal-records",
+      "inputHex": "0300000000010006",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": { "kind": "failure", "stage": "sfnt" }
+    },
+    {
+      "id": "empty-generated-sfnt",
+      "risk": "malformed-generated-sfnt",
+      "inputHex": "0400",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": { "kind": "failure", "stage": "validate" }
+    },
+    {
+      "id": "corrupt-generated-sfnt",
+      "risk": "malformed-generated-sfnt",
+      "inputHex": "040100",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": { "kind": "failure", "stage": "validate" }
+    },
+    {
+      "id": "empty-generated-woff2",
+      "risk": "malformed-generated-woff2",
+      "inputHex": "0500",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": { "kind": "failure", "stage": "validate" }
+    },
+    {
+      "id": "corrupt-generated-woff2",
+      "risk": "malformed-generated-woff2",
+      "inputHex": "050100",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": { "kind": "failure", "stage": "validate" }
+    },
+    {
+      "id": "unknown-table-tag",
+      "risk": "table-policy",
+      "inputHex": "0600",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": { "kind": "failure", "stage": "plan" }
+    },
+    {
+      "id": "missing-required-name-table",
+      "risk": "table-policy",
+      "inputHex": "0601",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": { "kind": "failure", "stage": "plan" }
+    },
+    {
+      "id": "cache-miss-hit",
+      "risk": "cache-miss-hit-replay",
+      "inputHex": "07",
+      "minimized": true,
+      "completeChunkFallback": false,
+      "partialOutput": false,
+      "expected": {
+        "kind": "valid",
+        "woff2_sha256": "dcad65a1deac09e780435b0e3595d2fe01daa07d6ae4605c172bdd8199f4d7a7"
+      }
+    }
+  ]
+}
