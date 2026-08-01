@@ -33,8 +33,8 @@ use crate::{
     },
     outcome::{DiagnosticAttribution, DiagnosticOrder},
     resource_accounting::{
-        ResourceContext, ResourceCrossing, ResourceDelta, ResourceMeter, ResourcePhase,
-        ResourceRecordKind,
+        ResourceAccount, ResourceContext, ResourceCrossing, ResourceDelta, ResourceMeter,
+        ResourcePhase, ResourceRecordKind,
     },
     scene::{OriginalJsonEntryKind, OriginalJsonVisitError},
     Artifact, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode, DiagnosticEffect,
@@ -97,14 +97,14 @@ pub(crate) fn render(
     scene: &SceneDocument,
     request: &RenderRequest,
 ) -> Result<RenderOutcome, RenderError> {
-    render_with_svg_font_payload(catalog, scene, request, SvgFontPayload::Subset)
+    render_with_svg_font_payload(catalog, scene, request, svg_fonts::Payload::Subset)
 }
 
 fn render_with_svg_font_payload(
     catalog: &'static RevisionCatalog,
     scene: &SceneDocument,
     request: &RenderRequest,
-    svg_font_payload: SvgFontPayload,
+    svg_font_payload: svg_fonts::Payload,
 ) -> Result<RenderOutcome, RenderError> {
     let profile = catalog.profile();
     debug_assert_eq!(
@@ -154,7 +154,7 @@ pub(crate) fn render_frame_scoped(
     if let Some(prepared) = prepared {
         session.font_subset_session = Arc::clone(&prepared.font_subset_session);
     }
-    let result = session.render(frame.scene, request, prepared, SvgFontPayload::Subset);
+    let result = session.render(frame.scene, request, prepared, svg_fonts::Payload::Subset);
     let report = match &result {
         Ok(outcome) => outcome.report(),
         Err(error) => error.report(),
@@ -195,7 +195,7 @@ struct FrameViewport {
     max_y: f64,
 }
 
-type SharedFontSubsetSession = Arc<Mutex<font_subset::Session>>;
+type SharedFontSubsetSession = Arc<Mutex<svg_fonts::Session>>;
 
 pub(crate) struct PreparedFrameRender {
     original_json_events: Vec<PreparedOriginalJsonEvent>,
@@ -334,7 +334,7 @@ impl PreparedFrameRender {
             normalization,
             relationship_events,
             relationships,
-            font_subset_session: Arc::new(Mutex::new(font_subset::Session::new())),
+            font_subset_session: Arc::new(Mutex::new(svg_fonts::Session::new())),
         })
     }
 
@@ -629,7 +629,7 @@ fn render_with_trace(
         scene,
         request,
     );
-    let result = session.render(scene, request, None, SvgFontPayload::Subset);
+    let result = session.render(scene, request, None, svg_fonts::Payload::Subset);
     (result, session.meter.trace_bytes())
 }
 
@@ -669,10 +669,16 @@ fn render_font_subset_qualification_trace(
                 })?,
             ],
         };
-        let selection = account_svg_font_selection(&mut session, &request, &demand)?;
-        let envelope = account_svg_font_dependency_envelope(&mut session, &request, &demand)?;
-        let mut subset_session = font_subset::Session::new();
-        let bundle = svg_fonts::build(demand, &[], SvgFontPayload::Subset, &mut subset_session)
+        let selection = svg_fonts::account_selection(
+            &mut RenderResourceAccount::new(&mut session, &request),
+            &demand,
+        )?;
+        let envelope = svg_fonts::account_dependency_envelope(
+            &mut RenderResourceAccount::new(&mut session, &request),
+            &demand,
+        )?;
+        let mut subset_session = svg_fonts::Session::new();
+        let bundle = svg_fonts::build(demand, &[], svg_fonts::Payload::Subset, &mut subset_session)
             .map_err(|error| {
                 session.format_failure(
                     &request,
@@ -684,9 +690,10 @@ fn render_font_subset_qualification_trace(
                     },
                 )
             })?;
-        observe_svg_font_derivation(&mut session, &request, &bundle)?;
+        bundle
+            .account_resource_transcript(&mut RenderResourceAccount::new(&mut session, &request))?;
         release_svg_font_encoding_records(&mut session, &request, None, envelope)?;
-        release_svg_font_records(&mut session, &request, selection)
+        selection.release(&mut RenderResourceAccount::new(&mut session, &request))
     })();
     (result, session.meter.trace_bytes())
 }
@@ -723,7 +730,7 @@ fn font_subset_qualification_error(
 
 #[cfg(test)]
 fn new_font_subset_cache() -> SharedFontSubsetSession {
-    Arc::new(Mutex::new(font_subset::Session::new()))
+    Arc::new(Mutex::new(svg_fonts::Session::new()))
 }
 
 #[cfg(test)]
@@ -740,7 +747,7 @@ fn render_with_trace_and_font_subset_cache(
         request,
     );
     session.font_subset_session = Arc::clone(cache);
-    let result = session.render(scene, request, None, SvgFontPayload::Subset);
+    let result = session.render(scene, request, None, svg_fonts::Payload::Subset);
     (result, session.meter.trace_bytes())
 }
 
@@ -771,7 +778,7 @@ fn render_frame_with_trace(
     if let Some(prepared) = prepared {
         session.font_subset_session = Arc::clone(&prepared.font_subset_session);
     }
-    let result = session.render(frame.scene, request, prepared, SvgFontPayload::Subset);
+    let result = session.render(frame.scene, request, prepared, svg_fonts::Payload::Subset);
     (result, session.meter.trace_bytes())
 }
 
@@ -802,11 +809,45 @@ struct RenderSession {
     font_subset_session: SharedFontSubsetSession,
 }
 
-#[derive(Clone, Copy)]
-enum SvgFontPayload {
-    Subset,
-    #[cfg(test)]
-    CompleteChunks,
+struct RenderResourceAccount<'a> {
+    session: &'a mut RenderSession,
+    request: &'a RenderRequest,
+}
+
+impl<'a> RenderResourceAccount<'a> {
+    fn new(session: &'a mut RenderSession, request: &'a RenderRequest) -> Self {
+        Self { session, request }
+    }
+}
+
+impl ResourceAccount for RenderResourceAccount<'_> {
+    type Error = RenderError;
+
+    fn transact_resource(
+        &mut self,
+        context: ResourceContext<'_>,
+        delta: ResourceDelta,
+    ) -> Result<(), Self::Error> {
+        self.session.transact(self.request, context, delta)
+    }
+
+    fn release_resource(
+        &mut self,
+        context: ResourceContext<'_>,
+        bytes: u64,
+    ) -> Result<(), Self::Error> {
+        self.session.release_working(self.request, context, bytes)
+    }
+
+    fn internal_failure(&mut self, message: &'static str) -> Self::Error {
+        self.session
+            .internal_failure(self.request.format(), message, "")
+    }
+
+    fn memory_failure(&mut self, subject_kind: &'static str, subject: &'static str) -> Self::Error {
+        self.session
+            .memory_failure(self.request, subject_kind, subject)
+    }
 }
 
 struct PendingAnimationDiagnostic {
@@ -933,7 +974,7 @@ impl RenderSession {
             pending_frame_normalization_diagnostics: Vec::new(),
             target,
             diagnostic_attribution: DiagnosticAttribution::SceneGlobal,
-            font_subset_session: Arc::new(Mutex::new(font_subset::Session::new())),
+            font_subset_session: Arc::new(Mutex::new(svg_fonts::Session::new())),
         }
     }
 
@@ -959,7 +1000,7 @@ impl RenderSession {
             pending_frame_normalization_diagnostics: Vec::new(),
             target: RenderTarget::Scene,
             diagnostic_attribution: DiagnosticAttribution::SceneGlobal,
-            font_subset_session: Arc::new(Mutex::new(font_subset::Session::new())),
+            font_subset_session: Arc::new(Mutex::new(svg_fonts::Session::new())),
         }
     }
 
@@ -1143,7 +1184,7 @@ impl RenderSession {
         scene: &SceneDocument,
         request: &RenderRequest,
         prepared: Option<&PreparedFrameRender>,
-        svg_font_payload: SvgFontPayload,
+        svg_font_payload: svg_fonts::Payload,
     ) -> Result<RenderOutcome, RenderError> {
         self.transact(
             request,
@@ -2706,7 +2747,7 @@ impl RenderSession {
         scene: &SceneDocument,
         request: &RenderRequest,
         semantic_working: &[SemanticWorkingRecord],
-        svg_font_payload: SvgFontPayload,
+        svg_font_payload: svg_fonts::Payload,
     ) -> Result<Vec<u8>, RenderError> {
         match request.format() {
             OutputFormat::Svg => self.validate_svg_dimensions(&resolved, request)?,
@@ -2773,15 +2814,21 @@ impl RenderSession {
                 let demand = svg_font_demand(&resolved).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_SVG_FAILED, error)
                 })?;
-                let selection_working = account_svg_font_selection(self, request, &demand)?;
-                let dependency_envelope =
-                    match account_svg_font_dependency_envelope(self, request, &demand) {
-                        Ok(envelope) => envelope,
-                        Err(error) => {
-                            release_svg_font_records(self, request, selection_working)?;
-                            return Err(error);
-                        }
-                    };
+                let selection_working = svg_fonts::account_selection(
+                    &mut RenderResourceAccount::new(self, request),
+                    &demand,
+                )?;
+                let dependency_envelope = match svg_fonts::account_dependency_envelope(
+                    &mut RenderResourceAccount::new(self, request),
+                    &demand,
+                ) {
+                    Ok(envelope) => envelope,
+                    Err(error) => {
+                        selection_working
+                            .release(&mut RenderResourceAccount::new(self, request))?;
+                        return Err(error);
+                    }
+                };
                 let font_bundle = {
                     let mut subset_session = self
                         .font_subset_session
@@ -2798,7 +2845,8 @@ impl RenderSession {
                             None,
                             dependency_envelope,
                         )?;
-                        release_svg_font_records(self, request, selection_working)?;
+                        selection_working
+                            .release(&mut RenderResourceAccount::new(self, request))?;
                         return Err(self.format_failure(
                             request,
                             ErrorCode::ENCODE_SVG_FAILED,
@@ -2806,7 +2854,9 @@ impl RenderSession {
                         ));
                     }
                 };
-                match observe_svg_font_derivation(self, request, &font_bundle) {
+                match font_bundle
+                    .account_resource_transcript(&mut RenderResourceAccount::new(self, request))
+                {
                     Ok(()) => {}
                     Err(error) => {
                         release_svg_font_encoding_records(
@@ -2815,7 +2865,8 @@ impl RenderSession {
                             None,
                             dependency_envelope,
                         )?;
-                        release_svg_font_records(self, request, selection_working)?;
+                        selection_working
+                            .release(&mut RenderResourceAccount::new(self, request))?;
                         return Err(error);
                     }
                 }
@@ -2828,7 +2879,8 @@ impl RenderSession {
                             None,
                             dependency_envelope,
                         )?;
-                        release_svg_font_records(self, request, selection_working)?;
+                        selection_working
+                            .release(&mut RenderResourceAccount::new(self, request))?;
                         return Err(self.format_failure(
                             request,
                             ErrorCode::ENCODE_SVG_FAILED,
@@ -2839,7 +2891,7 @@ impl RenderSession {
                 if let Err(error) = self.release_semantic_working(request, semantic_working, false)
                 {
                     release_svg_font_encoding_records(self, request, None, dependency_envelope)?;
-                    release_svg_font_records(self, request, selection_working)?;
+                    selection_working.release(&mut RenderResourceAccount::new(self, request))?;
                     return Err(error);
                 }
                 let workspace_bytes = 256 * 1_024;
@@ -2851,7 +2903,7 @@ impl RenderSession {
                 .with_record(ResourceRecordKind::SvgSerializerWorkspace);
                 if let Err(error) = self.acquire_working(request, workspace, workspace_bytes) {
                     release_svg_font_encoding_records(self, request, None, dependency_envelope)?;
-                    release_svg_font_records(self, request, selection_working)?;
+                    selection_working.release(&mut RenderResourceAccount::new(self, request))?;
                     return Err(error);
                 }
                 let mandatory_notices = plan.take_mandatory_notices();
@@ -2874,11 +2926,14 @@ impl RenderSession {
                             Some((workspace, workspace_bytes)),
                             dependency_envelope,
                         )?;
-                        release_svg_font_records(self, request, selection_working)?;
+                        selection_working
+                            .release(&mut RenderResourceAccount::new(self, request))?;
                         return Err(error);
                     }
                 };
-                if let Err(error) = release_svg_font_records(self, request, selection_working) {
+                if let Err(error) =
+                    selection_working.release(&mut RenderResourceAccount::new(self, request))
+                {
                     release_svg_font_encoding_records(
                         self,
                         request,
@@ -6071,8 +6126,8 @@ fn svg_font_demand(scene: &ResolvedScene) -> Result<svg_fonts::Demand, FormatEnc
 fn build_svg_font_bundle(
     scene: &ResolvedScene,
     demand: svg_fonts::Demand,
-    payload: SvgFontPayload,
-    subset_session: &mut font_subset::Session,
+    payload: svg_fonts::Payload,
+    subset_session: &mut svg_fonts::Session,
 ) -> Result<svg_fonts::Bundle, FormatEncodeError> {
     let unchanged = scene
         .official_fonts
@@ -6093,482 +6148,19 @@ fn build_svg_font_bundle(
     })
 }
 
-fn account_svg_font_selection(
-    session: &mut RenderSession,
-    request: &RenderRequest,
-    demand: &svg_fonts::Demand,
-) -> Result<Vec<SvgFontWorkingRecord<'static>>, RenderError> {
-    let mut retained = Vec::new();
-    let result = (|| -> Result<(), RenderError> {
-        for family in &demand.families {
-            let scalar_count = u64::try_from(family.scalars.len()).map_err(|_| {
-                session.internal_failure(request.format(), "SVG font scalar count overflowed", "")
-            })?;
-            let scalar_work = checked_svg_font_product(
-                session,
-                request,
-                scalar_count,
-                36,
-                "SVG font scalar-set work overflowed",
-            )?;
-            let scalar_working = checked_svg_font_product(
-                session,
-                request,
-                scalar_count,
-                64,
-                "SVG font scalar-set working bytes overflowed",
-            )?;
-            retained.try_reserve(1).map_err(|_| {
-                session.memory_failure(request, "svg_font_selection", "retained_record")
-            })?;
-            let context = ResourceContext::new(
-                ResourcePhase::FormatPlanning,
-                "svg_font_family_scalar_set",
-                "",
-            )
-            .with_semantic_identity(family.family)
-            .with_record(ResourceRecordKind::BuiltInGlyphOrRangeState);
-            session.transact(
-                request,
-                context,
-                ResourceDelta {
-                    working_bytes: scalar_working,
-                    total_work_units: scalar_work,
-                    ..ResourceDelta::default()
-                },
-            )?;
-            retained.push(SvgFontWorkingRecord {
-                context,
-                bytes: scalar_working,
-            });
-        }
-        for family in &demand.families {
-            let scalar_count = u64::try_from(family.scalars.len()).map_err(|_| {
-                session.internal_failure(request.format(), "SVG font scalar count overflowed", "")
-            })?;
-            let catalog_family = svg_fonts::catalog_family(family.family);
-            let mut records = excalidraw_render_assets_base::revision_1()
-                .assets
-                .iter()
-                .filter(|record| record.family == catalog_family)
-                .collect::<Vec<_>>();
-            records.sort_unstable_by_key(|record| {
-                excalidraw_render_assets_base::font_face_order(catalog_family, record.upstream_path)
-                    .unwrap_or(usize::MAX)
-            });
-            for record in records {
-                let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
-                    catalog_family,
-                    record.upstream_path,
-                )
-                .ok_or_else(|| {
-                    session.internal_failure(
-                        request.format(),
-                        "official font range declaration is missing",
-                        "",
-                    )
-                })?;
-                let range_count = u64::try_from(ranges.len()).map_err(|_| {
-                    session.internal_failure(
-                        request.format(),
-                        "SVG font range count overflowed",
-                        "",
-                    )
-                })?;
-                let pairs = checked_svg_font_product(
-                    session,
-                    request,
-                    scalar_count,
-                    range_count,
-                    "SVG font scalar-range pair count overflowed",
-                )?;
-                let pair_work = checked_svg_font_product(
-                    session,
-                    request,
-                    pairs,
-                    32,
-                    "SVG font scalar-range work overflowed",
-                )?;
-                session.transact(
-                    request,
-                    ResourceContext::new(
-                        ResourcePhase::FormatPlanning,
-                        "svg_font_chunk_considered",
-                        "",
-                    )
-                    .with_semantic_identity(record.identity),
-                    ResourceDelta {
-                        total_work_units: pair_work,
-                        ..ResourceDelta::default()
-                    },
-                )?;
-                if family.scalars.iter().any(|scalar| {
-                    ranges
-                        .iter()
-                        .any(|(start, end)| start <= scalar && scalar <= end)
-                }) {
-                    retained.try_reserve(1).map_err(|_| {
-                        session.memory_failure(request, "svg_font_selection", "retained_record")
-                    })?;
-                    let context = ResourceContext::new(
-                        ResourcePhase::FormatPlanning,
-                        "svg_font_chunk_selected",
-                        "",
-                    )
-                    .with_semantic_identity(record.identity)
-                    .with_record(ResourceRecordKind::BuiltInSelectionState);
-                    session.transact(
-                        request,
-                        context,
-                        ResourceDelta {
-                            working_bytes: 256,
-                            total_work_units: 8,
-                            ..ResourceDelta::default()
-                        },
-                    )?;
-                    retained.push(SvgFontWorkingRecord {
-                        context,
-                        bytes: 256,
-                    });
-                }
-            }
-        }
-        Ok(())
-    })();
-    if let Err(error) = result {
-        release_svg_font_records(session, request, retained)?;
-        return Err(error);
-    }
-    Ok(retained)
-}
-
-fn observe_svg_font_derivation(
-    session: &mut RenderSession,
-    request: &RenderRequest,
-    bundle: &svg_fonts::Bundle,
-) -> Result<(), RenderError> {
-    for metrics in bundle.subset_metrics() {
-        observe_svg_font_subset_metrics(session, request, metrics)?;
-    }
-    Ok(())
-}
-
-fn observe_svg_font_subset_metrics(
-    session: &mut RenderSession,
-    request: &RenderRequest,
-    metrics: &svg_fonts::SubsetMetrics,
-) -> Result<(), RenderError> {
-    let decoded = u64::try_from(metrics.decoded_sfnt_bytes).unwrap_or(u64::MAX);
-    let subset = u64::try_from(metrics.subset_sfnt_bytes).unwrap_or(u64::MAX);
-    let encoded = u64::try_from(metrics.subset_woff2_bytes).unwrap_or(u64::MAX);
-    let tables = u64::try_from(metrics.subset_tables).unwrap_or(u64::MAX);
-    let sfnt_bound = checked_svg_font_product(
-        session,
-        request,
-        decoded,
-        256,
-        "SVG font subset sfnt envelope overflowed",
-    )?;
-    let woff2_bound = checked_svg_font_product(
-        session,
-        request,
-        decoded,
-        2,
-        "SVG font subset WOFF2 envelope overflowed",
-    )?;
-    if subset > sfnt_bound || encoded > woff2_bound || tables > decoded / 16 {
-        return Err(session.internal_failure(
-            request.format(),
-            "SVG font dependency exceeded its admitted envelope",
-            "",
-        ));
-    }
-    for event in [
-        "svg_font_woff2_decode",
-        "svg_font_subset_plan",
-        "svg_font_subset_sfnt",
-        "svg_font_woff2_encode",
-        "svg_font_validate",
-        "svg_font_css_data_url",
-    ] {
-        session.transact(
-            request,
-            ResourceContext::new(ResourcePhase::EncodingAndOutcomeAssembly, event, "")
-                .with_semantic_identity(metrics.asset_identity),
-            ResourceDelta::default(),
-        )?;
-    }
-    Ok(())
-}
-
-fn account_svg_font_dependency_envelope(
-    session: &mut RenderSession,
-    request: &RenderRequest,
-    demand: &svg_fonts::Demand,
-) -> Result<Option<SvgFontWorkingRecord<'static>>, RenderError> {
-    const GLYPH_BOUND: u64 = u16::MAX as u64;
-    const ENCODER_WORKSPACE: u64 = 8 * 1_024 * 1_024;
-
-    let mut retained_bound = 0_u64;
-    let mut active_bound = 0_u64;
-    let mut work_bound = 0_u64;
-    for family in &demand.families {
-        let catalog_family = svg_fonts::catalog_family(family.family);
-        let scalar_count = u64::try_from(family.scalars.len()).map_err(|_| {
-            session.internal_failure(request.format(), "SVG font scalar count overflowed", "")
-        })?;
-        for record in excalidraw_render_assets_base::revision_1()
-            .assets
-            .iter()
-            .filter(|record| record.family == catalog_family)
-        {
-            let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
-                catalog_family,
-                record.upstream_path,
-            )
-            .ok_or_else(|| {
-                session.internal_failure(
-                    request.format(),
-                    "official font range declaration is missing",
-                    "",
-                )
-            })?;
-            if !family.scalars.iter().any(|scalar| {
-                ranges
-                    .iter()
-                    .any(|(start, end)| start <= scalar && scalar <= end)
-            }) {
-                continue;
-            }
-            let source = u64::try_from(record.complete_length).map_err(|_| {
-                session.internal_failure(request.format(), "SVG font source size overflowed", "")
-            })?;
-            let decoded = u64::try_from(
-                excalidraw_render_assets_base::font_face_decoded_length(record.upstream_path)
-                    .ok_or_else(|| {
-                        session.internal_failure(
-                            request.format(),
-                            "official font decoded bound is missing",
-                            "",
-                        )
-                    })?,
-            )
-            .map_err(|_| {
-                session.internal_failure(request.format(), "SVG font decoded size overflowed", "")
-            })?;
-            let table_bound = decoded / 16;
-            let sfnt_bound = checked_svg_font_product(
-                session,
-                request,
-                decoded,
-                256,
-                "SVG font subset sfnt envelope overflowed",
-            )?;
-            let woff2_bound = checked_svg_font_product(
-                session,
-                request,
-                decoded,
-                2,
-                "SVG font subset WOFF2 envelope overflowed",
-            )?;
-            let base64_groups = checked_svg_font_sum(
-                session,
-                request,
-                &[woff2_bound, 2],
-                "SVG font base64 rounding overflowed",
-            )? / 3;
-            let base64_bound = checked_svg_font_product(
-                session,
-                request,
-                base64_groups,
-                4,
-                "SVG font base64 envelope overflowed",
-            )?;
-            let table_work = checked_svg_font_product(
-                session,
-                request,
-                table_bound,
-                8,
-                "SVG font table work envelope overflowed",
-            )?;
-            let scalar_work = checked_svg_font_product(
-                session,
-                request,
-                scalar_count,
-                32,
-                "SVG font scalar work envelope overflowed",
-            )?;
-            let glyph_work = checked_svg_font_product(
-                session,
-                request,
-                GLYPH_BOUND,
-                32,
-                "SVG font glyph work envelope overflowed",
-            )?;
-            let chunk_work = checked_svg_font_sum(
-                session,
-                request,
-                &[
-                    source,
-                    decoded,
-                    table_work,
-                    scalar_work,
-                    glyph_work,
-                    sfnt_bound,
-                    table_work,
-                    sfnt_bound,
-                    woff2_bound,
-                    woff2_bound,
-                    sfnt_bound,
-                    glyph_work,
-                    woff2_bound,
-                    base64_bound,
-                ],
-                "SVG font dependency work envelope overflowed",
-            )?;
-            work_bound = checked_svg_font_sum(
-                session,
-                request,
-                &[work_bound, chunk_work],
-                "SVG font aggregate work envelope overflowed",
-            )?;
-            let plan_records = checked_svg_font_sum(
-                session,
-                request,
-                &[scalar_count, GLYPH_BOUND],
-                "SVG font subset plan record envelope overflowed",
-            )?;
-            let plan_bound = checked_svg_font_product(
-                session,
-                request,
-                plan_records,
-                64,
-                "SVG font subset plan workspace envelope overflowed",
-            )?;
-            let decoded_blob = checked_derived_blob_bytes(session, request, decoded)?;
-            let sfnt_blob = checked_derived_blob_bytes(session, request, sfnt_bound)?;
-            let chunk_active = checked_svg_font_sum(
-                session,
-                request,
-                &[decoded_blob, sfnt_blob, ENCODER_WORKSPACE, plan_bound],
-                "SVG font active dependency envelope overflowed",
-            )?;
-            active_bound = active_bound.max(chunk_active);
-            let woff2_blob = checked_derived_blob_bytes(session, request, woff2_bound)?;
-            retained_bound = checked_svg_font_sum(
-                session,
-                request,
-                &[retained_bound, woff2_blob],
-                "SVG font retained dependency envelope overflowed",
-            )?;
-        }
-    }
-    let bytes = checked_svg_font_sum(
-        session,
-        request,
-        &[active_bound, retained_bound],
-        "SVG font live dependency envelope overflowed",
-    )?;
-    let context = ResourceContext::new(
-        ResourcePhase::EncodingAndOutcomeAssembly,
-        "svg_font_dependency_envelope",
-        "",
-    )
-    .with_record(ResourceRecordKind::SvgFontSubsetWorkspace);
-    if bytes == 0 {
-        return Ok(None);
-    }
-    session.transact(
-        request,
-        context,
-        ResourceDelta {
-            working_bytes: bytes,
-            total_work_units: work_bound,
-            ..ResourceDelta::default()
-        },
-    )?;
-    Ok(Some(SvgFontWorkingRecord { context, bytes }))
-}
-
-struct SvgFontWorkingRecord<'a> {
-    context: ResourceContext<'a>,
-    bytes: u64,
-}
-
-fn release_svg_font_records(
-    session: &mut RenderSession,
-    request: &RenderRequest,
-    mut records: Vec<SvgFontWorkingRecord<'static>>,
-) -> Result<(), RenderError> {
-    while let Some(record) = records.pop() {
-        session.release_working(request, record.context, record.bytes)?;
-    }
-    Ok(())
-}
-
 fn release_svg_font_encoding_records(
     session: &mut RenderSession,
     request: &RenderRequest,
     workspace: Option<(ResourceContext<'static>, u64)>,
-    envelope: Option<SvgFontWorkingRecord<'static>>,
+    envelope: Option<svg_fonts::DependencyEnvelope>,
 ) -> Result<(), RenderError> {
     if let Some((context, bytes)) = workspace {
         session.release_working(request, context, bytes)?;
     }
-    if let Some(record) = envelope {
-        session.release_working(request, record.context, record.bytes)?;
+    if let Some(envelope) = envelope {
+        envelope.release(&mut RenderResourceAccount::new(session, request))?;
     }
     Ok(())
-}
-
-fn checked_svg_font_product(
-    session: &mut RenderSession,
-    request: &RenderRequest,
-    left: u64,
-    right: u64,
-    subject: &'static str,
-) -> Result<u64, RenderError> {
-    left.checked_mul(right)
-        .ok_or_else(|| session.internal_failure(request.format(), subject, ""))
-}
-
-fn checked_svg_font_sum(
-    session: &mut RenderSession,
-    request: &RenderRequest,
-    values: &[u64],
-    subject: &'static str,
-) -> Result<u64, RenderError> {
-    values.iter().try_fold(0_u64, |total, value| {
-        total
-            .checked_add(*value)
-            .ok_or_else(|| session.internal_failure(request.format(), subject, ""))
-    })
-}
-
-fn checked_derived_blob_bytes(
-    session: &mut RenderSession,
-    request: &RenderRequest,
-    bytes: u64,
-) -> Result<u64, RenderError> {
-    let rounded = checked_svg_font_sum(
-        session,
-        request,
-        &[bytes, 63],
-        "SVG font blob alignment overflowed",
-    )? / 64;
-    let aligned = checked_svg_font_product(
-        session,
-        request,
-        rounded,
-        64,
-        "SVG font blob size overflowed",
-    )?;
-    checked_svg_font_sum(
-        session,
-        request,
-        &[256, aligned],
-        "SVG font blob record overflowed",
-    )
 }
 
 fn add_svg_font_text(
@@ -10222,7 +9814,7 @@ mod tests {
             &crate::catalog::REVISION_1,
             &scene,
             &request,
-            SvgFontPayload::CompleteChunks,
+            svg_fonts::Payload::CompleteChunks,
         )
         .expect("focused Latin complete-chunk control renders");
 
@@ -10247,7 +9839,7 @@ mod tests {
             &crate::catalog::REVISION_1,
             &scene,
             &request,
-            SvgFontPayload::CompleteChunks,
+            svg_fonts::Payload::CompleteChunks,
         )
         .expect("multi-chunk complete-chunk control renders");
 
@@ -10277,7 +9869,7 @@ mod tests {
             &crate::catalog::REVISION_1,
             &scene,
             &request,
-            SvgFontPayload::CompleteChunks,
+            svg_fonts::Payload::CompleteChunks,
         )
         .expect("complete-CJK complete-chunk control renders");
 
@@ -10315,7 +9907,7 @@ mod tests {
             &crate::catalog::REVISION_1,
             &scene,
             &request,
-            SvgFontPayload::CompleteChunks,
+            svg_fonts::Payload::CompleteChunks,
         )
         .expect("full-intersection complete-chunk control renders");
 
@@ -10400,7 +9992,7 @@ mod tests {
                 &crate::catalog::REVISION_1,
                 &scene,
                 &request,
-                SvgFontPayload::CompleteChunks,
+                svg_fonts::Payload::CompleteChunks,
             )
             .unwrap_or_else(|error| panic!("complete-chunk size case {id} failed: {error}"));
             assert_eq!(candidate.report(), control.report(), "size case {id}");
@@ -10646,7 +10238,7 @@ mod tests {
             .expect("diagnostic is retained");
 
         let error = session
-            .render(&scene, &request, None, SvgFontPayload::Subset)
+            .render(&scene, &request, None, svg_fonts::Payload::Subset)
             .expect_err("output exhaustion is fatal");
 
         assert_eq!(error.code(), ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED);

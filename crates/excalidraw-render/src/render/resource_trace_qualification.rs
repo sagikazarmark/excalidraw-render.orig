@@ -52,7 +52,7 @@ fn assert_scene_trace_replay() {
     assert_eq!(envelope["deltas"]["total_work_units"], 52_456_060);
     assert_eq!(
         crate::resource_accounting::sha256_hex(&cold_trace),
-        "9537d62502e56ae63bdbcbf34e39f61df43d12f64536c97ccddb2adc21b5123a"
+        "ab9cdd6755270b17963c90b7a373ea40f6951c30c0fa5d2bb3395ed189dc2114"
     );
 }
 
@@ -105,7 +105,7 @@ fn assert_frame_batch_trace_replay() {
         .contains("cache"));
     assert_eq!(
         crate::resource_accounting::sha256_hex(&batch_trace),
-        "37c75e68d2602eeea51c16f10158dcbd5df7b8737f6ac51ff731d6fb62ed4304"
+        "28ffead7aaf68fa83e2d2049086c2ee798fabec97202baa3305e5bd60c48f9ed"
     );
 
     let failure_request = crate::FrameRenderRequest::builder(OutputFormat::Svg)

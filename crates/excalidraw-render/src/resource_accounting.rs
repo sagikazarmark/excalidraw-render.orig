@@ -73,6 +73,26 @@ pub(crate) struct ResourceContext<'a> {
     fallback_parent: Option<u64>,
 }
 
+pub(crate) trait ResourceAccount {
+    type Error;
+
+    fn transact_resource(
+        &mut self,
+        context: ResourceContext<'_>,
+        delta: ResourceDelta,
+    ) -> Result<(), Self::Error>;
+
+    fn release_resource(
+        &mut self,
+        context: ResourceContext<'_>,
+        bytes: u64,
+    ) -> Result<(), Self::Error>;
+
+    fn internal_failure(&mut self, message: &'static str) -> Self::Error;
+
+    fn memory_failure(&mut self, subject_kind: &'static str, subject: &'static str) -> Self::Error;
+}
+
 impl<'a> ResourceContext<'a> {
     pub(crate) const fn new(
         phase: ResourcePhase,

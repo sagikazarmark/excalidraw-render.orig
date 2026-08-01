@@ -1160,7 +1160,8 @@ pub(super) fn mandatory_notices_json(
     liberation: bool,
     official: &[super::ResolvedFont],
 ) -> Result<super::notices::MandatoryNotices, LabelError> {
-    let full_ofl_notice = liberation_sans_notice().ok_or(LabelError::InvalidFont)?;
+    let full_ofl_notice =
+        super::notices::liberation_sans_notice().ok_or(LabelError::InvalidFont)?;
     let ofl_start = full_ofl_notice
         .find("This Font Software is licensed")
         .map(|index| &full_ofl_notice[index..])
@@ -1195,7 +1196,7 @@ pub(super) fn mandatory_notices_json(
             liberation_pending = false;
         }
         if font.family == "Noto Emoji" {
-            let notice = noto_emoji_notice().ok_or(LabelError::InvalidFont)?;
+            let notice = super::notices::noto_emoji_notice().ok_or(LabelError::InvalidFont)?;
             push_manifest_notice(&mut manifest, &mut separator, font.identity, notice);
             continue;
         }
@@ -1203,7 +1204,7 @@ pub(super) fn mandatory_notices_json(
             .map_err(|_| LabelError::InvalidFont)?;
         let mut official_notice = String::new();
         if provenance.license_identity == "font.comic-shanns.mit" {
-            let notice = comic_shanns_notice().ok_or(LabelError::InvalidFont)?;
+            let notice = super::notices::comic_shanns_notice().ok_or(LabelError::InvalidFont)?;
             official_notice.try_reserve_exact(notice.len())?;
             official_notice.push_str(notice);
         } else if provenance.license_identity.ends_with(".ofl-1.1") {
@@ -1249,57 +1250,9 @@ fn push_manifest_notice(
     manifest.push_str("{\"asset_identity\":\"");
     manifest.push_str(identity);
     manifest.push_str("\",\"text\":\"");
-    push_json_string_content(manifest, notice);
+    super::notices::push_json_string_content(manifest, notice);
     manifest.push_str("\"}");
     *separator = ",";
-}
-
-pub(super) fn comic_shanns_notice() -> Option<&'static str> {
-    const START: &str = "Comic Shanns MIT license\n==============================================================================\n\n";
-    const END: &str = "\n\n==============================================================================\nSIL Open Font License 1.1";
-    let bundle = excalidraw_render_assets_base::license_bundle();
-    let start = bundle.find(START)?.checked_add(START.len())?;
-    let tail = bundle.get(start..)?;
-    tail.get(..tail.find(END)?)
-}
-
-pub(super) fn liberation_sans_notice() -> Option<&'static str> {
-    const START: &str = "liberation-sans.ofl-full\n";
-    const END: &str = "\n\nnoto-emoji.ofl-full\n";
-    let bundle = excalidraw_render_assets_base::license_bundle();
-    let start = bundle.find(START)?.checked_add(START.len())?;
-    let tail = bundle.get(start..)?;
-    let end = tail.find(END)?;
-    tail.get(..end)
-}
-
-pub(super) fn noto_emoji_notice() -> Option<&'static str> {
-    const START: &str = "noto-emoji.ofl-full\n";
-    let bundle = excalidraw_render_assets_base::license_bundle();
-    let start = bundle.find(START)?.checked_add(START.len())?;
-    bundle.get(start..)
-}
-
-pub(super) fn push_json_string_content(output: &mut String, value: &str) {
-    for character in value.chars() {
-        match character {
-            '"' => output.push_str("\\\""),
-            '\\' => output.push_str("\\\\"),
-            '\u{08}' => output.push_str("\\b"),
-            '\u{0c}' => output.push_str("\\f"),
-            '\n' => output.push_str("\\n"),
-            '\r' => output.push_str("\\r"),
-            '\t' => output.push_str("\\t"),
-            character if character < '\u{20}' => {
-                const HEX: &[u8; 16] = b"0123456789abcdef";
-                let value = character as u32;
-                output.push_str("\\u00");
-                output.push(char::from(HEX[((value >> 4) & 0x0f) as usize]));
-                output.push(char::from(HEX[(value & 0x0f) as usize]));
-            }
-            character => output.push(character),
-        }
-    }
 }
 
 struct GlyphOutlineBuilder<'a> {

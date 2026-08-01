@@ -1,3 +1,4 @@
+use crate::resource_accounting::{ResourceAccount, ResourceContext, ResourceDelta, ResourcePhase};
 use excalidraw_render_assets_base::{FontSubsetTableAction, FONT_SUBSET_TABLE_RULES_V1};
 use skera::{subset_font, Plan, SubsetFlags};
 use std::collections::VecDeque;
@@ -31,6 +32,63 @@ pub(super) struct Derived {
     pub(super) decoded_sfnt_bytes: usize,
     pub(super) subset_sfnt_bytes: usize,
     pub(super) subset_tables: usize,
+}
+
+pub(super) struct DerivationMetrics {
+    asset_identity: &'static str,
+    decoded_sfnt_bytes: usize,
+    subset_sfnt_bytes: usize,
+    subset_woff2_bytes: usize,
+    subset_tables: usize,
+}
+
+impl DerivationMetrics {
+    pub(super) fn new(asset_identity: &'static str, derived: &Derived) -> Self {
+        Self {
+            asset_identity,
+            decoded_sfnt_bytes: derived.decoded_sfnt_bytes,
+            subset_sfnt_bytes: derived.subset_sfnt_bytes,
+            subset_woff2_bytes: derived.woff2.len(),
+            subset_tables: derived.subset_tables,
+        }
+    }
+
+    pub(super) const fn asset_identity(&self) -> &'static str {
+        self.asset_identity
+    }
+}
+
+pub(super) fn account_derivation<A: ResourceAccount>(
+    account: &mut A,
+    metrics: &DerivationMetrics,
+) -> Result<(), A::Error> {
+    let decoded = u64::try_from(metrics.decoded_sfnt_bytes).unwrap_or(u64::MAX);
+    let subset = u64::try_from(metrics.subset_sfnt_bytes).unwrap_or(u64::MAX);
+    let encoded = u64::try_from(metrics.subset_woff2_bytes).unwrap_or(u64::MAX);
+    let tables = u64::try_from(metrics.subset_tables).unwrap_or(u64::MAX);
+    let sfnt_bound = decoded
+        .checked_mul(256)
+        .ok_or_else(|| account.internal_failure("SVG font subset sfnt envelope overflowed"))?;
+    let woff2_bound = decoded
+        .checked_mul(2)
+        .ok_or_else(|| account.internal_failure("SVG font subset WOFF2 envelope overflowed"))?;
+    if subset > sfnt_bound || encoded > woff2_bound || tables > decoded / 16 {
+        return Err(account.internal_failure("SVG font dependency exceeded its admitted envelope"));
+    }
+    for event in [
+        "svg_font_woff2_decode",
+        "svg_font_subset_plan",
+        "svg_font_subset_sfnt",
+        "svg_font_woff2_encode",
+        "svg_font_validate",
+    ] {
+        account.transact_resource(
+            ResourceContext::new(ResourcePhase::EncodingAndOutcomeAssembly, event, "")
+                .with_semantic_identity(metrics.asset_identity),
+            ResourceDelta::default(),
+        )?;
+    }
+    Ok(())
 }
 
 #[derive(Eq, PartialEq)]

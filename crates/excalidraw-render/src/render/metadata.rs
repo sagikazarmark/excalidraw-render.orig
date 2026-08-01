@@ -479,7 +479,7 @@ fn manifest_json(
             write!(manifest, "{ordinal}").map_err(|_| metadata_size_error())?;
             if let Some(name) = name {
                 manifest.push_str(",\"name\":\"");
-                super::text::push_json_string_content(&mut manifest, name);
+                super::notices::push_json_string_content(&mut manifest, name);
                 manifest.push('"');
             }
             manifest.push_str("},\"provenance\":");
