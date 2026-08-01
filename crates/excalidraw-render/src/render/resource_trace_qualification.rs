@@ -215,7 +215,10 @@ fn assert_failure_trace_replay() {
         render_with_trace_and_font_subset_cache(profile, &scene, &output_request, &cache);
     let cold_output = cold_output.expect_err("cold output crossing is fatal");
     let cached_output = cached_output.expect_err("cached output crossing is fatal");
-    assert_eq!(cold_output.code(), ErrorCode::ENCODE_SVG_FAILED);
+    assert_eq!(
+        cold_output.code(),
+        ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED
+    );
     assert_eq!(cold_output.code(), cached_output.code());
     assert_eq!(cold_output.report(), cached_output.report());
     assert_eq!(cold_output_trace, cached_output_trace);

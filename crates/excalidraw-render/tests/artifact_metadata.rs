@@ -14,6 +14,7 @@ const SOURCE: &[u8] = br#"{
   "files": {"unreferenced": {"dataURL": "data:image/png;base64,AA=="}}
 }"#;
 const CANONICAL_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"source":"metadata-vector","elements":[],"appState":{"future":1.00e+02},"files":{"unreferenced":{"dataURL":"data:image/png;base64,AA=="}}}"#;
+const MANDATORY_NOTICE_SOURCE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","width":100,"height":30,"fontSize":20,"fontFamily":3,"text":"Code","updated":1}],"appState":{},"files":{}}"#;
 
 #[test]
 fn every_format_round_trips_one_canonical_artifact_manifest() {
@@ -117,6 +118,95 @@ fn output_exhaustion_omits_only_the_crossing_optional_component() {
         assert!(manifest.contains("\"diagnostic_summary\":{"));
         assert!(manifest.ends_with("\"embedded_scene\":null}"));
     }
+}
+
+#[test]
+fn svg_exact_output_boundary_retains_the_complete_mandatory_notice_artifact() {
+    let renderer = Renderer::new();
+    let scene = SceneDocument::parse(MANDATORY_NOTICE_SOURCE).expect("font scene is admitted");
+    let unlimited_request = RenderRequest::builder(OutputFormat::Svg).build().unwrap();
+    let unlimited = renderer.render(&scene, &unlimited_request).unwrap();
+    let output_bytes = u64::try_from(unlimited.artifact().bytes().len()).unwrap();
+    let exact_request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(
+            ResourceLimits::builder()
+                .max_output_bytes(output_bytes)
+                .build()
+                .unwrap(),
+        )
+        .build()
+        .unwrap();
+
+    let exact = renderer.render(&scene, &exact_request).unwrap();
+
+    assert_eq!(exact.artifact().bytes(), unlimited.artifact().bytes());
+    let manifest = artifact_manifest(OutputFormat::Svg, exact.artifact().bytes())
+        .expect("mandatory notices are retained");
+    assert!(manifest.contains("svg-font-subset@sha256:"));
+}
+
+#[test]
+fn svg_one_byte_below_mandatory_notice_output_reports_the_resource_crossing() {
+    let renderer = Renderer::new();
+    let scene = SceneDocument::parse(MANDATORY_NOTICE_SOURCE).expect("font scene is admitted");
+    let unlimited_request = RenderRequest::builder(OutputFormat::Svg).build().unwrap();
+    let unlimited = renderer.render(&scene, &unlimited_request).unwrap();
+    let output_bytes = u64::try_from(unlimited.artifact().bytes().len()).unwrap();
+    let limit = output_bytes - 1;
+    let limited_request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(
+            ResourceLimits::builder()
+                .max_output_bytes(limit)
+                .build()
+                .unwrap(),
+        )
+        .build()
+        .unwrap();
+
+    let error = renderer.render(&scene, &limited_request).unwrap_err();
+
+    assert_eq!(error.code(), ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED);
+    assert!(matches!(
+        error.details(),
+        Some(ErrorDetails::ResourceLimit {
+            field: "max_output_bytes",
+            ..
+        })
+    ));
+}
+
+#[test]
+fn svg_exact_measurement_preserves_optional_metadata_selection() {
+    let renderer = Renderer::new();
+    let scene = SceneDocument::parse(SOURCE).expect("scene is admitted");
+    let metadata = MetadataOptions::new(true, true, true);
+    let unlimited_request = RenderRequest::builder(OutputFormat::Svg)
+        .metadata_options(metadata.clone())
+        .build()
+        .unwrap();
+    let unlimited = renderer.render(&scene, &unlimited_request).unwrap();
+    let limit = u64::try_from(unlimited.artifact().bytes().len()).unwrap() - 1;
+    let limited_request = RenderRequest::builder(OutputFormat::Svg)
+        .metadata_options(metadata)
+        .resource_limits(
+            ResourceLimits::builder()
+                .max_output_bytes(limit)
+                .build()
+                .unwrap(),
+        )
+        .build()
+        .unwrap();
+
+    let limited = renderer.render(&scene, &limited_request).unwrap();
+
+    assert!(u64::try_from(limited.artifact().bytes().len()).unwrap() <= limit);
+    let manifest = artifact_manifest(OutputFormat::Svg, limited.artifact().bytes()).unwrap();
+    assert!(manifest.contains("\"provenance\":{"));
+    assert!(manifest.contains("\"diagnostic_summary\":{"));
+    assert!(manifest.ends_with("\"embedded_scene\":null}"));
+    assert!(limited.report().diagnostics().iter().any(|diagnostic| {
+        diagnostic.code() == DiagnosticCode::RESOURCE_OPTIONAL_METADATA_OMITTED
+    }));
 }
 
 #[test]
@@ -307,16 +397,13 @@ fn png_image_placeholders_carry_only_the_rendered_font_awesome_notices() {
 
 #[test]
 fn output_limit_cannot_silently_remove_a_mandatory_notice() {
-    let font_scene = SceneDocument::parse(
-        br#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","width":100,"height":30,"fontSize":20,"fontFamily":3,"text":"Code","updated":1}],"appState":{},"files":{}}"#,
-    )
-    .unwrap();
+    let font_scene = SceneDocument::parse(MANDATORY_NOTICE_SOURCE).unwrap();
     let image_scene = SceneDocument::parse(
         br#"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":20,"height":10,"fileId":"missing","status":"error","updated":1}],"appState":{},"files":{}}"#,
     )
     .unwrap();
 
-    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+    for format in [OutputFormat::Png, OutputFormat::Pdf] {
         let scene = if format == OutputFormat::Png {
             &image_scene
         } else {
@@ -339,7 +426,6 @@ fn output_limit_cannot_silently_remove_a_mandatory_notice() {
         assert_eq!(
             error.code(),
             match format {
-                OutputFormat::Svg => ErrorCode::ENCODE_SVG_FAILED,
                 OutputFormat::Png => ErrorCode::ENCODE_PNG_FAILED,
                 OutputFormat::Pdf => ErrorCode::ENCODE_PDF_FAILED,
                 _ => unreachable!(),

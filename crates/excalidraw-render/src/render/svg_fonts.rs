@@ -55,23 +55,10 @@ impl Bundle {
             .filter_map(|resource| resource.metrics.as_ref())
     }
 
-    pub(super) fn encoded_capacity(&self) -> Option<usize> {
-        self.resources.iter().try_fold(0_usize, |total, resource| {
-            resource
-                .bytes
-                .len()
-                .checked_add(2)
-                .and_then(|length| length.checked_div(3))
-                .and_then(|groups| groups.checked_mul(4))
-                .and_then(|encoded| encoded.checked_add(128))
-                .and_then(|encoded| total.checked_add(encoded))
-        })
-    }
-
-    pub(super) fn write(
+    pub(super) fn write<W: super::svg::SvgSink + ?Sized>(
         &self,
-        output: &mut String,
-        mut write_base64: impl FnMut(&mut String, &[u8]) -> Result<(), super::FormatEncodeError>,
+        output: &mut W,
+        mut write_base64: impl FnMut(&mut W, &[u8]) -> Result<(), super::FormatEncodeError>,
     ) -> Result<(), super::FormatEncodeError> {
         if self.resources.is_empty() {
             output.push_str("<defs></defs>");

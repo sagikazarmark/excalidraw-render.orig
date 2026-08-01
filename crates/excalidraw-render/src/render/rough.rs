@@ -1,5 +1,4 @@
 use std::collections::TryReserveError;
-use std::fmt::Write as _;
 
 use super::FormatEncodeError;
 
@@ -334,17 +333,24 @@ pub(super) enum FillStyle {
     Zigzag,
 }
 
-pub(super) fn push_number(output: &mut String, value: f64) -> Result<(), FormatEncodeError> {
+pub(super) fn push_number(
+    output: &mut (impl std::fmt::Write + ?Sized),
+    value: f64,
+) -> Result<(), FormatEncodeError> {
     let (negative, units) = fixed_two_decimal_units(value)?;
     if negative && units != 0 {
-        output.push('-');
+        output.write_char('-').map_err(|_| {
+            FormatEncodeError::Encoding("failed to write Rough path sign".to_owned())
+        })?;
     }
     let whole = units / 100;
     let fraction = units % 100;
     write!(output, "{whole}")
         .map_err(|_| FormatEncodeError::Encoding("failed to write Rough path number".to_owned()))?;
     if fraction != 0 {
-        output.push('.');
+        output.write_char('.').map_err(|_| {
+            FormatEncodeError::Encoding("failed to write Rough path decimal point".to_owned())
+        })?;
         if fraction % 10 == 0 {
             write!(output, "{}", fraction / 10)
         } else {

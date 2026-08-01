@@ -75,8 +75,7 @@ impl CanonicalColor {
         ]
     }
 
-    pub(crate) fn write_hex(self, output: &mut String) -> fmt::Result {
-        use std::fmt::Write as _;
+    pub(crate) fn write_hex(self, output: &mut (impl fmt::Write + ?Sized)) -> fmt::Result {
         write!(
             output,
             "#{:02x}{:02x}{:02x}",

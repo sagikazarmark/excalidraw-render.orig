@@ -829,6 +829,28 @@ enum OptionalMetadataComponent {
     EmbeddedScene,
 }
 
+trait ArtifactMeasurement {
+    const DEFERS_MANDATORY_OUTPUT_ADMISSION: bool;
+
+    fn output_len(&self) -> usize;
+}
+
+impl ArtifactMeasurement for usize {
+    const DEFERS_MANDATORY_OUTPUT_ADMISSION: bool = true;
+
+    fn output_len(&self) -> usize {
+        *self
+    }
+}
+
+impl ArtifactMeasurement for Vec<u8> {
+    const DEFERS_MANDATORY_OUTPUT_ADMISSION: bool = false;
+
+    fn output_len(&self) -> usize {
+        self.len()
+    }
+}
+
 impl OptionalMetadataComponent {
     fn requested(self, selection: metadata::MetadataSelection) -> bool {
         match self {
@@ -2840,7 +2862,7 @@ impl RenderSession {
                     0,
                     |metadata| {
                         plan.set_metadata(metadata.try_clone()?);
-                        plan.encode()
+                        plan.measure()
                     },
                 ) {
                     Ok(measured) => measured,
@@ -2865,13 +2887,8 @@ impl RenderSession {
                     return Err(error);
                 }
                 plan.set_metadata(metadata);
-                if let Err(error) = self.emit_premeasured_output(
-                    request,
-                    ErrorCode::ENCODE_SVG_FAILED,
-                    0,
-                    measured,
-                    || plan.encode(),
-                ) {
+                let output_bytes = u64::try_from(measured).unwrap_or(u64::MAX);
+                if let Err(error) = self.admit_output(request, output_bytes, 0) {
                     release_svg_font_encoding_records(
                         self,
                         request,
@@ -2880,6 +2897,23 @@ impl RenderSession {
                     )?;
                     return Err(error);
                 }
+                let emitted = match plan.encode_exact(measured) {
+                    Ok(emitted) => emitted,
+                    Err(error) => {
+                        release_svg_font_encoding_records(
+                            self,
+                            request,
+                            Some((workspace, workspace_bytes)),
+                            dependency_envelope,
+                        )?;
+                        return Err(self.format_failure(
+                            request,
+                            ErrorCode::ENCODE_SVG_FAILED,
+                            error,
+                        ));
+                    }
+                };
+                self.staged_output = Some(emitted);
                 if let Err(error) = self.release_semantic_working(request, semantic_working, true) {
                     release_svg_font_encoding_records(
                         self,
@@ -3475,15 +3509,15 @@ impl RenderSession {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn select_artifact_metadata(
+    fn select_artifact_metadata<M: ArtifactMeasurement>(
         &mut self,
         scene: &SceneDocument,
         request: &RenderRequest,
         mandatory_notices: Option<&notices::MandatoryNotices>,
         error_code: ErrorCode,
         codec_emission_work: u64,
-        mut measure: impl FnMut(&metadata::ArtifactMetadata) -> Result<Vec<u8>, FormatEncodeError>,
-    ) -> Result<(metadata::ArtifactMetadata, Vec<u8>), RenderError> {
+        mut measure: impl FnMut(&metadata::ArtifactMetadata) -> Result<M, FormatEncodeError>,
+    ) -> Result<(metadata::ArtifactMetadata, M), RenderError> {
         let snapshot = self.report.clone();
         let manifest_target = manifest_target(self.target, scene);
         let requested = metadata::MetadataSelection::requested(request);
@@ -3533,7 +3567,7 @@ impl RenderSession {
         .map_err(|error| self.format_failure(request, error_code, error))?;
         let baseline_artifact =
             measure(&baseline).map_err(|error| self.format_failure(request, error_code, error))?;
-        let baseline_bytes = u64::try_from(baseline_artifact.len()).unwrap_or(u64::MAX);
+        let baseline_bytes = u64::try_from(baseline_artifact.output_len()).unwrap_or(u64::MAX);
         if self
             .meter
             .optional_metadata_crossing(
@@ -3546,7 +3580,7 @@ impl RenderSession {
             )
             .is_some()
         {
-            if mandatory_notices.is_some() {
+            if mandatory_notices.is_some() && !M::DEFERS_MANDATORY_OUTPUT_ADMISSION {
                 return Err(self.format_failure(
                     request,
                     error_code,
@@ -3555,10 +3589,9 @@ impl RenderSession {
                     ),
                 ));
             }
-            if mandatory_notices.is_some() {
-                self.release_working(request, baseline_context, baseline_estimate.scratch_bytes)?;
+            if mandatory_notices.is_none() {
+                return Ok((baseline, baseline_artifact));
             }
-            return Ok((baseline, baseline_artifact));
         }
         if mandatory_notices.is_some() {
             self.release_working(request, baseline_context, baseline_estimate.scratch_bytes)?;
@@ -3739,8 +3772,8 @@ impl RenderSession {
                 }
             };
             let marginal_bytes = candidate_artifact
-                .len()
-                .checked_sub(accepted_artifact.len())
+                .output_len()
+                .checked_sub(accepted_artifact.output_len())
                 .and_then(|bytes| u64::try_from(bytes).ok())
                 .ok_or_else(|| {
                     self.internal_failure(
@@ -3749,7 +3782,7 @@ impl RenderSession {
                         "",
                     )
                 })?;
-            let output_bytes = u64::try_from(accepted_artifact.len())
+            let output_bytes = u64::try_from(accepted_artifact.output_len())
                 .unwrap_or(u64::MAX)
                 .saturating_add(marginal_bytes);
             if let Some(crossing) = self.meter.optional_metadata_crossing(
@@ -10876,7 +10909,7 @@ mod tests {
             output_result
                 .expect_err("output rejection occurs after derivation")
                 .code(),
-            ErrorCode::ENCODE_SVG_FAILED
+            ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED
         );
         let output_trace: serde_json::Value =
             serde_json::from_slice(&output_trace).expect("the output trace is valid JSON");

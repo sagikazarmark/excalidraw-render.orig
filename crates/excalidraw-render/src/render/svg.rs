@@ -1,11 +1,68 @@
-use std::fmt::Write as _;
-
 use crate::{color::CanonicalColor, RenderRequest, Sizing};
 
 use super::{
     rough::{Drawing, FillKind, Path, PathOperation},
     FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene, StrokeStyle,
 };
+
+pub(super) trait SvgSink: std::fmt::Write {
+    fn push_str(&mut self, value: &str);
+
+    fn push(&mut self, value: char);
+}
+
+impl SvgSink for String {
+    fn push_str(&mut self, value: &str) {
+        String::push_str(self, value);
+    }
+
+    fn push(&mut self, value: char) {
+        String::push(self, value);
+    }
+}
+
+impl<T: SvgSink + ?Sized> SvgSink for &mut T {
+    fn push_str(&mut self, value: &str) {
+        T::push_str(self, value);
+    }
+
+    fn push(&mut self, value: char) {
+        T::push(self, value);
+    }
+}
+
+#[derive(Default)]
+struct CountingWriter {
+    len: usize,
+    overflowed: bool,
+}
+
+impl CountingWriter {
+    fn add(&mut self, bytes: usize) {
+        if let Some(len) = self.len.checked_add(bytes) {
+            self.len = len;
+        } else {
+            self.overflowed = true;
+        }
+    }
+}
+
+impl std::fmt::Write for CountingWriter {
+    fn write_str(&mut self, value: &str) -> std::fmt::Result {
+        self.add(value.len());
+        Ok(())
+    }
+}
+
+impl SvgSink for CountingWriter {
+    fn push_str(&mut self, value: &str) {
+        self.add(value.len());
+    }
+
+    fn push(&mut self, value: char) {
+        self.add(value.len_utf8());
+    }
+}
 
 pub(super) struct SvgPlan {
     logical_width: f64,
@@ -132,8 +189,8 @@ impl SvgElement {
     }
 }
 
-fn push_frame_clip_prefix(
-    svg: &mut String,
+fn push_frame_clip_prefix<W: SvgSink + ?Sized>(
+    svg: &mut W,
     element_index: usize,
     legacy_fallback_index: Option<usize>,
     clips: &[super::ResolvedClip],
@@ -175,8 +232,8 @@ fn push_frame_clip_prefix(
     Ok(())
 }
 
-fn push_svg_link_hit_rect(
-    svg: &mut String,
+fn push_svg_link_hit_rect<W: SvgSink + ?Sized>(
+    svg: &mut W,
     link: Option<&str>,
     width: f64,
     height: f64,
@@ -192,8 +249,8 @@ fn push_svg_link_hit_rect(
     Ok(())
 }
 
-fn push_frame_clip_id(
-    svg: &mut String,
+fn push_frame_clip_id<W: SvgSink + ?Sized>(
+    svg: &mut W,
     element_index: usize,
     legacy_fallback_index: Option<usize>,
     clip_index: usize,
@@ -382,143 +439,41 @@ impl SvgPlan {
         })
     }
 
-    pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
-        let mut capacity = 256_usize;
-        capacity = checked_capacity_add(
-            capacity,
-            self.font_bundle
-                .encoded_capacity()
-                .ok_or_else(svg_size_error)?,
-        )?;
-        if let Some(manifest) = self
-            .metadata
-            .as_ref()
-            .and_then(super::metadata::ArtifactMetadata::manifest)
-        {
-            capacity = escaped_capacity(manifest)
-                .and_then(|manifest_capacity| checked_capacity_add(capacity, manifest_capacity))
-                .and_then(|capacity| checked_capacity_add(capacity, 256))
-                .map_err(|_| {
-                    super::metadata_embedding_error(
-                        crate::DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
-                        crate::MetadataComponent::Manifest,
-                    )
-                })?;
+    pub(super) fn measure(&self) -> Result<usize, FormatEncodeError> {
+        let mut output = CountingWriter::default();
+        self.write(&mut output)?;
+        if output.overflowed {
+            Err(svg_size_error())
+        } else {
+            Ok(output.len)
         }
-        if let Some(wrapper) = self
-            .metadata
-            .as_ref()
-            .and_then(super::metadata::ArtifactMetadata::scene_wrapper)
-        {
-            capacity = checked_capacity_add(
-                capacity,
-                wrapper
-                    .len()
-                    .saturating_add(2)
-                    .div_ceil(3)
-                    .saturating_mul(4),
-            )
-            .and_then(|capacity| checked_capacity_add(capacity, 256))
-            .map_err(|_| {
-                super::metadata_embedding_error(
-                    crate::DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
-                    crate::MetadataComponent::EmbeddedScene,
-                )
-            })?;
-        }
-        capacity = checked_capacity_add(capacity, usize::from(self.background.is_some()) * 32)?;
-        for element in &self.elements {
-            if let Some(link) = element.link() {
-                capacity = checked_capacity_add(capacity, escaped_capacity(link)?)?;
-                capacity = checked_capacity_add(capacity, 32)?;
-            }
-            match element {
-                SvgElement::RoughOutline {
-                    drawing,
-                    generated_label,
-                    ..
-                } => {
-                    capacity = checked_capacity_add(
-                        capacity,
-                        drawing
-                            .operation_count()
-                            .checked_mul(200)
-                            .ok_or_else(svg_size_error)?,
-                    )?;
-                    capacity = checked_capacity_add(capacity, 512)?;
-                    if let Some(label) = generated_label {
-                        capacity = checked_capacity_add(
-                            capacity,
-                            label.lines.iter().fold(256_usize, |size, line| {
-                                size.saturating_add(line.text.len()).saturating_add(192)
-                            }),
-                        )?;
-                    }
-                }
-                SvgElement::Freedraw {
-                    path_data,
-                    background_fill,
-                    ..
-                } => {
-                    capacity = checked_capacity_add(capacity, path_data.len())?;
-                    if let Some(fill) = background_fill {
-                        capacity = checked_capacity_add(
-                            capacity,
-                            fill.path
-                                .operations
-                                .len()
-                                .checked_mul(200)
-                                .ok_or_else(svg_size_error)?,
-                        )?;
-                    }
-                    capacity = checked_capacity_add(capacity, 256)?;
-                }
-                SvgElement::Frame { name, .. } => {
-                    if let Some(name) = name {
-                        capacity = checked_capacity_add(capacity, escaped_capacity(&name.text)?)?;
-                    }
-                    capacity = checked_capacity_add(capacity, 512)?;
-                }
-                SvgElement::Text { text, .. } => {
-                    for line in &text.lines {
-                        capacity = checked_capacity_add(capacity, escaped_capacity(&line.text)?)?;
-                    }
-                    capacity =
-                        checked_capacity_add(capacity, text.lines.len().saturating_mul(192))?;
-                }
-                SvgElement::Image { asset, .. } => {
-                    let encoded = asset
-                        .source_bytes
-                        .len()
-                        .checked_add(2)
-                        .and_then(|length| length.checked_div(3))
-                        .and_then(|groups| groups.checked_mul(4))
-                        .and_then(|length| length.checked_add(512))
-                        .ok_or_else(svg_size_error)?;
-                    capacity = checked_capacity_add(capacity, encoded)?;
-                }
-                SvgElement::Fallback { label, .. } => {
-                    if let Some(label) = label {
-                        capacity = checked_capacity_add(capacity, escaped_capacity(label)?)?;
-                    }
-                    capacity = checked_capacity_add(capacity, 1_024)?;
-                }
-            }
-        }
+    }
+
+    pub(super) fn encode_exact(&self, measured: usize) -> Result<Vec<u8>, FormatEncodeError> {
         let mut svg = String::new();
-        svg.try_reserve_exact(capacity)
+        svg.try_reserve_exact(measured)
             .map_err(|_| FormatEncodeError::MemoryUnavailable {
                 subject_kind: "artifact",
                 subject: "svg_output",
             })?;
+        self.write(&mut svg)?;
+        if svg.len() != measured {
+            return Err(FormatEncodeError::Encoding(
+                "measured and encoded SVG lengths differ".to_owned(),
+            ));
+        }
+        Ok(svg.into_bytes())
+    }
+
+    fn write<W: SvgSink + ?Sized>(&self, mut svg: &mut W) -> Result<(), FormatEncodeError> {
         svg.push_str("<svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 ");
-        push_svg_number(&mut svg, self.logical_width, "SVG width")?;
+        push_svg_number(svg, self.logical_width, "SVG width")?;
         svg.push(' ');
-        push_svg_number(&mut svg, self.logical_height, "SVG height")?;
+        push_svg_number(svg, self.logical_height, "SVG height")?;
         svg.push_str("\" width=\"");
-        push_svg_number(&mut svg, self.output_width, "scaled SVG width")?;
+        push_svg_number(svg, self.output_width, "scaled SVG width")?;
         svg.push_str("\" height=\"");
-        push_svg_number(&mut svg, self.output_height, "scaled SVG height")?;
+        push_svg_number(svg, self.output_height, "scaled SVG height")?;
         svg.push_str("\">");
         let scene_wrapper = self
             .metadata
@@ -534,16 +489,16 @@ impl SvgPlan {
                 "<!-- payload-type:application/vnd.excalidraw+json -->",
                 "<!-- payload-version:2 --><!-- payload-start -->"
             ));
-            push_base64(&mut svg, wrapper)?;
+            push_base64(svg, wrapper)?;
             svg.push_str("<!-- payload-end -->");
         }
         if let Some(manifest) = manifest {
             svg.push_str("<excalidraw-render:manifest xmlns:excalidraw-render=\"urn:excalidraw-render:artifact-manifest:1\">");
-            push_escaped_text(&mut svg, manifest);
+            push_escaped_text(svg, manifest);
             svg.push_str("</excalidraw-render:manifest>");
         }
         svg.push_str("</metadata>");
-        self.font_bundle.write(&mut svg, push_base64)?;
+        self.font_bundle.write(svg, push_base64)?;
         if let Some(background) = &self.background {
             svg.push_str("<rect x=\"0\" y=\"0\" width=\"");
             push_svg_number(&mut svg, self.logical_width, "SVG background width")?;
@@ -1332,7 +1287,7 @@ impl SvgPlan {
             }
         }
         svg.push_str("</svg>");
-        Ok(svg.into_bytes())
+        Ok(())
     }
 
     pub(super) fn set_metadata(&mut self, metadata: super::metadata::ArtifactMetadata) {
@@ -1374,8 +1329,8 @@ impl SvgElement {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn push_svg_drawing(
-    output: &mut String,
+fn push_svg_drawing<W: SvgSink + ?Sized>(
+    output: &mut W,
     drawing: &Drawing,
     stroke_color: CanonicalColor,
     fill_color: Option<CanonicalColor>,
@@ -1463,7 +1418,10 @@ fn push_svg_drawing(
     Ok(())
 }
 
-fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeError> {
+fn push_rough_path<W: SvgSink + ?Sized>(
+    output: &mut W,
+    path: &Path,
+) -> Result<(), FormatEncodeError> {
     for (index, operation) in path.operations.iter().enumerate() {
         if index != 0 {
             output.push(' ');
@@ -1571,8 +1529,8 @@ fn push_freedraw_number(output: &mut String, value: f64) -> Result<(), FormatEnc
     Ok(())
 }
 
-fn push_svg_number(
-    output: &mut String,
+fn push_svg_number<W: SvgSink + ?Sized>(
+    output: &mut W,
     value: f64,
     subject: &str,
 ) -> Result<(), FormatEncodeError> {
@@ -1586,7 +1544,7 @@ fn push_svg_number(
         .map_err(|_| FormatEncodeError::Encoding(format!("failed to write {subject}")))
 }
 
-fn push_escaped_attribute(output: &mut String, value: &str) {
+fn push_escaped_attribute<W: SvgSink + ?Sized>(output: &mut W, value: &str) {
     for character in value.chars() {
         match character {
             '&' => output.push_str("&amp;"),
@@ -1601,7 +1559,7 @@ fn push_escaped_attribute(output: &mut String, value: &str) {
     }
 }
 
-fn push_escaped_text(output: &mut String, value: &str) {
+fn push_escaped_text<W: SvgSink + ?Sized>(output: &mut W, value: &str) {
     for character in value.chars() {
         match character {
             '&' => output.push_str("&amp;"),
@@ -1612,7 +1570,7 @@ fn push_escaped_text(output: &mut String, value: &str) {
     }
 }
 
-fn push_base64(output: &mut String, bytes: &[u8]) -> Result<(), FormatEncodeError> {
+fn push_base64<W: SvgSink + ?Sized>(output: &mut W, bytes: &[u8]) -> Result<(), FormatEncodeError> {
     const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     for chunk in bytes.chunks(3) {
         let first = chunk[0];
@@ -1636,14 +1594,6 @@ fn push_base64(output: &mut String, bytes: &[u8]) -> Result<(), FormatEncodeErro
         }
     }
     Ok(())
-}
-
-fn escaped_capacity(value: &str) -> Result<usize, FormatEncodeError> {
-    value.len().checked_mul(6).ok_or_else(svg_size_error)
-}
-
-fn checked_capacity_add(current: usize, added: usize) -> Result<usize, FormatEncodeError> {
-    current.checked_add(added).ok_or_else(svg_size_error)
 }
 
 fn svg_size_error() -> FormatEncodeError {
