@@ -307,6 +307,9 @@ fn rasterized_font_glyphs_do_not_create_a_png_notice_manifest() {
                     .as_str()
                     .unwrap()
                     .contains("names rewritten for compatibility revision 1"));
+                assert!(notices[1]["text"].as_str().unwrap().contains(
+                    "Source SHA-256: 5bce041e0fcce617e35efbc335b1372d27a84acb65fb464c65ff80ab3424a885"
+                ));
             } else {
                 assert_eq!(notices.len(), 1);
                 assert!(notices[0]["asset_identity"]

@@ -638,7 +638,9 @@ hinting, and glyph renumbering; do not pin variation axes. Drop `morx`, `mort`,
 `LTSH`, and Graphite tables. Pass through `gasp`, `fpgm`, `prep`, and `VDMX`.
 Clear `OVERLAP_SIMPLE` while rebuilding canonical `glyf`/`loca`; this is an
 explicit profile normalization applied before WOFF2 encoding, not an encoder
-side effect.
+side effect. When subsetting would otherwise produce a zero-length `glyf`
+table, encode an outline-free simple `.notdef` glyph so Chromium OTS admits the
+font without changing any selected visible glyph.
 Every other table occurring in the sealed font corpus MUST have an explicit
 keep, subset, rewrite, pass-through, or drop classification in a frozen manifest;
 dependency defaults and unknown-table defaults MUST NOT decide output.

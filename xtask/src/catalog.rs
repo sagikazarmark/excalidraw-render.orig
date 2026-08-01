@@ -38,7 +38,7 @@ const NOTO_EMOJI_LENGTH: usize = 862_680;
 const XIAOLAI_ORDER_SHA256: &str =
     "c2cbbbfa669404795527e06cf596ab4b1b851f9bb993c608c8ab9c3c2aabe9d3";
 const SVG_FONT_SUBSET_PROFILE_DIGEST: &str =
-    "8efda16840ffa56b89d039fe6288fd4a4f793310e5b75d7496fe3bebb876f1a8";
+    "19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d";
 const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
     "fc4e8ce56cb7bf4bca9dfd6f3495c9ae9f5440a5818aa3e6f645d5303265ff85";
 const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST: &str =
@@ -447,6 +447,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
 pub fn materialize() -> Result<(), String> {
     let root = crate::conformance::repo_root();
     let base = root.join("crates/excalidraw-render-assets-base");
+    materialize_svg_font_subset_profile(&root)?;
     materialize_incorporated_artifacts(&root, &base)?;
 
     let scene_surface = read_canonical_json(
@@ -470,6 +471,46 @@ pub fn materialize() -> Result<(), String> {
         generated.as_bytes(),
     )?;
     verify()
+}
+
+fn materialize_svg_font_subset_profile(root: &Path) -> Result<(), String> {
+    use excalidraw_render_assets_base::{
+        FontSubsetTableAction, FONT_SUBSET_PROFILE_SETTINGS_V1, FONT_SUBSET_TABLE_RULES_V1,
+    };
+
+    let settings = std::str::from_utf8(FONT_SUBSET_PROFILE_SETTINGS_V1)
+        .map_err(|error| format!("invalid SVG font subset profile settings: {error}"))?;
+    let rules = FONT_SUBSET_TABLE_RULES_V1
+        .iter()
+        .map(|rule| {
+            Ok(json!({
+                "action": match rule.action {
+                    FontSubsetTableAction::Subset => "subset",
+                    FontSubsetTableAction::Rewrite => "rewrite",
+                    FontSubsetTableAction::PassThrough => "pass_through",
+                    FontSubsetTableAction::Drop => "drop",
+                },
+                "required": rule.required,
+                "tag": std::str::from_utf8(&rule.tag)
+                    .map_err(|error| format!("invalid subset table tag: {error}"))?,
+            }))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    let semantic_digest = excalidraw_render_assets_base::font_subset_profile_digest_v1()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    let profile = json!({
+        "semanticDigest": format!("sha256:{semantic_digest}"),
+        "settingsPreimage": settings,
+        "tableRules": rules,
+    });
+    let bytes = serde_json::to_vec(&profile)
+        .map_err(|error| format!("failed to serialize SVG font subset profile: {error}"))?;
+    let path =
+        root.join("tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json");
+    write_if_changed(&path, &bytes)?;
+    write_digest_sidecar(&path.with_extension("sha256"), &bytes)
 }
 
 fn materialize_incorporated_artifacts(root: &Path, base: &Path) -> Result<(), String> {

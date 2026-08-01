@@ -6038,7 +6038,7 @@ pub static REVISION_1: RevisionCatalog = RevisionCatalog {
         source_commit: "a2ec2889babf7d2295469c6d90ebe77fae57df84",
         npm_integrity: "sha512-6i5Gt7IDTOH//qa0Z315Ly5iVRhjWpu2whrlQFqkuwrkKUWgRsMk0P5qdE7bpyDpai7jeLeWYkyj1eVAfni1lw==",
         reference_profile_digest: "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71",
-        catalog_sha256: "93146d20e98eef8a00de2647185d407ecba5c1e826b110bebd4996cc7f5f80c6",
+        catalog_sha256: "262a355c9e97fa75b912754cfa17b61c2c4c270cbac106c4e8dbc4b439dbcbab",
     catalog_json: include_bytes!("../../catalog/revision-1.json"),
     incorporated_artifacts: &[
         IncorporatedArtifact {
@@ -6073,7 +6073,7 @@ pub static REVISION_1: RevisionCatalog = RevisionCatalog {
         },
         IncorporatedArtifact {
             repository_path: "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json",
-            sha256: "8efda16840ffa56b89d039fe6288fd4a4f793310e5b75d7496fe3bebb876f1a8",
+            sha256: "19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d",
             bytes: include_bytes!("../../catalog/incorporated/svg-font-subset-profile.json"),
         },
         IncorporatedArtifact {

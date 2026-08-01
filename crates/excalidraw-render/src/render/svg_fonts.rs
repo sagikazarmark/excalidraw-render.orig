@@ -210,8 +210,9 @@ pub(super) fn build(
                     resource_notices.push((
                         format!("svg-font-subset@sha256:{semantic_identity}"),
                         format!(
-                            "Derived font subset of {}. {} Modified Version under {}. Transformation: Unicode and required layout/glyph closure subset; names rewritten for compatibility revision 1. Effective alias: {}. Subset profile SHA-256: {}. Semantic subset identity: {}. Output WOFF2: {} bytes, SHA-256 {}.",
+                            "Derived font subset of {}. Source SHA-256: {}. {} Modified Version under {}. Transformation: Unicode and required layout/glyph closure subset; names rewritten for compatibility revision 1. Effective alias: {}. Subset profile SHA-256: {}. Semantic subset identity: {}. Output WOFF2: {} bytes, SHA-256 {}.",
                             record.identity,
+                            record.complete_sha256,
                             provenance.text,
                             provenance.license_identity,
                             effective_alias,

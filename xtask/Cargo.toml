@@ -9,6 +9,7 @@ publish = false
 workspace = true
 
 [dependencies]
+excalidraw-render-assets-base = { path = "../crates/excalidraw-render-assets-base" }
 jsonschema.workspace = true
 png.workspace = true
 roxmltree.workspace = true

@@ -257,7 +257,7 @@ fn svg_font_compatibility_artifacts_are_incorporated_into_revision_1() {
     );
     assert_eq!(
         profile["semanticDigest"],
-        "sha256:c79d0f7905709f5177a2ec8cd502be2eed9dd0c35806dfae06642e6cf4dd4ff5"
+        "sha256:49015dfb91f9e89fcf1e7f3e16fd892e4c1715f5d49b6488d67037b7aac21c23"
     );
     let rules = profile["tableRules"]
         .as_array()
