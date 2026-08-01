@@ -15,7 +15,7 @@ const VIEWER_PROFILE_SCHEMA_ID: &str = "excalidraw-render/conformance-pdf-viewer
 const STRUCTURE_PROFILE_SCHEMA_ID: &str = "excalidraw-render/conformance-pdf-structure-profile/v1";
 const REFERENCE_PROFILE_DIGEST: &str =
     "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
-const COMPARATOR_DIGEST: &str = "c0552e6d78cdb226db0c50f71c2abf959066c5c16fd596493aa5de9f5e37abc1";
+const COMPARATOR_DIGEST: &str = "d4d68dbee822023a4707b106774aad5e4be8f91d30c9f88615776feadb84fd31";
 const REFERENCE_RASTER_DIGEST: &str =
     "5ab7b28c0d733b93198a0c456e1683f5d130c310831f1593ccc3e6c0c2ba8d8a";
 const VISUAL_FAIL_RASTER_DIGEST: &str =

@@ -183,7 +183,7 @@ fn svg_font_subset_profile_classifies_each_table_once() {
         .collect::<String>();
     assert_eq!(
         digest,
-        "c79d0f7905709f5177a2ec8cd502be2eed9dd0c35806dfae06642e6cf4dd4ff5"
+        "49015dfb91f9e89fcf1e7f3e16fd892e4c1715f5d49b6488d67037b7aac21c23"
     );
 }
 

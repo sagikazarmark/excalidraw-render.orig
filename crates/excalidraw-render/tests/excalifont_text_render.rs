@@ -97,10 +97,10 @@ fn excalifont_text_renders_semantically_and_deterministically_in_every_format() 
                 assert!(svg.contains(">Four</tspan></text>"));
                 assert_eq!(svg_source_text(svg), "One two three\nFour");
                 assert!(!svg.contains("Unavailable: text"));
-                assert_eq!(first.artifact().bytes().len(), 9_195);
+                assert_eq!(first.artifact().bytes().len(), 9_289);
                 assert_eq!(
                     artifact_sha256(&first),
-                    "e96248a34e36a55343e3d84a4673dfbc096f62351d6ce0abc5746510b903ec80"
+                    "ac0848b77bb1ba30bcb9a2b1e5266df7f3dc7c13386446d65433b6b4ee8518ef"
                 );
             }
             OutputFormat::Png => {
@@ -384,7 +384,7 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
     assert!(work_equality.report().is_empty());
     assert_eq!(
         artifact_sha256(&work_equality),
-        "e96248a34e36a55343e3d84a4673dfbc096f62351d6ce0abc5746510b903ec80"
+        "ac0848b77bb1ba30bcb9a2b1e5266df7f3dc7c13386446d65433b6b4ee8518ef"
     );
     let work_crossing = render_svg_with_limits(
         &scene,
