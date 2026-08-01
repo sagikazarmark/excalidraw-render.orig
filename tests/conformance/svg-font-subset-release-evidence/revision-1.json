@@ -1,0 +1,61 @@
+{
+  "approval": null,
+  "compatibilityRevision": 1,
+  "corpus": {
+    "path": "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qualification-corpus.json",
+    "sha256": "c08ee3f16b077cb38b88a9812f8719f7fb8edae2fe450f2c3b8b4c9910b5f084",
+    "successfulCells": 762
+  },
+  "decision": "pending_approval_and_target_aggregation",
+  "fuzzRegressions": {
+    "path": "crates/excalidraw-render/tests/qualification/font-subset-fuzz-regressions.json",
+    "sha256": "11d7ceb6053af37882f862fae60ae1afe3758942cb0bd23507dd5f8a97e20480"
+  },
+  "id": "svg-font-subsets.release-evidence.revision-1.v1",
+  "licensing": {
+    "evidenceOwner": "corpus.sources[].licenseIdentity/reservedFontNames and cells[].transformationNoticeSha256",
+    "qualifiedSources": 230,
+    "qualifiedTransformationNotices": 762
+  },
+  "originatingIssue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/101",
+  "reproductionCommands": [
+    "cargo run --locked -p xtask -- catalog verify",
+    "bash tools/svg-font-subset-qualification.sh reproduce",
+    "cargo test --locked --release -p excalidraw-render --lib complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces"
+  ],
+  "sizeCorpus": {
+    "path": "crates/excalidraw-render/tests/qualification/svg-font-subset-size-corpus.json",
+    "sha256": "fabe6f57e9b08fd54f180bf0aedc6b7ab3474813439aa5e454969adc7b1b6ce0"
+  },
+  "subsetProfile": {
+    "path": "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json",
+    "sha256": "19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d"
+  },
+  "targetEvidence": {
+    "aggregateArtifact": "svg-font-subset-target-aggregate",
+    "aggregateScript": {
+      "path": "tools/aggregate-svg-font-subset-target-evidence.sh",
+      "sha256": "1ab4882fcab21248a9d823380b13adc962cb580d0b6026021eb94439f66a3114"
+    },
+    "reportSchema": {
+      "path": "tests/conformance/svg-font-subset-target-evidence-v1.schema.json",
+      "sha256": "b6a4bd04b59f1d58c9745be9e19926b61f1ecc0392dbbf626da7c8b58c8f9bb2"
+    },
+    "status": "pending_ci",
+    "workflow": {
+      "path": ".github/workflows/packaged-public-facade.yml",
+      "sha256": "24e4e2498150343911935581f47572602abe375c0d3effeb60a5006b1ca2abac"
+    },
+    "writerScript": {
+      "path": "tools/write-svg-font-subset-target-evidence.sh",
+      "sha256": "5a1bc83f8273c199ca7191e14c52fab7be5430c37d72096fcafe2efe32fdaff2"
+    }
+  },
+  "viewerEvidence": {
+    "approvalSubject": "sha256:e301a4df2f01edd6cdb9c759f6b610b9130996e128b809726a44a0e47e12337e",
+    "executions": 643,
+    "path": "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json",
+    "sha256": "0fa2fa340b3bd78467e381e79d86e2dad16e849e21feb55042c230afe2b5e65c",
+    "status": "pending_maintainer_approval"
+  }
+}

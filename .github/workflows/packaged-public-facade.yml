@@ -9,8 +9,23 @@ permissions:
   contents: read
 
 jobs:
+  qualification-evidence:
+    name: Approved SVG font subset evidence
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
+      - name: Verify approved SVG font subset evidence
+        run: |
+          bash tools/verify-svg-font-subset-release-evidence.sh
+          cargo run --locked -p xtask -- conformance verify-svg-font-subsets
+
   native:
     name: ${{ matrix.target }}
+    needs: qualification-evidence
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -42,9 +57,18 @@ jobs:
       - name: Execute packaged public facade
         working-directory: tests/package-consumer
         run: cargo test --locked --release --target ${{ matrix.target }} --test public_facade
+      - name: Materialize target evidence
+        shell: bash
+        run: bash tools/write-svg-font-subset-target-evidence.sh "${{ matrix.target }}" "target/svg-font-subset-target-evidence/${{ matrix.target }}.json"
+      - name: Upload target evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: svg-font-subset-target-${{ matrix.target }}
+          path: target/svg-font-subset-target-evidence/${{ matrix.target }}.json
 
   browser-wasm:
     name: wasm32-unknown-unknown in Chromium
+    needs: qualification-evidence
     runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
@@ -94,3 +118,33 @@ jobs:
           PATH="$RUNNER_TEMP/browser/$(dirname "$chrome"):$PATH" \
             CHROMEDRIVER="$RUNNER_TEMP/browser/$driver" \
             cargo test --locked --release --target wasm32-unknown-unknown --test public_facade
+      - name: Materialize target evidence
+        shell: bash
+        run: bash tools/write-svg-font-subset-target-evidence.sh wasm32-unknown-unknown target/svg-font-subset-target-evidence/wasm32-unknown-unknown.json
+      - name: Upload target evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: svg-font-subset-target-wasm32-unknown-unknown
+          path: target/svg-font-subset-target-evidence/wasm32-unknown-unknown.json
+
+  aggregate-font-subset-evidence:
+    name: Aggregate SVG font subset target evidence
+    needs: [native, browser-wasm]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Download target evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: svg-font-subset-target-*
+          path: target/svg-font-subset-target-evidence
+          merge-multiple: true
+      - name: Aggregate target evidence
+        shell: bash
+        run: bash tools/aggregate-svg-font-subset-target-evidence.sh target/svg-font-subset-target-evidence target/svg-font-subset-target-aggregate.json
+      - name: Upload aggregate evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: svg-font-subset-target-aggregate
+          path: target/svg-font-subset-target-aggregate.json
