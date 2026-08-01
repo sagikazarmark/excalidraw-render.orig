@@ -324,7 +324,7 @@ fn push_notice(json: &mut String, separator: &mut &'static str, identity: &str, 
     *separator = ",";
 }
 
-fn semantic_identity(
+pub(super) fn semantic_identity(
     record: &excalidraw_render_assets_base::AssetRecord,
     scalars: &[u32],
 ) -> Option<String> {

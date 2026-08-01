@@ -198,17 +198,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc0b364ead1874514c8c2855ab558056ebfeb775653e7ae45ff72f28f8f3166c"
 
 [[package]]
-name = "brotli"
-version = "8.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5cc91aac060a7a1e25823bdccbfb6af1875b88f17c6daac97894eed8207166b3"
-dependencies = [
- "alloc-no-stdlib",
- "alloc-stdlib",
- "brotli-decompressor",
-]
-
-[[package]]
 name = "brotli-decompressor"
 version = "5.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -584,6 +573,7 @@ dependencies = [
  "euclid",
  "excalidraw-render-assets-base",
  "excalidraw-render-compare",
+ "excalidraw-render-ttf2woff2",
  "gif 0.14.2",
  "image-webp",
  "jpeg-encoder",
@@ -601,8 +591,8 @@ dependencies = [
  "svg2pdf",
  "svgtypes 0.15.3",
  "tiny-skia",
- "ttf2woff2",
  "unicode-bidi",
+ "unicode-normalization",
  "usvg",
  "wasm-bindgen-test",
  "write-fonts 0.51.0",
@@ -631,6 +621,16 @@ name = "excalidraw-render-assets-data-001"
 version = "0.1.0"
 
 [[package]]
+name = "excalidraw-render-brotli"
+version = "0.1.0"
+dependencies = [
+ "alloc-no-stdlib",
+ "alloc-stdlib",
+ "brotli-decompressor",
+ "sha2",
+]
+
+[[package]]
 name = "excalidraw-render-cli"
 version = "0.1.0"
 dependencies = [
@@ -653,6 +653,16 @@ dependencies = [
  "serde_json",
  "sha1",
  "sha2",
+]
+
+[[package]]
+name = "excalidraw-render-ttf2woff2"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "clap",
+ "excalidraw-render-brotli",
+ "thiserror",
 ]
 
 [[package]]
@@ -2147,17 +2157,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 dependencies = [
  "core_maths",
-]
-
-[[package]]
-name = "ttf2woff2"
-version = "0.13.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d34bd8adc70431694a80b21870d616ba660257a737fa4cd875d571dd01ba0a3"
-dependencies = [
- "brotli",
- "byteorder",
- "thiserror",
 ]
 
 [[package]]

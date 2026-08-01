@@ -45,6 +45,7 @@ roughr.workspace = true
 [dev-dependencies]
 excalidraw-render-compare = { path = "../excalidraw-render-compare" }
 jpeg-encoder.workspace = true
+unicode-normalization.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "=0.3.76"

@@ -38,9 +38,13 @@ const NOTO_EMOJI_LENGTH: usize = 862_680;
 const XIAOLAI_ORDER_SHA256: &str =
     "c2cbbbfa669404795527e06cf596ab4b1b851f9bb993c608c8ab9c3c2aabe9d3";
 const SVG_FONT_SUBSET_PROFILE_DIGEST: &str =
-    "37caac0a16cb0e0a0d56f526e57c7c0a42ae230d460b2442174847b51ad2b6a3";
+    "8efda16840ffa56b89d039fe6288fd4a4f793310e5b75d7496fe3bebb876f1a8";
 const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
     "fc4e8ce56cb7bf4bca9dfd6f3495c9ae9f5440a5818aa3e6f645d5303265ff85";
+const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST: &str =
+    "d72dc4a4699f56dbc2fa213eaaee18f846b08c2e1f2a11a111aa70bfed7f6d9b";
+const SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST: &str =
+    "a12bcf35a6fba556ce8f7342132a144d6b7494535d016e399f431e126043765c";
 
 struct IncorporatedArtifactSource {
     repository_path: &'static str,
@@ -493,8 +497,11 @@ fn materialize_incorporated_artifacts(root: &Path, base: &Path) -> Result<(), St
     schema["properties"]["incorporatedArtifacts"]["maxItems"] = json!(ARTIFACTS.len());
     let schema_bytes = serde_json::to_vec(&schema)
         .map_err(|error| format!("failed to canonicalize revision catalog schema: {error}"))?;
-    if sha256(&schema_bytes) != CATALOG_SCHEMA_DIGEST {
-        return Err("revision catalog schema differs from its pinned materialization".to_owned());
+    let schema_digest = sha256(&schema_bytes);
+    if schema_digest != CATALOG_SCHEMA_DIGEST {
+        return Err(format!(
+            "revision catalog schema differs from its pinned materialization: {schema_digest}"
+        ));
     }
     write_if_changed(&schema_path, &schema_bytes)?;
     write_digest_sidecar(
@@ -595,6 +602,7 @@ pub fn verify() -> Result<(), String> {
     }
     verify_catalog_schema(&base, &catalog)?;
     verify_catalog_identity(&catalog, &scene_surface)?;
+    verify_font_subset_qualification_corpus(&root, &catalog)?;
     let excalifont_source = verify_assets(&root, &catalog)?;
     verify_predecoded_excalifont(&root, &excalifont_source)?;
     verify_noto_emoji(&root)?;
@@ -1323,6 +1331,159 @@ fn verify_catalog_schema(base: &Path, catalog: &Value) -> Result<(), String> {
     validator
         .validate(catalog)
         .map_err(|error| format!("revision catalog does not satisfy its schema: {error}"))
+}
+
+fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Result<(), String> {
+    const CLASSES: [&str; 8] = [
+        "mapped-scalar",
+        "range-boundary",
+        "empty-intersection",
+        "full-intersection",
+        "non-bmp",
+        "combining-mark",
+        "composite-closure",
+        "layout-closure-heavy",
+    ];
+    let corpus_path = root.join(
+        "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qualification-corpus.json",
+    );
+    let packaged_corpus_path =
+        root.join("crates/excalidraw-render/tests/qualification/font-subset-corpus.json");
+    let schema_path = root.join(
+        "tests/oracle/compatibility-artifacts/svg-font-subset-qualification-corpus-v1.schema.json",
+    );
+    let corpus_bytes = fs::read(&corpus_path)
+        .map_err(|error| format!("failed to read {}: {error}", corpus_path.display()))?;
+    let packaged_corpus_bytes = fs::read(&packaged_corpus_path).map_err(|error| {
+        format!(
+            "failed to read packaged corpus copy {}: {error}",
+            packaged_corpus_path.display()
+        )
+    })?;
+    let schema_bytes = fs::read(&schema_path)
+        .map_err(|error| format!("failed to read {}: {error}", schema_path.display()))?;
+    verify_canonical_json_bytes(&corpus_bytes, "font subset qualification corpus")?;
+    if packaged_corpus_bytes != corpus_bytes {
+        return Err("packaged font subset qualification corpus copy is stale".to_owned());
+    }
+    verify_digest_sidecar(&corpus_path.with_extension("sha256"), &corpus_bytes)?;
+    verify_digest_sidecar(&schema_path.with_extension("sha256"), &schema_bytes)?;
+    if sha256(&corpus_bytes) != SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST
+        || sha256(&schema_bytes) != SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST
+    {
+        return Err("font subset qualification artifact digest is not pinned".to_owned());
+    }
+    let corpus: Value = serde_json::from_slice(&corpus_bytes)
+        .map_err(|error| format!("invalid font subset qualification corpus: {error}"))?;
+    let schema: Value = serde_json::from_slice(&schema_bytes)
+        .map_err(|error| format!("invalid font subset qualification schema: {error}"))?;
+    jsonschema::draft202012::meta::validate(&schema)
+        .map_err(|error| format!("font subset qualification schema is invalid: {error}"))?;
+    jsonschema::draft202012::options()
+        .build(&schema)
+        .map_err(|error| {
+            format!("font subset qualification schema could not be compiled: {error}")
+        })?
+        .validate(&corpus)
+        .map_err(|error| {
+            format!("font subset qualification corpus does not satisfy its schema: {error}")
+        })?;
+
+    if corpus["schema"] != json!("excalidraw-render/svg-font-subset-qualification-corpus/v1")
+        || corpus["compatibilityRevision"] != json!(REVISION)
+        || corpus["originatingIssue"] != json!(98)
+        || corpus["sourceManifestSha256"] != json!(ASSET_MANIFEST_DIGEST)
+        || corpus["subsetProfileSha256"]
+            != json!("c79d0f7905709f5177a2ec8cd502be2eed9dd0c35806dfae06642e6cf4dd4ff5")
+    {
+        return Err("font subset qualification corpus identity is invalid".to_owned());
+    }
+    let classes = array_at(
+        &corpus,
+        &["classes"],
+        "font subset qualification corpus classes",
+    )?;
+    if classes.len() != CLASSES.len()
+        || classes
+            .iter()
+            .zip(CLASSES)
+            .any(|(class, expected)| class["id"] != json!(expected))
+    {
+        return Err("font subset qualification classes are incomplete or unordered".to_owned());
+    }
+    let assets = array_at(catalog, &["assets"], "revision catalog assets")?;
+    let sources = array_at(
+        &corpus,
+        &["sources"],
+        "font subset qualification corpus sources",
+    )?;
+    if sources.len() != 230 || sources.len() != assets.len() {
+        return Err("font subset qualification source inventory is incomplete".to_owned());
+    }
+    let mut source_ids = BTreeSet::new();
+    let mut cell_ids = BTreeSet::new();
+    for (source, asset) in sources.iter().zip(assets) {
+        let source_id = string(source, "sourceIdentity", "font subset source")?;
+        if source_id != string(asset, "identity", "catalog asset")?
+            || source["upstreamPath"] != asset["upstreamPath"]
+            || source["sourceSha256"] != asset["completeSha256"]
+            || !source_ids.insert(source_id)
+        {
+            return Err(
+                "font subset qualification source identity is stale or duplicated".to_owned(),
+            );
+        }
+        let cells = array_at(source, &["cells"], "font subset source cells")?;
+        if cells.len() != CLASSES.len() {
+            return Err(format!(
+                "font subset qualification source {source_id} has missing cells"
+            ));
+        }
+        for (cell, expected_class) in cells.iter().zip(CLASSES) {
+            let class = string(cell, "class", "font subset qualification cell")?;
+            if class != expected_class || !cell_ids.insert((source_id, class)) {
+                return Err("font subset qualification cell is stale or duplicated".to_owned());
+            }
+            let status = string(cell, "status", "font subset qualification cell")?;
+            let has = |name: &str| cell.get(name).is_some();
+            let valid = match status {
+                "success" => {
+                    cell["expectedValidationOutcome"] == json!("valid")
+                        && has("orderedScalars")
+                        && has("semanticSubsetIdentity")
+                        && has("generatedWoff2Sha256")
+                        && has("canonicalResourceTraceSha256")
+                        && !has("reason")
+                }
+                "not_selected" => {
+                    cell["expectedValidationOutcome"] == json!("not_selected")
+                        && has("orderedScalars")
+                        && !has("semanticSubsetIdentity")
+                        && !has("generatedWoff2Sha256")
+                        && has("canonicalResourceTraceSha256")
+                        && !has("reason")
+                }
+                "not_applicable" => {
+                    cell["expectedValidationOutcome"] == json!("not_applicable")
+                        && !has("orderedScalars")
+                        && !has("semanticSubsetIdentity")
+                        && !has("generatedWoff2Sha256")
+                        && !has("canonicalResourceTraceSha256")
+                        && has("reason")
+                }
+                _ => false,
+            };
+            if !valid {
+                return Err(format!(
+                    "font subset qualification cell {source_id}/{class} has inconsistent evidence"
+                ));
+            }
+        }
+    }
+    if source_ids.len() != 230 || cell_ids.len() != 230 * CLASSES.len() {
+        return Err("font subset qualification coverage is incomplete".to_owned());
+    }
+    Ok(())
 }
 
 fn verify_catalog_identity(catalog: &Value, scene_surface: &Value) -> Result<(), String> {

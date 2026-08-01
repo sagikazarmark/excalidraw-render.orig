@@ -16,8 +16,10 @@ sha2 = "=0.10.9"
 wasm-bindgen-test = "=0.3.76"
 
 [patch.crates-io]
+excalidraw-render-brotli = { path = "../../target/package/excalidraw-render-brotli-0.1.0" }
 excalidraw-render-assets-base = { path = "../../target/package/excalidraw-render-assets-base-0.1.0" }
 excalidraw-render-assets-data-000 = { path = "../../target/package/excalidraw-render-assets-data-000-0.1.0" }
 excalidraw-render-assets-data-001 = { path = "../../target/package/excalidraw-render-assets-data-001-0.1.0" }
+excalidraw-render-ttf2woff2 = { path = "../../target/package/excalidraw-render-ttf2woff2-0.1.0" }
 
 [workspace]

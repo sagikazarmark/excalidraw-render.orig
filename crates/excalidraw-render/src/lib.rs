@@ -53,8 +53,8 @@ pub mod wasm_tests {
     wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
 
     #[wasm_bindgen_test]
-    fn all_official_font_chunks_derive_repeatably_in_wasm() {
-        crate::render::assert_every_official_chunk_derives_repeatably();
+    fn complete_font_subset_qualification_corpus_in_wasm() {
+        crate::render::assert_complete_font_subset_qualification_corpus();
     }
 
     #[wasm_bindgen_test]

@@ -104,17 +104,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "brotli"
-version = "8.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5cc91aac060a7a1e25823bdccbfb6af1875b88f17c6daac97894eed8207166b3"
-dependencies = [
- "alloc-no-stdlib",
- "alloc-stdlib",
- "brotli-decompressor",
-]
-
-[[package]]
 name = "brotli-decompressor"
 version = "5.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -417,6 +406,7 @@ dependencies = [
  "cssparser-color",
  "euclid",
  "excalidraw-render-assets-base",
+ "excalidraw-render-ttf2woff2",
  "gif 0.14.2",
  "image-webp",
  "moxcms 0.9.0",
@@ -433,9 +423,7 @@ dependencies = [
  "svg2pdf",
  "svgtypes 0.15.3",
  "tiny-skia",
- "ttf2woff2",
  "unicode-bidi",
- "unicode-script",
  "usvg",
  "write-fonts 0.51.0",
  "wuff",
@@ -460,6 +448,15 @@ name = "excalidraw-render-assets-data-001"
 version = "0.1.0"
 
 [[package]]
+name = "excalidraw-render-brotli"
+version = "0.1.0"
+dependencies = [
+ "alloc-no-stdlib",
+ "alloc-stdlib",
+ "brotli-decompressor",
+]
+
+[[package]]
 name = "excalidraw-render-package-consumer"
 version = "0.0.0"
 dependencies = [
@@ -468,6 +465,15 @@ dependencies = [
  "serde_json",
  "sha2",
  "wasm-bindgen-test",
+]
+
+[[package]]
+name = "excalidraw-render-ttf2woff2"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "excalidraw-render-brotli",
+ "thiserror",
 ]
 
 [[package]]
@@ -1506,17 +1512,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ttf2woff2"
-version = "0.13.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d34bd8adc70431694a80b21870d616ba660257a737fa4cd875d571dd01ba0a3"
-dependencies = [
- "brotli",
- "byteorder",
- "thiserror",
-]
-
-[[package]]
 name = "typenum"
 version = "1.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1766,6 +1761,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b082e0c3b0c5565b4f7bb1e0bbb4efbc8afc5a9441ade74fadc6502f9d406091"
 dependencies = [
  "font-types 0.12.2",
+ "indexmap",
+ "kurbo 0.13.1",
  "log",
  "read-fonts 0.42.1",
 ]

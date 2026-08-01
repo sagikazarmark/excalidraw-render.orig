@@ -1,7 +1,9 @@
 mod asset;
 mod font_subset;
+#[cfg(test)]
+mod font_subset_qualification;
 #[cfg(all(test, target_arch = "wasm32"))]
-pub(crate) use font_subset::assert_every_official_chunk_derives_repeatably;
+pub(crate) use font_subset_qualification::assert_complete_font_subset_qualification_corpus;
 mod freedraw;
 mod metadata;
 mod notices;
@@ -623,6 +625,93 @@ fn render_with_trace(
     );
     let result = session.render(scene, request, None, SvgFontPayload::Subset);
     (result, session.meter.trace_bytes())
+}
+
+#[cfg(test)]
+fn render_font_subset_qualification_trace(
+    record: &'static excalidraw_render_assets_base::AssetRecord,
+    scalars: &[u32],
+) -> (Result<(), RenderError>, Vec<u8>) {
+    let family = match record.family {
+        "Cascadia" => "Cascadia Code",
+        "ComicShanns" => "Comic Shanns",
+        "Liberation" => "Liberation Sans",
+        "Lilita" => "Lilita One",
+        "Excalifont" | "Nunito" | "Virgil" | "Xiaolai" => record.family,
+        _ => panic!("unknown qualification source family"),
+    };
+    let scene = SceneDocument::parse(
+        br#"{"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}}"#,
+    )
+    .expect("qualification trace scene is valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("qualification SVG request is valid");
+    let profile = crate::Renderer::profile_identity(crate::CompatibilityRevision::REVISION_1)
+        .expect("revision 1 exists");
+    let mut session = RenderSession::new_with_trace(
+        profile,
+        crate::catalog::REVISION_1.scene_surface(),
+        &scene,
+        &request,
+    );
+    let result = (|| {
+        let demand = svg_fonts::Demand {
+            families: vec![svg_fonts::FamilyDemand {
+                family,
+                scalars: scalars.to_vec(),
+            }],
+        };
+        let selection = account_svg_font_selection(&mut session, &request, &demand)?;
+        let envelope = account_svg_font_dependency_envelope(&mut session, &request, &demand)?;
+        let mut subset_session = font_subset::Session::new();
+        let bundle = svg_fonts::build(demand, &[], SvgFontPayload::Subset, &mut subset_session)
+            .map_err(|error| {
+                session.format_failure(
+                    &request,
+                    ErrorCode::ENCODE_SVG_FAILED,
+                    FormatEncodeError::SvgFontSubset {
+                        stage: error.stage,
+                        resolved_family: error.family,
+                        asset_identity: error.asset_identity,
+                    },
+                )
+            })?;
+        observe_svg_font_derivation(&mut session, &request, &bundle)?;
+        release_svg_font_encoding_records(&mut session, &request, None, envelope)?;
+        release_svg_font_records(&mut session, &request, selection)
+    })();
+    (result, session.meter.trace_bytes())
+}
+
+#[cfg(test)]
+fn font_subset_qualification_error(
+    stage: crate::SvgFontSubsetStage,
+    resolved_family: &'static str,
+    asset_identity: &'static str,
+) -> RenderError {
+    let scene = SceneDocument::parse(
+        br#"{"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}}"#,
+    )
+    .expect("qualification failure scene is valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("qualification failure request is valid");
+    let mut session = RenderSession::new(
+        crate::catalog::REVISION_1.profile(),
+        crate::catalog::REVISION_1.scene_surface(),
+        &scene,
+        &request,
+    );
+    session.format_failure(
+        &request,
+        ErrorCode::ENCODE_SVG_FAILED,
+        FormatEncodeError::SvgFontSubset {
+            stage,
+            resolved_family,
+            asset_identity,
+        },
+    )
 }
 
 #[cfg(test)]
@@ -6128,46 +6217,55 @@ fn observe_svg_font_derivation(
     bundle: &svg_fonts::Bundle,
 ) -> Result<(), RenderError> {
     for metrics in bundle.subset_metrics() {
-        let decoded = u64::try_from(metrics.decoded_sfnt_bytes).unwrap_or(u64::MAX);
-        let subset = u64::try_from(metrics.subset_sfnt_bytes).unwrap_or(u64::MAX);
-        let encoded = u64::try_from(metrics.subset_woff2_bytes).unwrap_or(u64::MAX);
-        let tables = u64::try_from(metrics.subset_tables).unwrap_or(u64::MAX);
-        let sfnt_bound = checked_svg_font_product(
-            session,
+        observe_svg_font_subset_metrics(session, request, metrics)?;
+    }
+    Ok(())
+}
+
+fn observe_svg_font_subset_metrics(
+    session: &mut RenderSession,
+    request: &RenderRequest,
+    metrics: &svg_fonts::SubsetMetrics,
+) -> Result<(), RenderError> {
+    let decoded = u64::try_from(metrics.decoded_sfnt_bytes).unwrap_or(u64::MAX);
+    let subset = u64::try_from(metrics.subset_sfnt_bytes).unwrap_or(u64::MAX);
+    let encoded = u64::try_from(metrics.subset_woff2_bytes).unwrap_or(u64::MAX);
+    let tables = u64::try_from(metrics.subset_tables).unwrap_or(u64::MAX);
+    let sfnt_bound = checked_svg_font_product(
+        session,
+        request,
+        decoded,
+        256,
+        "SVG font subset sfnt envelope overflowed",
+    )?;
+    let woff2_bound = checked_svg_font_product(
+        session,
+        request,
+        decoded,
+        2,
+        "SVG font subset WOFF2 envelope overflowed",
+    )?;
+    if subset > sfnt_bound || encoded > woff2_bound || tables > decoded / 16 {
+        return Err(session.internal_failure(
+            request.format(),
+            "SVG font dependency exceeded its admitted envelope",
+            "",
+        ));
+    }
+    for event in [
+        "svg_font_woff2_decode",
+        "svg_font_subset_plan",
+        "svg_font_subset_sfnt",
+        "svg_font_woff2_encode",
+        "svg_font_validate",
+        "svg_font_css_data_url",
+    ] {
+        session.transact(
             request,
-            decoded,
-            256,
-            "SVG font subset sfnt envelope overflowed",
+            ResourceContext::new(ResourcePhase::EncodingAndOutcomeAssembly, event, "")
+                .with_semantic_identity(metrics.asset_identity),
+            ResourceDelta::default(),
         )?;
-        let woff2_bound = checked_svg_font_product(
-            session,
-            request,
-            decoded,
-            2,
-            "SVG font subset WOFF2 envelope overflowed",
-        )?;
-        if subset > sfnt_bound || encoded > woff2_bound || tables > decoded / 16 {
-            return Err(session.internal_failure(
-                request.format(),
-                "SVG font dependency exceeded its admitted envelope",
-                "",
-            ));
-        }
-        for event in [
-            "svg_font_woff2_decode",
-            "svg_font_subset_plan",
-            "svg_font_subset_sfnt",
-            "svg_font_woff2_encode",
-            "svg_font_validate",
-            "svg_font_css_data_url",
-        ] {
-            session.transact(
-                request,
-                ResourceContext::new(ResourcePhase::EncodingAndOutcomeAssembly, event, "")
-                    .with_semantic_identity(metrics.asset_identity),
-                ResourceDelta::default(),
-            )?;
-        }
     }
     Ok(())
 }

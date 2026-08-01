@@ -1,11 +1,13 @@
 [workspace]
 members = [
+    "crates/brotli-deterministic",
     "crates/excalidraw-render",
     "crates/excalidraw-render-assets-base",
     "crates/excalidraw-render-assets-data-000",
     "crates/excalidraw-render-assets-data-001",
     "crates/excalidraw-render-cli",
     "crates/excalidraw-render-compare",
+    "crates/ttf2woff2-deterministic",
     "xtask",
 ]
 resolver = "2"
@@ -51,7 +53,7 @@ unicase = "=2.9.0"
 svg2pdf = { version = "=0.13.0", default-features = false, features = ["filters", "image", "text"] }
 svgtypes = "=0.15.3"
 tiny-skia = { version = "=0.11.4", default-features = false, features = ["png-format", "std"] }
-ttf2woff2 = { version = "=0.13.2", default-features = false }
+ttf2woff2 = { package = "excalidraw-render-ttf2woff2", path = "crates/ttf2woff2-deterministic", version = "=0.1.0", default-features = false }
 usvg = { version = "=0.45.1", default-features = false, features = ["text"] }
 wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
 write-fonts = { version = "=0.51.0", default-features = false, features = ["read", "tables"] }

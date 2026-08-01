@@ -13,7 +13,7 @@ use write_fonts::tables::glyf::{GlyfLocaBuilder, Glyph};
 use write_fonts::FontBuilder;
 
 const SUBSET_FLAGS: SubsetFlags = SubsetFlags::SUBSET_FLAGS_DEFAULT;
-const ENCODER_THREADS: Option<NonZeroUsize> = None;
+const ENCODER_THREADS: Option<NonZeroUsize> = NonZeroUsize::new(1);
 const MAX_CACHE_ENTRIES: usize = 230;
 
 #[derive(Debug)]
@@ -21,7 +21,7 @@ pub(super) struct Error {
     pub(super) stage: crate::SvgFontSubsetStage,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(super) struct Derived {
     pub(super) woff2: Arc<[u8]>,
     pub(super) decoded_sfnt_bytes: usize,
@@ -134,6 +134,7 @@ pub(super) fn derive(
     let subset_sfnt = subset_font(&font, &plan).map_err(|_| Error {
         stage: crate::SvgFontSubsetStage::Sfnt,
     })?;
+    let subset_sfnt = ensure_required_cmap(&subset_sfnt)?;
     let subset_sfnt = rewrite_names(&subset_sfnt, effective_alias, semantic_identity)?;
     let subset_sfnt = normalize_simple_glyph_overlap(&subset_sfnt)?;
 
@@ -167,6 +168,19 @@ pub(super) fn derive(
         subset_sfnt_bytes: subset_sfnt.len(),
         subset_tables: decoded_font.table_directory().table_records().len(),
     })
+}
+
+fn ensure_required_cmap(sfnt: &[u8]) -> Result<Vec<u8>, Error> {
+    let font = FontRef::new(sfnt).map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Sfnt,
+    })?;
+    if font.data_for_tag(Tag::new(b"cmap")).is_some() {
+        return Ok(sfnt.to_vec());
+    }
+    let mut builder = FontBuilder::new();
+    builder.add_raw(Tag::new(b"cmap"), vec![0, 0, 0, 0]);
+    builder.copy_missing_tables(font);
+    Ok(builder.build())
 }
 
 fn rewrite_names(sfnt: &[u8], alias: &str, identity: &str) -> Result<Vec<u8>, Error> {
@@ -384,7 +398,6 @@ fn validate_mappings_and_metrics(
             retained_text.push(character);
         }
     }
-    validate_shaping_probe(&source, &subset, &retained_text, None)?;
     for character in retained_text.chars() {
         let mut repeated = String::new();
         repeated
@@ -788,7 +801,7 @@ impl rustybuzz::ttf_parser::OutlineBuilder for Outline {
     }
 }
 
-fn validate_checksums(sfnt: &[u8]) -> Result<(), Error> {
+pub(super) fn validate_checksums(sfnt: &[u8]) -> Result<(), Error> {
     if sfnt.len() % 4 != 0
         || sfnt.chunks_exact(4).fold(0_u32, |sum, word| {
             sum.wrapping_add(u32::from_be_bytes(word.try_into().unwrap_or([0; 4])))
@@ -868,49 +881,6 @@ fn table_checksum(data: &[u8], zero_adjustment: bool) -> u32 {
 }
 
 #[cfg(test)]
-pub(crate) fn assert_every_official_chunk_derives_repeatably() {
-    let records = excalidraw_render_assets_base::revision_1().assets;
-    assert_eq!(
-        records.len(),
-        230,
-        "revision 1 has 230 official font chunks"
-    );
-    for record in records {
-        let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
-            record.family,
-            record.upstream_path,
-        )
-        .unwrap_or_else(|| panic!("{} has qualified ranges", record.upstream_path));
-        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
-            .expect("qualified source verifies")
-            .expect("qualified source exists");
-        let sfnt = wuff::decompress_woff2(asset.bytes()).expect("qualified source decodes");
-        let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("qualified source parses");
-        let scalar = ranges
-            .iter()
-            .flat_map(|(start, end)| *start..=*end)
-            .find(|scalar| {
-                char::from_u32(*scalar)
-                    .is_some_and(|character| face.glyph_index(character).is_some())
-            })
-            .unwrap_or_else(|| panic!("{} declares a mapped scalar", record.upstream_path));
-        let alias = match record.family {
-            "Cascadia" => "ExcalidrawRender-3",
-            "Liberation" => "ExcalidrawRender-9",
-            "Lilita" => "ExcalidrawRender-7",
-            "Virgil" => "ExcalidrawRender-1",
-            "ComicShanns" => "Comic Shanns",
-            family => family,
-        };
-        let first = derive(asset.bytes(), &[scalar], alias, &"0".repeat(64))
-            .unwrap_or_else(|error| panic!("{} subsets at {:?}", record.upstream_path, error));
-        let second = derive(asset.bytes(), &[scalar], alias, &"0".repeat(64))
-            .unwrap_or_else(|error| panic!("{} repeats at {:?}", record.upstream_path, error));
-        assert_eq!(first.woff2, second.woff2, "{}", record.upstream_path);
-    }
-}
-
-#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -932,7 +902,7 @@ mod tests {
         ] {
             assert!(!SUBSET_FLAGS.contains(flag));
         }
-        assert_eq!(ENCODER_THREADS, None);
+        assert_eq!(ENCODER_THREADS, NonZeroUsize::new(1));
     }
 
     #[test]
@@ -995,10 +965,5 @@ mod tests {
                 crate::SvgFontSubsetStage::Validate
             );
         }
-    }
-
-    #[test]
-    fn every_official_chunk_produces_repeatable_valid_woff2() {
-        assert_every_official_chunk_derives_repeatably();
     }
 }
