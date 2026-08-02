@@ -89,8 +89,6 @@ pub(crate) trait ResourceAccount {
     ) -> Result<(), Self::Error>;
 
     fn internal_failure(&mut self, message: &'static str) -> Self::Error;
-
-    fn memory_failure(&mut self, subject_kind: &'static str, subject: &'static str) -> Self::Error;
 }
 
 impl<'a> ResourceContext<'a> {

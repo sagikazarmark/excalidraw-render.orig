@@ -27,7 +27,7 @@ const FRAME_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"i
 const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
     (
         OutputFormat::Svg,
-        "13d8a51796cbf1be401b5ba7caeefafab61a709131ed00fc2cdf5ee884bba19c",
+        "6a0a5c573758649ffb13c525a57071ac394515055ccae1e1d3fb2445d83cd10a",
         "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
     ),
     (
@@ -172,7 +172,7 @@ fn packaged_svg_font_subsets_are_cross_target_stable() {
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "73b7119dacfa92d8b7161e78ec742112845dfc1a6bc7fe3a439c2beea77f9ffb"
+        "176b7e41a2991457b3732874b0fc48c7459729416e52bd2c92f4a6b0249b2e57"
     );
     assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
     assert!(svg.contains("svg-font-subset@sha256:"));

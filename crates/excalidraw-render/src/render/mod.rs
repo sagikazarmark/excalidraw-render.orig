@@ -662,6 +662,10 @@ fn render_font_subset_qualification_trace(
         &request,
     );
     let result = (|| {
+        let selection = svg_fonts::account_demand(
+            &mut RenderResourceAccount::new(&mut session, &request),
+            std::iter::once((family, scalars.len())),
+        )?;
         let demand = svg_fonts::Demand {
             families: vec![
                 svg_fonts::FamilyDemand::from_scalars(family, scalars).map_err(|_| {
@@ -672,6 +676,7 @@ fn render_font_subset_qualification_trace(
         let selection = svg_fonts::account_selection(
             &mut RenderResourceAccount::new(&mut session, &request),
             &demand,
+            selection,
         )?;
         let envelope = svg_fonts::account_dependency_envelope(
             &mut RenderResourceAccount::new(&mut session, &request),
@@ -842,11 +847,6 @@ impl ResourceAccount for RenderResourceAccount<'_> {
     fn internal_failure(&mut self, message: &'static str) -> Self::Error {
         self.session
             .internal_failure(self.request.format(), message, "")
-    }
-
-    fn memory_failure(&mut self, subject_kind: &'static str, subject: &'static str) -> Self::Error {
-        self.session
-            .memory_failure(self.request, subject_kind, subject)
     }
 }
 
@@ -2811,12 +2811,33 @@ impl RenderSession {
         }
         match request.format() {
             OutputFormat::Svg => {
-                let demand = svg_font_demand(&resolved).map_err(|error| {
+                let text_order = svg_font_text_order(&resolved).map_err(|error| {
                     self.format_failure(request, ErrorCode::ENCODE_SVG_FAILED, error)
                 })?;
+                let demand_estimates =
+                    svg_font_demand_estimates(&resolved, &text_order).map_err(|error| {
+                        self.format_failure(request, ErrorCode::ENCODE_SVG_FAILED, error)
+                    })?;
+                let selection_working = svg_fonts::account_demand(
+                    &mut RenderResourceAccount::new(self, request),
+                    demand_estimates.into_iter(),
+                )?;
+                let demand = match svg_font_demand(&resolved, &text_order) {
+                    Ok(demand) => demand,
+                    Err(error) => {
+                        selection_working
+                            .release(&mut RenderResourceAccount::new(self, request))?;
+                        return Err(self.format_failure(
+                            request,
+                            ErrorCode::ENCODE_SVG_FAILED,
+                            error,
+                        ));
+                    }
+                };
                 let selection_working = svg_fonts::account_selection(
                     &mut RenderResourceAccount::new(self, request),
                     &demand,
+                    selection_working,
                 )?;
                 let dependency_envelope = match svg_fonts::account_dependency_envelope(
                     &mut RenderResourceAccount::new(self, request),
@@ -6057,8 +6078,9 @@ struct ResolvedFont {
     sfnt: Vec<u8>,
 }
 
-fn svg_font_demand(scene: &ResolvedScene) -> Result<svg_fonts::Demand, FormatEncodeError> {
-    let mut families = Vec::<svg_fonts::FamilyDemand>::new();
+fn svg_font_text_order(
+    scene: &ResolvedScene,
+) -> Result<Vec<&ResolvedTextElement>, FormatEncodeError> {
     let mut ordinary = Vec::new();
     ordinary.try_reserve(scene.elements.len()).map_err(|_| {
         FormatEncodeError::MemoryUnavailable {
@@ -6066,44 +6088,22 @@ fn svg_font_demand(scene: &ResolvedScene) -> Result<svg_fonts::Demand, FormatEnc
             subject: "ordinary_text_order",
         }
     })?;
-    for element in &scene.elements {
-        if let ResolvedElement::Text(text) = element {
-            ordinary.push(text);
-        }
-    }
+    ordinary.extend(scene.elements.iter().filter_map(|element| match element {
+        ResolvedElement::Text(text) => Some(text),
+        _ => None,
+    }));
     ordinary.sort_by_key(|text| text.source_order);
-    for text in ordinary {
-        add_svg_font_text(
-            &mut families,
-            resolved_family(text.font_family),
-            &text.original_text,
-        )?;
-        if !text.text.missing_codepoints.is_empty() {
-            add_svg_font_text(&mut families, "Liberation Sans", "?")?;
-        }
-    }
-    for element in &scene.elements {
-        match element {
-            ResolvedElement::Outline(outline) => {
-                if let Some(label) = &outline.generated_label {
-                    for line in &label.lines {
-                        add_svg_font_text(&mut families, "Liberation Sans", &line.display_text)?;
-                    }
-                }
-            }
-            ResolvedElement::Frame(frame) => {
-                if let Some(name) = &frame.name {
-                    add_svg_font_text(&mut families, "Liberation Sans", &name.display_text)?;
-                }
-            }
-            ResolvedElement::Fallback(fallback) => {
-                if let Some(label) = &fallback.label {
-                    add_svg_font_text(&mut families, "Liberation Sans", &label.display_text)?;
-                }
-            }
-            _ => {}
-        }
-    }
+    Ok(ordinary)
+}
+
+fn svg_font_demand(
+    scene: &ResolvedScene,
+    text_order: &[&ResolvedTextElement],
+) -> Result<svg_fonts::Demand, FormatEncodeError> {
+    let mut families = Vec::<svg_fonts::FamilyDemand>::new();
+    visit_svg_font_text(scene, text_order, |family, text| {
+        add_svg_font_text(&mut families, family, text)
+    })?;
     if let Some(excalifont) = families.iter().find(|family| {
         family.family == "Excalifont" && family.scalars.iter().any(|scalar| is_cjk(*scalar))
     }) {
@@ -6121,6 +6121,117 @@ fn svg_font_demand(scene: &ResolvedScene) -> Result<svg_fonts::Demand, FormatEnc
         families.insert(0, xiaolai);
     }
     Ok(svg_fonts::Demand { families })
+}
+
+fn svg_font_demand_estimates(
+    scene: &ResolvedScene,
+    text_order: &[&ResolvedTextElement],
+) -> Result<[(&'static str, usize); 9], FormatEncodeError> {
+    const UNICODE_WORDS: usize = 0x11_0000_usize.div_ceil(u64::BITS as usize);
+    let mut family_order = [None; 8];
+    let mut family_count = 0_usize;
+    let mut excalifont_has_cjk = false;
+    visit_svg_font_text(scene, text_order, |family, text| {
+        if text.is_empty() {
+            return Ok(());
+        }
+        if !family_order[..family_count].contains(&Some(family)) {
+            let slot =
+                family_order
+                    .get_mut(family_count)
+                    .ok_or(FormatEncodeError::MemoryUnavailable {
+                        subject_kind: "svg_font_demand",
+                        subject: "family_count",
+                    })?;
+            *slot = Some(family);
+            family_count += 1;
+        }
+        if family == "Excalifont" && text.chars().map(u32::from).any(is_cjk) {
+            excalifont_has_cjk = true;
+        }
+        Ok(())
+    })?;
+
+    let mut estimates = [("", 0_usize); 9];
+    let mut output = usize::from(excalifont_has_cjk);
+    let mut seen = [0_u64; UNICODE_WORDS];
+    for family in family_order.into_iter().flatten() {
+        seen.fill(0);
+        let mut unique = 0_usize;
+        visit_svg_font_text(scene, text_order, |candidate, text| {
+            if candidate != family {
+                return Ok(());
+            }
+            for scalar in text.chars().map(u32::from) {
+                let scalar = usize::try_from(scalar).unwrap_or(usize::MAX);
+                let word = scalar / u64::BITS as usize;
+                let bit = 1_u64 << (scalar % u64::BITS as usize);
+                let entry = seen
+                    .get_mut(word)
+                    .ok_or(FormatEncodeError::MemoryUnavailable {
+                        subject_kind: "svg_font_demand",
+                        subject: "scalar_range",
+                    })?;
+                if *entry & bit == 0 {
+                    *entry |= bit;
+                    unique = unique
+                        .checked_add(1)
+                        .ok_or(FormatEncodeError::MemoryUnavailable {
+                            subject_kind: "svg_font_demand",
+                            subject: "family_scalar_count",
+                        })?;
+                }
+            }
+            Ok(())
+        })?;
+        estimates[output] = (family, unique);
+        output += 1;
+    }
+    if excalifont_has_cjk {
+        let excalifont = estimates
+            .iter()
+            .find(|(family, _)| *family == "Excalifont")
+            .map(|(_, count)| *count)
+            .unwrap_or_default();
+        estimates[0] = ("Xiaolai", excalifont);
+    }
+    Ok(estimates)
+}
+
+fn visit_svg_font_text(
+    scene: &ResolvedScene,
+    text_order: &[&ResolvedTextElement],
+    mut visit: impl FnMut(&'static str, &str) -> Result<(), FormatEncodeError>,
+) -> Result<(), FormatEncodeError> {
+    for text in text_order {
+        visit(resolved_family(text.font_family), &text.original_text)?;
+        if !text.text.missing_codepoints.is_empty() {
+            visit("Liberation Sans", "?")?;
+        }
+    }
+    for element in &scene.elements {
+        match element {
+            ResolvedElement::Outline(outline) => {
+                if let Some(label) = &outline.generated_label {
+                    for line in &label.lines {
+                        visit("Liberation Sans", &line.display_text)?;
+                    }
+                }
+            }
+            ResolvedElement::Frame(frame) => {
+                if let Some(name) = &frame.name {
+                    visit("Liberation Sans", &name.display_text)?;
+                }
+            }
+            ResolvedElement::Fallback(fallback) => {
+                if let Some(label) = &fallback.label {
+                    visit("Liberation Sans", &label.display_text)?;
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(())
 }
 
 fn build_svg_font_bundle(
@@ -6168,6 +6279,9 @@ fn add_svg_font_text(
     family: &'static str,
     text: &str,
 ) -> Result<(), FormatEncodeError> {
+    if text.is_empty() {
+        return Ok(());
+    }
     let index = if let Some(index) = families.iter().position(|demand| demand.family == family) {
         index
     } else {
@@ -9791,6 +9905,7 @@ mod tests {
     };
     use base64::Engine as _;
     use serde_json::json;
+    use sha2::{Digest as _, Sha256};
     use std::fs;
     use std::path::Path;
 
@@ -9960,7 +10075,8 @@ mod tests {
     }
 
     #[test]
-    fn representative_direct_svg_corpus_does_not_grow_against_complete_chunk_controls() {
+    fn font_subset_representative_direct_svg_corpus_does_not_grow_against_complete_chunk_controls()
+    {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let corpus: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -9975,14 +10091,26 @@ mod tests {
             .as_array()
             .expect("representative size corpus cases are an array");
         assert!(!cases.is_empty());
+        assert!(cases.iter().any(|case| case["layer"] == "representative"));
         let request = RenderRequest::builder(OutputFormat::Svg)
             .build()
             .expect("SVG request is valid");
         for case in cases {
             let id = case["id"].as_str().expect("size case has an ID");
+            let layer = case["layer"]
+                .as_str()
+                .expect("size case has a conformance layer");
+            assert!(matches!(layer, "focused" | "representative"));
             let path = case["scene"].as_str().expect("size case has a scene path");
             let scene_bytes = fs::read(root.join(path))
                 .unwrap_or_else(|error| panic!("failed to read size case {id}: {error}"));
+            assert_eq!(
+                format!("{:x}", Sha256::digest(&scene_bytes)),
+                case["scene_sha256"]
+                    .as_str()
+                    .expect("size case has a scene digest"),
+                "size case {id} scene digest",
+            );
             let scene = SceneDocument::parse(&scene_bytes)
                 .unwrap_or_else(|error| panic!("failed to parse size case {id}: {error}"));
             let candidate = Renderer::new()
@@ -10079,10 +10207,10 @@ mod tests {
             .remove("approval")
             .expect("PDF expectation manifest is approved");
         assert_eq!(approval["approved_by"], "sagikazarmark");
-        assert_eq!(approval["approved_at"], "2026-07-23");
+        assert_eq!(approval["approved_at"], "2026-08-01");
         assert_eq!(
             approval["approval_url"],
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5060283812"
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5154056352"
         );
         let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
         canonical.push(b'\n');
@@ -10455,7 +10583,10 @@ mod tests {
         assert_eq!(
             events
                 .iter()
-                .filter(|event| **event == "svg_font_chunk_considered")
+                .zip(entries)
+                .filter(|(event, entry)| {
+                    **event == "svg_font_chunk_considered" && entry["decision"] == "committed"
+                })
                 .count(),
             7
         );

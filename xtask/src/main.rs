@@ -2,6 +2,7 @@ mod catalog;
 mod conformance;
 mod pdf_viewers;
 mod svg_font_subset_runner;
+mod svg_font_subset_targets;
 mod svg_font_subsets;
 mod svg_viewers;
 
@@ -95,6 +96,26 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             svg_font_subsets::verify()?;
             println!("verified canonical SVG font subset viewer qualification");
         }
+        Some("verify-svg-font-subset-release") => {
+            no_more_args(args)?;
+            svg_font_subset_targets::verify_release()?;
+            println!("verified pending SVG font subset release evidence");
+        }
+        Some("materialize-svg-font-subset-target") => {
+            let target = required_arg(&mut args, "target")?;
+            let test_log = required_arg(&mut args, "qualification test log")?;
+            let output = required_arg(&mut args, "target report path")?;
+            no_more_args(args)?;
+            svg_font_subset_targets::materialize(&target, &test_log, &output)?;
+            println!("materialized SVG font subset target evidence for {target}");
+        }
+        Some("aggregate-svg-font-subset-targets") => {
+            let input = required_arg(&mut args, "target report directory")?;
+            let output = required_arg(&mut args, "aggregate report path")?;
+            no_more_args(args)?;
+            svg_font_subset_targets::aggregate(&input, &output)?;
+            println!("aggregated SVG font subset target evidence");
+        }
         Some("svg-font-subset-approval-subject") => {
             no_more_args(args)?;
             println!("sha256:{}", svg_font_subsets::approval_subject()?);
@@ -151,6 +172,11 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             pdf_viewers::verify(true)?;
             println!("verified canonical PDF viewer and structural qualification");
+        }
+        Some("refresh-pdf-viewer-dependencies") => {
+            no_more_args(args)?;
+            pdf_viewers::refresh_dependencies()?;
+            println!("refreshed PDF viewer qualification dependencies");
         }
         Some("pdf-viewer-approval-subject") => {
             no_more_args(args)?;
@@ -218,8 +244,8 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify> | ",
         "conformance <generate|reproduce|verify|approval-subject|record-approval|",
-        "verify-svg-viewers|verify-svg-font-subsets|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
-        "verify-pdf-viewers|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
+        "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|aggregate-svg-font-subset-targets|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
+        "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"
     )
     .to_owned()

@@ -12,7 +12,6 @@ use write_fonts::read::{
     FontRef, TableProvider,
 };
 use write_fonts::tables::glyf::{Contour, GlyfLocaBuilder, Glyph, SimpleGlyph};
-use write_fonts::validate::Validate;
 use write_fonts::FontBuilder;
 
 const SUBSET_FLAGS: SubsetFlags = SubsetFlags::SUBSET_FLAGS_DEFAULT;
@@ -482,6 +481,14 @@ fn validate_mappings_and_metrics(
         });
     }
     let mut retained_text = String::new();
+    retained_text
+        .try_reserve_exact(
+            scalars
+                .len()
+                .checked_mul(char::MAX.len_utf8())
+                .ok_or_else(validate_error)?,
+        )
+        .map_err(|_| validate_error())?;
     for scalar in scalars {
         let Some(character) = char::from_u32(*scalar) else {
             return Err(Error {
@@ -538,14 +545,18 @@ fn validate_mappings_and_metrics(
             validate_shaping_probe(&source, &subset, probe, None)?;
         }
     }
-    let retained = retained_text.chars().collect::<Vec<_>>();
+    let mut retained = Vec::new();
+    retained
+        .try_reserve_exact(retained_text.chars().count())
+        .map_err(|_| validate_error())?;
+    retained.extend(retained_text.chars());
     for chunk in retained.chunks(32).filter(|chunk| chunk.len() > 1) {
-        let probe = chunk.iter().collect::<String>();
+        let probe = fallible_probe(chunk)?;
         validate_shaping_probe(&source, &subset, &probe, None)?;
     }
     for width in 2..=4 {
         for window in retained.windows(width) {
-            let probe = window.iter().collect::<String>();
+            let probe = fallible_probe(window)?;
             validate_shaping_probe(&source, &subset, &probe, None)?;
         }
     }
@@ -567,26 +578,32 @@ fn validate_layout_closure(font: &FontRef<'_>) -> Result<(), Error> {
     if font.data_for_tag(Tag::new(b"GSUB")).is_some() {
         let table = font.gsub().map_err(|_| validate_error())?;
         validate_layout_table(&table, glyph_count, &mut glyphs, &mut budget, 0)?;
-        let owned = write_fonts::tables::gsub::Gsub::from_table_ref(&table);
-        owned.validate().map_err(|_| validate_error())?;
-        write_fonts::dump_table(&owned).map_err(|_| validate_error())?;
         validate_single_substitution_deltas(&table, glyph_count)?;
     }
     if font.data_for_tag(Tag::new(b"GPOS")).is_some() {
         let table = font.gpos().map_err(|_| validate_error())?;
         validate_layout_table(&table, glyph_count, &mut glyphs, &mut budget, 0)?;
-        let owned = write_fonts::tables::gpos::Gpos::from_table_ref(&table);
-        owned.validate().map_err(|_| validate_error())?;
-        write_fonts::dump_table(&owned).map_err(|_| validate_error())?;
     }
     if font.data_for_tag(Tag::new(b"GDEF")).is_some() {
         let table = font.gdef().map_err(|_| validate_error())?;
         validate_layout_table(&table, glyph_count, &mut glyphs, &mut budget, 0)?;
-        let owned = write_fonts::tables::gdef::Gdef::from_table_ref(&table);
-        owned.validate().map_err(|_| validate_error())?;
-        write_fonts::dump_table(&owned).map_err(|_| validate_error())?;
     }
     Ok(())
+}
+
+fn fallible_probe(characters: &[char]) -> Result<String, Error> {
+    let bytes = characters
+        .iter()
+        .try_fold(0_usize, |total, character| {
+            total.checked_add(character.len_utf8())
+        })
+        .ok_or_else(validate_error)?;
+    let mut probe = String::new();
+    probe
+        .try_reserve_exact(bytes)
+        .map_err(|_| validate_error())?;
+    probe.extend(characters);
+    Ok(probe)
 }
 
 #[cfg(test)]

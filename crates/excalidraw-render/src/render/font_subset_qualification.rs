@@ -102,6 +102,61 @@ struct FailureQualification {
     partial_artifact: bool,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct QualificationMeasurementReport {
+    generated_bytes_sha256: String,
+    resource_traces_sha256: String,
+    successful_cells: usize,
+    traced_cells: usize,
+}
+
+struct QualificationMeasurement {
+    generated_bytes: Sha256,
+    resource_traces: Sha256,
+    successful_cells: usize,
+    traced_cells: usize,
+}
+
+impl QualificationMeasurement {
+    fn new() -> Self {
+        Self {
+            generated_bytes: Sha256::new(),
+            resource_traces: Sha256::new(),
+            successful_cells: 0,
+            traced_cells: 0,
+        }
+    }
+
+    fn record_generated(&mut self, source: &str, class: &str, bytes: &[u8]) {
+        update_framed(&mut self.generated_bytes, source.as_bytes());
+        update_framed(&mut self.generated_bytes, class.as_bytes());
+        update_framed(&mut self.generated_bytes, bytes);
+        self.successful_cells += 1;
+    }
+
+    fn record_trace(&mut self, source: &str, class: &str, bytes: &[u8]) {
+        update_framed(&mut self.resource_traces, source.as_bytes());
+        update_framed(&mut self.resource_traces, class.as_bytes());
+        update_framed(&mut self.resource_traces, bytes);
+        self.traced_cells += 1;
+    }
+
+    fn report(&self) -> QualificationMeasurementReport {
+        QualificationMeasurementReport {
+            generated_bytes_sha256: format!("{:x}", self.generated_bytes.clone().finalize()),
+            resource_traces_sha256: format!("{:x}", self.resource_traces.clone().finalize()),
+            successful_cells: self.successful_cells,
+            traced_cells: self.traced_cells,
+        }
+    }
+}
+
+fn update_framed(hasher: &mut Sha256, bytes: &[u8]) {
+    hasher.update(u64::try_from(bytes.len()).unwrap_or(u64::MAX).to_le_bytes());
+    hasher.update(bytes);
+}
+
 pub(crate) fn assert_complete_font_subset_qualification_corpus() {
     let catalog = excalidraw_render_assets_base::revision_1();
     let corpus_bytes = include_bytes!(concat!(
@@ -124,6 +179,7 @@ pub(crate) fn assert_complete_font_subset_qualification_corpus() {
     assert_eq!(corpus.sources.len(), 230);
     assert_eq!(corpus.sources.len(), catalog.assets.len());
 
+    let mut measurement = QualificationMeasurement::new();
     let mut source_identities = BTreeSet::new();
     let mut cell_identities = BTreeSet::new();
     for (source, record) in corpus.sources.iter().zip(catalog.assets) {
@@ -150,12 +206,24 @@ pub(crate) fn assert_complete_font_subset_qualification_corpus() {
         for ((cell, expected), class) in source.cells.iter().zip(expected_cells).zip(CLASS_IDS) {
             assert_eq!(cell.class, class);
             assert!(cell_identities.insert((source.source_identity.as_str(), cell.class.as_str())));
-            assert_cell(record, asset.bytes(), source, cell, expected);
+            assert_cell(
+                record,
+                asset.bytes(),
+                source,
+                cell,
+                expected,
+                &mut measurement,
+            );
         }
     }
     assert_eq!(source_identities.len(), 230);
     assert_eq!(cell_identities.len(), 230 * CLASS_IDS.len());
     assert_failure_cells(&corpus.failures);
+    println!(
+        "SVG_FONT_SUBSET_TARGET_MEASUREMENT={}",
+        serde_json::to_string(&measurement.report())
+            .expect("qualification measurement report is serializable")
+    );
 }
 
 fn assert_cell(
@@ -164,6 +232,7 @@ fn assert_cell(
     source: &SourceQualification,
     cell: &QualificationCell,
     expected: ClassifiedCell,
+    measurement: &mut QualificationMeasurement,
 ) {
     assert_eq!(cell.status, expected.status);
     assert_eq!(cell.ordered_scalars.as_deref(), expected.scalars.as_deref());
@@ -219,11 +288,13 @@ fn assert_cell(
                     sha256(&decoded)
                 );
             }
-            let trace_sha256 = canonical_trace_sha256(record, scalars, Some(&derived));
+            measurement.record_generated(record.identity, &cell.class, derived.woff2.as_ref());
+            let (trace_sha256, trace) = canonical_trace(record, scalars, Some(&derived));
             assert_eq!(
                 cell.canonical_resource_trace_sha256.as_deref(),
                 Some(trace_sha256.as_str())
             );
+            measurement.record_trace(record.identity, &cell.class, &trace);
             let notice = svg_fonts::subset_notice(
                 record,
                 family_name(record.family),
@@ -247,11 +318,12 @@ fn assert_cell(
                 .scalars
                 .as_deref()
                 .expect("not-selected has scalars");
-            let trace_sha256 = canonical_trace_sha256(record, scalars, None);
+            let (trace_sha256, trace) = canonical_trace(record, scalars, None);
             assert_eq!(
                 cell.canonical_resource_trace_sha256.as_deref(),
                 Some(trace_sha256.as_str())
             );
+            measurement.record_trace(record.identity, &cell.class, &trace);
         }
         CellStatus::NotApplicable => {
             assert_eq!(cell.expected_validation_outcome, "not_applicable");
@@ -386,7 +458,7 @@ fn classify_source(
             |scalar| success(vec![scalar]),
         ),
         layout.map_or_else(
-            || not_applicable("source has no complete manifested layout probe"),
+            || not_applicable("source has no mapped layout-referenced glyph"),
             success,
         ),
     ]
@@ -614,7 +686,8 @@ fn layout_probe(face: &rustybuzz::Face<'_>, font: &FontRef<'_>) -> Option<Vec<u3
             return Some(probe_scalars(&probe));
         }
     }
-    None
+    let carrier = mapped.into_iter().take(64).collect::<Vec<_>>();
+    (!carrier.is_empty()).then_some(carrier)
 }
 
 fn probe_scalars(probe: &str) -> Vec<u32> {
@@ -655,11 +728,11 @@ fn probe_exercises_layout(face: &rustybuzz::Face<'_>, probe: &str) -> bool {
         })
 }
 
-fn canonical_trace_sha256(
+fn canonical_trace(
     record: &'static excalidraw_render_assets_base::AssetRecord,
     scalars: &[u32],
     derived: Option<&font_subset::Derived>,
-) -> String {
+) -> (String, Vec<u8>) {
     let selected = derived.is_some();
     let (outcome, trace) = super::render_font_subset_qualification_trace(record, scalars);
     outcome.unwrap_or_else(|error| {
@@ -694,7 +767,7 @@ fn canonical_trace_sha256(
             assert!(has_event(event), "{} lacks {event}", record.upstream_path);
         }
     }
-    sha256(&trace)
+    (sha256(&trace), trace)
 }
 
 fn family_failure_diagnosis(
@@ -866,7 +939,7 @@ fn materialize_cell(
                     )
                 });
             let output_sha256 = sha256(derived.woff2.as_ref());
-            let trace_sha256 = canonical_trace_sha256(record, &scalars, Some(&derived));
+            let trace_sha256 = canonical_trace(record, &scalars, Some(&derived)).0;
             let notice = svg_fonts::subset_notice(
                 record,
                 family_name(record.family),
@@ -892,9 +965,7 @@ fn materialize_cell(
             QualificationCell {
                 class: class.to_owned(),
                 status: CellStatus::NotSelected,
-                canonical_resource_trace_sha256: Some(canonical_trace_sha256(
-                    record, &scalars, None,
-                )),
+                canonical_resource_trace_sha256: Some(canonical_trace(record, &scalars, None).0),
                 ordered_scalars: Some(scalars),
                 semantic_subset_identity: None,
                 generated_woff2_sha256: None,
@@ -946,7 +1017,7 @@ fn class_definitions() -> Vec<ClassDefinition> {
         "first source-mapped scalar above U+FFFF",
         "first source-mapped scalar with a nonzero canonical combining class",
         "first source-mapped scalar whose TrueType glyph is composite",
-        "first complete bounded shaping probe whose default GSUB/GPOS shaping changes glyph choice, count, horizontal or vertical advance, or offset",
+        "complete bounded carrier for source-mapped glyphs referenced by GSUB/GPOS/GDEF closure, preferring a shaping probe that changes glyph choice, count, advance, or offset",
     ]
     .into_iter()
     .zip(CLASS_IDS)

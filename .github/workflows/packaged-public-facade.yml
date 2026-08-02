@@ -20,7 +20,7 @@ jobs:
         run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
       - name: Verify approved SVG font subset evidence
         run: |
-          bash tools/verify-svg-font-subset-release-evidence.sh
+          cargo run --locked -p xtask -- conformance verify-svg-font-subset-release
           cargo run --locked -p xtask -- conformance verify-svg-font-subsets
 
   native:
@@ -48,7 +48,11 @@ jobs:
       - name: Verify sealed revision catalog
         run: cargo run --locked -p xtask -- catalog verify
       - name: Execute font qualification
-        run: cargo test --locked --release --target ${{ matrix.target }} -p excalidraw-render --lib font_subset
+        shell: bash
+        run: |
+          mkdir -p target/svg-font-subset-target-evidence
+          cargo test --locked --release --target ${{ matrix.target }} -p excalidraw-render --lib font_subset -- --nocapture \
+            | tee target/svg-font-subset-target-evidence/${{ matrix.target }}.log
       - name: Package library
         run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
       - name: Check packaged CLI against packaged renderer
@@ -59,7 +63,11 @@ jobs:
         run: cargo test --locked --release --target ${{ matrix.target }} --test public_facade
       - name: Materialize target evidence
         shell: bash
-        run: bash tools/write-svg-font-subset-target-evidence.sh "${{ matrix.target }}" "target/svg-font-subset-target-evidence/${{ matrix.target }}.json"
+        run: >-
+          cargo run --locked -p xtask -- conformance materialize-svg-font-subset-target
+          "${{ matrix.target }}"
+          "target/svg-font-subset-target-evidence/${{ matrix.target }}.log"
+          "target/svg-font-subset-target-evidence/${{ matrix.target }}.json"
       - name: Upload target evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -99,6 +107,7 @@ jobs:
           WASM_BINDGEN_TEST_WEBDRIVER_JSON: ${{ github.workspace }}/tests/package-consumer/webdriver.json
         shell: bash
         run: |
+          mkdir -p target/svg-font-subset-target-evidence
           chrome="$(jq -er '.browser.tools.chromium.binary' tests/package-consumer/tool-manifest.json)"
           driver="$(jq -er '.browser.tools.chromedriver.binary' tests/package-consumer/tool-manifest.json)"
           PATH="$RUNNER_TEMP/browser/$(dirname "$chrome"):$PATH" \
@@ -106,7 +115,8 @@ jobs:
             CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner \
             cargo test --locked --release -p excalidraw-render --lib \
               --target wasm32-unknown-unknown \
-              wasm_tests
+              wasm_tests -- --nocapture \
+              | tee target/svg-font-subset-target-evidence/wasm32-unknown-unknown.log
       - name: Execute packaged public facade in Chromium
         working-directory: tests/package-consumer
         env:
@@ -120,7 +130,11 @@ jobs:
             cargo test --locked --release --target wasm32-unknown-unknown --test public_facade
       - name: Materialize target evidence
         shell: bash
-        run: bash tools/write-svg-font-subset-target-evidence.sh wasm32-unknown-unknown target/svg-font-subset-target-evidence/wasm32-unknown-unknown.json
+        run: >-
+          cargo run --locked -p xtask -- conformance materialize-svg-font-subset-target
+          wasm32-unknown-unknown
+          target/svg-font-subset-target-evidence/wasm32-unknown-unknown.log
+          target/svg-font-subset-target-evidence/wasm32-unknown-unknown.json
       - name: Upload target evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -134,6 +148,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
       - name: Download target evidence
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
@@ -141,8 +158,10 @@ jobs:
           path: target/svg-font-subset-target-evidence
           merge-multiple: true
       - name: Aggregate target evidence
-        shell: bash
-        run: bash tools/aggregate-svg-font-subset-target-evidence.sh target/svg-font-subset-target-evidence target/svg-font-subset-target-aggregate.json
+        run: >-
+          cargo run --locked -p xtask -- conformance aggregate-svg-font-subset-targets
+          target/svg-font-subset-target-evidence
+          target/svg-font-subset-target-aggregate.json
       - name: Upload aggregate evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

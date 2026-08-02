@@ -144,6 +144,55 @@ pub fn approval_subject() -> Result<String, String> {
     approval_subject_from_manifest(&manifest)
 }
 
+pub fn refresh_dependencies() -> Result<(), String> {
+    let root = repo_root();
+    let path = root.join(MANIFEST_PATH);
+    let mut manifest: Value = serde_json::from_slice(
+        &fs::read(&path).map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?,
+    )
+    .map_err(|error| format!("invalid qualification manifest: {error}"))?;
+    manifest["approval"] = Value::Null;
+    refresh_descriptors(&mut manifest, &root)?;
+    let canonical = canonical_bytes(&manifest)?;
+    fs::write(&path, [&canonical[..], b"\n"].concat())
+        .map_err(|error| format!("failed to write {MANIFEST_PATH}: {error}"))?;
+    fs::write(
+        root.join(MANIFEST_DIGEST_PATH),
+        format!("{}\n", sha256(&canonical)),
+    )
+    .map_err(|error| format!("failed to write {MANIFEST_DIGEST_PATH}: {error}"))?;
+    verify(false)
+}
+
+fn refresh_descriptors(value: &mut Value, root: &Path) -> Result<(), String> {
+    match value {
+        Value::Object(object) => {
+            let descriptor_path = object
+                .get("path")
+                .and_then(Value::as_str)
+                .filter(|_| object.contains_key("sha256"))
+                .map(str::to_owned);
+            if let Some(descriptor_path) = descriptor_path {
+                let bytes = read_repository_file(root, &descriptor_path)?;
+                object.insert("sha256".to_owned(), json!(sha256(&bytes)));
+                if object.contains_key("byte_length") {
+                    object.insert("byte_length".to_owned(), json!(bytes.len()));
+                }
+            }
+            for child in object.values_mut() {
+                refresh_descriptors(child, root)?;
+            }
+        }
+        Value::Array(values) => {
+            for child in values {
+                refresh_descriptors(child, root)?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 pub fn record_approval(
     approved_by: &str,
     approved_at: &str,
@@ -579,6 +628,14 @@ fn validate_schema(definition: &Value, value: &Value, subject: &str) -> Result<(
 fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
     let descriptor = object(descriptor, "file descriptor")?;
     let relative = string(&descriptor["path"], "file descriptor path")?;
+    let bytes = read_repository_file(&repo_root(), relative)?;
+    if descriptor["sha256"] != json!(sha256(&bytes)) {
+        return Err(format!("stale digest for {relative}"));
+    }
+    Ok(bytes)
+}
+
+fn read_repository_file(root: &Path, relative: &str) -> Result<Vec<u8>, String> {
     let path = Path::new(relative);
     if path.is_absolute()
         || path
@@ -587,7 +644,7 @@ fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
     {
         return Err(format!("unsafe repository-relative path {relative:?}"));
     }
-    let root = fs::canonicalize(repo_root())
+    let root = fs::canonicalize(root)
         .map_err(|error| format!("failed to resolve repository root: {error}"))?;
     let resolved = fs::canonicalize(root.join(path))
         .map_err(|error| format!("failed to resolve {relative}: {error}"))?;
@@ -596,12 +653,7 @@ fn verify_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
             "file descriptor path escapes repository: {relative}"
         ));
     }
-    let bytes =
-        fs::read(resolved).map_err(|error| format!("failed to read {relative}: {error}"))?;
-    if descriptor["sha256"] != json!(sha256(&bytes)) {
-        return Err(format!("stale digest for {relative}"));
-    }
-    Ok(bytes)
+    fs::read(resolved).map_err(|error| format!("failed to read {relative}: {error}"))
 }
 
 fn verify_sidecar(relative: &str, bytes: &[u8]) -> Result<(), String> {

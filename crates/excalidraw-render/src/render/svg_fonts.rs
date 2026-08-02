@@ -31,10 +31,11 @@ impl FamilyDemand {
         scalars: &[u32],
     ) -> Result<Self, TryReserveError> {
         let mut demand = Self::new(family);
-        demand.scalars.try_reserve_exact(scalars.len())?;
-        demand.scalar_membership.try_reserve(scalars.len())?;
         for scalar in scalars {
-            if demand.scalar_membership.insert(*scalar) {
+            if !demand.scalar_membership.contains(scalar) {
+                demand.scalars.try_reserve(1)?;
+                demand.scalar_membership.try_reserve(1)?;
+                demand.scalar_membership.insert(*scalar);
                 demand.scalars.push(*scalar);
             }
         }
@@ -42,11 +43,11 @@ impl FamilyDemand {
     }
 
     pub(super) fn add_text(&mut self, text: &str) -> Result<(), TryReserveError> {
-        let scalar_count = text.chars().count();
-        self.scalars.try_reserve(scalar_count)?;
-        self.scalar_membership.try_reserve(scalar_count)?;
         for scalar in text.chars().map(u32::from) {
-            if self.scalar_membership.insert(scalar) {
+            if !self.scalar_membership.contains(&scalar) {
+                self.scalars.try_reserve(1)?;
+                self.scalar_membership.try_reserve(1)?;
+                self.scalar_membership.insert(scalar);
                 self.scalars.push(scalar);
             }
         }
@@ -171,20 +172,42 @@ impl Bundle {
     }
 }
 
+#[derive(Clone, Copy)]
 struct WorkingRecord {
     context: ResourceContext<'static>,
     bytes: u64,
 }
 
 pub(super) struct SelectionAccounting {
-    retained: Vec<WorkingRecord>,
+    retained: [Option<WorkingRecord>; MAX_SELECTION_RECORDS],
+    retained_len: usize,
 }
+
+const MAX_SELECTION_RECORDS: usize = 9 + 230 * 2;
 
 impl SelectionAccounting {
     pub(super) fn release<A: ResourceAccount>(mut self, account: &mut A) -> Result<(), A::Error> {
-        while let Some(record) = self.retained.pop() {
+        while self.retained_len != 0 {
+            self.retained_len -= 1;
+            let record = self.retained[self.retained_len]
+                .take()
+                .ok_or_else(|| account.internal_failure("SVG font selection record is missing"))?;
             account.release_resource(record.context, record.bytes)?;
         }
+        Ok(())
+    }
+
+    fn retain<A: ResourceAccount>(
+        &mut self,
+        account: &mut A,
+        record: WorkingRecord,
+    ) -> Result<(), A::Error> {
+        let slot = self
+            .retained
+            .get_mut(self.retained_len)
+            .ok_or_else(|| account.internal_failure("SVG font selection record bound exceeded"))?;
+        *slot = Some(record);
+        self.retained_len += 1;
         Ok(())
     }
 }
@@ -197,14 +220,18 @@ impl DependencyEnvelope {
     }
 }
 
-pub(super) fn account_selection<A: ResourceAccount>(
+pub(super) fn account_demand<A: ResourceAccount>(
     account: &mut A,
-    demand: &Demand,
+    estimates: impl Iterator<Item = (&'static str, usize)>,
 ) -> Result<SelectionAccounting, A::Error> {
-    let mut retained = Vec::new();
+    let mut accounting = SelectionAccounting {
+        retained: [None; MAX_SELECTION_RECORDS],
+        retained_len: 0,
+    };
+
     let result = (|| -> Result<(), A::Error> {
-        for family in &demand.families {
-            let scalar_count = u64::try_from(family.scalars.len())
+        for (family, scalar_count) in estimates.filter(|(_, count)| *count != 0) {
+            let scalar_count = u64::try_from(scalar_count)
                 .map_err(|_| account.internal_failure("SVG font scalar count overflowed"))?;
             let scalar_work = checked_product(
                 account,
@@ -218,15 +245,12 @@ pub(super) fn account_selection<A: ResourceAccount>(
                 64,
                 "SVG font scalar-set working bytes overflowed",
             )?;
-            retained
-                .try_reserve(1)
-                .map_err(|_| account.memory_failure("svg_font_selection", "retained_record"))?;
             let context = ResourceContext::new(
                 ResourcePhase::FormatPlanning,
                 "svg_font_family_scalar_set",
                 "",
             )
-            .with_semantic_identity(family.family)
+            .with_semantic_identity(family)
             .with_record(ResourceRecordKind::BuiltInGlyphOrRangeState);
             account.transact_resource(
                 context,
@@ -236,25 +260,51 @@ pub(super) fn account_selection<A: ResourceAccount>(
                     ..ResourceDelta::default()
                 },
             )?;
-            retained.push(WorkingRecord {
-                context,
-                bytes: scalar_working,
-            });
+            accounting.retain(
+                account,
+                WorkingRecord {
+                    context,
+                    bytes: scalar_working,
+                },
+            )?;
         }
+        Ok(())
+    })();
+    if let Err(error) = result {
+        accounting.release(account)?;
+        return Err(error);
+    }
+    Ok(accounting)
+}
+
+pub(super) fn account_selection<A: ResourceAccount>(
+    account: &mut A,
+    demand: &Demand,
+    mut accounting: SelectionAccounting,
+) -> Result<SelectionAccounting, A::Error> {
+    let result = (|| -> Result<(), A::Error> {
         for family in &demand.families {
             let scalar_count = u64::try_from(family.scalars.len())
                 .map_err(|_| account.internal_failure("SVG font scalar count overflowed"))?;
             let catalog_family = catalog_family(family.family);
-            let mut records = excalidraw_render_assets_base::revision_1()
+            let mut records = [None; 230];
+            let mut record_count = 0_usize;
+            for record in excalidraw_render_assets_base::revision_1()
                 .assets
                 .iter()
                 .filter(|record| record.family == catalog_family)
-                .collect::<Vec<_>>();
+            {
+                records[record_count] = Some(record);
+                record_count += 1;
+            }
+            let records = &mut records[..record_count];
             records.sort_unstable_by_key(|record| {
+                let record = record.expect("populated catalog record");
                 excalidraw_render_assets_base::font_face_order(catalog_family, record.upstream_path)
                     .unwrap_or(usize::MAX)
             });
             for record in records {
+                let record = record.expect("populated catalog record");
                 let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
                     catalog_family,
                     record.upstream_path,
@@ -272,16 +322,26 @@ pub(super) fn account_selection<A: ResourceAccount>(
                 )?;
                 let pair_work =
                     checked_product(account, pairs, 32, "SVG font scalar-range work overflowed")?;
+                let considered_context = ResourceContext::new(
+                    ResourcePhase::FormatPlanning,
+                    "svg_font_chunk_considered",
+                    "",
+                )
+                .with_semantic_identity(record.identity)
+                .with_record(ResourceRecordKind::BuiltInGlyphOrRangeState);
                 account.transact_resource(
-                    ResourceContext::new(
-                        ResourcePhase::FormatPlanning,
-                        "svg_font_chunk_considered",
-                        "",
-                    )
-                    .with_semantic_identity(record.identity),
+                    considered_context,
                     ResourceDelta {
+                        working_bytes: 64,
                         total_work_units: pair_work,
                         ..ResourceDelta::default()
+                    },
+                )?;
+                accounting.retain(
+                    account,
+                    WorkingRecord {
+                        context: considered_context,
+                        bytes: 64,
                     },
                 )?;
                 if family.scalars.iter().any(|scalar| {
@@ -289,9 +349,6 @@ pub(super) fn account_selection<A: ResourceAccount>(
                         .iter()
                         .any(|(start, end)| start <= scalar && scalar <= end)
                 }) {
-                    retained.try_reserve(1).map_err(|_| {
-                        account.memory_failure("svg_font_selection", "retained_record")
-                    })?;
                     let context = ResourceContext::new(
                         ResourcePhase::FormatPlanning,
                         "svg_font_chunk_selected",
@@ -307,16 +364,18 @@ pub(super) fn account_selection<A: ResourceAccount>(
                             ..ResourceDelta::default()
                         },
                     )?;
-                    retained.push(WorkingRecord {
-                        context,
-                        bytes: 256,
-                    });
+                    accounting.retain(
+                        account,
+                        WorkingRecord {
+                            context,
+                            bytes: 256,
+                        },
+                    )?;
                 }
             }
         }
         Ok(())
     })();
-    let accounting = SelectionAccounting { retained };
     if let Err(error) = result {
         accounting.release(account)?;
         return Err(error);

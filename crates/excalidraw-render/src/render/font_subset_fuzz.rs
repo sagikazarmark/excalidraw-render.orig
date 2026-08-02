@@ -221,7 +221,7 @@ fn exercise(context: &Context, input: &[u8]) -> Outcome {
     let input = &input[..input.len().min(MAX_FUZZ_INPUT_BYTES)];
     let (route, payload) = input
         .split_first()
-        .map_or((0, &[][..]), |(route, rest)| (route % 8, rest));
+        .map_or((0, &[][..]), |(route, rest)| (route % 9, rest));
     match route {
         0 => derive_outcome(
             payload,
@@ -260,7 +260,64 @@ fn exercise(context: &Context, input: &[u8]) -> Outcome {
         }
         6 => table_policy_outcome(context, payload),
         7 => cache_outcome(context, payload),
-        _ => unreachable!("route is reduced modulo eight"),
+        8 => public_facade_outcome(payload),
+        _ => unreachable!("route is reduced modulo nine"),
+    }
+}
+
+fn public_facade_outcome(payload: &[u8]) -> Outcome {
+    let mut text = payload
+        .chunks(4)
+        .take(MAX_SCALARS)
+        .map(|chunk| {
+            let mut bytes = [0_u8; 4];
+            bytes[..chunk.len()].copy_from_slice(chunk);
+            char::from_u32(u32::from_le_bytes(bytes) % 0x11_0000).unwrap_or('?')
+        })
+        .collect::<String>();
+    if text.is_empty() {
+        text.push('A');
+    }
+    let source = serde_json::to_vec(&serde_json::json!({
+        "type": "excalidraw",
+        "version": 2,
+        "elements": [{
+            "id": "font-subset-fuzz",
+            "type": "text",
+            "width": 320,
+            "height": 80,
+            "fontSize": 20,
+            "fontFamily": 2,
+            "text": text,
+            "updated": 1,
+        }],
+        "appState": {},
+        "files": {},
+    }))
+    .expect("bounded public-facade fuzz scene is serializable");
+    let scene =
+        crate::SceneDocument::parse(&source).expect("bounded public-facade fuzz scene is admitted");
+    let request = crate::RenderRequest::builder(crate::OutputFormat::Svg)
+        .build()
+        .expect("public-facade fuzz request is valid");
+    match crate::Renderer::new().render(&scene, &request) {
+        Ok(outcome) => {
+            let svg = std::str::from_utf8(outcome.artifact().bytes())
+                .expect("public-facade fuzz SVG is UTF-8");
+            assert!(
+                svg.contains("svg-font-subset@sha256:"),
+                "public-facade fuzz render used an unqualified font payload"
+            );
+            Outcome::Valid(Sha256::digest(outcome.artifact().bytes()).into())
+        }
+        Err(error) => match error.details() {
+            Some(crate::ErrorDetails::SvgFontSubsetFailure { stage, .. }) => {
+                Outcome::Failure(*stage)
+            }
+            details => {
+                panic!("public-facade fuzz render failed outside font subsetting: {details:?}")
+            }
+        },
     }
 }
 
@@ -454,7 +511,7 @@ impl Generator {
             _ => 2 + (usize::from(self.next_u8()) % 127),
         };
         let mut input = Vec::with_capacity(length);
-        input.push(u8::try_from(index % 8).expect("route count fits in u8"));
+        input.push(u8::try_from(index % 9).expect("route count fits in u8"));
         input.extend((1..length).map(|_| self.next_u8()));
         input
     }

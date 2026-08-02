@@ -142,8 +142,8 @@ fn materialize_schema() -> Result<(), String> {
         &fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?,
     )
     .map_err(|error| format!("invalid SVG font subset viewer schema: {error}"))?;
-    schema["properties"]["executions"]["minItems"] = json!(643);
-    schema["properties"]["executions"]["maxItems"] = json!(643);
+    schema["properties"]["executions"]["minItems"] = json!(851);
+    schema["properties"]["executions"]["maxItems"] = json!(851);
     let bytes = canonical_bytes(&schema)?;
     fs::write(&path, [&bytes[..], b"\n"].concat())
         .map_err(|error| format!("failed to write {}: {error}", path.display()))
@@ -329,7 +329,7 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
     }
     if manifest["corpus"]["path"] != json!(CORPUS_PATH)
         || manifest["corpus"]["sha256"]
-            != json!("c08ee3f16b077cb38b88a9812f8719f7fb8edae2fe450f2c3b8b4c9910b5f084")
+            != json!("30783f9080c953f61441e67f77875f321a896feab2bbae819aa5171ea7f22919")
         || manifest["subset_profile"]["sha256"]
             != json!("19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d")
         || manifest["viewer_profiles"]["chromium"]["sha256"]
@@ -405,9 +405,9 @@ fn expected_cells() -> Result<BTreeMap<(String, String), ExpectedCell>, String> 
             }
         }
     }
-    if expected.len() != 762 {
+    if expected.len() != 971 {
         return Err(format!(
-            "font subset corpus has {} successful cells, expected 762",
+            "font subset corpus has {} successful cells, expected 971",
             expected.len()
         ));
     }
@@ -464,9 +464,9 @@ fn verify_execution_coverage<'a>(
     if actual != expected.keys().cloned().collect::<BTreeSet<_>>() {
         return Err("qualification does not cover every successful corpus cell".to_owned());
     }
-    if executions.len() != 643 {
+    if executions.len() != 851 {
         return Err(format!(
-            "qualification has {} semantic executions, expected 643",
+            "qualification has {} semantic executions, expected 851",
             executions.len()
         ));
     }

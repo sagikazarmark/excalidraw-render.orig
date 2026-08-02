@@ -11,6 +11,24 @@ if [[ -z "${TARGET}" ]]; then
 fi
 
 cd "${REPO_ROOT}"
+for package in \
+  excalidraw-render-cli \
+  excalidraw-render \
+  excalidraw-render-brotli \
+  excalidraw-render-assets-base \
+  excalidraw-render-assets-data-000 \
+  excalidraw-render-assets-data-001 \
+  excalidraw-render-skera \
+  excalidraw-render-ttf2woff2
+do
+  archive="target/package/${package}-0.1.0.crate"
+  if [[ ! -f "${archive}" ]]; then
+    echo "missing packaged crate archive: ${archive}" >&2
+    exit 1
+  fi
+  tar -xzf "${archive}" -C target/package
+done
+
 cargo check \
   --target "${TARGET}" \
   --manifest-path target/package/excalidraw-render-cli-0.1.0/Cargo.toml \
