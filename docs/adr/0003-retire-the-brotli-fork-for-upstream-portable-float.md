@@ -58,4 +58,22 @@ resurrected only as part of the fallback.
 First crates.io publication is blocked until stage C or the fallback completes,
 because git dependencies cannot be published and `portable-float` does not exist
 in released 8.0.4. That block is a consequence of this decision, not a technical
-limit — a vendored crate is publishable, and CI packages the fork today.
+limit, and that has now been measured rather than assumed: on 2026-09-01
+`cargo package --locked --workspace --exclude xtask --exclude
+excalidraw-render-compare` succeeded **without** `--no-verify` — the
+build-verifying run CI never performs — with the vendored fork in place. Every
+tarball also fits the crates.io 10 MiB cap, though not by much:
+
+| Crate | `.crate` size |
+| --- | ---: |
+| `excalidraw-render-assets-data-000` | 7.97 MiB |
+| `excalidraw-render-assets-data-001` | 4.49 MiB |
+| `excalidraw-render-assets-base` | 0.76 MiB |
+| `excalidraw-render-brotli` | 0.69 MiB |
+| `excalidraw-render` | 0.58 MiB |
+| `excalidraw-render-cli` | 0.05 MiB |
+| `excalidraw-render-ttf2woff2` | 0.03 MiB |
+| `excalidraw-render-skera` | 0.01 MiB |
+
+So publishing with the fork remains available at any time; retiring it is a
+maintenance decision, not a precondition for release.
