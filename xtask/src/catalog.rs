@@ -22,6 +22,13 @@ const SCENE_SURFACE_SCHEMA_DIGEST: &str =
 const SCENE_SURFACE_EVIDENCE_DIGEST: &str =
     "29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb";
 const RAW_SHARD_LIMIT: usize = 8 * 1024 * 1024;
+/// Data crates that carry raw asset shards, in shard order. The shard count is
+/// derived from `RAW_SHARD_LIMIT` and the asset inventory; this list only bounds
+/// it, because a shard without a data crate has nowhere to live.
+const SHARD_CRATES: [&str; 2] = [
+    "excalidraw_render_assets_data_000",
+    "excalidraw_render_assets_data_001",
+];
 const CATALOG_SCHEMA: &str = "excalidraw-render/revision-catalog/v1";
 const CATALOG_SCHEMA_DIGEST: &str =
     "053acdd51de993a5a9a8ba4a8a3bc4bd02255744bfc620e3c58545dda21586e0";
@@ -386,12 +393,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
     materialize_predecoded_excalifont(&root, &assets)?;
 
     let shards = partition(&mut assets)?;
-    if shards.len() != 2 {
-        return Err(format!(
-            "revision 1 official assets must materialize as two shards, found {}",
-            shards.len()
-        ));
-    }
+    require_shard_crates(shards.len())?;
 
     let base = root.join("crates/excalidraw-render-assets-base");
     materialize_incorporated_artifacts(&root, &base)?;
@@ -470,6 +472,11 @@ pub fn materialize() -> Result<(), String> {
     write_if_changed(
         &base.join("src/generated/revision_1.rs"),
         generated.as_bytes(),
+    )?;
+    let scene_policy = generated_scene_surface(&scene_surface)?;
+    write_if_changed(
+        &root.join("crates/excalidraw-render/src/generated/scene_surface_revision_1.rs"),
+        scene_policy.as_bytes(),
     )?;
     verify()
 }
@@ -971,13 +978,18 @@ fn expected_catalog(reference_assets: &Value, scene_surface: &Value) -> Result<V
         asset.offset = offset;
         offset += asset.length;
     }
-    if shard != 1 {
+    require_shard_crates(shard + 1)?;
+    build_catalog(&assets, scene_surface)
+}
+
+fn require_shard_crates(shards: usize) -> Result<(), String> {
+    if shards > SHARD_CRATES.len() {
         return Err(format!(
-            "authoritative assets must materialize as two shards, found {}",
-            shard + 1
+            "revision 1 official assets materialize as {shards} shards, but only {} data crates exist",
+            SHARD_CRATES.len()
         ));
     }
-    build_catalog(&assets, scene_surface)
+    Ok(())
 }
 
 fn partition(assets: &mut [ImportedAsset]) -> Result<Vec<Vec<u8>>, String> {
@@ -1073,11 +1085,12 @@ fn generate_rust(
             .ok_or_else(|| "catalog asset segments must be an array".to_owned())?
         {
             let shard = string(segment, "shard", "catalog segment")?;
-            let shard_expr = match shard {
-                "revision-1-000" => "excalidraw_render_assets_data_000::BYTES",
-                "revision-1-001" => "excalidraw_render_assets_data_001::BYTES",
-                other => return Err(format!("no data crate exists for shard {other}")),
-            };
+            let shard_crate = shard
+                .strip_prefix("revision-1-")
+                .and_then(|ordinal| ordinal.parse::<usize>().ok())
+                .and_then(|ordinal| SHARD_CRATES.get(ordinal))
+                .ok_or_else(|| format!("no data crate exists for shard {shard}"))?;
+            let shard_expr = format!("{shard_crate}::BYTES");
             output.push_str("            AssetSegment {\n");
             rust_field_indented(
                 &mut output,
@@ -1241,30 +1254,11 @@ fn generate_scene_surface_rust(output: &mut String, scene_surface: &Value) -> Re
             "participation",
             string(&field["scope"], "participation", "scene field scope")?,
         );
-        for name in ["formats", "options", "states"] {
+        for name in ["formats", "options"] {
             rust_string_values(output, name, &field["scope"][name], "scene field scope")?;
         }
         generate_scene_field_fallback(output, "missing", &field["missing"])?;
         generate_scene_field_fallback(output, "invalid", &field["invalid"])?;
-        output.push_str("        value_rules: &[\n");
-        for rule in field["valueRules"]
-            .as_array()
-            .ok_or_else(|| "scene field valueRules must be an array".to_owned())?
-        {
-            output.push_str("            SceneFieldValueRule {\n");
-            generate_optional_rust_string(output, "code", &rule["code"], 16)?;
-            generate_optional_rust_string(output, "recovery", &rule["recovery"], 16)?;
-            rust_json_field(output, "value_json", &rule["value"], 16)?;
-            rust_json_field(output, "format_rules_json", &rule["formatRules"], 16)?;
-            rust_field_indented(
-                output,
-                "when",
-                string(rule, "when", "scene field value rule")?,
-                16,
-            );
-            output.push_str("            },\n");
-        }
-        output.push_str("        ],\n");
         output.push_str(&format!("        ordinal: {ordinal},\n"));
         output.push_str("    },\n");
     }
@@ -1335,8 +1329,6 @@ fn generate_scene_field_fallback(
         &fallback["effects"],
         "scene field fallback effects",
     )?;
-    rust_json_field(output, "value_json", &fallback["value"], 12)?;
-    rust_json_field(output, "format_rules_json", &fallback["formatRules"], 12)?;
     output.push_str("            format_recoveries: [");
     for format in ["svg", "png", "pdf"] {
         match fallback["formatRules"][format]["recovery"].as_str() {
@@ -1345,12 +1337,6 @@ fn generate_scene_field_fallback(
         }
     }
     output.push_str("],\n");
-    rust_field_indented(
-        output,
-        "when",
-        string(fallback, "when", "scene field fallback")?,
-        12,
-    );
     output.push_str("        },\n");
     Ok(())
 }
@@ -1367,18 +1353,6 @@ fn generate_optional_rust_string(
         None if value.is_null() => output.push_str("None,\n"),
         None => return Err(format!("scene policy {name} must be string or null")),
     }
-    Ok(())
-}
-
-fn rust_json_field(
-    output: &mut String,
-    name: &str,
-    value: &Value,
-    indent: usize,
-) -> Result<(), String> {
-    let value = serde_json::to_string(value)
-        .map_err(|error| format!("failed to serialize scene policy {name}: {error}"))?;
-    rust_field_indented(output, name, &value, indent);
     Ok(())
 }
 

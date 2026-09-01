@@ -24,20 +24,7 @@ pub(crate) struct SceneFieldFallback {
     pub(crate) effects: &'static [&'static str],
     pub(crate) recovery: Option<&'static str>,
     pub(crate) recipe: Option<&'static str>,
-    pub(crate) value_json: &'static str,
-    pub(crate) format_rules_json: &'static str,
     pub(crate) format_recoveries: [Option<&'static str>; 3],
-    pub(crate) when: &'static str,
-}
-
-#[derive(Clone, Copy, Debug)]
-#[allow(dead_code)]
-pub(crate) struct SceneFieldValueRule {
-    pub(crate) code: Option<&'static str>,
-    pub(crate) recovery: Option<&'static str>,
-    pub(crate) value_json: &'static str,
-    pub(crate) format_rules_json: &'static str,
-    pub(crate) when: &'static str,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -52,10 +39,8 @@ pub(crate) struct SceneFieldPolicy {
     pub(crate) participation: &'static str,
     pub(crate) formats: &'static [&'static str],
     pub(crate) options: &'static [&'static str],
-    pub(crate) states: &'static [&'static str],
     pub(crate) missing: SceneFieldFallback,
     pub(crate) invalid: SceneFieldFallback,
-    pub(crate) value_rules: &'static [SceneFieldValueRule],
     pub(crate) ordinal: usize,
 }
 
