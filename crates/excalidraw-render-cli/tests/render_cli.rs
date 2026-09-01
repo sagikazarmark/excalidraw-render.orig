@@ -686,6 +686,132 @@ fn preserves_embedded_images_across_cli_formats() {
 }
 
 #[test]
+fn frames_list_reports_the_selection_without_rendering_anything() {
+    let temp = temp_directory_named("frames-list");
+    let input = temp.join("scene.excalidraw");
+    let output = temp.join("frames");
+    fs::write(
+        &input,
+        br##"{
+            "type":"excalidraw","version":2,
+            "elements":[
+                {"id":"one","type":"frame","name":"Road Map","x":0,"y":0,"width":40,"height":30,"updated":1},
+                {"id":"two","type":"frame","name":"Road Map","x":50,"y":0,"width":40,"height":30,"updated":1},
+                {"id":"three","type":"magicframe","name":null,"x":100,"y":0,"width":40,"height":30,"updated":1}
+            ],
+            "appState":{},"files":{}
+        }"##,
+    )
+    .expect("write frame scene");
+
+    // Neither --output nor --format is required, and nothing is written.
+    let human = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .arg("--list")
+        .output()
+        .expect("run frame listing");
+    assert!(human.status.success());
+    assert!(human.stdout.is_empty());
+    assert_eq!(
+        String::from_utf8_lossy(&human.stderr),
+        "1\tframe\tRoad Map\tRoad-Map\n2\tframe\tRoad Map\tRoad-Map-2\n3\tmagicframe\t\tframe-3\n"
+    );
+    assert!(!output.exists());
+
+    // With a format, the derived basenames carry the extension the export would
+    // have used, and the ordinals, kinds, and names match the export order.
+    let json = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .args(["--list", "--format", "svg", "--report-format", "json"])
+        .output()
+        .expect("run frame listing");
+    assert!(json.status.success());
+    let report: serde_json::Value =
+        serde_json::from_slice(&json.stderr).expect("frame list JSON report");
+    assert_eq!(report["schema_version"], 1);
+    assert_eq!(report["status"], "success");
+    assert_eq!(report["mode"], "list");
+    assert_eq!(report["compatibility_revision"], 1);
+    assert_eq!(
+        report["reference_profile_digest"],
+        Renderer::frame_profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("frame profile")
+            .profile_digest()
+    );
+    assert_eq!(report["frames"].as_array().map(Vec::len), Some(3));
+    assert_eq!(report["frames"][0]["ordinal"], 1);
+    assert_eq!(report["frames"][0]["kind"], "frame");
+    assert_eq!(report["frames"][0]["name"], "Road Map");
+    assert_eq!(report["frames"][0]["output_basename"], "Road-Map.svg");
+    assert_eq!(report["frames"][2]["kind"], "magicframe");
+    assert_eq!(report["frames"][2]["name"], serde_json::Value::Null);
+    assert_eq!(report["frames"][2]["output_basename"], "frame-3.svg");
+    assert!(!output.exists());
+
+    // --name-regex and --max-frames apply exactly as they do to an export.
+    let filtered = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .args(["--list", "--name-regex", "^Road"])
+        .output()
+        .expect("run filtered frame listing");
+    assert!(filtered.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&filtered.stderr),
+        "1\tframe\tRoad Map\tRoad-Map\n2\tframe\tRoad Map\tRoad-Map-2\n"
+    );
+
+    let capped = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .args(["--list", "--max-frames", "2"])
+        .output()
+        .expect("run capped frame listing");
+    assert_eq!(capped.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&capped.stderr).contains("cli.frame-limit-exceeded"));
+
+    // An empty selection is a valid answer to a listing, unlike to an export.
+    let empty = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .args([
+            "--list",
+            "--name-regex",
+            "^Missing$",
+            "--report-format",
+            "json",
+        ])
+        .output()
+        .expect("run empty frame listing");
+    assert!(empty.status.success());
+    let empty_report: serde_json::Value =
+        serde_json::from_slice(&empty.stderr).expect("empty frame list JSON report");
+    assert_eq!(empty_report["frames"].as_array().map(Vec::len), Some(0));
+
+    let suppressed = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .args(["--list", "--report-format", "none"])
+        .output()
+        .expect("run suppressed frame listing");
+    assert_eq!(suppressed.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&suppressed.stderr).contains("cli.invalid-arguments"));
+
+    // Outside --list, both --output and --format remain required.
+    let missing = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+        .arg("frames")
+        .arg(&input)
+        .args(["--format", "svg"])
+        .output()
+        .expect("run frame export without an output");
+    assert_eq!(missing.status.code(), Some(2));
+
+    fs::remove_dir_all(temp).expect("remove test temp directory");
+}
+
+#[test]
 fn frames_command_filters_names_and_writes_one_deterministically_named_artifact_per_frame() {
     let temp = temp_directory_named("frames-command");
     let input = temp.join("scene.excalidraw");

@@ -27,6 +27,7 @@ CLI is a thin adapter over the public library facade.
 ```text
 excalidraw-render [OPTIONS] <INPUT> --output <OUTPUT>
 excalidraw-render frames [OPTIONS] <INPUT> --output <DIRECTORY> --format <svg|png|pdf>
+excalidraw-render frames [OPTIONS] <INPUT> --list
 ```
 
 For scene export, `INPUT` and `OUTPUT` may be `-` for standard input and artifact
@@ -45,11 +46,16 @@ deterministically. `--name-regex` filters nonempty source frame names. Batch
 publication is stage-all by default; `--allow-partial` publishes independent
 successes while retaining a nonzero exit status for any failed frame.
 
+`--list` is a dry run: it reports the ordinal, kind, name, and derived basename
+of every frame the same selection would export, and writes nothing. `--output`
+and `--format` are required only outside `--list`.
+
 ```sh
 target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.svg
 target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.png --scale 2
 target/release/excalidraw-render crates/excalidraw-render-cli/tests/fixtures/basic-shapes.excalidraw -o basic.pdf
 target/release/excalidraw-render frames drawing.excalidraw -o frames --format png --name-regex 'Slide'
+target/release/excalidraw-render frames drawing.excalidraw --list --report-format json
 ```
 
 ## Reference renderer

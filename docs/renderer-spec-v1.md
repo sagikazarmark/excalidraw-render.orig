@@ -419,6 +419,7 @@ The frame export command is:
 
 ```text
 excalidraw-render frames [OPTIONS] <INPUT> --output <DIRECTORY> --format <svg|png|pdf>
+excalidraw-render frames [OPTIONS] <INPUT> --list
 ```
 
 Frame artifact output is always a directory and cannot be `-`; input may still
@@ -427,7 +428,24 @@ file with that basename remains addressable as `./frames` or after `--`. The
 frame command reuses applicable background, sizing, color, metadata, asset, PDF,
 report, revision, and force controls. It does not accept padding or whole-scene
 frame controls. Its additional controls are one `--name-regex <REGEX>`, positive
-`--max-frames <N>` up to 16384 with default 256, and `--allow-partial`.
+`--max-frames <N>` up to 16384 with default 256, `--allow-partial`, and
+`--list`.
+
+`--list` is a dry run. `--output` and `--format` are required unless `--list` is
+present. It applies the same selection an export would apply — name filter,
+selected-frame cap, source ordering, and derived basenames — then reports
+ordinal, kind, source name, and derived output basename without rendering,
+reading supplemental assets, creating the output directory, or writing any
+artifact. With `--format` the basename carries its extension; without it, the
+basename is reported as a stem. An empty selection is a valid answer and exits
+`0`, unlike an export, which fails `cli.frame-no-match`. Exceeding
+`--max-frames` still fails `cli.frame-limit-exceeded`. `--list` does not accept
+`--report-format none`. The listing is delivered on the report channel: human
+mode emits one tab-separated line per frame; JSON mode emits one schema-1
+document whose top-level member order is `schema_version`, `status`,
+`renderer_version`, `compatibility_revision`, `excalidraw_release`,
+`reference_profile_digest`, `mode`, `frames`, with `mode` fixed to `list` and
+each entry ordered `ordinal`, `kind`, `name`, `output_basename`.
 
 The optional name regex uses Unicode-aware linear-time Rust regex search,
 case-sensitive by default. It is applied only to nonempty source string names.
