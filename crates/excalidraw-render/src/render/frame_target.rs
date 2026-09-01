@@ -225,3 +225,76 @@ pub(super) fn resolve_frame_opacity(
         })
         .map_or(1.0, |frame| frame.opacity)
 }
+
+/// The frame-scoped view of a normalized scene: which source records take part
+/// in one frame target, and which file records the survivors still reference.
+///
+/// Both the batch path (which clones a shared normalization per target) and the
+/// standalone path (which filters its own normalization in place) select the
+/// same records; only their allocation and failure strategies differ, so the
+/// decision lives here and the application stays with each caller.
+pub(super) struct FrameSelection {
+    pub(super) viewport: FrameViewport,
+    pub(super) participating: Vec<usize>,
+    target_id: String,
+}
+
+impl FrameSelection {
+    /// Returns `None` when the target frame is absent from the normalized
+    /// elements. That is a contradiction for a discovered frame, but what it
+    /// means to the caller differs: the standalone path fails the render, while
+    /// the batch path falls back to the unfiltered scene.
+    pub(super) fn compute(
+        elements: &[NormalizedElement],
+        relationships: &crate::relationships::ResolvedRelationshipGraph,
+        target: FrameTarget,
+    ) -> Result<Option<Self>, std::collections::TryReserveError> {
+        let Some(viewport) = frame_target_viewport(elements, target) else {
+            return Ok(None);
+        };
+        let participating = frame_participating_sources(elements, relationships, target, viewport)?;
+        let target_id = elements
+            .iter()
+            .find(|element| element.source.source_index() == target.source_index)
+            .map_or(Ok(String::new()), |element| {
+                super::try_owned(element.source.id())
+            })?;
+        Ok(Some(Self {
+            viewport,
+            participating,
+            target_id,
+        }))
+    }
+
+    pub(super) fn retains_element(&self, element: &NormalizedElement) -> bool {
+        self.participating
+            .binary_search(&element.source.source_index())
+            .is_ok()
+    }
+
+    pub(super) fn retains_fallback(
+        &self,
+        fallback: &crate::scene_surface::SurfaceFallback,
+    ) -> bool {
+        self.participating
+            .binary_search(&fallback.source_index)
+            .is_ok()
+            || fallback_participates_in_frame(fallback, &self.target_id, self.viewport)
+    }
+}
+
+/// File-record keys referenced by the retained elements, sorted and
+/// deduplicated so both the file retention and the diagnostic scope can use a
+/// binary search.
+pub(super) fn selected_file_ids(elements: &[NormalizedElement]) -> Vec<String> {
+    let mut selected = elements
+        .iter()
+        .filter_map(|element| match &element.kind {
+            NormalizedElementKind::Image(image) => image.file_id.clone(),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    selected.sort_unstable();
+    selected.dedup();
+    selected
+}

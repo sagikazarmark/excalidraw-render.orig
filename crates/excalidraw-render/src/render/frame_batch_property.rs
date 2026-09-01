@@ -120,6 +120,14 @@ fn assert_batch_matches_standalone(
                     cold.code(),
                     "{id} frame {ordinal} {format:?} failure code diverges"
                 );
+                // The record a crossing lands on is contract-visible, so the
+                // first crossing must be identical and not merely the same
+                // code: a charge that moves earlier or later would change it.
+                assert_eq!(
+                    (batch.element_id(), batch.json_pointer()),
+                    (cold.element_id(), cold.json_pointer()),
+                    "{id} frame {ordinal} {format:?} first crossing location diverges"
+                );
                 assert_eq!(
                     batch.report(),
                     cold.report(),

@@ -340,33 +340,21 @@ impl PreparedFrameRender {
         &self,
         target: FrameTarget,
     ) -> Result<crate::normalization::NormalizationOutcome, std::collections::TryReserveError> {
-        let Some(viewport) = frame_target_viewport(&self.normalization.elements, target) else {
-            return Ok(self.normalization.clone());
-        };
-        let participating = frame_participating_sources(
+        let Some(selection) = FrameSelection::compute(
             &self.normalization.elements,
             &self.relationships.graph,
             target,
-            viewport,
-        )?;
-        let target_id = self
-            .normalization
-            .elements
-            .iter()
-            .find(|element| element.source.source_index() == target.source_index)
-            .map(|element| element.source.id())
-            .unwrap_or_default();
+        )?
+        else {
+            return Ok(self.normalization.clone());
+        };
         let mut elements = Vec::new();
-        elements.try_reserve_exact(participating.len())?;
+        elements.try_reserve_exact(selection.participating.len())?;
         elements.extend(
             self.normalization
                 .elements
                 .iter()
-                .filter(|element| {
-                    participating
-                        .binary_search(&element.source.source_index())
-                        .is_ok()
-                })
+                .filter(|element| selection.retains_element(element))
                 .cloned(),
         );
         let mut fallbacks = Vec::new();
@@ -375,26 +363,17 @@ impl PreparedFrameRender {
             self.normalization
                 .fallbacks
                 .iter()
-                .filter(|fallback| {
-                    participating.binary_search(&fallback.source_index).is_ok()
-                        || fallback_participates_in_frame(fallback, target_id, viewport)
-                })
+                .filter(|fallback| selection.retains_fallback(fallback))
                 .cloned(),
         );
+        let file_ids = selected_file_ids(&elements);
         let mut files = Vec::new();
         files.try_reserve_exact(self.normalization.files.len())?;
         files.extend(
             self.normalization
                 .files
                 .iter()
-                .filter(|file| {
-                    elements.iter().any(|element| match &element.kind {
-                        NormalizedElementKind::Image(image) => {
-                            image.file_id.as_deref() == Some(file.key.as_str())
-                        }
-                        _ => false,
-                    })
-                })
+                .filter(|file| file_ids.binary_search(&file.key).is_ok())
                 .cloned(),
         );
         Ok(crate::normalization::NormalizationOutcome {
@@ -1278,6 +1257,12 @@ impl RenderSession {
     ) -> Result<ResolvedScene, RenderError> {
         let relationship_storage;
         let (mut normalization, relationships) = if let Some(prepared) = prepared {
+            // The journal is replayed event by event rather than collapsed into
+            // one aggregate charge. Lump-sum charging was measured against
+            // `frame_batch_property`: artifact bytes and reports survive it,
+            // but the canonical resource trace does not, and the revision-1
+            // contract requires the trace to be exact across the cold,
+            // warm, request-cache, and frame-batch-cache paths alike.
             for event in &prepared.normalization_events {
                 event.replay(self, request)?;
             }
@@ -1358,7 +1343,16 @@ impl RenderSession {
         let (frame_viewport, frame_participating_sources, selected_file_ids) = match self.target {
             RenderTarget::Scene => (None, None, None),
             RenderTarget::Frame(target) => {
-                let Some(viewport) = frame_target_viewport(&normalization.elements, target) else {
+                let selection =
+                    FrameSelection::compute(&normalization.elements, &relationships.graph, target)
+                        .map_err(|_| {
+                            self.memory_failure(
+                                request,
+                                "frame_selection",
+                                "participating_elements",
+                            )
+                        })?;
+                let Some(selection) = selection else {
                     self.flush_frame_normalization_diagnostics(
                         request,
                         &[target.source_index],
@@ -1372,31 +1366,13 @@ impl RenderSession {
                         "/elements",
                     ));
                 };
-                let target_id = normalization
+                normalization
                     .elements
-                    .iter()
-                    .find(|element| element.source.source_index() == target.source_index)
-                    .map(|element| element.source.id().to_owned())
-                    .unwrap_or_default();
-                let participating = frame_participating_sources(
-                    &normalization.elements,
-                    &relationships.graph,
-                    target,
-                    viewport,
-                )
-                .map_err(|_| {
-                    self.memory_failure(request, "frame_selection", "participating_elements")
-                })?;
-                normalization.elements.retain(|element| {
-                    participating
-                        .binary_search(&element.source.source_index())
-                        .is_ok()
-                });
-                normalization.fallbacks.retain(|fallback| {
-                    participating.binary_search(&fallback.source_index).is_ok()
-                        || fallback_participates_in_frame(fallback, &target_id, viewport)
-                });
-                let mut diagnostic_sources = participating.clone();
+                    .retain(|element| selection.retains_element(element));
+                normalization
+                    .fallbacks
+                    .retain(|fallback| selection.retains_fallback(fallback));
+                let mut diagnostic_sources = selection.participating.clone();
                 diagnostic_sources.extend(
                     normalization
                         .fallbacks
@@ -1405,27 +1381,23 @@ impl RenderSession {
                 );
                 diagnostic_sources.sort_unstable();
                 diagnostic_sources.dedup();
-                let mut selected_file_ids = normalization
-                    .elements
-                    .iter()
-                    .filter_map(|element| match &element.kind {
-                        NormalizedElementKind::Image(image) => image.file_id.clone(),
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>();
-                selected_file_ids.sort_unstable();
-                selected_file_ids.dedup();
+                let file_ids = selected_file_ids(&normalization.elements);
                 normalization
                     .files
-                    .retain(|record| selected_file_ids.binary_search(&record.key).is_ok());
+                    .retain(|record| file_ids.binary_search(&record.key).is_ok());
                 self.flush_frame_normalization_diagnostics(
                     request,
                     &diagnostic_sources,
-                    &selected_file_ids,
+                    &file_ids,
                 )?;
                 self.scope_frame_diagnostics(&diagnostic_sources);
                 self.diagnostic_attribution = DiagnosticAttribution::Target;
-                (Some(viewport), Some(participating), Some(selected_file_ids))
+                let FrameSelection {
+                    viewport,
+                    participating,
+                    ..
+                } = selection;
+                (Some(viewport), Some(participating), Some(file_ids))
             }
         };
         let asset_authorities =

@@ -739,3 +739,185 @@ mod tests {
         assert_eq!(two_blocks.len(), 2 + 10 + 65_536 + 4);
     }
 }
+
+#[cfg(test)]
+mod agreement_tests {
+    use super::super::notices::MandatoryNotices;
+    use super::*;
+    use crate::{CompatibilityRevision, FrameKind, Renderer};
+
+    const SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"rect","type":"rectangle","x":0,"y":0,"width":40,"height":30,"updated":1}],"appState":{},"files":{}}"#;
+
+    /// The manifest length is estimated before the manifest is built, and the
+    /// estimate is charged against the resource ledger. If the two disagree the
+    /// ledger is wrong, so every selection and target shape is checked rather
+    /// than relying on the `debug_assertions`-only check inside `build`.
+    #[test]
+    fn manifest_length_estimate_matches_the_serialized_manifest() {
+        let (scene, profile, report) = fixture();
+        for notices in [None, Some(notices())] {
+            for selection in selections() {
+                for target in targets() {
+                    if !has_manifest(selection, notices.as_ref()) {
+                        continue;
+                    }
+                    let notice_json = notices.as_ref().map_or("[]", MandatoryNotices::as_json);
+                    let digest = match selection.embedded_scene {
+                        true => {
+                            let canonical = scene
+                                .canonicalized_original_bytes()
+                                .unwrap_or_else(|_| panic!("canonical scene is representable"));
+                            Some(
+                                sha256_string(&canonical)
+                                    .unwrap_or_else(|_| panic!("scene digest is representable")),
+                            )
+                        }
+                        false => None,
+                    };
+                    let manifest = manifest_json(
+                        &profile,
+                        &report,
+                        notice_json,
+                        digest.as_deref(),
+                        selection,
+                        target,
+                    )
+                    .unwrap_or_else(|_| panic!("manifest serializes"));
+                    let estimated = manifest_json_len(
+                        &profile,
+                        &report,
+                        notice_json,
+                        selection.embedded_scene,
+                        selection,
+                        target,
+                    );
+                    assert_eq!(
+                        estimated,
+                        manifest.len() as u64,
+                        "{} {} manifest length estimate diverges",
+                        selection_label(selection),
+                        target_label(target)
+                    );
+                }
+            }
+        }
+    }
+
+    /// `estimate` is the charge the ledger commits before generation; `build`
+    /// is what generation actually consumes. Release builds skip the
+    /// `debug_assert_eq!` inside `build`, so the agreement is asserted here too.
+    #[test]
+    fn metadata_estimate_matches_the_built_metadata() {
+        let (scene, profile, report) = fixture();
+        for notices in [None, Some(notices())] {
+            for selection in selections() {
+                for target in targets() {
+                    let built = ArtifactMetadata::build(
+                        &scene,
+                        &profile,
+                        &report,
+                        notices.as_ref(),
+                        selection,
+                        target,
+                    )
+                    .unwrap_or_else(|_| panic!("metadata builds"));
+                    assert_eq!(
+                        ArtifactMetadata::estimate(
+                            &scene,
+                            &profile,
+                            &report,
+                            notices.as_ref(),
+                            selection,
+                            target,
+                        ),
+                        MetadataEstimate {
+                            scratch_bytes: built.scratch_bytes(),
+                            generation_work: built.generation_work(),
+                        },
+                        "{} {} metadata estimate diverges",
+                        selection_label(selection),
+                        target_label(target)
+                    );
+                }
+            }
+        }
+    }
+
+    fn fixture() -> (
+        SceneDocument,
+        &'static ReferenceProfileIdentity,
+        CompatibilityReport,
+    ) {
+        let scene = SceneDocument::parse(SCENE).expect("metadata fixture scene is admitted");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+        let request = RenderRequest::builder(crate::OutputFormat::Svg)
+            .build()
+            .expect("metadata fixture request is valid");
+        let report = Renderer::new()
+            .render(&scene, &request)
+            .expect("metadata fixture renders")
+            .report()
+            .clone();
+        (scene, profile, report)
+    }
+
+    fn notices() -> MandatoryNotices {
+        MandatoryNotices::from_json(
+            "[{\"asset_identity\":\"fixture\",\"text\":\"notice\"}]".to_owned(),
+        )
+    }
+
+    fn selections() -> Vec<MetadataSelection> {
+        let mut selections = Vec::new();
+        for provenance in [false, true] {
+            for diagnostic_summary in [false, true] {
+                for embedded_scene in [false, true] {
+                    selections.push(MetadataSelection {
+                        provenance,
+                        diagnostic_summary,
+                        embedded_scene,
+                    });
+                }
+            }
+        }
+        selections
+    }
+
+    fn targets() -> Vec<ManifestTarget<'static>> {
+        vec![
+            ManifestTarget::Scene,
+            ManifestTarget::Frame {
+                ordinal: 1,
+                kind: FrameKind::Frame,
+                name: None,
+            },
+            ManifestTarget::Frame {
+                ordinal: 12,
+                kind: FrameKind::MagicFrame,
+                name: Some("Road \"map\"\n"),
+            },
+        ]
+    }
+
+    fn has_manifest(selection: MetadataSelection, notices: Option<&MandatoryNotices>) -> bool {
+        selection.provenance
+            || selection.diagnostic_summary
+            || selection.embedded_scene
+            || notices.is_some()
+    }
+
+    fn selection_label(selection: MetadataSelection) -> String {
+        format!(
+            "provenance={} diagnostics={} scene={}",
+            selection.provenance, selection.diagnostic_summary, selection.embedded_scene
+        )
+    }
+
+    fn target_label(target: ManifestTarget<'_>) -> &'static str {
+        match target {
+            ManifestTarget::Scene => "scene",
+            ManifestTarget::Frame { .. } => "frame",
+        }
+    }
+}

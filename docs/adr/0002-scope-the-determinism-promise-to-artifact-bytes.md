@@ -26,3 +26,14 @@ bytes, not trace bytes, are what the compatibility contract promises.
 
 For bisecting an aggregate mismatch, the qualification test gains a diagnostic
 mode that dumps per-cell trace digests.
+
+## Journal replay stays
+
+The frame batch path replays its normalization and relationship journal event by
+event instead of charging one lump sum. That was measured, not assumed: with
+lump-sum charging, `frame_batch_property` still agrees on artifact bytes,
+reports, and first-crossing locations, but the canonical resource trace
+diverges between the batch and standalone paths. Cross-target trace equality is
+the determinism property this ADR keeps, and the revision-1 contract requires
+the trace to be exact across the cold, warm, request-cache, and
+frame-batch-cache paths alike, so the replay stays.
