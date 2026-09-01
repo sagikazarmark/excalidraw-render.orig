@@ -9,6 +9,9 @@ self-contained pure-Rust renderer for scene and frame SVG, PNG, and vector-first
 with explicit compatibility diagnostics and no production browser or network
 dependency.
 
+The performance and canonical WASM footprint protocols are specified but not yet
+activated; they live in [docs/roadmap.md](docs/roadmap.md) and gate nothing today.
+
 ## Build
 
 ```sh
