@@ -22,6 +22,17 @@ the stage-A branch comments out the packaging steps so the target jobs reach the
 aggregate. The branch never merges; it only banks the proof, together with a
 scripted mechanical diff of the fork against upstream 8.0.4.
 
+Stage A was executed on branch `brotli-portable-float-stage-a`, which does not
+merge. On `x86_64-unknown-linux-gnu` the swap reproduces the fork's output byte
+for byte: `catalog verify` passes, all 971 per-cell `generatedWoff2Sha256` pins
+match unchanged, and both the `generatedBytesSha256` and `resourceTracesSha256`
+measurements are identical to the fork's. The four remaining targets need the
+CI aggregate; the branch records what is still unproven. The mechanical diff
+lives on `main` as `tools/brotli-fork-diff.sh`, and against released `8.0.4` it
+reports one substantive divergence — `src/enc/util.rs`, where `log2` and `powf`
+are replaced by software implementations so evaluation order cannot vary by
+platform. That is precisely what `portable-float` now provides.
+
 **Stage B.** Request an upstream rust-brotli release containing PR #259.
 
 **Stage C (on release).** Pin `=8.0.x`, delete `crates/brotli-deterministic`,
