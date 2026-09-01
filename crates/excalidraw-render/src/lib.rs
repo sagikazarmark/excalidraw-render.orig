@@ -1,22 +1,18 @@
 //! Pure-Rust rendering of Excalidraw scene documents.
 //!
+//! Scene and frame exports to SVG, PNG, and vector-first PDF are produced
+//! against a compatibility revision: an immutable static-export promise
+//! covering artifact bytes, compatibility diagnostics, and failure behavior.
 //! The compatibility-revision public API is being implemented incrementally.
-//! The current proof-of-concept CLI behavior is not that compatibility contract.
 
-#[cfg(not(target_arch = "wasm32"))]
-mod backends;
 mod catalog;
 mod color;
 mod compatibility;
 mod frame;
-#[cfg(not(target_arch = "wasm32"))]
-mod model;
 mod normalization;
 mod outcome;
 mod relationships;
 mod render;
-#[cfg(not(target_arch = "wasm32"))]
-mod render_svg;
 mod request;
 mod resource_accounting;
 mod resource_limits;
@@ -76,28 +72,4 @@ pub mod wasm_tests {
 /// Returns the complete package-wide license and attribution bundle.
 pub const fn license_bundle() -> &'static str {
     include_str!("../LICENSE-BUNDLE.txt")
-}
-
-/// Temporary integration seam for the proof-of-concept CLI.
-///
-/// This module is deliberately hidden from generated documentation. It will be
-/// removed as the compatibility-revision public facade replaces the MVP.
-#[doc(hidden)]
-#[cfg(not(target_arch = "wasm32"))]
-pub mod __mvp {
-    pub use crate::backends::OutputFormat;
-    pub use crate::model::ExcalidrawFile as SceneDocument;
-
-    use anyhow::Result;
-
-    /// Renders the MVP document model to one complete artifact.
-    pub fn render(
-        document: &SceneDocument,
-        format: OutputFormat,
-        scale: f32,
-        padding: f64,
-    ) -> Result<Vec<u8>> {
-        let svg = crate::render_svg::render(document, padding)?;
-        crate::backends::encode(format, &svg, scale)
-    }
 }

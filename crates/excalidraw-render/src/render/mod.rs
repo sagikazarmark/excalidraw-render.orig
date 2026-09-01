@@ -10207,10 +10207,10 @@ mod tests {
             .remove("approval")
             .expect("PDF expectation manifest is approved");
         assert_eq!(approval["approved_by"], "sagikazarmark");
-        assert_eq!(approval["approved_at"], "2026-08-01");
+        assert_eq!(approval["approved_at"], "2026-09-01");
         assert_eq!(
             approval["approval_url"],
-            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5154056352"
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5492588875"
         );
         let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
         canonical.push(b'\n');
