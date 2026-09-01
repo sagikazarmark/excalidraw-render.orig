@@ -18,7 +18,7 @@ use unicode_normalization::UnicodeNormalization;
 
 mod frames;
 
-use frames::*;
+use frames::{run_frames, FramesCli};
 
 const EXIT_OPERATIONAL: u8 = 1;
 const EXIT_USAGE: u8 = 2;

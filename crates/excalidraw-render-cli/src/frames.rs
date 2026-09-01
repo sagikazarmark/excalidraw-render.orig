@@ -104,7 +104,7 @@ impl FramesCli {
     }
 }
 
-pub(crate) struct FrameCliEntry {
+struct FrameCliEntry {
     ordinal: u32,
     kind: &'static str,
     name: Option<String>,
@@ -115,13 +115,13 @@ pub(crate) struct FrameCliEntry {
     delivery_state: DeliveryState,
 }
 
-pub(crate) struct PreparedFrameBatch {
+struct PreparedFrameBatch {
     entries: Vec<(FrameCliEntry, Option<StagedFile>)>,
     global_diagnostics: Vec<CompatibilityDiagnostic>,
     had_failure: bool,
 }
 
-pub(crate) struct FrameListEntry {
+struct FrameListEntry {
     ordinal: u32,
     kind: &'static str,
     name: Option<String>,
@@ -154,7 +154,7 @@ pub(crate) fn run_frames(frames: FramesCli) -> u8 {
 /// and reports it, but reads nothing beyond the scene, writes no artifact, and
 /// creates no output directory. An empty selection is a legitimate answer here,
 /// so unlike the export it succeeds instead of failing `cli.frame-no-match`.
-pub(crate) fn run_frames_list(frames: &FramesCli) -> u8 {
+fn run_frames_list(frames: &FramesCli) -> u8 {
     let cli = frames.report_cli();
     let mut identity = None;
     match prepare_frame_list(frames, &mut identity) {
@@ -216,7 +216,7 @@ fn prepare_frame_list(
         .collect())
 }
 
-pub(crate) fn deliver_frame_list(
+fn deliver_frame_list(
     cli: &Cli,
     identity: Option<&SelectedIdentity>,
     entries: &[FrameListEntry],
@@ -243,7 +243,7 @@ pub(crate) fn deliver_frame_list(
     deliver_report_bytes(cli, &bytes, DeliveryState::None)
 }
 
-pub(crate) fn frame_list_json_line(
+fn frame_list_json_line(
     identity: Option<&SelectedIdentity>,
     entries: &[FrameListEntry],
 ) -> Vec<u8> {
@@ -391,7 +391,7 @@ fn frame_revision(frames: &FramesCli) -> Result<CompatibilityRevision, Failure> 
     }
 }
 
-pub(crate) fn select_frames<'scene>(
+fn select_frames<'scene>(
     scene: &'scene SceneDocument,
     regex: Option<&Regex>,
 ) -> Vec<excalidraw_render::FrameRef<'scene>> {
@@ -407,7 +407,7 @@ pub(crate) fn select_frames<'scene>(
         .collect()
 }
 
-pub(crate) fn frame_limit_exceeded(frames: &FramesCli) -> Failure {
+fn frame_limit_exceeded(frames: &FramesCli) -> Failure {
     Failure::cli(
         "cli.frame-limit-exceeded",
         "selected frame count exceeds --max-frames",
@@ -419,7 +419,7 @@ pub(crate) fn frame_limit_exceeded(frames: &FramesCli) -> Failure {
     )
 }
 
-pub(crate) fn prepare_and_render_frames(
+fn prepare_and_render_frames(
     frames: &FramesCli,
     identity: &mut Option<SelectedIdentity>,
 ) -> Result<PreparedFrameBatch, Failure> {
@@ -641,7 +641,7 @@ pub(crate) fn prepare_and_render_frames(
     })
 }
 
-pub(crate) fn destination_exists(destination: &Path) -> Failure {
+fn destination_exists(destination: &Path) -> Failure {
     Failure::cli(
         "cli.destination-exists",
         "output destination already exists",
@@ -655,7 +655,7 @@ pub(crate) fn destination_exists(destination: &Path) -> Failure {
     )
 }
 
-pub(crate) fn frame_destination_error(destination: &Path) -> ReportError {
+fn frame_destination_error(destination: &Path) -> ReportError {
     frame_cli_error(
         "cli.destination-exists",
         "output destination already exists",
@@ -668,7 +668,7 @@ pub(crate) fn frame_destination_error(destination: &Path) -> ReportError {
     )
 }
 
-pub(crate) fn build_frame_request(
+fn build_frame_request(
     frames: &FramesCli,
     format: OutputFormat,
     assets: SupplementalAssets,
@@ -703,7 +703,7 @@ pub(crate) fn build_frame_request(
         .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))
 }
 
-pub(crate) fn validate_frame_paths(
+fn validate_frame_paths(
     input: &str,
     outputs: &[PathBuf],
     report: &str,
@@ -738,7 +738,7 @@ pub(crate) fn validate_frame_paths(
 /// Derives the portable, collision-free basename for each selected frame.
 /// `format` is `None` only in `--list` mode without an explicit `--format`,
 /// where the stem is reported without an extension.
-pub(crate) fn frame_output_basenames(
+fn frame_output_basenames(
     frames: &[excalidraw_render::FrameRef<'_>],
     format: Option<OutputFormat>,
 ) -> Vec<String> {
@@ -787,7 +787,7 @@ pub(crate) fn frame_output_basenames(
     basenames
 }
 
-pub(crate) fn portable_frame_slug(name: &str) -> String {
+fn portable_frame_slug(name: &str) -> String {
     let mut slug = String::new();
     let mut separator = false;
     for character in name.chars() {
@@ -804,7 +804,7 @@ pub(crate) fn portable_frame_slug(name: &str) -> String {
     slug
 }
 
-pub(crate) fn truncate_basename(value: &str, max_bytes: usize) -> String {
+fn truncate_basename(value: &str, max_bytes: usize) -> String {
     let mut end = max_bytes.min(value.len());
     while !value.is_char_boundary(end) {
         end = end.saturating_sub(1);
@@ -812,7 +812,7 @@ pub(crate) fn truncate_basename(value: &str, max_bytes: usize) -> String {
     value[..end].to_owned()
 }
 
-pub(crate) fn is_reserved_device_name(value: &str) -> bool {
+fn is_reserved_device_name(value: &str) -> bool {
     let value = value.to_ascii_uppercase();
     matches!(value.as_str(), "CON" | "PRN" | "AUX" | "NUL")
         || value
@@ -823,7 +823,7 @@ pub(crate) fn is_reserved_device_name(value: &str) -> bool {
             })
 }
 
-pub(crate) fn frame_cli_error(
+fn frame_cli_error(
     code: &'static str,
     message: impl Into<String>,
     details: CliDetails,
@@ -840,7 +840,7 @@ pub(crate) fn frame_cli_error(
     })
 }
 
-pub(crate) fn deliver_frame_batch(
+fn deliver_frame_batch(
     cli: &Cli,
     identity: &SelectedIdentity,
     format: OutputFormat,
@@ -1011,7 +1011,7 @@ pub(crate) fn deliver_frame_batch(
     }
 }
 
-pub(crate) fn frame_batch_diagnostics(
+fn frame_batch_diagnostics(
     global: &[CompatibilityDiagnostic],
     entries: &[(FrameCliEntry, Option<StagedFile>)],
 ) -> Vec<CompatibilityDiagnostic> {
@@ -1026,7 +1026,7 @@ pub(crate) fn frame_batch_diagnostics(
         .collect()
 }
 
-pub(crate) fn frame_batch_delivery(
+fn frame_batch_delivery(
     entries: &[(FrameCliEntry, Option<StagedFile>)],
     had_failure: bool,
 ) -> (&'static str, DeliveryState) {
@@ -1056,7 +1056,7 @@ pub(crate) fn frame_batch_delivery(
     (status, artifact_state)
 }
 
-pub(crate) fn frame_batch_report_bytes(
+fn frame_batch_report_bytes(
     mode: ReportFormat,
     identity: &SelectedIdentity,
     format: OutputFormat,
@@ -1150,7 +1150,7 @@ pub(crate) fn frame_batch_report_bytes(
     }
 }
 
-pub(crate) fn frame_batch_error_line(entries: &[(FrameCliEntry, Option<StagedFile>)]) -> Vec<u8> {
+fn frame_batch_error_line(entries: &[(FrameCliEntry, Option<StagedFile>)]) -> Vec<u8> {
     entries
         .iter()
         .find_map(|(entry, _)| entry.error.as_ref())
@@ -1163,7 +1163,7 @@ pub(crate) fn frame_batch_error_line(entries: &[(FrameCliEntry, Option<StagedFil
         )
 }
 
-pub(crate) fn deliver_frame_report(
+fn deliver_frame_report(
     cli: &Cli,
     identity: &SelectedIdentity,
     format: OutputFormat,

@@ -94,7 +94,7 @@ pub(super) fn resolve_bound_text_placements(
     Ok(placements)
 }
 
-pub(super) fn bound_text_box(container: &NormalizedElement) -> Option<[f64; 4]> {
+fn bound_text_box(container: &NormalizedElement) -> Option<[f64; 4]> {
     const PADDING: f64 = 5.0;
     let (offset_x, offset_y, width, height) = match container.kind {
         NormalizedElementKind::Rectangle => (
@@ -133,7 +133,7 @@ pub(super) fn bound_text_box(container: &NormalizedElement) -> Option<[f64; 4]> 
         .then_some(values)
 }
 
-pub(super) fn linear_midpoint(
+fn linear_midpoint(
     source: &NormalizedElement,
     linear: &crate::normalization::NormalizedLinear,
     geometry: Option<&GeneratedGeometry>,
@@ -161,7 +161,7 @@ pub(super) fn linear_midpoint(
     ])
 }
 
-pub(super) fn rough_segment_midpoint(path: &rough::Path, target: [f64; 2]) -> Option<[f64; 2]> {
+fn rough_segment_midpoint(path: &rough::Path, target: [f64; 2]) -> Option<[f64; 2]> {
     let mut current = None;
     let mut closest = None;
     let mut closest_distance = f64::INFINITY;
@@ -213,7 +213,7 @@ pub(super) fn rough_segment_midpoint(path: &rough::Path, target: [f64; 2]) -> Op
     Some(cubic_point(start, control_1, control_2, end, t))
 }
 
-pub(super) fn cubic_point(
+fn cubic_point(
     start: rough::Point,
     control_1: rough::Point,
     control_2: rough::Point,

@@ -425,7 +425,7 @@ pub(super) fn rough_drawing(
     }
 }
 
-pub(super) fn elbow_drawing(
+fn elbow_drawing(
     points: &[rough::Point],
     seed: i32,
     roughness: f64,
@@ -501,7 +501,7 @@ pub(super) fn elbow_drawing(
     )
 }
 
-pub(super) fn add_arrowheads(
+fn add_arrowheads(
     drawing: &mut rough::Drawing,
     linear: &crate::normalization::NormalizedLinear,
     source: &NormalizedElement,
@@ -661,7 +661,7 @@ pub(super) fn add_arrowheads(
     Ok(())
 }
 
-pub(super) fn add_open_arrowhead(
+fn add_open_arrowhead(
     drawing: &mut rough::Drawing,
     source: &NormalizedElement,
     arrowhead: &str,
@@ -709,7 +709,7 @@ pub(super) fn add_open_arrowhead(
     Ok(())
 }
 
-pub(super) fn arrowhead_points(
+fn arrowhead_points(
     drawing: &rough::Drawing,
     linear: &crate::normalization::NormalizedLinear,
     start: bool,
@@ -834,7 +834,7 @@ pub(super) fn arrowhead_points(
     Some([tip.x, tip.y, first.x, first.y, second.x, second.y, 0.0, 0.0])
 }
 
-pub(super) fn translate_drawing(drawing: &mut rough::Drawing, x: f64, y: f64) {
+fn translate_drawing(drawing: &mut rough::Drawing, x: f64, y: f64) {
     fn translate(path: &mut rough::Path, x: f64, y: f64) {
         for operation in &mut path.operations {
             match operation {
@@ -861,7 +861,7 @@ pub(super) fn translate_drawing(drawing: &mut rough::Drawing, x: f64, y: f64) {
     }
 }
 
-pub(super) fn local_outline_bounds(
+fn local_outline_bounds(
     source: &NormalizedElement,
     drawing: Option<&rough::Drawing>,
 ) -> (f64, f64, f64, f64) {
@@ -905,10 +905,7 @@ pub(super) fn union_bounds(
     }
 }
 
-pub(super) fn corner_radius(
-    size: f64,
-    roundness: crate::normalization::NormalizedRoundness,
-) -> f64 {
+fn corner_radius(size: f64, roundness: crate::normalization::NormalizedRoundness) -> f64 {
     const PROPORTIONAL_RADIUS: f64 = 0.25;
     match roundness {
         crate::normalization::NormalizedRoundness::Proportional => size * PROPORTIONAL_RADIUS,

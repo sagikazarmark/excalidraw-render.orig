@@ -140,7 +140,7 @@ pub(super) fn asset_claim_location(
     }
 }
 
-pub(super) fn supplemental_source_order(
+fn supplemental_source_order(
     scene: &SceneDocument,
     supplemental: &crate::SupplementalAssets,
     file_id: &str,
@@ -1089,7 +1089,7 @@ pub(super) struct ResolvedImageInputs {
 }
 
 pub(super) struct ResolvedImage {
-    pub(super) source_order: u64,
+    source_order: u64,
     pub(super) source: NormalizedElementSource,
     pub(super) asset: std::sync::Arc<ResolvedImageAsset>,
     pub(super) frame_clips: Vec<ResolvedClip>,
@@ -1103,7 +1103,7 @@ pub(super) struct ResolvedImage {
 }
 
 pub(super) struct ResolvedImageFallback {
-    pub(super) source_order: u64,
+    source_order: u64,
     pub(super) source: NormalizedElementSource,
     pub(super) status: crate::normalization::NormalizedImageStatus,
     pub(super) frame_clips: Vec<ResolvedClip>,
@@ -1133,7 +1133,7 @@ pub(super) struct ResolvedTextElement {
     pub(super) opacity: f64,
     pub(super) render: bool,
     pub(super) base_element_work_units: u64,
-    pub(super) container_source_order: Option<u64>,
+    container_source_order: Option<u64>,
     pub(super) link: Option<String>,
     pub(super) width: f64,
     pub(super) height: f64,
@@ -1161,7 +1161,7 @@ pub(super) struct ResolvedOutline {
     pub(super) generated_label: Option<text::ResolvedText>,
     pub(super) generated_label_color: Option<CanonicalColor>,
     pub(super) generated_label_offset_y: f64,
-    pub(super) final_pass: bool,
+    final_pass: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -1173,7 +1173,7 @@ pub(super) struct ResolvedLabelMask {
 }
 
 pub(super) struct ResolvedFreedraw {
-    pub(super) source_order: u64,
+    source_order: u64,
     pub(super) source: NormalizedElementSource,
     pub(super) base_element_work_units: u64,
     pub(super) path: freedraw::Path,
@@ -1239,7 +1239,7 @@ pub(super) struct FallbackColors {
     pub(super) label: CanonicalColor,
 }
 
-pub(super) fn embeddable_font_size(width: f64, label: &str) -> f64 {
+fn embeddable_font_size(width: f64, label: &str) -> f64 {
     let utf16_length = label.encode_utf16().count().max(1) as f64;
     let raw = (width / 2.0).min(width / utf16_length).max(width / 30.0);
     if raw == 0.0 {
@@ -1272,13 +1272,13 @@ pub(super) struct ResolvedFallback {
     pub(super) render: bool,
 }
 
-pub(super) struct FallbackFrameClipSource {
-    pub(super) id: String,
-    pub(super) x: f64,
-    pub(super) y: f64,
-    pub(super) width: f64,
-    pub(super) height: f64,
-    pub(super) angle: f64,
+struct FallbackFrameClipSource {
+    id: String,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    angle: f64,
 }
 
 pub(super) struct SemanticFrameSource {

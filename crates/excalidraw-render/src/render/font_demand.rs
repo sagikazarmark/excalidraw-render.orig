@@ -129,7 +129,7 @@ pub(super) fn svg_font_demand_estimates(
     Ok(estimates)
 }
 
-pub(super) fn visit_svg_font_text(
+fn visit_svg_font_text(
     scene: &ResolvedScene,
     text_order: &[&ResolvedTextElement],
     mut visit: impl FnMut(&'static str, &str) -> Result<(), FormatEncodeError>,
@@ -205,7 +205,7 @@ pub(super) fn release_svg_font_encoding_records(
     Ok(())
 }
 
-pub(super) fn add_svg_font_text(
+fn add_svg_font_text(
     families: &mut Vec<svg_fonts::FamilyDemand>,
     family: &'static str,
     text: &str,

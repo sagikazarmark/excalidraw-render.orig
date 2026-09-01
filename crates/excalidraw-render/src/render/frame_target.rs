@@ -25,7 +25,7 @@ pub(super) struct EffectiveFrameRendering {
     pub(super) emit_frame_elements: bool,
 }
 
-pub(super) fn frame_target_viewport(
+fn frame_target_viewport(
     elements: &[NormalizedElement],
     target: FrameTarget,
 ) -> Option<FrameViewport> {
@@ -102,7 +102,7 @@ pub(super) fn frame_participating_sources(
     Ok(selected)
 }
 
-pub(super) fn normalized_element_aabb(source: &NormalizedElement) -> (f64, f64, f64, f64) {
+fn normalized_element_aabb(source: &NormalizedElement) -> (f64, f64, f64, f64) {
     let (local_min_x, local_min_y, local_max_x, local_max_y) = source_layout_bounds(source);
     let center_x = source.x + (local_min_x + local_max_x) / 2.0;
     let center_y = source.y + (local_min_y + local_max_y) / 2.0;
@@ -130,7 +130,7 @@ pub(super) fn normalized_element_aabb(source: &NormalizedElement) -> (f64, f64, 
     (min_x, min_y, max_x, max_y)
 }
 
-pub(super) fn fallback_participates_in_frame(
+fn fallback_participates_in_frame(
     fallback: &crate::scene_surface::SurfaceFallback,
     target_id: &str,
     viewport: FrameViewport,
