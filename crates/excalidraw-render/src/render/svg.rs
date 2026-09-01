@@ -64,6 +64,31 @@ impl SvgSink for CountingWriter {
     }
 }
 
+/// A transform in the units SVG emits: degrees of rotation, logical pixels for
+/// translation and centre. `ResolvedTransform` carries radians, so the
+/// conversion happens once here rather than at each element variant — the same
+/// coordinate-space boundary `PngTransform` marks for device pixels.
+#[derive(Clone, Copy)]
+struct SvgTransform {
+    translation_x: f64,
+    translation_y: f64,
+    rotation_degrees: f64,
+    center_x: f64,
+    center_y: f64,
+}
+
+impl SvgTransform {
+    fn new(transform: &super::ResolvedTransform) -> Self {
+        Self {
+            translation_x: transform.translation_x,
+            translation_y: transform.translation_y,
+            rotation_degrees: 180.0 * transform.angle_radians / std::f64::consts::PI,
+            center_x: transform.center_x,
+            center_y: transform.center_y,
+        }
+    }
+}
+
 pub(super) struct SvgPlan {
     logical_width: f64,
     logical_height: f64,
@@ -82,11 +107,7 @@ enum SvgElement {
         source: NormalizedElementSource,
         drawing: Drawing,
         frame_clips: Vec<super::ResolvedClip>,
-        translation_x: f64,
-        translation_y: f64,
-        rotation_degrees: f64,
-        center_x: f64,
-        center_y: f64,
+        transform: SvgTransform,
         stroke_color: CanonicalColor,
         fill_color: Option<CanonicalColor>,
         stroke_width: f64,
@@ -107,11 +128,7 @@ enum SvgElement {
         path_data: String,
         background_fill: Option<super::rough::Fill>,
         frame_clips: Vec<super::ResolvedClip>,
-        translation_x: f64,
-        translation_y: f64,
-        rotation_degrees: f64,
-        center_x: f64,
-        center_y: f64,
+        transform: SvgTransform,
         color: CanonicalColor,
         background_color: Option<CanonicalColor>,
         source_stroke_width: f64,
@@ -126,11 +143,7 @@ enum SvgElement {
         magic: bool,
         outline_path: Option<Path>,
         frame_clips: Vec<super::ResolvedClip>,
-        translation_x: f64,
-        translation_y: f64,
-        rotation_degrees: f64,
-        center_x: f64,
-        center_y: f64,
+        transform: SvgTransform,
         opacity: f64,
         link: Option<String>,
         width: f64,
@@ -167,11 +180,7 @@ enum SvgElement {
         frame_clips: Vec<super::ResolvedClip>,
         width: f64,
         height: f64,
-        translation_x: f64,
-        translation_y: f64,
-        rotation_degrees: f64,
-        center_x: f64,
-        center_y: f64,
+        transform: SvgTransform,
         opacity: f64,
     },
 }
@@ -309,12 +318,7 @@ impl SvgPlan {
                         source: outline.source,
                         drawing: outline.drawing,
                         frame_clips,
-                        translation_x: outline.transform.translation_x,
-                        translation_y: outline.transform.translation_y,
-                        rotation_degrees: 180.0 * outline.transform.angle_radians
-                            / std::f64::consts::PI,
-                        center_x: outline.transform.center_x,
-                        center_y: outline.transform.center_y,
+                        transform: SvgTransform::new(&outline.transform),
                         stroke_color: outline.stroke_color,
                         fill_color: outline.fill_color,
                         stroke_width: outline.stroke_width,
@@ -341,12 +345,7 @@ impl SvgPlan {
                         path_data: freedraw_path_data(&freedraw.path)?,
                         background_fill: freedraw.background_fill,
                         frame_clips: freedraw.frame_clips,
-                        translation_x: freedraw.transform.translation_x,
-                        translation_y: freedraw.transform.translation_y,
-                        rotation_degrees: 180.0 * freedraw.transform.angle_radians
-                            / std::f64::consts::PI,
-                        center_x: freedraw.transform.center_x,
-                        center_y: freedraw.transform.center_y,
+                        transform: SvgTransform::new(&freedraw.transform),
                         color: freedraw.color,
                         background_color: freedraw.background_color,
                         source_stroke_width: freedraw.source_stroke_width,
@@ -363,12 +362,7 @@ impl SvgPlan {
                         magic: frame.magic,
                         outline_path: frame.outline_path,
                         frame_clips: frame.frame_clips,
-                        translation_x: frame.transform.translation_x,
-                        translation_y: frame.transform.translation_y,
-                        rotation_degrees: 180.0 * frame.transform.angle_radians
-                            / std::f64::consts::PI,
-                        center_x: frame.transform.center_x,
-                        center_y: frame.transform.center_y,
+                        transform: SvgTransform::new(&frame.transform),
                         opacity: frame.opacity,
                         link: frame.link,
                         width: frame.width,
@@ -413,12 +407,7 @@ impl SvgPlan {
                         frame_clips: fallback.frame_clips,
                         width: fallback.width,
                         height: fallback.height,
-                        translation_x: fallback.transform.translation_x,
-                        translation_y: fallback.transform.translation_y,
-                        rotation_degrees: 180.0 * fallback.transform.angle_radians
-                            / std::f64::consts::PI,
-                        center_x: fallback.transform.center_x,
-                        center_y: fallback.transform.center_y,
+                        transform: SvgTransform::new(&fallback.transform),
                         opacity: fallback.opacity,
                     });
                     fallback_index = fallback_index.saturating_add(1);
@@ -536,11 +525,7 @@ impl SvgPlan {
                     source,
                     drawing,
                     frame_clips: _,
-                    translation_x,
-                    translation_y,
-                    rotation_degrees,
-                    center_x,
-                    center_y,
+                    transform,
                     stroke_color,
                     fill_color,
                     stroke_width,
@@ -595,15 +580,15 @@ impl SvgPlan {
                     }
                     svg.push_str("<g stroke-linecap=\"round\"");
                     svg.push_str(" transform=\"translate(");
-                    push_svg_number(&mut svg, *translation_x, "SVG translation x")?;
+                    push_svg_number(&mut svg, transform.translation_x, "SVG translation x")?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *translation_y, "SVG translation y")?;
+                    push_svg_number(&mut svg, transform.translation_y, "SVG translation y")?;
                     svg.push_str(") rotate(");
-                    push_svg_number(&mut svg, *rotation_degrees, "SVG rotation")?;
+                    push_svg_number(&mut svg, transform.rotation_degrees, "SVG rotation")?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *center_x, "SVG rotation center x")?;
+                    push_svg_number(&mut svg, transform.center_x, "SVG rotation center x")?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *center_y, "SVG rotation center y")?;
+                    push_svg_number(&mut svg, transform.center_y, "SVG rotation center y")?;
                     svg.push_str(")\"");
                     svg.push('>');
                     push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
@@ -741,11 +726,7 @@ impl SvgPlan {
                     path_data,
                     background_fill,
                     frame_clips: _,
-                    translation_x,
-                    translation_y,
-                    rotation_degrees,
-                    center_x,
-                    center_y,
+                    transform,
                     color,
                     background_color,
                     source_stroke_width,
@@ -761,15 +742,27 @@ impl SvgPlan {
                         ));
                     }
                     svg.push_str("<g transform=\"translate(");
-                    push_svg_number(&mut svg, *translation_x, "SVG freedraw translation x")?;
+                    push_svg_number(
+                        &mut svg,
+                        transform.translation_x,
+                        "SVG freedraw translation x",
+                    )?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *translation_y, "SVG freedraw translation y")?;
+                    push_svg_number(
+                        &mut svg,
+                        transform.translation_y,
+                        "SVG freedraw translation y",
+                    )?;
                     svg.push_str(") rotate(");
-                    push_svg_number(&mut svg, *rotation_degrees, "SVG freedraw rotation")?;
+                    push_svg_number(
+                        &mut svg,
+                        transform.rotation_degrees,
+                        "SVG freedraw rotation",
+                    )?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *center_x, "SVG freedraw center x")?;
+                    push_svg_number(&mut svg, transform.center_x, "SVG freedraw center x")?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *center_y, "SVG freedraw center y")?;
+                    push_svg_number(&mut svg, transform.center_y, "SVG freedraw center y")?;
                     svg.push_str(")\">");
                     push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
                     if let (Some(fill), Some(background_color)) =
@@ -848,11 +841,7 @@ impl SvgPlan {
                     magic,
                     outline_path,
                     frame_clips: _,
-                    translation_x,
-                    translation_y,
-                    rotation_degrees,
-                    center_x,
-                    center_y,
+                    transform,
                     opacity,
                     link,
                     width,
@@ -860,15 +849,15 @@ impl SvgPlan {
                     ..
                 } => {
                     svg.push_str("<g transform=\"translate(");
-                    push_svg_number(&mut svg, *translation_x, "SVG frame translation x")?;
+                    push_svg_number(&mut svg, transform.translation_x, "SVG frame translation x")?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *translation_y, "SVG frame translation y")?;
+                    push_svg_number(&mut svg, transform.translation_y, "SVG frame translation y")?;
                     svg.push_str(") rotate(");
-                    push_svg_number(&mut svg, *rotation_degrees, "SVG frame rotation")?;
+                    push_svg_number(&mut svg, transform.rotation_degrees, "SVG frame rotation")?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *center_x, "SVG frame center x")?;
+                    push_svg_number(&mut svg, transform.center_x, "SVG frame center x")?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *center_y, "SVG frame center y")?;
+                    push_svg_number(&mut svg, transform.center_y, "SVG frame center y")?;
                     svg.push_str(")\"");
                     if *opacity != 1.0 {
                         svg.push_str(" opacity=\"");
@@ -1166,11 +1155,7 @@ impl SvgPlan {
                     frame_clips: _,
                     width,
                     height,
-                    translation_x,
-                    translation_y,
-                    rotation_degrees,
-                    center_x,
-                    center_y,
+                    transform,
                     opacity,
                 } => {
                     if source.pointer.is_empty() {
@@ -1179,15 +1164,35 @@ impl SvgPlan {
                         ));
                     }
                     svg.push_str("<g transform=\"translate(");
-                    push_svg_number(&mut svg, *translation_x, "SVG fallback translation x")?;
+                    push_svg_number(
+                        &mut svg,
+                        transform.translation_x,
+                        "SVG fallback translation x",
+                    )?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *translation_y, "SVG fallback translation y")?;
+                    push_svg_number(
+                        &mut svg,
+                        transform.translation_y,
+                        "SVG fallback translation y",
+                    )?;
                     svg.push_str(") rotate(");
-                    push_svg_number(&mut svg, *rotation_degrees, "SVG fallback rotation")?;
+                    push_svg_number(
+                        &mut svg,
+                        transform.rotation_degrees,
+                        "SVG fallback rotation",
+                    )?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *center_x, "SVG fallback rotation center x")?;
+                    push_svg_number(
+                        &mut svg,
+                        transform.center_x,
+                        "SVG fallback rotation center x",
+                    )?;
                     svg.push(' ');
-                    push_svg_number(&mut svg, *center_y, "SVG fallback rotation center y")?;
+                    push_svg_number(
+                        &mut svg,
+                        transform.center_y,
+                        "SVG fallback rotation center y",
+                    )?;
                     svg.push_str(")\"");
                     if *opacity != 1.0 {
                         svg.push_str(" opacity=\"");
