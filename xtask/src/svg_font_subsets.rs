@@ -329,7 +329,7 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
     }
     if manifest["corpus"]["path"] != json!(CORPUS_PATH)
         || manifest["corpus"]["sha256"]
-            != json!("30783f9080c953f61441e67f77875f321a896feab2bbae819aa5171ea7f22919")
+            != json!("560b85da0aefab791f2c41385a159db8b76d40c2ef230616f242e344c23493fc")
         || manifest["subset_profile"]["sha256"]
             != json!("19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d")
         || manifest["viewer_profiles"]["chromium"]["sha256"]

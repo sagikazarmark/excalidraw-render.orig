@@ -1,0 +1,10 @@
+{
+  "compatibilityRevision": 1,
+  "measurement": {
+    "generatedBytesSha256": "6733d051635c7c191301fa4ffe6a7e74e8cfe3c43de7f3c047d939abf89e514f",
+    "resourceTracesSha256": "a98ec84052bffcfc0bcd63f348f77bdeec3be5ee991a6b4acfca8a172563dd42",
+    "successfulCells": 971,
+    "tracedCells": 1198
+  },
+  "schema": "excalidraw-render/svg-font-subset-cross-target-measurement/v1"
+}

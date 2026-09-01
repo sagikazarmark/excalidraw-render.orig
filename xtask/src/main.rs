@@ -109,6 +109,12 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             svg_font_subset_targets::materialize(&target, &test_log, &output)?;
             println!("materialized SVG font subset target evidence for {target}");
         }
+        Some("materialize-svg-font-subset-cross-target") => {
+            let test_log = required_arg(&mut args, "qualification test log")?;
+            no_more_args(args)?;
+            svg_font_subset_targets::materialize_cross_target(&test_log)?;
+            println!("materialized cross-target SVG font subset measurement");
+        }
         Some("aggregate-svg-font-subset-targets") => {
             let input = required_arg(&mut args, "target report directory")?;
             let output = required_arg(&mut args, "aggregate report path")?;
@@ -244,7 +250,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify> | ",
         "conformance <generate|reproduce|verify|approval-subject|record-approval|",
-        "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|aggregate-svg-font-subset-targets|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
+        "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"
     )

@@ -1,3 +1,9 @@
+//! Canonical resource traces are held stable as a cross-target equality
+//! property, not as pinned digests (ADR-0002). These tests assert the relative
+//! equalities — cold, warm, request-cache, and frame-batch paths agree — and
+//! spot-check absolute envelope deltas; the cross-target digest itself is
+//! compared by `xtask conformance aggregate-svg-font-subset-targets`.
+
 use super::*;
 use crate::{CompatibilityRevision, Renderer, ResourceLimits};
 
@@ -50,10 +56,6 @@ fn assert_scene_trace_replay() {
         .expect("font dependency envelope is traced");
     assert_eq!(envelope["deltas"]["working_bytes"], 28_628_224);
     assert_eq!(envelope["deltas"]["total_work_units"], 52_456_060);
-    assert_eq!(
-        crate::resource_accounting::sha256_hex(&cold_trace),
-        "ce32bd692bad41083365a89e1b307ec81159bcc6d1240ef80d5ae7befe9bbb31"
-    );
 }
 
 fn assert_frame_batch_trace_replay() {
@@ -103,10 +105,6 @@ fn assert_frame_batch_trace_replay() {
     assert!(!std::str::from_utf8(&batch_trace)
         .expect("frame trace is UTF-8 JSON")
         .contains("cache"));
-    assert_eq!(
-        crate::resource_accounting::sha256_hex(&batch_trace),
-        "9ba146d4b2e38c5ef244980dcf503599c172d959f48332176649a462da97db70"
-    );
 
     let failure_request = crate::FrameRenderRequest::builder(OutputFormat::Svg)
         .resource_limits(

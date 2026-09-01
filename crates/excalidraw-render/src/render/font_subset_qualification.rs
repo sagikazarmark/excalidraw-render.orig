@@ -19,6 +19,14 @@ const CORPUS_SCHEMA: &str = "excalidraw-render/svg-font-subset-qualification-cor
 const SOURCE_MANIFEST_SHA256: &str =
     "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
 const PROFILE_SHA256: &str = "49015dfb91f9e89fcf1e7f3e16fd892e4c1715f5d49b6488d67037b7aac21c23";
+/// Per-cell trace digests are not pinned: cross-target equality of the
+/// aggregate `resourceTracesSha256` is the determinism property (ADR-0002).
+/// Building with `EXCALIDRAW_FONT_SUBSET_TRACE_DIGESTS` set dumps one digest
+/// per traced cell so an aggregate mismatch can be bisected on any target,
+/// including `wasm32-unknown-unknown`, where run-time environment variables are
+/// unavailable.
+const TRACE_DIGEST_DIAGNOSTICS: bool =
+    option_env!("EXCALIDRAW_FONT_SUBSET_TRACE_DIGESTS").is_some();
 const CLASS_IDS: [&str; 8] = [
     "mapped-scalar",
     "range-boundary",
@@ -72,8 +80,6 @@ struct QualificationCell {
     semantic_subset_identity: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     generated_woff2_sha256: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    canonical_resource_trace_sha256: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     transformation_notice_sha256: Option<String>,
     expected_validation_outcome: String,
@@ -140,6 +146,12 @@ impl QualificationMeasurement {
         update_framed(&mut self.resource_traces, class.as_bytes());
         update_framed(&mut self.resource_traces, bytes);
         self.traced_cells += 1;
+        if TRACE_DIGEST_DIAGNOSTICS {
+            println!(
+                "SVG_FONT_SUBSET_CELL_TRACE={source}\t{class}\t{}",
+                sha256(bytes)
+            );
+        }
     }
 
     fn report(&self) -> QualificationMeasurementReport {
@@ -289,11 +301,7 @@ fn assert_cell(
                 );
             }
             measurement.record_generated(record.identity, &cell.class, derived.woff2.as_ref());
-            let (trace_sha256, trace) = canonical_trace(record, scalars, Some(&derived));
-            assert_eq!(
-                cell.canonical_resource_trace_sha256.as_deref(),
-                Some(trace_sha256.as_str())
-            );
+            let trace = canonical_trace(record, scalars, Some(&derived));
             measurement.record_trace(record.identity, &cell.class, &trace);
             let notice = svg_fonts::subset_notice(
                 record,
@@ -318,11 +326,7 @@ fn assert_cell(
                 .scalars
                 .as_deref()
                 .expect("not-selected has scalars");
-            let (trace_sha256, trace) = canonical_trace(record, scalars, None);
-            assert_eq!(
-                cell.canonical_resource_trace_sha256.as_deref(),
-                Some(trace_sha256.as_str())
-            );
+            let trace = canonical_trace(record, scalars, None);
             measurement.record_trace(record.identity, &cell.class, &trace);
         }
         CellStatus::NotApplicable => {
@@ -330,7 +334,6 @@ fn assert_cell(
             assert!(cell.ordered_scalars.is_none());
             assert!(cell.semantic_subset_identity.is_none());
             assert!(cell.generated_woff2_sha256.is_none());
-            assert!(cell.canonical_resource_trace_sha256.is_none());
             assert!(cell.transformation_notice_sha256.is_none());
             assert_eq!(cell.reason.as_deref(), expected.reason);
         }
@@ -732,7 +735,7 @@ fn canonical_trace(
     record: &'static excalidraw_render_assets_base::AssetRecord,
     scalars: &[u32],
     derived: Option<&font_subset::Derived>,
-) -> (String, Vec<u8>) {
+) -> Vec<u8> {
     let selected = derived.is_some();
     let (outcome, trace) = super::render_font_subset_qualification_trace(record, scalars);
     outcome.unwrap_or_else(|error| {
@@ -767,7 +770,7 @@ fn canonical_trace(
             assert!(has_event(event), "{} lacks {event}", record.upstream_path);
         }
     }
-    (sha256(&trace), trace)
+    trace
 }
 
 fn family_failure_diagnosis(
@@ -939,7 +942,6 @@ fn materialize_cell(
                     )
                 });
             let output_sha256 = sha256(derived.woff2.as_ref());
-            let trace_sha256 = canonical_trace(record, &scalars, Some(&derived)).0;
             let notice = svg_fonts::subset_notice(
                 record,
                 family_name(record.family),
@@ -954,7 +956,6 @@ fn materialize_cell(
                 ordered_scalars: Some(scalars),
                 semantic_subset_identity: Some(semantic_identity),
                 generated_woff2_sha256: Some(output_sha256),
-                canonical_resource_trace_sha256: Some(trace_sha256),
                 transformation_notice_sha256: Some(sha256(notice.resource_text.as_bytes())),
                 expected_validation_outcome: "valid".to_owned(),
                 reason: None,
@@ -965,7 +966,6 @@ fn materialize_cell(
             QualificationCell {
                 class: class.to_owned(),
                 status: CellStatus::NotSelected,
-                canonical_resource_trace_sha256: Some(canonical_trace(record, &scalars, None).0),
                 ordered_scalars: Some(scalars),
                 semantic_subset_identity: None,
                 generated_woff2_sha256: None,
@@ -980,7 +980,6 @@ fn materialize_cell(
             ordered_scalars: None,
             semantic_subset_identity: None,
             generated_woff2_sha256: None,
-            canonical_resource_trace_sha256: None,
             transformation_notice_sha256: None,
             expected_validation_outcome: "not_applicable".to_owned(),
             reason: classified.reason.map(str::to_owned),

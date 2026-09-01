@@ -8,6 +8,13 @@ use std::process::Command;
 
 const REPORT_SCHEMA: &str = "excalidraw-render/svg-font-subset-target-evidence/v2";
 const AGGREGATE_SCHEMA: &str = "excalidraw-render/svg-font-subset-target-aggregate/v2";
+const CROSS_TARGET_SCHEMA: &str = "excalidraw-render/svg-font-subset-cross-target-measurement/v1";
+/// Committed cross-target qualification measurement. Canonical resource traces
+/// are held stable by cross-target equality rather than by per-cell pins
+/// (ADR-0002); this file keeps that equality visible as a reviewable diff and
+/// is re-asserted by every aggregation.
+const CROSS_TARGET_PATH: &str =
+    "tests/conformance/svg-font-subset-cross-target-measurement/revision-1.json";
 const MEASUREMENT_PREFIX: &str = "SVG_FONT_SUBSET_TARGET_MEASUREMENT=";
 const TARGETS: [&str; 5] = [
     "aarch64-apple-darwin",
@@ -22,21 +29,7 @@ pub(crate) fn materialize(target: &str, test_log: &str, output: &str) -> Result<
         return Err(format!("unsupported target {target:?}"));
     }
     let commit = tested_commit()?;
-    let log = fs::read_to_string(test_log)
-        .map_err(|error| format!("failed to read qualification log {test_log}: {error}"))?;
-    let measurements = log
-        .lines()
-        .filter_map(|line| line.split_once(MEASUREMENT_PREFIX).map(|(_, value)| value))
-        .collect::<Vec<_>>();
-    let [measurement] = measurements.as_slice() else {
-        return Err(format!(
-            "expected exactly one qualification measurement in {test_log}, got {}",
-            measurements.len()
-        ));
-    };
-    let measurement: Value = serde_json::from_str(measurement)
-        .map_err(|error| format!("qualification measurement is invalid JSON: {error}"))?;
-    validate_measurement(&measurement)?;
+    let measurement = read_measurement(test_log)?;
 
     let root = repo_root();
     let corpus = root.join(
@@ -65,6 +58,25 @@ pub(crate) fn materialize(target: &str, test_log: &str, output: &str) -> Result<
         "status": "pass",
     });
     write_json(Path::new(output), &report)
+}
+
+fn read_measurement(test_log: &str) -> Result<Value, String> {
+    let log = fs::read_to_string(test_log)
+        .map_err(|error| format!("failed to read qualification log {test_log}: {error}"))?;
+    let measurements = log
+        .lines()
+        .filter_map(|line| line.split_once(MEASUREMENT_PREFIX).map(|(_, value)| value))
+        .collect::<Vec<_>>();
+    let [measurement] = measurements.as_slice() else {
+        return Err(format!(
+            "expected exactly one qualification measurement in {test_log}, got {}",
+            measurements.len()
+        ));
+    };
+    let measurement: Value = serde_json::from_str(measurement)
+        .map_err(|error| format!("qualification measurement is invalid JSON: {error}"))?;
+    validate_measurement(&measurement)?;
+    Ok(measurement)
 }
 
 fn tested_commit() -> Result<String, String> {
@@ -144,6 +156,8 @@ pub(crate) fn aggregate(input: &str, output: &str) -> Result<(), String> {
             return Err(format!("target reports disagree at {}", path.join(".")));
         }
     }
+    let measurement = required_path(&reports[0], &["measurement"])?.clone();
+    verify_cross_target_measurement(&repo_root(), &measurement)?;
     let aggregate = json!({
         "schema": AGGREGATE_SCHEMA,
         "commit": required_string(&reports[0], "commit")?,
@@ -151,7 +165,7 @@ pub(crate) fn aggregate(input: &str, output: &str) -> Result<(), String> {
         "corpus_sha256": required_string(&reports[0], "corpus_sha256")?,
         "subset_profile_sha256": required_string(&reports[0], "subset_profile_sha256")?,
         "viewer_approval_subject": required_string(&reports[0], "viewer_approval_subject")?,
-        "measurement": required_path(&reports[0], &["measurement"])?,
+        "measurement": measurement,
         "targets": reports,
         "decision": "pass",
     });
@@ -183,6 +197,39 @@ pub(crate) fn verify_release() -> Result<(), String> {
         return Err("release evidence and viewer approval subjects disagree".to_owned());
     }
     verify_descriptors(&root, &manifest)?;
+    Ok(())
+}
+
+/// Writes the committed cross-target measurement from one target's
+/// qualification log. Any supported target may produce it: the measurement is
+/// only evidence because every target agrees on it.
+pub(crate) fn materialize_cross_target(test_log: &str) -> Result<(), String> {
+    let measurement = read_measurement(test_log)?;
+    let root = repo_root();
+    write_json(
+        &root.join(CROSS_TARGET_PATH),
+        &json!({
+            "schema": CROSS_TARGET_SCHEMA,
+            "compatibilityRevision": 1,
+            "measurement": measurement,
+        }),
+    )
+}
+
+fn verify_cross_target_measurement(root: &Path, measurement: &Value) -> Result<(), String> {
+    let committed = read_json(&root.join(CROSS_TARGET_PATH))?;
+    if required_string(&committed, "schema")? != CROSS_TARGET_SCHEMA
+        || required_path(&committed, &["compatibilityRevision"]) != Ok(&json!(1))
+    {
+        return Err("committed cross-target measurement identity is invalid".to_owned());
+    }
+    validate_measurement(required_path(&committed, &["measurement"])?)?;
+    if required_path(&committed, &["measurement"]) != Ok(measurement) {
+        return Err(format!(
+            "aggregated qualification measurement disagrees with {CROSS_TARGET_PATH}; \
+             regenerate it with `xtask conformance materialize-svg-font-subset-cross-target`"
+        ));
+    }
     Ok(())
 }
 

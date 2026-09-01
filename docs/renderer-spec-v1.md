@@ -2194,8 +2194,13 @@ allocation, whole-chunk fallback, or partial output.
 
 Repeated artifacts and canonical resource traces MUST be exact on every
 supported native target and executed `wasm32-unknown-unknown`, including cold,
-warm, request-cache, and frame-batch-cache paths. Canonical Chromium and the
-controlled pure-Rust viewer each compare source chunks with generated subsets
+warm, request-cache, and frame-batch-cache paths. Artifact bytes are evidence
+per qualification cell. Trace stability is instead evidenced as a cross-target
+equality property: each target computes its trace measurement fresh, the
+aggregation job compares all five, and the agreed measurement is committed as a
+reviewable artifact that every aggregation re-asserts. Per-cell trace digests
+MUST NOT be pinned. Canonical Chromium and the controlled pure-Rust viewer each
+compare source chunks with generated subsets
 for shaping, glyph choice, metrics, line layout, selectable text, and rasterized
 typography. Both viewers MUST pass independently; source-vs-subset semantic
 parity, not Excalidraw subset bytes, is authoritative.

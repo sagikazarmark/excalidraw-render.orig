@@ -49,9 +49,9 @@ const SVG_FONT_SUBSET_PROFILE_DIGEST: &str =
 const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
     "fc4e8ce56cb7bf4bca9dfd6f3495c9ae9f5440a5818aa3e6f645d5303265ff85";
 const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST: &str =
-    "30783f9080c953f61441e67f77875f321a896feab2bbae819aa5171ea7f22919";
+    "560b85da0aefab791f2c41385a159db8b76d40c2ef230616f242e344c23493fc";
 const SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST: &str =
-    "ce363772d9fed5b960e50bffc9f67d5ce85d6bdeddb433aeaa37ea4643b883f6";
+    "480aac78b75d31c3bfac5a683793df28ffcdf454e91f8558b7add3b6112e3765";
 
 struct IncorporatedArtifactSource {
     repository_path: &'static str,
@@ -491,6 +491,13 @@ fn materialize_svg_font_subset_qualification_schema(root: &Path) -> Result<(), S
     .map_err(|error| format!("invalid SVG font subset qualification schema: {error}"))?;
     schema["$defs"]["cell"]["properties"]["transformationNoticeSha256"] =
         json!({"$ref": "#/$defs/sha256"});
+    // Per-cell canonical resource trace digests are no longer evidence; the
+    // determinism property is cross-target equality of the aggregate trace
+    // measurement (ADR-0002).
+    schema["$defs"]["cell"]["properties"]
+        .as_object_mut()
+        .ok_or_else(|| "SVG font subset cell schema has no properties".to_owned())?
+        .remove("canonicalResourceTraceSha256");
     schema["$defs"]["source"]["properties"]["licenseIdentity"] =
         json!({"minLength": 1, "type": "string"});
     schema["$defs"]["source"]["properties"]["reservedFontNames"] = json!({
@@ -1500,7 +1507,6 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
                         && has("orderedScalars")
                         && has("semanticSubsetIdentity")
                         && has("generatedWoff2Sha256")
-                        && has("canonicalResourceTraceSha256")
                         && !has("reason")
                 }
                 "not_selected" => {
@@ -1508,7 +1514,6 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
                         && has("orderedScalars")
                         && !has("semanticSubsetIdentity")
                         && !has("generatedWoff2Sha256")
-                        && has("canonicalResourceTraceSha256")
                         && !has("reason")
                 }
                 "not_applicable" => {
@@ -1516,7 +1521,6 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
                         && !has("orderedScalars")
                         && !has("semanticSubsetIdentity")
                         && !has("generatedWoff2Sha256")
-                        && !has("canonicalResourceTraceSha256")
                         && has("reason")
                 }
                 _ => false,

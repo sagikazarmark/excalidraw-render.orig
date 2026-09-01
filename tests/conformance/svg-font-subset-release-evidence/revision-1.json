@@ -3,7 +3,7 @@
   "compatibilityRevision": 1,
   "corpus": {
     "path": "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qualification-corpus.json",
-    "sha256": "30783f9080c953f61441e67f77875f321a896feab2bbae819aa5171ea7f22919",
+    "sha256": "560b85da0aefab791f2c41385a159db8b76d40c2ef230616f242e344c23493fc",
     "successfulCells": 971
   },
   "decision": "pending_target_aggregation",
@@ -35,7 +35,11 @@
     "aggregateArtifact": "svg-font-subset-target-aggregate",
     "generatorAndAggregator": {
       "path": "xtask/src/svg_font_subset_targets.rs",
-      "sha256": "2e55da050e6bcd0f32800069f1470889f30fea2ea72e59ebe2ea1975339b0cca"
+      "sha256": "04426f99610145cf7a5cfd234a5a98f44fbe60ffd4feaf3d3edf67d5819c1a8f"
+    },
+    "crossTargetMeasurement": {
+      "path": "tests/conformance/svg-font-subset-cross-target-measurement/revision-1.json",
+      "sha256": "e6b608595af457ee1a80f6a65d6139036b15594b396c6051a7e098631ff352c1"
     },
     "reportSchema": {
       "path": "tests/conformance/svg-font-subset-target-evidence-v2.schema.json",
@@ -48,10 +52,10 @@
     }
   },
   "viewerEvidence": {
-    "approvalSubject": "sha256:6270f330c2ae9d4b04cb0990a81213fd49db61ed4e46300fb1a2c946ab3d590f",
+    "approvalSubject": "sha256:41b1c5ab5c9a9b2c5b1287d76a1404b0bf415b834e00b0e64af173d659bbb830",
     "executions": 851,
     "path": "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json",
-    "sha256": "15f631a0e8615112e96b5e23471b6b329da02a88c71c0aa663101cee27b8a9d4",
+    "sha256": "4dabce932916ae44212ed5549b1b599ea5d6e9179eea849432152bdec02f5737",
     "status": "approved"
   }
 }
