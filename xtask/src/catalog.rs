@@ -989,10 +989,13 @@ fn expected_catalog(reference_assets: &Value, scene_surface: &Value) -> Result<V
     build_catalog(&assets, scene_surface)
 }
 
+/// Every data crate must receive exactly one shard. Too many shards leaves a
+/// shard with nowhere to live; too few leaves a data crate holding stale bytes
+/// that nothing rewrites.
 fn require_shard_crates(shards: usize) -> Result<(), String> {
-    if shards > SHARD_CRATES.len() {
+    if shards != SHARD_CRATES.len() {
         return Err(format!(
-            "revision 1 official assets materialize as {shards} shards, but only {} data crates exist",
+            "revision 1 official assets materialize as {shards} shards, but {} data crates exist",
             SHARD_CRATES.len()
         ));
     }

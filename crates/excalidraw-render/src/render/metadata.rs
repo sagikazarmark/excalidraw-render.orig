@@ -914,10 +914,17 @@ mod agreement_tests {
         )
     }
 
-    fn target_label(target: ManifestTarget<'_>) -> &'static str {
+    fn target_label(target: ManifestTarget<'_>) -> String {
         match target {
-            ManifestTarget::Scene => "scene",
-            ManifestTarget::Frame { .. } => "frame",
+            ManifestTarget::Scene => "scene".to_owned(),
+            ManifestTarget::Frame {
+                ordinal,
+                kind,
+                name,
+            } => format!(
+                "frame ordinal={ordinal} kind={} name={name:?}",
+                kind.as_str()
+            ),
         }
     }
 }

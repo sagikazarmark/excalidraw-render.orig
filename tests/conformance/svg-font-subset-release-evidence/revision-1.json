@@ -35,7 +35,7 @@
     "aggregateArtifact": "svg-font-subset-target-aggregate",
     "generatorAndAggregator": {
       "path": "xtask/src/svg_font_subset_targets.rs",
-      "sha256": "04426f99610145cf7a5cfd234a5a98f44fbe60ffd4feaf3d3edf67d5819c1a8f"
+      "sha256": "a69d9dc5febb0d4bf71c63742b88421b0e54bb7586d28994c55811204f36621a"
     },
     "crossTargetMeasurement": {
       "path": "tests/conformance/svg-font-subset-cross-target-measurement/revision-1.json",

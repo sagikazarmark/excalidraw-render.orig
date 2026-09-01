@@ -163,11 +163,10 @@ pub(crate) fn run_frames_list(frames: &FramesCli) -> u8 {
     }
 }
 
-pub(crate) fn prepare_frame_list(
+fn prepare_frame_list(
     frames: &FramesCli,
     identity: &mut Option<SelectedIdentity>,
 ) -> Result<Vec<FrameListEntry>, Failure> {
-    validate_report_options(&frames.report_cli())?;
     if frames.report_format == ReportFormat::None {
         return Err(Failure::cli(
             "cli.invalid-arguments",
@@ -176,16 +175,7 @@ pub(crate) fn prepare_frame_list(
             EXIT_USAGE,
         ));
     }
-    let regex = frame_name_regex(frames)?;
-    let revision = frame_revision(frames)?;
-    let renderer = Renderer::for_revision(revision)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))?;
-    let profile = renderer.selected_frame_profile_identity();
-    *identity = Some(SelectedIdentity {
-        revision,
-        release: profile.excalidraw_release(),
-        digest: profile.profile_digest(),
-    });
+    let FramePreamble { regex, .. } = prepare_frame_preamble(frames, identity)?;
 
     let report_path = frames.report_output.as_deref().unwrap_or("stderr");
     if report_path != "stderr" {
@@ -294,7 +284,7 @@ pub(crate) fn frame_list_json_line(
     bytes
 }
 
-pub(crate) fn frame_name_regex(frames: &FramesCli) -> Result<Option<Regex>, Failure> {
+fn validate_frame_limit(frames: &FramesCli) -> Result<(), Failure> {
     if frames.max_frames == 0 || frames.max_frames > 16_384 {
         return Err(Failure::cli(
             "cli.invalid-arguments",
@@ -306,6 +296,10 @@ pub(crate) fn frame_name_regex(frames: &FramesCli) -> Result<Option<Regex>, Fail
             EXIT_USAGE,
         ));
     }
+    Ok(())
+}
+
+fn frame_name_regex(frames: &FramesCli) -> Result<Option<Regex>, Failure> {
     frames
         .name_regex
         .as_deref()
@@ -324,7 +318,63 @@ pub(crate) fn frame_name_regex(frames: &FramesCli) -> Result<Option<Regex>, Fail
         })
 }
 
-pub(crate) fn frame_revision(frames: &FramesCli) -> Result<CompatibilityRevision, Failure> {
+/// Everything `--list` and an export must both settle before either touches the
+/// filesystem, in the order the CLI failure ladder requires: report options,
+/// selection bounds, revision identity, then request values and asset
+/// declarations. `--list` is exempt from *reading* supplemental assets and from
+/// writing, not from rejecting a command an export would reject.
+struct FramePreamble {
+    regex: Option<Regex>,
+    renderer: Renderer,
+    asset_paths: BTreeMap<String, String>,
+    asset_mimes: BTreeMap<String, String>,
+}
+
+fn prepare_frame_preamble(
+    frames: &FramesCli,
+    identity: &mut Option<SelectedIdentity>,
+) -> Result<FramePreamble, Failure> {
+    validate_report_options(&frames.report_cli())?;
+    validate_frame_limit(frames)?;
+    let regex = frame_name_regex(frames)?;
+    let revision = frame_revision(frames)?;
+    let renderer = Renderer::for_revision(revision)
+        .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))?;
+    let profile = renderer.selected_frame_profile_identity();
+    *identity = Some(SelectedIdentity {
+        revision,
+        release: profile.excalidraw_release(),
+        digest: profile.profile_digest(),
+    });
+
+    let (asset_paths, asset_mimes) = parse_asset_declarations(&frames.asset, &frames.asset_mime)?;
+    let mut validation_assets = SupplementalAssets::builder();
+    for asset_id in asset_paths.keys() {
+        validation_assets = if let Some(media_type) = asset_mimes.get(asset_id) {
+            validation_assets.asset_with_media_type(asset_id, Vec::new(), media_type)
+        } else {
+            validation_assets.asset(asset_id, Vec::new())
+        };
+    }
+    let validation_assets = validation_assets
+        .build()
+        .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))?;
+    // Without `--format` there is no artifact to shape, but the format-agnostic
+    // request values still have to be validated; SVG stands in as the probe.
+    build_frame_request(
+        frames,
+        frames.format.map_or(OutputFormat::Svg, OutputFormat::from),
+        validation_assets,
+    )?;
+    Ok(FramePreamble {
+        regex,
+        renderer,
+        asset_paths,
+        asset_mimes,
+    })
+}
+
+fn frame_revision(frames: &FramesCli) -> Result<CompatibilityRevision, Failure> {
     match &frames.compatibility_revision {
         Some(value) => value.parse::<CompatibilityRevision>().map_err(|_| {
             Failure::cli(
@@ -373,7 +423,6 @@ pub(crate) fn prepare_and_render_frames(
     frames: &FramesCli,
     identity: &mut Option<SelectedIdentity>,
 ) -> Result<PreparedFrameBatch, Failure> {
-    validate_report_options(&frames.report_cli())?;
     if frames.output() == "-" {
         return Err(Failure::cli(
             "cli.invalid-arguments",
@@ -385,30 +434,12 @@ pub(crate) fn prepare_and_render_frames(
             EXIT_USAGE,
         ));
     }
-    let regex = frame_name_regex(frames)?;
-    let revision = frame_revision(frames)?;
-    let renderer = Renderer::for_revision(revision)
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))?;
-    let profile = renderer.selected_frame_profile_identity();
-    *identity = Some(SelectedIdentity {
-        revision,
-        release: profile.excalidraw_release(),
-        digest: profile.profile_digest(),
-    });
-
-    let (asset_paths, asset_mimes) = parse_asset_declarations(&frames.asset, &frames.asset_mime)?;
-    let mut validation_assets = SupplementalAssets::builder();
-    for asset_id in asset_paths.keys() {
-        validation_assets = if let Some(media_type) = asset_mimes.get(asset_id) {
-            validation_assets.asset_with_media_type(asset_id, Vec::new(), media_type)
-        } else {
-            validation_assets.asset(asset_id, Vec::new())
-        };
-    }
-    let validation_assets = validation_assets
-        .build()
-        .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))?;
-    build_frame_request(frames, validation_assets)?;
+    let FramePreamble {
+        regex,
+        renderer,
+        asset_paths,
+        asset_mimes,
+    } = prepare_frame_preamble(frames, identity)?;
 
     let report_path = frames.report_output.as_deref().unwrap_or("stderr");
     validate_paths(&frames.input, frames.output(), report_path, &asset_paths)?;
@@ -505,7 +536,7 @@ pub(crate) fn prepare_and_render_frames(
     let assets = assets_builder
         .build()
         .map_err(|error| Failure::library(error.descriptor(), EXIT_USAGE))?;
-    let request = build_frame_request(frames, assets)?;
+    let request = build_frame_request(frames, OutputFormat::from(frames.format()), assets)?;
     let mut cursor = match renderer.render_frames(&scene, selected.iter().copied(), &request) {
         Ok(cursor) => cursor,
         Err(error) => {
@@ -639,13 +670,14 @@ pub(crate) fn frame_destination_error(destination: &Path) -> ReportError {
 
 pub(crate) fn build_frame_request(
     frames: &FramesCli,
+    format: OutputFormat,
     assets: SupplementalAssets,
 ) -> Result<FrameRenderRequest, Failure> {
     let sizing = frames
         .max_dimension
         .map(Sizing::MaxDimension)
         .unwrap_or_else(|| Sizing::Scale(frames.scale.unwrap_or(1.0)));
-    let mut builder = FrameRenderRequest::builder(frames.format().into())
+    let mut builder = FrameRenderRequest::builder(format)
         .include_background(!frames.no_background)
         .sizing(sizing)
         .color_mode(if frames.dark_mode {

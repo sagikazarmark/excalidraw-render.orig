@@ -808,6 +808,43 @@ fn frames_list_reports_the_selection_without_rendering_anything() {
         .expect("run frame export without an output");
     assert_eq!(missing.status.code(), Some(2));
 
+    // A dry run is exempt from performing an export's work, not from rejecting
+    // what an export would reject: a listing that succeeded here while the
+    // matching export failed would be a false preview.
+    for rejected in [
+        vec!["--scale", "0"],
+        vec!["--max-dimension", "-1"],
+        vec!["--asset", "bogus-no-equals"],
+        vec!["--asset-mime", "unmatched=image/png"],
+    ] {
+        let listed = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+            .arg("frames")
+            .arg(&input)
+            .arg("--list")
+            .args(&rejected)
+            .output()
+            .expect("run rejected frame listing");
+        let exported = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
+            .arg("frames")
+            .arg(&input)
+            .arg("--output")
+            .arg(temp.join("rejected"))
+            .args(["--format", "svg"])
+            .args(&rejected)
+            .output()
+            .expect("run rejected frame export");
+        assert_eq!(
+            listed.status.code(),
+            exported.status.code(),
+            "{rejected:?} is accepted by --list but rejected by an export"
+        );
+        assert_eq!(
+            listed.status.code(),
+            Some(2),
+            "{rejected:?} is a usage error"
+        );
+    }
+
     fs::remove_dir_all(temp).expect("remove test temp directory");
 }
 

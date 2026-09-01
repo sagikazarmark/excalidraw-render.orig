@@ -435,8 +435,11 @@ frame controls. Its additional controls are one `--name-regex <REGEX>`, positive
 present. It applies the same selection an export would apply — name filter,
 selected-frame cap, source ordering, and derived basenames — then reports
 ordinal, kind, source name, and derived output basename without rendering,
-reading supplemental assets, creating the output directory, or writing any
-artifact. With `--format` the basename carries its extension; without it, the
+reading supplemental asset bytes, creating the output directory, or writing any
+artifact. It is exempt from performing those actions, not from validating them:
+failure-ordering steps 1 through 5 apply unchanged, so request values and asset
+declarations an export would reject are rejected here too. Without `--format`,
+format-independent request values are still validated. With `--format` the basename carries its extension; without it, the
 basename is reported as a stem. An empty selection is a valid answer and exits
 `0`, unlike an export, which fails `cli.frame-no-match`. Exceeding
 `--max-frames` still fails `cli.frame-limit-exceeded`. `--list` does not accept

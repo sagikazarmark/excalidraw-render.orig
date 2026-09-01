@@ -57,9 +57,14 @@ fn assert_generated_cases(seed: u64, cases: usize) {
         if frames.is_empty() {
             continue;
         }
-        for format in [OutputFormat::Svg, OutputFormat::Png] {
-            for limits in limit_ladder(format, &frames, &id) {
-                assert_batch_matches_standalone(&scene, &frames, format, limits, &id);
+        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+            // Each frame sets its own boundaries: a ladder derived from one
+            // frame says nothing about what the others consume, and it is the
+            // frame sitting on its own limit whose charge timing matters.
+            for frame in &frames {
+                for limits in limit_ladder(format, *frame, &id) {
+                    assert_batch_matches_standalone(&scene, *frame, format, limits, &id);
+                }
             }
         }
     }
@@ -70,7 +75,7 @@ fn assert_generated_cases(seed: u64, cases: usize) {
 /// trace, whether they succeed or fail.
 fn assert_batch_matches_standalone(
     scene: &SceneDocument,
-    frames: &[crate::FrameRef<'_>],
+    frame: crate::FrameRef<'_>,
     format: OutputFormat,
     limits: ResourceLimits,
     id: &str,
@@ -91,15 +96,15 @@ fn assert_batch_matches_standalone(
         return;
     };
 
-    for frame in frames {
+    {
         let (batch, batch_trace) = render_frame_with_trace(
             &crate::catalog::REVISION_1,
-            *frame,
+            frame,
             &request,
             Some(&prepared),
         );
         let (cold, cold_trace) =
-            render_frame_with_trace(&crate::catalog::REVISION_1, *frame, &request, None);
+            render_frame_with_trace(&crate::catalog::REVISION_1, frame, &request, None);
         let ordinal = frame.ordinal();
         match (batch, cold) {
             (Ok(batch), Ok(cold)) => {
@@ -147,21 +152,18 @@ fn assert_batch_matches_standalone(
     }
 }
 
-/// Probes what the first frame actually consumes under default limits, then
-/// returns limits sitting exactly on, just under, and just over those values.
-/// A scene whose measurements cannot be observed contributes only the default
-/// profile.
-fn limit_ladder(
-    format: OutputFormat,
-    frames: &[crate::FrameRef<'_>],
-    id: &str,
-) -> Vec<ResourceLimits> {
+/// Probes what this frame actually consumes under default limits, then returns
+/// limits sitting exactly on, just under, and just over those values. A frame
+/// that already fails under default limits is itself the near-limit case, so it
+/// still contributes the default profile even though no boundary can be derived
+/// from it.
+fn limit_ladder(format: OutputFormat, frame: crate::FrameRef<'_>, id: &str) -> Vec<ResourceLimits> {
     let mut ladder = vec![ResourceLimits::default()];
     let probe = FrameRenderRequest::builder(format)
         .build()
         .unwrap_or_else(|error| panic!("{id} probe request is valid: {error:?}"));
     let (outcome, trace) =
-        render_frame_with_trace(&crate::catalog::REVISION_1, frames[0], &probe, None);
+        render_frame_with_trace(&crate::catalog::REVISION_1, frame, &probe, None);
     let Ok(outcome) = outcome else {
         return ladder;
     };
@@ -309,7 +311,7 @@ fn frame_batch_rendering_matches_standalone_around_resource_limits() {
 #[cfg(not(target_arch = "wasm32"))]
 #[test]
 #[ignore = "scheduled deterministic frame batch expansion"]
-fn nightly_frame_batch_property_is_exhaustive() {
+fn nightly_frame_batch_property_runs_a_deeper_sample() {
     let cases = std::env::var("EXCALIDRAW_FRAME_BATCH_CASES")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())

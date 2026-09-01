@@ -43,4 +43,4 @@ fi
 
 echo
 echo "--- fork files outside src/ (not compared; upstream ships more) ---"
-(cd "${FORK}" && find . -type f -not -path './src/*' -not -path './target/*' | sort)
+(cd "${FORK}" && find . -type f -not -path './src/*' -not -path './target/*' | LC_ALL=C sort)

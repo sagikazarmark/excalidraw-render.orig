@@ -205,19 +205,16 @@ pub(crate) fn verify_release() -> Result<(), String> {
 /// only evidence because every target agrees on it.
 pub(crate) fn materialize_cross_target(test_log: &str) -> Result<(), String> {
     let measurement = read_measurement(test_log)?;
-    let root = repo_root();
-    write_json(
-        &root.join(CROSS_TARGET_PATH),
-        &json!({
-            "schema": CROSS_TARGET_SCHEMA,
-            "compatibilityRevision": 1,
-            "measurement": measurement,
-        }),
-    )
+    write_cross_target(&repo_root().join(CROSS_TARGET_PATH), &measurement)
 }
 
+/// Compares the measurement all five targets agreed on against the committed
+/// evidence. On disagreement the committed file is rewritten in place before the
+/// error is returned, so refreshing it is a mechanical step — re-run, read the
+/// diff, commit it — rather than a hand-transcribed digest.
 fn verify_cross_target_measurement(root: &Path, measurement: &Value) -> Result<(), String> {
-    let committed = read_json(&root.join(CROSS_TARGET_PATH))?;
+    let path = root.join(CROSS_TARGET_PATH);
+    let committed = read_json(&path)?;
     if required_string(&committed, "schema")? != CROSS_TARGET_SCHEMA
         || required_path(&committed, &["compatibilityRevision"]) != Ok(&json!(1))
     {
@@ -225,12 +222,24 @@ fn verify_cross_target_measurement(root: &Path, measurement: &Value) -> Result<(
     }
     validate_measurement(required_path(&committed, &["measurement"])?)?;
     if required_path(&committed, &["measurement"]) != Ok(measurement) {
+        write_cross_target(&path, measurement)?;
         return Err(format!(
-            "aggregated qualification measurement disagrees with {CROSS_TARGET_PATH}; \
-             regenerate it with `xtask conformance materialize-svg-font-subset-cross-target`"
+            "aggregated qualification measurement disagreed with {CROSS_TARGET_PATH}; \
+             it has been rewritten — review the diff and commit it"
         ));
     }
     Ok(())
+}
+
+fn write_cross_target(path: &Path, measurement: &Value) -> Result<(), String> {
+    write_json(
+        path,
+        &json!({
+            "schema": CROSS_TARGET_SCHEMA,
+            "compatibilityRevision": 1,
+            "measurement": measurement,
+        }),
+    )
 }
 
 fn validate_report(report: &Value) -> Result<(), String> {
