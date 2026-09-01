@@ -44,7 +44,7 @@
     "status": "pending_ci",
     "workflow": {
       "path": ".github/workflows/packaged-public-facade.yml",
-      "sha256": "13d0cffa3c80546732d7a3f4b12284737d5378ed7da878b2175a65ce20dccc59"
+      "sha256": "5c6573003b69e4db48102a5458b2e6b45b56a90a07027139f58b8503eac8be14"
     }
   },
   "viewerEvidence": {
