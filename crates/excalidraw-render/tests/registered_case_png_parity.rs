@@ -28,6 +28,7 @@ use serde_json::Value;
 /// differences. A case that starts passing must be removed from the list, which
 /// the test enforces so the suppression cannot outlive the divergence.
 const KNOWN_DIVERGENT: &[&str] = &[
+    // extent now matches official exactly; a pixel difference remains
     "focused.arrow-suite.v1",
     "focused.bound-text-containers.v1",
     "focused.cjk-propagation.v1",
