@@ -457,6 +457,79 @@
       "approving_issue": "97",
       "runner": "tools/reference-oracle/run-frame-conformance.sh",
       "generator": "tools/reference-oracle/scripts/frame-conformance-case.mjs"
+    },
+    {
+      "id": "focused.cjk-propagation.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/cjk-propagation",
+      "approving_issue": "103",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/cjk-propagation",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-02",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+      "purpose": "Propagate CJK text from Excalifont to the Xiaolai chain, including mixed Latin, digit and CJK runs in one text element.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "font.cjk-propagation",
+          "role": "primary"
+        },
+        {
+          "identity": "font.mixed-script",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:text",
+        "font:cjk",
+        "font:mixed-script",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "text": 4
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "text": 4
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ]
     }
   ]
 }
