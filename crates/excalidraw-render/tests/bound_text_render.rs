@@ -22,7 +22,7 @@ fn shape_bound_text_inherits_the_container_rotation() {
 }
 
 #[test]
-fn shape_bound_text_uses_container_padding_and_alignment() {
+fn shape_bound_text_paints_at_its_stored_coordinates() {
     let scene = SceneDocument::parse(br##"{
         "type":"excalidraw","version":2,
         "elements":[
@@ -39,7 +39,15 @@ fn shape_bound_text_uses_container_padding_and_alignment() {
         .next()
         .and_then(|prefix| prefix.rsplit("<g transform=\"").next())
         .expect("bound text transform is emitted");
-    assert!(text_group.starts_with("translate(95 65)"));
+    // The label is stored at (400, 400), far outside its 120x80 container, and
+    // paints there rather than being re-derived from the container box and the
+    // align values. focused.bound-text-probe.v1 holds the official evidence: a
+    // label stored outside its container renders outside it and expands the
+    // scene bounds to include it. The transform carries the 10px export padding.
+    assert!(
+        text_group.starts_with("translate(410 410)"),
+        "bound label should paint at its stored coordinates, got {text_group:.40}"
+    );
 }
 
 #[test]

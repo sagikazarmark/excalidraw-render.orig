@@ -28,10 +28,14 @@ use serde_json::Value;
 /// differences. A case that starts passing must be removed from the list, which
 /// the test enforces so the suppression cannot outlive the divergence.
 const KNOWN_DIVERGENT: &[&str] = &[
-    // Outline geometry matches official byte for byte in all three of these; the
-    // residual is text rasterization, which is the next thread under #104.
+    // Tracked under #104. All but focused.arrow-suite.v1 are sub-pixel glyph
+    // coverage, where outline geometry and glyph bounding boxes match official
+    // exactly and only interior ink differs. focused.arrow-suite.v1 is different:
+    // its path data matches official byte for byte, but our scene bounds are
+    // 0.44px taller, so the whole raster is offset.
     "focused.arrow-suite.v1",
     "focused.bound-text-containers.v1",
+    "focused.bound-text-placement.v1",
     "focused.ellipse-diamond-fills.v1",
     "focused.cjk-propagation.v1",
     "focused.embeddable-links.v1",

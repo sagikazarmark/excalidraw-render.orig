@@ -44,19 +44,13 @@ pub(super) fn resolve_bound_text_placements(
             NormalizedElementKind::Rectangle
             | NormalizedElementKind::Diamond
             | NormalizedElementKind::Ellipse => {
-                let [box_x, box_y, box_width, box_height] =
-                    bound_text_box(container).ok_or(ResolveSceneError::UnboundedGeometry)?;
-                let x = match text_source.text_align.as_str() {
-                    "center" => box_x + (box_width - text.width) / 2.0,
-                    "right" => box_x + box_width - text.width,
-                    _ => box_x,
-                };
-                let y = match text_source.vertical_align.as_str() {
-                    "middle" => box_y + (box_height - text.height) / 2.0,
-                    "bottom" => box_y + box_height - text.height,
-                    _ => box_y,
-                };
-                (x, y, container.angle)
+                // A shape container's label paints at its own stored
+                // coordinates. The official export does not re-derive them from
+                // the container box and the align values: a label stored far
+                // outside its container renders outside it, and expands the
+                // scene bounds to include it. Arrow labels are different and
+                // are still resolved to the arrow midpoint below.
+                (text.x, text.y, container.angle)
             }
             NormalizedElementKind::Linear(linear)
                 if linear.kind == crate::normalization::NormalizedLinearKind::Arrow =>

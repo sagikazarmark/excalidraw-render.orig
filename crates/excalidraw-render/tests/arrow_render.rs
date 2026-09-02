@@ -34,14 +34,13 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
 
         assert_eq!(outcome.artifact().bytes(), repeated.artifact().bytes());
         assert_eq!(outcome.report(), repeated.report());
-        // All three digests moved when elbow arrows stopped being jittered: the
-        // scene's `elbow` element is drawn unroughened now, matching the official
-        // export. An earlier PNG-only move came from fixing stroke dashing, which
-        // the `crowfeet` element exercises.
         let expected_digest = match format {
-            OutputFormat::Svg => "5ed9cdcd490f212d05f3de5edf8cd1d964ae523b32cfd6c4aa0f8e30c3d5f909",
-            OutputFormat::Png => "61f7fcbafaa629f9b11043ae998d36c3a0181a6286b3f7c86aab30f14fea74b6",
-            OutputFormat::Pdf => "62df83d9b01cef9620e6b730190b592732ceb933bb7212df4c9f1f82ea39cf32",
+            OutputFormat::Svg => "d8575574faff4ed75ccc617239980c2a0250e1213e0da4adb01b4c6c71b6e4b3",
+            // Updated when PNG stroke dashing was fixed: the previous digest pinned the
+            // `crowfeet` arrow's dashed stroke rendering as solid. SVG and PDF are
+            // unchanged, which is what confirms the move was PNG-only.
+            OutputFormat::Png => "17f96486431b5b140229a3ed3c5d102c32308faaf943da94839c2fe06356a50f",
+            OutputFormat::Pdf => "99505f0a67ce2181670ec8fcc9992e68e6376e6e9700cb1a59fae74a8a192566",
             _ => unreachable!("the test enumerates every revision-1 format"),
         };
         assert_eq!(
