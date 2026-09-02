@@ -14,7 +14,7 @@ use std::fs;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
-use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{ColorMode, OutputFormat, RenderRequest, Renderer, SceneDocument};
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
 use png::{BitDepth, ColorType, Decoder, Transformations};
 use serde_json::Value;
@@ -69,25 +69,35 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
         let variants = manifest["variants"]
             .as_array()
             .expect("manifest variants are an array");
-        // Every case declares only the default export today. When a case adds a
-        // dark-mode or scale row this must learn to build the matching request
-        // rather than quietly skip it, so it fails loudly instead.
-        assert_eq!(
-            variants.len(),
-            1,
-            "{id} declares {} variants; this harness only builds the default request",
-            variants.len()
-        );
-        let variant = &variants[0];
-        assert_eq!(variant["id"], "default", "{id} has a non-default variant");
+        for variant in variants {
 
         let scene = SceneDocument::parse(
             &fs::read(dir.join("scene.excalidraw")).expect("scene document present"),
         )
         .unwrap_or_else(|error| panic!("{id} scene is admitted: {error:?}"));
-        let request = RenderRequest::builder(OutputFormat::Png)
-            .build()
-            .expect("default PNG request is valid");
+        let options = &variant["options"];
+        // Only the options a registered variant actually varies are honoured. An
+        // unrecognised deviation from the default export fails rather than
+        // silently rendering the default and comparing it to other evidence.
+        let mut builder = RenderRequest::builder(OutputFormat::Png);
+        if options["exportWithDarkMode"] == serde_json::json!(true) {
+            builder = builder.color_mode(ColorMode::Dark);
+        }
+        for (key, default) in [
+            ("exportBackground", serde_json::json!(true)),
+            ("exportEmbedScene", serde_json::json!(false)),
+            ("exportPadding", serde_json::json!(10)),
+            ("exportScale", serde_json::json!(1)),
+            ("maxWidthOrHeight", serde_json::Value::Null),
+            ("viewBackgroundColor", serde_json::json!("#ffffff")),
+        ] {
+            assert_eq!(
+                options[key], default,
+                "{id} variant {} varies {key}, which this harness does not build",
+                variant["id"]
+            );
+        }
+        let request = builder.build().expect("PNG request is valid");
         let outcome = Renderer::new()
             .render(&scene, &request)
             .unwrap_or_else(|error| panic!("{id} renders as PNG: {error:?}"));
@@ -138,10 +148,13 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
         };
 
         match (divergence, KNOWN_DIVERGENT.contains(&id)) {
-            (Some(detail), false) => failures.push(format!("{id}: {detail}")),
+            (Some(detail), false) => {
+                failures.push(format!("{id} [{}]: {detail}", variant["id"]))
+            }
             (Some(_), true) => {}
             (None, true) => unexpected_passes.push(id.to_owned()),
             (None, false) => {}
+        }
         }
     }
 

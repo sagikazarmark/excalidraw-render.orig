@@ -428,7 +428,8 @@
           }
         },
         "id": {
-          "const": "default"
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
         },
         "options": {
           "type": "object",

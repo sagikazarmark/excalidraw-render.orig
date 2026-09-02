@@ -214,7 +214,7 @@
       "layer": "focused",
       "generated_at": "2026-09-02",
       "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
-      "purpose": "Drive ellipse and diamond geometry through every Rough fill style and every stroke style at compatibility revision 1.",
+      "purpose": "Drive ellipse and diamond geometry through every Rough fill style and every stroke style, in both the default and dark-mode exports.",
       "license": {
         "copyright": "Copyright 2026 excalidraw-render contributors",
         "expression": "MIT OR Apache-2.0"
@@ -263,6 +263,10 @@
         {
           "identity": "reference.svg",
           "role": "primary"
+        },
+        {
+          "identity": "export.dark-mode",
+          "role": "primary"
         }
       ],
       "feature_tags": [
@@ -275,7 +279,8 @@
         "stroke:dashed",
         "stroke:dotted",
         "format:svg",
-        "format:png"
+        "format:png",
+        "export:dark-mode"
       ],
       "semantic_expectations": {
         "element_counts": {
@@ -311,6 +316,25 @@
             "exportPadding": 10,
             "exportScale": 1,
             "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "dark-mode",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": true,
             "frameRendering": {
               "clip": true,
               "enabled": true,
