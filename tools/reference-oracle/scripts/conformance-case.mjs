@@ -17,11 +17,32 @@ import { canonicalize } from "./canonical-json.mjs";
 const ORACLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = resolve(ORACLE_ROOT, "../..");
 const PROFILE_ROOT = resolve(REPO_ROOT, "tests/oracle/reference-profiles");
-const CASE_ID = "focused.rectangle-outline.v1";
-const CASE_ROOT = resolve(REPO_ROOT, "tests/conformance/cases/focused/rectangle-outline");
-const EVIDENCE_ROOT = resolve(CASE_ROOT, "evidence");
-const STAGING_ROOT = resolve(REPO_ROOT, "target/reference-evidence/rectangle-outline");
-const SCHEMA_PATH = resolve(REPO_ROOT, "tests/conformance/rectangle-reference-case-v1.schema.json");
+const REGISTRY_PATH = resolve(REPO_ROOT, "tests/conformance/cases/registry.json");
+const REGISTRY_SCHEMA = "excalidraw-render/conformance-case-registry/v1";
+
+// Populated by main() from the checked registry before any case data is read.
+let CASE = null;
+
+function loadCase(caseId) {
+  const registry = JSON.parse(readFileSync(REGISTRY_PATH, "utf8"));
+  if (registry.schema !== REGISTRY_SCHEMA) {
+    throw new Error(`case registry schema must be ${REGISTRY_SCHEMA}`);
+  }
+  const entry = registry.cases.find((candidate) => candidate.id === caseId);
+  if (!entry) {
+    throw new Error(`unknown conformance case ${caseId}`);
+  }
+  if (entry.kind !== "scene") {
+    throw new Error(`case ${caseId} has kind ${entry.kind}; this generator builds scene cases`);
+  }
+  return {
+    ...entry,
+    root: resolve(REPO_ROOT, entry.path),
+    staging: resolve(REPO_ROOT, entry.staging),
+    schemaPath: resolve(REPO_ROOT, entry.schema.path),
+    runnerPath: resolve(REPO_ROOT, entry.runner),
+  };
+}
 const ORIGIN = "http://reference.invalid";
 const PROFILE_DIGEST = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 const ASSET_DIGEST = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
@@ -78,7 +99,7 @@ function canonicalBytes(value) {
 }
 
 function casePath(path) {
-  return relative(CASE_ROOT, path).split(sep).join("/");
+  return relative(CASE.root, path).split(sep).join("/");
 }
 
 function repoPath(path) {
@@ -285,22 +306,22 @@ function provenance(first, second) {
     requests: run.requests,
   });
   const generatorPath = fileURLToPath(import.meta.url);
-  const runnerPath = resolve(ORACLE_ROOT, "run-conformance.sh");
+  const runnerPath = CASE.runnerPath;
   return {
     browser: {
       arguments: BROWSER_ARGUMENTS,
       context: CONTEXT_OPTIONS,
       version: BROWSER_VERSION,
     },
-    case_id: CASE_ID,
+    case_id: CASE.id,
     container_image: CONTAINER_IMAGE,
-    generated_at: "2026-07-19",
+    generated_at: CASE.generated_at,
     generator: {
       byte_length: readFileSync(generatorPath).length,
       path: repoPath(generatorPath),
       sha256: sha256(readFileSync(generatorPath)),
     },
-    generation_invocation: "cargo run --locked -p xtask -- conformance generate focused.rectangle-outline.v1",
+    generation_invocation: `cargo run --locked -p xtask -- conformance generate ${CASE.id}`,
     node_version: process.version,
     png_independent_from_svg: true,
     raw_raster_profile: {
@@ -316,7 +337,7 @@ function provenance(first, second) {
     },
     runs: [runRecord(first, 1), runRecord(second, 2)],
     schema: "excalidraw-render/reference-evidence-provenance/v1",
-    reproduction_invocation: "cargo run --locked -p xtask -- conformance reproduce focused.rectangle-outline.v1",
+    reproduction_invocation: `cargo run --locked -p xtask -- conformance reproduce ${CASE.id}`,
   };
 }
 
@@ -325,7 +346,7 @@ function buildManifest(scenePath, provenancePath, outputRoot, first) {
   return {
     approval: null,
     assets: [],
-    case_id: CASE_ID,
+    case_id: CASE.id,
     comparison: {
       comparator_profiles: [],
       viewer_profiles: [{
@@ -335,25 +356,17 @@ function buildManifest(scenePath, provenancePath, outputRoot, first) {
       }],
     },
     compatibility_revision: 1,
-    coverage: [
-      { identity: "element.rectangle", role: "primary" },
-      { identity: "rough.outline", role: "primary" },
-      { identity: "reference.direct-png", role: "primary" },
-      { identity: "reference.svg", role: "primary" },
-    ],
+    coverage: CASE.coverage,
     crops: [],
-    determinism: { animation_offset_microseconds: 0, fresh_process_runs: 2 },
+    determinism: CASE.determinism,
     exceptions: [],
     expected_report: descriptor("expected-report.json"),
-    feature_tags: ["element:rectangle", "rough:outline", "format:svg", "format:png"],
-    layer: "focused",
-    license: {
-      copyright: "Copyright 2026 excalidraw-render contributors",
-      expression: "MIT OR Apache-2.0",
-    },
-    originating_issue: "https://github.com/sagikazarmark/excalidraw-render.orig/issues/32",
+    feature_tags: CASE.feature_tags,
+    layer: CASE.layer,
+    license: CASE.license,
+    originating_issue: CASE.originating_issue,
     provenance: fileDescriptor(provenancePath, {}, "evidence/provenance.json"),
-    purpose: "Isolate one unrounded, transparent-fill Rough rectangle outline in official SVG and direct-canvas PNG.",
+    purpose: CASE.purpose,
     reference: {
       asset_manifest: {
         digest: `sha256:${ASSET_DIGEST}`,
@@ -368,25 +381,14 @@ function buildManifest(scenePath, provenancePath, outputRoot, first) {
         path: "tests/oracle/scene-surfaces/revision-1.json",
       },
     },
-    sanitization: {
-      performed: false,
-      reason: "Project-authored synthetic scene document; no external content.",
-    },
+    sanitization: CASE.sanitization,
     scene: fileDescriptor(scenePath),
     schema: {
-      digest: `sha256:${sha256(readFileSync(SCHEMA_PATH))}`,
-      id: "excalidraw-render/conformance-case/rectangle-reference/v1",
-      path: repoPath(SCHEMA_PATH),
+      digest: `sha256:${sha256(readFileSync(CASE.schemaPath))}`,
+      id: CASE.schema.id,
+      path: repoPath(CASE.schemaPath),
     },
-    semantic_expectations: {
-      element_count: 1,
-      element_type: "rectangle",
-      embedded_scene: false,
-      images: 0,
-      links: 0,
-      masks: 0,
-      selectable_text: false,
-    },
+    semantic_expectations: CASE.semantic_expectations,
     variants: [{
       formats: {
         png: {
@@ -445,14 +447,14 @@ function compareCheckedEvidence(stagedRoot, manifest) {
     "evidence/official-svg.rgba",
   ]) {
     const staged = readFileSync(resolve(stagedRoot, relativePath));
-    const checked = readFileSync(resolve(CASE_ROOT, relativePath));
+    const checked = readFileSync(resolve(CASE.root, relativePath));
     if (!staged.equals(checked)) {
       throw new Error(`${relativePath} differs from approved reference evidence`);
     }
   }
-  const checked = JSON.parse(readFileSync(resolve(CASE_ROOT, "manifest.json"), "utf8"));
+  const checked = JSON.parse(readFileSync(resolve(CASE.root, "manifest.json"), "utf8"));
   const stagedProvenance = JSON.parse(readFileSync(resolve(stagedRoot, "evidence/provenance.json"), "utf8"));
-  const checkedProvenance = JSON.parse(readFileSync(resolve(CASE_ROOT, "evidence/provenance.json"), "utf8"));
+  const checkedProvenance = JSON.parse(readFileSync(resolve(CASE.root, "evidence/provenance.json"), "utf8"));
   const normalizeProvenance = (value) => {
     const normalized = structuredClone(value);
     for (const run of normalized.runs) delete run.browser_process_id;
@@ -472,9 +474,10 @@ function compareCheckedEvidence(stagedRoot, manifest) {
 
 async function main() {
   const [mode, caseId] = process.argv.slice(2);
-  if ((mode !== "generate" && mode !== "reproduce") || caseId !== CASE_ID) {
-    throw new Error(`usage: node scripts/conformance-case.mjs <generate|reproduce> ${CASE_ID}`);
+  if ((mode !== "generate" && mode !== "reproduce") || !caseId) {
+    throw new Error("usage: node scripts/conformance-case.mjs <generate|reproduce> <case-id>");
   }
+  CASE = loadCase(caseId);
   if (process.env.REFERENCE_ORACLE_CANONICAL !== "1" || process.version !== "v24.16.0") {
     throw new Error("run this command in the canonical reference-profile container");
   }
@@ -491,33 +494,33 @@ async function main() {
   }
   const assetManifest = JSON.parse(readFileSync(resolve(PROFILE_ROOT, "revision-1-assets.json"), "utf8"));
   const allowedAssets = new Set(assetManifest.officialPackage.assets.map((asset) => `/${asset.path}`));
-  const scenePath = resolve(CASE_ROOT, "scene.excalidraw");
+  const scenePath = resolve(CASE.root, "scene.excalidraw");
   const scene = JSON.parse(readFileSync(scenePath, "utf8"));
   const first = await renderOnce(scene, allowedAssets);
   const second = await renderOnce(scene, allowedAssets);
   assertRepeatable(first, second);
 
-  const outputRoot = mode === "generate" ? CASE_ROOT : STAGING_ROOT;
-  if (mode === "generate" && existsSync(resolve(CASE_ROOT, "manifest.json"))) {
-    const existing = JSON.parse(readFileSync(resolve(CASE_ROOT, "manifest.json"), "utf8"));
+  const outputRoot = mode === "generate" ? CASE.root : CASE.staging;
+  if (mode === "generate" && existsSync(resolve(CASE.root, "manifest.json"))) {
+    const existing = JSON.parse(readFileSync(resolve(CASE.root, "manifest.json"), "utf8"));
     if (existing.approval !== null) {
       throw new Error("generation refuses to replace approved reference evidence");
     }
   }
   if (mode === "reproduce") {
-    rmSync(STAGING_ROOT, { force: true, recursive: true });
+    rmSync(CASE.staging, { force: true, recursive: true });
   }
   const provenancePath = writeEvidence(outputRoot, first, second);
   const manifest = buildManifest(scenePath, provenancePath, outputRoot, first);
   if (mode === "generate") {
     const manifestBytes = canonicalBytes(manifest);
-    writeFileSync(resolve(CASE_ROOT, "manifest.json"), Buffer.concat([manifestBytes, Buffer.from("\n")]));
-    writeFileSync(resolve(CASE_ROOT, "manifest.sha256"), `${sha256(manifestBytes)}\n`);
+    writeFileSync(resolve(CASE.root, "manifest.json"), Buffer.concat([manifestBytes, Buffer.from("\n")]));
+    writeFileSync(resolve(CASE.root, "manifest.sha256"), `${sha256(manifestBytes)}\n`);
   } else {
-    compareCheckedEvidence(STAGING_ROOT, manifest);
+    compareCheckedEvidence(CASE.staging, manifest);
   }
   console.log(JSON.stringify({
-    case_id: CASE_ID,
+    case_id: CASE.id,
     mode,
     png: {
       artifact_sha256: first.outputs.png.artifactSha256,

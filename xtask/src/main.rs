@@ -65,6 +65,15 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             conformance::verify(&case_id, true)?;
             println!("verified {case_id}");
         }
+        Some("verify-all") => {
+            no_more_args(args)?;
+            let case_ids = conformance::case_ids()?;
+            for case_id in &case_ids {
+                conformance::verify(case_id, true)?;
+                println!("verified {case_id}");
+            }
+            println!("verified {} registered cases", case_ids.len());
+        }
         Some("approval-subject") => {
             let case_id = required_arg(&mut args, "case ID")?;
             no_more_args(args)?;
@@ -226,15 +235,9 @@ fn no_more_args(mut args: impl Iterator<Item = String>) -> Result<(), String> {
 }
 
 fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
-    let runner = if case_id == "focused.excalifont-text.v1" {
-        "tools/reference-oracle/run-typography-conformance.sh"
-    } else if case_id == "focused.frame-export.v1" {
-        "tools/reference-oracle/run-frame-conformance.sh"
-    } else {
-        "tools/reference-oracle/run-conformance.sh"
-    };
+    let runner = conformance::case_runner(case_id)?;
     let status = Command::new("bash")
-        .arg(conformance::repo_root().join(runner))
+        .arg(conformance::repo_root().join(&runner))
         .arg(mode)
         .arg(case_id)
         .status()
@@ -249,7 +252,7 @@ fn usage() -> String {
     concat!(
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify> | ",
-        "conformance <generate|reproduce|verify|approval-subject|record-approval|",
+        "conformance <generate|reproduce|verify|verify-all|approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"

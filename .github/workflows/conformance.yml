@@ -1,0 +1,23 @@
+name: conformance
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  registered-cases:
+    name: registered conformance cases
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
+      - name: Verify every registered conformance case
+        run: cargo run --locked -p xtask -- conformance verify-all
+      - name: Renderer parity suite
+        run: cargo test --locked -p excalidraw-render --lib
