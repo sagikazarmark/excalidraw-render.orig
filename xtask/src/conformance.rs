@@ -36,6 +36,8 @@ struct CaseEntry {
     coverage: Vec<String>,
     semantic_expectations: Value,
     sanitization_reason: Option<String>,
+    svg_element_counts: Value,
+    generated_at: Option<String>,
 }
 
 fn registry() -> Result<Vec<CaseEntry>, String> {
@@ -81,6 +83,8 @@ fn registry() -> Result<Vec<CaseEntry>, String> {
                 .unwrap_or_default(),
             semantic_expectations: case["semantic_expectations"].clone(),
             sanitization_reason: case["sanitization"]["reason"].as_str().map(str::to_owned),
+            svg_element_counts: case["svg_element_counts"].clone(),
+            generated_at: case["generated_at"].as_str().map(str::to_owned),
         });
     }
     let mut seen = BTreeSet::new();
@@ -188,7 +192,7 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
     match &loaded.manifest["approval"] {
         Value::Null if require_approval => return Err("case has no approval record".to_owned()),
         Value::Null => {}
-        approval => verify_approval(approval, &subject)?,
+        approval => verify_approval_for_issue(approval, &subject, &loaded.entry.approving_issue)?,
     }
     Ok(())
 }
@@ -269,7 +273,7 @@ fn verify_frame(loaded: &LoadedCase, require_approval: bool) -> Result<(), Strin
     match &loaded.manifest["approval"] {
         Value::Null if require_approval => Err("frame case has no approval record".to_owned()),
         Value::Null => Ok(()),
-        approval => verify_approval_for_issue(approval, &subject, "97"),
+        approval => verify_approval_for_issue(approval, &subject, &loaded.entry.approving_issue),
     }
 }
 
@@ -574,7 +578,7 @@ fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), 
     match &loaded.manifest["approval"] {
         Value::Null if require_approval => Err("case has no approval record".to_owned()),
         Value::Null => Ok(()),
-        approval => verify_approval_for_issue(approval, &subject, "58"),
+        approval => verify_approval_for_issue(approval, &subject, &loaded.entry.approving_issue),
     }
 }
 
@@ -1192,7 +1196,7 @@ fn verify_variants(case_data: &LoadedCase, referenced: &mut Vec<Value>) -> Resul
         }
         verify_descriptor(&case_data.root, &value["artifact"], referenced)?;
         verify_descriptor(&case_data.root, &value["raw_raster"], referenced)?;
-        verify_format_dimensions(&case_data.root, format, value)?;
+        verify_format_dimensions(&case_data.root, format, value, &case_data.entry)?;
     }
     Ok(())
 }
@@ -1213,6 +1217,7 @@ fn verify_format_dimensions(
     root: &Path,
     format: &str,
     value: &Map<String, Value>,
+    entry: &CaseEntry,
 ) -> Result<(), String> {
     let artifact = object(&value["artifact"], "artifact")?;
     let raw = object(&value["raw_raster"], "raw raster")?;
@@ -1247,20 +1252,17 @@ fn verify_format_dimensions(
     let artifact_path = descriptor_path(root, &value["artifact"])?;
     let bytes = fs::read(artifact_path)
         .map_err(|error| format!("failed to read {format} artifact: {error}"))?;
-    let observed = if format == "png" {
-        png_dimensions(&bytes)?
-    } else {
-        svg_dimensions(&bytes)?
-    };
-    if observed != (width, height) {
-        return Err(format!(
-            "{format} encoded dimensions do not match the manifest"
-        ));
-    }
     if format == "png" {
+        if png_dimensions(&bytes)? != (width, height) {
+            return Err("png encoded dimensions do not match the manifest".to_owned());
+        }
         verify_png_semantics(&bytes, &raw_bytes)?;
     } else {
-        verify_svg_semantics(&bytes, width, height)?;
+        let (svg_width, svg_height) = svg_f64_dimensions(&bytes)?;
+        if svg_width.round() != f64::from(width) || svg_height.round() != f64::from(height) {
+            return Err("svg encoded dimensions do not match the manifest".to_owned());
+        }
+        verify_svg_semantics(&bytes, width, height, entry)?;
     }
     Ok(())
 }
@@ -1273,6 +1275,11 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
     if bytes != [&canonical_bytes(&provenance)?[..], b"\n"].concat() {
         return Err("provenance is not canonical JSON followed by one LF".to_owned());
     }
+    let generated_at = case_data
+        .entry
+        .generated_at
+        .as_deref()
+        .ok_or_else(|| format!("case {} registers no generation date", case_data.entry.id))?;
     if provenance["schema"] != json!("excalidraw-render/reference-evidence-provenance/v1")
         || provenance["case_id"] != json!(case_data.entry.id)
         || provenance["png_independent_from_svg"] != json!(true)
@@ -1302,12 +1309,18 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
     if provenance["container_image"]
         != json!("mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9")
         || provenance["node_version"] != json!("v24.16.0")
-        || provenance["generated_at"] != json!("2026-07-19")
+        || provenance["generated_at"] != json!(generated_at)
         || provenance["reference_profile_digest"] != json!(format!("sha256:{PROFILE_DIGEST}"))
         || provenance["generation_invocation"]
-            != json!("cargo run --locked -p xtask -- conformance generate focused.rectangle-outline.v1")
+            != json!(format!(
+                "cargo run --locked -p xtask -- conformance generate {}",
+                case_data.entry.id
+            ))
         || provenance["reproduction_invocation"]
-            != json!("cargo run --locked -p xtask -- conformance reproduce focused.rectangle-outline.v1")
+            != json!(format!(
+                "cargo run --locked -p xtask -- conformance reproduce {}",
+                case_data.entry.id
+            ))
     {
         return Err("generation provenance identity is invalid".to_owned());
     }
@@ -1464,9 +1477,6 @@ fn verify_repo_descriptor(value: &Value, subject: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn verify_approval(approval: &Value, subject: &str) -> Result<(), String> {
-    verify_approval_for_issue(approval, subject, "32")
-}
 
 fn verify_approval_for_issue(approval: &Value, subject: &str, issue: &str) -> Result<(), String> {
     let approval = object(approval, "approval")?;
@@ -1719,18 +1729,46 @@ fn verify_png_semantics(bytes: &[u8], expected_rgba: &[u8]) -> Result<(), String
     Ok(())
 }
 
-fn verify_svg_semantics(bytes: &[u8], width: u32, height: u32) -> Result<(), String> {
+fn verify_svg_semantics(
+    bytes: &[u8],
+    width: u32,
+    height: u32,
+    entry: &CaseEntry,
+) -> Result<(), String> {
     let text = std::str::from_utf8(bytes).map_err(|error| format!("SVG is not UTF-8: {error}"))?;
     let document = roxmltree::Document::parse(text)
         .map_err(|error| format!("SVG evidence is not well-formed XML: {error}"))?;
     let root = document.root_element();
     if root.tag_name().name() != "svg"
         || root.tag_name().namespace() != Some("http://www.w3.org/2000/svg")
-        || root.attribute("width") != Some(width.to_string().as_str())
-        || root.attribute("height") != Some(height.to_string().as_str())
-        || root.attribute("viewBox") != Some(format!("0 0 {width} {height}").as_str())
     {
-        return Err("SVG root semantics or dimensions are invalid".to_owned());
+        return Err("SVG root semantics are invalid".to_owned());
+    }
+    let attribute = |name: &str| -> Result<f64, String> {
+        root.attribute(name)
+            .ok_or_else(|| format!("SVG root is missing {name}"))?
+            .parse::<f64>()
+            .map_err(|error| format!("SVG root {name} is not a number: {error}"))
+    };
+    if attribute("width")?.round() != f64::from(width)
+        || attribute("height")?.round() != f64::from(height)
+    {
+        return Err("SVG root dimensions do not match the rasterized size".to_owned());
+    }
+    let view_box: Vec<f64> = root
+        .attribute("viewBox")
+        .ok_or_else(|| "SVG root is missing viewBox".to_owned())?
+        .split_whitespace()
+        .map(|part| part.parse::<f64>().map_err(|error| error.to_string()))
+        .collect::<Result<_, _>>()
+        .map_err(|error| format!("SVG viewBox is not numeric: {error}"))?;
+    if view_box.len() != 4
+        || view_box[0] != 0.0
+        || view_box[1] != 0.0
+        || view_box[2].round() != f64::from(width)
+        || view_box[3].round() != f64::from(height)
+    {
+        return Err("SVG viewBox does not match the rasterized size".to_owned());
     }
     let element_count = |name| {
         document
@@ -1738,14 +1776,14 @@ fn verify_svg_semantics(bytes: &[u8], width: u32, height: u32) -> Result<(), Str
             .filter(|node| node.is_element() && node.tag_name().name() == name)
             .count()
     };
-    if element_count("rect") != 1 || element_count("path") != 1 {
-        return Err(
-            "SVG does not contain exactly one background and one rectangle path".to_owned(),
-        );
-    }
-    for absent in ["a", "clipPath", "image", "mask", "text"] {
-        if element_count(absent) != 0 {
-            return Err(format!("SVG unexpectedly contains {absent} semantics"));
+    let declared = object(&entry.svg_element_counts, "svg_element_counts")?;
+    for name in ["rect", "path", "a", "clipPath", "image", "mask", "text"] {
+        let expected = declared.get(name).and_then(Value::as_u64).unwrap_or(0);
+        let observed = element_count(name) as u64;
+        if observed != expected {
+            return Err(format!(
+                "SVG contains {observed} {name} elements; the registered case declares {expected}"
+            ));
         }
     }
     let metadata = document
