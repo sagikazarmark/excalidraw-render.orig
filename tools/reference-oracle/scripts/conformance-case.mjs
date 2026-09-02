@@ -339,6 +339,13 @@ function provenance(first, second) {
 
 // One record per scene file payload: the payload kind and its decoded bytes,
 // which is the semantic asset identity the corpus binds.
+// The default variant's artifacts stay at evidence/official.*: the SVG viewer
+// qualification, its Chromium viewer profile, and two harness tools pin those
+// paths, and a canonical viewer identity must not move for a case layout change.
+function variantDir(variant) {
+  return variant.id === "default" ? "evidence" : `evidence/${variant.id}`;
+}
+
 function sceneAssets(scenePath) {
   const scene = JSON.parse(readFileSync(scenePath, "utf8"));
   const files = scene.files ?? {};
@@ -363,14 +370,14 @@ function buildManifest(scenePath, provenancePath, outputRoot, renders) {
   const descriptor = (name, extra) => fileDescriptor(resolve(outputRoot, name), extra, name);
   const variantEntry = (variant) => {
     const first = renders.get(variant.id).first;
-    const dir = `evidence/${variant.id}`;
+    const dir = variantDir(variant);
     const forFormat = (format, mediaType) => ({
       artifact: descriptor(`${dir}/official.${format}`, {
         height: first.outputs[format].height,
         media_type: mediaType,
         width: first.outputs[format].width,
       }),
-      expected_report: descriptor(`${dir}/expected-report-${format}.json`, {}),
+      expected_report: descriptor(`expected-report-${format}.json`, {}),
       raw_raster: descriptor(`${dir}/official-${format}.rgba`, {
         height: first.outputs[format].height,
         layout: "top-left-row-major",
@@ -436,17 +443,17 @@ function buildManifest(scenePath, provenancePath, outputRoot, renders) {
 
 function writeEvidence(outputRoot, renders) {
   mkdirSync(resolve(outputRoot, "evidence"), { recursive: true });
+  for (const format of ["png", "svg"]) {
+    writeFileSync(resolve(outputRoot, `expected-report-${format}.json`), expectedReport(format));
+  }
   for (const variant of CASE.variants) {
     const { first } = renders.get(variant.id);
-    const dir = resolve(outputRoot, "evidence", variant.id);
+    const dir = resolve(outputRoot, variantDir(variant));
     mkdirSync(dir, { recursive: true });
     writeFileSync(resolve(dir, "official.png"), first.outputs.png.artifact);
     writeFileSync(resolve(dir, "official.svg"), first.outputs.svg.artifact);
     writeFileSync(resolve(dir, "official-png.rgba"), first.outputs.png.rawRaster);
     writeFileSync(resolve(dir, "official-svg.rgba"), first.outputs.svg.rawRaster);
-    for (const format of ["png", "svg"]) {
-      writeFileSync(resolve(dir, `expected-report-${format}.json`), expectedReport(format));
-    }
   }
   const base = renders.get(CASE.variants[0].id);
   const provenancePath = resolve(outputRoot, "evidence/provenance.json");
@@ -455,14 +462,19 @@ function writeEvidence(outputRoot, renders) {
 }
 
 function compareCheckedEvidence(stagedRoot, manifest) {
-  const relativePaths = CASE.variants.flatMap((variant) => [
-    `evidence/${variant.id}/official.png`,
-    `evidence/${variant.id}/official.svg`,
-    `evidence/${variant.id}/official-png.rgba`,
-    `evidence/${variant.id}/official-svg.rgba`,
-    `evidence/${variant.id}/expected-report-png.json`,
-    `evidence/${variant.id}/expected-report-svg.json`,
-  ]);
+  const relativePaths = [
+    "expected-report-png.json",
+    "expected-report-svg.json",
+    ...CASE.variants.flatMap((variant) => {
+      const dir = variantDir(variant);
+      return [
+        `${dir}/official.png`,
+        `${dir}/official.svg`,
+        `${dir}/official-png.rgba`,
+        `${dir}/official-svg.rgba`,
+      ];
+    }),
+  ];
   for (const relativePath of relativePaths) {
     const staged = readFileSync(resolve(stagedRoot, relativePath));
     const checked = readFileSync(resolve(CASE.root, relativePath));

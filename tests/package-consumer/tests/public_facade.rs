@@ -15,7 +15,7 @@ const SCENE: &[u8] =
     include_bytes!("../../conformance/cases/focused/rectangle-outline/scene.excalidraw");
 const EXPECTED_REPORT: &[u8] =
     include_bytes!(
-        "../../conformance/cases/focused/rectangle-outline/evidence/default/expected-report-svg.json"
+        "../../conformance/cases/focused/rectangle-outline/expected-report-svg.json"
     );
 const LICENSE_BUNDLE_SHA256: &str =
     "a3236318603e4035951ad166ad827ef9fd3a98d9eeae9996e804aa6048d20077";

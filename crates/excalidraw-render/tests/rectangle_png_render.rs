@@ -20,7 +20,7 @@ fn approved_rectangle_renders_as_a_deterministic_canvas_equivalent_png() {
     assert_eq!(first.artifact().media_type(), "image/png");
     assert_eq!(
         serde_json::to_vec(first.report()).expect("report serializes"),
-        fs::read(case.join("evidence/default/expected-report-png.json")).unwrap()
+        fs::read(case.join("expected-report-png.json")).unwrap()
     );
 
     let candidate = decode_png(first.artifact().bytes());
@@ -38,7 +38,7 @@ fn approved_rectangle_renders_as_a_deterministic_canvas_equivalent_png() {
     let reference = CanonicalRgba8::new(
         200,
         120,
-        fs::read(case.join("evidence/default/official-png.rgba")).unwrap(),
+        fs::read(case.join("evidence/official-png.rgba")).unwrap(),
     )
     .expect("approved direct-canvas evidence is canonical RGBA8");
     let report = compare(

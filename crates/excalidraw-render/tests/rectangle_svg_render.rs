@@ -18,11 +18,11 @@ fn approved_rectangle_renders_as_deterministic_semantic_svg() {
     assert_eq!(first.report(), second.report());
     assert_eq!(
         serde_json::to_vec(first.report()).expect("report serializes"),
-        fs::read(case.join("evidence/default/expected-report-svg.json")).unwrap()
+        fs::read(case.join("expected-report-svg.json")).unwrap()
     );
 
     let candidate = parse_svg(first.artifact().bytes());
-    let official_bytes = fs::read(case.join("evidence/default/official.svg")).unwrap();
+    let official_bytes = fs::read(case.join("evidence/official.svg")).unwrap();
     let official = parse_svg(&official_bytes);
     assert!(candidate.starts_with(concat!(
         "<svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" ",
