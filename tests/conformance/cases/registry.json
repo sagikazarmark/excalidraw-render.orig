@@ -253,6 +253,104 @@
       ]
     },
     {
+      "id": "focused.arrow-suite.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/arrow-suite",
+      "approving_issue": "103",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/arrow-suite",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-02",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+      "purpose": "Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "element.arrow",
+          "role": "primary"
+        },
+        {
+          "identity": "element.text.bound",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.filled",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.outline",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.crowfoot",
+          "role": "primary"
+        },
+        {
+          "identity": "arrow.elbowed",
+          "role": "primary"
+        },
+        {
+          "identity": "bound-text.mask-gap",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:arrow",
+        "element:text",
+        "arrowhead:all-12",
+        "arrow:elbowed",
+        "bound-text:mask-gap",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "arrow": 14,
+          "text": 1
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 1,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 3,
+        "path": 54,
+        "mask": 14,
+        "text": 1
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ]
+    },
+    {
       "id": "focused.excalifont-text.v1",
       "kind": "typography",
       "path": "tests/conformance/cases/focused/excalifont-text",

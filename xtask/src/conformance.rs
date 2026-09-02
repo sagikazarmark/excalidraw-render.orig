@@ -1263,14 +1263,28 @@ fn verify_format_dimensions(
             "{format} raw raster length does not match its dimensions"
         ));
     }
-    if raw_bytes.chunks_exact(4).any(|pixel| pixel[3] != 255) {
-        return Err(format!(
-            "{format} raw raster must be opaque for this white-background case"
-        ));
-    }
+    // Rasterizing an SVG document antialiases its outer border, so those edge
+    // pixels carry partial alpha whenever the extent is not pixel-aligned. The
+    // interior must still be fully opaque for a white-background case. The
+    // direct-canvas PNG is pixel-aligned by construction and stays strict over
+    // the whole surface, which is where an unintended hole would show.
     let artifact_path = descriptor_path(root, &value["artifact"])?;
     let bytes = fs::read(artifact_path)
         .map_err(|error| format!("failed to read {format} artifact: {error}"))?;
+    let border = u32::from(format != "png");
+    if width <= 2 * border || height <= 2 * border {
+        return Err(format!("{format} raster is too small to verify"));
+    }
+    for row in border..height - border {
+        for column in border..width - border {
+            let index = ((row as usize * width as usize) + column as usize) * 4;
+            if raw_bytes[index + 3] != 255 {
+                return Err(format!(
+                    "{format} raw raster is not opaque at {column},{row} for this white-background case"
+                ));
+            }
+        }
+    }
     if format == "png" {
         if png_dimensions(&bytes)? != (width, height) {
             return Err("png encoded dimensions do not match the manifest".to_owned());
