@@ -23,3 +23,4 @@ jobs:
         run: |
           cargo test --locked -p excalidraw-render --lib
           cargo test --locked -p excalidraw-render --test registered_case_png_parity
+          cargo test --locked -p excalidraw-render --test registered_case_svg_path_parity
