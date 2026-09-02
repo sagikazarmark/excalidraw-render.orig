@@ -363,12 +363,13 @@ pub(super) fn rough_drawing(
                         (first.x - last.x).hypot(first.y - last.y) <= LINE_CONFIRM_THRESHOLD
                     });
             let mut drawing = if linear.elbowed {
-                // An elbow arrow is a precise orthogonal route with rounded
-                // corners, and the official export draws it unjittered whatever
-                // the element's roughness. Passing the element roughness through
-                // extended the scene by a fraction of a pixel and moved pixels
-                // along the whole route.
-                elbow_drawing(&points, source.seed, 0.0, disable_multi_stroke, budget)?
+                elbow_drawing(
+                    &points,
+                    source.seed,
+                    roughness,
+                    disable_multi_stroke,
+                    budget,
+                )?
             } else if source.roundness.is_some() {
                 rough::curve_drawing(
                     &points,
