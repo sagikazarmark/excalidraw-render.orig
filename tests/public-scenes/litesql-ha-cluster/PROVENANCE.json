@@ -1,0 +1,52 @@
+{
+  "identity": "litesql-ha-cluster",
+  "upstream": {
+    "repository": "https://github.com/litesql/ha",
+    "path": "ha.excalidraw",
+    "commit": "174bdf56ee3fa8c28b427f94e5fa2e2c2704f23b",
+    "committed": "2026-05-08T23:22:56Z",
+    "permalink": "https://github.com/litesql/ha/blob/174bdf56ee3fa8c28b427f94e5fa2e2c2704f23b/ha.excalidraw",
+    "raw": "https://raw.githubusercontent.com/litesql/ha/174bdf56ee3fa8c28b427f94e5fa2e2c2704f23b/ha.excalidraw"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 148420,
+    "sha256": "704df59e98c901aa9b3ef1d99670805d3dde01fcffd349352e2ae4670003b1ba",
+    "source": "https://excalidraw.com",
+    "schema_version": 2,
+    "elements": 111,
+    "element_types": {
+      "arrow": 18,
+      "ellipse": 8,
+      "image": 1,
+      "line": 38,
+      "rectangle": 11,
+      "text": 35
+    },
+    "font_families": [
+      1,
+      2,
+      8
+    ],
+    "fill_styles": [
+      "cross-hatch",
+      "hachure",
+      "solid"
+    ],
+    "roughness": [
+      0,
+      1,
+      2
+    ],
+    "files": 1,
+    "view_background": "#ffffff"
+  },
+  "coverage_note": "embedded SVG image payload; font families 1/2/8; 111 elements"
+}

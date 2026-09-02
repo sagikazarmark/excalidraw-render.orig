@@ -1,0 +1,48 @@
+{
+  "identity": "antibody-contact-maps",
+  "upstream": {
+    "repository": "https://github.com/Jake-Jay/antibody-illustrations",
+    "path": "contact-maps-from-attention-excalidraw.excalidraw",
+    "commit": "10f9e98105d3bcc7d93f8c752d96b095b4b3b7a9",
+    "committed": "2023-04-15T01:15:13Z",
+    "permalink": "https://github.com/Jake-Jay/antibody-illustrations/blob/10f9e98105d3bcc7d93f8c752d96b095b4b3b7a9/contact-maps-from-attention-excalidraw.excalidraw",
+    "raw": "https://raw.githubusercontent.com/Jake-Jay/antibody-illustrations/10f9e98105d3bcc7d93f8c752d96b095b4b3b7a9/contact-maps-from-attention-excalidraw.excalidraw"
+  },
+  "license": {
+    "spdx": "CC0-1.0",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 132092,
+    "sha256": "1f761c772147e0a54a692daf50102b6d4a3fab0abcf5251a328431d0e5963e32",
+    "source": "https://excalidraw.com",
+    "schema_version": 2,
+    "elements": 130,
+    "element_types": {
+      "arrow": 3,
+      "ellipse": 15,
+      "line": 67,
+      "rectangle": 34,
+      "text": 11
+    },
+    "font_families": [
+      1
+    ],
+    "fill_styles": [
+      "cross-hatch",
+      "solid"
+    ],
+    "roughness": [
+      0,
+      1,
+      2
+    ],
+    "files": 0,
+    "view_background": "#ffffff"
+  },
+  "coverage_note": "cross-hatch fills over a dense line grid; 130 elements"
+}

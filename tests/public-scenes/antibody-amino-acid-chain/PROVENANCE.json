@@ -1,0 +1,48 @@
+{
+  "identity": "antibody-amino-acid-chain",
+  "upstream": {
+    "repository": "https://github.com/Jake-Jay/antibody-illustrations",
+    "path": "amino-acid-with-chain.excalidraw",
+    "commit": "7f899ed68ce16a1707e18b4b0d8ac54ef35e06a8",
+    "committed": "2023-01-17T14:02:08Z",
+    "permalink": "https://github.com/Jake-Jay/antibody-illustrations/blob/7f899ed68ce16a1707e18b4b0d8ac54ef35e06a8/amino-acid-with-chain.excalidraw",
+    "raw": "https://raw.githubusercontent.com/Jake-Jay/antibody-illustrations/7f899ed68ce16a1707e18b4b0d8ac54ef35e06a8/amino-acid-with-chain.excalidraw"
+  },
+  "license": {
+    "spdx": "CC0-1.0",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 127113,
+    "sha256": "251d9a4362baad88daef5edb66d82d43ca12355f6539e35f8046d73fffe47846",
+    "source": "https://excalidraw.com",
+    "schema_version": 2,
+    "elements": 129,
+    "element_types": {
+      "arrow": 35,
+      "diamond": 36,
+      "ellipse": 31,
+      "rectangle": 10,
+      "text": 17
+    },
+    "font_families": [
+      1
+    ],
+    "fill_styles": [
+      "hachure",
+      "solid"
+    ],
+    "roughness": [
+      0,
+      1,
+      2
+    ],
+    "files": 0,
+    "view_background": "#ffffff"
+  },
+  "coverage_note": "diamond- and ellipse-dense illustration; roughness 0/1/2 mixed; hachure and solid fills"
+}

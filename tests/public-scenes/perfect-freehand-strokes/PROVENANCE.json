@@ -1,0 +1,46 @@
+{
+  "identity": "perfect-freehand-strokes",
+  "upstream": {
+    "repository": "https://github.com/steveruizok/perfect-freehand",
+    "path": "packages/dev/src/state/excalidraw.json",
+    "commit": "a2433b166608f1e36ca744a670cfc072a30ea4b2",
+    "committed": "2026-02-01T00:35:08Z",
+    "permalink": "https://github.com/steveruizok/perfect-freehand/blob/a2433b166608f1e36ca744a670cfc072a30ea4b2/packages/dev/src/state/excalidraw.json",
+    "raw": "https://raw.githubusercontent.com/steveruizok/perfect-freehand/a2433b166608f1e36ca744a670cfc072a30ea4b2/packages/dev/src/state/excalidraw.json"
+  },
+  "license": {
+    "spdx": "MIT",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 15052,
+    "sha256": "be814edf6005ce8a2af8ad4ed675487c29f51a1159df9a628dab26e8716564fc",
+    "source": "https://excalidraw.com",
+    "schema_version": 2,
+    "elements": 18,
+    "element_types": {
+      "arrow": 4,
+      "freedraw": 8,
+      "rectangle": 3,
+      "text": 3
+    },
+    "font_families": [
+      1
+    ],
+    "fill_styles": [
+      "hachure",
+      "solid"
+    ],
+    "roughness": [
+      0,
+      1
+    ],
+    "files": 0,
+    "view_background": "#ffffff"
+  },
+  "coverage_note": "freedraw-heavy scene (8 strokes) with bound arrows and text"
+}

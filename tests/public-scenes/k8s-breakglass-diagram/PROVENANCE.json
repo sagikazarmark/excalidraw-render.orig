@@ -1,0 +1,46 @@
+{
+  "identity": "k8s-breakglass-diagram",
+  "upstream": {
+    "repository": "https://github.com/telekom/k8s-breakglass",
+    "path": "docs/diagram.excalidraw",
+    "commit": "d5d046671f9a63e671c2e63d7b71f99355f4dad8",
+    "committed": "2025-04-10T11:00:41Z",
+    "permalink": "https://github.com/telekom/k8s-breakglass/blob/d5d046671f9a63e671c2e63d7b71f99355f4dad8/docs/diagram.excalidraw",
+    "raw": "https://raw.githubusercontent.com/telekom/k8s-breakglass/d5d046671f9a63e671c2e63d7b71f99355f4dad8/docs/diagram.excalidraw"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 50138,
+    "sha256": "d1f8a2f0be3d6fe8915863c8244887584a31f461e052c036af95c6d2a6a62415",
+    "source": "https://excalidraw.com",
+    "schema_version": 2,
+    "elements": 44,
+    "element_types": {
+      "arrow": 10,
+      "diamond": 2,
+      "ellipse": 5,
+      "line": 5,
+      "rectangle": 4,
+      "text": 18
+    },
+    "font_families": [
+      5
+    ],
+    "fill_styles": [
+      "solid"
+    ],
+    "roughness": [
+      1
+    ],
+    "files": 0,
+    "view_background": "#ffffff"
+  },
+  "coverage_note": "diamond, ellipse and line mix at moderate size"
+}

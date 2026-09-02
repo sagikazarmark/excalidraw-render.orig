@@ -1,0 +1,41 @@
+{
+  "identity": "leaflet-area-selection-ui",
+  "upstream": {
+    "repository": "https://github.com/bopen/leaflet-area-selection",
+    "path": "ui-components.excalidraw.json",
+    "commit": "74b55102dd8c4936367a997508e5dbc989450eb3",
+    "committed": "2020-12-09T17:45:26Z",
+    "permalink": "https://github.com/bopen/leaflet-area-selection/blob/74b55102dd8c4936367a997508e5dbc989450eb3/ui-components.excalidraw.json",
+    "raw": "https://raw.githubusercontent.com/bopen/leaflet-area-selection/74b55102dd8c4936367a997508e5dbc989450eb3/ui-components.excalidraw.json"
+  },
+  "license": {
+    "spdx": "MIT",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 5366,
+    "sha256": "fa31f950b4aa644ce3c131c7d2e9c3cbb829719575716ab51ff4ef77872c2714",
+    "source": "https://excalidraw.com",
+    "schema_version": 2,
+    "elements": 7,
+    "element_types": {
+      "ellipse": 6,
+      "line": 1
+    },
+    "font_families": [],
+    "fill_styles": [
+      "hachure",
+      "solid"
+    ],
+    "roughness": [
+      1
+    ],
+    "files": 0,
+    "view_background": "#ffffff"
+  },
+  "coverage_note": "ellipse and line only; no text, exercises pure geometry"
+}

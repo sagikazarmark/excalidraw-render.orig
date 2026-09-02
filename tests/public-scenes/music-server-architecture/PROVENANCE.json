@@ -1,0 +1,50 @@
+{
+  "identity": "music-server-architecture",
+  "upstream": {
+    "repository": "https://github.com/Seirea/excalidraws",
+    "path": "music-server.excalidraw",
+    "commit": "33a2f94bd85f1b4e4a921f96cf2b3025ff9957a1",
+    "committed": "2025-01-09T06:14:56Z",
+    "permalink": "https://github.com/Seirea/excalidraws/blob/33a2f94bd85f1b4e4a921f96cf2b3025ff9957a1/music-server.excalidraw",
+    "raw": "https://raw.githubusercontent.com/Seirea/excalidraws/33a2f94bd85f1b4e4a921f96cf2b3025ff9957a1/music-server.excalidraw"
+  },
+  "license": {
+    "spdx": "CC0-1.0",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 101260,
+    "sha256": "630d679cb73ba39572b9f3bc6ac9a733e79fe02bf7c66f44e52516778ada2933",
+    "source": "https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor",
+    "schema_version": 2,
+    "elements": 77,
+    "element_types": {
+      "arrow": 25,
+      "diamond": 4,
+      "ellipse": 1,
+      "freedraw": 1,
+      "rectangle": 19,
+      "text": 27
+    },
+    "font_families": [
+      1,
+      2
+    ],
+    "fill_styles": [
+      "cross-hatch",
+      "hachure",
+      "solid"
+    ],
+    "roughness": [
+      1,
+      2
+    ],
+    "files": 0,
+    "view_background": "#f5faff"
+  },
+  "coverage_note": "all three fill styles, freedraw stroke, tinted view background, two font families"
+}
