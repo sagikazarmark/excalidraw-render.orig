@@ -40,6 +40,7 @@ struct CaseEntry {
     generated_at: Option<String>,
     empty_fields: Vec<String>,
     expected_diagnostics: Value,
+    variants: Value,
 }
 
 fn registry() -> Result<Vec<CaseEntry>, String> {
@@ -97,6 +98,7 @@ fn registry() -> Result<Vec<CaseEntry>, String> {
                 })
                 .unwrap_or_default(),
             expected_diagnostics: case["expected_diagnostics"].clone(),
+            variants: case["variants"].clone(),
         });
     }
     let mut seen = BTreeSet::new();
@@ -145,7 +147,6 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
             "crops",
             "determinism",
             "exceptions",
-            "expected_report",
             "feature_tags",
             "layer",
             "license",
@@ -190,16 +191,10 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
     verify_descriptor(&loaded.root, &loaded.manifest["scene"], &mut referenced)?;
     verify_descriptor(
         &loaded.root,
-        &loaded.manifest["expected_report"],
-        &mut referenced,
-    )?;
-    verify_descriptor(
-        &loaded.root,
         &loaded.manifest["provenance"],
         &mut referenced,
     )?;
     verify_scene(&loaded)?;
-    verify_expected_report(&loaded)?;
     verify_variants(&loaded, &mut referenced)?;
     verify_provenance(&loaded)?;
 
@@ -586,7 +581,7 @@ fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), 
         &mut referenced,
     )?;
     verify_typography_scene(loaded)?;
-    verify_expected_report(loaded)?;
+    verify_expected_report(loaded, &loaded.manifest["expected_report"], &json!([]))?;
     verify_typography_variants(loaded, &mut referenced)?;
     verify_typography_provenance(loaded)?;
     let subject = subject_digest(&loaded.manifest, referenced)?;
@@ -841,11 +836,6 @@ pub fn approval_subject(case_id: &str) -> Result<String, String> {
         return subject_digest(&loaded.manifest, referenced);
     }
     verify_descriptor(&loaded.root, &loaded.manifest["scene"], &mut referenced)?;
-    verify_descriptor(
-        &loaded.root,
-        &loaded.manifest["expected_report"],
-        &mut referenced,
-    )?;
     verify_descriptor(
         &loaded.root,
         &loaded.manifest["provenance"],
@@ -1252,25 +1242,23 @@ fn verify_typography_provenance(case_data: &LoadedCase) -> Result<(), String> {
     Ok(())
 }
 
-fn verify_expected_report(case_data: &LoadedCase) -> Result<(), String> {
-    let path = descriptor_path(&case_data.root, &case_data.manifest["expected_report"])?;
+fn verify_expected_report(
+    case_data: &LoadedCase,
+    descriptor: &Value,
+    declared: &Value,
+) -> Result<(), String> {
+    let path = descriptor_path(&case_data.root, descriptor)?;
     let bytes =
         fs::read(path).map_err(|error| format!("failed to read expected report: {error}"))?;
-    let declared = case_data
-        .entry
-        .expected_diagnostics
+    let list = declared
         .as_array()
         .map(|values| serde_json::to_string(values).unwrap_or_default())
         .unwrap_or_else(|| "[]".to_owned());
-    let expected = format!(r#"{{"schema_version":1,"diagnostics":{declared}}}"#);
+    let expected = format!(r#"{{"schema_version":1,"diagnostics":{list}}}"#);
     if bytes != expected.as_bytes() {
         return Err(format!(
             "expected report does not match the {} diagnostics the case declares",
-            case_data
-                .entry
-                .expected_diagnostics
-                .as_array()
-                .map_or(0, Vec::len)
+            declared.as_array().map_or(0, Vec::len)
         ));
     }
     Ok(())
@@ -1280,52 +1268,71 @@ fn verify_variants(case_data: &LoadedCase, referenced: &mut Vec<Value>) -> Resul
     let variants = case_data.manifest["variants"]
         .as_array()
         .ok_or_else(|| "variants must be an array".to_owned())?;
-    if variants.len() != 1 || variants[0]["id"] != json!("default") {
-        return Err("first case must have exactly the default variant".to_owned());
+    let declared = case_data.entry.variants.as_array().ok_or_else(|| {
+        format!("case {} registers no export variants", case_data.entry.id)
+    })?;
+    if variants.len() != declared.len() {
+        return Err(format!(
+            "manifest carries {} variants; the registered case declares {}",
+            variants.len(),
+            declared.len()
+        ));
     }
-    let options = object(&variants[0]["options"], "variant options")?;
-    verify_exact_keys(
-        options,
-        &[
-            "exportBackground",
-            "exportEmbedScene",
-            "exportPadding",
-            "exportScale",
-            "exportWithDarkMode",
-            "frameRendering",
-            "maxWidthOrHeight",
-            "viewBackgroundColor",
-        ],
-        "variant options",
-    )?;
-    if options["exportScale"].is_null() == options["maxWidthOrHeight"].is_null() {
-        return Err("exactly one sizing mode must be selected".to_owned());
-    }
-    if Value::Object(options.clone())
-        != json!({
-            "exportBackground": true,
-            "exportEmbedScene": false,
-            "exportPadding": 10,
-            "exportScale": 1,
-            "exportWithDarkMode": false,
-            "frameRendering": {"clip": true, "enabled": true, "name": true, "outline": true},
-            "maxWidthOrHeight": null,
-            "viewBackgroundColor": "#ffffff",
-        })
-    {
-        return Err("default variant options are not the approved first-case options".to_owned());
-    }
-    let formats = object(&variants[0]["formats"], "formats")?;
-    verify_exact_keys(formats, &["png", "svg"], "formats")?;
-    for format in ["png", "svg"] {
-        let value = object(&formats[format], format)?;
-        verify_exact_keys(value, &["artifact", "raw_raster", "visual_class"], format)?;
-        if value["visual_class"] != json!("geometry/image") {
-            return Err(format!("{format} has the wrong visual class"));
+    for (variant, registered) in variants.iter().zip(declared) {
+        if variant["id"] != registered["id"] {
+            return Err(format!(
+                "variant {:?} is not the registered {:?}",
+                variant["id"], registered["id"]
+            ));
         }
-        verify_descriptor(&case_data.root, &value["artifact"], referenced)?;
-        verify_descriptor(&case_data.root, &value["raw_raster"], referenced)?;
-        verify_format_dimensions(&case_data.root, format, value, &case_data.entry)?;
+        let options = object(&variant["options"], "variant options")?;
+        verify_exact_keys(
+            options,
+            &[
+                "exportBackground",
+                "exportEmbedScene",
+                "exportPadding",
+                "exportScale",
+                "exportWithDarkMode",
+                "frameRendering",
+                "maxWidthOrHeight",
+                "viewBackgroundColor",
+            ],
+            "variant options",
+        )?;
+        if Value::Object(options.clone()) != registered["options"] {
+            return Err(format!(
+                "variant {:?} options do not match the registered case",
+                variant["id"]
+            ));
+        }
+        if options["exportScale"].is_null() == options["maxWidthOrHeight"].is_null() {
+            return Err("exactly one sizing mode must be selected".to_owned());
+        }
+        let formats = object(&variant["formats"], "formats")?;
+        verify_exact_keys(formats, &["png", "svg"], "formats")?;
+        for format in ["png", "svg"] {
+            let value = object(&formats[format], format)?;
+            verify_exact_keys(
+                value,
+                &["artifact", "expected_report", "raw_raster", "visual_class"],
+                format,
+            )?;
+            if value["visual_class"] != registered["visual_class"] {
+                return Err(format!("{format} has the wrong visual class"));
+            }
+            verify_descriptor(&case_data.root, &value["artifact"], referenced)?;
+            verify_descriptor(&case_data.root, &value["raw_raster"], referenced)?;
+            verify_descriptor(&case_data.root, &value["expected_report"], referenced)?;
+            verify_format_dimensions(&case_data.root, format, value, &case_data.entry)?;
+            // A raster carries no hyperlink to sanitize, so a case can legitimately
+            // report diagnostics for one format and none for another.
+            verify_expected_report(
+                case_data,
+                &value["expected_report"],
+                &case_data.entry.expected_diagnostics[format],
+            )?;
+        }
     }
     Ok(())
 }
@@ -1334,10 +1341,16 @@ fn collect_variant_descriptors(
     case_data: &LoadedCase,
     referenced: &mut Vec<Value>,
 ) -> Result<(), String> {
-    let formats = object(&case_data.manifest["variants"][0]["formats"], "formats")?;
-    for format in ["png", "svg"] {
-        verify_descriptor(&case_data.root, &formats[format]["artifact"], referenced)?;
-        verify_descriptor(&case_data.root, &formats[format]["raw_raster"], referenced)?;
+    let variants = case_data.manifest["variants"]
+        .as_array()
+        .ok_or_else(|| "variants must be an array".to_owned())?;
+    for variant in variants {
+        let formats = object(&variant["formats"], "formats")?;
+        for format in ["png", "svg"] {
+            verify_descriptor(&case_data.root, &formats[format]["artifact"], referenced)?;
+            verify_descriptor(&case_data.root, &formats[format]["raw_raster"], referenced)?;
+            verify_descriptor(&case_data.root, &formats[format]["expected_report"], referenced)?;
+        }
     }
     Ok(())
 }

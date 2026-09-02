@@ -20,7 +20,7 @@ fn approved_rectangle_renders_as_a_deterministic_canvas_equivalent_png() {
     assert_eq!(first.artifact().media_type(), "image/png");
     assert_eq!(
         serde_json::to_vec(first.report()).expect("report serializes"),
-        fs::read(case.join("expected-report.json")).unwrap()
+        fs::read(case.join("expected-report-png.json")).unwrap()
     );
 
     let candidate = decode_png(first.artifact().bytes());

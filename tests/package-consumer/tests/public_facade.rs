@@ -14,7 +14,9 @@ wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 const SCENE: &[u8] =
     include_bytes!("../../conformance/cases/focused/rectangle-outline/scene.excalidraw");
 const EXPECTED_REPORT: &[u8] =
-    include_bytes!("../../conformance/cases/focused/rectangle-outline/expected-report.json");
+    include_bytes!(
+        "../../conformance/cases/focused/rectangle-outline/expected-report-svg.json"
+    );
 const LICENSE_BUNDLE_SHA256: &str =
     "a3236318603e4035951ad166ad827ef9fd3a98d9eeae9996e804aa6048d20077";
 const FALLBACK_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"future","type":"future","x":0,"y":0,"width":200,"height":60,"angle":0.2,"opacity":40,"updated":1},null],"appState":{},"files":{}}"#;

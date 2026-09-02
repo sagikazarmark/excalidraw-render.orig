@@ -14,7 +14,6 @@
     "crops",
     "determinism",
     "exceptions",
-    "expected_report",
     "feature_tags",
     "layer",
     "license",
@@ -128,9 +127,6 @@
     "exceptions": {
       "type": "array",
       "maxItems": 0
-    },
-    "expected_report": {
-      "$ref": "#/$defs/file"
     },
     "feature_tags": {
       "type": "array",
@@ -281,7 +277,6 @@
     "variants": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 1,
       "items": {
         "$ref": "#/$defs/variant"
       }
@@ -392,6 +387,7 @@
       "additionalProperties": false,
       "required": [
         "artifact",
+        "expected_report",
         "raw_raster",
         "visual_class"
       ],
@@ -404,6 +400,9 @@
         },
         "visual_class": {
           "const": "geometry/image"
+        },
+        "expected_report": {
+          "$ref": "#/$defs/file"
         }
       }
     },

@@ -18,7 +18,7 @@ fn approved_rectangle_renders_as_deterministic_semantic_svg() {
     assert_eq!(first.report(), second.report());
     assert_eq!(
         serde_json::to_vec(first.report()).expect("report serializes"),
-        fs::read(case.join("expected-report.json")).unwrap()
+        fs::read(case.join("expected-report-svg.json")).unwrap()
     );
 
     let candidate = parse_svg(first.artifact().bytes());
