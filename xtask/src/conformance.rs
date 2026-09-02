@@ -1491,7 +1491,10 @@ fn subject_digest(manifest: &Value, mut files: Vec<Value>) -> Result<String, Str
     }))?))
 }
 
-fn canonical_bytes(value: &Value) -> Result<Vec<u8>, String> {
+/// Canonical JSON for approval subjects and digest sidecars, shared by every
+/// evidence family that is not pinned by an approval record. Object keys must
+/// be ASCII so byte-order key sorting is a total canonical ordering.
+pub(crate) fn canonical_bytes(value: &Value) -> Result<Vec<u8>, String> {
     let mut output = String::new();
     write_canonical(value, &mut output)?;
     Ok(output.into_bytes())
@@ -1537,7 +1540,10 @@ fn write_canonical(value: &Value, output: &mut String) -> Result<(), String> {
     Ok(())
 }
 
-fn object<'a>(value: &'a Value, subject: &str) -> Result<&'a Map<String, Value>, String> {
+pub(crate) fn object<'a>(
+    value: &'a Value,
+    subject: &str,
+) -> Result<&'a Map<String, Value>, String> {
     value
         .as_object()
         .ok_or_else(|| format!("{subject} must be an object"))
@@ -1570,7 +1576,7 @@ fn u32_field(value: &Map<String, Value>, key: &str) -> Result<u32, String> {
         .ok_or_else(|| format!("{key} must be a u32"))
 }
 
-fn sha256(bytes: &[u8]) -> String {
+pub(crate) fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
@@ -1664,7 +1670,7 @@ fn verify_svg_semantics(bytes: &[u8], width: u32, height: u32) -> Result<(), Str
     Ok(())
 }
 
-fn valid_github_login(value: &str) -> bool {
+pub(crate) fn valid_github_login(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 39
         && !value.starts_with('-')
@@ -1674,7 +1680,7 @@ fn valid_github_login(value: &str) -> bool {
             .all(|character| character.is_ascii_alphanumeric() || character == '-')
 }
 
-fn valid_date(value: &str) -> bool {
+pub(crate) fn valid_date(value: &str) -> bool {
     let parts: Vec<_> = value.split('-').collect();
     if parts.len() != 3 || parts[0].len() != 4 || parts[1].len() != 2 || parts[2].len() != 2 {
         return false;

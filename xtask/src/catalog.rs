@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use crate::conformance::sha256;
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 
 const REVISION: u64 = 1;
 const EXCALIDRAW_RELEASE: &str = "v0.18.1";
@@ -2490,10 +2490,6 @@ fn verify_digest_sidecar(path: &Path, bytes: &[u8]) -> Result<(), String> {
         return Err(format!("digest sidecar is stale: {}", path.display()));
     }
     Ok(())
-}
-
-fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
 }
 
 fn array_at<'a>(value: &'a Value, path: &[&str], name: &str) -> Result<&'a [Value], String> {

@@ -174,3 +174,27 @@ dependency order; check `.crate` tarball sizes against crates.io's 10 MiB
 cap (`excalidraw-render-assets-data-000` carries ~8.0 MiB of incompressible
 WOFF2). Every contract-touching step carries its spec edit in the same
 change-set per the draft-revision upgrade policy.
+
+## Deferred follow-ups (recorded 2026-09-02)
+
+The unpinned xtask evidence modules (`conformance.rs`, `svg_viewers.rs`,
+`catalog.rs`) now share one canonical-JSON serializer and digest/approval
+helpers, with the ASCII-key guard applied uniformly. The pinned modules —
+`pdf_viewers.rs` and `main.rs` (approval subject on issue #35),
+`svg_font_subsets.rs` and `svg_font_subset_runner.rs` (issue #99), and
+`svg_font_subset_targets.rs` (cross-checked against #99's subject) — keep
+their duplicate copies deliberately: editing a pinned file invalidates its
+human approval record, and spending re-approval ceremonies on provably
+identical code is a bad trade. The approval record, not file duplication,
+is the isolation boundary.
+
+**Ride-along rule:** the next change that already forces a re-approval of
+issue #35 or #99 must also fold in, for the files that change anyway:
+deduplicating the shared helpers against `conformance.rs`, and porting the
+ASCII-key guard into that family's `write_canonical`. Until then the guard
+divergence is latent only — every committed manifest key is ASCII, and
+writer-side keys are string literals.
+
+Next planned design item: `resolve_scene` (~1,435 lines) — give its threaded
+accumulators a real type before splitting it; a mechanical code move is not
+enough.

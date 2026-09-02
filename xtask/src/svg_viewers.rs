@@ -1,10 +1,11 @@
 use std::fs;
 use std::path::{Component, Path};
 
-use serde_json::{json, Map, Value};
-use sha2::{Digest, Sha256};
+use serde_json::{json, Value};
 
-use crate::conformance::repo_root;
+use crate::conformance::{
+    canonical_bytes, object, repo_root, sha256, valid_date, valid_github_login,
+};
 
 const MANIFEST_PATH: &str =
     "tests/conformance/svg-viewer-qualification/rectangle-outline/manifest.json";
@@ -411,97 +412,9 @@ fn has_runtime(records: &[Value], name: &str, value: &str) -> bool {
         .any(|record| record["name"] == json!(name) && record["value"] == json!(value))
 }
 
-fn object<'a>(value: &'a Value, subject: &str) -> Result<&'a Map<String, Value>, String> {
-    value
-        .as_object()
-        .ok_or_else(|| format!("{subject} must be an object"))
-}
-
 fn array<'a>(value: &'a Value, subject: &str) -> Result<&'a [Value], String> {
     value
         .as_array()
         .map(Vec::as_slice)
         .ok_or_else(|| format!("{subject} must be an array"))
-}
-
-fn canonical_bytes(value: &Value) -> Result<Vec<u8>, String> {
-    let mut output = String::new();
-    write_canonical(value, &mut output)?;
-    Ok(output.into_bytes())
-}
-
-fn write_canonical(value: &Value, output: &mut String) -> Result<(), String> {
-    match value {
-        Value::Null => output.push_str("null"),
-        Value::Bool(value) => output.push_str(if *value { "true" } else { "false" }),
-        Value::Number(value) => output.push_str(&value.to_string()),
-        Value::String(value) => output.push_str(
-            &serde_json::to_string(value)
-                .map_err(|error| format!("invalid JSON string: {error}"))?,
-        ),
-        Value::Array(values) => {
-            output.push('[');
-            for (index, value) in values.iter().enumerate() {
-                if index > 0 {
-                    output.push(',');
-                }
-                write_canonical(value, output)?;
-            }
-            output.push(']');
-        }
-        Value::Object(values) => {
-            output.push('{');
-            let mut keys: Vec<_> = values.keys().collect();
-            keys.sort();
-            for (index, key) in keys.into_iter().enumerate() {
-                if index > 0 {
-                    output.push(',');
-                }
-                output.push_str(&serde_json::to_string(key).unwrap());
-                output.push(':');
-                write_canonical(&values[key], output)?;
-            }
-            output.push('}');
-        }
-    }
-    Ok(())
-}
-
-fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
-}
-
-fn valid_github_login(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 39
-        && !value.starts_with('-')
-        && !value.ends_with('-')
-        && value
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || character == '-')
-}
-
-fn valid_date(value: &str) -> bool {
-    let parts: Vec<_> = value.split('-').collect();
-    if parts.len() != 3 || parts[0].len() != 4 || parts[1].len() != 2 || parts[2].len() != 2 {
-        return false;
-    }
-    let Ok(year) = parts[0].parse::<u32>() else {
-        return false;
-    };
-    let Ok(month) = parts[1].parse::<u32>() else {
-        return false;
-    };
-    let Ok(day) = parts[2].parse::<u32>() else {
-        return false;
-    };
-    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
-    let days = match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 if leap => 29,
-        2 => 28,
-        _ => return false,
-    };
-    (1..=days).contains(&day)
 }
