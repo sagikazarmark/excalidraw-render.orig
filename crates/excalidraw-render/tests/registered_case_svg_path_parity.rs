@@ -32,11 +32,7 @@ use serde_json::Value;
 /// wrong must still have its path geometry checked: suppressing the whole case
 /// would hide exactly the class of defect this harness exists to catch — a
 /// change that corrupts path data while making an extent agree.
-const KNOWN_DIVERGENT_EXTENT: &[&str] = &[
-    // Path data matches byte for byte; the viewBox is 0.44px taller. The drawing
-    // is correct and the scene bounds are not.
-    "focused.arrow-suite.v1",
-];
+const KNOWN_DIVERGENT_EXTENT: &[&str] = &[];
 
 const KNOWN_DIVERGENT_PATHS: &[&str] = &[];
 

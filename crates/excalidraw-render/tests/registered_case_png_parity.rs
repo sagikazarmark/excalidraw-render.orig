@@ -28,11 +28,10 @@ use serde_json::Value;
 /// differences. A case that starts passing must be removed from the list, which
 /// the test enforces so the suppression cannot outlive the divergence.
 const KNOWN_DIVERGENT: &[&str] = &[
-    // Tracked under #104. All but focused.arrow-suite.v1 are sub-pixel glyph
-    // coverage, where outline geometry and glyph bounding boxes match official
-    // exactly and only interior ink differs. focused.arrow-suite.v1 is different:
-    // its path data matches official byte for byte, but our scene bounds are
-    // 0.44px taller, so the whole raster is offset.
+    // Tracked under #104. Every entry is now sub-pixel glyph coverage: SVG path
+    // geometry and the scene extent match official exactly for all nine cases
+    // (see registered_case_svg_path_parity), glyph bounding boxes match, and only
+    // interior ink differs. Each remaining case contains text.
     "focused.arrow-suite.v1",
     "focused.bound-text-containers.v1",
     "focused.bound-text-placement.v1",

@@ -34,8 +34,15 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
 
         assert_eq!(outcome.artifact().bytes(), repeated.artifact().bytes());
         assert_eq!(outcome.report(), repeated.report());
+        // The SVG digest moved when elbow arrow bounds started deriving from the
+        // declared route: the scene's `elbow` element makes the document a
+        // fraction of a pixel shorter, which the SVG records in its viewBox. PNG
+        // and PDF are unchanged because the difference does not cross the
+        // truncation boundary for this scene, so the raster is identical. An
+        // earlier PNG-only move came from fixing stroke dashing, which the
+        // `crowfeet` element exercises.
         let expected_digest = match format {
-            OutputFormat::Svg => "d8575574faff4ed75ccc617239980c2a0250e1213e0da4adb01b4c6c71b6e4b3",
+            OutputFormat::Svg => "cf381468226c5326196b98fda7c940636a35b3637021ea344e3fc765daf15756",
             // Updated when PNG stroke dashing was fixed: the previous digest pinned the
             // `crowfeet` arrow's dashed stroke rendering as solid. SVG and PDF are
             // unchanged, which is what confirms the move was PNG-only.

@@ -868,8 +868,15 @@ fn local_outline_bounds(
     let NormalizedElementKind::Linear(linear) = &source.kind else {
         return (0.0, 0.0, source.width, source.height);
     };
-    if let Some(bounds) = drawing.and_then(|drawing| drawing.outline.cubic_bounds()) {
-        return bounds;
+    // An elbow arrow's extent comes from its declared orthogonal route, not from
+    // the jittered path drawn along it. Taking the drawn curve's bounds made the
+    // scene a fraction of a pixel taller than the official export, which is
+    // enough to change a rasterized dimension when the extent sits near an
+    // integer boundary. Other linear elements do use the drawn bounds.
+    if !linear.elbowed {
+        if let Some(bounds) = drawing.and_then(|drawing| drawing.outline.cubic_bounds()) {
+            return bounds;
+        }
     }
     linear.points.iter().fold(
         (
