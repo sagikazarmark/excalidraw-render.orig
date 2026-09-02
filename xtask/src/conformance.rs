@@ -32,6 +32,10 @@ struct CaseEntry {
     approving_issue: String,
     runner: String,
     schema_id: Option<String>,
+    originating_issue: Option<String>,
+    coverage: Vec<String>,
+    semantic_expectations: Value,
+    sanitization_reason: Option<String>,
 }
 
 fn registry() -> Result<Vec<CaseEntry>, String> {
@@ -65,6 +69,18 @@ fn registry() -> Result<Vec<CaseEntry>, String> {
             approving_issue: field("approving_issue")?,
             runner: field("runner")?,
             schema_id: case["schema"]["id"].as_str().map(str::to_owned),
+            originating_issue: case["originating_issue"].as_str().map(str::to_owned),
+            coverage: case["coverage"]
+                .as_array()
+                .map(|records| {
+                    records
+                        .iter()
+                        .filter_map(|record| record["identity"].as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default(),
+            semantic_expectations: case["semantic_expectations"].clone(),
+            sanitization_reason: case["sanitization"]["reason"].as_str().map(str::to_owned),
         });
     }
     let mut seen = BTreeSet::new();
@@ -148,7 +164,7 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
         .as_deref()
         .ok_or_else(|| format!("case {} has no registered schema id", loaded.entry.id))?;
     verify_schema(&loaded.manifest, schema_id)?;
-    verify_case_metadata(&loaded.manifest)?;
+    verify_case_metadata(&loaded.manifest, &loaded.entry)?;
     verify_comparison(&loaded.manifest)?;
     verify_reference_identities(&loaded.manifest)?;
     let mut referenced = Vec::new();
@@ -615,16 +631,14 @@ fn verify_schema_for(manifest: &Value, schema_id: &str, schema_path: &str) -> Re
     Ok(())
 }
 
-fn verify_case_metadata(manifest: &Value) -> Result<(), String> {
+fn verify_case_metadata(manifest: &Value, entry: &CaseEntry) -> Result<(), String> {
     let coverage = manifest["coverage"]
         .as_array()
         .ok_or_else(|| "coverage must be an array".to_owned())?;
-    let expected_coverage = [
-        "element.rectangle",
-        "reference.direct-png",
-        "reference.svg",
-        "rough.outline",
-    ];
+    let expected_coverage: BTreeSet<&str> = entry.coverage.iter().map(String::as_str).collect();
+    if expected_coverage.is_empty() {
+        return Err(format!("case {} registers no coverage identities", entry.id));
+    }
     let actual_coverage: BTreeSet<&str> = coverage
         .iter()
         .map(|entry| {
@@ -641,8 +655,8 @@ fn verify_case_metadata(manifest: &Value) -> Result<(), String> {
     if actual_coverage.len() != coverage.len() {
         return Err("coverage contains a duplicate primary record".to_owned());
     }
-    if actual_coverage != expected_coverage.into_iter().collect() {
-        return Err("coverage identities do not match the first case".to_owned());
+    if actual_coverage != expected_coverage {
+        return Err("coverage identities do not match the registered case".to_owned());
     }
     let determinism = object(&manifest["determinism"], "determinism")?;
     verify_exact_keys(
@@ -662,16 +676,21 @@ fn verify_case_metadata(manifest: &Value) -> Result<(), String> {
     {
         return Err("case license metadata is invalid".to_owned());
     }
-    if manifest["originating_issue"]
-        != json!("https://github.com/sagikazarmark/excalidraw-render.orig/issues/32")
-    {
+    let originating_issue = entry
+        .originating_issue
+        .as_deref()
+        .ok_or_else(|| format!("case {} registers no originating issue", entry.id))?;
+    if manifest["originating_issue"] != json!(originating_issue) {
         return Err("originating issue is stale".to_owned());
     }
     let sanitization = object(&manifest["sanitization"], "sanitization")?;
     verify_exact_keys(sanitization, &["performed", "reason"], "sanitization")?;
+    let sanitization_reason = entry
+        .sanitization_reason
+        .as_deref()
+        .ok_or_else(|| format!("case {} registers no sanitization reason", entry.id))?;
     if sanitization["performed"] != json!(false)
-        || sanitization["reason"]
-            != json!("Project-authored synthetic scene document; no external content.")
+        || sanitization["reason"] != json!(sanitization_reason)
     {
         return Err("sanitization metadata is invalid".to_owned());
     }
@@ -689,18 +708,8 @@ fn verify_case_metadata(manifest: &Value) -> Result<(), String> {
         ],
         "semantic expectations",
     )?;
-    if Value::Object(expectations.clone())
-        != json!({
-            "element_count": 1,
-            "element_type": "rectangle",
-            "embedded_scene": false,
-            "images": 0,
-            "links": 0,
-            "masks": 0,
-            "selectable_text": false,
-        })
-    {
-        return Err("semantic expectations do not match the first case".to_owned());
+    if Value::Object(expectations.clone()) != entry.semantic_expectations {
+        return Err("semantic expectations do not match the registered case".to_owned());
     }
     Ok(())
 }
@@ -896,49 +905,71 @@ fn verify_scene(case_data: &LoadedCase) -> Result<(), String> {
     let elements = scene["elements"]
         .as_array()
         .ok_or_else(|| "scene.elements must be an array".to_owned())?;
-    if elements.len() != 1 || elements[0]["type"] != json!("rectangle") {
-        return Err("first case must contain exactly one rectangle".to_owned());
+
+    let expectations = &case_data.entry.semantic_expectations;
+    let expected_count = expectations["element_count"]
+        .as_u64()
+        .ok_or_else(|| "registered element_count must be an integer".to_owned())?;
+    if elements.len() as u64 != expected_count {
+        return Err(format!(
+            "scene has {} elements; the registered case expects {expected_count}",
+            elements.len()
+        ));
     }
-    let element = object(&elements[0], "rectangle")?;
-    for field in [
-        "id",
-        "type",
-        "x",
-        "y",
-        "width",
-        "height",
-        "angle",
-        "strokeColor",
-        "backgroundColor",
-        "fillStyle",
-        "strokeWidth",
-        "strokeStyle",
-        "roughness",
-        "opacity",
-        "groupIds",
-        "frameId",
-        "index",
-        "seed",
-        "version",
-        "versionNonce",
-        "isDeleted",
-        "boundElements",
-        "updated",
-        "link",
-        "locked",
-        "roundness",
-    ] {
-        if !element.contains_key(field) {
-            return Err(format!("rectangle is missing {field}"));
+    let expected_type = expectations["element_type"]
+        .as_str()
+        .ok_or_else(|| "registered element_type must be a string".to_owned())?;
+
+    for (position, value) in elements.iter().enumerate() {
+        let element = object(value, "scene element")?;
+        if element["type"] != json!(expected_type) {
+            return Err(format!(
+                "element {position} is {:?}; the registered case expects {expected_type:?}",
+                element["type"]
+            ));
+        }
+        for field in [
+            "id",
+            "type",
+            "x",
+            "y",
+            "width",
+            "height",
+            "angle",
+            "strokeColor",
+            "backgroundColor",
+            "fillStyle",
+            "strokeWidth",
+            "strokeStyle",
+            "roughness",
+            "opacity",
+            "groupIds",
+            "frameId",
+            "index",
+            "seed",
+            "version",
+            "versionNonce",
+            "isDeleted",
+            "boundElements",
+            "updated",
+            "link",
+            "locked",
+            "roundness",
+        ] {
+            if !element.contains_key(field) {
+                return Err(format!("element {position} is missing {field}"));
+            }
+        }
+        if element["id"].as_str().unwrap_or_default().is_empty()
+            || element["seed"].as_i64().unwrap_or_default() == 0
+            || element["isDeleted"] != json!(false)
+        {
+            return Err(format!(
+                "element {position} contains a normalization repair trigger"
+            ));
         }
     }
-    if element["id"].as_str().unwrap_or_default().is_empty()
-        || element["seed"].as_i64().unwrap_or_default() == 0
-        || element["isDeleted"] != json!(false)
-        || element["roundness"] != Value::Null
-    {
-        return Err("rectangle contains a normalization repair trigger".to_owned());
-    }
+
     if !scene["appState"].is_object() || !scene["files"].is_object() {
         return Err("scene must explicitly contain appState and files objects".to_owned());
     }
