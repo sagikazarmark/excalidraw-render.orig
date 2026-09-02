@@ -1,0 +1,88 @@
+{
+  "schema": "excalidraw-render/conformance-case-registry/v1",
+  "cases": [
+    {
+      "id": "focused.rectangle-outline.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/rectangle-outline",
+      "approving_issue": "32",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/rectangle-outline",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/rectangle-reference/v1",
+        "path": "tests/conformance/rectangle-reference-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-07-19",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/32",
+      "purpose": "Isolate one unrounded, transparent-fill Rough rectangle outline in official SVG and direct-canvas PNG.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "element.rectangle",
+          "role": "primary"
+        },
+        {
+          "identity": "rough.outline",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:rectangle",
+        "rough:outline",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_count": 1,
+        "element_type": "rectangle",
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ]
+    },
+    {
+      "id": "focused.excalifont-text.v1",
+      "kind": "typography",
+      "path": "tests/conformance/cases/focused/excalifont-text",
+      "approving_issue": "58",
+      "runner": "tools/reference-oracle/run-typography-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/typography-conformance-case.mjs"
+    },
+    {
+      "id": "focused.frame-export.v1",
+      "kind": "frame",
+      "path": "tests/conformance/cases/focused/frame-export",
+      "approving_issue": "97",
+      "runner": "tools/reference-oracle/run-frame-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/frame-conformance-case.mjs"
+    }
+  ]
+}

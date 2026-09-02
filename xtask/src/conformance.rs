@@ -6,13 +6,8 @@ use std::path::{Component, Path, PathBuf};
 use serde_json::{json, Map, Value};
 use sha2::{Digest, Sha256};
 
-const CASE_ID: &str = "focused.rectangle-outline.v1";
-const CASE_RELATIVE_PATH: &str = "tests/conformance/cases/focused/rectangle-outline";
-const TYPOGRAPHY_CASE_ID: &str = "focused.excalifont-text.v1";
-const TYPOGRAPHY_CASE_RELATIVE_PATH: &str = "tests/conformance/cases/focused/excalifont-text";
-const FRAME_CASE_ID: &str = "focused.frame-export.v1";
-const FRAME_CASE_RELATIVE_PATH: &str = "tests/conformance/cases/focused/frame-export";
-const MANIFEST_SCHEMA: &str = "excalidraw-render/conformance-case/rectangle-reference/v1";
+const REGISTRY_RELATIVE_PATH: &str = "tests/conformance/cases/registry.json";
+const REGISTRY_SCHEMA: &str = "excalidraw-render/conformance-case-registry/v1";
 const APPROVAL_SCHEMA: &str = "excalidraw-render/conformance-approval-subject/v1";
 const EMPTY_REPORT: &[u8] = br#"{"schema_version":1,"diagnostics":[]}"#;
 const PROFILE_DIGEST: &str = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
@@ -28,13 +23,82 @@ pub fn repo_root() -> PathBuf {
         .to_owned()
 }
 
+/// One registered conformance case: the identity, layout, and approval issue
+/// that used to be a per-case constant in this file.
+struct CaseEntry {
+    id: String,
+    kind: String,
+    relative_path: String,
+    approving_issue: String,
+    runner: String,
+    schema_id: Option<String>,
+}
+
+fn registry() -> Result<Vec<CaseEntry>, String> {
+    let path = repo_root().join(REGISTRY_RELATIVE_PATH);
+    let bytes = fs::read(&path)
+        .map_err(|error| format!("failed to read {REGISTRY_RELATIVE_PATH}: {error}"))?;
+    let value: Value = serde_json::from_slice(&bytes)
+        .map_err(|error| format!("invalid case registry JSON: {error}"))?;
+    if value["schema"] != json!(REGISTRY_SCHEMA) {
+        return Err(format!("case registry schema must be {REGISTRY_SCHEMA}"));
+    }
+    let cases = value["cases"]
+        .as_array()
+        .ok_or_else(|| "case registry cases must be an array".to_owned())?;
+    let mut entries = Vec::with_capacity(cases.len());
+    for case in cases {
+        let field = |key: &str| -> Result<String, String> {
+            case[key]
+                .as_str()
+                .map(str::to_owned)
+                .ok_or_else(|| format!("case registry entry is missing a string {key}"))
+        };
+        let kind = field("kind")?;
+        if !matches!(kind.as_str(), "scene" | "typography" | "frame") {
+            return Err(format!("unknown registered case kind {kind:?}"));
+        }
+        entries.push(CaseEntry {
+            id: field("id")?,
+            kind,
+            relative_path: field("path")?,
+            approving_issue: field("approving_issue")?,
+            runner: field("runner")?,
+            schema_id: case["schema"]["id"].as_str().map(str::to_owned),
+        });
+    }
+    let mut seen = BTreeSet::new();
+    for entry in &entries {
+        if !seen.insert(entry.id.clone()) {
+            return Err(format!("case registry has a duplicate id {:?}", entry.id));
+        }
+    }
+    Ok(entries)
+}
+
+fn registered(case_id: &str) -> Result<CaseEntry, String> {
+    registry()?
+        .into_iter()
+        .find(|entry| entry.id == case_id)
+        .ok_or_else(|| format!("unknown conformance case {case_id:?}"))
+}
+
+/// The runner script that materializes evidence for a registered case.
+pub fn case_runner(case_id: &str) -> Result<String, String> {
+    Ok(registered(case_id)?.runner)
+}
+
+/// Every registered case id, in registry order.
+pub fn case_ids() -> Result<Vec<String>, String> {
+    Ok(registry()?.into_iter().map(|entry| entry.id).collect())
+}
+
 pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
     let loaded = load(case_id)?;
-    if case_id == FRAME_CASE_ID {
-        return verify_frame(&loaded, require_approval);
-    }
-    if case_id == TYPOGRAPHY_CASE_ID {
-        return verify_typography(&loaded, require_approval);
+    match loaded.entry.kind.as_str() {
+        "frame" => return verify_frame(&loaded, require_approval),
+        "typography" => return verify_typography(&loaded, require_approval),
+        _ => {}
     }
     verify_manifest_digest(&loaded)?;
     verify_exact_keys(
@@ -65,12 +129,12 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
         ],
         "manifest",
     )?;
-    expect_string(&loaded.manifest, "case_id", CASE_ID)?;
+    expect_string(&loaded.manifest, "case_id", &loaded.entry.id)?;
     if loaded.manifest["compatibility_revision"] != json!(1) {
         return Err("compatibility_revision must be 1".to_owned());
     }
     if loaded.manifest["layer"] != json!("focused") {
-        return Err("the first case must be in the focused corpus layer".to_owned());
+        return Err("registered scene cases must be in the focused corpus layer".to_owned());
     }
     for field in ["assets", "crops", "exceptions"] {
         if loaded.manifest[field] != json!([]) {
@@ -78,7 +142,12 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
         }
     }
 
-    verify_schema(&loaded.manifest)?;
+    let schema_id = loaded
+        .entry
+        .schema_id
+        .as_deref()
+        .ok_or_else(|| format!("case {} has no registered schema id", loaded.entry.id))?;
+    verify_schema(&loaded.manifest, schema_id)?;
     verify_case_metadata(&loaded.manifest)?;
     verify_comparison(&loaded.manifest)?;
     verify_reference_identities(&loaded.manifest)?;
@@ -129,7 +198,7 @@ fn verify_frame(loaded: &LoadedCase, require_approval: bool) -> Result<(), Strin
         "frame manifest",
     )?;
     if loaded.manifest["schema"] != json!("excalidraw-render/frame-conformance-case/v1")
-        || loaded.manifest["case_id"] != json!(FRAME_CASE_ID)
+        || loaded.manifest["case_id"] != json!(loaded.entry.id)
         || loaded.manifest["compatibility_revision"] != json!(1)
         || loaded.manifest["originating_issue"]
             != json!("https://github.com/sagikazarmark/excalidraw-render.orig/issues/97")
@@ -356,7 +425,7 @@ fn verify_frame_provenance(loaded: &LoadedCase) -> Result<(), String> {
     )
     .map_err(|error| format!("invalid frame provenance: {error}"))?;
     if provenance["schema"] != json!("excalidraw-render/frame-reference-evidence-provenance/v1")
-        || provenance["case_id"] != json!(FRAME_CASE_ID)
+        || provenance["case_id"] != json!(loaded.entry.id)
         || provenance["frame_reference_profile_digest"]
             != json!(format!("sha256:{FRAME_PROFILE_DIGEST}"))
     {
@@ -437,7 +506,7 @@ fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), 
         ],
         "manifest",
     )?;
-    if loaded.manifest["case_id"] != json!(TYPOGRAPHY_CASE_ID)
+    if loaded.manifest["case_id"] != json!(loaded.entry.id)
         || loaded.manifest["compatibility_revision"] != json!(1)
         || loaded.manifest["layer"] != json!("focused")
         || loaded.manifest["crops"] != json!([])
@@ -493,12 +562,12 @@ fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), 
     }
 }
 
-fn verify_schema(manifest: &Value) -> Result<(), String> {
-    verify_schema_for(
-        manifest,
-        MANIFEST_SCHEMA,
-        "tests/conformance/rectangle-reference-case-v1.schema.json",
-    )
+fn verify_schema(manifest: &Value, schema_id: &str) -> Result<(), String> {
+    let schema_path = manifest["schema"]["path"]
+        .as_str()
+        .ok_or_else(|| "schema.path must be a string".to_owned())?
+        .to_owned();
+    verify_schema_for(manifest, schema_id, &schema_path)
 }
 
 fn verify_schema_for(manifest: &Value, schema_id: &str, schema_path: &str) -> Result<(), String> {
@@ -666,7 +735,7 @@ pub fn approval_subject(case_id: &str) -> Result<String, String> {
     verify(case_id, false)?;
     let loaded = load(case_id)?;
     let mut referenced = Vec::new();
-    if case_id == FRAME_CASE_ID {
+    if loaded.entry.kind == "frame" {
         collect_frame_descriptors(&loaded, &mut referenced)?;
         return subject_digest(&loaded.manifest, referenced);
     }
@@ -712,13 +781,7 @@ pub fn record_approval(
         "approval_subject_sha256": format!("sha256:{subject}"),
         "approval_url": approval_url,
     });
-    if case_id == TYPOGRAPHY_CASE_ID {
-        verify_approval_for_issue(&approval, &subject, "58")?;
-    } else if case_id == FRAME_CASE_ID {
-        verify_approval_for_issue(&approval, &subject, "97")?;
-    } else {
-        verify_approval(&approval, &subject)?;
-    }
+    verify_approval_for_issue(&approval, &subject, &loaded.entry.approving_issue)?;
     loaded.manifest["approval"] = approval;
     let bytes = canonical_bytes(&loaded.manifest)?;
     fs::write(&loaded.manifest_path, [&bytes[..], b"\n"].concat())
@@ -732,6 +795,7 @@ pub fn record_approval(
 }
 
 struct LoadedCase {
+    entry: CaseEntry,
     root: PathBuf,
     manifest_path: PathBuf,
     manifest_bytes: Vec<u8>,
@@ -739,13 +803,8 @@ struct LoadedCase {
 }
 
 fn load(case_id: &str) -> Result<LoadedCase, String> {
-    let relative = match case_id {
-        CASE_ID => CASE_RELATIVE_PATH,
-        TYPOGRAPHY_CASE_ID => TYPOGRAPHY_CASE_RELATIVE_PATH,
-        FRAME_CASE_ID => FRAME_CASE_RELATIVE_PATH,
-        _ => return Err(format!("unknown conformance case {case_id:?}")),
-    };
-    let root = repo_root().join(relative);
+    let entry = registered(case_id)?;
+    let root = repo_root().join(&entry.relative_path);
     let manifest_path = root.join("manifest.json");
     let manifest_bytes = fs::read(&manifest_path)
         .map_err(|error| format!("failed to read {}: {error}", manifest_path.display()))?;
@@ -756,6 +815,7 @@ fn load(case_id: &str) -> Result<LoadedCase, String> {
         return Err("manifest.json is not canonical JSON followed by one LF".to_owned());
     }
     Ok(LoadedCase {
+        entry,
         root,
         manifest_path,
         manifest_bytes,
@@ -1007,7 +1067,7 @@ fn verify_typography_provenance(case_data: &LoadedCase) -> Result<(), String> {
     let provenance: Value =
         serde_json::from_slice(&bytes).map_err(|error| format!("invalid provenance: {error}"))?;
     if bytes != [&canonical_bytes(&provenance)?[..], b"\n"].concat()
-        || provenance["case_id"] != json!(TYPOGRAPHY_CASE_ID)
+        || provenance["case_id"] != json!(case_data.entry.id)
         || provenance["generated_at"] != json!("2026-07-22")
         || provenance["png_independent_from_svg"] != json!(true)
         || provenance["reference_profile_digest"] != json!(format!("sha256:{PROFILE_DIGEST}"))
@@ -1183,7 +1243,7 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
         return Err("provenance is not canonical JSON followed by one LF".to_owned());
     }
     if provenance["schema"] != json!("excalidraw-render/reference-evidence-provenance/v1")
-        || provenance["case_id"] != json!(CASE_ID)
+        || provenance["case_id"] != json!(case_data.entry.id)
         || provenance["png_independent_from_svg"] != json!(true)
     {
         return Err("provenance identity or independent PNG declaration is invalid".to_owned());

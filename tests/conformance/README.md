@@ -16,6 +16,27 @@ cargo run --locked -p xtask -- conformance generate focused.rectangle-outline.v1
 cargo run --locked -p xtask -- conformance reproduce focused.rectangle-outline.v1
 ```
 
+## Case registry
+
+`cases/registry.json` is the checked list of registered conformance cases. Each
+entry carries the case identity, directory, kind (`scene`, `typography`, or
+`frame`), approving issue, and runner script; `scene` entries additionally carry
+the manifest inputs the reference-oracle generator needs — schema, layer,
+coverage, feature tags, purpose, licence, sanitization, determinism, and
+semantic expectations.
+
+`xtask` resolves every case through this file, so adding a scene case is a
+registry entry plus a case directory rather than a new generator script or a new
+constant. `conformance-case.mjs` reads the same file and refuses any entry whose
+kind is not `scene`; the frame and typography wrappers keep their own generators
+and dedicated profiles.
+
+Verify every registered case at once with:
+
+```sh
+cargo run --locked -p xtask -- conformance verify-all
+```
+
 The first typography case uses a separate pinned runner so changes needed for
 font-bearing evidence cannot invalidate the approved rectangle generator:
 
