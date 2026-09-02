@@ -1,0 +1,49 @@
+{
+  "identity": "excalirender-sample",
+  "upstream": {
+    "repository": "https://github.com/JonRC/excalirender",
+    "path": "sample.excalidraw",
+    "commit": "dd2e231ccc7fc9d40755f8fccbc7748967b5a4d0",
+    "committed": "2026-02-02T11:21:53Z",
+    "permalink": "https://github.com/JonRC/excalirender/blob/dd2e231ccc7fc9d40755f8fccbc7748967b5a4d0/sample.excalidraw",
+    "raw": "https://raw.githubusercontent.com/JonRC/excalirender/dd2e231ccc7fc9d40755f8fccbc7748967b5a4d0/sample.excalidraw"
+  },
+  "license": {
+    "spdx": "MIT",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 2657,
+    "sha256": "9b36ba428f48d2be3c4930d8e66e23d27682e6281aa9c181ed1f442286c10c5a",
+    "source": "excalidraw-cli-test",
+    "schema_version": 2,
+    "elements": 6,
+    "element_types": {
+      "arrow": 1,
+      "diamond": 1,
+      "ellipse": 1,
+      "line": 1,
+      "rectangle": 1,
+      "text": 1
+    },
+    "font_families": [
+      1
+    ],
+    "fill_styles": [
+      "cross-hatch",
+      "hachure",
+      "solid"
+    ],
+    "roughness": [
+      1,
+      2
+    ],
+    "files": 0,
+    "view_background": "#ffffff"
+  },
+  "coverage_note": "minimal smoke scene: one rectangle, diamond, ellipse, line, arrow, text"
+}

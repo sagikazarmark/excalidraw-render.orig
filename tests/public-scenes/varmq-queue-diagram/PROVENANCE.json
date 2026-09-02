@@ -1,0 +1,49 @@
+{
+  "identity": "varmq-queue-diagram",
+  "upstream": {
+    "repository": "https://github.com/goptics/varmq",
+    "path": "assets/diagrams/varmq.excalidraw",
+    "commit": "58458daaf9fdd545025c89837a79400ab55b0ee2",
+    "committed": "2025-06-28T16:14:24Z",
+    "permalink": "https://github.com/goptics/varmq/blob/58458daaf9fdd545025c89837a79400ab55b0ee2/assets/diagrams/varmq.excalidraw",
+    "raw": "https://raw.githubusercontent.com/goptics/varmq/58458daaf9fdd545025c89837a79400ab55b0ee2/assets/diagrams/varmq.excalidraw"
+  },
+  "license": {
+    "spdx": "MIT",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 90886,
+    "sha256": "4874be31c2d4254e8a3375edd3a7e389c3cb2250beca8b152c2f6e4e653c279e",
+    "source": "https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor",
+    "schema_version": 2,
+    "elements": 89,
+    "element_types": {
+      "arrow": 11,
+      "diamond": 1,
+      "ellipse": 4,
+      "frame": 1,
+      "rectangle": 30,
+      "text": 42
+    },
+    "font_families": [
+      5
+    ],
+    "fill_styles": [
+      "cross-hatch",
+      "solid"
+    ],
+    "roughness": [
+      0,
+      1,
+      2
+    ],
+    "files": 0,
+    "view_background": "#fffce8"
+  },
+  "coverage_note": "single frame, tinted view background, Excalifont-era fontFamily 5"
+}

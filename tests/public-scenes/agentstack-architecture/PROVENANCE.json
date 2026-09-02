@@ -1,0 +1,50 @@
+{
+  "identity": "agentstack-architecture",
+  "upstream": {
+    "repository": "https://github.com/i-am-bee/agentstack",
+    "path": "docs/stable/images/architecture-src.excalidraw",
+    "commit": "5077c9b4c2067ac96533d4a52aac322f12819f83",
+    "committed": "2025-12-11T15:13:58Z",
+    "permalink": "https://github.com/i-am-bee/agentstack/blob/5077c9b4c2067ac96533d4a52aac322f12819f83/docs/stable/images/architecture-src.excalidraw",
+    "raw": "https://raw.githubusercontent.com/i-am-bee/agentstack/5077c9b4c2067ac96533d4a52aac322f12819f83/docs/stable/images/architecture-src.excalidraw"
+  },
+  "license": {
+    "spdx": "Apache-2.0",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 131195,
+    "sha256": "c1f6000ef7f8ab3364e25a1a6890fbd484a6d78ce4a08dfb06b67a59b14b33c9",
+    "source": "https://excalidraw.com",
+    "schema_version": 2,
+    "elements": 73,
+    "element_types": {
+      "arrow": 10,
+      "ellipse": 4,
+      "frame": 1,
+      "image": 1,
+      "line": 4,
+      "rectangle": 24,
+      "text": 29
+    },
+    "font_families": [
+      1,
+      8
+    ],
+    "fill_styles": [
+      "hachure",
+      "solid"
+    ],
+    "roughness": [
+      0,
+      1
+    ],
+    "files": 1,
+    "view_background": "#ffffff"
+  },
+  "coverage_note": "frame plus embedded image; mixed hand-drawn and code fonts"
+}

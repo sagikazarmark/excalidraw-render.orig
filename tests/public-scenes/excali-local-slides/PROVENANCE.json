@@ -1,0 +1,44 @@
+{
+  "identity": "excali-local-slides",
+  "upstream": {
+    "repository": "https://github.com/azzgo/excali-local",
+    "path": "demos/slides.excalidraw",
+    "commit": "5f63d1941ab85fe9343fea64f6d0b1225e0ef51d",
+    "committed": "2024-12-05T00:06:43Z",
+    "permalink": "https://github.com/azzgo/excali-local/blob/5f63d1941ab85fe9343fea64f6d0b1225e0ef51d/demos/slides.excalidraw",
+    "raw": "https://raw.githubusercontent.com/azzgo/excali-local/5f63d1941ab85fe9343fea64f6d0b1225e0ef51d/demos/slides.excalidraw"
+  },
+  "license": {
+    "spdx": "MIT",
+    "text": "LICENSE",
+    "redistribution": "attribution retained; upstream license text copied verbatim"
+  },
+  "retrieved": "2026-09-02",
+  "sanitization": "none; upstream bytes retained verbatim",
+  "scene": {
+    "file": "scene.excalidraw",
+    "bytes": 45030,
+    "sha256": "47c485a978bcb96f80f050baa11b16075c7c5cfbcc23b574fc83321aefa1c755",
+    "source": "http://localhost:3000",
+    "schema_version": 2,
+    "elements": 32,
+    "element_types": {
+      "frame": 8,
+      "image": 16,
+      "text": 8
+    },
+    "font_families": [
+      1
+    ],
+    "fill_styles": [
+      "solid"
+    ],
+    "roughness": [
+      0,
+      1
+    ],
+    "files": 2,
+    "view_background": "#ffffff"
+  },
+  "coverage_note": "8 frames and 16 image elements; frame-export batch coverage"
+}
