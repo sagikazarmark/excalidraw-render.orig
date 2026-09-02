@@ -216,6 +216,7 @@ pub(super) struct Claims {
 
 pub(super) struct Resolution {
     pub(super) asset: Arc<ResolvedImageAsset>,
+    pub(super) svg_tree: Option<Arc<usvg::Tree>>,
     pub(super) claims: Claims,
     pub(super) animated: bool,
     pub(super) media_kind: MediaKind,
@@ -676,10 +677,10 @@ impl Cache {
                     .as_ref()
                     .map(|decoded| Arc::clone(&decoded.premultiplied_rgba)),
                 sanitized_svg: None,
-                sanitized_svg_tree: None,
                 svg_effects: Vec::new(),
                 svg_fallback_pointer: None,
             }),
+            svg_tree: None,
             claims: payload.claims,
             animated: validated.semantics.animated(),
             media_kind: validated.media_kind,
@@ -840,7 +841,6 @@ impl Cache {
                 rgba: None,
                 premultiplied_rgba: None,
                 sanitized_svg: Some(Arc::new(sanitized.bytes.clone())),
-                sanitized_svg_tree: Some(Arc::clone(&sanitized.tree)),
                 svg_effects: sanitized.effects.clone(),
                 svg_fallback_pointer: match authority {
                     Authority::Scene => Some(format!(
@@ -850,6 +850,7 @@ impl Cache {
                     Authority::Supplemental | Authority::Missing => Some(String::new()),
                 },
             }),
+            svg_tree: Some(Arc::clone(&sanitized.tree)),
             claims: payload.claims,
             animated: false,
             media_kind: MediaKind::Svg,

@@ -1078,7 +1078,6 @@ pub(super) struct ResolvedImageAsset {
     pub(super) rgba: Option<std::sync::Arc<Vec<u8>>>,
     pub(super) premultiplied_rgba: Option<std::sync::Arc<Vec<u8>>>,
     pub(super) sanitized_svg: Option<std::sync::Arc<Vec<u8>>>,
-    pub(super) sanitized_svg_tree: Option<std::sync::Arc<usvg::Tree>>,
     pub(super) svg_effects: Vec<asset::svg::Effect>,
     pub(super) svg_fallback_pointer: Option<String>,
 }

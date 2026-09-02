@@ -195,6 +195,12 @@ enum RenderTarget {
 }
 
 type SharedFontSubsetSession = Arc<Mutex<svg_fonts::Session>>;
+/// Sanitized-SVG viewer trees, keyed by asset identity. The sanitized bytes
+/// are contract state and live in the resolved scene; the parsed tree is a
+/// deterministic derivation of those bytes that only the raster-capable
+/// backends consume, so it lives in the request-scoped session's caches, not
+/// in the shared semantic graph (spec section 9).
+type SvgTreeCache = std::collections::BTreeMap<[u8; 32], std::sync::Arc<usvg::Tree>>;
 
 pub(crate) struct PreparedFrameRender {
     original_json_events: Vec<PreparedOriginalJsonEvent>,
@@ -790,6 +796,7 @@ struct RenderSession {
     target: RenderTarget,
     diagnostic_attribution: DiagnosticAttribution,
     font_subset_session: SharedFontSubsetSession,
+    svg_trees: SvgTreeCache,
 }
 
 struct RenderResourceAccount<'a> {
@@ -953,6 +960,7 @@ impl RenderSession {
             target,
             diagnostic_attribution: DiagnosticAttribution::SceneGlobal,
             font_subset_session: Arc::new(Mutex::new(svg_fonts::Session::new())),
+            svg_trees: SvgTreeCache::new(),
         }
     }
 
@@ -979,6 +987,7 @@ impl RenderSession {
             target: RenderTarget::Scene,
             diagnostic_attribution: DiagnosticAttribution::SceneGlobal,
             font_subset_session: Arc::new(Mutex::new(svg_fonts::Session::new())),
+            svg_trees: SvgTreeCache::new(),
         }
     }
 
@@ -1949,6 +1958,9 @@ impl RenderSession {
                             )?;
                         }
                         let asset = resolution.asset;
+                        if let Some(tree) = resolution.svg_tree {
+                            self.svg_trees.insert(asset.identity, tree);
+                        }
                         for (claim, field) in [
                             (resolution.claims.mime_type.as_deref(), "mimeType"),
                             (resolution.claims.data_url_media_type.as_deref(), "dataURL"),

@@ -17,6 +17,7 @@ pub(super) struct PngPlan {
     fallback_colors: super::FallbackColors,
     image_fallback_background: CanonicalColor,
     metadata: Option<super::metadata::ArtifactMetadata>,
+    svg_trees: super::SvgTreeCache,
     elements: Vec<PngElement>,
 }
 
@@ -396,6 +397,7 @@ impl PngPlan {
     pub(super) fn new(
         scene: ResolvedScene,
         request: &RenderRequest,
+        svg_trees: &super::SvgTreeCache,
     ) -> Result<Self, FormatEncodeError> {
         let scale = scene.raster_or_pdf_scale(request.sizing());
         let width = pixel_dimension(scene.logical_width * scale)?;
@@ -543,6 +545,7 @@ impl PngPlan {
             width,
             height,
             background,
+            svg_trees: svg_trees.clone(),
             fallback_colors: scene.fallback_colors,
             image_fallback_background: match request.color_mode() {
                 crate::ColorMode::Light => CanonicalColor::from_rgb8(0xe7, 0xe7, 0xe7),
@@ -901,7 +904,11 @@ impl PngPlan {
                                 "PNG image lost its source identity".to_owned(),
                             ));
                         }
-                        if let Some(tree) = asset.sanitized_svg_tree.as_deref() {
+                        if let Some(tree) = self
+                            .svg_trees
+                            .get(&asset.identity)
+                            .map(std::sync::Arc::as_ref)
+                        {
                             let corners = [
                                 Point { x: 0.0, y: 0.0 },
                                 Point { x: *width, y: 0.0 },

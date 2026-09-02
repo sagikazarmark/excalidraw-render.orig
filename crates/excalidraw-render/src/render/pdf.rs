@@ -53,6 +53,7 @@ pub(super) struct PdfPlan {
     metadata: Option<super::metadata::ArtifactMetadata>,
     fallback_font_sfnt: Option<Vec<u8>>,
     official_fonts: Vec<super::ResolvedFont>,
+    svg_trees: super::SvgTreeCache,
     elements: Vec<PdfElement>,
     raster_closures: Vec<PdfRasterClosure>,
 }
@@ -200,6 +201,7 @@ impl PdfPlan {
     pub(super) fn new(
         scene: ResolvedScene,
         request: &RenderRequest,
+        svg_trees: &super::SvgTreeCache,
     ) -> Result<Self, FormatEncodeError> {
         let scale = scene.raster_or_pdf_scale(request.sizing());
         let (page_width, page_height) = page_dimensions(&scene, request)?;
@@ -322,12 +324,18 @@ impl PdfPlan {
                 }
             }
         }
-        let raster_closures =
-            collect_raster_closures(&elements, scale, scene.logical_width, scene.logical_height)?;
+        let raster_closures = collect_raster_closures(
+            &elements,
+            svg_trees,
+            scale,
+            scene.logical_width,
+            scene.logical_height,
+        )?;
         Ok(Self {
             logical_width: scene.logical_width,
             logical_height: scene.logical_height,
             scale,
+            svg_trees: svg_trees.clone(),
             page_width,
             page_height,
             background,
@@ -358,7 +366,7 @@ impl PdfPlan {
         let opacity_resources = self.opacity_resources()?;
         let image_resources = self.image_resources()?;
         let svg_resources = self.svg_resources()?;
-        let raw_svg_chunks = svg_chunks(&svg_resources)?;
+        let raw_svg_chunks = svg_chunks(&svg_resources, &self.svg_trees)?;
         let fallback_mappings = self.fallback_glyph_mappings()?;
         let official_mappings = self.official_glyph_mappings()?;
         let content = self.encode_content(
@@ -3184,6 +3192,7 @@ fn width_scale(element: &PdfElement) -> f64 {
 
 fn collect_raster_closures(
     elements: &[PdfElement],
+    svg_trees: &super::SvgTreeCache,
     final_scale: f64,
     logical_width: f64,
     logical_height: f64,
@@ -3207,9 +3216,12 @@ fn collect_raster_closures(
         if asset.svg_effects.is_empty() {
             continue;
         }
-        let tree = asset.sanitized_svg_tree.as_deref().ok_or_else(|| {
-            FormatEncodeError::Encoding("PDF effect source lost its sanitized tree".to_owned())
-        })?;
+        let tree = svg_trees
+            .get(&asset.identity)
+            .map(std::sync::Arc::as_ref)
+            .ok_or_else(|| {
+                FormatEncodeError::Encoding("PDF effect source lost its sanitized tree".to_owned())
+            })?;
         let mut occurrences = Vec::new();
         collect_filter_occurrences(tree.root(), None, &mut occurrences);
         let mut occurrence_closures: Vec<Option<usize>> = Vec::new();
@@ -3498,7 +3510,10 @@ fn effect_cause_path(cause: &super::asset::svg::EffectCause) -> NestedPath {
     NestedPath { segments }
 }
 
-fn svg_chunks(resources: &[PdfSvgResource]) -> Result<Vec<PdfSvgChunk>, FormatEncodeError> {
+fn svg_chunks(
+    resources: &[PdfSvgResource],
+    svg_trees: &super::SvgTreeCache,
+) -> Result<Vec<PdfSvgChunk>, FormatEncodeError> {
     let mut chunks = Vec::new();
     chunks.try_reserve_exact(resources.len()).map_err(|_| {
         FormatEncodeError::MemoryUnavailable {
@@ -3507,10 +3522,9 @@ fn svg_chunks(resources: &[PdfSvgResource]) -> Result<Vec<PdfSvgChunk>, FormatEn
         }
     })?;
     for resource in resources {
-        let tree = resource
-            .asset
-            .sanitized_svg_tree
-            .as_deref()
+        let tree = svg_trees
+            .get(&resource.asset.identity)
+            .map(std::sync::Arc::as_ref)
             .ok_or_else(|| {
                 FormatEncodeError::Encoding("PDF SVG resource lost its sanitized tree".to_owned())
             })?;

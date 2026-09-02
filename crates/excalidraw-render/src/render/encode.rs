@@ -204,7 +204,7 @@ impl RenderSession {
         request: &RenderRequest,
         semantic_working: &[SemanticWorkingRecord],
     ) -> Result<(), RenderError> {
-        let mut plan = PngPlan::new(resolved, request)
+        let mut plan = PngPlan::new(resolved, request, &self.svg_trees)
             .map_err(|error| self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error))?;
         self.release_semantic_working(request, semantic_working, false)?;
         let pixels = u64::from(plan.width()).saturating_mul(u64::from(plan.height()));
@@ -616,7 +616,7 @@ impl RenderSession {
         semantic_working: &[SemanticWorkingRecord],
     ) -> Result<(), RenderError> {
         let workspace_bytes = 1_048_576;
-        let mut plan = PdfPlan::new(resolved, request)
+        let mut plan = PdfPlan::new(resolved, request, &self.svg_trees)
             .map_err(|error| self.format_failure(request, ErrorCode::ENCODE_PDF_FAILED, error))?;
         let fallback_surface_working = self.preflight_pdf_raster_fallbacks(request, &plan)?;
         self.release_semantic_working(request, semantic_working, false)?;
