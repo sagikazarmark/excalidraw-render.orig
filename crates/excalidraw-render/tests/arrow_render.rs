@@ -36,7 +36,10 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
         assert_eq!(outcome.report(), repeated.report());
         let expected_digest = match format {
             OutputFormat::Svg => "d8575574faff4ed75ccc617239980c2a0250e1213e0da4adb01b4c6c71b6e4b3",
-            OutputFormat::Png => "f663ce2b7f8dc37ebcadb7828575eabf2dbd91136648c2a2b215148dad6b69cf",
+            // Updated when PNG stroke dashing was fixed: the previous digest pinned the
+            // `crowfeet` arrow's dashed stroke rendering as solid. SVG and PDF are
+            // unchanged, which is what confirms the move was PNG-only.
+            OutputFormat::Png => "17f96486431b5b140229a3ed3c5d102c32308faaf943da94839c2fe06356a50f",
             OutputFormat::Pdf => "99505f0a67ce2181670ec8fcc9992e68e6376e6e9700cb1a59fae74a8a192566",
             _ => unreachable!("the test enumerates every revision-1 format"),
         };

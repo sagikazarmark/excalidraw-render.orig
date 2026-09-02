@@ -1961,6 +1961,18 @@ fn paint_rough_drawing(
         },
     };
     let resolution_scale = PathStroker::compute_resolution_scale(&transform);
+    // `Stroke::dash` is inert for the low-level stroker: tiny-skia applies it by
+    // dashing the path first, exactly as its own painter does. Stroking without
+    // this step silently drops dashed and dotted stroke styles.
+    let dashed_path;
+    let path = if let Some(dash) = &stroke.dash {
+        dashed_path = path.dash(dash, resolution_scale).ok_or_else(|| {
+            FormatEncodeError::Encoding("PNG raster adapter could not dash the Rough path".to_owned())
+        })?;
+        dashed_path
+    } else {
+        path
+    };
     let path = path.stroke(&stroke, resolution_scale).ok_or_else(|| {
         FormatEncodeError::Encoding("PNG raster adapter could not stroke the Rough path".to_owned())
     })?;

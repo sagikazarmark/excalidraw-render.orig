@@ -32,6 +32,14 @@ struct CaseEntry {
     approving_issue: String,
     runner: String,
     schema_id: Option<String>,
+    originating_issue: Option<String>,
+    coverage: Vec<String>,
+    semantic_expectations: Value,
+    sanitization_reason: Option<String>,
+    svg_element_counts: Value,
+    generated_at: Option<String>,
+    empty_fields: Vec<String>,
+    expected_diagnostics: Value,
 }
 
 fn registry() -> Result<Vec<CaseEntry>, String> {
@@ -65,6 +73,30 @@ fn registry() -> Result<Vec<CaseEntry>, String> {
             approving_issue: field("approving_issue")?,
             runner: field("runner")?,
             schema_id: case["schema"]["id"].as_str().map(str::to_owned),
+            originating_issue: case["originating_issue"].as_str().map(str::to_owned),
+            coverage: case["coverage"]
+                .as_array()
+                .map(|records| {
+                    records
+                        .iter()
+                        .filter_map(|record| record["identity"].as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default(),
+            semantic_expectations: case["semantic_expectations"].clone(),
+            sanitization_reason: case["sanitization"]["reason"].as_str().map(str::to_owned),
+            svg_element_counts: case["svg_element_counts"].clone(),
+            generated_at: case["generated_at"].as_str().map(str::to_owned),
+            empty_fields: case["empty_fields"]
+                .as_array()
+                .map(|values| {
+                    values
+                        .iter()
+                        .filter_map(|value| value.as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default(),
+            expected_diagnostics: case["expected_diagnostics"].clone(),
         });
     }
     let mut seen = BTreeSet::new();
@@ -136,11 +168,14 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
     if loaded.manifest["layer"] != json!("focused") {
         return Err("registered scene cases must be in the focused corpus layer".to_owned());
     }
-    for field in ["assets", "crops", "exceptions"] {
-        if loaded.manifest[field] != json!([]) {
+    // Which of these a case leaves empty is a property of the case, not of the
+    // corpus: an asset-bearing case necessarily populates `assets`.
+    for field in loaded.entry.empty_fields.iter() {
+        if loaded.manifest[field.as_str()] != json!([]) {
             return Err(format!("{field} must be explicitly empty for this case"));
         }
     }
+    verify_assets(&loaded)?;
 
     let schema_id = loaded
         .entry
@@ -148,7 +183,7 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
         .as_deref()
         .ok_or_else(|| format!("case {} has no registered schema id", loaded.entry.id))?;
     verify_schema(&loaded.manifest, schema_id)?;
-    verify_case_metadata(&loaded.manifest)?;
+    verify_case_metadata(&loaded.manifest, &loaded.entry)?;
     verify_comparison(&loaded.manifest)?;
     verify_reference_identities(&loaded.manifest)?;
     let mut referenced = Vec::new();
@@ -172,7 +207,7 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
     match &loaded.manifest["approval"] {
         Value::Null if require_approval => return Err("case has no approval record".to_owned()),
         Value::Null => {}
-        approval => verify_approval(approval, &subject)?,
+        approval => verify_approval_for_issue(approval, &subject, &loaded.entry.approving_issue)?,
     }
     Ok(())
 }
@@ -253,7 +288,7 @@ fn verify_frame(loaded: &LoadedCase, require_approval: bool) -> Result<(), Strin
     match &loaded.manifest["approval"] {
         Value::Null if require_approval => Err("frame case has no approval record".to_owned()),
         Value::Null => Ok(()),
-        approval => verify_approval_for_issue(approval, &subject, "97"),
+        approval => verify_approval_for_issue(approval, &subject, &loaded.entry.approving_issue),
     }
 }
 
@@ -558,7 +593,7 @@ fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), 
     match &loaded.manifest["approval"] {
         Value::Null if require_approval => Err("case has no approval record".to_owned()),
         Value::Null => Ok(()),
-        approval => verify_approval_for_issue(approval, &subject, "58"),
+        approval => verify_approval_for_issue(approval, &subject, &loaded.entry.approving_issue),
     }
 }
 
@@ -615,16 +650,95 @@ fn verify_schema_for(manifest: &Value, schema_id: &str, schema_path: &str) -> Re
     Ok(())
 }
 
-fn verify_case_metadata(manifest: &Value) -> Result<(), String> {
+/// Every declared asset must match a scene file payload by kind and decoded
+/// bytes, and every payload must be declared exactly once.
+fn verify_assets(case_data: &LoadedCase) -> Result<(), String> {
+    let declared = case_data.manifest["assets"]
+        .as_array()
+        .ok_or_else(|| "assets must be an array".to_owned())?;
+    let path = descriptor_path(&case_data.root, &case_data.manifest["scene"])?;
+    let scene: Value = serde_json::from_slice(
+        &fs::read(path).map_err(|error| format!("failed to read scene document: {error}"))?,
+    )
+    .map_err(|error| format!("invalid scene document: {error}"))?;
+    let files = scene["files"]
+        .as_object()
+        .ok_or_else(|| "scene.files must be an object".to_owned())?;
+    if declared.len() != files.len() {
+        return Err(format!(
+            "manifest declares {} assets; the scene carries {} file payloads",
+            declared.len(),
+            files.len()
+        ));
+    }
+    for record in declared {
+        let record = object(record, "asset record")?;
+        verify_exact_keys(
+            record,
+            &["byte_length", "file_id", "media_type", "sha256"],
+            "asset record",
+        )?;
+        let file_id = record["file_id"]
+            .as_str()
+            .ok_or_else(|| "asset file_id must be a string".to_owned())?;
+        let file = files
+            .get(file_id)
+            .ok_or_else(|| format!("asset {file_id:?} is not a scene file payload"))?;
+        if record["media_type"] != file["mimeType"] {
+            return Err(format!("asset {file_id:?} media type does not match the scene"));
+        }
+        let data_url = file["dataURL"]
+            .as_str()
+            .ok_or_else(|| format!("scene file {file_id:?} has no dataURL"))?;
+        let encoded = data_url
+            .split_once(";base64,")
+            .map(|(_, encoded)| encoded)
+            .ok_or_else(|| format!("scene file {file_id:?} is not a base64 data URL"))?;
+        let bytes = base64_decode(encoded)
+            .ok_or_else(|| format!("scene file {file_id:?} payload is not valid base64"))?;
+        if record["byte_length"] != json!(bytes.len()) || record["sha256"] != json!(sha256(&bytes))
+        {
+            return Err(format!("asset {file_id:?} does not match its decoded payload"));
+        }
+    }
+    Ok(())
+}
+
+fn base64_decode(input: &str) -> Option<Vec<u8>> {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut lookup = [255u8; 256];
+    for (index, byte) in TABLE.iter().enumerate() {
+        lookup[*byte as usize] = index as u8;
+    }
+    let mut out = Vec::with_capacity(input.len() / 4 * 3);
+    let mut accumulator = 0u32;
+    let mut bits = 0u32;
+    for byte in input.bytes() {
+        if byte == b'=' {
+            break;
+        }
+        let value = lookup[byte as usize];
+        if value == 255 {
+            return None;
+        }
+        accumulator = (accumulator << 6) | u32::from(value);
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            out.push((accumulator >> bits) as u8);
+        }
+    }
+    Some(out)
+}
+
+fn verify_case_metadata(manifest: &Value, entry: &CaseEntry) -> Result<(), String> {
     let coverage = manifest["coverage"]
         .as_array()
         .ok_or_else(|| "coverage must be an array".to_owned())?;
-    let expected_coverage = [
-        "element.rectangle",
-        "reference.direct-png",
-        "reference.svg",
-        "rough.outline",
-    ];
+    let expected_coverage: BTreeSet<&str> = entry.coverage.iter().map(String::as_str).collect();
+    if expected_coverage.is_empty() {
+        return Err(format!("case {} registers no coverage identities", entry.id));
+    }
     let actual_coverage: BTreeSet<&str> = coverage
         .iter()
         .map(|entry| {
@@ -641,8 +755,8 @@ fn verify_case_metadata(manifest: &Value) -> Result<(), String> {
     if actual_coverage.len() != coverage.len() {
         return Err("coverage contains a duplicate primary record".to_owned());
     }
-    if actual_coverage != expected_coverage.into_iter().collect() {
-        return Err("coverage identities do not match the first case".to_owned());
+    if actual_coverage != expected_coverage {
+        return Err("coverage identities do not match the registered case".to_owned());
     }
     let determinism = object(&manifest["determinism"], "determinism")?;
     verify_exact_keys(
@@ -662,45 +776,32 @@ fn verify_case_metadata(manifest: &Value) -> Result<(), String> {
     {
         return Err("case license metadata is invalid".to_owned());
     }
-    if manifest["originating_issue"]
-        != json!("https://github.com/sagikazarmark/excalidraw-render.orig/issues/32")
-    {
+    let originating_issue = entry
+        .originating_issue
+        .as_deref()
+        .ok_or_else(|| format!("case {} registers no originating issue", entry.id))?;
+    if manifest["originating_issue"] != json!(originating_issue) {
         return Err("originating issue is stale".to_owned());
     }
     let sanitization = object(&manifest["sanitization"], "sanitization")?;
     verify_exact_keys(sanitization, &["performed", "reason"], "sanitization")?;
+    let sanitization_reason = entry
+        .sanitization_reason
+        .as_deref()
+        .ok_or_else(|| format!("case {} registers no sanitization reason", entry.id))?;
     if sanitization["performed"] != json!(false)
-        || sanitization["reason"]
-            != json!("Project-authored synthetic scene document; no external content.")
+        || sanitization["reason"] != json!(sanitization_reason)
     {
         return Err("sanitization metadata is invalid".to_owned());
     }
     let expectations = object(&manifest["semantic_expectations"], "semantic expectations")?;
-    verify_exact_keys(
-        expectations,
-        &[
-            "element_count",
-            "element_type",
-            "embedded_scene",
-            "images",
-            "links",
-            "masks",
-            "selectable_text",
-        ],
-        "semantic expectations",
-    )?;
-    if Value::Object(expectations.clone())
-        != json!({
-            "element_count": 1,
-            "element_type": "rectangle",
-            "embedded_scene": false,
-            "images": 0,
-            "links": 0,
-            "masks": 0,
-            "selectable_text": false,
-        })
-    {
-        return Err("semantic expectations do not match the first case".to_owned());
+    // the registered entry is the authority on shape as well as values, so the
+    // key set follows it rather than a literal that only fits one schema
+    let registered = object(&entry.semantic_expectations, "registered semantic expectations")?;
+    let expected_keys: Vec<&str> = registered.keys().map(String::as_str).collect();
+    verify_exact_keys(expectations, &expected_keys, "semantic expectations")?;
+    if Value::Object(expectations.clone()) != entry.semantic_expectations {
+        return Err("semantic expectations do not match the registered case".to_owned());
     }
     Ok(())
 }
@@ -896,49 +997,98 @@ fn verify_scene(case_data: &LoadedCase) -> Result<(), String> {
     let elements = scene["elements"]
         .as_array()
         .ok_or_else(|| "scene.elements must be an array".to_owned())?;
-    if elements.len() != 1 || elements[0]["type"] != json!("rectangle") {
-        return Err("first case must contain exactly one rectangle".to_owned());
+
+    let expectations = &case_data.entry.semantic_expectations;
+    // rectangle-reference/v1 declares one type and a count; focused-scene/v1
+    // declares a per-type census. Derive the census from whichever is present.
+    let census: Map<String, Value> = match expectations.get("element_counts") {
+        Some(value) => object(value, "element_counts")?.clone(),
+        None => {
+            let kind = expectations["element_type"]
+                .as_str()
+                .ok_or_else(|| "registered element_type must be a string".to_owned())?;
+            let count = expectations["element_count"]
+                .as_u64()
+                .ok_or_else(|| "registered element_count must be an integer".to_owned())?;
+            let mut single = Map::new();
+            single.insert(kind.to_owned(), json!(count));
+            single
+        }
+    };
+    let counts = &census;
+    let expected_total: u64 = counts.values().filter_map(Value::as_u64).sum();
+    if elements.len() as u64 != expected_total {
+        return Err(format!(
+            "scene has {} elements; the registered case expects {expected_total}",
+            elements.len()
+        ));
     }
-    let element = object(&elements[0], "rectangle")?;
-    for field in [
-        "id",
-        "type",
-        "x",
-        "y",
-        "width",
-        "height",
-        "angle",
-        "strokeColor",
-        "backgroundColor",
-        "fillStyle",
-        "strokeWidth",
-        "strokeStyle",
-        "roughness",
-        "opacity",
-        "groupIds",
-        "frameId",
-        "index",
-        "seed",
-        "version",
-        "versionNonce",
-        "isDeleted",
-        "boundElements",
-        "updated",
-        "link",
-        "locked",
-        "roundness",
-    ] {
-        if !element.contains_key(field) {
-            return Err(format!("rectangle is missing {field}"));
+    let mut observed: std::collections::BTreeMap<&str, u64> = std::collections::BTreeMap::new();
+    for value in elements {
+        let kind = value["type"]
+            .as_str()
+            .ok_or_else(|| "scene element type must be a string".to_owned())?;
+        *observed.entry(kind).or_default() += 1;
+    }
+    for (kind, count) in counts {
+        let want = count.as_u64().unwrap_or_default();
+        let have = observed.remove(kind.as_str()).unwrap_or_default();
+        if have != want {
+            return Err(format!(
+                "scene has {have} {kind} elements; the registered case expects {want}"
+            ));
         }
     }
-    if element["id"].as_str().unwrap_or_default().is_empty()
-        || element["seed"].as_i64().unwrap_or_default() == 0
-        || element["isDeleted"] != json!(false)
-        || element["roundness"] != Value::Null
-    {
-        return Err("rectangle contains a normalization repair trigger".to_owned());
+    if let Some((kind, count)) = observed.into_iter().next() {
+        return Err(format!(
+            "scene has {count} undeclared {kind} elements"
+        ));
     }
+
+    for (position, value) in elements.iter().enumerate() {
+        let element = object(value, "scene element")?;
+        for field in [
+            "id",
+            "type",
+            "x",
+            "y",
+            "width",
+            "height",
+            "angle",
+            "strokeColor",
+            "backgroundColor",
+            "fillStyle",
+            "strokeWidth",
+            "strokeStyle",
+            "roughness",
+            "opacity",
+            "groupIds",
+            "frameId",
+            "index",
+            "seed",
+            "version",
+            "versionNonce",
+            "isDeleted",
+            "boundElements",
+            "updated",
+            "link",
+            "locked",
+            "roundness",
+        ] {
+            if !element.contains_key(field) {
+                return Err(format!("element {position} is missing {field}"));
+            }
+        }
+        if element["id"].as_str().unwrap_or_default().is_empty()
+            || element["seed"].as_i64().unwrap_or_default() == 0
+            || element["isDeleted"] != json!(false)
+        {
+            return Err(format!(
+                "element {position} contains a normalization repair trigger"
+            ));
+        }
+    }
+
     if !scene["appState"].is_object() || !scene["files"].is_object() {
         return Err("scene must explicitly contain appState and files objects".to_owned());
     }
@@ -1106,8 +1256,22 @@ fn verify_expected_report(case_data: &LoadedCase) -> Result<(), String> {
     let path = descriptor_path(&case_data.root, &case_data.manifest["expected_report"])?;
     let bytes =
         fs::read(path).map_err(|error| format!("failed to read expected report: {error}"))?;
-    if bytes != EMPTY_REPORT {
-        return Err("expected report is not the exact empty compatibility report".to_owned());
+    let declared = case_data
+        .entry
+        .expected_diagnostics
+        .as_array()
+        .map(|values| serde_json::to_string(values).unwrap_or_default())
+        .unwrap_or_else(|| "[]".to_owned());
+    let expected = format!(r#"{{"schema_version":1,"diagnostics":{declared}}}"#);
+    if bytes != expected.as_bytes() {
+        return Err(format!(
+            "expected report does not match the {} diagnostics the case declares",
+            case_data
+                .entry
+                .expected_diagnostics
+                .as_array()
+                .map_or(0, Vec::len)
+        ));
     }
     Ok(())
 }
@@ -1161,7 +1325,7 @@ fn verify_variants(case_data: &LoadedCase, referenced: &mut Vec<Value>) -> Resul
         }
         verify_descriptor(&case_data.root, &value["artifact"], referenced)?;
         verify_descriptor(&case_data.root, &value["raw_raster"], referenced)?;
-        verify_format_dimensions(&case_data.root, format, value)?;
+        verify_format_dimensions(&case_data.root, format, value, &case_data.entry)?;
     }
     Ok(())
 }
@@ -1182,6 +1346,7 @@ fn verify_format_dimensions(
     root: &Path,
     format: &str,
     value: &Map<String, Value>,
+    entry: &CaseEntry,
 ) -> Result<(), String> {
     let artifact = object(&value["artifact"], "artifact")?;
     let raw = object(&value["raw_raster"], "raw raster")?;
@@ -1208,28 +1373,39 @@ fn verify_format_dimensions(
             "{format} raw raster length does not match its dimensions"
         ));
     }
-    if raw_bytes.chunks_exact(4).any(|pixel| pixel[3] != 255) {
-        return Err(format!(
-            "{format} raw raster must be opaque for this white-background case"
-        ));
-    }
+    // Rasterizing an SVG document antialiases its outer border, so those edge
+    // pixels carry partial alpha whenever the extent is not pixel-aligned. The
+    // interior must still be fully opaque for a white-background case. The
+    // direct-canvas PNG is pixel-aligned by construction and stays strict over
+    // the whole surface, which is where an unintended hole would show.
     let artifact_path = descriptor_path(root, &value["artifact"])?;
     let bytes = fs::read(artifact_path)
         .map_err(|error| format!("failed to read {format} artifact: {error}"))?;
-    let observed = if format == "png" {
-        png_dimensions(&bytes)?
-    } else {
-        svg_dimensions(&bytes)?
-    };
-    if observed != (width, height) {
-        return Err(format!(
-            "{format} encoded dimensions do not match the manifest"
-        ));
+    let border = u32::from(format != "png");
+    if width <= 2 * border || height <= 2 * border {
+        return Err(format!("{format} raster is too small to verify"));
+    }
+    for row in border..height - border {
+        for column in border..width - border {
+            let index = ((row as usize * width as usize) + column as usize) * 4;
+            if raw_bytes[index + 3] != 255 {
+                return Err(format!(
+                    "{format} raw raster is not opaque at {column},{row} for this white-background case"
+                ));
+            }
+        }
     }
     if format == "png" {
+        if png_dimensions(&bytes)? != (width, height) {
+            return Err("png encoded dimensions do not match the manifest".to_owned());
+        }
         verify_png_semantics(&bytes, &raw_bytes)?;
     } else {
-        verify_svg_semantics(&bytes, width, height)?;
+        let (svg_width, svg_height) = svg_f64_dimensions(&bytes)?;
+        if svg_width.round() != f64::from(width) || svg_height.round() != f64::from(height) {
+            return Err("svg encoded dimensions do not match the manifest".to_owned());
+        }
+        verify_svg_semantics(&bytes, width, height, entry)?;
     }
     Ok(())
 }
@@ -1242,6 +1418,11 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
     if bytes != [&canonical_bytes(&provenance)?[..], b"\n"].concat() {
         return Err("provenance is not canonical JSON followed by one LF".to_owned());
     }
+    let generated_at = case_data
+        .entry
+        .generated_at
+        .as_deref()
+        .ok_or_else(|| format!("case {} registers no generation date", case_data.entry.id))?;
     if provenance["schema"] != json!("excalidraw-render/reference-evidence-provenance/v1")
         || provenance["case_id"] != json!(case_data.entry.id)
         || provenance["png_independent_from_svg"] != json!(true)
@@ -1271,12 +1452,18 @@ fn verify_provenance(case_data: &LoadedCase) -> Result<(), String> {
     if provenance["container_image"]
         != json!("mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9")
         || provenance["node_version"] != json!("v24.16.0")
-        || provenance["generated_at"] != json!("2026-07-19")
+        || provenance["generated_at"] != json!(generated_at)
         || provenance["reference_profile_digest"] != json!(format!("sha256:{PROFILE_DIGEST}"))
         || provenance["generation_invocation"]
-            != json!("cargo run --locked -p xtask -- conformance generate focused.rectangle-outline.v1")
+            != json!(format!(
+                "cargo run --locked -p xtask -- conformance generate {}",
+                case_data.entry.id
+            ))
         || provenance["reproduction_invocation"]
-            != json!("cargo run --locked -p xtask -- conformance reproduce focused.rectangle-outline.v1")
+            != json!(format!(
+                "cargo run --locked -p xtask -- conformance reproduce {}",
+                case_data.entry.id
+            ))
     {
         return Err("generation provenance identity is invalid".to_owned());
     }
@@ -1433,9 +1620,6 @@ fn verify_repo_descriptor(value: &Value, subject: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn verify_approval(approval: &Value, subject: &str) -> Result<(), String> {
-    verify_approval_for_issue(approval, subject, "32")
-}
 
 fn verify_approval_for_issue(approval: &Value, subject: &str, issue: &str) -> Result<(), String> {
     let approval = object(approval, "approval")?;
@@ -1688,18 +1872,46 @@ fn verify_png_semantics(bytes: &[u8], expected_rgba: &[u8]) -> Result<(), String
     Ok(())
 }
 
-fn verify_svg_semantics(bytes: &[u8], width: u32, height: u32) -> Result<(), String> {
+fn verify_svg_semantics(
+    bytes: &[u8],
+    width: u32,
+    height: u32,
+    entry: &CaseEntry,
+) -> Result<(), String> {
     let text = std::str::from_utf8(bytes).map_err(|error| format!("SVG is not UTF-8: {error}"))?;
     let document = roxmltree::Document::parse(text)
         .map_err(|error| format!("SVG evidence is not well-formed XML: {error}"))?;
     let root = document.root_element();
     if root.tag_name().name() != "svg"
         || root.tag_name().namespace() != Some("http://www.w3.org/2000/svg")
-        || root.attribute("width") != Some(width.to_string().as_str())
-        || root.attribute("height") != Some(height.to_string().as_str())
-        || root.attribute("viewBox") != Some(format!("0 0 {width} {height}").as_str())
     {
-        return Err("SVG root semantics or dimensions are invalid".to_owned());
+        return Err("SVG root semantics are invalid".to_owned());
+    }
+    let attribute = |name: &str| -> Result<f64, String> {
+        root.attribute(name)
+            .ok_or_else(|| format!("SVG root is missing {name}"))?
+            .parse::<f64>()
+            .map_err(|error| format!("SVG root {name} is not a number: {error}"))
+    };
+    if attribute("width")?.round() != f64::from(width)
+        || attribute("height")?.round() != f64::from(height)
+    {
+        return Err("SVG root dimensions do not match the rasterized size".to_owned());
+    }
+    let view_box: Vec<f64> = root
+        .attribute("viewBox")
+        .ok_or_else(|| "SVG root is missing viewBox".to_owned())?
+        .split_whitespace()
+        .map(|part| part.parse::<f64>().map_err(|error| error.to_string()))
+        .collect::<Result<_, _>>()
+        .map_err(|error| format!("SVG viewBox is not numeric: {error}"))?;
+    if view_box.len() != 4
+        || view_box[0] != 0.0
+        || view_box[1] != 0.0
+        || view_box[2].round() != f64::from(width)
+        || view_box[3].round() != f64::from(height)
+    {
+        return Err("SVG viewBox does not match the rasterized size".to_owned());
     }
     let element_count = |name| {
         document
@@ -1707,14 +1919,14 @@ fn verify_svg_semantics(bytes: &[u8], width: u32, height: u32) -> Result<(), Str
             .filter(|node| node.is_element() && node.tag_name().name() == name)
             .count()
     };
-    if element_count("rect") != 1 || element_count("path") != 1 {
-        return Err(
-            "SVG does not contain exactly one background and one rectangle path".to_owned(),
-        );
-    }
-    for absent in ["a", "clipPath", "image", "mask", "text"] {
-        if element_count(absent) != 0 {
-            return Err(format!("SVG unexpectedly contains {absent} semantics"));
+    let declared = object(&entry.svg_element_counts, "svg_element_counts")?;
+    for name in ["rect", "path", "a", "clipPath", "image", "mask", "text"] {
+        let expected = declared.get(name).and_then(Value::as_u64).unwrap_or(0);
+        let observed = element_count(name) as u64;
+        if observed != expected {
+            return Err(format!(
+                "SVG contains {observed} {name} elements; the registered case declares {expected}"
+            ));
         }
     }
     let metadata = document

@@ -58,6 +58,380 @@
         "masks": 0,
         "selectable_text": false
       },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 1
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ]
+    },
+    {
+      "id": "focused.freedraw.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/freedraw",
+      "approving_issue": "103",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/freedraw",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-02",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+      "purpose": "Exercise the qualified Perfect Freehand path with one simulated-pressure stroke carrying a velocity signal and one recorded-pressure stroke with a pressure value per point.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "element.freedraw",
+          "role": "primary"
+        },
+        {
+          "identity": "freehand.simulated-pressure",
+          "role": "primary"
+        },
+        {
+          "identity": "freehand.recorded-pressure",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:freedraw",
+        "freehand:simulated-pressure",
+        "freehand:recorded-pressure",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "freedraw": 2
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 2
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ]
+    },
+    {
+      "id": "focused.ellipse-diamond-fills.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/ellipse-diamond-fills",
+      "approving_issue": "103",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/ellipse-diamond-fills",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-02",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+      "purpose": "Drive ellipse and diamond geometry through every Rough fill style and every stroke style at compatibility revision 1.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "element.ellipse",
+          "role": "primary"
+        },
+        {
+          "identity": "element.diamond",
+          "role": "primary"
+        },
+        {
+          "identity": "fill.hachure",
+          "role": "primary"
+        },
+        {
+          "identity": "fill.cross-hatch",
+          "role": "primary"
+        },
+        {
+          "identity": "fill.solid",
+          "role": "primary"
+        },
+        {
+          "identity": "fill.zigzag",
+          "role": "primary"
+        },
+        {
+          "identity": "stroke.dashed",
+          "role": "primary"
+        },
+        {
+          "identity": "stroke.dotted",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:ellipse",
+        "element:diamond",
+        "fill:hachure",
+        "fill:cross-hatch",
+        "fill:solid",
+        "fill:zigzag",
+        "stroke:dashed",
+        "stroke:dotted",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "ellipse": 7,
+          "diamond": 7
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 22
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ]
+    },
+    {
+      "id": "focused.arrow-suite.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/arrow-suite",
+      "approving_issue": "103",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/arrow-suite",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-02",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+      "purpose": "Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "element.arrow",
+          "role": "primary"
+        },
+        {
+          "identity": "element.text.bound",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.filled",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.outline",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.crowfoot",
+          "role": "primary"
+        },
+        {
+          "identity": "arrow.elbowed",
+          "role": "primary"
+        },
+        {
+          "identity": "bound-text.mask-gap",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:arrow",
+        "element:text",
+        "arrowhead:all-12",
+        "arrow:elbowed",
+        "bound-text:mask-gap",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "arrow": 14,
+          "text": 1
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 1,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 3,
+        "path": 54,
+        "mask": 14,
+        "text": 1
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ]
+    },
+    {
+      "id": "focused.bound-text-containers.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/bound-text-containers",
+      "approving_issue": "103",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/bound-text-containers",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-02",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+      "purpose": "Bind text to rectangle, ellipse and diamond containers across every textAlign and verticalAlign combination.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "bound-text.rectangle",
+          "role": "primary"
+        },
+        {
+          "identity": "bound-text.ellipse",
+          "role": "primary"
+        },
+        {
+          "identity": "bound-text.diamond",
+          "role": "primary"
+        },
+        {
+          "identity": "bound-text.align",
+          "role": "primary"
+        },
+        {
+          "identity": "bound-text.vertical-align",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:rectangle",
+        "element:ellipse",
+        "element:diamond",
+        "element:text",
+        "bound-text:container",
+        "bound-text:align",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "rectangle": 9,
+          "ellipse": 9,
+          "diamond": 9,
+          "text": 27
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 27,
+        "text": 27
+      },
       "determinism": {
         "animation_offset_microseconds": 0,
         "fresh_process_runs": 2
@@ -83,6 +457,187 @@
       "approving_issue": "97",
       "runner": "tools/reference-oracle/run-frame-conformance.sh",
       "generator": "tools/reference-oracle/scripts/frame-conformance-case.mjs"
+    },
+    {
+      "id": "focused.cjk-propagation.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/cjk-propagation",
+      "approving_issue": "103",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/cjk-propagation",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-02",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+      "purpose": "Propagate CJK text from Excalifont to the Xiaolai chain, including mixed Latin, digit and CJK runs in one text element.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "font.cjk-propagation",
+          "role": "primary"
+        },
+        {
+          "identity": "font.mixed-script",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:text",
+        "font:cjk",
+        "font:mixed-script",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "text": 4
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "text": 4
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ]
+    },
+    {
+      "id": "focused.image-codecs.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/image-codecs",
+      "approving_issue": "103",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/image-codecs",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-asset-scene/v1",
+        "path": "tests/conformance/focused-asset-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-02",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+      "purpose": "Decode one embedded payload per accepted image family plus a sanitized nested SVG, and cover crop and both flip axes.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "image.png",
+          "role": "primary"
+        },
+        {
+          "identity": "image.jpeg",
+          "role": "primary"
+        },
+        {
+          "identity": "image.webp",
+          "role": "primary"
+        },
+        {
+          "identity": "image.gif",
+          "role": "primary"
+        },
+        {
+          "identity": "image.bmp",
+          "role": "primary"
+        },
+        {
+          "identity": "image.ico",
+          "role": "primary"
+        },
+        {
+          "identity": "image.nested-svg",
+          "role": "primary"
+        },
+        {
+          "identity": "image.crop",
+          "role": "primary"
+        },
+        {
+          "identity": "image.flip",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:image",
+        "codec:png",
+        "codec:jpeg",
+        "codec:webp",
+        "codec:gif",
+        "codec:bmp",
+        "codec:ico",
+        "codec:svg",
+        "image:crop",
+        "image:flip",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "image": 11
+        },
+        "embedded_scene": false,
+        "images": 11,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "svg_element_counts": {
+        "rect": 2,
+        "image": 8,
+        "mask": 1
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "crops",
+        "exceptions"
+      ]
     }
   ]
 }
