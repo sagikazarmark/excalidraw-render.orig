@@ -465,7 +465,7 @@
       "layer": "focused",
       "generated_at": "2026-09-02",
       "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
-      "purpose": "Bind text to rectangle, ellipse and diamond containers across every textAlign and verticalAlign combination.",
+      "purpose": "Justify a multi-line bound label under every textAlign value inside rectangle, ellipse and diamond containers.",
       "license": {
         "copyright": "Copyright 2026 excalidraw-render contributors",
         "expression": "MIT OR Apache-2.0"
@@ -492,10 +492,6 @@
           "role": "primary"
         },
         {
-          "identity": "bound-text.vertical-align",
-          "role": "primary"
-        },
-        {
           "identity": "reference.direct-png",
           "role": "primary"
         },
@@ -516,10 +512,10 @@
       ],
       "semantic_expectations": {
         "element_counts": {
-          "rectangle": 9,
-          "ellipse": 9,
-          "diamond": 9,
-          "text": 27
+          "rectangle": 3,
+          "ellipse": 3,
+          "diamond": 3,
+          "text": 9
         },
         "embedded_scene": false,
         "images": 0,
@@ -529,8 +525,8 @@
       },
       "svg_element_counts": {
         "rect": 1,
-        "path": 27,
-        "text": 27
+        "path": 9,
+        "text": 18
       },
       "determinism": {
         "animation_offset_microseconds": 0,
