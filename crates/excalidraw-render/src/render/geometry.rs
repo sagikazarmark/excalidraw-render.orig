@@ -234,23 +234,23 @@ pub(super) fn rough_drawing(
             )
         }
         NormalizedElementKind::Diamond => {
+            // The official export places the diamond's vertices at
+            // `floor(extent / 2) + 1`, not at the exact midpoint, so an
+            // even-sized diamond sits one pixel right of and below centre.
+            // Using the true midpoint moved every diamond outline.
+            let mid_x = (width / 2.0).floor() + 1.0;
+            let mid_y = (height / 2.0).floor() + 1.0;
             let points = [
-                Point {
-                    x: width / 2.0,
-                    y: 0.0,
-                },
+                Point { x: mid_x, y: 0.0 },
                 Point {
                     x: width,
-                    y: height / 2.0,
+                    y: mid_y,
                 },
                 Point {
-                    x: width / 2.0,
+                    x: mid_x,
                     y: height,
                 },
-                Point {
-                    x: 0.0,
-                    y: height / 2.0,
-                },
+                Point { x: 0.0, y: mid_y },
             ];
             let Some(roundness) = source.roundness else {
                 return rough::polygon_drawing(
