@@ -195,6 +195,11 @@ ASCII-key guard into that family's `write_canonical`. Until then the guard
 divergence is latent only — every committed manifest key is ASCII, and
 writer-side keys are string literals.
 
-Next planned design item: `resolve_scene` (~1,435 lines) — give its threaded
-accumulators a real type before splitting it; a mechanical code move is not
-enough.
+`resolve_scene` was restructured 2026-09-02 (design-it-twice: minimal-interface
+vs phase-pipeline vs deep-image-module, hybrid of the latter two): image
+resolution is a deep module (`render/image.rs`, `ImageResolver` with an
+`ImageDisposition` protocol owning the asset cache and image accumulators), and
+the remaining phases are private session methods (`acquire_resolution_inputs`
+ends both variation axes behind `ResolutionInputs`; `account_semantic_census`;
+`assemble_resolved_scene` over `SceneChrome`). The orchestrator is ~40 lines
+plus the element loop; byte/trace neutrality proven by the pinned suites.
