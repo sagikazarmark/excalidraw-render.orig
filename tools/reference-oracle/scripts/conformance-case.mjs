@@ -79,7 +79,18 @@ const OPTIONS = {
   maxWidthOrHeight: null,
   viewBackgroundColor: "#ffffff",
 };
-const EMPTY_REPORT = Buffer.from('{"schema_version":1,"diagnostics":[]}', "utf8");
+// A case that legitimately drives a compatibility or normalization path declares
+// its diagnostics; the common case declares none.
+function expectedReport() {
+  // Reported key order, not canonical order: the checked reports are byte-pinned
+  // with schema_version first, and a case with no diagnostics must keep emitting
+  // exactly the bytes the existing approved cases carry.
+  const diagnostics = CASE.expected_diagnostics ?? [];
+  return Buffer.from(
+    `{"schema_version":1,"diagnostics":${JSON.stringify(diagnostics)}}`,
+    "utf8",
+  );
+}
 const RAW_RASTER_PROFILE = {
   alpha: "straight",
   color_space: "sRGB",
@@ -341,11 +352,33 @@ function provenance(first, second) {
   };
 }
 
+// One record per scene file payload: the payload kind and its decoded bytes,
+// which is the semantic asset identity the corpus binds.
+function sceneAssets(scenePath) {
+  const scene = JSON.parse(readFileSync(scenePath, "utf8"));
+  const files = scene.files ?? {};
+  return Object.keys(files).sort().map((fileId) => {
+    const file = files[fileId];
+    const separator = ";base64,";
+    const index = file.dataURL.indexOf(separator);
+    if (index < 0) {
+      throw new Error(`scene file ${fileId} is not a base64 data URL`);
+    }
+    const bytes = Buffer.from(file.dataURL.slice(index + separator.length), "base64");
+    return {
+      byte_length: bytes.length,
+      file_id: fileId,
+      media_type: file.mimeType,
+      sha256: sha256(bytes),
+    };
+  });
+}
+
 function buildManifest(scenePath, provenancePath, outputRoot, first) {
   const descriptor = (name, extra) => fileDescriptor(resolve(outputRoot, name), extra, name);
   return {
     approval: null,
-    assets: [],
+    assets: sceneAssets(scenePath),
     case_id: CASE.id,
     comparison: {
       comparator_profiles: [],
@@ -432,7 +465,7 @@ function writeEvidence(outputRoot, first, second) {
   writeFileSync(resolve(outputRoot, "evidence/official.svg"), first.outputs.svg.artifact);
   writeFileSync(resolve(outputRoot, "evidence/official-png.rgba"), first.outputs.png.rawRaster);
   writeFileSync(resolve(outputRoot, "evidence/official-svg.rgba"), first.outputs.svg.rawRaster);
-  writeFileSync(resolve(outputRoot, "expected-report.json"), EMPTY_REPORT);
+  writeFileSync(resolve(outputRoot, "expected-report.json"), expectedReport());
   const provenancePath = resolve(outputRoot, "evidence/provenance.json");
   writeFileSync(provenancePath, Buffer.concat([canonicalBytes(provenance(first, second)), Buffer.from("\n")]));
   return provenancePath;

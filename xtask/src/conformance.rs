@@ -38,6 +38,8 @@ struct CaseEntry {
     sanitization_reason: Option<String>,
     svg_element_counts: Value,
     generated_at: Option<String>,
+    empty_fields: Vec<String>,
+    expected_diagnostics: Value,
 }
 
 fn registry() -> Result<Vec<CaseEntry>, String> {
@@ -85,6 +87,16 @@ fn registry() -> Result<Vec<CaseEntry>, String> {
             sanitization_reason: case["sanitization"]["reason"].as_str().map(str::to_owned),
             svg_element_counts: case["svg_element_counts"].clone(),
             generated_at: case["generated_at"].as_str().map(str::to_owned),
+            empty_fields: case["empty_fields"]
+                .as_array()
+                .map(|values| {
+                    values
+                        .iter()
+                        .filter_map(|value| value.as_str().map(str::to_owned))
+                        .collect()
+                })
+                .unwrap_or_default(),
+            expected_diagnostics: case["expected_diagnostics"].clone(),
         });
     }
     let mut seen = BTreeSet::new();
@@ -156,11 +168,14 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
     if loaded.manifest["layer"] != json!("focused") {
         return Err("registered scene cases must be in the focused corpus layer".to_owned());
     }
-    for field in ["assets", "crops", "exceptions"] {
-        if loaded.manifest[field] != json!([]) {
+    // Which of these a case leaves empty is a property of the case, not of the
+    // corpus: an asset-bearing case necessarily populates `assets`.
+    for field in loaded.entry.empty_fields.iter() {
+        if loaded.manifest[field.as_str()] != json!([]) {
             return Err(format!("{field} must be explicitly empty for this case"));
         }
     }
+    verify_assets(&loaded)?;
 
     let schema_id = loaded
         .entry
@@ -633,6 +648,87 @@ fn verify_schema_for(manifest: &Value, schema_id: &str, schema_path: &str) -> Re
         .validate(manifest)
         .map_err(|error| format!("manifest does not satisfy its declared schema: {error}"))?;
     Ok(())
+}
+
+/// Every declared asset must match a scene file payload by kind and decoded
+/// bytes, and every payload must be declared exactly once.
+fn verify_assets(case_data: &LoadedCase) -> Result<(), String> {
+    let declared = case_data.manifest["assets"]
+        .as_array()
+        .ok_or_else(|| "assets must be an array".to_owned())?;
+    let path = descriptor_path(&case_data.root, &case_data.manifest["scene"])?;
+    let scene: Value = serde_json::from_slice(
+        &fs::read(path).map_err(|error| format!("failed to read scene document: {error}"))?,
+    )
+    .map_err(|error| format!("invalid scene document: {error}"))?;
+    let files = scene["files"]
+        .as_object()
+        .ok_or_else(|| "scene.files must be an object".to_owned())?;
+    if declared.len() != files.len() {
+        return Err(format!(
+            "manifest declares {} assets; the scene carries {} file payloads",
+            declared.len(),
+            files.len()
+        ));
+    }
+    for record in declared {
+        let record = object(record, "asset record")?;
+        verify_exact_keys(
+            record,
+            &["byte_length", "file_id", "media_type", "sha256"],
+            "asset record",
+        )?;
+        let file_id = record["file_id"]
+            .as_str()
+            .ok_or_else(|| "asset file_id must be a string".to_owned())?;
+        let file = files
+            .get(file_id)
+            .ok_or_else(|| format!("asset {file_id:?} is not a scene file payload"))?;
+        if record["media_type"] != file["mimeType"] {
+            return Err(format!("asset {file_id:?} media type does not match the scene"));
+        }
+        let data_url = file["dataURL"]
+            .as_str()
+            .ok_or_else(|| format!("scene file {file_id:?} has no dataURL"))?;
+        let encoded = data_url
+            .split_once(";base64,")
+            .map(|(_, encoded)| encoded)
+            .ok_or_else(|| format!("scene file {file_id:?} is not a base64 data URL"))?;
+        let bytes = base64_decode(encoded)
+            .ok_or_else(|| format!("scene file {file_id:?} payload is not valid base64"))?;
+        if record["byte_length"] != json!(bytes.len()) || record["sha256"] != json!(sha256(&bytes))
+        {
+            return Err(format!("asset {file_id:?} does not match its decoded payload"));
+        }
+    }
+    Ok(())
+}
+
+fn base64_decode(input: &str) -> Option<Vec<u8>> {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut lookup = [255u8; 256];
+    for (index, byte) in TABLE.iter().enumerate() {
+        lookup[*byte as usize] = index as u8;
+    }
+    let mut out = Vec::with_capacity(input.len() / 4 * 3);
+    let mut accumulator = 0u32;
+    let mut bits = 0u32;
+    for byte in input.bytes() {
+        if byte == b'=' {
+            break;
+        }
+        let value = lookup[byte as usize];
+        if value == 255 {
+            return None;
+        }
+        accumulator = (accumulator << 6) | u32::from(value);
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            out.push((accumulator >> bits) as u8);
+        }
+    }
+    Some(out)
 }
 
 fn verify_case_metadata(manifest: &Value, entry: &CaseEntry) -> Result<(), String> {
@@ -1160,8 +1256,22 @@ fn verify_expected_report(case_data: &LoadedCase) -> Result<(), String> {
     let path = descriptor_path(&case_data.root, &case_data.manifest["expected_report"])?;
     let bytes =
         fs::read(path).map_err(|error| format!("failed to read expected report: {error}"))?;
-    if bytes != EMPTY_REPORT {
-        return Err("expected report is not the exact empty compatibility report".to_owned());
+    let declared = case_data
+        .entry
+        .expected_diagnostics
+        .as_array()
+        .map(|values| serde_json::to_string(values).unwrap_or_default())
+        .unwrap_or_else(|| "[]".to_owned());
+    let expected = format!(r#"{{"schema_version":1,"diagnostics":{declared}}}"#);
+    if bytes != expected.as_bytes() {
+        return Err(format!(
+            "expected report does not match the {} diagnostics the case declares",
+            case_data
+                .entry
+                .expected_diagnostics
+                .as_array()
+                .map_or(0, Vec::len)
+        ));
     }
     Ok(())
 }
