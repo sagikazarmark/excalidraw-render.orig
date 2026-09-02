@@ -811,6 +811,74 @@ fn resource_specific_omission_never_uses_the_generic_known_element_box() {
     }
 }
 
+#[test]
+fn scene_text_reports_missing_glyphs_and_emoji_substitution_in_every_format() {
+    // The neighbouring tests cover generated compatibility labels and embeddable
+    // labels. This covers the same two font paths reached from an ordinary scene
+    // text element, where the renderer diverges from the official export on
+    // purpose: official draws the font's notdef box, revision 1 draws the
+    // deterministic basic-Latin replacement and reports it. That divergence is
+    // specified, so it is pinned here rather than evidenced as a parity case.
+    let scene = SceneDocument::parse(
+        r##"{
+        "type":"excalidraw","version":2,
+        "elements":[
+            {"id":"unmapped","type":"text","x":20,"y":20,"width":200,"height":40,"text":"𐀀𐀁","originalText":"𐀀𐀁","fontSize":28,"fontFamily":5,"textAlign":"left","verticalAlign":"top","lineHeight":1.25,"containerId":null,"seed":31,"updated":1},
+            {"id":"emoji","type":"text","x":20,"y":80,"width":200,"height":40,"text":"😀","originalText":"😀","fontSize":28,"fontFamily":5,"textAlign":"left","verticalAlign":"top","lineHeight":1.25,"containerId":null,"seed":32,"updated":1}
+        ],
+        "appState":{},"files":{}
+    }"##
+        .as_bytes(),
+    )
+    .expect("unmapped scene text is admitted");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let outcome = render(&scene, format);
+
+        // Linear B U+10000 and U+10001 are absent from every bundled face.
+        let missing: Vec<_> = outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .filter(|diagnostic| diagnostic.code() == DiagnosticCode::FONT_MISSING_GLYPH)
+            .collect();
+        assert_eq!(
+            missing.len(),
+            2,
+            "each unmapped scene codepoint reports once for {format:?}"
+        );
+        for (diagnostic, codepoint) in missing.iter().zip([0x10000_u32, 0x10001]) {
+            assert!(
+                matches!(
+                    diagnostic.details(),
+                    Some(ErrorDetails::MissingGlyph {
+                        codepoint: reported,
+                        recovery: Recovery::Substituted,
+                    }) if *reported == codepoint
+                ),
+                "unmapped scene codepoint {codepoint:#x} is substituted for {format:?}"
+            );
+        }
+
+        // Emoji in scene text resolves through the bundled Noto Emoji face and is
+        // therefore never reported as a missing glyph.
+        assert!(
+            outcome
+                .report()
+                .diagnostics()
+                .iter()
+                .any(|diagnostic| diagnostic.code()
+                    == DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED),
+            "scene emoji uses the bundled Noto Emoji face for {format:?}"
+        );
+    }
+
+    // The replacement is deterministic and reaches the SVG text content.
+    let svg = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("??"), "unmapped text uses the replacement glyph");
+}
+
 fn render(scene: &SceneDocument, format: OutputFormat) -> excalidraw_render::RenderOutcome {
     let request = RenderRequest::builder(format)
         .build()
