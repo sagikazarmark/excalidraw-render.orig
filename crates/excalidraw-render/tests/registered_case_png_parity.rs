@@ -28,11 +28,12 @@ use serde_json::Value;
 /// differences. A case that starts passing must be removed from the list, which
 /// the test enforces so the suppression cannot outlive the divergence.
 const KNOWN_DIVERGENT: &[&str] = &[
-    // extent now matches official exactly; a pixel difference remains
+    // Outline geometry matches official byte for byte in all three of these; the
+    // residual is text rasterization, which is the next thread under #104.
     "focused.arrow-suite.v1",
     "focused.bound-text-containers.v1",
-    "focused.cjk-propagation.v1",
     "focused.ellipse-diamond-fills.v1",
+    "focused.cjk-propagation.v1",
     "focused.embeddable-links.v1",
 ];
 

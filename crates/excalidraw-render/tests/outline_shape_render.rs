@@ -32,9 +32,9 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
             .render(&scene, &request)
             .expect("all outline families render");
         let expected_digest = match format {
-            OutputFormat::Svg => "53fa544e7a4b08fe8c5edc0b56333ffa7927379ed823b73c53526f1b932c7459",
-            OutputFormat::Png => "2876cfd36669b422fdf36d58adda69541e57ffa8f086c4d069868d65f578c556",
-            OutputFormat::Pdf => "60f2c503b164bdbcc24d16301465ccad8abc5bc9a4b366b8cced6887815f5c75",
+            OutputFormat::Svg => "92cb399bdb9891670afc384c84ef686513467c08acf93164bbb0ae838d4d82ca",
+            OutputFormat::Png => "9fa349d5762c6966f545afc4da01a838168623c2ce1111f7d61398f542b92679",
+            OutputFormat::Pdf => "58ce5d784ad2594d87b9000b1cb84248f3b40e843c51d624536c8e002dbac88e",
             _ => unreachable!("the test enumerates every revision-1 output format"),
         };
         assert_eq!(
@@ -98,8 +98,16 @@ fn svg_outline_operations_match_the_pinned_roughjs_vectors() {
     let digest = Sha256::digest(paths.join("\n"));
     assert_eq!(
         format!("{digest:x}"),
-        "c7f7fecb0ae243c8a19d0f650cdd937e917292559449cc40b99783e8ffbfadd6",
-        "vectors were generated independently with pinned Rough.js 4.6.4"
+        "6d0e81bef0d09500efd1e8f97e78d2a998331d4a4e7683d0adbf596a695fbe80",
+        // The original vectors came from an independent pinned Rough.js 4.6.4 run,
+        // but that run was fed midpoint diamond vertices, which is not what the
+        // official export uses. The two diamond entries were re-derived after the
+        // vertex fix; their geometry is corroborated by official evidence at two
+        // sizes of differing parity, 170x110 and 130x95, where every path matches
+        // byte for byte. The five non-diamond entries are unchanged from the
+        // independent run.
+        "diamond vectors re-derived against official evidence; the rest are the \
+         independent pinned Rough.js 4.6.4 run"
     );
 }
 

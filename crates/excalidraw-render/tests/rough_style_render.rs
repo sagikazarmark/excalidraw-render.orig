@@ -97,7 +97,8 @@ fn rough_fill_vectors_match_the_pinned_geometry_families() {
     assert_eq!(paths.len(), 8);
     assert_eq!(
         format!("{:x}", Sha256::digest(paths.join("\n"))),
-        "f55398f18df88d2962a1f060efb21615aa4e725793d2085d7d5d216b9247f111"
+        // Moved with the diamond vertex fix: the scene carries two diamonds.
+        "d4e7528ff1a10f3ebbfbb8f3b404728ce7bef805930d56384652c2be6dc53f6d"
     );
 }
 
