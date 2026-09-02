@@ -70,7 +70,32 @@
         "assets",
         "crops",
         "exceptions"
-      ]
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
     },
     {
       "id": "focused.freedraw.v1",
@@ -147,7 +172,32 @@
         "assets",
         "crops",
         "exceptions"
-      ]
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
     },
     {
       "id": "focused.ellipse-diamond-fills.v1",
@@ -250,7 +300,32 @@
         "assets",
         "crops",
         "exceptions"
-      ]
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
     },
     {
       "id": "focused.arrow-suite.v1",
@@ -348,7 +423,32 @@
         "assets",
         "crops",
         "exceptions"
-      ]
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
     },
     {
       "id": "focused.bound-text-containers.v1",
@@ -440,7 +540,32 @@
         "assets",
         "crops",
         "exceptions"
-      ]
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
     },
     {
       "id": "focused.excalifont-text.v1",
@@ -529,7 +654,32 @@
         "assets",
         "crops",
         "exceptions"
-      ]
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
     },
     {
       "id": "focused.image-codecs.v1",
@@ -637,7 +787,173 @@
       "empty_fields": [
         "crops",
         "exceptions"
-      ]
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
+    },
+    {
+      "id": "focused.embeddable-links.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/embeddable-links",
+      "approving_issue": "103",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/embeddable-links",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-02",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+      "purpose": "Render the offline embeddable shell with its label and cover admitted and rejected link schemes across element kinds.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "element.embeddable",
+          "role": "primary"
+        },
+        {
+          "identity": "link.admitted",
+          "role": "primary"
+        },
+        {
+          "identity": "link.unsafe-omitted",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:embeddable",
+        "element:rectangle",
+        "element:ellipse",
+        "link:admitted",
+        "link:unsafe",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "embeddable": 2,
+          "rectangle": 2,
+          "ellipse": 1
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 3,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 10,
+        "a": 7,
+        "text": 2
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": [
+          {
+            "code": "link.unsafe-omitted",
+            "details": {
+              "kind": "compatibility",
+              "recipe_id": null,
+              "recovery": "omitted"
+            },
+            "effects": [
+              "semantic"
+            ],
+            "element_id": "embed-unsafe",
+            "format": "svg",
+            "json_pointer": "/elements/1/link",
+            "message": "unsafe link was omitted by the revision-1 sanitizer",
+            "severity": "warning"
+          },
+          {
+            "code": "link.unsafe-omitted",
+            "details": {
+              "kind": "compatibility",
+              "recipe_id": null,
+              "recovery": "omitted"
+            },
+            "effects": [
+              "semantic"
+            ],
+            "element_id": "rect-unsafe",
+            "format": "svg",
+            "json_pointer": "/elements/4/link",
+            "message": "unsafe link was omitted by the revision-1 sanitizer",
+            "severity": "warning"
+          }
+        ]
+      }
     }
   ]
 }

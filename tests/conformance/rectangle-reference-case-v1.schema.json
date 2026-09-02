@@ -14,7 +14,6 @@
     "crops",
     "determinism",
     "exceptions",
-    "expected_report",
     "feature_tags",
     "layer",
     "license",
@@ -31,204 +30,472 @@
   "properties": {
     "approval": {
       "oneOf": [
-        { "type": "null" },
+        {
+          "type": "null"
+        },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["approved_at", "approved_by", "approval_subject_sha256", "approval_url"],
+          "required": [
+            "approved_at",
+            "approved_by",
+            "approval_subject_sha256",
+            "approval_url"
+          ],
           "properties": {
-            "approved_at": { "type": "string", "format": "date" },
-            "approved_by": { "type": "string", "minLength": 1 },
-            "approval_subject_sha256": { "$ref": "#/$defs/prefixedDigest" },
-            "approval_url": { "type": "string", "format": "uri" }
+            "approved_at": {
+              "type": "string",
+              "format": "date"
+            },
+            "approved_by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "approval_subject_sha256": {
+              "$ref": "#/$defs/prefixedDigest"
+            },
+            "approval_url": {
+              "type": "string",
+              "format": "uri"
+            }
           }
         }
       ]
     },
-    "assets": { "type": "array", "maxItems": 0 },
-    "case_id": { "type": "string", "minLength": 1 },
+    "assets": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
     "comparison": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["comparator_profiles", "viewer_profiles"],
+      "required": [
+        "comparator_profiles",
+        "viewer_profiles"
+      ],
       "properties": {
-        "comparator_profiles": { "type": "array", "items": { "$ref": "#/$defs/profileIdentity" } },
-        "viewer_profiles": { "type": "array", "items": { "$ref": "#/$defs/profileIdentity" } }
+        "comparator_profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/profileIdentity"
+          }
+        },
+        "viewer_profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/profileIdentity"
+          }
+        }
       }
     },
-    "compatibility_revision": { "type": "integer", "minimum": 1 },
-    "coverage": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/coverage" } },
-    "crops": { "type": "array", "maxItems": 0 },
+    "compatibility_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "coverage": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/coverage"
+      }
+    },
+    "crops": {
+      "type": "array",
+      "maxItems": 0
+    },
     "determinism": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["animation_offset_microseconds", "fresh_process_runs"],
+      "required": [
+        "animation_offset_microseconds",
+        "fresh_process_runs"
+      ],
       "properties": {
-        "animation_offset_microseconds": { "const": 0 },
-        "fresh_process_runs": { "const": 2 }
+        "animation_offset_microseconds": {
+          "const": 0
+        },
+        "fresh_process_runs": {
+          "const": 2
+        }
       }
     },
-    "exceptions": { "type": "array", "maxItems": 0 },
-    "expected_report": { "$ref": "#/$defs/file" },
-    "feature_tags": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-    "layer": { "enum": ["exact-vector", "focused", "representative", "adversarial", "regression"] },
+    "exceptions": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "feature_tags": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "layer": {
+      "enum": [
+        "exact-vector",
+        "focused",
+        "representative",
+        "adversarial",
+        "regression"
+      ]
+    },
     "license": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["copyright", "expression"],
+      "required": [
+        "copyright",
+        "expression"
+      ],
       "properties": {
-        "copyright": { "type": "string" },
-        "expression": { "const": "MIT OR Apache-2.0" }
+        "copyright": {
+          "type": "string"
+        },
+        "expression": {
+          "const": "MIT OR Apache-2.0"
+        }
       }
     },
-    "originating_issue": { "type": "string", "format": "uri" },
-    "provenance": { "$ref": "#/$defs/file" },
-    "purpose": { "type": "string", "minLength": 1 },
+    "originating_issue": {
+      "type": "string",
+      "format": "uri"
+    },
+    "provenance": {
+      "$ref": "#/$defs/file"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
     "reference": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["asset_manifest", "profile", "scene_surface"],
+      "required": [
+        "asset_manifest",
+        "profile",
+        "scene_surface"
+      ],
       "properties": {
-        "asset_manifest": { "$ref": "#/$defs/identity" },
-        "profile": { "$ref": "#/$defs/identity" },
-        "scene_surface": { "$ref": "#/$defs/identity" }
+        "asset_manifest": {
+          "$ref": "#/$defs/identity"
+        },
+        "profile": {
+          "$ref": "#/$defs/identity"
+        },
+        "scene_surface": {
+          "$ref": "#/$defs/identity"
+        }
       }
     },
     "sanitization": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["performed", "reason"],
+      "required": [
+        "performed",
+        "reason"
+      ],
       "properties": {
-        "performed": { "const": false },
-        "reason": { "type": "string" }
+        "performed": {
+          "const": false
+        },
+        "reason": {
+          "type": "string"
+        }
       }
     },
-    "scene": { "$ref": "#/$defs/file" },
+    "scene": {
+      "$ref": "#/$defs/file"
+    },
     "schema": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["digest", "id", "path"],
+      "required": [
+        "digest",
+        "id",
+        "path"
+      ],
       "properties": {
-        "digest": { "$ref": "#/$defs/prefixedDigest" },
-        "id": { "const": "excalidraw-render/conformance-case/rectangle-reference/v1" },
-        "path": { "type": "string" }
+        "digest": {
+          "$ref": "#/$defs/prefixedDigest"
+        },
+        "id": {
+          "const": "excalidraw-render/conformance-case/rectangle-reference/v1"
+        },
+        "path": {
+          "type": "string"
+        }
       }
     },
     "semantic_expectations": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["element_count", "element_type", "embedded_scene", "images", "links", "masks", "selectable_text"],
+      "required": [
+        "element_count",
+        "element_type",
+        "embedded_scene",
+        "images",
+        "links",
+        "masks",
+        "selectable_text"
+      ],
       "properties": {
-        "element_count": { "type": "integer", "minimum": 0 },
-        "element_type": { "type": "string" },
-        "embedded_scene": { "type": "boolean" },
-        "images": { "type": "integer", "minimum": 0 },
-        "links": { "type": "integer", "minimum": 0 },
-        "masks": { "type": "integer", "minimum": 0 },
-        "selectable_text": { "type": "boolean" }
+        "element_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "element_type": {
+          "type": "string"
+        },
+        "embedded_scene": {
+          "type": "boolean"
+        },
+        "images": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "links": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "masks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "selectable_text": {
+          "type": "boolean"
+        }
       }
     },
     "variants": {
       "type": "array",
       "minItems": 1,
-      "maxItems": 1,
-      "items": { "$ref": "#/$defs/variant" }
+      "items": {
+        "$ref": "#/$defs/variant"
+      }
     }
   },
   "$defs": {
     "coverage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["identity", "role"],
+      "required": [
+        "identity",
+        "role"
+      ],
       "properties": {
-        "identity": { "type": "string" },
-        "role": { "const": "primary" }
+        "identity": {
+          "type": "string"
+        },
+        "role": {
+          "const": "primary"
+        }
       }
     },
-    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-    "prefixedDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "prefixedDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
     "file": {
       "type": "object",
-      "required": ["byte_length", "path", "sha256"],
+      "required": [
+        "byte_length",
+        "path",
+        "sha256"
+      ],
       "properties": {
-        "byte_length": { "type": "integer", "minimum": 0 },
-        "path": { "type": "string", "minLength": 1 },
-        "sha256": { "$ref": "#/$defs/digest" },
-        "height": { "type": "integer", "minimum": 1 },
-        "layout": { "type": "string" },
-        "media_type": { "type": "string" },
-        "pixel_format": { "type": "string" },
-        "width": { "type": "integer", "minimum": 1 }
+        "byte_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "layout": {
+          "type": "string"
+        },
+        "media_type": {
+          "type": "string"
+        },
+        "pixel_format": {
+          "type": "string"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        }
       },
       "additionalProperties": false
     },
     "identity": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["digest", "path"],
+      "required": [
+        "digest",
+        "path"
+      ],
       "properties": {
-        "digest": { "$ref": "#/$defs/prefixedDigest" },
-        "path": { "type": "string" }
+        "digest": {
+          "$ref": "#/$defs/prefixedDigest"
+        },
+        "path": {
+          "type": "string"
+        }
       }
     },
     "profileIdentity": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["digest", "id", "scope"],
+      "required": [
+        "digest",
+        "id",
+        "scope"
+      ],
       "properties": {
-        "digest": { "$ref": "#/$defs/prefixedDigest" },
-        "id": { "type": "string" },
-        "scope": { "type": "string" }
+        "digest": {
+          "$ref": "#/$defs/prefixedDigest"
+        },
+        "id": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        }
       }
     },
     "format": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["artifact", "raw_raster", "visual_class"],
+      "required": [
+        "artifact",
+        "expected_report",
+        "raw_raster",
+        "visual_class"
+      ],
       "properties": {
-        "artifact": { "$ref": "#/$defs/file" },
-        "raw_raster": { "$ref": "#/$defs/file" },
-        "visual_class": { "const": "geometry/image" }
+        "artifact": {
+          "$ref": "#/$defs/file"
+        },
+        "raw_raster": {
+          "$ref": "#/$defs/file"
+        },
+        "visual_class": {
+          "const": "geometry/image"
+        },
+        "expected_report": {
+          "$ref": "#/$defs/file"
+        }
       }
     },
     "variant": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["formats", "id", "options"],
+      "required": [
+        "formats",
+        "id",
+        "options"
+      ],
       "properties": {
         "formats": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["png", "svg"],
+          "required": [
+            "png",
+            "svg"
+          ],
           "properties": {
-            "png": { "$ref": "#/$defs/format" },
-            "svg": { "$ref": "#/$defs/format" }
+            "png": {
+              "$ref": "#/$defs/format"
+            },
+            "svg": {
+              "$ref": "#/$defs/format"
+            }
           }
         },
-        "id": { "const": "default" },
+        "id": {
+          "const": "default"
+        },
         "options": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["exportBackground", "exportEmbedScene", "exportPadding", "exportScale", "exportWithDarkMode", "frameRendering", "maxWidthOrHeight", "viewBackgroundColor"],
+          "required": [
+            "exportBackground",
+            "exportEmbedScene",
+            "exportPadding",
+            "exportScale",
+            "exportWithDarkMode",
+            "frameRendering",
+            "maxWidthOrHeight",
+            "viewBackgroundColor"
+          ],
           "properties": {
-            "exportBackground": { "type": "boolean" },
-            "exportEmbedScene": { "type": "boolean" },
-            "exportPadding": { "type": "number", "minimum": 0 },
-            "exportScale": { "type": ["number", "null"] },
-            "exportWithDarkMode": { "type": "boolean" },
+            "exportBackground": {
+              "type": "boolean"
+            },
+            "exportEmbedScene": {
+              "type": "boolean"
+            },
+            "exportPadding": {
+              "type": "number",
+              "minimum": 0
+            },
+            "exportScale": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "exportWithDarkMode": {
+              "type": "boolean"
+            },
             "frameRendering": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["clip", "enabled", "name", "outline"],
+              "required": [
+                "clip",
+                "enabled",
+                "name",
+                "outline"
+              ],
               "properties": {
-                "clip": { "type": "boolean" },
-                "enabled": { "type": "boolean" },
-                "name": { "type": "boolean" },
-                "outline": { "type": "boolean" }
+                "clip": {
+                  "type": "boolean"
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "name": {
+                  "type": "boolean"
+                },
+                "outline": {
+                  "type": "boolean"
+                }
               }
             },
-            "maxWidthOrHeight": { "type": ["number", "null"] },
-            "viewBackgroundColor": { "type": "string" }
+            "maxWidthOrHeight": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "viewBackgroundColor": {
+              "type": "string"
+            }
           }
         }
       }

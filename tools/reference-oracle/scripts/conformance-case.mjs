@@ -64,28 +64,13 @@ const CONTEXT_OPTIONS = {
   timezoneId: "UTC",
   viewport: { height: 720, width: 1280 },
 };
-const OPTIONS = {
-  exportBackground: true,
-  exportEmbedScene: false,
-  exportPadding: 10,
-  exportScale: 1,
-  exportWithDarkMode: false,
-  frameRendering: {
-    clip: true,
-    enabled: true,
-    name: true,
-    outline: true,
-  },
-  maxWidthOrHeight: null,
-  viewBackgroundColor: "#ffffff",
-};
 // A case that legitimately drives a compatibility or normalization path declares
 // its diagnostics; the common case declares none.
-function expectedReport() {
+function expectedReport(format) {
   // Reported key order, not canonical order: the checked reports are byte-pinned
   // with schema_version first, and a case with no diagnostics must keep emitting
   // exactly the bytes the existing approved cases carry.
-  const diagnostics = CASE.expected_diagnostics ?? [];
+  const diagnostics = (CASE.expected_diagnostics ?? {})[format] ?? [];
   return Buffer.from(
     `{"schema_version":1,"diagnostics":${JSON.stringify(diagnostics)}}`,
     "utf8",
@@ -143,7 +128,7 @@ function fileDescriptor(path, extra = {}, logicalPath = casePath(path)) {
   };
 }
 
-async function renderOnce(scene, allowedAssets) {
+async function renderOnce(scene, allowedAssets, options) {
   const browser = await chromium.launch({
     args: BROWSER_ARGUMENTS,
     chromiumSandbox: false,
@@ -252,7 +237,7 @@ async function renderOnce(scene, allowedAssets) {
         svg: rendered.svg,
         svgRaster: await rasterize(new Blob([rendered.svg], { type: "image/svg+xml" })),
       };
-    }, { input: scene, options: OPTIONS });
+    }, { input: scene, options });
     if (errors.length > 0) {
       throw new Error(errors.join("\n"));
     }
@@ -374,8 +359,32 @@ function sceneAssets(scenePath) {
   });
 }
 
-function buildManifest(scenePath, provenancePath, outputRoot, first) {
+function buildManifest(scenePath, provenancePath, outputRoot, renders) {
   const descriptor = (name, extra) => fileDescriptor(resolve(outputRoot, name), extra, name);
+  const variantEntry = (variant) => {
+    const first = renders.get(variant.id).first;
+    const dir = `evidence/${variant.id}`;
+    const forFormat = (format, mediaType) => ({
+      artifact: descriptor(`${dir}/official.${format}`, {
+        height: first.outputs[format].height,
+        media_type: mediaType,
+        width: first.outputs[format].width,
+      }),
+      expected_report: descriptor(`${dir}/expected-report-${format}.json`, {}),
+      raw_raster: descriptor(`${dir}/official-${format}.rgba`, {
+        height: first.outputs[format].height,
+        layout: "top-left-row-major",
+        pixel_format: "straight-alpha-srgb-rgba8",
+        width: first.outputs[format].width,
+      }),
+      visual_class: variant.visual_class,
+    });
+    return {
+      formats: { png: forFormat("png", "image/png"), svg: forFormat("svg", "image/svg+xml") },
+      id: variant.id,
+      options: variant.options,
+    };
+  };
   return {
     approval: null,
     assets: sceneAssets(scenePath),
@@ -393,7 +402,6 @@ function buildManifest(scenePath, provenancePath, outputRoot, first) {
     crops: [],
     determinism: CASE.determinism,
     exceptions: [],
-    expected_report: descriptor("expected-report.json"),
     feature_tags: CASE.feature_tags,
     layer: CASE.layer,
     license: CASE.license,
@@ -422,63 +430,40 @@ function buildManifest(scenePath, provenancePath, outputRoot, first) {
       path: repoPath(CASE.schemaPath),
     },
     semantic_expectations: CASE.semantic_expectations,
-    variants: [{
-      formats: {
-        png: {
-          artifact: descriptor("evidence/official.png", {
-            height: first.outputs.png.height,
-            media_type: "image/png",
-            width: first.outputs.png.width,
-          }),
-          raw_raster: descriptor("evidence/official-png.rgba", {
-            height: first.outputs.png.height,
-            layout: "top-left-row-major",
-            pixel_format: "straight-alpha-srgb-rgba8",
-            width: first.outputs.png.width,
-          }),
-          visual_class: "geometry/image",
-        },
-        svg: {
-          artifact: descriptor("evidence/official.svg", {
-            height: first.outputs.svg.height,
-            media_type: "image/svg+xml",
-            width: first.outputs.svg.width,
-          }),
-          raw_raster: descriptor("evidence/official-svg.rgba", {
-            height: first.outputs.svg.height,
-            layout: "top-left-row-major",
-            pixel_format: "straight-alpha-srgb-rgba8",
-            width: first.outputs.svg.width,
-          }),
-          visual_class: "geometry/image",
-        },
-      },
-      id: "default",
-      options: OPTIONS,
-    }],
+    variants: CASE.variants.map(variantEntry),
   };
 }
 
-function writeEvidence(outputRoot, first, second) {
+function writeEvidence(outputRoot, renders) {
   mkdirSync(resolve(outputRoot, "evidence"), { recursive: true });
-  writeFileSync(resolve(outputRoot, "evidence/official.png"), first.outputs.png.artifact);
-  writeFileSync(resolve(outputRoot, "evidence/official.svg"), first.outputs.svg.artifact);
-  writeFileSync(resolve(outputRoot, "evidence/official-png.rgba"), first.outputs.png.rawRaster);
-  writeFileSync(resolve(outputRoot, "evidence/official-svg.rgba"), first.outputs.svg.rawRaster);
-  writeFileSync(resolve(outputRoot, "expected-report.json"), expectedReport());
+  for (const variant of CASE.variants) {
+    const { first } = renders.get(variant.id);
+    const dir = resolve(outputRoot, "evidence", variant.id);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(resolve(dir, "official.png"), first.outputs.png.artifact);
+    writeFileSync(resolve(dir, "official.svg"), first.outputs.svg.artifact);
+    writeFileSync(resolve(dir, "official-png.rgba"), first.outputs.png.rawRaster);
+    writeFileSync(resolve(dir, "official-svg.rgba"), first.outputs.svg.rawRaster);
+    for (const format of ["png", "svg"]) {
+      writeFileSync(resolve(dir, `expected-report-${format}.json`), expectedReport(format));
+    }
+  }
+  const base = renders.get(CASE.variants[0].id);
   const provenancePath = resolve(outputRoot, "evidence/provenance.json");
-  writeFileSync(provenancePath, Buffer.concat([canonicalBytes(provenance(first, second)), Buffer.from("\n")]));
+  writeFileSync(provenancePath, Buffer.concat([canonicalBytes(provenance(base.first, base.second)), Buffer.from("\n")]));
   return provenancePath;
 }
 
 function compareCheckedEvidence(stagedRoot, manifest) {
-  for (const relativePath of [
-    "expected-report.json",
-    "evidence/official.png",
-    "evidence/official.svg",
-    "evidence/official-png.rgba",
-    "evidence/official-svg.rgba",
-  ]) {
+  const relativePaths = CASE.variants.flatMap((variant) => [
+    `evidence/${variant.id}/official.png`,
+    `evidence/${variant.id}/official.svg`,
+    `evidence/${variant.id}/official-png.rgba`,
+    `evidence/${variant.id}/official-svg.rgba`,
+    `evidence/${variant.id}/expected-report-png.json`,
+    `evidence/${variant.id}/expected-report-svg.json`,
+  ]);
+  for (const relativePath of relativePaths) {
     const staged = readFileSync(resolve(stagedRoot, relativePath));
     const checked = readFileSync(resolve(CASE.root, relativePath));
     if (!staged.equals(checked)) {
@@ -529,9 +514,14 @@ async function main() {
   const allowedAssets = new Set(assetManifest.officialPackage.assets.map((asset) => `/${asset.path}`));
   const scenePath = resolve(CASE.root, "scene.excalidraw");
   const scene = JSON.parse(readFileSync(scenePath, "utf8"));
-  const first = await renderOnce(scene, allowedAssets);
-  const second = await renderOnce(scene, allowedAssets);
-  assertRepeatable(first, second);
+  const renders = new Map();
+  for (const variant of CASE.variants) {
+    const first = await renderOnce(scene, allowedAssets, variant.options);
+    const second = await renderOnce(scene, allowedAssets, variant.options);
+    assertRepeatable(first, second);
+    renders.set(variant.id, { first, second });
+  }
+  const first = renders.get(CASE.variants[0].id).first;
 
   const outputRoot = mode === "generate" ? CASE.root : CASE.staging;
   if (mode === "generate" && existsSync(resolve(CASE.root, "manifest.json"))) {
@@ -543,8 +533,8 @@ async function main() {
   if (mode === "reproduce") {
     rmSync(CASE.staging, { force: true, recursive: true });
   }
-  const provenancePath = writeEvidence(outputRoot, first, second);
-  const manifest = buildManifest(scenePath, provenancePath, outputRoot, first);
+  const provenancePath = writeEvidence(outputRoot, renders);
+  const manifest = buildManifest(scenePath, provenancePath, outputRoot, renders);
   if (mode === "generate") {
     const manifestBytes = canonicalBytes(manifest);
     writeFileSync(resolve(CASE.root, "manifest.json"), Buffer.concat([manifestBytes, Buffer.from("\n")]));
