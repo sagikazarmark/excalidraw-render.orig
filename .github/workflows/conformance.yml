@@ -20,4 +20,6 @@ jobs:
       - name: Verify every registered conformance case
         run: cargo run --locked -p xtask -- conformance verify-all
       - name: Renderer parity suite
-        run: cargo test --locked -p excalidraw-render --lib
+        run: |
+          cargo test --locked -p excalidraw-render --lib
+          cargo test --locked -p excalidraw-render --test registered_case_png_parity
