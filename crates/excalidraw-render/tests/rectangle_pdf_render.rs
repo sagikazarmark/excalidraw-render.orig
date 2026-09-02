@@ -36,7 +36,7 @@ fn approved_rectangle_renders_as_a_deterministic_vector_first_pdf() {
     assert_eq!(first.artifact().media_type(), "application/pdf");
     assert_eq!(
         serde_json::to_vec(first.report()).expect("report serializes"),
-        fs::read(case.join("expected-report.json")).unwrap()
+        fs::read(case.join("evidence/default/expected-report-svg.json")).unwrap()
     );
 
     let bytes = first.artifact().bytes();

@@ -298,11 +298,11 @@ fn isolated_fallback_passes_both_canonical_pdf_visual_gates() {
     assert_eq!(
         format!(
             "{:x}",
-            Sha256::digest(fs::read(evidence.join("evidence/official.svg")).unwrap())
+            Sha256::digest(fs::read(evidence.join("evidence/default/official.svg")).unwrap())
         ),
         "8efab916e92d110a76ac8ecb692027895a6b021d3bf594ca747f742ac600c363"
     );
-    let reference_bytes = fs::read(evidence.join("evidence/official-svg.rgba"))
+    let reference_bytes = fs::read(evidence.join("evidence/default/official-svg.rgba"))
         .expect("approved official-SVG fallback evidence is present");
     assert_eq!(
         format!("{:x}", Sha256::digest(&reference_bytes)),
