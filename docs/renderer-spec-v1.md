@@ -1,6 +1,6 @@
 # Excalidraw Static Renderer Specification
 
-Document version: `1.2.0`
+Document version: `1.2.1`
 
 Compatibility revision: `1`
 
@@ -2498,12 +2498,13 @@ Release is blocked by unmanifested assets, unapproved byte changes, missing
 provenance/transformation/license records, improper Reserved Font Names, missing
 output-traveling attribution, font-bearing evidence without notice packages,
 production installed/network font access, dependency-audit failure, incomplete
-target execution, incomplete corpus coverage, or missing mandatory checkpoint.
+target execution, or incomplete corpus coverage. Checkpoints belong to the
+aspirational protocols in [docs/roadmap.md](roadmap.md) and gate a release only
+if a protocol is activated and moved back into this specification first.
 
 Concrete compiler, builder, PDF viewer, WASM tool, compressor, ICC profile,
-qualified decoder/port, backend-adapter, fixture, and checkpoint identities are
-immutable implementation or release evidence selected under the closed gates
-above. Their materialization is implementation work, not an unresolved product,
+qualified decoder/port, backend-adapter, and fixture identities are immutable
+implementation or release evidence selected under the closed gates above. Their materialization is implementation work, not an unresolved product,
 compatibility, architecture, API, robustness, platform, or test strategy
 decision. Where qualification fails, this document already specifies
 the required fallback or release block.
