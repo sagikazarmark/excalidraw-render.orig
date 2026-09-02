@@ -699,19 +699,11 @@ fn verify_case_metadata(manifest: &Value, entry: &CaseEntry) -> Result<(), Strin
         return Err("sanitization metadata is invalid".to_owned());
     }
     let expectations = object(&manifest["semantic_expectations"], "semantic expectations")?;
-    verify_exact_keys(
-        expectations,
-        &[
-            "element_count",
-            "element_type",
-            "embedded_scene",
-            "images",
-            "links",
-            "masks",
-            "selectable_text",
-        ],
-        "semantic expectations",
-    )?;
+    // the registered entry is the authority on shape as well as values, so the
+    // key set follows it rather than a literal that only fits one schema
+    let registered = object(&entry.semantic_expectations, "registered semantic expectations")?;
+    let expected_keys: Vec<&str> = registered.keys().map(String::as_str).collect();
+    verify_exact_keys(expectations, &expected_keys, "semantic expectations")?;
     if Value::Object(expectations.clone()) != entry.semantic_expectations {
         return Err("semantic expectations do not match the registered case".to_owned());
     }
@@ -911,27 +903,54 @@ fn verify_scene(case_data: &LoadedCase) -> Result<(), String> {
         .ok_or_else(|| "scene.elements must be an array".to_owned())?;
 
     let expectations = &case_data.entry.semantic_expectations;
-    let expected_count = expectations["element_count"]
-        .as_u64()
-        .ok_or_else(|| "registered element_count must be an integer".to_owned())?;
-    if elements.len() as u64 != expected_count {
+    // rectangle-reference/v1 declares one type and a count; focused-scene/v1
+    // declares a per-type census. Derive the census from whichever is present.
+    let census: Map<String, Value> = match expectations.get("element_counts") {
+        Some(value) => object(value, "element_counts")?.clone(),
+        None => {
+            let kind = expectations["element_type"]
+                .as_str()
+                .ok_or_else(|| "registered element_type must be a string".to_owned())?;
+            let count = expectations["element_count"]
+                .as_u64()
+                .ok_or_else(|| "registered element_count must be an integer".to_owned())?;
+            let mut single = Map::new();
+            single.insert(kind.to_owned(), json!(count));
+            single
+        }
+    };
+    let counts = &census;
+    let expected_total: u64 = counts.values().filter_map(Value::as_u64).sum();
+    if elements.len() as u64 != expected_total {
         return Err(format!(
-            "scene has {} elements; the registered case expects {expected_count}",
+            "scene has {} elements; the registered case expects {expected_total}",
             elements.len()
         ));
     }
-    let expected_type = expectations["element_type"]
-        .as_str()
-        .ok_or_else(|| "registered element_type must be a string".to_owned())?;
+    let mut observed: std::collections::BTreeMap<&str, u64> = std::collections::BTreeMap::new();
+    for value in elements {
+        let kind = value["type"]
+            .as_str()
+            .ok_or_else(|| "scene element type must be a string".to_owned())?;
+        *observed.entry(kind).or_default() += 1;
+    }
+    for (kind, count) in counts {
+        let want = count.as_u64().unwrap_or_default();
+        let have = observed.remove(kind.as_str()).unwrap_or_default();
+        if have != want {
+            return Err(format!(
+                "scene has {have} {kind} elements; the registered case expects {want}"
+            ));
+        }
+    }
+    if let Some((kind, count)) = observed.into_iter().next() {
+        return Err(format!(
+            "scene has {count} undeclared {kind} elements"
+        ));
+    }
 
     for (position, value) in elements.iter().enumerate() {
         let element = object(value, "scene element")?;
-        if element["type"] != json!(expected_type) {
-            return Err(format!(
-                "element {position} is {:?}; the registered case expects {expected_type:?}",
-                element["type"]
-            ));
-        }
         for field in [
             "id",
             "type",

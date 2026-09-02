@@ -126,8 +126,9 @@
         "format:png"
       ],
       "semantic_expectations": {
-        "element_count": 2,
-        "element_type": "freedraw",
+        "element_counts": {
+          "freedraw": 2
+        },
         "embedded_scene": false,
         "images": 0,
         "links": 0,
