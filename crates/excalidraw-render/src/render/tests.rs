@@ -1262,3 +1262,38 @@ fn test_diagnostic() -> CompatibilityDiagnostic {
         order: DiagnosticOrder::default(),
     }
 }
+
+#[test]
+fn png_raster_distinguishes_every_stroke_style() {
+    // tiny-skia treats `Stroke::dash` as inert for the low-level stroker: the
+    // path must be dashed before stroking. Skipping that step rendered dashed
+    // and dotted elements as solid in PNG while SVG and PDF emitted the correct
+    // dash arrays, so this pins all three styles apart in the raster.
+    let render_one = |stroke_style: &str| {
+        let scene = SceneDocument::parse(
+            format!(
+                r##"{{"type":"excalidraw","version":2,"elements":[{{"id":"probe","type":"ellipse","x":20,"y":20,"width":200,"height":120,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"strokeStyle":"{stroke_style}","roughness":0,"opacity":100,"groupIds":[],"frameId":null,"index":"a1","roundness":null,"seed":4242,"version":1,"versionNonce":4243,"isDeleted":false,"boundElements":null,"updated":1,"link":null,"locked":false}}],"appState":{{"viewBackgroundColor":"#ffffff"}},"files":{{}}}}"##
+            )
+            .as_bytes(),
+        )
+        .expect("stroke-style probe scene is admitted");
+        let request = RenderRequest::builder(OutputFormat::Png)
+            .build()
+            .expect("PNG request is valid");
+        let artifact = Renderer::new()
+            .render(&scene, &request)
+            .expect("stroke-style probe renders");
+        Sha256::digest(artifact.artifact().bytes()).to_vec()
+    };
+
+    let solid = render_one("solid");
+    let dashed = render_one("dashed");
+    let dotted = render_one("dotted");
+
+    assert_ne!(solid, dashed, "dashed strokes must not rasterize as solid");
+    assert_ne!(solid, dotted, "dotted strokes must not rasterize as solid");
+    assert_ne!(
+        dashed, dotted,
+        "dashed and dotted strokes use different dash arrays and must differ"
+    );
+}
