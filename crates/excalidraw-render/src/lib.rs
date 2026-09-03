@@ -8,6 +8,7 @@
 mod catalog;
 mod color;
 mod compatibility;
+mod font_metadata;
 mod frame;
 mod normalization;
 mod outcome;

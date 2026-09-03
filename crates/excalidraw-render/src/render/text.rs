@@ -2,6 +2,8 @@ use std::collections::TryReserveError;
 
 use rustybuzz::ttf_parser::{GlyphId, OutlineBuilder, Tag};
 
+use crate::font_metadata::FamilyMetrics;
+
 const LIBERATION_SANS_PATH: &str = "fonts/Liberation/LiberationSans-Regular.woff2";
 const EXCALIFONT_LATIN_PATH: &str =
     "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2";
@@ -10,59 +12,6 @@ const LIBERATION_SANS_IDENTITY: &str = concat!(
     "006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8"
 );
 pub(super) const FALLBACK_FONT_SIZE: f64 = 14.0;
-
-/// The vertical metrics Excalidraw's `FONT_METADATA` declares for one source
-/// font family: what the reference renderer's `getVerticalOffset` reads when it
-/// positions text, independent of the face that shapes the glyphs.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) struct FamilyMetrics {
-    pub(super) units_per_em: u16,
-    pub(super) ascender: i16,
-    pub(super) descender: i16,
-}
-
-impl FamilyMetrics {
-    /// Excalidraw v0.18.1 `FONT_METADATA[family].metrics` for every family the
-    /// renderer resolves. Every bundled face carries the same values in its
-    /// `hhea` table; Helvetica does not ship and is shaped with Liberation Sans,
-    /// whose own metrics differ, so revision 1 positions Helvetica text by these
-    /// values rather than the substitute's (#105).
-    pub(super) fn for_source_family(source_family: i32) -> Option<Self> {
-        let (units_per_em, ascender, descender) = match source_family {
-            // Virgil and Excalifont share one metric set; Segoe UI Emoji
-            // (1000) reuses it upstream.
-            1 | 5 | 1_000 => (1_000, 886, -374),
-            // Helvetica: the local-only family Liberation Sans substitutes.
-            2 => (2_048, 1_577, -471),
-            // Cascadia Code.
-            3 => (2_048, 1_900, -480),
-            // Nunito.
-            6 => (1_000, 1_011, -353),
-            // Lilita One.
-            7 => (1_000, 923, -220),
-            // Comic Shanns.
-            8 => (1_000, 750, -250),
-            // Liberation Sans.
-            9 => (2_048, 1_854, -434),
-            // Xiaolai, the CJK fallback.
-            100 => (1_000, 880, -144),
-            _ => return None,
-        };
-        Some(Self {
-            units_per_em,
-            ascender,
-            descender,
-        })
-    }
-
-    /// Canvas centers the family's ascender/descender box within the first
-    /// line box, so the first baseline sits at
-    /// `line_step / 2 + font_size * (ascender + descender) / units_per_em / 2`.
-    fn first_baseline(self, font_size: f64, line_step: f64) -> f64 {
-        let scale = font_size / f64::from(self.units_per_em);
-        line_step / 2.0 + f64::from(self.ascender + self.descender) * scale / 2.0
-    }
-}
 
 pub(super) struct FallbackFont {
     woff2: Vec<u8>,

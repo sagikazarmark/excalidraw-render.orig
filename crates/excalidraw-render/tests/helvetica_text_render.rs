@@ -3,7 +3,14 @@
 //! Helvetica, as `getVerticalOffset` does in the reference renderer. Decided on
 //! #105.
 
-use excalidraw_render::{DiagnosticCode, OutputFormat, RenderRequest, Renderer, SceneDocument};
+// Included by path so this binary shares the baseline helpers without
+// compiling the rest of `common/`.
+#[path = "common/svg_baselines.rs"]
+mod svg_baselines;
+
+use excalidraw_render::{DiagnosticCode, SceneDocument};
+
+use svg_baselines::{assert_baselines, render_svg, tspan_baselines};
 
 /// `1.15 / 2 + (1577 - 471) / 2048 / 2`: the first-baseline factor for
 /// Helvetica at `lineHeight: 1.15`.
@@ -24,44 +31,6 @@ fn two_line_text_scene(font_family: u32) -> SceneDocument {
         .as_bytes(),
     )
     .expect("two-line text scene is admitted")
-}
-
-fn render_svg(scene: &SceneDocument) -> excalidraw_render::RenderOutcome {
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("SVG request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .expect("text scene renders")
-}
-
-/// The baseline of every `tspan`, taken from the first `y` value: ordinary text
-/// emits one baseline per line and generated labels emit one per glyph, all on
-/// the line's baseline.
-fn tspan_baselines(svg: &str) -> Vec<f64> {
-    svg.split("<tspan ")
-        .skip(1)
-        .map(|tspan| {
-            tspan
-                .split(" y=\"")
-                .nth(1)
-                .and_then(|value| value.split('"').next())
-                .and_then(|value| value.split(' ').next())
-                .expect("tspan carries a baseline")
-                .parse::<f64>()
-                .expect("baseline is a number")
-        })
-        .collect()
-}
-
-fn assert_baselines(actual: &[f64], expected: &[f64]) {
-    assert_eq!(actual.len(), expected.len(), "line count: {actual:?}");
-    for (actual, expected) in actual.iter().zip(expected) {
-        assert!(
-            (actual - expected).abs() < 1e-9,
-            "baseline {actual} should be {expected}"
-        );
-    }
 }
 
 #[test]

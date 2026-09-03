@@ -2,6 +2,7 @@ use std::collections::TryReserveError;
 
 use sha2::{Digest, Sha256};
 
+use crate::font_metadata::FamilyMetrics;
 use crate::outcome::DiagnosticOrder;
 use crate::scene::{
     pointer_child, pointer_index, BindingSource, ElementKind, ElementSource, FrameRenderingSource,
@@ -1575,6 +1576,57 @@ fn source_accepts<T>(source: SourceField<T>, accepts: impl FnOnce(T) -> bool) ->
     }
 }
 
+/// The restored line height: what the reference renderer's restore path gives a
+/// text element whose source `lineHeight` is missing or unusable (#108),
+/// detected from the element's height when it has one, otherwise the source
+/// family's metadata line height.
+///
+/// `height` and `font_size` are the compatibility-normalized values, so a
+/// negative source height detects from its magnitude and a missing or invalid
+/// `fontSize` detects with the default rather than reproducing the reference's
+/// `NaN`; a zero height falls through as the reference's truthiness check does.
+/// The family metadata line height is keyed on the source family, so Helvetica
+/// keeps `1.15` although Liberation Sans shapes it. Every normalized family is
+/// in the table; the Excalifont fallback mirrors the reference's for a family
+/// it has not registered. A detected value that overflows to infinity, which
+/// only a degenerate height or font size can produce, is excluded like every
+/// other non-finite metric and takes the family value too.
+fn restored_line_height(height: f64, text: &str, font_size: f64, font_family: i32) -> f64 {
+    let family_line_height = FamilyMetrics::for_source_family(font_family)
+        .unwrap_or(FamilyMetrics::EXCALIFONT)
+        .line_height;
+    if height <= 0.0 {
+        return family_line_height;
+    }
+    let detected = height / restored_line_count(text) as f64 / font_size;
+    if detected.is_finite() && detected > 0.0 {
+        detected
+    } else {
+        family_line_height
+    }
+}
+
+/// The line count the reference renderer's `splitIntoLines` reports for wrapped text:
+/// every `\r\n`, `\r`, and `\n` ends a line, and the text always has at least
+/// one. Tab expansion happens on the same path but adds no lines.
+fn restored_line_count(text: &str) -> usize {
+    let mut lines = 1_usize;
+    let mut bytes = text.bytes().peekable();
+    while let Some(byte) = bytes.next() {
+        match byte {
+            b'\n' => lines += 1,
+            b'\r' => {
+                lines += 1;
+                if bytes.peek() == Some(&b'\n') {
+                    bytes.next();
+                }
+            }
+            _ => {}
+        }
+    }
+    lines
+}
+
 #[allow(clippy::too_many_arguments)]
 fn normalize_element_kind(
     source: &ElementSource<'_>,
@@ -1803,12 +1855,20 @@ fn normalize_element_kind(
                 (OutputFormat::Svg, SourceField::Missing | SourceField::Invalid) => text,
                 (OutputFormat::Png | OutputFormat::Pdf, _) => "",
             };
+            let font_size = manifested_value(source.font_size, 20.0, |value| value > 0.0);
+            let font_family = manifested_value(source.font_family, 5, |value| {
+                matches!(value, 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9)
+            });
+            let line_height = match source.line_height {
+                SourceField::Value(value) if value > 0.0 => value,
+                SourceField::Missing | SourceField::Invalid | SourceField::Value(_) => {
+                    restored_line_height(fields.height, text, font_size, font_family)
+                }
+            };
             Ok((
                 NormalizedElementKind::Text(NormalizedText {
-                    font_size: manifested_value(source.font_size, 20.0, |value| value > 0.0),
-                    font_family: manifested_value(source.font_family, 5, |value| {
-                        matches!(value, 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9)
-                    }),
+                    font_size,
+                    font_family,
                     text: try_owned(text)?,
                     original_text: try_owned(original_text)?,
                     text_align: try_owned(manifested_value(source.text_align, "left", |value| {
@@ -1819,7 +1879,7 @@ fn normalize_element_kind(
                         "top",
                         |value| matches!(value, "top" | "middle" | "bottom"),
                     ))?,
-                    line_height: manifested_value(source.line_height, 1.25, |value| value > 0.0),
+                    line_height,
                 }),
                 fields.x,
                 fields.y,
@@ -4241,5 +4301,174 @@ mod tests {
                 ("/files/asset/created".to_owned(), Some("asset".to_owned()),),
             ]
         );
+    }
+
+    /// Normalizes one text element and returns its line height with the
+    /// element-scoped diagnostics normalization emitted for it.
+    fn normalized_text_line_height(text_fields: &str) -> (f64, Vec<(DiagnosticCode, String)>) {
+        let scene = format!(
+            r##"{{"type":"excalidraw","version":2,"elements":[{{"id":"text","type":"text","seed":1,"updated":1,{text_fields}}}],"appState":{{}},"files":{{}}}}"##
+        );
+        let scene = SceneDocument::parse(scene.as_bytes()).expect("text vector is admitted");
+        let mut diagnostics = Vec::new();
+        let normalized = normalize_scene(
+            &scene,
+            CompatibilityRevision::REVISION_1,
+            OutputFormat::Svg,
+            |event| {
+                if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
+                    diagnostics.push((diagnostic.code(), diagnostic.json_pointer.clone()));
+                }
+                Ok::<_, ()>(())
+            },
+        )
+        .expect("normalization succeeds")
+        .expect("the scene is in the implemented normalization slice");
+        let [element] = normalized.elements.as_slice() else {
+            panic!("one text element is normalized");
+        };
+        let NormalizedElementKind::Text(text) = &element.kind else {
+            panic!("the element retains its normalized text kind");
+        };
+        (text.line_height, diagnostics)
+    }
+
+    #[test]
+    fn an_explicit_positive_line_height_is_kept_verbatim() {
+        let (line_height, diagnostics) = normalized_text_line_height(
+            r##""text":"one","fontSize":20,"fontFamily":2,"width":40,"height":90,"lineHeight":1.4"##,
+        );
+        assert_eq!(line_height, 1.4);
+        assert!(diagnostics.is_empty());
+    }
+
+    #[test]
+    fn a_missing_line_height_detects_from_the_height_line_count_and_font_size() {
+        // Excalidraw's restore path: height / splitIntoLines(text).length / fontSize.
+        let (line_height, diagnostics) = normalized_text_line_height(
+            r##""text":"one","fontSize":20,"fontFamily":2,"width":40,"height":30"##,
+        );
+        assert_eq!(line_height, 1.5);
+        assert!(diagnostics.is_empty());
+
+        let (line_height, _) = normalized_text_line_height(
+            r##""text":"one\ntwo\nthree","fontSize":10,"fontFamily":3,"width":40,"height":36"##,
+        );
+        assert_eq!(line_height, 1.2);
+    }
+
+    #[test]
+    fn a_missing_line_height_detects_with_the_normalized_font_size() {
+        // The reference divides by the raw fontSize and yields NaN for a missing
+        // or invalid one; revision 1 detects with the defaulted 20 instead (#108).
+        let (line_height, diagnostics) =
+            normalized_text_line_height(r##""text":"one","fontFamily":5,"width":40,"height":30"##);
+        assert_eq!(line_height, 1.5);
+        assert!(diagnostics.is_empty());
+
+        let (line_height, diagnostics) = normalized_text_line_height(
+            r##""text":"one","fontSize":-8,"fontFamily":5,"width":40,"height":30"##,
+        );
+        assert_eq!(line_height, 1.5);
+        assert_eq!(
+            diagnostics,
+            [(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                "/elements/0/fontSize".to_owned(),
+            )]
+        );
+    }
+
+    #[test]
+    fn a_missing_line_height_counts_lines_after_eol_normalization() {
+        // splitIntoLines normalizes \r\n and \r to \n before splitting; tab
+        // expansion does not add lines. Four lines here, so 120 / 4 / 20.
+        let (line_height, _) = normalized_text_line_height(
+            r##""text":"a\r\nb\rc\n\td","fontSize":20,"fontFamily":5,"width":40,"height":120"##,
+        );
+        assert_eq!(line_height, 1.5);
+
+        // A trailing line break still starts an (empty) final line.
+        let (line_height, _) = normalized_text_line_height(
+            r##""text":"a\n","fontSize":20,"fontFamily":5,"width":40,"height":60"##,
+        );
+        assert_eq!(line_height, 1.5);
+    }
+
+    #[test]
+    fn a_missing_line_height_without_a_height_takes_the_family_metadata_line_height() {
+        // FONT_METADATA[family].metrics.lineHeight, keyed on the source family:
+        // Helvetica keeps 1.15 although Liberation Sans shapes it.
+        for (family, expected) in [
+            (1, 1.25),
+            (2, 1.15),
+            (3, 1.2),
+            (5, 1.25),
+            (6, 1.35),
+            (7, 1.15),
+            (8, 1.25),
+            (9, 1.15),
+        ] {
+            let (line_height, diagnostics) = normalized_text_line_height(&format!(
+                r##""text":"one","fontSize":20,"fontFamily":{family},"width":40"##
+            ));
+            assert_eq!(line_height, expected, "family {family}");
+            assert!(diagnostics.is_empty(), "family {family}");
+        }
+
+        // An unrecognized family normalizes to Excalifont first, which is
+        // also the reference's fallback for an unregistered family.
+        let (line_height, diagnostics) = normalized_text_line_height(
+            r##""text":"one","fontSize":20,"fontFamily":4,"width":40"##,
+        );
+        assert_eq!(line_height, 1.25);
+        assert_eq!(
+            diagnostics,
+            [(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                "/elements/0/fontFamily".to_owned(),
+            )]
+        );
+    }
+
+    #[test]
+    fn a_zero_height_takes_the_family_metadata_line_height_like_the_reference_truthiness() {
+        let (line_height, diagnostics) = normalized_text_line_height(
+            r##""text":"one","fontSize":20,"fontFamily":6,"width":40,"height":0"##,
+        );
+        assert_eq!(line_height, 1.35);
+        assert!(diagnostics.is_empty());
+
+        // Negative heights are normalized to their magnitude before detection.
+        let (line_height, _) = normalized_text_line_height(
+            r##""text":"one","fontSize":20,"fontFamily":6,"width":40,"height":-30"##,
+        );
+        assert_eq!(line_height, 1.5);
+    }
+
+    #[test]
+    fn non_positive_line_heights_derive_and_keep_the_invalid_diagnostic() {
+        // The reference's `||` treats 0 as missing and keeps a negative;
+        // revision 1 derives both, and both keep the existing unsupported
+        // diagnostic.
+        for source in ["0", "-1.2"] {
+            let (line_height, diagnostics) = normalized_text_line_height(&format!(
+                r##""text":"one\ntwo","fontSize":20,"fontFamily":2,"width":40,"height":60,"lineHeight":{source}"##
+            ));
+            assert_eq!(line_height, 1.5, "lineHeight {source}");
+            assert_eq!(
+                diagnostics,
+                [(
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                    "/elements/0/lineHeight".to_owned(),
+                )],
+                "lineHeight {source}"
+            );
+
+            let (line_height, _) = normalized_text_line_height(&format!(
+                r##""text":"one","fontSize":20,"fontFamily":2,"width":40,"lineHeight":{source}"##
+            ));
+            assert_eq!(line_height, 1.15, "lineHeight {source} without height");
+        }
     }
 }

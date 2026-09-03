@@ -863,6 +863,15 @@ const SOURCE_CATALOG = [
     path: null,
     url: "https://github.com/sagikazarmark/excalidraw-render.orig/issues/105#issuecomment-5527679821",
   },
+  {
+    contentSha256: "55b79a61267d2f65b85b1d948cc0a8ff8b0b36cbe6646c3c8807ec5a9cad0a34",
+    gitBlobSha1: null,
+    id: "project.legacy-line-height-decision",
+    immutableRevision: "issue-comment-5531720800",
+    kind: "project-decision",
+    path: null,
+    url: "https://github.com/sagikazarmark/excalidraw-render.orig/issues/108#issuecomment-5531720800",
+  },
 ];
 
 const AUTHORITIES = [
@@ -1371,7 +1380,6 @@ function buildFieldDispositions(evidenceByClassification) {
     verticalAlign: ["vertical_align", "top", ["visual"]],
     containerId: ["nullable_string", null, ["visual", "semantic"]],
     originalText: ["string", "source text", ["visual"]],
-    lineHeight: ["positive_number", "pinned family default", ["visual"]],
   };
   for (const [name, [domainId, defaultValue, effects]] of Object.entries(textDefinitions)) {
     add("element.text", name, domainId, "supported", {
@@ -1382,6 +1390,18 @@ function buildFieldDispositions(evidenceByClassification) {
       sourceIds: ["excalidraw.element-types", "excalidraw.restore", "excalidraw.static-svg", "excalidraw.render-element"],
     });
   }
+  // The pinned restore path derives a missing lineHeight rather than defaulting
+  // it: `element.lineHeight || (element.height ? detectLineHeight(element) :
+  // getLineHeight(element.fontFamily))`. Decided for revision 1 on #108, with
+  // the normalized height and fontSize standing in for the raw values.
+  const restoredLineHeight = "height > 0 ? height / lineCount(text) / fontSize : familyMetadataLineHeight(fontFamily)";
+  add("element.text", "lineHeight", "positive_number", "supported", {
+    invalid: unsupportedValue(restoredLineHeight, ["input_repair", "visual"]),
+    missing: fallback("default", { value: restoredLineHeight }),
+    normalization: "Pinned restore derivation. When the compatibility-normalized height is positive, lineHeight is height / lineCount / fontSize, where lineCount is the number of lines of the wrapped text after EOL normalization (\\r\\n and \\r become \\n; tab expansion adds no lines) and fontSize is the compatibility-normalized font size, so a missing or invalid fontSize detects with 20. Otherwise lineHeight is the source family's FONT_METADATA lineHeight: Excalifont, Virgil, Comic Shanns 1.25; Helvetica, Lilita One, Liberation Sans, Xiaolai 1.15; Cascadia 1.2; Nunito 1.35, keyed on the source family so Helvetica keeps 1.15 while Liberation Sans shapes it; an unrecognized family has normalized to Excalifont. A source lineHeight of 0 or a negative value is unusable and takes the same derived value.",
+    scope: scope(["visual"], "participating-text-element"),
+    sourceIds: ["excalidraw.element-types", "excalidraw.restore", "excalidraw.font-metadata", "excalidraw.static-svg", "excalidraw.render-element", "project.legacy-line-height-decision"],
+  });
   add("element.text", "autoResize", "boolean", "static-export-irrelevant", {
     evidenceIds: ev("element.text:/autoResize"),
     harmlessNewerBehavior: true,

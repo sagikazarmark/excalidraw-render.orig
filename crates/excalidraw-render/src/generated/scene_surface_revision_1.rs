@@ -4217,7 +4217,7 @@ static SCENE_FIELD_POLICIES: &[SceneFieldPolicy] = &[
         accepted_domain: "positive_number",
         disposition: SceneFieldDisposition::Supported,
         required: false,
-        normalization: "Pinned text restore/default behavior.",
+        normalization: "Pinned restore derivation. When the compatibility-normalized height is positive, lineHeight is height / lineCount / fontSize, where lineCount is the number of lines of the wrapped text after EOL normalization (\\r\\n and \\r become \\n; tab expansion adds no lines) and fontSize is the compatibility-normalized font size, so a missing or invalid fontSize detects with 20. Otherwise lineHeight is the source family's FONT_METADATA lineHeight: Excalifont, Virgil, Comic Shanns 1.25; Helvetica, Lilita One, Liberation Sans, Xiaolai 1.15; Cascadia 1.2; Nunito 1.35, keyed on the source family so Helvetica keeps 1.15 while Liberation Sans shapes it; an unrecognized family has normalized to Excalifont. A source lineHeight of 0 or a negative value is unusable and takes the same derived value.",
         participation: "participating-text-element",
         formats: &["svg","png","pdf",],
         options: &[],

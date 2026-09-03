@@ -125,8 +125,12 @@ The canonical bundled font family selected after compatibility substitution for 
 _Avoid_: Source font family, CSS font-family
 
 **Family metadata metrics**:
-The `unitsPerEm`, `ascender`, and `descender` the reference renderer declares for one source font family and uses to position its text, independent of the face that shapes the glyphs. They coincide with every bundled face's `hhea` table; a substituted family such as Helvetica keeps its own declared metrics while the substitute face shapes it.
+The `unitsPerEm`, `ascender`, `descender`, and `lineHeight` the reference renderer declares for one source font family and uses to position its text and to fill a text element's missing line height, independent of the face that shapes the glyphs. The vertical metrics coincide with every bundled face's `hhea` table; a substituted family such as Helvetica keeps its own declared metrics while the substitute face shapes it.
 _Avoid_: Face metrics, hhea metrics, substitute metrics
+
+**Restored line height**:
+The line height compatibility normalization gives a text element whose source `lineHeight` is missing or non-positive, following the pinned restore path: the normalized `height` divided by the wrapped text's EOL-normalized line count and the normalized `fontSize` when the height is positive, otherwise the source family's metadata `lineHeight`. It is never one constant across families.
+_Avoid_: Default line height, 1.25 fallback, detected line height (for the family branch)
 
 **Official font chunk**:
 An immutable bundled WOFF2 resource representing one declared Unicode-range face of a resolved font family.

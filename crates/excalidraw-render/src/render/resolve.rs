@@ -1,4 +1,5 @@
 use super::*;
+use crate::font_metadata::FamilyMetrics;
 
 pub(super) struct ResolvedScene {
     pub(super) logical_width: f64,
@@ -751,7 +752,7 @@ impl ResolvedScene {
                                     text::TextLayout {
                                         width: source.width,
                                         font_size,
-                                        line_height: 1.15,
+                                        line_height: EMBEDDABLE_LABEL_LINE_HEIGHT,
                                         text_align: "center",
                                         font_family: EMBEDDABLE_LABEL_FONT_FAMILY,
                                     },
@@ -773,7 +774,7 @@ impl ResolvedScene {
                                     text::TextLayout {
                                         width: source.width,
                                         font_size,
-                                        line_height: 1.15,
+                                        line_height: EMBEDDABLE_LABEL_LINE_HEIGHT,
                                         text_align: "center",
                                         font_family: EMBEDDABLE_LABEL_FONT_FAMILY,
                                     },
@@ -787,7 +788,9 @@ impl ResolvedScene {
                                 .0;
                             }
                             let line_count = laid_out.lines.len() as f64;
-                            let offset_y = (source.height - line_count * font_size * 1.15) / 2.0;
+                            let offset_y = (source.height
+                                - line_count * font_size * EMBEDDABLE_LABEL_LINE_HEIGHT)
+                                / 2.0;
                             let label_color =
                                 color::parse_css(if source.stroke_color == "transparent" {
                                     "#000000"
@@ -1247,6 +1250,14 @@ pub(super) struct FallbackColors {
 /// label is shaped with the Liberation Sans substitute and positioned by
 /// Helvetica's metadata metrics.
 const EMBEDDABLE_LABEL_FONT_FAMILY: i32 = 2;
+
+/// The label is a new text element with no stored height, so its line height
+/// is its family's metadata line height (`getLineHeight`), 1.15 for Helvetica.
+const EMBEDDABLE_LABEL_LINE_HEIGHT: f64 =
+    match FamilyMetrics::for_source_family(EMBEDDABLE_LABEL_FONT_FAMILY) {
+        Some(metrics) => metrics.line_height,
+        None => panic!("the embeddable label family has metadata metrics"),
+    };
 
 fn embeddable_font_size(width: f64, label: &str) -> f64 {
     let utf16_length = label.encode_utf16().count().max(1) as f64;

@@ -111,7 +111,7 @@ has been published.
 | --- | --- |
 | [Reference profile](../tests/oracle/reference-profiles/revision-1.json) | `1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71` |
 | [Reference asset manifest](../tests/oracle/reference-profiles/revision-1-assets.json) | `02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a` |
-| [Scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json) | `9369555a7f3d4a92f3c86f3f97f674da40f263ac3ca638b2650f1c8047829011` |
+| [Scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json) | `c2beac04b6e5973093db128f57a3ad8a6cf3222faa583315b61baddb9bad43c8` |
 | [Scene-surface schema](../tests/oracle/scene-surfaces/scene-surface-v1.schema.json) | `29871fad7bf7665142c8d625c3715b34603a6369a78ffa7baf96ade66be63362` |
 | [Scene-surface evidence index](../tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json) | `29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb` |
 
@@ -636,6 +636,22 @@ coincide with every bundled face's `hhea` table. Substituted Helvetica text
 (`fontFamily` `2`) keeps Helvetica's declared metrics (`2048`, `1577`, `-471`)
 while Liberation Sans shapes its glyphs, as the official export does; the face
 that shapes the glyphs never positions them.
+
+A text element whose `lineHeight` is missing or non-positive takes the pinned
+restore path's derivation rather than one constant. When the
+compatibility-normalized `height` is positive, `lineHeight` is `height /
+lineCount / fontSize`, where `lineCount` counts the lines of the wrapped `text`
+after EOL normalization (`\r\n` and `\r` become `\n`; tab expansion adds no
+lines) and `fontSize` is the compatibility-normalized font size, so a missing
+or invalid `fontSize` detects with `20` rather than reproducing the reference's
+`NaN`. Otherwise it is the source family's metadata line height: Excalifont,
+Virgil, and Comic Shanns `1.25`; Helvetica, Lilita One, Liberation Sans, and
+Xiaolai `1.15`; Cascadia `1.2`; Nunito `1.35`, keyed on the source family so
+Helvetica keeps `1.15` while Liberation Sans shapes it. An unrecognized family
+has already normalized to Excalifont. A `lineHeight` of `0` or a negative value
+is unusable and derives the same way, keeping its unsupported-value diagnostic;
+an absent `lineHeight` is silent. Generated embeddable labels have no stored
+height and take Helvetica's `1.15`.
 
 #### 8.3.1 Semantic Demand and Face Selection
 
