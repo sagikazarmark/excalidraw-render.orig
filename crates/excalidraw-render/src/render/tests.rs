@@ -293,7 +293,7 @@ fn focused_pdf_expectations_are_approval_bound() {
     assert_eq!(manifest["coverage"].as_array().map(Vec::len), Some(4));
     assert_eq!(
         manifest["case_manifest_approval_subject_sha256"],
-        "sha256:07b5227219c4f97848ea26317a7180bffd82ac7189af4b7cba53da27145cfb3d"
+        "sha256:bc870d20627148871b0b2c18dc9fe67476001dc9f47aa5f0b46742e5be837008"
     );
 
     let approval = manifest
@@ -305,7 +305,7 @@ fn focused_pdf_expectations_are_approval_bound() {
     assert_eq!(approval["approved_at"], "2026-09-03");
     assert_eq!(
         approval["approval_url"],
-        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5528117500"
+        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5533587096"
     );
     let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
     canonical.push(b'\n');

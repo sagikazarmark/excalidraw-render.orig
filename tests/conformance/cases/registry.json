@@ -1599,7 +1599,18 @@
         "assets",
         "crops"
       ],
-      "exceptions": [],
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/108",
+          "format": "png",
+          "max_changed_pixels": 572,
+          "minimum_ssim_bits": "3fef6eec124f4ef3",
+          "reason": "Sub-pixel glyph coverage. A missing lineHeight is derived by the pinned restore rule (decided on #108): the SVG document matches the official export exactly under one rasterizer and every baseline agrees to the last digit; only interior glyph ink differs between the renderer's rasterizer and the browser's across six text lines in three faces. The same class is recorded on #104 and #105 for the other text-bearing cases.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ],
       "variants": [
         {
           "id": "default",
