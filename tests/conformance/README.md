@@ -22,8 +22,20 @@ cargo run --locked -p xtask -- conformance reproduce focused.rectangle-outline.v
 entry carries the case identity, directory, kind (`scene`, `typography`, or
 `frame`), approving issue, and runner script; `scene` entries additionally carry
 the manifest inputs the reference-oracle generator needs — schema, layer,
-coverage, feature tags, purpose, licence, sanitization, determinism, and
-semantic expectations.
+coverage, feature tags, purpose, licence, sanitization, determinism, semantic
+expectations, and any tolerance exceptions.
+
+A tolerance exception records a maintainer's judgment that one variant's
+observed difference from the official evidence has a non-defect cause. It names
+the variant, format, viewer, and region it governs, sets its ceilings to the
+exact observed changed-pixel count and binary64 SSIM score with no margin,
+documents the cause, and links the issue that carries the decision. The
+generator carries registered exceptions into the manifest, so the case approval
+subject binds them and any change to a record invalidates that approval;
+`registered_case_png_parity` then holds an excepted variant to those ceilings
+and fails if the variant starts passing the canonical budget, so a record cannot
+outlive the difference it describes. Today only whole-artifact direct-PNG
+exceptions with no viewer are admitted.
 
 `xtask` resolves every case through this file, so adding a scene case is a
 registry entry plus a case directory rather than a new generator script or a new

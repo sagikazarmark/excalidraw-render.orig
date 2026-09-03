@@ -60,6 +60,10 @@ _Avoid_: Compatibility report, format-specific metadata schema
 An explicit, diagnosed, and tested departure from reference behavior required by the renderer's safety, self-containment, or determinism constraints.
 _Avoid_: Silent divergence, implementation limitation
 
+**Tolerance exception**:
+An approved record in a conformance case that one variant's observed difference from reference evidence, for one format, viewer, and region, has a diagnosed non-defect cause. It documents that cause, names the issue that carries the decision, and sets ceilings to the exact observed changed-pixel count and SSIM score with no margin; the case approval binds the record, and a variant that returns inside the canonical budget makes it stale.
+_Avoid_: Visual exception, known-divergence suppression, test skip
+
 **Static export**:
 A deterministic SVG, PNG, or PDF representation of either a whole scene or one frame, without interactive editor overlays or viewport state.
 _Avoid_: Editor snapshot, canvas rendering

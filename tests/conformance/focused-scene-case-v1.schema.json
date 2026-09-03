@@ -126,7 +126,9 @@
     },
     "exceptions": {
       "type": "array",
-      "maxItems": 0
+      "items": {
+        "$ref": "#/$defs/toleranceException"
+      }
     },
     "feature_tags": {
       "type": "array",
@@ -379,6 +381,51 @@
         },
         "scope": {
           "type": "string"
+        }
+      }
+    },
+    "toleranceException": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approving_issue",
+        "format",
+        "max_changed_pixels",
+        "minimum_ssim_bits",
+        "reason",
+        "region",
+        "variant",
+        "viewer_profile"
+      ],
+      "properties": {
+        "approving_issue": {
+          "type": "string",
+          "pattern": "^https://github\\.com/sagikazarmark/excalidraw-render\\.orig/issues/[1-9][0-9]*$"
+        },
+        "format": {
+          "const": "png"
+        },
+        "max_changed_pixels": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimum_ssim_bits": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "region": {
+          "const": "whole"
+        },
+        "variant": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "viewer_profile": {
+          "type": "null"
         }
       }
     },

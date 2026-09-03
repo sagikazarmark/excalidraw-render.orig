@@ -303,8 +303,29 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
+      ],
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
+          "format": "png",
+          "max_changed_pixels": 64,
+          "minimum_ssim_bits": "3fefdd7236fdf8ca",
+          "reason": "Fill and stroke rasterization. All 22 SVG paths match the official export byte for byte, so the difference arises while rasterizing geometry both renderers agree on, not in the geometry. The scene carries no text. Diagnosed on #104.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        },
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
+          "format": "png",
+          "max_changed_pixels": 26,
+          "minimum_ssim_bits": "3fefd8fc9b0c6046",
+          "reason": "Fill and stroke rasterization. All 22 SVG paths match the official export byte for byte, so the difference arises while rasterizing geometry both renderers agree on, not in the geometry. The scene carries no text. Diagnosed on #104.",
+          "region": "whole",
+          "variant": "dark-mode",
+          "viewer_profile": null
+        }
       ],
       "variants": [
         {
@@ -445,8 +466,19 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
+      ],
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
+          "format": "png",
+          "max_changed_pixels": 326,
+          "minimum_ssim_bits": "3fefe8d8e5ced851",
+          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with one bound text label. Diagnosed on #104.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
       ],
       "variants": [
         {
@@ -558,8 +590,19 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
+      ],
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
+          "format": "png",
+          "max_changed_pixels": 495,
+          "minimum_ssim_bits": "3fefd2ba5c67d5bc",
+          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with 27 bound text labels. Diagnosed on #104.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
       ],
       "variants": [
         {
@@ -672,8 +715,19 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
+      ],
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
+          "format": "png",
+          "max_changed_pixels": 188,
+          "minimum_ssim_bits": "3fef9fd8a6b58839",
+          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with CJK glyph complexity. Diagnosed on #104.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
       ],
       "variants": [
         {
@@ -913,8 +967,19 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
+      ],
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
+          "format": "png",
+          "max_changed_pixels": 1042,
+          "minimum_ssim_bits": "3fef5eaf320814e1",
+          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with link labels and embeddable placeholder text. Diagnosed on #104.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
       ],
       "variants": [
         {
@@ -1046,8 +1111,19 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
+      ],
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
+          "format": "png",
+          "max_changed_pixels": 64,
+          "minimum_ssim_bits": "3feff13f34146a9a",
+          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with one bound text label. Diagnosed on #104.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
       ],
       "variants": [
         {

@@ -25,17 +25,6 @@ use std::path::{Path, PathBuf};
 use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
 use serde_json::Value;
 
-/// Cases whose path geometry does not match the official export, tracked by
-/// issue #104. A suppressed case that starts matching fails the test until it is
-/// removed, so an entry cannot outlive the divergence it records.
-/// Suppression is per dimension, not per case. A case whose scene bounds are
-/// wrong must still have its path geometry checked: suppressing the whole case
-/// would hide exactly the class of defect this harness exists to catch — a
-/// change that corrupts path data while making an extent agree.
-const KNOWN_DIVERGENT_EXTENT: &[&str] = &[];
-
-const KNOWN_DIVERGENT_PATHS: &[&str] = &[];
-
 #[test]
 fn every_registered_scene_case_matches_its_official_svg_path_geometry() {
     let root = repository_root();
@@ -47,7 +36,6 @@ fn every_registered_scene_case_matches_its_official_svg_path_geometry() {
 
     let mut total = 0usize;
     let mut failures = Vec::new();
-    let mut unexpected_passes: Vec<String> = Vec::new();
 
     for case in registry["cases"]
         .as_array()
@@ -107,37 +95,23 @@ fn every_registered_scene_case_matches_its_official_svg_path_geometry() {
                 })
         };
 
-        for (dimension, divergence, suppressed) in [
-            ("extent", extent, KNOWN_DIVERGENT_EXTENT.contains(&id)),
-            ("paths", paths, KNOWN_DIVERGENT_PATHS.contains(&id)),
-        ] {
-            match (divergence, suppressed) {
-                (Some(detail), false) => failures.push(format!("{id} [{dimension}]: {detail}")),
-                (Some(_), true) => {}
-                (None, true) => unexpected_passes.push(format!("{id} [{dimension}]")),
-                (None, false) => {}
+        // Both dimensions are reported, not just the first to fail. A change that
+        // corrupts path data while making an extent agree produces an entry for
+        // each, and reporting only one would hide the more serious half.
+        for (dimension, divergence) in [("extent", extent), ("paths", paths)] {
+            if let Some(detail) = divergence {
+                failures.push(format!("{id} [{dimension}]: {detail}"));
             }
         }
     }
 
     assert!(total > 0, "the registry declared no scene cases");
-    // Both lists are reported together. A change that fixes one dimension while
-    // breaking another produces an entry in each, and reporting only the first
-    // would hide the more serious half.
-    let mut report = String::new();
-    if !failures.is_empty() {
-        report.push_str(&format!(
-            "{} divergence(s) from the official export across {total} cases:\n  {}\n",
-            failures.len(),
-            failures.join("\n  ")
-        ));
-    }
-    if !unexpected_passes.is_empty() {
-        report.push_str(&format!(
-            "these now match official and must leave KNOWN_DIVERGENT (see issue #104): {unexpected_passes:?}\n"
-        ));
-    }
-    assert!(report.is_empty(), "{report}");
+    assert!(
+        failures.is_empty(),
+        "{} divergence(s) from the official export across {total} cases:\n  {}",
+        failures.len(),
+        failures.join("\n  ")
+    );
 }
 
 /// The root `viewBox`, which carries the scene's computed extent.

@@ -9,6 +9,8 @@ use sha2::{Digest, Sha256};
 const REGISTRY_RELATIVE_PATH: &str = "tests/conformance/cases/registry.json";
 const REGISTRY_SCHEMA: &str = "excalidraw-render/conformance-case-registry/v1";
 const APPROVAL_SCHEMA: &str = "excalidraw-render/conformance-approval-subject/v1";
+const REPOSITORY_ISSUE_PREFIX: &str =
+    "https://github.com/sagikazarmark/excalidraw-render.orig/issues/";
 const EMPTY_REPORT: &[u8] = br#"{"schema_version":1,"diagnostics":[]}"#;
 const PROFILE_DIGEST: &str = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 const ASSET_DIGEST: &str = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
@@ -41,6 +43,7 @@ struct CaseEntry {
     empty_fields: Vec<String>,
     expected_diagnostics: Value,
     variants: Value,
+    exceptions: Value,
 }
 
 fn registry() -> Result<Vec<CaseEntry>, String> {
@@ -99,6 +102,12 @@ fn registry() -> Result<Vec<CaseEntry>, String> {
                 .unwrap_or_default(),
             expected_diagnostics: case["expected_diagnostics"].clone(),
             variants: case["variants"].clone(),
+            // A case that registers no tolerance exceptions carries none; the
+            // manifest field is then required to be explicitly empty.
+            exceptions: match &case["exceptions"] {
+                Value::Null => json!([]),
+                exceptions => exceptions.clone(),
+            },
         });
     }
     let mut seen = BTreeSet::new();
@@ -185,6 +194,11 @@ pub fn verify(case_id: &str, require_approval: bool) -> Result<(), String> {
         .ok_or_else(|| format!("case {} has no registered schema id", loaded.entry.id))?;
     verify_schema(&loaded.manifest, schema_id)?;
     verify_case_metadata(&loaded.manifest, &loaded.entry)?;
+    verify_exceptions(
+        &loaded.manifest["exceptions"],
+        &loaded.entry.exceptions,
+        &loaded.entry.variants,
+    )?;
     verify_comparison(&loaded.manifest)?;
     verify_reference_identities(&loaded.manifest)?;
     let mut referenced = Vec::new();
@@ -231,7 +245,7 @@ fn verify_frame(loaded: &LoadedCase, require_approval: bool) -> Result<(), Strin
         || loaded.manifest["case_id"] != json!(loaded.entry.id)
         || loaded.manifest["compatibility_revision"] != json!(1)
         || loaded.manifest["originating_issue"]
-            != json!("https://github.com/sagikazarmark/excalidraw-render.orig/issues/97")
+            != json!(format!("{REPOSITORY_ISSUE_PREFIX}97"))
         || loaded.manifest["options"]
             != json!({
                 "exportBackground": true,
@@ -542,7 +556,7 @@ fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), 
         || loaded.manifest["crops"] != json!([])
         || loaded.manifest["exceptions"] != json!([])
         || loaded.manifest["originating_issue"]
-            != json!("https://github.com/sagikazarmark/excalidraw-render.orig/issues/58")
+            != json!(format!("{REPOSITORY_ISSUE_PREFIX}58"))
     {
         return Err("typography case identity or policy metadata is invalid".to_owned());
     }
@@ -797,6 +811,103 @@ fn verify_case_metadata(manifest: &Value, entry: &CaseEntry) -> Result<(), Strin
     verify_exact_keys(expectations, &expected_keys, "semantic expectations")?;
     if Value::Object(expectations.clone()) != entry.semantic_expectations {
         return Err("semantic expectations do not match the registered case".to_owned());
+    }
+    Ok(())
+}
+
+/// A tolerance exception names one variant, format, viewer, and region, sets
+/// exact ceilings, and names the issue that carries the decision (spec 14.4).
+/// The immutable approval is the case approval itself: the record is part of
+/// the manifest, so the approval subject binds it and any change to a ceiling
+/// or cause invalidates the approval. The registered entry is the authority on
+/// which exceptions a case carries, as it is for coverage and semantic
+/// expectations, so the manifest must reproduce it exactly. Only the scope the
+/// direct-PNG harness judges today is admitted: whole-artifact PNG with no
+/// viewer.
+fn verify_exceptions(
+    exceptions: &Value,
+    registered: &Value,
+    variants: &Value,
+) -> Result<(), String> {
+    let exceptions = exceptions
+        .as_array()
+        .ok_or_else(|| "exceptions must be an array".to_owned())?;
+    if Value::Array(exceptions.clone()) != *registered {
+        return Err("exceptions do not match the registered case".to_owned());
+    }
+    let declared_variants: BTreeSet<&str> = variants
+        .as_array()
+        .ok_or_else(|| "registered variants must be an array".to_owned())?
+        .iter()
+        .filter_map(|variant| variant["id"].as_str())
+        .collect();
+    let mut excepted_variants = BTreeSet::new();
+    for exception in exceptions {
+        let exception = object(exception, "tolerance exception")?;
+        verify_exact_keys(
+            exception,
+            &[
+                "approving_issue",
+                "format",
+                "max_changed_pixels",
+                "minimum_ssim_bits",
+                "reason",
+                "region",
+                "variant",
+                "viewer_profile",
+            ],
+            "tolerance exception",
+        )?;
+        let variant = exception["variant"]
+            .as_str()
+            .ok_or_else(|| "tolerance exception variant must be a string".to_owned())?;
+        if !declared_variants.contains(variant) {
+            return Err(format!(
+                "tolerance exception names undeclared variant {variant:?}"
+            ));
+        }
+        if exception["format"] != json!("png")
+            || exception["region"] != json!("whole")
+            || !exception["viewer_profile"].is_null()
+        {
+            return Err(
+                "tolerance exception scope must be the whole direct PNG with no viewer".to_owned(),
+            );
+        }
+        if !excepted_variants.insert(variant) {
+            return Err(format!(
+                "variant {variant:?} carries more than one tolerance exception for one scope"
+            ));
+        }
+        if exception["max_changed_pixels"].as_u64().is_none() {
+            return Err(
+                "tolerance exception max_changed_pixels must be a non-negative integer".to_owned(),
+            );
+        }
+        let bits = exception["minimum_ssim_bits"]
+            .as_str()
+            .filter(|bits| bits.len() == 16)
+            .and_then(|bits| u64::from_str_radix(bits, 16).ok())
+            .ok_or_else(|| {
+                "tolerance exception minimum_ssim_bits must be 16 hex digits".to_owned()
+            })?;
+        if !f64::from_bits(bits).is_finite() {
+            return Err("tolerance exception SSIM floor must be finite".to_owned());
+        }
+        if exception["reason"].as_str().is_none_or(str::is_empty) {
+            return Err("tolerance exception must document a non-defect cause".to_owned());
+        }
+        let issue = exception["approving_issue"]
+            .as_str()
+            .and_then(|url| url.strip_prefix(REPOSITORY_ISSUE_PREFIX))
+            .filter(|number| !number.is_empty() && !number.starts_with('0'))
+            .filter(|number| number.chars().all(|character| character.is_ascii_digit()));
+        if issue.is_none() {
+            return Err(
+                "tolerance exception approving issue must be an issue in this repository"
+                    .to_owned(),
+            );
+        }
     }
     Ok(())
 }
@@ -1652,9 +1763,7 @@ fn verify_approval_for_issue(approval: &Value, subject: &str, issue: &str) -> Re
     let approved_by = approval["approved_by"].as_str().unwrap_or_default();
     let approved_at = approval["approved_at"].as_str().unwrap_or_default();
     let approval_url = approval["approval_url"].as_str().unwrap_or_default();
-    let prefix = format!(
-        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/{issue}#issuecomment-"
-    );
+    let prefix = format!("{REPOSITORY_ISSUE_PREFIX}{issue}#issuecomment-");
     let comment_id = approval_url.strip_prefix(&prefix);
     if !valid_github_login(approved_by)
         || !valid_date(approved_at)
@@ -2058,4 +2167,138 @@ fn svg_f64_attribute(root: &str, name: &str) -> Result<f64, String> {
         return Err(format!("SVG {name} is not positive and finite"));
     }
     Ok(value)
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::{json, Value};
+
+    use super::verify_exceptions;
+
+    fn record() -> Value {
+        json!({
+            "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
+            "format": "png",
+            "max_changed_pixels": 188,
+            "minimum_ssim_bits": "3fef9fd8a6b58839",
+            "reason": "sub-pixel glyph coverage on exact glyph bounding boxes",
+            "region": "whole",
+            "variant": "default",
+            "viewer_profile": null,
+        })
+    }
+
+    fn variants() -> Value {
+        json!([{"id": "default"}, {"id": "dark-mode"}])
+    }
+
+    /// The rejection must come from the rule under test, not from an earlier
+    /// check tripping over the same mutation.
+    fn assert_rejected(manifest: Value, registered: Value, rule: &str) {
+        let error = verify_exceptions(&manifest, &registered, &variants())
+            .expect_err("an invalid exception record must fail closed");
+        assert!(
+            error.contains(rule),
+            "expected a rejection mentioning {rule:?}, got {error:?}"
+        );
+    }
+
+    /// A record that is registered verbatim, so only the record's own content
+    /// is under test.
+    fn assert_registered_rejected(record: Value, rule: &str) {
+        assert_rejected(json!([record.clone()]), json!([record]), rule);
+    }
+
+    #[test]
+    fn exceptions_accept_the_registered_record_for_a_declared_variant() {
+        verify_exceptions(&json!([record()]), &json!([record()]), &variants())
+            .expect("a registered, well-formed exception verifies");
+        verify_exceptions(&json!([]), &json!([]), &variants())
+            .expect("a case with no exceptions verifies");
+    }
+
+    #[test]
+    fn exceptions_must_match_the_registered_case_exactly() {
+        let rule = "do not match the registered case";
+        assert_rejected(json!([record()]), json!([]), rule);
+        assert_rejected(json!([]), json!([record()]), rule);
+        let mut relaxed = record();
+        relaxed["max_changed_pixels"] = json!(189);
+        assert_rejected(json!([relaxed]), json!([record()]), rule);
+    }
+
+    #[test]
+    fn exceptions_reject_an_undeclared_variant() {
+        let mut record = record();
+        record["variant"] = json!("high-dpi");
+        assert_registered_rejected(record, "undeclared variant");
+    }
+
+    #[test]
+    fn exceptions_reject_two_records_for_one_scope() {
+        let mut second = record();
+        second["max_changed_pixels"] = json!(1);
+        assert_rejected(
+            json!([record(), second.clone()]),
+            json!([record(), second]),
+            "more than one tolerance exception for one scope",
+        );
+    }
+
+    #[test]
+    fn exceptions_reject_a_non_finite_ssim_floor() {
+        let mut record = record();
+        record["minimum_ssim_bits"] = json!("7ff8000000000000");
+        assert_registered_rejected(record, "SSIM floor must be finite");
+        let mut record = self::record();
+        record["minimum_ssim_bits"] = json!("3fef");
+        assert_registered_rejected(record, "16 hex digits");
+    }
+
+    #[test]
+    fn exceptions_reject_an_approving_issue_outside_this_repository() {
+        for url in [
+            "https://github.com/excalidraw/excalidraw/issues/1",
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/",
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/0104",
+            "https://github.com/sagikazarmark/excalidraw-render.orig/pull/104",
+        ] {
+            let mut record = record();
+            record["approving_issue"] = json!(url);
+            assert_registered_rejected(
+                record,
+                "approving issue must be an issue in this repository",
+            );
+        }
+    }
+
+    #[test]
+    fn exceptions_reject_scopes_the_harness_does_not_judge() {
+        for (key, value) in [
+            ("format", json!("svg")),
+            ("region", json!("crop-1")),
+            ("viewer_profile", json!("canonical-svg.chromium.v1")),
+        ] {
+            let mut record = record();
+            record[key] = value;
+            assert_registered_rejected(record, "whole direct PNG with no viewer");
+        }
+    }
+
+    #[test]
+    fn exceptions_reject_an_undocumented_cause() {
+        let mut record = record();
+        record["reason"] = json!("");
+        assert_registered_rejected(record, "must document a non-defect cause");
+    }
+
+    #[test]
+    fn exceptions_reject_unknown_or_missing_keys() {
+        let mut extra = record();
+        extra["visual_class"] = json!("geometry/image");
+        assert_registered_rejected(extra, "tolerance exception keys differ");
+        let mut missing = record();
+        missing.as_object_mut().unwrap().remove("reason");
+        assert_registered_rejected(missing, "tolerance exception keys differ");
+    }
 }
