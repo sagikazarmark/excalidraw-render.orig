@@ -37,6 +37,26 @@ a maximum-dimension export leaves the SVG untouched and downscales only the PNG.
 The verifier holds both rasters to those rules: the SVG rounds `viewBox` times
 the scale, the PNG truncates it.
 
+Three registry-driven harnesses compare the renderer against every registered
+scene case and variant, each isolating one variable:
+
+- `registered_case_svg_path_parity` compares SVG path data and the root extent
+  as text: geometry with no rasterizer involved.
+- `registered_case_svg_raster_parity` rasterizes the renderer's SVG and the
+  official SVG through the same in-process `resvg`, each with a font database
+  built from its own embedded fonts, and compares under the pure-Rust budget:
+  the SVG document with the rasterizer held constant. It is document parity,
+  not a canonical viewer gate; the pinned canonical SVG viewers are a separate
+  piece of work and neither admits text-bearing SVG today.
+- `registered_case_png_parity` compares the renderer's PNG against the official
+  browser raster under the canonical budget: the whole pipeline, rasterizer
+  included, which is where tolerance exceptions apply.
+
+A variant whose divergence is a diagnosed defect awaiting a decision is not
+excepted: it is listed in the harness that observes it as a known defect naming
+its issue, with its measurement pinned exactly so the entry fails if the
+divergence moves in either direction.
+
 A tolerance exception records a maintainer's judgment that one variant's
 observed difference from the official evidence has a non-defect cause. It names
 the variant, format, viewer, and region it governs, sets its ceilings to the

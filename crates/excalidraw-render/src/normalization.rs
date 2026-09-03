@@ -810,7 +810,10 @@ fn normalize_scene_impl<E>(
         );
         let planned_working_bytes = normalized_working_bytes(normalized_id_bytes, &fields)
             .saturating_add(owned_field_bytes(normalized_index.len()))
-            .saturating_add(planned_kind_working_bytes(&source, participation));
+            .saturating_add(memory_at_source!(planned_kind_working_bytes(
+                &source,
+                participation
+            )));
         let normalization_event = source.kind.normalization_event_name();
         observe(NormalizationEvent::PreflightRecord {
             event: normalization_event,
@@ -1263,21 +1266,20 @@ impl ElementKind {
     }
 }
 
+/// The working bytes the normalized kind will own, planned before the kind is
+/// built so the preflight record can be observed first. The plan must equal the
+/// actual measurement exactly; where the kind owns derived text, the derivation
+/// runs here too and its allocation failure is the caller's to report.
 fn planned_kind_working_bytes(
     source: &ElementSource<'_>,
     participation: NormalizationParticipation,
-) -> u64 {
+) -> Result<u64, TryReserveError> {
     let optional_owned_bytes =
         |value: Option<&str>| value.map_or(64, |value| owned_field_bytes(value.len()));
-    match source.kind {
+    Ok(match source.kind {
         ElementKind::Rectangle | ElementKind::Diamond | ElementKind::Ellipse => 0,
         ElementKind::Iframe => owned_field_bytes("IFrame element".len()),
-        ElementKind::Embeddable => owned_field_bytes(match source.link {
-            SourceField::Value(Some(link)) => link.len(),
-            SourceField::Missing | SourceField::Invalid | SourceField::Value(None) => {
-                "Empty Web-Embed".len()
-            }
-        }),
+        ElementKind::Embeddable => owned_field_bytes(embeddable_label(source.link)?.len()),
         ElementKind::Text => {
             let text = match source.text {
                 SourceField::Value(text) => text,
@@ -1375,7 +1377,7 @@ fn planned_kind_working_bytes(
             optional_owned_bytes(name)
         }
         ElementKind::Frame | ElementKind::MagicFrame => 0,
-    }
+    })
 }
 
 fn planned_arrowhead<'a>(
@@ -2230,12 +2232,7 @@ fn normalize_element_kind(
             let label = if iframe {
                 try_owned("IFrame element")?
             } else {
-                match source.link {
-                    SourceField::Value(Some(link)) => try_owned(link)?,
-                    SourceField::Missing | SourceField::Invalid | SourceField::Value(None) => {
-                        try_owned("Empty Web-Embed")?
-                    }
-                }
+                embeddable_label(source.link)?
             };
             Ok((
                 NormalizedElementKind::Embeddable { iframe, label },
@@ -3389,6 +3386,26 @@ const fn manifested_recovery(recovery: &str) -> Option<Recovery> {
         b"rasterized" => Some(Recovery::Rasterized),
         b"metadata_omitted" => Some(Recovery::MetadataOmitted),
         _ => None,
+    }
+}
+
+/// The placeholder label of an embeddable element. The reference renderer
+/// derives it from the element's link after its restore path has normalized
+/// it, so the label is the sanitized link: an unsafe link reads `about:blank`,
+/// the sanitizer's replacement, rather than exposing the rejected text, and a
+/// missing or blank link reads `Empty Web-Embed`.
+fn embeddable_label(link: SourceField<Option<&str>>) -> Result<String, TryReserveError> {
+    match link {
+        SourceField::Value(Some(link)) if !link.trim().is_empty() => {
+            match crate::scene_surface::sanitized_link(link)? {
+                Some(sanitized) => Ok(sanitized),
+                None => try_owned("about:blank"),
+            }
+        }
+        SourceField::Value(Some(_))
+        | SourceField::Missing
+        | SourceField::Invalid
+        | SourceField::Value(None) => try_owned("Empty Web-Embed"),
     }
 }
 

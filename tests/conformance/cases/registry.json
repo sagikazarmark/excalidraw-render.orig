@@ -1117,19 +1117,8 @@
       },
       "empty_fields": [
         "assets",
-        "crops"
-      ],
-      "exceptions": [
-        {
-          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
-          "format": "png",
-          "max_changed_pixels": 1042,
-          "minimum_ssim_bits": "3fef5eaf320814e1",
-          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with link labels and embeddable placeholder text. Diagnosed on #104.",
-          "region": "whole",
-          "variant": "default",
-          "viewer_profile": null
-        }
+        "crops",
+        "exceptions"
       ],
       "variants": [
         {

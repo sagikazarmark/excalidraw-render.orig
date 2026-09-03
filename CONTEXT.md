@@ -64,6 +64,10 @@ _Avoid_: Silent divergence, implementation limitation
 An approved record in a conformance case that one variant's observed difference from reference evidence, for one format, viewer, and region, has a diagnosed non-defect cause. It documents that cause, names the issue that carries the decision, and sets ceilings to the exact observed changed-pixel count and SSIM score with no margin; the case approval binds the record, and a variant that returns inside the canonical budget makes it stale.
 _Avoid_: Visual exception, known-divergence suppression, test skip
 
+**Known defect**:
+A diagnosed renderer defect whose fix awaits a maintainer decision, recorded in the parity harness that observes it with its exact measurement pinned and the issue that tracks it named. It is not an approved judgment and never enters a case manifest; the pin fails the harness when the divergence moves in either direction, so the entry can neither outlive the defect nor absorb another one.
+_Avoid_: Tolerance exception for a defect, suppression list, expected failure
+
 **Static export**:
 A deterministic SVG, PNG, or PDF representation of either a whole scene or one frame, without interactive editor overlays or viewport state.
 _Avoid_: Editor snapshot, canvas rendering

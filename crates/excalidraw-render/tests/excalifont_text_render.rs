@@ -93,14 +93,18 @@ fn excalifont_text_renders_semantically_and_deterministically_in_every_format() 
                     .expect("text has a line baseline");
                 assert_eq!(line_x, "45");
                 assert_eq!(line_y.split_whitespace().count(), 1);
-                assert!(svg.contains(">One two three</tspan>\n<tspan"));
+                // Lines are adjacent tspans with nothing between them: under
+                // xml:space="preserve" any separator is a rendered character,
+                // and a trailing space would shift a middle- or end-anchored
+                // line. The line break lives in data-source-text.
+                assert!(svg.contains(">One two three</tspan><tspan"));
                 assert!(svg.contains(">Four</tspan></text>"));
                 assert_eq!(svg_source_text(svg), "One two three\nFour");
                 assert!(!svg.contains("Unavailable: text"));
-                assert_eq!(first.artifact().bytes().len(), 9_289);
+                assert_eq!(first.artifact().bytes().len(), 9_288);
                 assert_eq!(
                     artifact_sha256(&first),
-                    "ac0848b77bb1ba30bcb9a2b1e5266df7f3dc7c13386446d65433b6b4ee8518ef"
+                    "a76464883d44a8535b601e0e47913e96e05d0bcfe3beac28492abe45c3053260"
                 );
             }
             OutputFormat::Png => {
@@ -384,7 +388,7 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
     assert!(work_equality.report().is_empty());
     assert_eq!(
         artifact_sha256(&work_equality),
-        "ac0848b77bb1ba30bcb9a2b1e5266df7f3dc7c13386446d65433b6b4ee8518ef"
+        "a76464883d44a8535b601e0e47913e96e05d0bcfe3beac28492abe45c3053260"
     );
     let work_crossing = render_svg_with_limits(
         &scene,

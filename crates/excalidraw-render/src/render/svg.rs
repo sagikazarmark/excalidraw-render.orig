@@ -1028,9 +1028,12 @@ impl SvgPlan {
                                 svg.push_str("</tspan>");
                             }
                         }
-                        if line.text.ends_with('\n') {
-                            svg.push('\n');
-                        }
+                        // Nothing separates one line's tspans from the next.
+                        // Under xml:space="preserve" a separator is a rendered
+                        // character that joins the preceding text chunk, and a
+                        // trailing space shifts every middle- or end-anchored
+                        // line off the position the official export gives it.
+                        // The source line break is carried by data-source-text.
                     }
                     svg.push_str("</text></g>");
                 }

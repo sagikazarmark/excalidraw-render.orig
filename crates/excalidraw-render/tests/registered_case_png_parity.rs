@@ -16,25 +16,43 @@
 //! budget, and must still fail the canonical budget: an exception is a recorded
 //! judgment about an observed difference, so once the difference is gone the
 //! record is stale and the test says so rather than letting it linger.
+//!
+//! A variant whose divergence is a diagnosed defect awaiting a decision gets no
+//! exception; it is listed in `KNOWN_DEFECTS` with its measurement pinned, so
+//! the entry fails the moment the divergence moves.
 
 // Included by path rather than through `common/mod.rs` so this binary does not
 // also compile the PDF harness helpers, and the PDF binaries do not compile this.
 #[path = "common/registered_cases.rs"]
 mod registered_cases;
 
+use std::collections::BTreeSet;
 use std::fs;
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
 
 use excalidraw_render::{ColorMode, OutputFormat, Renderer, SceneDocument, Sizing};
 use excalidraw_render_compare::{
-    compare, CanonicalRgba8, ComparisonLimits, ComparisonMode, ComparisonReport, RegionReport,
-    SsimOutcome, VisualClass,
+    compare, CanonicalRgba8, ComparisonLimits, ComparisonMode, RegionReport, SsimOutcome,
 };
 use png::{BitDepth, ColorType, Decoder, Transformations};
 use serde_json::Value;
 
-use registered_cases::variant_request;
+use registered_cases::{observed, repository_root, variant_request, visual_class, KnownDefect};
+
+/// Diagnosed defects whose fix is pending a maintainer decision. See
+/// `KnownDefect` for why these are pinned rather than excepted.
+const KNOWN_DEFECTS: &[KnownDefect] = &[
+    // The embeddable label baseline follows Liberation Sans hhea metrics where
+    // the official export uses Excalidraw's Helvetica metadata; the approved
+    // recipe encodes the former. The remainder is glyph coverage.
+    KnownDefect {
+        case: "focused.embeddable-links.v1",
+        variant: "default",
+        issue: "https://github.com/sagikazarmark/excalidraw-render.orig/issues/105",
+        changed_pixels: 865,
+        ssim_bits: 0x3fef_7e7e_43ca_ed1e,
+    },
+];
 
 #[test]
 fn every_registered_scene_case_matches_its_official_direct_png() {
@@ -47,6 +65,7 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
 
     let mut total = 0usize;
     let mut failures = Vec::new();
+    let mut seen = BTreeSet::new();
 
     for case in registry["cases"]
         .as_array()
@@ -70,6 +89,7 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
             )
             .unwrap_or_else(|error| panic!("{id} scene is admitted: {error:?}"));
             let variant_id = variant["id"].as_str().expect("variant id is a string");
+            seen.insert((id.to_owned(), variant_id.to_owned()));
             let request = variant_request(
                 OutputFormat::Png,
                 &variant["options"],
@@ -87,11 +107,16 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
             );
             // A report mismatch is never suppressed: it means the renderer's
             // diagnostics disagree with what the case declares, which is a contract
-            // break rather than a pixel difference.
+            // break rather than a pixel difference. The checked report is canonical
+            // JSON and the renderer's is spec-ordered, so they compare as values.
+            let expected_report: Value = serde_json::from_slice(
+                &fs::read(&expected_report).expect("expected report present"),
+            )
+            .expect("expected report is valid JSON");
             assert_eq!(
-                serde_json::to_vec(outcome.report()).expect("report serializes"),
-                fs::read(&expected_report).expect("expected report present"),
-                "{id}: PNG report differs from its declared expectation"
+                serde_json::to_value(outcome.report()).expect("report serializes"),
+                expected_report,
+                "{id} [{variant_id}]: PNG report differs from its declared expectation"
             );
 
             let raw = &png["raw_raster"];
@@ -107,6 +132,12 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
             let candidate = decode_png(outcome.artifact().bytes());
 
             let exception = tolerance_exception(&manifest, variant_id);
+            let defect = KnownDefect::lookup(KNOWN_DEFECTS, id, variant_id);
+            assert!(
+                exception.is_none() || defect.is_none(),
+                "{id} [{variant_id}] is both excepted and a known defect; a defect has no \
+                 non-defect cause to except"
+            );
             let divergence = if (candidate.width(), candidate.height()) != (width, height) {
                 Some(format!(
                     "rendered {}x{}, official evidence is {width}x{height}",
@@ -126,19 +157,20 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
                 // The measurement is the same under either budget; only the
                 // pass judgment differs, so the exception is judged on the
                 // canonical report rather than by comparing the rasters again.
-                match exception {
-                    None => (!canonical.passed())
+                match (defect, exception) {
+                    (Some(defect), _) => defect.mismatch(&canonical),
+                    (None, None) => (!canonical.passed())
                         .then(|| format!("outside the canonical budget: {}", observed(&canonical))),
-                    Some(_) if canonical.passed() => Some(format!(
+                    (None, Some(_)) if canonical.passed() => Some(format!(
                         "passes the canonical budget, so its tolerance exception is stale and \
                          must be withdrawn: {}",
                         observed(&canonical)
                     )),
-                    Some(limits) if !within(limits, &canonical.whole) => Some(format!(
+                    (None, Some(limits)) if !within(limits, &canonical.whole) => Some(format!(
                         "exceeds its approved tolerance exception ceilings: {}",
                         observed(&canonical)
                     )),
-                    Some(_) => None,
+                    (None, Some(_)) => None,
                 }
             };
 
@@ -149,6 +181,7 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
     }
 
     assert!(total > 0, "the registry declared no scene cases");
+    KnownDefect::assert_all_observed(KNOWN_DEFECTS, &seen);
     assert!(
         failures.is_empty(),
         "{} of {} registered scene cases diverge from their official direct PNG:\n  {}",
@@ -196,32 +229,6 @@ fn within(limits: ComparisonLimits, whole: &RegionReport) -> bool {
         && matches!(whole.ssim, SsimOutcome::Score(score) if limits.ssim_pass(score))
 }
 
-/// The observed whole-artifact measurement in the form a tolerance exception
-/// records it, so a failure prints values that can be transcribed exactly.
-fn observed(report: &ComparisonReport) -> String {
-    match report.whole.ssim {
-        SsimOutcome::Score(score) => format!(
-            "changed_pixels={} ssim={score:?} (minimum_ssim_bits={:016x})",
-            report.whole.changed_pixels,
-            score.to_bits()
-        ),
-        ref other => format!(
-            "changed_pixels={} ssim={other:?}",
-            report.whole.changed_pixels
-        ),
-    }
-}
-
-fn visual_class(name: &str) -> VisualClass {
-    match name {
-        "exact" => VisualClass::Exact,
-        "geometry/image" => VisualClass::GeometryImage,
-        "typography" => VisualClass::Typography,
-        "mixed/representative" => VisualClass::MixedRepresentative,
-        other => panic!("unknown visual class {other:?}"),
-    }
-}
-
 fn decode_png(bytes: &[u8]) -> CanonicalRgba8 {
     let mut decoder = Decoder::new(Cursor::new(bytes));
     decoder.set_transformations(Transformations::IDENTITY);
@@ -232,14 +239,6 @@ fn decode_png(bytes: &[u8]) -> CanonicalRgba8 {
     assert_eq!(frame.bit_depth, BitDepth::Eight);
     rgba.truncate(frame.buffer_size());
     CanonicalRgba8::new(frame.width, frame.height, rgba).expect("decoded PNG is canonical RGBA8")
-}
-
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("crate is inside the workspace")
-        .to_owned()
 }
 
 /// The default reference export, as every registered variant declares it

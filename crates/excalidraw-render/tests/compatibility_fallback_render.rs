@@ -439,8 +439,12 @@ fn unsupported_embeddable_values_use_field_recovery_without_replacing_the_shell(
     assert!(svg.contains("fill=\"#a5d8ff\""));
 }
 
+/// The official export derives the placeholder label from the element's link
+/// after its restore path has sanitized it, so an unsafe link labels its
+/// placeholder `about:blank` and is never shown as text. The navigation itself
+/// is still omitted and diagnosed.
 #[test]
-fn unsafe_embeddable_navigation_is_omitted_without_hiding_its_source_label() {
+fn unsafe_embeddable_navigation_is_omitted_and_its_label_is_the_restored_link() {
     let link = "javascript:alert(1)";
     let source = format!(
         r##"{{"type":"excalidraw","version":2,"elements":[{{"id":"embed","type":"embeddable","x":0,"y":0,"width":200,"height":80,"strokeColor":"#1e1e1e","backgroundColor":"#a5d8ff","link":"{link}","seed":1,"updated":1}}],"appState":{{}},"files":{{}}}}"##
@@ -454,8 +458,21 @@ fn unsafe_embeddable_navigation_is_omitted_without_hiding_its_source_label() {
         .iter()
         .any(|diagnostic| diagnostic.code() == DiagnosticCode::LINK_UNSAFE_OMITTED));
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-    assert!(svg.contains("data-source-text=\"javascript:alert(1)\""));
+    assert!(svg.contains("data-source-text=\"about:blank\""));
+    assert!(!svg.contains("javascript:alert(1)"));
     assert!(!svg.contains("<a href="));
+}
+
+/// A safe link labels its placeholder with the sanitized link text, which for
+/// an ordinary URL is the link itself; surrounding whitespace is trimmed the
+/// way the restore path trims it.
+#[test]
+fn safe_embeddable_label_is_the_sanitized_link() {
+    let source = r##"{"type":"excalidraw","version":2,"elements":[{"id":"embed","type":"embeddable","x":0,"y":0,"width":200,"height":80,"strokeColor":"#1e1e1e","backgroundColor":"#a5d8ff","link":"  https://example.com/embed  ","seed":1,"updated":1}],"appState":{},"files":{}}"##;
+    let scene = SceneDocument::parse(source.as_bytes()).expect("embeddable is admitted");
+    let outcome = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("data-source-text=\"https://example.com/embed\""));
 }
 
 #[test]
