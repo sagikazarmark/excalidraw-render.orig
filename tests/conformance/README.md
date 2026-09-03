@@ -72,8 +72,12 @@ exceptions with no viewer are admitted.
 `xtask` resolves every case through this file, so adding a scene case is a
 registry entry plus a case directory rather than a new generator script or a new
 constant. `conformance-case.mjs` reads the same file and refuses any entry whose
-kind is not `scene`; the frame and typography wrappers keep their own generators
-and dedicated profiles.
+kind is not `scene`; the frame and typography cases keep their own standalone
+generators, which carry their manifest inputs themselves. Neither imports
+anything `conformance-case.mjs` owns: every scene provenance pins that
+generator's bytes, so a change made for one of them must not invalidate the
+scene approvals. The one module all three share, `canonical-json.mjs`, is bound
+by the reference profile whose digest every provenance pins.
 
 Verify every registered case at once with:
 
@@ -81,8 +85,13 @@ Verify every registered case at once with:
 cargo run --locked -p xtask -- conformance verify-all
 ```
 
-The first typography case uses a separate pinned runner so changes needed for
-font-bearing evidence cannot invalidate the approved rectangle generator:
+The first typography case uses a separate pinned runner and generator,
+`typography-conformance-case.mjs`, so changes needed for font-bearing evidence
+cannot invalidate the approved scene generator. The generator resolves the case
+directory and runner through the registry, derives the bound `assets` record
+from the official font the reference renderer fetched while producing the
+evidence, and writes the single `expected-report.json` the typography schema
+pins:
 
 ```sh
 cargo run --locked -p xtask -- conformance generate focused.excalifont-text.v1
@@ -91,9 +100,10 @@ cargo run --locked -p xtask -- conformance approval-subject focused.excalifont-t
 ```
 
 `focused.excalifont-text.v1` binds the official basic-Latin Excalifont WOFF2
-identity and remains unapproved until a maintainer records approval for its
-printed subject digest. Policy approval for deterministic predecoding does not
-constitute approval of either the generated SFNT bytes or this evidence case.
+identity and is approved on issue #58 for its printed subject digest; any change
+to its generator bytes moves the provenance and needs a fresh approval there.
+Policy approval for deterministic predecoding does not constitute approval of
+either the generated SFNT bytes or this evidence case.
 
 The checked manifest is canonical JSON followed by one LF. Its adjacent digest
 hashes the canonical bytes without that LF. The approval subject excludes only
