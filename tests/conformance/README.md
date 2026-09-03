@@ -25,6 +25,18 @@ the manifest inputs the reference-oracle generator needs — schema, layer,
 coverage, feature tags, purpose, licence, sanitization, determinism, semantic
 expectations, and any tolerance exceptions.
 
+A scene case declares one or more export variants. The default variant is the
+reference wrapper's default export; a further variant may vary dark mode and
+selects exactly one sizing mode (`exportScale` or `maxWidthOrHeight`), and its
+evidence nests under `evidence/<variant-id>/`. Both parity harnesses build the
+renderer request from the variant's options and fail closed on any other
+deviation, so a variant cannot be compared against evidence generated under
+settings the harness did not reproduce. A scaled variant's official SVG
+multiplies only the root `width` and `height` while the `viewBox` stays logical;
+a maximum-dimension export leaves the SVG untouched and downscales only the PNG.
+The verifier holds both rasters to those rules: the SVG rounds `viewBox` times
+the scale, the PNG truncates it.
+
 A tolerance exception records a maintainer's judgment that one variant's
 observed difference from the official evidence has a non-defect cause. It names
 the variant, format, viewer, and region it governs, sets its ceilings to the

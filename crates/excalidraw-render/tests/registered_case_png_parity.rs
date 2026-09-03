@@ -17,17 +17,24 @@
 //! judgment about an observed difference, so once the difference is gone the
 //! record is stale and the test says so rather than letting it linger.
 
+// Included by path rather than through `common/mod.rs` so this binary does not
+// also compile the PDF harness helpers, and the PDF binaries do not compile this.
+#[path = "common/registered_cases.rs"]
+mod registered_cases;
+
 use std::fs;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
-use excalidraw_render::{ColorMode, OutputFormat, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{ColorMode, OutputFormat, Renderer, SceneDocument, Sizing};
 use excalidraw_render_compare::{
     compare, CanonicalRgba8, ComparisonLimits, ComparisonMode, ComparisonReport, RegionReport,
     SsimOutcome, VisualClass,
 };
 use png::{BitDepth, ColorType, Decoder, Transformations};
 use serde_json::Value;
+
+use registered_cases::variant_request;
 
 #[test]
 fn every_registered_scene_case_matches_its_official_direct_png() {
@@ -62,29 +69,12 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
                 &fs::read(dir.join("scene.excalidraw")).expect("scene document present"),
             )
             .unwrap_or_else(|error| panic!("{id} scene is admitted: {error:?}"));
-            let options = &variant["options"];
-            // Only the options a registered variant actually varies are honoured. An
-            // unrecognised deviation from the default export fails rather than
-            // silently rendering the default and comparing it to other evidence.
-            let mut builder = RenderRequest::builder(OutputFormat::Png);
-            if options["exportWithDarkMode"] == serde_json::json!(true) {
-                builder = builder.color_mode(ColorMode::Dark);
-            }
-            for (key, default) in [
-                ("exportBackground", serde_json::json!(true)),
-                ("exportEmbedScene", serde_json::json!(false)),
-                ("exportPadding", serde_json::json!(10)),
-                ("exportScale", serde_json::json!(1)),
-                ("maxWidthOrHeight", serde_json::Value::Null),
-                ("viewBackgroundColor", serde_json::json!("#ffffff")),
-            ] {
-                assert_eq!(
-                    options[key], default,
-                    "{id} variant {} varies {key}, which this harness does not build",
-                    variant["id"]
-                );
-            }
-            let request = builder.build().expect("PNG request is valid");
+            let variant_id = variant["id"].as_str().expect("variant id is a string");
+            let request = variant_request(
+                OutputFormat::Png,
+                &variant["options"],
+                &format!("{id} variant {variant_id}"),
+            );
             let outcome = Renderer::new()
                 .render(&scene, &request)
                 .unwrap_or_else(|error| panic!("{id} renders as PNG: {error:?}"));
@@ -116,7 +106,6 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
             .expect("official evidence is canonical RGBA8");
             let candidate = decode_png(outcome.artifact().bytes());
 
-            let variant_id = variant["id"].as_str().expect("variant id is a string");
             let exception = tolerance_exception(&manifest, variant_id);
             let divergence = if (candidate.width(), candidate.height()) != (width, height) {
                 Some(format!(
@@ -251,4 +240,84 @@ fn repository_root() -> PathBuf {
         .and_then(Path::parent)
         .expect("crate is inside the workspace")
         .to_owned()
+}
+
+/// The default reference export, as every registered variant declares it
+/// before varying anything.
+fn default_options() -> Value {
+    serde_json::json!({
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {"clip": true, "enabled": true, "name": true, "outline": true},
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+    })
+}
+
+#[test]
+fn variant_request_builds_the_default_export_from_default_options() {
+    let request = variant_request(OutputFormat::Png, &default_options(), "test");
+    assert_eq!(request.format(), OutputFormat::Png);
+    assert_eq!(request.sizing(), Sizing::Scale(1.0));
+    assert_eq!(request.color_mode(), ColorMode::Light);
+}
+
+#[test]
+fn variant_request_honours_dark_mode_and_each_sizing_mode() {
+    let mut dark = default_options();
+    dark["exportWithDarkMode"] = serde_json::json!(true);
+    assert_eq!(
+        variant_request(OutputFormat::Png, &dark, "test").color_mode(),
+        ColorMode::Dark
+    );
+
+    let mut scaled = default_options();
+    scaled["exportScale"] = serde_json::json!(2);
+    assert_eq!(
+        variant_request(OutputFormat::Svg, &scaled, "test").sizing(),
+        Sizing::Scale(2.0)
+    );
+
+    let mut bounded = default_options();
+    bounded["exportScale"] = Value::Null;
+    bounded["maxWidthOrHeight"] = serde_json::json!(160);
+    assert_eq!(
+        variant_request(OutputFormat::Png, &bounded, "test").sizing(),
+        Sizing::MaxDimension(160.0)
+    );
+}
+
+#[test]
+#[should_panic(expected = "varies exportPadding")]
+fn variant_request_refuses_an_option_it_does_not_build() {
+    let mut padded = default_options();
+    padded["exportPadding"] = serde_json::json!(20);
+    variant_request(OutputFormat::Png, &padded, "test");
+}
+
+#[test]
+#[should_panic(expected = "exactly one sizing mode")]
+fn variant_request_refuses_two_sizing_modes() {
+    let mut both = default_options();
+    both["maxWidthOrHeight"] = serde_json::json!(160);
+    variant_request(OutputFormat::Png, &both, "test");
+}
+
+#[test]
+#[should_panic(expected = "varies frameRendering")]
+fn variant_request_refuses_a_frame_control_deviation() {
+    let mut unclipped = default_options();
+    unclipped["frameRendering"]["clip"] = serde_json::json!(false);
+    variant_request(OutputFormat::Png, &unclipped, "test");
+}
+
+#[test]
+#[should_panic(expected = "exportWithDarkMode")]
+fn variant_request_refuses_a_non_boolean_dark_mode() {
+    let mut odd = default_options();
+    odd["exportWithDarkMode"] = serde_json::json!("yes");
+    variant_request(OutputFormat::Png, &odd, "test");
 }

@@ -13,17 +13,28 @@
 //!
 //! It also compares the root `viewBox`, which is where scene-bounds defects
 //! live: a bounds error emits every path at identical coordinates inside a
-//! differently sized document, so path data alone cannot see it.
+//! differently sized document, so path data alone cannot see it. The root
+//! `width` and `height` are compared too: an export scale multiplies only those
+//! and leaves the `viewBox` logical, so they are the one place a scaled SVG
+//! variant differs from the default and the one place a scaling defect shows.
 //!
 //! Path data and extent are the invariants, not SVG structure: the renderer
 //! legitimately differs from the official export in how it positions text and
-//! groups elements.
+//! groups elements. Every registered variant is compared, since dark mode and
+//! sizing must leave path geometry untouched.
+
+// Included by path rather than through `common/mod.rs` so this binary does not
+// also compile the PDF harness helpers, and the PDF binaries do not compile this.
+#[path = "common/registered_cases.rs"]
+mod registered_cases;
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{OutputFormat, Renderer, SceneDocument};
 use serde_json::Value;
+
+use registered_cases::variant_request;
 
 #[test]
 fn every_registered_scene_case_matches_its_official_svg_path_geometry() {
@@ -45,62 +56,79 @@ fn every_registered_scene_case_matches_its_official_svg_path_geometry() {
     {
         let id = case["id"].as_str().expect("case id is a string");
         let dir = root.join(case["path"].as_str().expect("case path is a string"));
+        let manifest: Value =
+            serde_json::from_slice(&fs::read(dir.join("manifest.json")).expect("manifest present"))
+                .expect("manifest is valid JSON");
         total += 1;
 
         let scene = SceneDocument::parse(
             &fs::read(dir.join("scene.excalidraw")).expect("scene document present"),
         )
         .unwrap_or_else(|error| panic!("{id} scene is admitted: {error:?}"));
-        let request = RenderRequest::builder(OutputFormat::Svg)
-            .build()
-            .expect("default SVG request is valid");
-        let outcome = Renderer::new()
-            .render(&scene, &request)
-            .unwrap_or_else(|error| panic!("{id} renders as SVG: {error:?}"));
+        for variant in manifest["variants"]
+            .as_array()
+            .expect("manifest variants are an array")
+        {
+            let variant_id = variant["id"].as_str().expect("variant id is a string");
+            let request = variant_request(
+                OutputFormat::Svg,
+                &variant["options"],
+                &format!("{id} variant {variant_id}"),
+            );
+            let outcome = Renderer::new()
+                .render(&scene, &request)
+                .unwrap_or_else(|error| panic!("{id} renders as SVG: {error:?}"));
+            let candidate_svg =
+                std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+            let official_path = variant["formats"]["svg"]["artifact"]["path"]
+                .as_str()
+                .expect("official SVG path");
+            let official_svg =
+                fs::read_to_string(dir.join(official_path)).expect("official SVG present");
 
-        let candidate = path_data(
-            std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8"),
-        );
-        let official = path_data(
-            &fs::read_to_string(dir.join("evidence/official.svg")).expect("official SVG present"),
-        );
-
-        let candidate_box = view_box(
-            std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8"),
-        );
-        let official_box = view_box(
-            &fs::read_to_string(dir.join("evidence/official.svg")).expect("official SVG present"),
-        );
-
-        let extent = (candidate_box != official_box).then(|| {
-            format!("viewBox {candidate_box:?} against official {official_box:?}")
-        });
-        let paths = if candidate.len() != official.len() {
-            Some(format!(
-                "emits {} paths, official has {}",
-                candidate.len(),
-                official.len()
-            ))
-        } else {
-            candidate
-                .iter()
-                .zip(&official)
-                .position(|(a, b)| a != b)
-                .map(|index| {
-                    format!(
-                        "path {index} differs\n      ours     {}\n      official {}",
-                        truncate(&candidate[index]),
-                        truncate(&official[index])
-                    )
+            // The viewBox is the logical extent; width and height are that extent
+            // times the export scale.
+            let extent = ["viewBox", "width", "height"]
+                .into_iter()
+                .filter_map(|attribute| {
+                    let ours = root_attribute(candidate_svg, attribute);
+                    let theirs = root_attribute(&official_svg, attribute);
+                    (ours != theirs)
+                        .then(|| format!("{attribute} {ours:?} against official {theirs:?}"))
                 })
-        };
+                .collect::<Vec<_>>();
+            let extent = (!extent.is_empty()).then(|| extent.join("; "));
 
-        // Both dimensions are reported, not just the first to fail. A change that
-        // corrupts path data while making an extent agree produces an entry for
-        // each, and reporting only one would hide the more serious half.
-        for (dimension, divergence) in [("extent", extent), ("paths", paths)] {
-            if let Some(detail) = divergence {
-                failures.push(format!("{id} [{dimension}]: {detail}"));
+            let candidate = path_data(candidate_svg);
+            let official = path_data(&official_svg);
+            let paths = if candidate.len() != official.len() {
+                Some(format!(
+                    "emits {} paths, official has {}",
+                    candidate.len(),
+                    official.len()
+                ))
+            } else {
+                candidate
+                    .iter()
+                    .zip(&official)
+                    .position(|(a, b)| a != b)
+                    .map(|index| {
+                        format!(
+                            "path {index} differs\n      ours     {}\n      official {}",
+                            truncate(&candidate[index]),
+                            truncate(&official[index])
+                        )
+                    })
+            };
+
+            // Both dimensions are reported, not just the first to fail. A change
+            // that corrupts path data while making an extent agree produces an
+            // entry for each, and reporting only one would hide the more serious
+            // half.
+            for (dimension, divergence) in [("extent", extent), ("paths", paths)] {
+                if let Some(detail) = divergence {
+                    failures.push(format!("{id} [{variant_id}] [{dimension}]: {detail}"));
+                }
             }
         }
     }
@@ -114,12 +142,18 @@ fn every_registered_scene_case_matches_its_official_svg_path_geometry() {
     );
 }
 
-/// The root `viewBox`, which carries the scene's computed extent.
-fn view_box(svg: &str) -> String {
-    svg.find("viewBox=\"")
-        .map(|start| &svg[start + "viewBox=\"".len()..])
-        .and_then(|rest| rest.find('"').map(|end| rest[..end].to_owned()))
-        .expect("SVG root declares a viewBox")
+/// An attribute of the `<svg>` root, located by name within the root tag so a
+/// same-named attribute on a nested element cannot stand in for it.
+fn root_attribute(svg: &str, name: &str) -> String {
+    let start = svg.find("<svg").expect("SVG has a root element");
+    let tag = &svg[start..];
+    let tag = &tag[..tag.find('>').expect("SVG root tag closes")];
+    let marker = format!(" {name}=\"");
+    let value = &tag[tag
+        .find(&marker)
+        .unwrap_or_else(|| panic!("SVG root declares {name}"))
+        + marker.len()..];
+    value[..value.find('"').expect("attribute value closes")].to_owned()
 }
 
 /// Every `<path>` element's `d` attribute, in document order. The attribute is

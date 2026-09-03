@@ -1417,11 +1417,18 @@ fn verify_variants(case_data: &LoadedCase, referenced: &mut Vec<Value>) -> Resul
                 variant["id"]
             ));
         }
-        if options["exportScale"].is_null() == options["maxWidthOrHeight"].is_null() {
-            return Err("exactly one sizing mode must be selected".to_owned());
-        }
+        let sizing = variant_sizing(options)?;
         let formats = object(&variant["formats"], "formats")?;
         verify_exact_keys(formats, &["png", "svg"], "formats")?;
+        // The SVG viewBox is the scene's logical extent, which both formats'
+        // rasterized dimensions derive from under the variant's sizing.
+        let logical = {
+            let svg_path = descriptor_path(&case_data.root, &formats["svg"]["artifact"])?;
+            let bytes = fs::read(&svg_path)
+                .map_err(|error| format!("failed to read svg artifact: {error}"))?;
+            let view_box = svg_view_box(&bytes)?;
+            (view_box[2], view_box[3])
+        };
         for format in ["png", "svg"] {
             let value = object(&formats[format], format)?;
             verify_exact_keys(
@@ -1435,7 +1442,14 @@ fn verify_variants(case_data: &LoadedCase, referenced: &mut Vec<Value>) -> Resul
             verify_descriptor(&case_data.root, &value["artifact"], referenced)?;
             verify_descriptor(&case_data.root, &value["raw_raster"], referenced)?;
             verify_descriptor(&case_data.root, &value["expected_report"], referenced)?;
-            verify_format_dimensions(&case_data.root, format, value, &case_data.entry)?;
+            verify_format_dimensions(
+                &case_data.root,
+                format,
+                value,
+                sizing,
+                logical,
+                &case_data.entry,
+            )?;
             // A raster carries no hyperlink to sanitize, so a case can legitimately
             // report diagnostics for one format and none for another.
             verify_expected_report(
@@ -1470,6 +1484,8 @@ fn verify_format_dimensions(
     root: &Path,
     format: &str,
     value: &Map<String, Value>,
+    sizing: Sizing,
+    logical: (f64, f64),
     entry: &CaseEntry,
 ) -> Result<(), String> {
     let artifact = object(&value["artifact"], "artifact")?;
@@ -1523,13 +1539,14 @@ fn verify_format_dimensions(
         if png_dimensions(&bytes)? != (width, height) {
             return Err("png encoded dimensions do not match the manifest".to_owned());
         }
+        verify_png_extent(logical, sizing, width, height)?;
         verify_png_semantics(&bytes, &raw_bytes)?;
     } else {
         let (svg_width, svg_height) = svg_f64_dimensions(&bytes)?;
         if svg_width.round() != f64::from(width) || svg_height.round() != f64::from(height) {
             return Err("svg encoded dimensions do not match the manifest".to_owned());
         }
-        verify_svg_semantics(&bytes, width, height, entry)?;
+        verify_svg_semantics(&bytes, width, height, sizing.svg_factor(), entry)?;
     }
     Ok(())
 }
@@ -1994,10 +2011,117 @@ fn verify_png_semantics(bytes: &[u8], expected_rgba: &[u8]) -> Result<(), String
     Ok(())
 }
 
+/// The one sizing mode a registered variant selects, as the reference wrapper
+/// and the renderer both understand it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Sizing {
+    Scale(f64),
+    MaxDimension(f64),
+}
+
+impl Sizing {
+    /// The factor the wrapper applied to its canvas: the explicit scale, or
+    /// `maximum / largest` when the maximum is below the largest logical
+    /// dimension. Maximum dimension is downscale-only and never upscales.
+    fn raster_factor(self, logical: (f64, f64)) -> f64 {
+        match self {
+            Self::Scale(scale) => scale,
+            Self::MaxDimension(maximum) => {
+                let largest = logical.0.max(logical.1);
+                if maximum < largest {
+                    maximum / largest
+                } else {
+                    1.0
+                }
+            }
+        }
+    }
+
+    /// The factor applied to the SVG root. A maximum-dimension export leaves
+    /// the official SVG untouched.
+    fn svg_factor(self) -> f64 {
+        match self {
+            Self::Scale(scale) => scale,
+            Self::MaxDimension(_) => 1.0,
+        }
+    }
+}
+
+/// A variant selects exactly one sizing mode, and whichever it selects must be
+/// a finite positive number.
+fn variant_sizing(options: &Map<String, Value>) -> Result<Sizing, String> {
+    let positive = |key: &str| -> Result<Option<f64>, String> {
+        match &options[key] {
+            Value::Null => Ok(None),
+            value => value
+                .as_f64()
+                .filter(|number| number.is_finite() && *number > 0.0)
+                .map(Some)
+                .ok_or_else(|| format!("{key} must be null or a finite positive number")),
+        }
+    };
+    match (positive("exportScale")?, positive("maxWidthOrHeight")?) {
+        (Some(scale), None) => Ok(Sizing::Scale(scale)),
+        (None, Some(maximum)) => Ok(Sizing::MaxDimension(maximum)),
+        _ => Err("exactly one sizing mode must be selected".to_owned()),
+    }
+}
+
+/// The reference wrapper sizes its canvas as the logical extent times the
+/// raster factor and lets the canvas truncate, so the official PNG must be
+/// exactly that truncation of the SVG's logical `viewBox`. This is the check
+/// that catches an upscaled or rounded raster that its own header would not.
+fn verify_png_extent(
+    logical: (f64, f64),
+    sizing: Sizing,
+    width: u32,
+    height: u32,
+) -> Result<(), String> {
+    let factor = sizing.raster_factor(logical);
+    let expected = ((logical.0 * factor).trunc(), (logical.1 * factor).trunc());
+    if expected != (f64::from(width), f64::from(height)) {
+        return Err(format!(
+            "PNG is {width}x{height}; the logical extent under {sizing:?} truncates to {}x{}",
+            expected.0, expected.1
+        ));
+    }
+    Ok(())
+}
+
+/// The reference export keeps the SVG `viewBox` in logical units and multiplies
+/// only `width` and `height` by the export scale; a maximum-dimension export
+/// leaves the SVG untouched. Chromium rasterizes the document at its rounded
+/// declared size, so both the root and the scaled logical extent must round to
+/// the rasterized dimensions.
+fn verify_svg_root_extent(
+    root_width: f64,
+    root_height: f64,
+    view_box: &[f64],
+    export_scale: f64,
+    width: u32,
+    height: u32,
+) -> Result<(), String> {
+    if root_width.round() != f64::from(width) || root_height.round() != f64::from(height) {
+        return Err("SVG root dimensions do not match the rasterized size".to_owned());
+    }
+    if view_box.len() != 4
+        || view_box[0] != 0.0
+        || view_box[1] != 0.0
+        || (view_box[2] * export_scale).round() != f64::from(width)
+        || (view_box[3] * export_scale).round() != f64::from(height)
+    {
+        return Err(
+            "SVG viewBox scaled by the export scale does not match the rasterized size".to_owned(),
+        );
+    }
+    Ok(())
+}
+
 fn verify_svg_semantics(
     bytes: &[u8],
     width: u32,
     height: u32,
+    export_scale: f64,
     entry: &CaseEntry,
 ) -> Result<(), String> {
     let text = std::str::from_utf8(bytes).map_err(|error| format!("SVG is not UTF-8: {error}"))?;
@@ -2015,11 +2139,6 @@ fn verify_svg_semantics(
             .parse::<f64>()
             .map_err(|error| format!("SVG root {name} is not a number: {error}"))
     };
-    if attribute("width")?.round() != f64::from(width)
-        || attribute("height")?.round() != f64::from(height)
-    {
-        return Err("SVG root dimensions do not match the rasterized size".to_owned());
-    }
     let view_box: Vec<f64> = root
         .attribute("viewBox")
         .ok_or_else(|| "SVG root is missing viewBox".to_owned())?
@@ -2027,14 +2146,14 @@ fn verify_svg_semantics(
         .map(|part| part.parse::<f64>().map_err(|error| error.to_string()))
         .collect::<Result<_, _>>()
         .map_err(|error| format!("SVG viewBox is not numeric: {error}"))?;
-    if view_box.len() != 4
-        || view_box[0] != 0.0
-        || view_box[1] != 0.0
-        || view_box[2].round() != f64::from(width)
-        || view_box[3].round() != f64::from(height)
-    {
-        return Err("SVG viewBox does not match the rasterized size".to_owned());
-    }
+    verify_svg_root_extent(
+        attribute("width")?,
+        attribute("height")?,
+        &view_box,
+        export_scale,
+        width,
+        height,
+    )?;
     let element_count = |name| {
         document
             .descendants()
@@ -2125,6 +2244,22 @@ fn svg_dimensions(bytes: &[u8]) -> Result<(u32, u32), String> {
     ))
 }
 
+/// The root `viewBox` as four numbers; the last two are the logical extent.
+fn svg_view_box(bytes: &[u8]) -> Result<[f64; 4], String> {
+    let text = std::str::from_utf8(bytes).map_err(|error| format!("SVG is not UTF-8: {error}"))?;
+    let document = roxmltree::Document::parse(text)
+        .map_err(|error| format!("SVG evidence is not well-formed XML: {error}"))?;
+    let values: Vec<f64> = document
+        .root_element()
+        .attribute("viewBox")
+        .ok_or_else(|| "SVG root is missing viewBox".to_owned())?
+        .split_whitespace()
+        .map(|part| part.parse::<f64>().map_err(|error| error.to_string()))
+        .collect::<Result<_, _>>()
+        .map_err(|error| format!("SVG viewBox is not numeric: {error}"))?;
+    <[f64; 4]>::try_from(values).map_err(|_| "SVG viewBox does not have four values".to_owned())
+}
+
 fn svg_f64_dimensions(bytes: &[u8]) -> Result<(f64, f64), String> {
     let text = std::str::from_utf8(bytes).map_err(|error| format!("SVG is not UTF-8: {error}"))?;
     let start = text
@@ -2173,7 +2308,7 @@ fn svg_f64_attribute(root: &str, name: &str) -> Result<f64, String> {
 mod tests {
     use serde_json::{json, Value};
 
-    use super::verify_exceptions;
+    use super::{verify_exceptions, verify_png_extent, verify_svg_root_extent, Sizing};
 
     fn record() -> Value {
         json!({
@@ -2207,6 +2342,94 @@ mod tests {
     /// is under test.
     fn assert_registered_rejected(record: Value, rule: &str) {
         assert_rejected(json!([record.clone()]), json!([record]), rule);
+    }
+
+    /// The reference wrapper sizes its canvas as the logical extent times the
+    /// scale and lets the canvas truncate, so the freedraw case (204 x 245.424)
+    /// is 408 x 490 at scale 2 and 132 x 160 under a 160-pixel maximum.
+    #[test]
+    fn png_extent_accepts_the_truncated_scaled_extent() {
+        verify_png_extent((204.0, 245.42399999999998), Sizing::Scale(2.0), 408, 490)
+            .expect("scale 2 truncates 490.848 to 490");
+        verify_png_extent(
+            (204.0, 245.42399999999998),
+            Sizing::MaxDimension(160.0),
+            132,
+            160,
+        )
+        .expect("a 160-pixel maximum downscales the largest dimension to exactly 160");
+        verify_png_extent((340.0, 275.0), Sizing::MaxDimension(200.0), 200, 161)
+            .expect("a 200-pixel maximum truncates 161.76 to 161");
+        verify_png_extent((730.0, 362.85758946736456), Sizing::Scale(1.0), 730, 362)
+            .expect("the default export truncates a fractional extent");
+    }
+
+    /// Maximum dimension is downscale-only and never upscales.
+    #[test]
+    fn png_extent_treats_a_maximum_above_the_extent_as_a_no_op() {
+        verify_png_extent((340.0, 275.0), Sizing::MaxDimension(400.0), 340, 275)
+            .expect("a maximum above the largest dimension leaves the raster unscaled");
+        let error = verify_png_extent((340.0, 275.0), Sizing::MaxDimension(400.0), 400, 323)
+            .expect_err("an upscaled raster is rejected");
+        assert!(error.contains("PNG"), "{error}");
+    }
+
+    #[test]
+    fn png_extent_rejects_a_rounded_rather_than_truncated_raster() {
+        let error = verify_png_extent((204.0, 245.42399999999998), Sizing::Scale(2.0), 408, 491)
+            .expect_err("491 is the rounded height, which is the SVG rule, not the PNG rule");
+        assert!(error.contains("PNG"), "{error}");
+    }
+
+    /// Chromium rounds an SVG image's natural size, so a fractional extent
+    /// rasterizes to the nearest pixel: the arrow suite's 362.857 is 363 tall.
+    #[test]
+    fn svg_root_extent_accepts_the_rounded_unscaled_extent() {
+        verify_svg_root_extent(
+            730.0,
+            362.85758946736456,
+            &[0.0, 0.0, 730.0, 362.85758946736456],
+            1.0,
+            730,
+            363,
+        )
+        .expect("an unscaled root whose extent rounds to the raster size verifies");
+    }
+
+    /// An exportScale multiplies width and height but leaves the viewBox in
+    /// logical units, so the freedraw case at scale 2 is 408 x 491 over a
+    /// 204 x 245.424 viewBox.
+    #[test]
+    fn svg_root_extent_accepts_a_scaled_root_over_its_logical_view_box() {
+        verify_svg_root_extent(
+            408.0,
+            490.848,
+            &[0.0, 0.0, 204.0, 245.42399999999998],
+            2.0,
+            408,
+            491,
+        )
+        .expect("a scaled root verifies against its logical viewBox");
+    }
+
+    #[test]
+    fn svg_root_extent_rejects_a_view_box_that_is_not_the_logical_extent() {
+        // The viewBox was scaled along with the root, which is not what the
+        // reference export does.
+        let error =
+            verify_svg_root_extent(408.0, 490.848, &[0.0, 0.0, 408.0, 490.848], 2.0, 408, 491)
+                .expect_err("a scaled viewBox is rejected");
+        assert!(error.contains("viewBox"), "{error}");
+        // The root does not match the rasterized size at all.
+        let error =
+            verify_svg_root_extent(204.0, 245.424, &[0.0, 0.0, 204.0, 245.424], 1.0, 408, 491)
+                .expect_err("a root smaller than its raster is rejected");
+        assert!(error.contains("root dimensions"), "{error}");
+        // A viewBox with an origin or the wrong arity.
+        let error =
+            verify_svg_root_extent(204.0, 245.424, &[1.0, 0.0, 204.0, 245.424], 1.0, 204, 245)
+                .expect_err("a viewBox with an origin is rejected");
+        assert!(error.contains("viewBox"), "{error}");
     }
 
     #[test]

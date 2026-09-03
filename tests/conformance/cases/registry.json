@@ -141,6 +141,14 @@
         {
           "identity": "reference.svg",
           "role": "primary"
+        },
+        {
+          "identity": "export.scale",
+          "role": "primary"
+        },
+        {
+          "identity": "export.max-dimension",
+          "role": "primary"
         }
       ],
       "feature_tags": [
@@ -148,7 +156,9 @@
         "freehand:simulated-pressure",
         "freehand:recorded-pressure",
         "format:svg",
-        "format:png"
+        "format:png",
+        "export:scale",
+        "export:max-dimension"
       ],
       "semantic_expectations": {
         "element_counts": {
@@ -190,6 +200,44 @@
               "outline": true
             },
             "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "scale-2",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 2,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "max-dimension-160",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": null,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": 160,
             "viewBackgroundColor": "#ffffff"
           }
         }
@@ -686,6 +734,18 @@
         {
           "identity": "reference.svg",
           "role": "primary"
+        },
+        {
+          "identity": "export.scale",
+          "role": "primary"
+        },
+        {
+          "identity": "export.max-dimension",
+          "role": "primary"
+        },
+        {
+          "identity": "export.dark-mode",
+          "role": "primary"
         }
       ],
       "feature_tags": [
@@ -693,7 +753,10 @@
         "font:cjk",
         "font:mixed-script",
         "format:svg",
-        "format:png"
+        "format:png",
+        "export:scale",
+        "export:max-dimension",
+        "export:dark-mode"
       ],
       "semantic_expectations": {
         "element_counts": {
@@ -727,6 +790,36 @@
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
+        },
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+          "format": "png",
+          "max_changed_pixels": 1,
+          "minimum_ssim_bits": "3fefd3f152a68fad",
+          "reason": "Sub-pixel glyph coverage at export scale 2, the class diagnosed on #104 for this case's default variant: every text row is best-aligned with the official raster at zero offset and only interior glyph ink differs. At twice the scale the difference shrinks to one changed pixel, but SSIM stays under the canonical floor.",
+          "region": "whole",
+          "variant": "scale-2",
+          "viewer_profile": null
+        },
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+          "format": "png",
+          "max_changed_pixels": 323,
+          "minimum_ssim_bits": "3fef53392edcb4a9",
+          "reason": "Sub-pixel glyph coverage after the downscale-only maximum-dimension export to 200 pixels (scale 0.588), the class diagnosed on #104 for this case's default variant: every text row is best-aligned with the official raster at zero offset and only interior glyph ink differs. Glyph edges are a larger share of ink at 14-pixel glyph heights, so the difference exceeds both the changed-pixel and SSIM budgets.",
+          "region": "whole",
+          "variant": "max-dimension-200",
+          "viewer_profile": null
+        },
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
+          "format": "png",
+          "max_changed_pixels": 167,
+          "minimum_ssim_bits": "3fef9e3cdea1b22b",
+          "reason": "Sub-pixel glyph coverage under the dark-mode colour transform, the class diagnosed on #104 for this case's default variant: every text row is best-aligned with the official raster at zero offset and only interior glyph ink differs. The divergence is slightly smaller than the default variant's, so the transform itself introduces none.",
+          "region": "whole",
+          "variant": "dark-mode",
+          "viewer_profile": null
         }
       ],
       "variants": [
@@ -739,6 +832,63 @@
             "exportPadding": 10,
             "exportScale": 1,
             "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "scale-2",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 2,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "max-dimension-200",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": null,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": 200,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "dark-mode",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": true,
             "frameRendering": {
               "clip": true,
               "enabled": true,
