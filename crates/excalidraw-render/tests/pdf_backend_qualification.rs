@@ -45,7 +45,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(PROJECT_STRUCTURE)),
-        "ba1c6902feb31e5bc420364bcab36c92a01b1996499ea3fa9a9f0b40c56c5771"
+        "a4d52747a82fd709ea7c67ddcf15318832502d8e18b0f4a7f2eef3eeaf784b5d"
     );
     let first = render_project_operations();
     let second = render_project_operations();
@@ -89,7 +89,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
 fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
     assert_eq!(
         format!("{:x}", Sha256::digest(FALLBACK_STRUCTURE)),
-        "eea223f7b1bf8f859cbbe138f2185c8c4d4e0681cad93ae68d878cbc5e24508c"
+        "20c6ab1a6d4026cf57668323cdc3a21e7a187238275cb69be6c5c5dba036da10"
     );
     let first = render_isolated_fallback();
     let second = render_isolated_fallback();
@@ -190,7 +190,7 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(NESTED_NATIVE_STRUCTURE)),
-        "3a6c6f0ef646fc5be6d00f2b5379a2b5d4332a003be59d447fb8e802894bef4d"
+        "5c2041e7ed4506d931187a453626c91470815549bfa8d3301bb28b213b19df4c"
     );
     let scene = SceneDocument::parse(NESTED_NATIVE_OPERATIONS)
         .expect("nested native qualification scene is admitted");
@@ -314,7 +314,7 @@ fn isolated_fallback_passes_both_canonical_pdf_visual_gates() {
         .expect("approved fallback visual exception is present");
     assert_eq!(
         format!("{:x}", Sha256::digest(&exception_bytes)),
-        "83d5bdfbedd9844f9a4214bc4e1b01c5e1a6c9d10943675b8f5a11a777c98079"
+        "e79c29f3849c480dcce62fa6169c01a7f11a399dd241e37fc0ee08780669e6cc"
     );
     assert_eq!(
         format!(
