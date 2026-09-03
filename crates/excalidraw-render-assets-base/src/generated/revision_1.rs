@@ -5990,7 +5990,7 @@ static FALLBACK_RECIPE_IDENTITIES: &[&str] = &[
     "official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9",
     "official.forbidden-resource@sha256:4452f99158233e3703e46dbbb83f6900a894fbceacd3e98b141332d552e22827",
     "official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677",
-    "official.embeddable-offline@sha256:699a9f3beef2190f6ab8c595480804d4e7d030d9d78db366aa2ad26af0ff2ef1",
+    "official.embeddable-offline@sha256:d1d9207be2a4022886b9916ef0068b654c47f64d9ea59cd6d31d6432c5eecb01",
 ];
 
 #[rustfmt::skip]
@@ -6038,7 +6038,7 @@ pub static REVISION_1: RevisionCatalog = RevisionCatalog {
         source_commit: "a2ec2889babf7d2295469c6d90ebe77fae57df84",
         npm_integrity: "sha512-6i5Gt7IDTOH//qa0Z315Ly5iVRhjWpu2whrlQFqkuwrkKUWgRsMk0P5qdE7bpyDpai7jeLeWYkyj1eVAfni1lw==",
         reference_profile_digest: "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71",
-        catalog_sha256: "262a355c9e97fa75b912754cfa17b61c2c4c270cbac106c4e8dbc4b439dbcbab",
+        catalog_sha256: "0c1834ac3407ac03fb2384f254711a7b8f643f63b53ed013f24e9ff189b15c33",
     catalog_json: include_bytes!("../../catalog/revision-1.json"),
     incorporated_artifacts: &[
         IncorporatedArtifact {
@@ -6058,7 +6058,7 @@ pub static REVISION_1: RevisionCatalog = RevisionCatalog {
         },
         IncorporatedArtifact {
             repository_path: "tests/oracle/scene-surfaces/revision-1.json",
-            sha256: "d7dadf8165ef3e42a025e68ec0c1f0f67cc63c7c745199e85442e6938c0c5ade",
+            sha256: "9369555a7f3d4a92f3c86f3f97f674da40f263ac3ca638b2650f1c8047829011",
             bytes: include_bytes!("../../catalog/incorporated/scene-surface.json"),
         },
         IncorporatedArtifact {

@@ -16,7 +16,7 @@ const FRAME_PROFILE_DIGEST: &str =
 const ASSET_MANIFEST_DIGEST: &str =
     "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
 const SCENE_SURFACE_DIGEST: &str =
-    "d7dadf8165ef3e42a025e68ec0c1f0f67cc63c7c745199e85442e6938c0c5ade";
+    "9369555a7f3d4a92f3c86f3f97f674da40f263ac3ca638b2650f1c8047829011";
 const SCENE_SURFACE_SCHEMA_DIGEST: &str =
     "29871fad7bf7665142c8d625c3715b34603a6369a78ffa7baf96ade66be63362";
 const SCENE_SURFACE_EVIDENCE_DIGEST: &str =
@@ -193,7 +193,7 @@ const FONT_NOTICES: &[(&str, &str)] = &[
 
 const FALLBACK_RECIPE_COUNT: usize = 5;
 const NOTICE_COUNT: usize = 4;
-const SOURCE_COUNT: usize = 34;
+const SOURCE_COUNT: usize = 35;
 const FIELD_DISPOSITION_COUNT: usize = 202;
 const ELEMENT_KIND_COUNT: usize = 13;
 const REGISTRY_MAPPING_COUNT: usize = 42;

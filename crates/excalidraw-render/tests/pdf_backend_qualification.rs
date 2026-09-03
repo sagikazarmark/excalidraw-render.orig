@@ -59,7 +59,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
         .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "a19ac4b3ee3b066910dcfe76baa2715f94fbb5a676aa261b66a7efd7cbde4a06"
+        "23f64b8ae4e63ad183ebd32ed05e26f4a9dc9c793c307154d88f611a2a5055a4"
     );
 
     let pdf = String::from_utf8_lossy(first.artifact().bytes());

@@ -572,6 +572,7 @@ impl ResolvedScene {
                             font_size: text_source.font_size,
                             line_height: text_source.line_height,
                             text_align: &text_source.text_align,
+                            font_family: text_source.font_family,
                         },
                     )
                     .map_err(|error| match error {
@@ -591,6 +592,7 @@ impl ResolvedScene {
                             font_size: text_source.font_size,
                             line_height: text_source.line_height,
                             text_align: &text_source.text_align,
+                            font_family: text_source.font_family,
                         },
                     )
                     .map_err(|error| match error {
@@ -719,19 +721,20 @@ impl ResolvedScene {
                             let font_size = embeddable_font_size(source.width, label);
                             let font_index = if let Some(index) = official_fonts
                                 .iter()
-                                .position(|font| font.matches_family(2))
+                                .position(|font| font.matches_family(EMBEDDABLE_LABEL_FONT_FAMILY))
                             {
                                 index
                             } else {
                                 official_fonts.try_reserve(1)?;
-                                official_fonts.push(text::OfficialFont::load(2, label).map_err(
-                                    |error| match error {
+                                official_fonts.push(
+                                    text::OfficialFont::load(EMBEDDABLE_LABEL_FONT_FAMILY, label)
+                                        .map_err(|error| match error {
                                         text::LabelError::Memory => ResolveSceneError::Memory,
                                         text::LabelError::InvalidFont => {
                                             ResolveSceneError::InvalidFallbackFont
                                         }
-                                    },
-                                )?);
+                                    })?,
+                                );
                                 official_fonts.len() - 1
                             };
                             let wrapped_label = official_fonts[font_index]
@@ -750,6 +753,7 @@ impl ResolvedScene {
                                         font_size,
                                         line_height: 1.15,
                                         text_align: "center",
+                                        font_family: EMBEDDABLE_LABEL_FONT_FAMILY,
                                     },
                                 )
                                 .map_err(|error| match error {
@@ -771,6 +775,7 @@ impl ResolvedScene {
                                         font_size,
                                         line_height: 1.15,
                                         text_align: "center",
+                                        font_family: EMBEDDABLE_LABEL_FONT_FAMILY,
                                     },
                                 )
                                 .map_err(|error| match error {
@@ -1237,6 +1242,11 @@ pub(super) struct FallbackColors {
     pub(super) stroke: CanonicalColor,
     pub(super) label: CanonicalColor,
 }
+
+/// Excalidraw creates the offline placeholder label as Helvetica text, so the
+/// label is shaped with the Liberation Sans substitute and positioned by
+/// Helvetica's metadata metrics.
+const EMBEDDABLE_LABEL_FONT_FAMILY: i32 = 2;
 
 fn embeddable_font_size(width: f64, label: &str) -> f64 {
     let utf16_length = label.encode_utf16().count().max(1) as f64;

@@ -1,12 +1,12 @@
 {
   "approval": {
-    "approval_subject_sha256": "sha256:e641e414d05bb73be4ec1737e3e8670589930212cdf2ab8efaaec2e81b50fbf1",
-    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5518802301",
+    "approval_subject_sha256": "sha256:480e0e63a1c332461387d74a1f483cf8fbe45420467c54274e73a4bcfcf4a925",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5528117500",
     "approved_at": "2026-09-03",
     "approved_by": "sagikazarmark"
   },
   "case_id": "focused.rectangle-outline.v1",
-  "case_manifest_approval_subject_sha256": "sha256:4d91e9519a7c6c9bd7c19cb249bfed84575fbe0951e0eec50a346b55fa8355e9",
+  "case_manifest_approval_subject_sha256": "sha256:07b5227219c4f97848ea26317a7180bffd82ac7189af4b7cba53da27145cfb3d",
   "compatibility_revision": 1,
   "coverage": [
     {
@@ -30,7 +30,7 @@
   "files": [
     {
       "path": "tests/conformance/cases/focused/rectangle-outline/manifest.json",
-      "sha256": "de447bfef1a18975d89508f121495b8a676b6573be87b38aa5ac7553e902d481"
+      "sha256": "9d1c8f202ddb2b33ec12e7374d3d3e6cb362dce0969580085e4c4bf81791526f"
     },
     {
       "path": "tests/conformance/cases/focused/rectangle-outline/scene.excalidraw",

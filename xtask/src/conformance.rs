@@ -14,7 +14,7 @@ const REPOSITORY_ISSUE_PREFIX: &str =
 const EMPTY_REPORT: &[u8] = br#"{"schema_version":1,"diagnostics":[]}"#;
 const PROFILE_DIGEST: &str = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 const ASSET_DIGEST: &str = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const SURFACE_DIGEST: &str = "d7dadf8165ef3e42a025e68ec0c1f0f67cc63c7c745199e85442e6938c0c5ade";
+const SURFACE_DIGEST: &str = "9369555a7f3d4a92f3c86f3f97f674da40f263ac3ca638b2650f1c8047829011";
 const FRAME_PROFILE_DIGEST: &str =
     "63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e";
 
@@ -582,28 +582,45 @@ fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), 
     )?;
     verify_comparison(&loaded.manifest)?;
     verify_reference_identities(&loaded.manifest)?;
-    let mut referenced = Vec::new();
-    verify_descriptor(&loaded.root, &loaded.manifest["scene"], &mut referenced)?;
-    verify_descriptor(
-        &loaded.root,
-        &loaded.manifest["expected_report"],
-        &mut referenced,
-    )?;
-    verify_descriptor(
-        &loaded.root,
-        &loaded.manifest["provenance"],
-        &mut referenced,
-    )?;
     verify_typography_scene(loaded)?;
     verify_expected_report(loaded, &loaded.manifest["expected_report"], &json!([]))?;
-    verify_typography_variants(loaded, &mut referenced)?;
+    verify_typography_variants(loaded)?;
     verify_typography_provenance(loaded)?;
+    let mut referenced = Vec::new();
+    collect_typography_descriptors(loaded, &mut referenced)?;
     let subject = subject_digest(&loaded.manifest, referenced)?;
     match &loaded.manifest["approval"] {
         Value::Null if require_approval => Err("case has no approval record".to_owned()),
         Value::Null => Ok(()),
         approval => verify_approval_for_issue(approval, &subject, &loaded.entry.approving_issue),
     }
+}
+
+/// The typography manifest carries one `expected_report` for both formats and
+/// per-format artifacts and rasters under its single variant; the approval
+/// subject binds exactly those files.
+fn collect_typography_descriptors(
+    loaded: &LoadedCase,
+    referenced: &mut Vec<Value>,
+) -> Result<(), String> {
+    verify_descriptor(&loaded.root, &loaded.manifest["scene"], referenced)?;
+    verify_descriptor(
+        &loaded.root,
+        &loaded.manifest["expected_report"],
+        referenced,
+    )?;
+    verify_descriptor(&loaded.root, &loaded.manifest["provenance"], referenced)?;
+    let variants = loaded.manifest["variants"]
+        .as_array()
+        .ok_or_else(|| "variants must be an array".to_owned())?;
+    for variant in variants {
+        let formats = object(&variant["formats"], "formats")?;
+        for format in ["png", "svg"] {
+            verify_descriptor(&loaded.root, &formats[format]["artifact"], referenced)?;
+            verify_descriptor(&loaded.root, &formats[format]["raw_raster"], referenced)?;
+        }
+    }
+    Ok(())
 }
 
 fn verify_schema(manifest: &Value, schema_id: &str) -> Result<(), String> {
@@ -946,6 +963,10 @@ pub fn approval_subject(case_id: &str) -> Result<String, String> {
         collect_frame_descriptors(&loaded, &mut referenced)?;
         return subject_digest(&loaded.manifest, referenced);
     }
+    if loaded.entry.kind == "typography" {
+        collect_typography_descriptors(&loaded, &mut referenced)?;
+        return subject_digest(&loaded.manifest, referenced);
+    }
     verify_descriptor(&loaded.root, &loaded.manifest["scene"], &mut referenced)?;
     verify_descriptor(
         &loaded.root,
@@ -1221,10 +1242,7 @@ fn verify_typography_scene(case_data: &LoadedCase) -> Result<(), String> {
     Ok(())
 }
 
-fn verify_typography_variants(
-    case_data: &LoadedCase,
-    referenced: &mut Vec<Value>,
-) -> Result<(), String> {
+fn verify_typography_variants(case_data: &LoadedCase) -> Result<(), String> {
     let variants = case_data.manifest["variants"]
         .as_array()
         .ok_or_else(|| "variants must be an array".to_owned())?;
@@ -1253,8 +1271,6 @@ fn verify_typography_variants(
         if value["visual_class"] != json!("geometry/image") {
             return Err(format!("{format} has the wrong visual class"));
         }
-        verify_descriptor(&case_data.root, &value["artifact"], referenced)?;
-        verify_descriptor(&case_data.root, &value["raw_raster"], referenced)?;
         verify_typography_format(&case_data.root, format, value)?;
     }
     Ok(())

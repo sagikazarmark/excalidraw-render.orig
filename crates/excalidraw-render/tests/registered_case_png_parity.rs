@@ -41,18 +41,7 @@ use registered_cases::{observed, repository_root, variant_request, visual_class,
 
 /// Diagnosed defects whose fix is pending a maintainer decision. See
 /// `KnownDefect` for why these are pinned rather than excepted.
-const KNOWN_DEFECTS: &[KnownDefect] = &[
-    // The embeddable label baseline follows Liberation Sans hhea metrics where
-    // the official export uses Excalidraw's Helvetica metadata; the approved
-    // recipe encodes the former. The remainder is glyph coverage.
-    KnownDefect {
-        case: "focused.embeddable-links.v1",
-        variant: "default",
-        issue: "https://github.com/sagikazarmark/excalidraw-render.orig/issues/105",
-        changed_pixels: 865,
-        ssim_bits: 0x3fef_7e7e_43ca_ed1e,
-    },
-];
+const KNOWN_DEFECTS: &[KnownDefect] = &[];
 
 #[test]
 fn every_registered_scene_case_matches_its_official_direct_png() {

@@ -293,7 +293,7 @@ fn focused_pdf_expectations_are_approval_bound() {
     assert_eq!(manifest["coverage"].as_array().map(Vec::len), Some(4));
     assert_eq!(
         manifest["case_manifest_approval_subject_sha256"],
-        "sha256:4d91e9519a7c6c9bd7c19cb249bfed84575fbe0951e0eec50a346b55fa8355e9"
+        "sha256:07b5227219c4f97848ea26317a7180bffd82ac7189af4b7cba53da27145cfb3d"
     );
 
     let approval = manifest
@@ -305,7 +305,7 @@ fn focused_pdf_expectations_are_approval_bound() {
     assert_eq!(approval["approved_at"], "2026-09-03");
     assert_eq!(
         approval["approval_url"],
-        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5518802301"
+        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5528117500"
     );
     let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
     canonical.push(b'\n');
@@ -1296,4 +1296,61 @@ fn png_raster_distinguishes_every_stroke_style() {
         dashed, dotted,
         "dashed and dotted strokes use different dash arrays and must differ"
     );
+}
+
+#[test]
+fn bundled_faces_carry_their_families_metadata_metrics_and_only_helvetica_differs() {
+    // Text is positioned by the source family's metadata metrics (#105). For
+    // every bundled family those equal the face's own hhea values, so moving
+    // the baseline from the face to the table changes no bundled family's
+    // output; Helvetica is shaped with Liberation Sans, whose metrics differ.
+    let source_family = |catalog_family: &str| match catalog_family {
+        "Virgil" => 1,
+        "Cascadia" => 3,
+        "Excalifont" => 5,
+        "Nunito" => 6,
+        "Lilita" => 7,
+        "ComicShanns" => 8,
+        "Liberation" => 9,
+        "Xiaolai" => 100,
+        other => panic!("unexpected bundled font family {other}"),
+    };
+    let mut checked = 0_usize;
+    for record in excalidraw_render_assets_base::revision_1()
+        .assets
+        .iter()
+        .filter(|record| record.role == "official-rendering-font")
+    {
+        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
+            .expect("bundled font is intact")
+            .expect("bundled font is present");
+        let sfnt = wuff::decompress_woff2(asset.bytes()).expect("bundled font decodes");
+        let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("bundled font parses");
+        let metadata = text::FamilyMetrics::for_source_family(source_family(record.family))
+            .expect("every bundled family has metadata metrics");
+        assert_eq!(
+            (
+                i32::from(metadata.units_per_em),
+                metadata.ascender,
+                metadata.descender
+            ),
+            (face.units_per_em(), face.ascender(), face.descender()),
+            "{} hhea table differs from its family metadata metrics",
+            record.upstream_path
+        );
+        checked += 1;
+    }
+    assert!(checked >= 8, "every bundled family was checked ({checked})");
+
+    let helvetica = text::FamilyMetrics::for_source_family(2).expect("Helvetica has metrics");
+    let liberation = text::FamilyMetrics::for_source_family(9).expect("Liberation has metrics");
+    assert_eq!(
+        (
+            helvetica.units_per_em,
+            helvetica.ascender,
+            helvetica.descender
+        ),
+        (2_048, 1_577, -471)
+    );
+    assert_ne!(helvetica, liberation);
 }

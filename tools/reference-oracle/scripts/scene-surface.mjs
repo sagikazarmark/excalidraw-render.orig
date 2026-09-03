@@ -854,6 +854,15 @@ const SOURCE_CATALOG = [
     path: null,
     url: "https://github.com/sagikazarmark/excalidraw-render.orig/issues/3#issuecomment-5009029451",
   },
+  {
+    contentSha256: "3ece97466334c4f9454d040568efc8ef28eecd6a264c53686dd53326d16cf055",
+    gitBlobSha1: null,
+    id: "project.helvetica-metrics-decision",
+    immutableRevision: "issue-comment-5527679821",
+    kind: "project-decision",
+    path: null,
+    url: "https://github.com/sagikazarmark/excalidraw-render.orig/issues/105#issuecomment-5527679821",
+  },
 ];
 
 const AUTHORITIES = [
@@ -1968,17 +1977,18 @@ function buildFallbackRecipes() {
         blockWidth: "max(line_advance_widths)",
         color: "element.strokeColor != 'transparent' ? element.strokeColor : #000000",
         font: {
-          ascender: 1854,
-          descender: -434,
+          ascender: 1577,
+          descender: -471,
           fallbackFamily: "Noto Emoji",
           family: "Liberation Sans",
           liberationWoff2Sha256: "006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8",
           lineHeight: 1.15,
+          metricsFamily: "Helvetica",
           notoEmojiTtfSha256: "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634",
           unitsPerEm: 2048,
         },
         fontSize: "raw=max(min(width/2,width/utf16_length(text)),width/30); effective=raw==0 ? 20 : raw",
-        lineBaseline: "block_top+font_size*0.9216796875+line_index*font_size*1.15",
+        lineBaseline: "block_top+font_size*0.84501953125+line_index*font_size*1.15",
         opacity: 1,
         presence: { pdf: "always", png: "width!=0 && height!=0", svg: "always" },
         text: { embeddableEmpty: "Empty Web-Embed", embeddableLink: "element.link", iframe: "IFrame element" },
@@ -2020,7 +2030,7 @@ function buildFallbackRecipes() {
       },
     },
     ["liberation-sans.ofl-full", "noto-emoji.ofl-full"],
-    ["excalidraw.embeddable", "excalidraw.shape", "excalidraw.text-wrapping", "excalidraw.new-element", "excalidraw.font-metadata", "project.reference-assets", "excalidraw.liberation-sans-ttf", "excalidraw.liberation-sans-2048-ttf", "excalidraw.noto-emoji-ttf", "excalidraw.noto-emoji-2048-ttf"],
+    ["excalidraw.embeddable", "excalidraw.shape", "excalidraw.text-wrapping", "excalidraw.new-element", "excalidraw.font-metadata", "project.helvetica-metrics-decision", "project.reference-assets", "excalidraw.liberation-sans-ttf", "excalidraw.liberation-sans-2048-ttf", "excalidraw.noto-emoji-ttf", "excalidraw.noto-emoji-2048-ttf"],
     ["oracle.official-iframe-offline-placeholder", "oracle.official-empty-embeddable-placeholder", "oracle.official-linked-embeddable-placeholder"],
   );
   return [image, imageError, forbidden, nested, embeddable];
@@ -2411,7 +2421,7 @@ function validateRecipeContent(recipe) {
     "forbidden-resource": ["baseRecipe", "placement.coordinateSpace", "placement.scope", "placement.viewport", "placement.viewportResolution", "placement.zeroOrUnbounded", "reuse"],
     "nested-resource": ["baseRecipe", "placement.coordinateSpace", "placement.recursion", "placement.scope", "placement.viewport", "placement.viewportResolution", "placement.zeroOrUnbounded", "reuse"],
     "iframe-embeddable": [
-      "label.font.family", "label.font.fallbackFamily", "label.font.liberationWoff2Sha256", "label.font.notoEmojiTtfSha256",
+      "label.font.family", "label.font.fallbackFamily", "label.font.liberationWoff2Sha256", "label.font.metricsFamily", "label.font.notoEmojiTtfSha256",
       "label.fontSize", "label.lineBaseline", "label.text.iframe", "label.text.embeddableEmpty", "label.text.embeddableLink",
       "label.wrap.algorithm", "label.wrap.maxWidth", "links.svg", "links.png", "links.pdf", "links.unsafe",
       "notices.liberationSans", "notices.notoEmoji", "notices.png", "shell.geometry.cornerRadius", "shell.geometry.roundedPath",
@@ -2469,7 +2479,7 @@ function validateRecipeContent(recipe) {
   }
   if (kind === "iframe-embeddable") {
     exactKeys(recipe.content.label, ["blockHeight", "blockPosition", "blockWidth", "color", "font", "fontSize", "lineBaseline", "opacity", "presence", "text", "textAlign", "verticalAlign", "wrap"], "label");
-    exactKeys(recipe.content.label.font, ["ascender", "descender", "fallbackFamily", "family", "liberationWoff2Sha256", "lineHeight", "notoEmojiTtfSha256", "unitsPerEm"], "label.font");
+    exactKeys(recipe.content.label.font, ["ascender", "descender", "fallbackFamily", "family", "liberationWoff2Sha256", "lineHeight", "metricsFamily", "notoEmojiTtfSha256", "unitsPerEm"], "label.font");
     exactKeys(recipe.content.label.presence, FORMATS, "label.presence");
     exactKeys(recipe.content.label.text, ["embeddableEmpty", "embeddableLink", "iframe"], "label.text");
     exactKeys(recipe.content.label.wrap, ["algorithm", "maxWidth", "negativeMaxWidth"], "label.wrap");
@@ -2485,7 +2495,7 @@ function validateRecipeContent(recipe) {
     exactKeys(recipe.content.shell.rough, ["dashed", "dotted", "fillWeight", "hachureGap", "library", "nonSolidStrokeWidth", "preserveVertices"], "shell.rough");
     textMembers(recipe.content, [
       "label.blockHeight", "label.blockPosition", "label.blockWidth", "label.color", "label.font.family", "label.font.fallbackFamily",
-      "label.font.liberationWoff2Sha256", "label.font.notoEmojiTtfSha256", "label.fontSize", "label.lineBaseline",
+      "label.font.liberationWoff2Sha256", "label.font.metricsFamily", "label.font.notoEmojiTtfSha256", "label.fontSize", "label.lineBaseline",
       "label.presence.pdf", "label.presence.png", "label.presence.svg", "label.text.embeddableEmpty", "label.text.embeddableLink",
       "label.text.iframe", "label.textAlign", "label.verticalAlign", "label.wrap.algorithm", "label.wrap.maxWidth", "label.wrap.negativeMaxWidth",
       "links.pdf", "links.png", "links.svg", "links.unsafe", "notices.liberationSans", "notices.notoEmoji", "notices.png",

@@ -111,7 +111,7 @@ has been published.
 | --- | --- |
 | [Reference profile](../tests/oracle/reference-profiles/revision-1.json) | `1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71` |
 | [Reference asset manifest](../tests/oracle/reference-profiles/revision-1-assets.json) | `02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a` |
-| [Scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json) | `d7dadf8165ef3e42a025e68ec0c1f0f67cc63c7c745199e85442e6938c0c5ade` |
+| [Scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json) | `9369555a7f3d4a92f3c86f3f97f674da40f263ac3ca638b2650f1c8047829011` |
 | [Scene-surface schema](../tests/oracle/scene-surfaces/scene-surface-v1.schema.json) | `29871fad7bf7665142c8d625c3715b34603a6369a78ffa7baf96ade66be63362` |
 | [Scene-surface evidence index](../tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json) | `29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb` |
 
@@ -628,6 +628,14 @@ Emoji behavior for user text and generated labels, with one informational
 substitution diagnostic per affected occurrence. Missing codepoints use the
 bundled deterministic replacement glyph at defined metrics and identify the
 element and codepoint.
+
+Ordinary scene text and generated embeddable labels take their baselines from
+the source family's metadata metrics: the `unitsPerEm`, `ascender`, and
+`descender` the pinned Excalidraw release declares for that family, which
+coincide with every bundled face's `hhea` table. Substituted Helvetica text
+(`fontFamily` `2`) keeps Helvetica's declared metrics (`2048`, `1577`, `-471`)
+while Liberation Sans shapes its glyphs, as the official export does; the face
+that shapes the glyphs never positions them.
 
 #### 8.3.1 Semantic Demand and Face Selection
 

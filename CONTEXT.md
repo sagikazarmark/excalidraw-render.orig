@@ -124,6 +124,10 @@ _Avoid_: CSS string, font cache
 The canonical bundled font family selected after compatibility substitution for ordinary scene text or generated export text. Source family identifiers that select the same bundled family share one resolved font family without sharing their source diagnostics.
 _Avoid_: Source font family, CSS font-family
 
+**Family metadata metrics**:
+The `unitsPerEm`, `ascender`, and `descender` the reference renderer declares for one source font family and uses to position its text, independent of the face that shapes the glyphs. They coincide with every bundled face's `hhea` table; a substituted family such as Helvetica keeps its own declared metrics while the substitute face shapes it.
+_Avoid_: Face metrics, hhea metrics, substitute metrics
+
 **Official font chunk**:
 An immutable bundled WOFF2 resource representing one declared Unicode-range face of a resolved font family.
 _Avoid_: System font, generated font
