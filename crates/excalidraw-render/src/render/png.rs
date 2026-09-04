@@ -713,7 +713,9 @@ impl PngPlan {
                                 .with_local_offset(0.0, *generated_label_offset_y)
                                 .raster_transform(SUBPIXEL_SCALE)?;
                             for line in &label.lines {
-                                let path = label_path(&line.path)?;
+                                let Some(path) = label_path(&line.path)? else {
+                                    continue;
+                                };
                                 surface.fill_path(
                                     &path,
                                     &paint,
@@ -835,22 +837,23 @@ impl PngPlan {
                             );
                         }
                         if let Some(name) = name {
-                            let path = label_path(&name.path)?;
-                            let color = if *magic {
-                                CanonicalColor::from_rgb8(0x7a, 0xff, 0xd7)
-                            } else {
-                                CanonicalColor::from_rgb8(0x1b, 0x1b, 0x1f)
-                            };
-                            let paint = solid_paint(color, *opacity)?;
-                            surface.fill_path(
-                                &path,
-                                &paint,
-                                FillRule::Winding,
-                                transform
-                                    .with_local_offset(0.0, -24.0)
-                                    .raster_transform(SUBPIXEL_SCALE)?,
-                                paint_mask,
-                            );
+                            if let Some(path) = label_path(&name.path)? {
+                                let color = if *magic {
+                                    CanonicalColor::from_rgb8(0x7a, 0xff, 0xd7)
+                                } else {
+                                    CanonicalColor::from_rgb8(0x1b, 0x1b, 0x1f)
+                                };
+                                let paint = solid_paint(color, *opacity)?;
+                                surface.fill_path(
+                                    &path,
+                                    &paint,
+                                    FillRule::Winding,
+                                    transform
+                                        .with_local_offset(0.0, -24.0)
+                                        .raster_transform(SUBPIXEL_SCALE)?,
+                                    paint_mask,
+                                );
+                            }
                         }
                     }
                     PngElement::Text {
@@ -874,7 +877,9 @@ impl PngPlan {
                         let paint = solid_paint(*color, *opacity)?;
                         let raster_transform = transform.raster_transform(SUBPIXEL_SCALE)?;
                         for line in &text.lines {
-                            let path = label_path(&line.path)?;
+                            let Some(path) = label_path(&line.path)? else {
+                                continue;
+                            };
                             surface.fill_path(
                                 &path,
                                 &paint,
@@ -1240,15 +1245,16 @@ impl PngPlan {
                             );
                         }
                         if let Some(label) = label {
-                            let label_path = label_path(&label.path)?;
-                            let label_paint = solid_paint(self.fallback_colors.label, 1.0)?;
-                            layer.fill_path(
-                                &label_path,
-                                &label_paint,
-                                FillRule::Winding,
-                                transform,
-                                Some(&clip),
-                            );
+                            if let Some(label_path) = label_path(&label.path)? {
+                                let label_paint = solid_paint(self.fallback_colors.label, 1.0)?;
+                                layer.fill_path(
+                                    &label_path,
+                                    &label_paint,
+                                    FillRule::Winding,
+                                    transform,
+                                    Some(&clip),
+                                );
+                            }
                         }
                         let layer_paint = PixmapPaint {
                             opacity: finite_f32(*opacity, "PNG fallback opacity")?,
@@ -1850,7 +1856,14 @@ fn fallback_paths(
     Ok((bounds, cross))
 }
 
-fn label_path(path: &super::text::LabelPath) -> Result<tiny_skia::Path, FormatEncodeError> {
+/// The raster path for one laid-out label line, or `None` when the line has no
+/// outline to paint: an empty line, a whitespace-only line, or one whose glyphs
+/// all lack outlines. Such a line still occupies its line step; it just paints
+/// nothing, as in SVG and PDF (#111).
+fn label_path(path: &super::text::LabelPath) -> Result<Option<tiny_skia::Path>, FormatEncodeError> {
+    if path.operations.is_empty() {
+        return Ok(None);
+    }
     let point_capacity = path
         .operations
         .len()
@@ -1896,9 +1909,8 @@ fn label_path(path: &super::text::LabelPath) -> Result<tiny_skia::Path, FormatEn
             super::text::LabelPathOperation::Close => builder.close(),
         }
     }
-    builder
-        .finish()
-        .ok_or_else(|| FormatEncodeError::Encoding("PNG fallback label has no outline".to_owned()))
+    // `finish` declines a lone move, which has nothing to fill either.
+    Ok(builder.finish())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2589,4 +2601,39 @@ fn pixel_dimension(value: f64) -> Result<u32, FormatEncodeError> {
         ));
     }
     Ok(value.trunc() as u32)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::text::{LabelPath, LabelPathOperation};
+    use super::label_path;
+
+    #[test]
+    fn a_line_with_no_outline_has_no_path_to_fill() {
+        // Every label call site shares this helper, so an empty line, a
+        // whitespace-only line, or a lone move paints nothing rather than
+        // failing the artifact (#111).
+        let empty = LabelPath {
+            operations: Vec::new(),
+        };
+        assert!(matches!(label_path(&empty), Ok(None)));
+
+        let lone_move = LabelPath {
+            operations: vec![LabelPathOperation::Move { x: 1.0, y: 2.0 }],
+        };
+        assert!(matches!(label_path(&lone_move), Ok(None)));
+
+        let outline = LabelPath {
+            operations: vec![
+                LabelPathOperation::Move { x: 0.0, y: 0.0 },
+                LabelPathOperation::Line { x: 4.0, y: 0.0 },
+                LabelPathOperation::Line { x: 4.0, y: 4.0 },
+                LabelPathOperation::Close,
+            ],
+        };
+        let Ok(Some(path)) = label_path(&outline) else {
+            panic!("an outline has a path");
+        };
+        assert_eq!(path.len(), 4);
+    }
 }
