@@ -233,12 +233,40 @@ impl RenderSession {
         )
         .with_record(ResourceRecordKind::RasterColorSurface);
         self.acquire_working(request, surface, surface_bytes)?;
+        // Every element a frame clips paints through one alpha mask of that
+        // frame, so the mask is generated and recorded once per frame and never
+        // owned by any one child (#112).
+        let frame_clip_masks = plan
+            .frame_clip_masks()
+            .map_err(|error| self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error))?;
+        for mask in &frame_clip_masks {
+            let (frame_id, frame_pointer) = frame_clip_mask_source(&plan, mask);
+            self.transact(
+                request,
+                ResourceContext::new(
+                    ResourcePhase::ProjectionAndFallback,
+                    "frame_clip_mask_samples",
+                    frame_pointer,
+                )
+                .with_element_id(frame_id),
+                ResourceDelta {
+                    rasterized_pixels: mask.pixels,
+                    total_work_units: mask.pixels.saturating_mul(8),
+                    ..ResourceDelta::default()
+                },
+            )?;
+            self.acquire_working(
+                request,
+                frame_clip_mask_surface(frame_id, frame_pointer),
+                frame_clip_mask_surface_bytes(mask),
+            )?;
+        }
         let paint_mask_bytes = plan
             .maximum_paint_mask_surface_area()
             .saturating_add(u64::from(plan.has_paint_masks()) * 256);
         let paint_mask_surface = ResourceContext::new(
             ResourcePhase::ProjectionAndFallback,
-            "frame_clip_mask_surface",
+            "paint_mask_surface",
             "",
         )
         .with_record(ResourceRecordKind::RasterMaskSurface);
@@ -269,57 +297,15 @@ impl RenderSession {
                     "/elements",
                 )
             })?;
-            let mut paint_mask_pixels = None;
-            if let Some(mask_pixels) = plan.paint_mask_surface_area(index).ok_or_else(|| {
+            // An element's own mask is bounded by the element and clamped to the
+            // canvas, so it never exceeds the admitted main raster surface.
+            let paint_mask_pixels = plan.paint_mask_surface_area(index).ok_or_else(|| {
                 self.internal_failure(
                     request.format(),
                     "PNG paint mask source is missing",
                     "/elements",
                 )
-            })? {
-                let surface_limit = request.resource_limits().max_raster_surface_pixels();
-                if mask_pixels > surface_limit {
-                    let diagnostic = ElementLocalCrossing {
-                                code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
-                                field: "max_raster_surface_pixels",
-                                configured: ResourceValue::Integer(surface_limit),
-                                value_kind: ValueKind::Pixels,
-                                attempted: ResourceValue::Integer(mask_pixels),
-                                pointer_field: None,
-                                message: "masked element omitted because its paint mask exceeds its raster surface limit",
-                            }
-                            .diagnostic(request.format(), element_id, json_pointer)
-                            .map_err(|_| {
-                                self.memory_failure(
-                                    request,
-                                    "compatibility_report",
-                                    "frame_mask_surface_recovery",
-                                )
-                            })?;
-                    self.retain_diagnostic(
-                        request,
-                        ResourcePhase::ProjectionAndFallback,
-                        "frame_mask_surface_local_recovery",
-                        diagnostic,
-                    )?;
-                    self.charge_local_omission(
-                        request,
-                        element_id,
-                        json_pointer,
-                        "frame_mask_surface_local_omission",
-                    )?;
-                    self.discard_pending_png_animation_diagnostic(request, element_id)?;
-                    if !plan.omit_element(index) {
-                        return Err(self.internal_failure(
-                            request.format(),
-                            "PNG omitted masked operation is missing",
-                            "/elements",
-                        ));
-                    }
-                    continue;
-                }
-                paint_mask_pixels = Some(mask_pixels);
-            }
+            })?;
             if let Some(fallback_pixels) = plan.fallback_surface_area(index).ok_or_else(|| {
                 self.internal_failure(
                     request.format(),
@@ -581,6 +567,14 @@ impl RenderSession {
         if paint_mask_bytes != 0 {
             self.release_working(request, paint_mask_surface, paint_mask_bytes)?;
         }
+        for mask in frame_clip_masks.iter().rev() {
+            let (frame_id, frame_pointer) = frame_clip_mask_source(&plan, mask);
+            self.release_working(
+                request,
+                frame_clip_mask_surface(frame_id, frame_pointer),
+                frame_clip_mask_surface_bytes(mask),
+            )?;
+        }
         self.release_working(request, workspace, workspace_bytes)?;
         self.release_working(request, surface, surface_bytes)?;
         for index in 0..plan.source_count() {
@@ -736,4 +730,34 @@ impl RenderSession {
         }
         Ok(())
     }
+}
+
+/// The clipping frame's identity for a shared frame clip mask's ledger events:
+/// its element id and JSON pointer, or the scene itself when the frame emits no
+/// element of its own.
+fn frame_clip_mask_source<'a>(
+    plan: &'a PngPlan,
+    mask: &super::png::PngFrameClipMask,
+) -> (Option<&'a str>, &'a str) {
+    mask.frame_element_index
+        .and_then(|index| plan.source(index))
+        .unwrap_or((None, ""))
+}
+
+fn frame_clip_mask_surface<'a>(
+    frame_id: Option<&'a str>,
+    frame_pointer: &'a str,
+) -> ResourceContext<'a> {
+    ResourceContext::new(
+        ResourcePhase::ProjectionAndFallback,
+        "frame_clip_mask_surface",
+        frame_pointer,
+    )
+    .with_element_id(frame_id)
+    .with_record(ResourceRecordKind::RasterMaskSurface)
+}
+
+/// The canonical raster mask surface record: `256 + pixels`.
+fn frame_clip_mask_surface_bytes(mask: &super::png::PngFrameClipMask) -> u64 {
+    256_u64.saturating_add(mask.pixels)
 }

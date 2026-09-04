@@ -195,6 +195,7 @@ pub(super) fn resolve_frame_clips(
     };
     clips.try_reserve_exact(1)?;
     clips.push(ResolvedClip {
+        frame_source_index: frame.source_index,
         path: if rendering.rectangular_clip {
             resolved_frame_rect(frame.width, frame.height)?
         } else {

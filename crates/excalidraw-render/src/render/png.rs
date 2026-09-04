@@ -110,8 +110,20 @@ enum PngElement {
 }
 
 struct PngFrameClip {
+    frame_source_index: usize,
     path: Path,
     transform: PngTransform,
+}
+
+/// One frame clip mask the PNG plan builds once and shares across every
+/// element that frame clips.
+#[derive(Clone, Copy)]
+pub(super) struct PngFrameClipMask {
+    /// Plan index of the clipping frame's own element, when it is emitted.
+    pub(super) frame_element_index: Option<usize>,
+    /// Clipped conservative device-space area of the frame clip in canvas
+    /// pixels: the alpha-mask generation cost `P` of the shared mask.
+    pub(super) pixels: u64,
 }
 
 #[derive(Clone, Copy)]
@@ -135,11 +147,114 @@ fn project_frame_clips(
         })?;
     for clip in clips {
         projected.push(PngFrameClip {
+            frame_source_index: clip.frame_source_index,
             path: clip.path,
             transform: PngTransform::new(&clip.transform, scale),
         });
     }
     Ok(projected)
+}
+
+/// The identity of a frame clip set: the clipping frames, in order.
+fn frame_clip_set_key(clips: &[PngFrameClip]) -> impl Iterator<Item = usize> + '_ {
+    clips.iter().map(|clip| clip.frame_source_index)
+}
+
+/// Whether two clip sets are the same frame clip set: the same frames, in the
+/// same order.
+fn same_frame_clip_set(left: &[PngFrameClip], right: &[PngFrameClip]) -> bool {
+    frame_clip_set_key(left).eq(frame_clip_set_key(right))
+}
+
+/// The clipped conservative device-space integer bounds of a frame clip set on
+/// a `surface_width` x `surface_height` surface, or `None` when the set clips
+/// everything away.
+fn frame_clip_coverage_bounds(
+    clips: &[PngFrameClip],
+    surface_width: u32,
+    surface_height: u32,
+) -> Option<(u32, u32, u32, u32)> {
+    let (mut left, mut top, mut right, mut bottom) = (0, 0, surface_width, surface_height);
+    for clip in clips {
+        let bounds = clip.path.cubic_bounds()?;
+        let points = [
+            Point {
+                x: bounds.0,
+                y: bounds.1,
+            },
+            Point {
+                x: bounds.2,
+                y: bounds.1,
+            },
+            Point {
+                x: bounds.2,
+                y: bounds.3,
+            },
+            Point {
+                x: bounds.0,
+                y: bounds.3,
+            },
+        ]
+        .map(|point| clip.transform.map_point(point));
+        let clip_left = points
+            .iter()
+            .map(|point| point.x)
+            .fold(f64::INFINITY, f64::min)
+            .floor()
+            .clamp(0.0, f64::from(surface_width)) as u32;
+        let clip_top = points
+            .iter()
+            .map(|point| point.y)
+            .fold(f64::INFINITY, f64::min)
+            .floor()
+            .clamp(0.0, f64::from(surface_height)) as u32;
+        let clip_right = points
+            .iter()
+            .map(|point| point.x)
+            .fold(f64::NEG_INFINITY, f64::max)
+            .ceil()
+            .clamp(0.0, f64::from(surface_width)) as u32;
+        let clip_bottom = points
+            .iter()
+            .map(|point| point.y)
+            .fold(f64::NEG_INFINITY, f64::max)
+            .ceil()
+            .clamp(0.0, f64::from(surface_height)) as u32;
+        left = left.max(clip_left);
+        top = top.max(clip_top);
+        right = right.min(clip_right);
+        bottom = bottom.min(clip_bottom);
+    }
+    (left < right && top < bottom).then_some((left, top, right, bottom))
+}
+
+/// The clipped conservative device-space area of a frame clip set in canvas
+/// pixels.
+fn frame_clip_coverage_area(
+    clips: &[PngFrameClip],
+    surface_width: u32,
+    surface_height: u32,
+) -> u64 {
+    frame_clip_coverage_bounds(clips, surface_width, surface_height).map_or(
+        0,
+        |(left, top, right, bottom)| {
+            u64::from(right - left).saturating_mul(u64::from(bottom - top))
+        },
+    )
+}
+
+/// The clipped conservative device-space area of a bound-label exclusion in
+/// canvas pixels.
+fn label_mask_coverage_area(label: PngLabelMask, surface_width: u32, surface_height: u32) -> u64 {
+    let left = label.x.floor().clamp(0.0, f64::from(surface_width)) as u32;
+    let top = label.y.floor().clamp(0.0, f64::from(surface_height)) as u32;
+    let right = (label.x + label.width)
+        .ceil()
+        .clamp(0.0, f64::from(surface_width)) as u32;
+    let bottom = (label.y + label.height)
+        .ceil()
+        .clamp(0.0, f64::from(surface_height)) as u32;
+    u64::from(right.saturating_sub(left)).saturating_mul(u64::from(bottom.saturating_sub(top)))
 }
 
 impl PngElement {
@@ -159,67 +274,19 @@ impl PngElement {
                 render: true,
                 ..
             } if *width > 0.0 && *height > 0.0 && *opacity > 0.0 => {
-                let (mut left, mut top, mut right, mut bottom) = fallback_coverage_bounds(
+                let (left, top, right, bottom) = fallback_coverage_bounds(
                     *width,
                     *height,
                     *transform,
                     surface_width,
                     surface_height,
                 );
-                for clip in frame_clips {
-                    let bounds = clip.path.cubic_bounds()?;
-                    let points = [
-                        Point {
-                            x: bounds.0,
-                            y: bounds.1,
-                        },
-                        Point {
-                            x: bounds.2,
-                            y: bounds.1,
-                        },
-                        Point {
-                            x: bounds.2,
-                            y: bounds.3,
-                        },
-                        Point {
-                            x: bounds.0,
-                            y: bounds.3,
-                        },
-                    ]
-                    .map(|point| clip.transform.map_point(point));
-                    let clip_left = points
-                        .iter()
-                        .map(|point| point.x)
-                        .fold(f64::INFINITY, f64::min)
-                        .floor()
-                        .clamp(0.0, f64::from(surface_width))
-                        as u32;
-                    let clip_top = points
-                        .iter()
-                        .map(|point| point.y)
-                        .fold(f64::INFINITY, f64::min)
-                        .floor()
-                        .clamp(0.0, f64::from(surface_height))
-                        as u32;
-                    let clip_right = points
-                        .iter()
-                        .map(|point| point.x)
-                        .fold(f64::NEG_INFINITY, f64::max)
-                        .ceil()
-                        .clamp(0.0, f64::from(surface_width))
-                        as u32;
-                    let clip_bottom = points
-                        .iter()
-                        .map(|point| point.y)
-                        .fold(f64::NEG_INFINITY, f64::max)
-                        .ceil()
-                        .clamp(0.0, f64::from(surface_height))
-                        as u32;
-                    left = left.max(clip_left);
-                    top = top.max(clip_top);
-                    right = right.min(clip_right);
-                    bottom = bottom.min(clip_bottom);
-                }
+                let (clip_left, clip_top, clip_right, clip_bottom) =
+                    frame_clip_coverage_bounds(frame_clips, surface_width, surface_height)?;
+                let left = left.max(clip_left);
+                let top = top.max(clip_top);
+                let right = right.min(clip_right);
+                let bottom = bottom.min(clip_bottom);
                 (left < right && top < bottom).then_some(*status)
             }
             _ => None,
@@ -235,6 +302,18 @@ impl PngElement {
             | Self::Image { frame_clips, .. }
             | Self::ImageFallback { frame_clips, .. } => frame_clips,
             Self::Fallback { .. } => &[],
+        }
+    }
+
+    fn renders(&self) -> bool {
+        match self {
+            Self::RoughOutline { render, .. }
+            | Self::Freedraw { render, .. }
+            | Self::Frame { render, .. }
+            | Self::Text { render, .. }
+            | Self::Image { render, .. }
+            | Self::ImageFallback { render, .. }
+            | Self::Fallback { render, .. } => *render,
         }
     }
 
@@ -633,16 +712,12 @@ impl PngPlan {
             if let Some([red, green, blue, alpha]) = self.background {
                 surface.fill(Color::from_rgba8(red, green, blue, alpha));
             }
+            let mut masks = PaintMasks::new(raster_width, raster_height, SUBPIXEL_SCALE);
             for element in &self.elements {
-                let paint_mask = png_paint_mask(
-                    raster_width,
-                    raster_height,
-                    element.frame_clips(),
-                    element.label_mask(),
-                    element.image_clip(),
-                    SUBPIXEL_SCALE,
-                )?;
-                let paint_mask = paint_mask.as_ref();
+                if !element.renders() {
+                    continue;
+                }
+                let paint_mask = masks.paint_mask(element)?;
                 match element {
                     PngElement::RoughOutline {
                         source,
@@ -660,12 +735,8 @@ impl PngPlan {
                         generated_label,
                         generated_label_color,
                         generated_label_offset_y,
-                        render,
                         ..
                     } => {
-                        if !render {
-                            continue;
-                        }
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG plan outline lost its source identity".to_owned(),
@@ -736,12 +807,8 @@ impl PngPlan {
                         background_color,
                         source_stroke_width,
                         opacity,
-                        render,
                         ..
                     } => {
-                        if !render {
-                            continue;
-                        }
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG freedraw lost its source identity".to_owned(),
@@ -803,11 +870,8 @@ impl PngPlan {
                         frame_clips: _,
                         transform,
                         opacity,
-                        render,
+                        render: _,
                     } => {
-                        if !render {
-                            continue;
-                        }
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG frame lost its source identity".to_owned(),
@@ -864,11 +928,8 @@ impl PngPlan {
                         color,
                         opacity,
                         base_element_work_units: _,
-                        render,
+                        render: _,
                     } => {
-                        if !render {
-                            continue;
-                        }
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG text lost its source identity".to_owned(),
@@ -898,12 +959,8 @@ impl PngPlan {
                         source_rect,
                         scale,
                         opacity,
-                        render,
                         ..
                     } => {
-                        if !render {
-                            continue;
-                        }
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG image lost its source identity".to_owned(),
@@ -1030,12 +1087,8 @@ impl PngPlan {
                         width,
                         height,
                         opacity,
-                        render,
                         ..
                     } => {
-                        if !render {
-                            continue;
-                        }
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG image fallback lost its source identity".to_owned(),
@@ -1117,12 +1170,8 @@ impl PngPlan {
                         height,
                         transform,
                         opacity,
-                        render,
                         ..
                     } => {
-                        if !render {
-                            continue;
-                        }
                         if source.pointer.is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG fallback lost its source location".to_owned(),
@@ -1409,22 +1458,19 @@ impl PngPlan {
         })
     }
 
+    /// The alpha mask an element needs beyond its shared frame clip mask, in
+    /// canvas pixels: a bound-label exclusion or an image's own clip rectangle.
+    /// `None` when the element paints through at most the shared frame mask.
     pub(super) fn paint_mask_surface_area(&self, index: usize) -> Option<Option<u64>> {
         self.elements.get(index).map(|element| match element {
             PngElement::RoughOutline {
-                frame_clips,
-                label_mask,
+                label_mask: Some(label_mask),
                 ..
-            } if !frame_clips.is_empty() || label_mask.is_some() => {
-                Some(u64::from(self.width).saturating_mul(u64::from(self.height)))
-            }
-            PngElement::Freedraw { frame_clips, .. }
-            | PngElement::Frame { frame_clips, .. }
-            | PngElement::Text { frame_clips, .. }
-                if !frame_clips.is_empty() =>
-            {
-                Some(u64::from(self.width).saturating_mul(u64::from(self.height)))
-            }
+            } => Some(label_mask_coverage_area(
+                *label_mask,
+                self.width,
+                self.height,
+            )),
             PngElement::Image {
                 width,
                 height,
@@ -1449,15 +1495,14 @@ impl PngPlan {
 
     pub(super) fn has_paint_masks(&self) -> bool {
         self.elements.iter().any(|element| {
-            matches!(element, PngElement::RoughOutline { frame_clips, label_mask, .. } if !frame_clips.is_empty() || label_mask.is_some())
-                || matches!(
-                    element,
-                    PngElement::Freedraw { frame_clips, .. }
-                    | PngElement::Frame { frame_clips, .. }
-                    | PngElement::Text { frame_clips, .. }
-                    if !frame_clips.is_empty()
-                )
-                || matches!(element, PngElement::Image { .. } | PngElement::ImageFallback { .. })
+            matches!(
+                element,
+                PngElement::RoughOutline {
+                    label_mask: Some(_),
+                    ..
+                } | PngElement::Image { .. }
+                    | PngElement::ImageFallback { .. }
+            )
         })
     }
 
@@ -1468,6 +1513,46 @@ impl PngPlan {
             .filter_map(|(index, _)| self.paint_mask_surface_area(index).flatten())
             .max()
             .unwrap_or(0)
+    }
+
+    /// The distinct frame clip masks this plan shares across clipped elements,
+    /// in first-use element order. Each is charged once for the whole plan.
+    pub(super) fn frame_clip_masks(&self) -> Result<Vec<PngFrameClipMask>, FormatEncodeError> {
+        let mut representatives: Vec<&[PngFrameClip]> = Vec::new();
+        for element in &self.elements {
+            let clips = element.frame_clips();
+            if clips.is_empty()
+                || representatives
+                    .iter()
+                    .any(|known| same_frame_clip_set(known, clips))
+            {
+                continue;
+            }
+            representatives
+                .try_reserve(1)
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "format_plan",
+                    subject: "png_frame_clip_masks",
+                })?;
+            representatives.push(clips);
+        }
+        let mut masks = Vec::new();
+        masks
+            .try_reserve_exact(representatives.len())
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_plan",
+                subject: "png_frame_clip_masks",
+            })?;
+        for clips in representatives {
+            let frame_source_index = clips.first().map(|clip| clip.frame_source_index);
+            masks.push(PngFrameClipMask {
+                frame_element_index: self.elements.iter().position(|element| {
+                    matches!(element, PngElement::Frame { source, .. } if Some(source.source_index()) == frame_source_index)
+                }),
+                pixels: frame_clip_coverage_area(clips, self.width, self.height),
+            });
+        }
+        Ok(masks)
     }
 
     pub(super) fn source_count(&self) -> usize {
@@ -2009,80 +2094,249 @@ fn paint_rough_drawing(
     Ok(())
 }
 
-fn png_paint_mask(
+/// The alpha masks one PNG rasterization reuses across elements.
+///
+/// Every element a frame clips paints through that frame's mask. tiny-skia
+/// composites a mask only when it matches the surface, so one full raster
+/// surface holds whichever frame clip mask the current element needs; each
+/// distinct frame clip set is rasterized once, its covered rows are kept as a
+/// stamp, and switching frames clears the previous stamp's rows and copies the
+/// next one in, so the work of a switch is bounded by the two frame areas
+/// rather than the canvas. An element that also excludes a bound label or clips
+/// to its own image rectangle paints through one scratch mask derived from the
+/// frame mask.
+struct PaintMasks {
     width: u32,
     height: u32,
-    clips: &[PngFrameClip],
-    label_mask: Option<PngLabelMask>,
-    image_clip: Option<(f64, f64, PngTransform)>,
     multiplier: u32,
-) -> Result<Option<Mask>, FormatEncodeError> {
-    if clips.is_empty() && label_mask.is_none() && image_clip.is_none() {
-        return Ok(None);
+    frame: Option<Mask>,
+    stamps: Vec<FrameClipStamp>,
+    current_stamp: Option<usize>,
+    element: Option<Mask>,
+}
+
+/// The rows of one frame clip set's mask that its clip covers, at raster
+/// resolution.
+struct FrameClipStamp {
+    key: Vec<usize>,
+    left: usize,
+    top: usize,
+    width: usize,
+    height: usize,
+    data: Vec<u8>,
+}
+
+impl PaintMasks {
+    fn new(width: u32, height: u32, multiplier: u32) -> Self {
+        Self {
+            width,
+            height,
+            multiplier,
+            frame: None,
+            stamps: Vec::new(),
+            current_stamp: None,
+            element: None,
+        }
     }
-    let mask_bytes = usize::try_from(width)
-        .ok()
-        .and_then(|width| width.checked_mul(usize::try_from(height).ok()?))
-        .ok_or_else(png_size_error)?;
-    let mut data = Vec::new();
-    data.try_reserve_exact(mask_bytes)
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+
+    /// The mask `element` paints through, if any: its frame clip mask, or a
+    /// scratch mask that also carries its bound-label exclusion or image clip.
+    fn paint_mask(&mut self, element: &PngElement) -> Result<Option<&Mask>, FormatEncodeError> {
+        let clips = element.frame_clips();
+        let label_mask = element.label_mask();
+        let image_clip = element.image_clip();
+        if clips.is_empty() && label_mask.is_none() && image_clip.is_none() {
+            return Ok(None);
+        }
+        self.ensure_frame_mask(clips)?;
+        if label_mask.is_none() && image_clip.is_none() {
+            return Ok(self.frame.as_ref());
+        }
+        let mut mask = match self.element.take() {
+            Some(mask) => mask,
+            None => self.blank_mask("png_paint_mask")?,
+        };
+        match &self.frame {
+            Some(frame) if !clips.is_empty() => mask.data_mut().copy_from_slice(frame.data()),
+            _ => mask.data_mut().fill(255),
+        }
+        if let Some(label) = label_mask {
+            self.exclude_label(&mut mask, label)?;
+        }
+        if let Some((width, height, transform)) = image_clip {
+            let rect = Rect::from_xywh(
+                0.0,
+                0.0,
+                finite_f32(width, "PNG image clip width")?,
+                finite_f32(height, "PNG image clip height")?,
+            )
+            .ok_or_else(png_size_error)?;
+            mask.intersect_path(
+                &PathBuilder::from_rect(rect),
+                FillRule::Winding,
+                true,
+                transform.raster_transform(self.multiplier)?,
+            );
+        }
+        Ok(Some(self.element.insert(mask)))
+    }
+
+    /// Makes `self.frame` the mask of `clips`: the stamp of a frame clip set
+    /// seen before is copied back in, a new set is rasterized once and stamped.
+    fn ensure_frame_mask(&mut self, clips: &[PngFrameClip]) -> Result<(), FormatEncodeError> {
+        if clips.is_empty() {
+            return Ok(());
+        }
+        let wanted = self
+            .stamps
+            .iter()
+            .position(|stamp| stamp.key.iter().copied().eq(frame_clip_set_key(clips)));
+        if self.frame.is_some() && wanted.is_some() && wanted == self.current_stamp {
+            return Ok(());
+        }
+        if self.frame.is_none() {
+            self.frame = Some(self.blank_mask("png_frame_clip")?);
+        }
+        if let Some(previous) = self.current_stamp.take() {
+            self.clear_stamp_rows(previous);
+        }
+        let index = match wanted {
+            Some(index) => {
+                self.copy_stamp_in(index);
+                index
+            }
+            None => self.rasterize_stamp(clips)?,
+        };
+        self.current_stamp = Some(index);
+        Ok(())
+    }
+
+    /// Rasterizes `clips` into the (cleared) frame mask and records the rows
+    /// its coverage bounds span as a new stamp.
+    fn rasterize_stamp(&mut self, clips: &[PngFrameClip]) -> Result<usize, FormatEncodeError> {
+        // Coverage bounds are conservative in canvas pixels; the stamp scales
+        // them to the raster and pads one raster pixel each side so that f32
+        // edge rounding in the rasterizer can never leave coverage behind.
+        let multiplier = usize::try_from(self.multiplier).map_err(|_| png_size_error())?;
+        let raster_width = usize::try_from(self.width).map_err(|_| png_size_error())?;
+        let raster_height = usize::try_from(self.height).map_err(|_| png_size_error())?;
+        let (left, top, width, height) = frame_clip_coverage_bounds(
+            clips,
+            self.width / self.multiplier,
+            self.height / self.multiplier,
+        )
+        .map_or((0, 0, 0, 0), |(left, top, right, bottom)| {
+            let left = (left as usize * multiplier).saturating_sub(1);
+            let top = (top as usize * multiplier).saturating_sub(1);
+            let right = (right as usize * multiplier + 1).min(raster_width);
+            let bottom = (bottom as usize * multiplier + 1).min(raster_height);
+            (left, top, right - left, bottom - top)
+        });
+        let mask = self.frame.as_mut().ok_or_else(png_size_error)?;
+        for (index, clip) in clips.iter().enumerate() {
+            let path = tiny_skia_path(&clip.path)?;
+            let transform = clip.transform.raster_transform(self.multiplier)?;
+            if index == 0 {
+                mask.fill_path(&path, FillRule::Winding, true, transform);
+            } else {
+                mask.intersect_path(&path, FillRule::Winding, true, transform);
+            }
+        }
+        let memory = |_| FormatEncodeError::MemoryUnavailable {
             subject_kind: "raster_surface",
-            subject: "png_frame_clip",
-        })?;
-    data.resize(mask_bytes, 255);
-    if let Some(label) = label_mask {
-        let multiplier = f64::from(multiplier);
+            subject: "png_frame_clip_stamp",
+        };
+        let mut key = Vec::new();
+        key.try_reserve_exact(clips.len()).map_err(memory)?;
+        key.extend(frame_clip_set_key(clips));
+        let mut data = Vec::new();
+        data.try_reserve_exact(width.checked_mul(height).ok_or_else(png_size_error)?)
+            .map_err(memory)?;
+        for row in top..top + height {
+            let start = row * raster_width + left;
+            data.extend_from_slice(&mask.data()[start..start + width]);
+        }
+        self.stamps.try_reserve(1).map_err(memory)?;
+        self.stamps.push(FrameClipStamp {
+            key,
+            left,
+            top,
+            width,
+            height,
+            data,
+        });
+        Ok(self.stamps.len() - 1)
+    }
+
+    fn clear_stamp_rows(&mut self, index: usize) {
+        let Some((mask, stamp)) = self.frame.as_mut().zip(self.stamps.get(index)) else {
+            return;
+        };
+        let stride = self.width as usize;
+        let data = mask.data_mut();
+        for row in stamp.top..stamp.top + stamp.height {
+            let start = row * stride + stamp.left;
+            data[start..start + stamp.width].fill(0);
+        }
+    }
+
+    fn copy_stamp_in(&mut self, index: usize) {
+        let Some((mask, stamp)) = self.frame.as_mut().zip(self.stamps.get(index)) else {
+            return;
+        };
+        let stride = self.width as usize;
+        let data = mask.data_mut();
+        for (offset, row) in (stamp.top..stamp.top + stamp.height).enumerate() {
+            let start = row * stride + stamp.left;
+            let source = offset * stamp.width;
+            data[start..start + stamp.width]
+                .copy_from_slice(&stamp.data[source..source + stamp.width]);
+        }
+    }
+
+    fn blank_mask(&self, subject: &'static str) -> Result<Mask, FormatEncodeError> {
+        let mask_bytes = usize::try_from(self.width)
+            .ok()
+            .and_then(|width| width.checked_mul(usize::try_from(self.height).ok()?))
+            .ok_or_else(png_size_error)?;
+        let mut data = Vec::new();
+        data.try_reserve_exact(mask_bytes)
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "raster_surface",
+                subject,
+            })?;
+        data.resize(mask_bytes, 0);
+        let size = IntSize::from_wh(self.width, self.height).ok_or_else(png_size_error)?;
+        Mask::from_vec(data, size).ok_or_else(|| {
+            FormatEncodeError::Encoding("PNG paint mask dimensions are invalid".to_owned())
+        })
+    }
+
+    fn exclude_label(&self, mask: &mut Mask, label: PngLabelMask) -> Result<(), FormatEncodeError> {
+        let multiplier = f64::from(self.multiplier);
         let left = (label.x * multiplier).floor().max(0.0) as u32;
         let top = (label.y * multiplier).floor().max(0.0) as u32;
         let right = ((label.x + label.width) * multiplier)
             .ceil()
-            .clamp(0.0, f64::from(width)) as u32;
+            .clamp(0.0, f64::from(self.width)) as u32;
         let bottom = ((label.y + label.height) * multiplier)
             .ceil()
-            .clamp(0.0, f64::from(height)) as u32;
-        for y in top.min(height)..bottom {
+            .clamp(0.0, f64::from(self.height)) as u32;
+        let data = mask.data_mut();
+        for y in top.min(self.height)..bottom {
             let row = usize::try_from(y)
                 .ok()
-                .and_then(|value| value.checked_mul(usize::try_from(width).ok()?))
+                .and_then(|value| value.checked_mul(usize::try_from(self.width).ok()?))
                 .ok_or_else(png_size_error)?;
-            for x in left.min(width)..right {
+            for x in left.min(self.width)..right {
                 let index = row
                     .checked_add(usize::try_from(x).map_err(|_| png_size_error())?)
                     .ok_or_else(png_size_error)?;
                 data[index] = 0;
             }
         }
+        Ok(())
     }
-    let size = IntSize::from_wh(width, height).ok_or_else(png_size_error)?;
-    let mut mask = Mask::from_vec(data, size).ok_or_else(|| {
-        FormatEncodeError::Encoding("PNG frame clip dimensions are invalid".to_owned())
-    })?;
-    for clip in clips {
-        let path = tiny_skia_path(&clip.path)?;
-        mask.intersect_path(
-            &path,
-            FillRule::Winding,
-            true,
-            clip.transform.raster_transform(multiplier)?,
-        );
-    }
-    if let Some((width, height, transform)) = image_clip {
-        let rect = Rect::from_xywh(
-            0.0,
-            0.0,
-            finite_f32(width, "PNG image clip width")?,
-            finite_f32(height, "PNG image clip height")?,
-        )
-        .ok_or_else(png_size_error)?;
-        mask.intersect_path(
-            &PathBuilder::from_rect(rect),
-            FillRule::Winding,
-            true,
-            transform.raster_transform(multiplier)?,
-        );
-    }
-    Ok(Some(mask))
 }
 
 const OFFICIAL_IMAGE_PATH: &str = "M464 448H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h416c26.51 0 48 21.49 48 48v288c0 26.51-21.49 48-48 48zM112 120c-30.928 0-56 25.072-56 56s25.072 56 56 56 56-25.072 56-56-25.072-56-56-56zM64 384h384V272l-87.515-87.515c-4.686-4.686-12.284-4.686-16.971 0L208 320l-55.515-55.515c-4.686-4.686-12.284-4.686-16.971 0L64 336v48z";

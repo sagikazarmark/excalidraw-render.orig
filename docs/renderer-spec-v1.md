@@ -2004,6 +2004,14 @@ coverage, and bicubic projection respectively. `P` is the clipped conservative
 device-space integer bounding rectangle area using floor minima, ceil maxima,
 and surface clamping.
 
+A PNG frame clip mask is generated once per distinct frame clip set in a target,
+in first-use element order and before any element projection. Its `P` is the
+clip's own bounding rectangle, it charges `P` rasterized pixels and `8P`
+total-only work, and its mask surface record lives from generation through
+final composite. An element clipped by a frame charges only its own projection
+plus any mask that is its own: a bound-label exclusion pays the label's `P`, an
+image clip pays the image's `P`.
+
 Canonical logical working bytes, not physical allocations, define
 `max_working_bytes`. All variable records use the `A(n)` function above:
 
@@ -2049,10 +2057,11 @@ Sharing is permitted only by these keys: identity payload/state by semantic
 identity; sanitized SVG by `(identity, sanitizer revision)`; RGBA by
 `(identity, decode policy)`; intrinsic work/pixels by `(identity, operation)`;
 element geometry by `(source element, semantic role)`; selected built-ins by
-identity/glyph/range; and format resource body only where that format permits.
-Occurrence admission, relationships, per-reference projection, masking,
-compositing, repeated nested occurrences, plan references, surfaces, fallback,
-diagnostics, optional metadata occurrences, and output octets never share.
+identity/glyph/range; a PNG frame clip mask by `(target, frame clip set)`; and
+format resource body only where that format permits. Occurrence admission,
+relationships, per-reference projection, element-owned masking, compositing,
+repeated nested occurrences, plan references, surfaces, fallback, diagnostics,
+optional metadata occurrences, and output octets never share.
 
 SVG family scalar and selection records are acquired before selection work. The
 dependency envelope is acquired after selection and before the first selected

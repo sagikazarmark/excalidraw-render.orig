@@ -787,6 +787,84 @@ fn cjk_subset_trigger_matches_script_and_explicit_symbol_classes() {
 }
 
 #[test]
+fn png_frame_clip_masks_are_charged_once_per_frame_and_owned_by_no_child() {
+    // Two frames with two children each, plus one unframed rectangle. With
+    // names and outlines off the canvas is 250x80; the frame clips cover
+    // 100x60 and 80x40 device pixels.
+    let scene = SceneDocument::parse(br##"{
+        "type":"excalidraw","version":2,
+        "elements":[
+            {"id":"left","type":"frame","x":0,"y":0,"width":100,"height":60,"updated":1},
+            {"id":"right","type":"frame","x":150,"y":0,"width":80,"height":40,"updated":1},
+            {"id":"l1","type":"rectangle","x":10,"y":10,"width":20,"height":20,"frameId":"left","roughness":0,"updated":1},
+            {"id":"r1","type":"rectangle","x":160,"y":10,"width":20,"height":20,"frameId":"right","roughness":0,"updated":1},
+            {"id":"l2","type":"rectangle","x":40,"y":10,"width":20,"height":20,"frameId":"left","roughness":0,"updated":1},
+            {"id":"r2","type":"rectangle","x":190,"y":10,"width":20,"height":20,"frameId":"right","roughness":0,"updated":1},
+            {"id":"free","type":"rectangle","x":110,"y":45,"width":20,"height":10,"roughness":0,"updated":1}
+        ],
+        "appState":{},"files":{}
+    }"##)
+    .expect("two-frame scene is admitted");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .frame_options(crate::FrameOptions::new(true, true, false, false))
+        .build()
+        .expect("request is valid");
+    let profile =
+        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+
+    let (result, trace) = render_with_trace(profile, &scene, &request);
+    result.expect("two-frame PNG renders");
+    let trace: serde_json::Value = serde_json::from_slice(&trace).expect("trace is valid JSON");
+    let entries = trace["entries"].as_array().expect("entries are an array");
+
+    let mask_samples: Vec<&serde_json::Value> = entries
+        .iter()
+        .filter(|entry| entry["event"] == "frame_clip_mask_samples")
+        .collect();
+    let expected = [
+        ("left", "/elements/0", 100 * 60),
+        ("right", "/elements/1", 80 * 40),
+    ];
+    assert_eq!(mask_samples.len(), expected.len());
+    for (entry, (frame_id, pointer, pixels)) in mask_samples.iter().zip(expected) {
+        assert_eq!(entry["element_id"], frame_id);
+        assert_eq!(entry["json_pointer"], pointer);
+        assert_eq!(entry["local_owner"], serde_json::Value::Null);
+        assert_eq!(entry["deltas"]["rasterized_pixels"], pixels);
+        assert_eq!(entry["deltas"]["total_work_units"], 8 * pixels);
+        assert_eq!(entry["decision"], "committed");
+    }
+
+    let mask_surfaces: Vec<&serde_json::Value> = entries
+        .iter()
+        .filter(|entry| {
+            entry["event"] == "frame_clip_mask_surface" && entry["record_action"] == "acquire"
+        })
+        .collect();
+    assert_eq!(mask_surfaces.len(), expected.len());
+    for (entry, (_, _, pixels)) in mask_surfaces.iter().zip(expected) {
+        assert_eq!(entry["record_kind"], "raster_mask_surface");
+        assert_eq!(entry["deltas"]["working_bytes"], 256 + pixels);
+    }
+
+    let last_mask = entries
+        .iter()
+        .rposition(|entry| entry["event"] == "frame_clip_mask_samples")
+        .expect("frame masks are traced");
+    let first_projection = entries
+        .iter()
+        .position(|entry| entry["event"] == "vector_coverage_samples")
+        .expect("element projection is traced");
+    assert!(last_mask < first_projection);
+    assert!(
+        !entries
+            .iter()
+            .any(|entry| entry["event"] == "paint_mask_samples"),
+        "plain framed children need no mask of their own"
+    );
+}
+
+#[test]
 fn required_raster_trace_precedes_projection_work() {
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
     let request = RenderRequest::builder(OutputFormat::Png)

@@ -434,6 +434,7 @@ impl ResolvedScene {
                 };
                 fallback_frame_clips.push(FallbackFrameClipSource {
                     id: try_owned(id)?,
+                    source_index: fallback.source_index,
                     x: fallback.x,
                     y: fallback.y,
                     width: fallback.width,
@@ -911,6 +912,7 @@ impl ResolvedScene {
                 if let Some(frame) = frame {
                     clips.try_reserve_exact(1)?;
                     clips.push(ResolvedClip {
+                        frame_source_index: frame.source_index,
                         path: resolved_frame_outline(frame.width, frame.height)?,
                         transform: ResolvedTransform {
                             translation_x: frame.x - min_x + request.padding(),
@@ -1294,6 +1296,7 @@ pub(super) struct ResolvedFallback {
 
 struct FallbackFrameClipSource {
     id: String,
+    source_index: usize,
     x: f64,
     y: f64,
     width: f64,
@@ -1312,6 +1315,10 @@ pub(super) struct SemanticFrameSource {
 }
 
 pub(super) struct ResolvedClip {
+    /// Source index of the frame whose outline this clip reproduces. Every
+    /// element clipped by the same frame shares one clip identity, which lets
+    /// the PNG encoder build and charge that frame's alpha mask once.
+    pub(super) frame_source_index: usize,
     pub(super) path: rough::Path,
     pub(super) transform: ResolvedTransform,
 }
