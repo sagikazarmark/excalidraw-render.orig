@@ -173,9 +173,12 @@ fn packaged_svg_font_subsets_are_cross_target_stable() {
     let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
 
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+    // Moved with 5173fae, which stopped separating a multi-line text's tspans
+    // with a raw newline (a rendered character under xml:space="preserve");
+    // the in-crate Excalifont digests were repinned then, this one was not (#116).
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "176b7e41a2991457b3732874b0fc48c7459729416e52bd2c92f4a6b0249b2e57"
+        "4516303b6a16f9976d140f2a2fcd0a55fc4729c01e1f53f315acdc84adde02bb"
     );
     assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
     assert!(svg.contains("svg-font-subset@sha256:"));
