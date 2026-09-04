@@ -2149,26 +2149,22 @@ impl RenderSession {
             match ResolvedScene::empty(&view_background_color, request, frame_viewport) {
                 Ok(resolved) => Ok(resolved),
                 Err(ResolveSceneError::UnboundedGeometry) => {
-                    return Err(self.unbounded_geometry_failure(request.format()));
+                    Err(self.unbounded_geometry_failure(request.format()))
                 }
-                Err(ResolveSceneError::InvalidColor) => {
-                    return Err(self.internal_failure(
-                        request.format(),
-                        "normalized scene background color is invalid",
-                        "/appState/viewBackgroundColor",
-                    ));
-                }
+                Err(ResolveSceneError::InvalidColor) => Err(self.internal_failure(
+                    request.format(),
+                    "normalized scene background color is invalid",
+                    "/appState/viewBackgroundColor",
+                )),
                 Err(
                     ResolveSceneError::Memory
                     | ResolveSceneError::InvalidFallbackFont
                     | ResolveSceneError::InvalidMandatoryNotice,
-                ) => {
-                    return Err(self.internal_failure(
-                        request.format(),
-                        "empty scene resolution reached an impossible failure",
-                        "",
-                    ));
-                }
+                ) => Err(self.internal_failure(
+                    request.format(),
+                    "empty scene resolution reached an impossible failure",
+                    "",
+                )),
             }
         } else {
             match ResolvedScene::elements(
@@ -2182,41 +2178,33 @@ impl RenderSession {
                 frame_viewport,
             ) {
                 Ok(Some(resolved)) => Ok(resolved),
-                Ok(None) => {
-                    return Err(self.internal_failure(
-                        request.format(),
-                        "outline semantics are outside the implemented focused case",
-                        "/elements",
-                    ));
-                }
+                Ok(None) => Err(self.internal_failure(
+                    request.format(),
+                    "outline semantics are outside the implemented focused case",
+                    "/elements",
+                )),
                 Err(ResolveSceneError::Memory) => {
-                    return Err(self.memory_failure(request, "semantic_geometry", "outline"));
+                    Err(self.memory_failure(request, "semantic_geometry", "outline"))
                 }
-                Err(ResolveSceneError::InvalidFallbackFont) => {
-                    return Err(self.internal_failure(
-                        request.format(),
-                        "the sealed fallback font could not be resolved",
-                        "/elements",
-                    ));
-                }
-                Err(ResolveSceneError::InvalidMandatoryNotice) => {
-                    return Err(self.format_failure(
-                        request,
-                        format_error_code(request.format()),
-                        FormatEncodeError::Encoding(
-                            "the mandatory font notice could not be resolved".to_owned(),
-                        ),
-                    ));
-                }
-                Err(ResolveSceneError::InvalidColor) => {
-                    return Err(self.internal_failure(
-                        request.format(),
-                        "normalized scene color is invalid",
-                        "/elements",
-                    ));
-                }
+                Err(ResolveSceneError::InvalidFallbackFont) => Err(self.internal_failure(
+                    request.format(),
+                    "the sealed fallback font could not be resolved",
+                    "/elements",
+                )),
+                Err(ResolveSceneError::InvalidMandatoryNotice) => Err(self.format_failure(
+                    request,
+                    format_error_code(request.format()),
+                    FormatEncodeError::Encoding(
+                        "the mandatory font notice could not be resolved".to_owned(),
+                    ),
+                )),
+                Err(ResolveSceneError::InvalidColor) => Err(self.internal_failure(
+                    request.format(),
+                    "normalized scene color is invalid",
+                    "/elements",
+                )),
                 Err(ResolveSceneError::UnboundedGeometry) => {
-                    return Err(self.unbounded_geometry_failure(request.format()));
+                    Err(self.unbounded_geometry_failure(request.format()))
                 }
             }
         }

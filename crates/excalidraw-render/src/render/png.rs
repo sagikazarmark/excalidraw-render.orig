@@ -2245,7 +2245,9 @@ fn paint_rough_drawing(
     let dashed_path;
     let path = if let Some(dash) = &stroke.dash {
         dashed_path = path.dash(dash, resolution_scale).ok_or_else(|| {
-            FormatEncodeError::Encoding("PNG raster adapter could not dash the Rough path".to_owned())
+            FormatEncodeError::Encoding(
+                "PNG raster adapter could not dash the Rough path".to_owned(),
+            )
         })?;
         dashed_path
     } else {

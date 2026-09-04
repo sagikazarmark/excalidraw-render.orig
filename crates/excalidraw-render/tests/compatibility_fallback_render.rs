@@ -884,8 +884,7 @@ fn scene_text_reports_missing_glyphs_and_emoji_substitution_in_every_format() {
                 .report()
                 .diagnostics()
                 .iter()
-                .any(|diagnostic| diagnostic.code()
-                    == DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED),
+                .any(|diagnostic| diagnostic.code() == DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED),
             "scene emoji uses the bundled Noto Emoji face for {format:?}"
         );
     }
@@ -893,7 +892,10 @@ fn scene_text_reports_missing_glyphs_and_emoji_substitution_in_every_format() {
     // The replacement is deterministic and reaches the SVG text content.
     let svg = render(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
-    assert!(svg.contains("??"), "unmapped text uses the replacement glyph");
+    assert!(
+        svg.contains("??"),
+        "unmapped text uses the replacement glyph"
+    );
 }
 
 fn render(scene: &SceneDocument, format: OutputFormat) -> excalidraw_render::RenderOutcome {

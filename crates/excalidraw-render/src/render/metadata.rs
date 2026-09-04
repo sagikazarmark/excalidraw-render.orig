@@ -775,7 +775,7 @@ mod agreement_tests {
                         false => None,
                     };
                     let manifest = manifest_json(
-                        &profile,
+                        profile,
                         &report,
                         notice_json,
                         digest.as_deref(),
@@ -784,7 +784,7 @@ mod agreement_tests {
                     )
                     .unwrap_or_else(|_| panic!("manifest serializes"));
                     let estimated = manifest_json_len(
-                        &profile,
+                        profile,
                         &report,
                         notice_json,
                         selection.embedded_scene,
@@ -814,7 +814,7 @@ mod agreement_tests {
                 for target in targets() {
                     let built = ArtifactMetadata::build(
                         &scene,
-                        &profile,
+                        profile,
                         &report,
                         notices.as_ref(),
                         selection,
@@ -824,7 +824,7 @@ mod agreement_tests {
                     assert_eq!(
                         ArtifactMetadata::estimate(
                             &scene,
-                            &profile,
+                            profile,
                             &report,
                             notices.as_ref(),
                             selection,

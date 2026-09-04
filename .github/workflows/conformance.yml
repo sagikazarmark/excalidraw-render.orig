@@ -8,6 +8,42 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: formatting and lints
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
+      - name: Install rustfmt and clippy for the pinned toolchain
+        run: rustup component add rustfmt clippy
+      # Every repo-authored crate except xtask. Vendored forks (brotli, skera,
+      # ttf2woff2) keep upstream formatting. xtask/src/pdf_viewers.rs is
+      # digest-pinned by the approved PDF viewer qualification (issue #35) and
+      # carries one pre-existing rustfmt diff; xtask joins this gate when the
+      # next re-approval round moves that file anyway.
+      - name: Check formatting
+        run: >-
+          cargo fmt --check
+          -p excalidraw-render -p excalidraw-render-cli -p excalidraw-render-compare
+          -p excalidraw-render-assets-base
+          -p excalidraw-render-assets-data-000 -p excalidraw-render-assets-data-001
+      # `--no-deps` keeps the vendored forks out of the gate: they are
+      # workspace members, so `--exclude` alone would still lint them as
+      # dependencies of the selected packages.
+      # `manual_is_multiple_of` is allowed across the linted crates because its
+      # one current occurrence is in crates/excalidraw-render/src/render/
+      # font_subset.rs, which is digest-pinned by the approved SVG font subset
+      # qualification (issue #99). Drop the allowance in the re-approval round
+      # that next moves that file.
+      - name: Lint the renderer, CLI, and xtask
+        run: >-
+          cargo clippy --locked --no-deps --all-targets
+          -p excalidraw-render -p excalidraw-render-cli -p xtask
+          -- -D warnings -A clippy::manual_is_multiple_of
+
   registered-cases:
     name: registered conformance cases
     runs-on: ubuntu-24.04
@@ -19,9 +55,29 @@ jobs:
         run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
       - name: Verify every registered conformance case
         run: cargo run --locked -p xtask -- conformance verify-all
-      - name: Renderer parity suite
-        run: |
-          cargo test --locked -p excalidraw-render --lib
-          cargo test --locked -p excalidraw-render --test registered_case_png_parity
-          cargo test --locked -p excalidraw-render --test registered_case_svg_path_parity
-          cargo test --locked -p excalidraw-render --test registered_case_svg_raster_parity
+      # The workspace suite below runs these targets too. They stay as named
+      # steps here so a unit or parity failure is legible on its own.
+      - name: Renderer unit tests
+        run: cargo test --locked -p excalidraw-render --lib
+      - name: Registered case PNG parity
+        run: cargo test --locked -p excalidraw-render --test registered_case_png_parity
+      - name: Registered case SVG path parity
+        run: cargo test --locked -p excalidraw-render --test registered_case_svg_path_parity
+      - name: Registered case SVG raster parity
+        run: cargo test --locked -p excalidraw-render --test registered_case_svg_raster_parity
+
+  workspace-suite:
+    name: workspace test suite
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
+      # Every unit, integration, and doc test target in every workspace crate,
+      # so a test target that no workflow names still gates a push.
+      # `#[ignore]`d tests stay ignored: the nightly workflow runs its two
+      # expansions, and #109 covers the PDF backend gates.
+      - name: Run every workspace test target
+        run: cargo test --locked --workspace --no-fail-fast

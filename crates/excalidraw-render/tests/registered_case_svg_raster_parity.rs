@@ -219,8 +219,10 @@ fn rasterize(svg: &str, context: &str) -> CanonicalRgba8 {
         }
     }
 
-    let mut options = usvg::Options::default();
-    options.fontdb = Arc::new(database);
+    let options = usvg::Options {
+        fontdb: Arc::new(database),
+        ..Default::default()
+    };
     let tree = usvg::Tree::from_str(svg, &options)
         .unwrap_or_else(|error| panic!("{context}: SVG parses: {error}"));
     let size = tree.size().to_int_size();
@@ -235,11 +237,9 @@ fn rasterize(svg: &str, context: &str) -> CanonicalRgba8 {
     for pixel in pixmap.pixels() {
         let alpha = u32::from(pixel.alpha());
         let straight = |channel: u8| -> u8 {
-            if alpha == 0 {
-                0
-            } else {
-                ((u32::from(channel) * 255 + alpha / 2) / alpha).min(255) as u8
-            }
+            (u32::from(channel) * 255 + alpha / 2)
+                .checked_div(alpha)
+                .map_or(0, |value| value.min(255) as u8)
         };
         rgba.extend_from_slice(&[
             straight(pixel.red()),

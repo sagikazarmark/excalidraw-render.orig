@@ -84,9 +84,11 @@ pub(super) fn svg_font_demand_estimates(
     })?;
 
     let mut estimates = [("", 0_usize); 9];
-    let mut output = usize::from(excalifont_has_cjk);
     let mut seen = [0_u64; UNICODE_WORDS];
-    for family in family_order.into_iter().flatten() {
+    // Slot 0 is reserved for Xiaolai when Excalifont text triggers the CJK
+    // subset; at most eight families follow, so nine slots always suffice.
+    let slots = estimates.iter_mut().skip(usize::from(excalifont_has_cjk));
+    for (slot, family) in slots.zip(family_order.into_iter().flatten()) {
         seen.fill(0);
         let mut unique = 0_usize;
         visit_svg_font_text(scene, text_order, |candidate, text| {
@@ -115,8 +117,7 @@ pub(super) fn svg_font_demand_estimates(
             }
             Ok(())
         })?;
-        estimates[output] = (family, unique);
-        output += 1;
+        *slot = (family, unique);
     }
     if excalifont_has_cjk {
         let excalifont = estimates

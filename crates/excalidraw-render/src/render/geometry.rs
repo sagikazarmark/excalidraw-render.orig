@@ -242,10 +242,7 @@ pub(super) fn rough_drawing(
             let mid_y = (height / 2.0).floor() + 1.0;
             let points = [
                 Point { x: mid_x, y: 0.0 },
-                Point {
-                    x: width,
-                    y: mid_y,
-                },
+                Point { x: width, y: mid_y },
                 Point {
                     x: mid_x,
                     y: height,

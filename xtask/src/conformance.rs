@@ -244,8 +244,7 @@ fn verify_frame(loaded: &LoadedCase, require_approval: bool) -> Result<(), Strin
     if loaded.manifest["schema"] != json!("excalidraw-render/frame-conformance-case/v1")
         || loaded.manifest["case_id"] != json!(loaded.entry.id)
         || loaded.manifest["compatibility_revision"] != json!(1)
-        || loaded.manifest["originating_issue"]
-            != json!(format!("{REPOSITORY_ISSUE_PREFIX}97"))
+        || loaded.manifest["originating_issue"] != json!(format!("{REPOSITORY_ISSUE_PREFIX}97"))
         || loaded.manifest["options"]
             != json!({
                 "exportBackground": true,
@@ -555,8 +554,7 @@ fn verify_typography(loaded: &LoadedCase, require_approval: bool) -> Result<(), 
         || loaded.manifest["layer"] != json!("focused")
         || loaded.manifest["crops"] != json!([])
         || loaded.manifest["exceptions"] != json!([])
-        || loaded.manifest["originating_issue"]
-            != json!(format!("{REPOSITORY_ISSUE_PREFIX}58"))
+        || loaded.manifest["originating_issue"] != json!(format!("{REPOSITORY_ISSUE_PREFIX}58"))
     {
         return Err("typography case identity or policy metadata is invalid".to_owned());
     }
@@ -711,7 +709,9 @@ fn verify_assets(case_data: &LoadedCase) -> Result<(), String> {
             .get(file_id)
             .ok_or_else(|| format!("asset {file_id:?} is not a scene file payload"))?;
         if record["media_type"] != file["mimeType"] {
-            return Err(format!("asset {file_id:?} media type does not match the scene"));
+            return Err(format!(
+                "asset {file_id:?} media type does not match the scene"
+            ));
         }
         let data_url = file["dataURL"]
             .as_str()
@@ -724,7 +724,9 @@ fn verify_assets(case_data: &LoadedCase) -> Result<(), String> {
             .ok_or_else(|| format!("scene file {file_id:?} payload is not valid base64"))?;
         if record["byte_length"] != json!(bytes.len()) || record["sha256"] != json!(sha256(&bytes))
         {
-            return Err(format!("asset {file_id:?} does not match its decoded payload"));
+            return Err(format!(
+                "asset {file_id:?} does not match its decoded payload"
+            ));
         }
     }
     Ok(())
@@ -763,7 +765,10 @@ fn verify_case_metadata(manifest: &Value, entry: &CaseEntry) -> Result<(), Strin
         .ok_or_else(|| "coverage must be an array".to_owned())?;
     let expected_coverage: BTreeSet<&str> = entry.coverage.iter().map(String::as_str).collect();
     if expected_coverage.is_empty() {
-        return Err(format!("case {} registers no coverage identities", entry.id));
+        return Err(format!(
+            "case {} registers no coverage identities",
+            entry.id
+        ));
     }
     let actual_coverage: BTreeSet<&str> = coverage
         .iter()
@@ -823,7 +828,10 @@ fn verify_case_metadata(manifest: &Value, entry: &CaseEntry) -> Result<(), Strin
     let expectations = object(&manifest["semantic_expectations"], "semantic expectations")?;
     // the registered entry is the authority on shape as well as values, so the
     // key set follows it rather than a literal that only fits one schema
-    let registered = object(&entry.semantic_expectations, "registered semantic expectations")?;
+    let registered = object(
+        &entry.semantic_expectations,
+        "registered semantic expectations",
+    )?;
     let expected_keys: Vec<&str> = registered.keys().map(String::as_str).collect();
     verify_exact_keys(expectations, &expected_keys, "semantic expectations")?;
     if Value::Object(expectations.clone()) != entry.semantic_expectations {
@@ -1162,9 +1170,7 @@ fn verify_scene(case_data: &LoadedCase) -> Result<(), String> {
         }
     }
     if let Some((kind, count)) = observed.into_iter().next() {
-        return Err(format!(
-            "scene has {count} undeclared {kind} elements"
-        ));
+        return Err(format!("scene has {count} undeclared {kind} elements"));
     }
 
     for (position, value) in elements.iter().enumerate() {
@@ -1395,9 +1401,11 @@ fn verify_variants(case_data: &LoadedCase, referenced: &mut Vec<Value>) -> Resul
     let variants = case_data.manifest["variants"]
         .as_array()
         .ok_or_else(|| "variants must be an array".to_owned())?;
-    let declared = case_data.entry.variants.as_array().ok_or_else(|| {
-        format!("case {} registers no export variants", case_data.entry.id)
-    })?;
+    let declared = case_data
+        .entry
+        .variants
+        .as_array()
+        .ok_or_else(|| format!("case {} registers no export variants", case_data.entry.id))?;
     if variants.len() != declared.len() {
         return Err(format!(
             "manifest carries {} variants; the registered case declares {}",
@@ -1490,7 +1498,11 @@ fn collect_variant_descriptors(
         for format in ["png", "svg"] {
             verify_descriptor(&case_data.root, &formats[format]["artifact"], referenced)?;
             verify_descriptor(&case_data.root, &formats[format]["raw_raster"], referenced)?;
-            verify_descriptor(&case_data.root, &formats[format]["expected_report"], referenced)?;
+            verify_descriptor(
+                &case_data.root,
+                &formats[format]["expected_report"],
+                referenced,
+            )?;
         }
     }
     Ok(())
@@ -1776,7 +1788,6 @@ fn verify_repo_descriptor(value: &Value, subject: &str) -> Result<(), String> {
     }
     Ok(())
 }
-
 
 fn verify_approval_for_issue(approval: &Value, subject: &str, issue: &str) -> Result<(), String> {
     let approval = object(approval, "approval")?;

@@ -24,9 +24,9 @@ pub(super) fn resolve_bound_text_placements(
     let mut placements = Vec::new();
     placements.try_reserve(outlines.len())?;
     for (text, _) in outlines {
-        let NormalizedElementKind::Text(text_source) = &text.kind else {
+        if !matches!(text.kind, NormalizedElementKind::Text(_)) {
             continue;
-        };
+        }
         let Some(container_index) = relationship_element_target(
             text.source.source_index(),
             crate::relationships::RelationshipKind::Mask,
@@ -86,45 +86,6 @@ pub(super) fn resolve_bound_text_placements(
         });
     }
     Ok(placements)
-}
-
-fn bound_text_box(container: &NormalizedElement) -> Option<[f64; 4]> {
-    const PADDING: f64 = 5.0;
-    let (offset_x, offset_y, width, height) = match container.kind {
-        NormalizedElementKind::Rectangle => (
-            PADDING,
-            PADDING,
-            container.width - PADDING * 2.0,
-            container.height - PADDING * 2.0,
-        ),
-        NormalizedElementKind::Ellipse => {
-            let inset_x = container.width / 2.0 * (1.0 - std::f64::consts::FRAC_1_SQRT_2);
-            let inset_y = container.height / 2.0 * (1.0 - std::f64::consts::FRAC_1_SQRT_2);
-            (
-                PADDING + inset_x,
-                PADDING + inset_y,
-                (container.width / 2.0 * std::f64::consts::SQRT_2).round() - PADDING * 2.0,
-                (container.height / 2.0 * std::f64::consts::SQRT_2).round() - PADDING * 2.0,
-            )
-        }
-        NormalizedElementKind::Diamond => (
-            PADDING + container.width / 4.0,
-            PADDING + container.height / 4.0,
-            (container.width / 2.0).round() - PADDING * 2.0,
-            (container.height / 2.0).round() - PADDING * 2.0,
-        ),
-        _ => return None,
-    };
-    let values = [
-        container.x + offset_x,
-        container.y + offset_y,
-        width.max(0.0),
-        height.max(0.0),
-    ];
-    values
-        .iter()
-        .all(|value| value.is_finite())
-        .then_some(values)
 }
 
 fn linear_midpoint(
