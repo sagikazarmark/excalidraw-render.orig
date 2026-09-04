@@ -33,6 +33,7 @@ crc32fast = "=1.4.2"
 gif = { version = "=0.14.2", default-features = false, features = ["std"] }
 image-webp = "=0.2.4"
 jsonschema = { version = "=0.33.0", default-features = false }
+miniz_oxide = "=0.8.9"
 moxcms = { version = "=0.9.0", default-features = false }
 png = "=0.17.16"
 pdf-writer = "=0.12.0"

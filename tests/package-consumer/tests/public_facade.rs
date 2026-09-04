@@ -25,6 +25,7 @@ const TEXT_SCENE: &[u8] =
 const SOURCE_IMAGE_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/png","dataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=","created":1}}}"#;
 const NATIVE_NESTED_SVG_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIj48c3RvcCBzdG9wLWNvbG9yPSIjZjAwIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDBmIi8+PC9saW5lYXJHcmFkaWVudD48Y2xpcFBhdGggaWQ9ImMiPjxjaXJjbGUgY3g9IjEwIiBjeT0iNSIgcj0iNSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCIgZmlsbD0idXJsKCNnKSIgY2xpcC1wYXRoPSJ1cmwoI2MpIi8+PC9zdmc+","created":1}}}"##;
 const RASTER_FALLBACK_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCI+PGRlZnM+PGZpbHRlciBpZD0iYmx1ciIgeD0iMCIgeT0iMCIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMSIvPjwvZmlsdGVyPjwvZGVmcz48cmVjdCB3aWR0aD0iMjAiIGhlaWdodD0iMTAiIGZpbGw9IiMwMGZmMDAiIGZpbHRlcj0idXJsKCNibHVyKSIvPjwvc3ZnPg==","created":1}}}"##;
+const NOISY_RASTER_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","x":0,"y":0,"width":128,"height":64,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}],"appState":{},"files":{"asset":{"id":"asset","mimeType":"image/png","dataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAICAYAAADwdn+XAAAB+ElEQVR42g3FbUyMAQDA8Wfo5Vg4t2jR8AFX0vIynXa5LqMdOeQ0Sa/bSRvhWmuVlA+ksjIXadMdcyvt6BxRpq22W63RqkdsbDHr3G5ys+JW6Lo/vy8/Iembipz3K7md/IUeWQzVvh/Uzvj5uKAZ8ckI6tR5jvjC2WO9ynRoHtV5WjQR+wlQnsQcXIDQY//DtjYrGR4Ta6O8tA0PMeUNxhAbiE5ZwcMdLxitjaPccZbOiGcEfTAxscHJ8iV2BrYfQGgsWo3S3oTamsmNmlRkb6WcPiFlIkjAJVpRdm1BlxyLIFRSIWlGEW6jyjqH8fAwqusNCO53azga8wDHpnEUNisF/g66XMX/v4dUW0eT0UyZXoZ5tJ6QsRwq5c9ZdbOGi6EeXO2lCJJHLQwmTZOufsl8VCtprV7k4yKJpp28yVzPZW0k3SW5pHUnUhY3w1BJJXPxOZx6/ZMVG/8inFeMEfF9M04xC3vAZ6ptEvbOxLMwWsX9r14+5e8iMDeeAQlkxxipkbswGrJZOnsGcVk6QrvGh33qKetSfqFOuENL33GqUvOJzDiEu/gVd+t+c0tTj6XBw2KdgWtbdyPRW+h1Gwg55kHYVzTCBVEk7NJBJqMLCSv04dI7OedfxGSPlI5+B+VXUohMGOJxVinexkFmazvpz7bQl9DLP6p9QFNSPs87AAAAAElFTkSuQmCC","created":1}}}"#;
 const FRAME_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"first-frame","type":"frame","name":"Public One","x":10,"y":20,"width":80,"height":60,"updated":1},{"id":"first-child","type":"rectangle","x":20,"y":30,"width":20,"height":20,"frameId":"first-frame","strokeColor":"#e03131","backgroundColor":"#e03131","fillStyle":"solid","roughness":0,"updated":1},{"id":"second-frame","type":"magicframe","name":"Public Two","x":110,"y":20,"width":50,"height":40,"updated":1},{"id":"second-child","type":"ellipse","x":120,"y":30,"width":20,"height":15,"frameId":"second-frame","strokeColor":"#1971c2","backgroundColor":"#1971c2","fillStyle":"solid","roughness":0,"updated":1}],"appState":{},"files":{}}"##;
 const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
     (
@@ -34,7 +35,7 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
     ),
     (
         OutputFormat::Png,
-        "2a118b5686dd514fc2b709716d7b0661de971c63ca910cb88852e392ff662068",
+        "997f544675c9330b82daf013d021a46b189b84ff82f2c0bacfe955523c9cc0a3",
         "2557fb95fd4972c5ceaea2b0b1b8a3a73f157c2fe147bd5d348be0f639186922",
     ),
     (
@@ -318,6 +319,43 @@ fn packaged_public_facade_renders_fallbacks_with_cross_target_stable_bytes() {
             format.as_str()
         );
     }
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn packaged_public_facade_preserves_png_scanline_filter_bytes_across_targets() {
+    // A noisy raster upscaled by the renderer makes the PNG encoder take its
+    // predictive scanline filters and exercises the deflate compressor on
+    // dense data, while the padding rows stay unfiltered. Together with the
+    // flat rectangle expectation this pins both filter paths and the
+    // compressor on every supported target (#113).
+    let scene =
+        SceneDocument::parse(NOISY_RASTER_SCENE).expect("the noisy raster scene is admitted");
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .build()
+        .expect("the PNG request is valid");
+    let first = Renderer::new()
+        .render(&scene, &request)
+        .expect("the noisy raster scene renders");
+    let second = Renderer::new()
+        .render(&scene, &request)
+        .expect("the noisy raster scene renders repeatedly");
+    let report = serde_json::to_vec(first.report()).expect("the report serializes");
+
+    assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+    // 148x84 RGBA scanlines occupy 49,812 bytes when stored uncompressed.
+    assert!(
+        first.artifact().bytes().len() * 2 < 148 * (84 * 4 + 1),
+        "the PNG is not deflate-compressed"
+    );
+    assert_eq!(
+        format!("{:x}", Sha256::digest(first.artifact().bytes())),
+        "f873403ca7e6533a3231c119ed9cd8db09bbede8304c191e079e56a61cbcd28f"
+    );
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&report)),
+        "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    );
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]

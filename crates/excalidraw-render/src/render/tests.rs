@@ -549,7 +549,7 @@ fn canonical_resource_trace_is_uncharged_stable_and_semantic() {
         ),
         (
             OutputFormat::Png,
-            "ea83686bc428297bb5c5b9b99faa5749350fd6f8480d1728a1aa7d827fdaa097",
+            "597955fc8a6149633ed5f9fbf475f1ac19b3abe05421c0d1cf4dcea99dced322",
         ),
         (
             OutputFormat::Pdf,

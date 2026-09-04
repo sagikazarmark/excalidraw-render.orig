@@ -45,8 +45,10 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
             OutputFormat::Svg => "cf381468226c5326196b98fda7c940636a35b3637021ea344e3fc765daf15756",
             // Updated when PNG stroke dashing was fixed: the previous digest pinned the
             // `crowfeet` arrow's dashed stroke rendering as solid. SVG and PDF are
-            // unchanged, which is what confirms the move was PNG-only.
-            OutputFormat::Png => "17f96486431b5b140229a3ed3c5d102c32308faaf943da94839c2fe06356a50f",
+            // unchanged, which is what confirms the move was PNG-only. Moved again
+            // when IDAT switched from stored to deflate-compressed scanlines (#113);
+            // the decoded pixels are unchanged.
+            OutputFormat::Png => "09e2eb955e4134f3f3a6b19b1cee567f130b42d947248764faa036e1199fae23",
             OutputFormat::Pdf => "99505f0a67ce2181670ec8fcc9992e68e6376e6e9700cb1a59fae74a8a192566",
             _ => unreachable!("the test enumerates every revision-1 format"),
         };

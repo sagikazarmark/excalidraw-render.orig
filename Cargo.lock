@@ -476,6 +476,7 @@ dependencies = [
  "gif 0.14.2",
  "image-webp",
  "jpeg-encoder",
+ "miniz_oxide",
  "moxcms 0.9.0",
  "pdf-writer",
  "png 0.17.16",

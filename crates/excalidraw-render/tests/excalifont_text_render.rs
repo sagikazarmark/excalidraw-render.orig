@@ -129,10 +129,10 @@ fn excalifont_text_renders_semantically_and_deterministically_in_every_format() 
                 assert!(pixels.chunks_exact(4).any(|pixel| {
                     pixel[2] > pixel[0] && pixel[2] > pixel[1] && pixel[3] == 255
                 }));
-                assert_eq!(first.artifact().bytes().len(), 48_314);
+                assert_eq!(first.artifact().bytes().len(), 2_647);
                 assert_eq!(
                     artifact_sha256(&first),
-                    "c36b45c0c7dd23f822c6f81368c45bc81dd2ad9234c24d3a473844701f5e4d29"
+                    "cb90c943bc71d5eec983bf2c933e1c3c16dd4ca7b5fc14ba79f0230404209534"
                 );
             }
             OutputFormat::Pdf => {
@@ -484,7 +484,7 @@ fn png_text_coverage_uses_the_transformed_glyph_rectangle() {
     assert!(equality.report().is_empty());
     assert_eq!(
         artifact_sha256(&equality),
-        "c36b45c0c7dd23f822c6f81368c45bc81dd2ad9234c24d3a473844701f5e4d29"
+        "cb90c943bc71d5eec983bf2c933e1c3c16dd4ca7b5fc14ba79f0230404209534"
     );
 
     let crossing_request = RenderRequest::builder(OutputFormat::Png)
