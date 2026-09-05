@@ -865,6 +865,86 @@ fn png_frame_clip_masks_are_charged_once_per_frame_and_owned_by_no_child() {
 }
 
 #[test]
+fn frame_name_is_laid_out_as_the_reference_text_element() {
+    let font = text::FallbackFont::load()
+        .ok()
+        .expect("the bundled Liberation Sans loads");
+    let baseline = FamilyMetrics::for_source_family(2)
+        .expect("Helvetica has metadata metrics")
+        .first_baseline(14.0, 17.5);
+    assert!((baseline - 12.530_273_437_5).abs() < 1e-12);
+
+    // A name narrower than its frame keeps its measured width and starts at
+    // the frame's x.
+    let name = font
+        .resolve_frame_name("Clip", 580.0)
+        .ok()
+        .expect("the name shapes");
+    assert_eq!(name.label.text, "Clip");
+    assert_eq!(name.label.display_text, "Clip");
+    assert!(name.width > 20.0 && name.width < 30.0, "{}", name.width);
+    assert_eq!(name.label.glyphs.len(), 4);
+    assert!(name.label.glyphs[0].x.abs() < 1e-12, "left aligned");
+    for glyph in &name.label.glyphs {
+        assert!((glyph.y - baseline).abs() < 1e-12, "baseline {}", glyph.y);
+    }
+    assert!((name.label.baseline - baseline).abs() < 1e-12);
+
+    // Wider than the frame: the longest prefix that fits with `...` appended,
+    // the text element as wide as the frame.
+    let full = font
+        .resolve_frame_name("A rather long frame name", 1_000.0)
+        .ok()
+        .expect("the full name shapes");
+    let narrow = font
+        .resolve_frame_name("A rather long frame name", full.width / 2.0)
+        .ok()
+        .expect("the truncated name shapes");
+    assert_eq!(narrow.width, full.width / 2.0);
+    let kept = narrow
+        .label
+        .text
+        .strip_suffix("...")
+        .expect("ASCII dots, as truncateText appends");
+    assert!("A rather long frame name".starts_with(kept) && !kept.is_empty());
+    let fits = |text: &str| {
+        font.resolve_frame_name(text, f64::INFINITY)
+            .ok()
+            .expect("candidate shapes")
+            .width
+    };
+    assert!(fits(&narrow.label.text) <= narrow.width, "the cut fits");
+    let one_more = format!(
+        "{}...",
+        "A rather long frame name"
+            .chars()
+            .take(kept.chars().count() + 1)
+            .collect::<String>()
+    );
+    assert!(
+        fits(&one_more) > narrow.width,
+        "and is the longest that does"
+    );
+
+    // Too narrow for even one character with the dots: the whole name stays,
+    // as truncateText leaves it, at the frame's width.
+    let tiny = font
+        .resolve_frame_name("Clip", 1.0)
+        .ok()
+        .expect("the tiny frame's name shapes");
+    assert_eq!(tiny.label.text, "Clip");
+    assert_eq!(tiny.width, 1.0);
+
+    // A blank name measures as one space, as measureText does.
+    let blank = font
+        .resolve_frame_name("", 100.0)
+        .ok()
+        .expect("the blank name shapes");
+    assert!(blank.label.glyphs.is_empty());
+    assert!(blank.width > 0.0);
+}
+
+#[test]
 fn required_raster_trace_precedes_projection_work() {
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
     let request = RenderRequest::builder(OutputFormat::Png)

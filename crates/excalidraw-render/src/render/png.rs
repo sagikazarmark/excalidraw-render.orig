@@ -58,7 +58,7 @@ enum PngElement {
     },
     Frame {
         source: NormalizedElementSource,
-        name: Option<super::text::ResolvedLabel>,
+        name: Option<PngFrameName>,
         magic: bool,
         outline_path: Option<Path>,
         frame_clips: Vec<PngFrameClip>,
@@ -115,6 +115,15 @@ struct PngFrameClip {
     frame_source_index: usize,
     path: Path,
     transform: PngTransform,
+}
+
+/// A frame's name at its own unrotated placement above the frame, painted at
+/// full opacity and outside the frame's clip like the text element the
+/// reference synthesizes for it.
+struct PngFrameName {
+    label: super::text::ResolvedLabel,
+    transform: PngTransform,
+    color: CanonicalColor,
 }
 
 /// One frame clip mask the PNG plan builds once and shares across every
@@ -545,7 +554,11 @@ impl PngPlan {
                 ResolvedElement::Frame(frame) => {
                     elements.push(PngElement::Frame {
                         source: frame.source,
-                        name: frame.name,
+                        name: frame.name.map(|name| PngFrameName {
+                            transform: PngTransform::new(&name.transform, scale),
+                            color: name.color,
+                            label: name.label,
+                        }),
                         magic: frame.magic,
                         outline_path: frame.outline_path,
                         frame_clips: project_frame_clips(frame.frame_clips, scale)?,
@@ -903,21 +916,14 @@ impl PngPlan {
                             );
                         }
                         if let Some(name) = name {
-                            if let Some(path) = label_path(&name.path)? {
-                                let color = if *magic {
-                                    CanonicalColor::from_rgb8(0x7a, 0xff, 0xd7)
-                                } else {
-                                    CanonicalColor::from_rgb8(0x1b, 0x1b, 0x1f)
-                                };
-                                let paint = solid_paint(color, *opacity)?;
+                            if let Some(path) = label_path(&name.label.path)? {
+                                let paint = solid_paint(name.color, 1.0)?;
                                 surface.fill_path(
                                     &path,
                                     &paint,
                                     FillRule::Winding,
-                                    transform
-                                        .with_local_offset(0.0, -24.0)
-                                        .raster_transform(SUBPIXEL_SCALE)?,
-                                    paint_mask,
+                                    name.transform.raster_transform(SUBPIXEL_SCALE)?,
+                                    None,
                                 );
                             }
                         }

@@ -575,8 +575,8 @@ fn compatibility_placeholder_preserves_frame_clipping_in_every_format() {
 
     let svg = render(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
-    assert!(svg.contains("<clipPath id=\"frame-fallback-1\">"));
-    assert!(svg.contains("<g clip-path=\"url(#frame-fallback-1)\">"));
+    assert_eq!(svg.matches("<clipPath id=\"frame-clip-0\">").count(), 1);
+    assert!(svg.contains("<g clip-path=\"url(#frame-clip-0)\">"));
 
     let png = render(&scene, OutputFormat::Png);
     let (width, _, rgba) = decode_png(png.artifact().bytes());

@@ -2920,11 +2920,11 @@ impl RenderSession {
                         u64::try_from(clip.path.operations.len()).unwrap_or(u64::MAX),
                     )
                 });
-                let label_segments = frame.name.as_ref().map_or(0, |label| {
-                    u64::try_from(label.path.operations.len()).unwrap_or(u64::MAX)
+                let label_segments = frame.name.as_ref().map_or(0, |name| {
+                    u64::try_from(name.label.path.operations.len()).unwrap_or(u64::MAX)
                 });
-                let text_scalars = frame.name.as_ref().map_or(0, |label| {
-                    u64::try_from(label.text.chars().count()).unwrap_or(u64::MAX)
+                let text_scalars = frame.name.as_ref().map_or(0, |name| {
+                    u64::try_from(name.label.text.chars().count()).unwrap_or(u64::MAX)
                 });
                 let geometry_segments = outline_segments
                     .saturating_add(clip_segments)

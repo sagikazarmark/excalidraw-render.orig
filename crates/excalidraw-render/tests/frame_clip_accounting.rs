@@ -108,8 +108,8 @@ fn an_arrow_label_mask_is_bounded_by_the_label_rather_than_the_canvas() {
 
 /// The #112 reproduction at default limits: one 580x580 frame clipping a
 /// 14x14 grid of filled rectangles whose last column and row straddle the frame
-/// edge. With the frame label the canvas is 600x624 = 374,400 pixels, so a
-/// full-canvas mask per clipped child would bill 197 x 374,400 = 73,756,800
+/// edge. With the frame name the canvas is 600x620 = 372,000 pixels, so a
+/// full-canvas mask per clipped child would bill 197 x 372,000 = 73,284,000
 /// rasterized pixels against the 67,108,864 default.
 #[test]
 fn a_frame_with_enough_children_to_exhaust_per_child_masks_renders_at_default_limits() {
@@ -146,7 +146,7 @@ fn a_frame_with_enough_children_to_exhaust_per_child_masks_renders_at_default_li
         outcome.report().diagnostics()
     );
     let (width, height) = png_dimensions(outcome.artifact().bytes());
-    assert_eq!((width, height), (600, 624));
+    assert_eq!((width, height), (600, 620));
 }
 
 fn png_dimensions(png: &[u8]) -> (u32, u32) {

@@ -45,7 +45,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(PROJECT_STRUCTURE)),
-        "a4d52747a82fd709ea7c67ddcf15318832502d8e18b0f4a7f2eef3eeaf784b5d"
+        "2e59dad185c4aabcb0c29a11a6354806dd31d42d6bc3a70cb685e157a2bf7076"
     );
     let first = render_project_operations();
     let second = render_project_operations();
@@ -59,7 +59,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
         .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "23f64b8ae4e63ad183ebd32ed05e26f4a9dc9c793c307154d88f611a2a5055a4"
+        "8e2eb6f5795e144a322649e347df0a05515655c96f874823b9a22e8a4c7da82c"
     );
 
     let pdf = String::from_utf8_lossy(first.artifact().bytes());

@@ -139,9 +139,8 @@ enum SvgElement {
     },
     Frame {
         source: NormalizedElementSource,
-        name: Option<super::text::ResolvedLabel>,
-        magic: bool,
-        outline_path: Option<Path>,
+        name: Option<SvgFrameName>,
+        outline: bool,
         frame_clips: Vec<super::ResolvedClip>,
         transform: SvgTransform,
         opacity: f64,
@@ -198,46 +197,170 @@ impl SvgElement {
     }
 }
 
+/// A frame's name as its own unrotated, unclipped, fully opaque text element
+/// above the frame, the way the reference export synthesizes it.
+struct SvgFrameName {
+    label: super::text::ResolvedLabel,
+    transform: SvgTransform,
+    color: CanonicalColor,
+}
+
+/// Every frame clip the plan references, in first-use order, each defined once
+/// in `<defs>` and referenced by every child it clips.
+fn frame_clip_definitions(
+    elements: &[SvgElement],
+) -> Result<Vec<&super::ResolvedClip>, FormatEncodeError> {
+    let mut definitions = Vec::<&super::ResolvedClip>::new();
+    for clip in elements.iter().flat_map(SvgElement::frame_clips) {
+        if !definitions
+            .iter()
+            .any(|known| known.frame_source_index == clip.frame_source_index)
+        {
+            definitions
+                .try_reserve(1)
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "format_plan",
+                    subject: "svg_frame_clip_definitions",
+                })?;
+            definitions.push(clip);
+        }
+    }
+    Ok(definitions)
+}
+
+fn push_frame_clip_definition<W: SvgSink + ?Sized>(
+    svg: &mut W,
+    clip: &super::ResolvedClip,
+) -> Result<(), FormatEncodeError> {
+    svg.push_str("<clipPath id=\"");
+    push_frame_clip_id(svg, clip)?;
+    svg.push_str("\"><rect transform=\"translate(");
+    push_svg_number(
+        svg,
+        clip.transform.translation_x,
+        "SVG frame clip translation x",
+    )?;
+    svg.push(' ');
+    push_svg_number(
+        svg,
+        clip.transform.translation_y,
+        "SVG frame clip translation y",
+    )?;
+    svg.push_str(") rotate(");
+    push_svg_number(
+        svg,
+        180.0 * clip.transform.angle_radians / std::f64::consts::PI,
+        "SVG frame clip rotation",
+    )?;
+    svg.push(' ');
+    push_svg_number(svg, clip.transform.center_x, "SVG frame clip center x")?;
+    svg.push(' ');
+    push_svg_number(svg, clip.transform.center_y, "SVG frame clip center y")?;
+    svg.push_str(")\" width=\"");
+    push_svg_number(svg, clip.width, "SVG frame clip width")?;
+    svg.push_str("\" height=\"");
+    push_svg_number(svg, clip.height, "SVG frame clip height")?;
+    svg.push('"');
+    push_svg_corner_radius(svg, clip.radius)?;
+    svg.push_str("/></clipPath>");
+    Ok(())
+}
+
+/// `rx`/`ry` for a rounded frame rectangle; the rectangular frame-export clip
+/// has none, as in the reference.
+fn push_svg_corner_radius<W: SvgSink + ?Sized>(
+    svg: &mut W,
+    radius: f64,
+) -> Result<(), FormatEncodeError> {
+    if radius > 0.0 {
+        svg.push_str(" rx=\"");
+        push_svg_number(svg, radius, "SVG frame corner radius")?;
+        svg.push_str("\" ry=\"");
+        push_svg_number(svg, radius, "SVG frame corner radius")?;
+        svg.push('"');
+    }
+    Ok(())
+}
+
 fn push_frame_clip_prefix<W: SvgSink + ?Sized>(
     svg: &mut W,
-    element_index: usize,
-    legacy_fallback_index: Option<usize>,
     clips: &[super::ResolvedClip],
 ) -> Result<(), FormatEncodeError> {
-    for (clip_index, clip) in clips.iter().enumerate() {
-        svg.push_str("<clipPath id=\"");
-        push_frame_clip_id(svg, element_index, legacy_fallback_index, clip_index)?;
-        svg.push_str("\"><path d=\"");
-        push_rough_path(svg, &clip.path)?;
-        svg.push_str("\" transform=\"translate(");
-        push_svg_number(
-            svg,
-            clip.transform.translation_x,
-            "SVG frame clip translation x",
-        )?;
-        svg.push(' ');
-        push_svg_number(
-            svg,
-            clip.transform.translation_y,
-            "SVG frame clip translation y",
-        )?;
-        svg.push_str(") rotate(");
-        push_svg_number(
-            svg,
-            180.0 * clip.transform.angle_radians / std::f64::consts::PI,
-            "SVG frame clip rotation",
-        )?;
-        svg.push(' ');
-        push_svg_number(svg, clip.transform.center_x, "SVG frame clip center x")?;
-        svg.push(' ');
-        push_svg_number(svg, clip.transform.center_y, "SVG frame clip center y")?;
-        svg.push_str(")\"/></clipPath>");
-    }
-    for clip_index in 0..clips.len() {
+    for clip in clips {
         svg.push_str("<g clip-path=\"url(#");
-        push_frame_clip_id(svg, element_index, legacy_fallback_index, clip_index)?;
+        push_frame_clip_id(svg, clip)?;
         svg.push_str(")\">");
     }
+    Ok(())
+}
+
+/// The frame name as the reference's synthesized text element: an unrotated
+/// group at the label box's top-left corner holding one left-aligned 14 px
+/// line on Helvetica's metadata baseline, in the theme's frame-name color.
+fn push_frame_name<W: SvgSink + ?Sized>(
+    svg: &mut W,
+    source: &NormalizedElementSource,
+    name: &SvgFrameName,
+) -> Result<(), FormatEncodeError> {
+    let SvgFrameName {
+        label,
+        transform,
+        color,
+    } = name;
+    svg.push_str("<g transform=\"translate(");
+    push_svg_number(svg, transform.translation_x, "SVG frame name translation x")?;
+    svg.push(' ');
+    push_svg_number(svg, transform.translation_y, "SVG frame name translation y")?;
+    svg.push_str(") rotate(");
+    push_svg_number(svg, transform.rotation_degrees, "SVG frame name rotation")?;
+    svg.push(' ');
+    push_svg_number(svg, transform.center_x, "SVG frame name center x")?;
+    svg.push(' ');
+    push_svg_number(svg, transform.center_y, "SVG frame name center y")?;
+    svg.push_str(")\"><text data-frame-name=\"");
+    push_escaped_attribute(svg, source.id());
+    svg.push_str("\" data-source-text=\"");
+    push_escaped_attribute(svg, &label.text);
+    svg.push_str("\" x=\"");
+    if label.glyphs.is_empty() {
+        svg.push('0');
+    } else {
+        for (index, glyph) in label.glyphs.iter().enumerate() {
+            if index != 0 {
+                svg.push(' ');
+            }
+            push_svg_number(svg, glyph.x, "SVG frame name glyph x")?;
+        }
+    }
+    svg.push_str("\" y=\"");
+    if label.glyphs.is_empty() {
+        push_svg_number(svg, label.baseline, "SVG frame name baseline")?;
+    } else {
+        for (index, glyph) in label.glyphs.iter().enumerate() {
+            if index != 0 {
+                svg.push(' ');
+            }
+            push_svg_number(svg, glyph.y, "SVG frame name glyph y")?;
+        }
+    }
+    svg.push_str("\" font-family=\"");
+    push_escaped_attribute(
+        svg,
+        super::svg_fonts::Bundle::effective_family("Liberation Sans"),
+    );
+    svg.push_str("\" font-size=\"");
+    push_svg_number(
+        svg,
+        super::text::FRAME_NAME_FONT_SIZE,
+        "SVG frame name font size",
+    )?;
+    svg.push_str("\" fill=\"");
+    color.write_hex(svg).map_err(|_| {
+        FormatEncodeError::Encoding("failed to write SVG frame name color".to_owned())
+    })?;
+    svg.push_str("\" text-anchor=\"start\">");
+    push_escaped_text(svg, &label.display_text);
+    svg.push_str("</text></g>");
     Ok(())
 }
 
@@ -258,27 +381,15 @@ fn push_svg_link_hit_rect<W: SvgSink + ?Sized>(
     Ok(())
 }
 
+/// The clip's identity is its frame's, so every child of one frame references
+/// the one definition. The source index is renderer-owned: an element id is
+/// untrusted input and need not be a usable XML ID.
 fn push_frame_clip_id<W: SvgSink + ?Sized>(
     svg: &mut W,
-    element_index: usize,
-    legacy_fallback_index: Option<usize>,
-    clip_index: usize,
+    clip: &super::ResolvedClip,
 ) -> Result<(), FormatEncodeError> {
-    if let Some(fallback_index) = legacy_fallback_index {
-        write!(svg, "frame-fallback-{fallback_index}").map_err(|_| {
-            FormatEncodeError::Encoding("failed to write SVG fallback clip ID".to_owned())
-        })?;
-        if clip_index != 0 {
-            write!(svg, "-{clip_index}").map_err(|_| {
-                FormatEncodeError::Encoding("failed to write SVG fallback clip suffix".to_owned())
-            })?;
-        }
-    } else {
-        write!(svg, "frame-clip-{element_index}-{clip_index}").map_err(|_| {
-            FormatEncodeError::Encoding("failed to write SVG frame clip ID".to_owned())
-        })?;
-    }
-    Ok(())
+    write!(svg, "frame-clip-{}", clip.frame_source_index)
+        .map_err(|_| FormatEncodeError::Encoding("failed to write SVG frame clip ID".to_owned()))
 }
 
 impl SvgPlan {
@@ -358,9 +469,12 @@ impl SvgPlan {
                 ResolvedElement::Frame(frame) => {
                     elements.push(SvgElement::Frame {
                         source: frame.source,
-                        name: frame.name,
-                        magic: frame.magic,
-                        outline_path: frame.outline_path,
+                        name: frame.name.map(|name| SvgFrameName {
+                            transform: SvgTransform::new(&name.transform),
+                            color: name.color,
+                            label: name.label,
+                        }),
+                        outline: frame.outline_path.is_some(),
                         frame_clips: frame.frame_clips,
                         transform: SvgTransform::new(&frame.transform),
                         opacity: frame.opacity,
@@ -486,8 +600,12 @@ impl SvgPlan {
             push_escaped_text(svg, manifest);
             svg.push_str("</excalidraw-render:manifest>");
         }
-        svg.push_str("</metadata>");
-        self.font_bundle.write(svg, push_base64)?;
+        svg.push_str("</metadata><defs>");
+        for clip in frame_clip_definitions(&self.elements)? {
+            push_frame_clip_definition(&mut svg, clip)?;
+        }
+        self.font_bundle.write_style(svg, push_base64)?;
+        svg.push_str("</defs>");
         if let Some(background) = &self.background {
             svg.push_str("<rect x=\"0\" y=\"0\" width=\"");
             push_svg_number(&mut svg, self.logical_width, "SVG background width")?;
@@ -505,16 +623,17 @@ impl SvgPlan {
         }
         for (element_index, element) in self.elements.iter().enumerate() {
             let frame_clip_count = element.frame_clips().len();
-            let legacy_fallback_index = match element {
-                SvgElement::Fallback { clip_index, .. } => Some(*clip_index),
-                _ => None,
-            };
-            push_frame_clip_prefix(
-                &mut svg,
-                element_index,
-                legacy_fallback_index,
-                element.frame_clips(),
-            )?;
+            // The name precedes the frame as its own element, outside the
+            // frame's clip and link, where the reference export puts it.
+            if let SvgElement::Frame {
+                source,
+                name: Some(name),
+                ..
+            } = element
+            {
+                push_frame_name(&mut svg, source, name)?;
+            }
+            push_frame_clip_prefix(&mut svg, element.frame_clips())?;
             if let Some(link) = element.link() {
                 svg.push_str("<a href=\"");
                 push_escaped_attribute(&mut svg, link);
@@ -837,16 +956,14 @@ impl SvgPlan {
                 }
                 SvgElement::Frame {
                     source,
-                    name,
-                    magic,
-                    outline_path,
+                    name: _,
+                    outline,
                     frame_clips: _,
                     transform,
                     opacity,
                     link,
                     width,
                     height,
-                    ..
                 } => {
                     svg.push_str("<g transform=\"translate(");
                     push_svg_number(&mut svg, transform.translation_x, "SVG frame translation x")?;
@@ -866,55 +983,18 @@ impl SvgPlan {
                     }
                     svg.push('>');
                     push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
-                    if let Some(outline_path) = outline_path {
-                        svg.push_str("<path data-frame-outline=\"");
+                    if *outline {
+                        // The reference outline: the frame rectangle with
+                        // `FRAME_STYLE.radius`, `strokeColor` and `strokeWidth`.
+                        svg.push_str("<rect data-frame-outline=\"");
                         push_escaped_attribute(&mut svg, source.id());
-                        svg.push_str("\" d=\"");
-                        push_rough_path(&mut svg, outline_path)?;
-                        svg.push_str("\" fill=\"none\" stroke=\"#bbbbbb\" stroke-width=\"2\" stroke-linejoin=\"round\"/>");
-                    }
-                    if let Some(name) = name {
-                        svg.push_str("<text data-frame-name=\"");
-                        push_escaped_attribute(&mut svg, source.id());
-                        svg.push_str("\" data-source-text=\"");
-                        push_escaped_attribute(&mut svg, &name.text);
-                        svg.push_str("\" x=\"");
-                        if name.glyphs.is_empty() {
-                            svg.push('0');
-                        } else {
-                            for (index, glyph) in name.glyphs.iter().enumerate() {
-                                if index != 0 {
-                                    svg.push(' ');
-                                }
-                                push_svg_number(&mut svg, glyph.x, "SVG frame name glyph x")?;
-                            }
-                        }
-                        svg.push_str("\" y=\"");
-                        if name.glyphs.is_empty() {
-                            push_svg_number(
-                                &mut svg,
-                                name.baseline - 24.0,
-                                "SVG frame name baseline",
-                            )?;
-                        } else {
-                            for (index, glyph) in name.glyphs.iter().enumerate() {
-                                if index != 0 {
-                                    svg.push(' ');
-                                }
-                                push_svg_number(
-                                    &mut svg,
-                                    glyph.y - 24.0,
-                                    "SVG frame name glyph y",
-                                )?;
-                            }
-                        }
-                        svg.push_str(
-                            "\" font-family=\"ExcalidrawRender-9\" font-size=\"14\" fill=\"",
-                        );
-                        svg.push_str(if *magic { "#7affd7" } else { "#1b1b1f" });
-                        svg.push_str("\">");
-                        push_escaped_text(&mut svg, &name.display_text);
-                        svg.push_str("</text>");
+                        svg.push_str("\" width=\"");
+                        push_svg_number(&mut svg, *width, "SVG frame outline width")?;
+                        svg.push_str("\" height=\"");
+                        push_svg_number(&mut svg, *height, "SVG frame outline height")?;
+                        svg.push('"');
+                        push_svg_corner_radius(&mut svg, super::FRAME_RADIUS)?;
+                        svg.push_str(" fill=\"none\" stroke=\"#bbbbbb\" stroke-width=\"2\"/>");
                     }
                     svg.push_str("</g>");
                 }

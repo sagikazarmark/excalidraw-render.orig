@@ -13,6 +13,28 @@ const LIBERATION_SANS_IDENTITY: &str = concat!(
 );
 pub(super) const FALLBACK_FONT_SIZE: f64 = 14.0;
 
+/// Excalidraw's `FRAME_STYLE`, as far as a frame's visible name goes. The
+/// export synthesizes the name as a Helvetica text element
+/// (`addFrameLabelsAsTextElements`): `nameFontSize` 14 at `nameLineHeight`
+/// 1.25 gives a 17.5 px line box, placed `nameOffsetY` 3 px above the frame's
+/// top edge and truncated with `...` to the frame's width.
+pub(super) const FRAME_NAME_FONT_FAMILY: i32 = 2;
+pub(super) const FRAME_NAME_FONT_SIZE: f64 = 14.0;
+pub(super) const FRAME_NAME_LINE_HEIGHT: f64 = 1.25;
+pub(super) const FRAME_NAME_OFFSET_Y: f64 = 3.0;
+pub(super) const FRAME_NAME_BOX_HEIGHT: f64 = FRAME_NAME_FONT_SIZE * FRAME_NAME_LINE_HEIGHT;
+
+/// A frame's visible name laid out as the reference's synthesized text element:
+/// left-aligned in a `FRAME_NAME_BOX_HEIGHT` line box, on the baseline
+/// Helvetica's metadata metrics give that box, shaped with the Liberation Sans
+/// substitute.
+pub(super) struct FrameName {
+    pub(super) label: ResolvedLabel,
+    /// The synthesized text element's width: the measured advance of the name,
+    /// or the frame's width once the name had to be truncated to fit it.
+    pub(super) width: f64,
+}
+
 pub(super) struct FallbackFont {
     woff2: Vec<u8>,
     sfnt: Vec<u8>,
@@ -186,6 +208,91 @@ impl FallbackFont {
         (self.woff2, self.sfnt)
     }
 
+    /// Lays out a frame's name the way `addFrameLabelsAsTextElements` and
+    /// `truncateText` do: measured at 14 px, and when wider than the frame,
+    /// cut to the longest prefix that fits with `...` appended. When even one
+    /// character with the dots does not fit, the reference keeps the whole
+    /// name at the frame's width, and so does this.
+    ///
+    /// The reference measures each candidate afresh, so it also sees the kern
+    /// pair between the last kept character and the first dot; this measures
+    /// prefixes of the one shaped name and adds the dots' own advance, which
+    /// can differ from that by one kern pair (a fraction of a pixel) exactly
+    /// at the cut. It also cuts between scalar values where the reference cuts
+    /// between UTF-16 code units, so a cut never splits a surrogate pair.
+    pub(super) fn resolve_frame_name(
+        &self,
+        name: &str,
+        frame_width: f64,
+    ) -> Result<FrameName, LabelError> {
+        let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+        let scale = FRAME_NAME_FONT_SIZE / f64::from(face.units_per_em());
+        let baseline = FamilyMetrics::for_source_family(FRAME_NAME_FONT_FAMILY)
+            .ok_or(LabelError::InvalidFont)?
+            .first_baseline(FRAME_NAME_FONT_SIZE, FRAME_NAME_BOX_HEIGHT);
+        let (display_text, missing_codepoints) = fallback_display_text(&face, name)?;
+        let glyphs = shape_text(&face, &display_text);
+        // `measureText` measures a blank line as one space.
+        let measured = if display_text.is_empty() {
+            shaped_advance(&face, " ", scale)
+        } else {
+            shaped_advance_units(&glyphs) as f64 * scale
+        };
+        if measured <= frame_width {
+            let label = build_label(
+                &face,
+                &glyphs,
+                name,
+                display_text,
+                missing_codepoints,
+                0.0,
+                baseline,
+                scale,
+            )?;
+            return Ok(FrameName {
+                label,
+                width: measured,
+            });
+        }
+        let dots = shaped_advance(&face, "...", scale);
+        let prefix_widths = shaped_prefix_widths(&glyphs, &display_text, scale)?;
+        // `truncateText` tries every prefix from the whole name down to its
+        // first character; `prefix_widths[i]` is the width of the first `i`
+        // characters, so index 0 (the empty prefix) is never a candidate.
+        let cut = (1..prefix_widths.len())
+            .rev()
+            .find(|&count| prefix_widths[count] + dots <= frame_width);
+        let text = match cut {
+            Some(count) => {
+                let end = char_boundary(name, count)?;
+                let mut text = String::new();
+                text.try_reserve_exact(end.saturating_add(3))?;
+                text.push_str(&name[..end]);
+                text.push_str("...");
+                text
+            }
+            None => try_owned(name)?,
+        };
+        // The cut text has its own replaced scalars: the ones the cut removed
+        // are not reported.
+        let (display_text, missing_codepoints) = fallback_display_text(&face, &text)?;
+        let glyphs = shape_text(&face, &display_text);
+        let label = build_label(
+            &face,
+            &glyphs,
+            &text,
+            display_text,
+            missing_codepoints,
+            0.0,
+            baseline,
+            scale,
+        )?;
+        Ok(FrameName {
+            label,
+            width: frame_width,
+        })
+    }
+
     fn shape(
         &self,
         text: &str,
@@ -193,101 +300,187 @@ impl FallbackFont {
         height: f64,
     ) -> Result<Option<ResolvedLabel>, LabelError> {
         let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
-        let mut display_text = String::new();
-        display_text.try_reserve_exact(text.len())?;
-        let mut missing_codepoints = Vec::new();
-        for character in text.chars() {
-            if face.glyph_index(character).is_some() {
-                display_text.push(character);
-            } else {
-                display_text.push('?');
-                missing_codepoints.try_reserve(1)?;
-                missing_codepoints.push(u32::from(character));
-            }
-        }
+        let (display_text, missing_codepoints) = fallback_display_text(&face, text)?;
         let glyphs = shape_text(&face, &display_text);
-        let advance_units = glyphs
-            .glyph_positions()
-            .iter()
-            .fold(0_i64, |advance, position| {
-                advance.saturating_add(i64::from(position.x_advance))
-            });
         let units_per_em = f64::from(face.units_per_em());
         let scale = FALLBACK_FONT_SIZE / units_per_em;
-        let advance = advance_units as f64 * scale;
+        let advance = shaped_advance_units(&glyphs) as f64 * scale;
         if advance > width {
             return Ok(None);
         }
         let origin_x = (width - advance) / 2.0;
         let baseline = height / 2.0 + f64::from(face.ascender() + face.descender()) * scale / 2.0;
-        let mut operations = Vec::new();
-        let estimated_operations = glyphs.glyph_infos().len().saturating_mul(32);
-        operations.try_reserve(estimated_operations)?;
-        let mut pen_x = 0_i64;
-        let mut pen_y = 0_i64;
-        let mut resolved_glyphs = Vec::new();
-        resolved_glyphs.try_reserve_exact(glyphs.glyph_infos().len())?;
-        for (info, position) in glyphs.glyph_infos().iter().zip(glyphs.glyph_positions()) {
-            let mut builder = GlyphOutlineBuilder {
-                operations: &mut operations,
-                failed: false,
-                origin_x,
-                baseline,
-                glyph_x: (pen_x + i64::from(position.x_offset)) as f64,
-                glyph_y: (pen_y + i64::from(position.y_offset)) as f64,
-                scale,
-            };
-            let glyph_id = u16::try_from(info.glyph_id).map_err(|_| LabelError::InvalidFont)?;
-            let cluster = usize::try_from(info.cluster).map_err(|_| LabelError::InvalidFont)?;
-            let cluster_text = glyph_cluster_text(&glyphs, &display_text, cluster)?;
-            if glyph_id == 0 {
-                return Err(LabelError::InvalidFont);
-            }
-            let mut unicode = Vec::new();
-            unicode.try_reserve_exact(cluster_text.encode_utf16().count())?;
-            unicode.extend(cluster_text.encode_utf16());
-            let advance = face
-                .glyph_hor_advance(GlyphId(glyph_id))
-                .unwrap_or_default();
-            let units_per_em =
-                u64::try_from(face.units_per_em()).map_err(|_| LabelError::InvalidFont)?;
-            let advance_1000 =
-                u16::try_from((u64::from(advance) * 1_000 + units_per_em / 2) / units_per_em)
-                    .map_err(|_| LabelError::InvalidFont)?;
-            resolved_glyphs.push(ResolvedGlyph {
-                id: glyph_id,
-                x: origin_x + (pen_x + i64::from(position.x_offset)) as f64 * scale,
-                y: baseline - (pen_y + i64::from(position.y_offset)) as f64 * scale,
-                advance_1000,
-                unicode,
-            });
-            if face
-                .outline_glyph(GlyphId(glyph_id), &mut builder)
-                .is_none()
-                && info.glyph_id != 3
-            {
-                return Err(LabelError::InvalidFont);
-            }
-            if builder.failed {
-                return Err(LabelError::Memory);
-            }
-            pen_x = pen_x.saturating_add(i64::from(position.x_advance));
-            pen_y = pen_y.saturating_add(i64::from(position.y_advance));
-        }
-        let mut owned_text = String::new();
-        owned_text.try_reserve_exact(text.len())?;
-        owned_text.push_str(text);
-        Ok(Some(ResolvedLabel {
-            text: owned_text,
+        build_label(
+            &face,
+            &glyphs,
+            text,
             display_text,
-            baseline,
-            path: LabelPath { operations },
-            glyph_count: u64::try_from(glyphs.glyph_infos().len()).unwrap_or(u64::MAX),
             missing_codepoints,
-            glyphs: resolved_glyphs,
-            runs: Vec::new(),
-        }))
+            origin_x,
+            baseline,
+            scale,
+        )
+        .map(Some)
     }
+}
+
+/// The text the fallback face can show: every character it has a glyph for,
+/// and `?` for each it has not, with the replaced scalars in source order.
+fn fallback_display_text(
+    face: &rustybuzz::Face<'_>,
+    text: &str,
+) -> Result<(String, Vec<u32>), LabelError> {
+    let mut display_text = String::new();
+    display_text.try_reserve_exact(text.len())?;
+    let mut missing_codepoints = Vec::new();
+    for character in text.chars() {
+        if face.glyph_index(character).is_some() {
+            display_text.push(character);
+        } else {
+            display_text.push('?');
+            missing_codepoints.try_reserve(1)?;
+            missing_codepoints.push(u32::from(character));
+        }
+    }
+    Ok((display_text, missing_codepoints))
+}
+
+fn shaped_advance_units(glyphs: &rustybuzz::GlyphBuffer) -> i64 {
+    glyphs
+        .glyph_positions()
+        .iter()
+        .fold(0_i64, |advance, position| {
+            advance.saturating_add(i64::from(position.x_advance))
+        })
+}
+
+/// The advance of `text` shaped with `face`, in logical pixels at `scale`.
+fn shaped_advance(face: &rustybuzz::Face<'_>, text: &str, scale: f64) -> f64 {
+    shaped_advance_units(&shape_text(face, text)) as f64 * scale
+}
+
+/// The advance of every character-count prefix of `display_text`, from the
+/// empty prefix to the whole text, in logical pixels. A glyph belongs to the
+/// prefix that contains the character its cluster starts at, so the widths
+/// keep the kerning the shaper applied inside each prefix.
+fn shaped_prefix_widths(
+    glyphs: &rustybuzz::GlyphBuffer,
+    display_text: &str,
+    scale: f64,
+) -> Result<Vec<f64>, LabelError> {
+    let mut advances = Vec::new();
+    advances.try_reserve_exact(glyphs.len())?;
+    for (info, position) in glyphs.glyph_infos().iter().zip(glyphs.glyph_positions()) {
+        let cluster = usize::try_from(info.cluster).map_err(|_| LabelError::InvalidFont)?;
+        advances.push((cluster, i64::from(position.x_advance)));
+    }
+    advances.sort_unstable_by_key(|(cluster, _)| *cluster);
+    let mut widths = Vec::new();
+    widths.try_reserve_exact(display_text.chars().count().saturating_add(1))?;
+    let mut next = advances.iter().peekable();
+    let mut units = 0_i64;
+    for boundary in display_text
+        .char_indices()
+        .map(|(offset, _)| offset)
+        .chain(std::iter::once(display_text.len()))
+    {
+        while let Some((_, advance)) = next.next_if(|(cluster, _)| *cluster < boundary) {
+            units = units.saturating_add(*advance);
+        }
+        widths.push(units as f64 * scale);
+    }
+    Ok(widths)
+}
+
+/// The byte offset where the first `count` characters of `text` end.
+fn char_boundary(text: &str, count: usize) -> Result<usize, LabelError> {
+    text.char_indices()
+        .map(|(offset, _)| offset)
+        .chain(std::iter::once(text.len()))
+        .nth(count)
+        .ok_or(LabelError::InvalidFont)
+}
+
+/// Builds the label for one shaped line of fallback-face text with its pen
+/// origin at `origin_x` on `baseline`.
+#[allow(clippy::too_many_arguments)]
+fn build_label(
+    face: &rustybuzz::Face<'_>,
+    glyphs: &rustybuzz::GlyphBuffer,
+    text: &str,
+    display_text: String,
+    missing_codepoints: Vec<u32>,
+    origin_x: f64,
+    baseline: f64,
+    scale: f64,
+) -> Result<ResolvedLabel, LabelError> {
+    let mut operations = Vec::new();
+    let estimated_operations = glyphs.glyph_infos().len().saturating_mul(32);
+    operations.try_reserve(estimated_operations)?;
+    let mut pen_x = 0_i64;
+    let mut pen_y = 0_i64;
+    let mut resolved_glyphs = Vec::new();
+    resolved_glyphs.try_reserve_exact(glyphs.glyph_infos().len())?;
+    for (info, position) in glyphs.glyph_infos().iter().zip(glyphs.glyph_positions()) {
+        let mut builder = GlyphOutlineBuilder {
+            operations: &mut operations,
+            failed: false,
+            origin_x,
+            baseline,
+            glyph_x: (pen_x + i64::from(position.x_offset)) as f64,
+            glyph_y: (pen_y + i64::from(position.y_offset)) as f64,
+            scale,
+        };
+        let glyph_id = u16::try_from(info.glyph_id).map_err(|_| LabelError::InvalidFont)?;
+        let cluster = usize::try_from(info.cluster).map_err(|_| LabelError::InvalidFont)?;
+        let cluster_text = glyph_cluster_text(glyphs, &display_text, cluster)?;
+        if glyph_id == 0 {
+            return Err(LabelError::InvalidFont);
+        }
+        let mut unicode = Vec::new();
+        unicode.try_reserve_exact(cluster_text.encode_utf16().count())?;
+        unicode.extend(cluster_text.encode_utf16());
+        let advance = face
+            .glyph_hor_advance(GlyphId(glyph_id))
+            .unwrap_or_default();
+        let units_per_em =
+            u64::try_from(face.units_per_em()).map_err(|_| LabelError::InvalidFont)?;
+        let advance_1000 =
+            u16::try_from((u64::from(advance) * 1_000 + units_per_em / 2) / units_per_em)
+                .map_err(|_| LabelError::InvalidFont)?;
+        resolved_glyphs.push(ResolvedGlyph {
+            id: glyph_id,
+            x: origin_x + (pen_x + i64::from(position.x_offset)) as f64 * scale,
+            y: baseline - (pen_y + i64::from(position.y_offset)) as f64 * scale,
+            advance_1000,
+            unicode,
+        });
+        if face
+            .outline_glyph(GlyphId(glyph_id), &mut builder)
+            .is_none()
+            && info.glyph_id != 3
+        {
+            return Err(LabelError::InvalidFont);
+        }
+        if builder.failed {
+            return Err(LabelError::Memory);
+        }
+        pen_x = pen_x.saturating_add(i64::from(position.x_advance));
+        pen_y = pen_y.saturating_add(i64::from(position.y_advance));
+    }
+    let mut owned_text = String::new();
+    owned_text.try_reserve_exact(text.len())?;
+    owned_text.push_str(text);
+    Ok(ResolvedLabel {
+        text: owned_text,
+        display_text,
+        baseline,
+        path: LabelPath { operations },
+        glyph_count: u64::try_from(glyphs.glyph_infos().len()).unwrap_or(u64::MAX),
+        missing_codepoints,
+        glyphs: resolved_glyphs,
+        runs: Vec::new(),
+    })
 }
 
 impl OfficialFont {

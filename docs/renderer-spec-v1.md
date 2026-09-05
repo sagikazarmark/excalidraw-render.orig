@@ -550,6 +550,22 @@ Scene-export bounds, paint order, clipping, masking, frames, bound text, links,
 dark mode, application state, and embedded files participate according to the
 scene-surface manifest.
 
+In a scene export with frame rendering and frame names on, each live frame's
+visible name is generated export text laid out as the text element the
+reference synthesizes for it rather than as a decoration of the frame:
+Helvetica at `FRAME_STYLE.nameFontSize` 14 with `nameLineHeight` 1.25, so a
+17.5 px line box whose top sits `nameOffsetY` 3 px above the frame's top edge
+at the frame's x, left-aligned, unrotated, fully opaque, unlinked, and never
+frame-clipped, whatever the frame's own angle, opacity, link, or parent frame.
+The name is positioned by Helvetica's metadata metrics and shaped with
+Liberation Sans, colored `nameColorLightTheme` `#999999` or
+`nameColorDarkTheme` `#7a7a7a` under the dark-mode filter, and truncated to the
+frame's width with the reference's ASCII `...` when its measured advance is
+wider; a frame too narrow for one character with the dots keeps its whole name
+at the frame's width. The name's line box takes part in the scene bounds exactly
+as that text element would. The frame outline is the frame rectangle with
+`FRAME_STYLE.radius` 8, stroke `#bbb`, and width 2.
+
 A frame export targets one live ordinary or magic frame and always uses the
 rotation-aware frame AABB as its zero-padding viewport. The target frame name and
 outline do not paint, even when persisted frame rendering is disabled. Candidate
@@ -778,6 +794,17 @@ canonical. All selected chunks and used unchanged fallbacks share this one style
 block; no second font style element is emitted. The artifact manifest carries
 one complete applicable OFL or MIT license text per canonical license identity
 and distinct mandatory subset notices in canonical subset-identity order.
+
+Before the style element, `<defs>` defines each referenced frame clip once, in
+first-use order, as a `<clipPath>` holding the frame rectangle with the frame's
+transform and, in a scene export, `FRAME_STYLE.radius` corners; the rectangular
+frame-export clip has none. Every clipped element is wrapped in one
+`<g clip-path>` referencing its frame's definition, so a frame's clip is never
+repeated per child. Clip IDs are renderer-owned and keyed by the frame's index
+in the source `elements` array; an element id is untrusted input and is not
+used as an XML ID. The clip rectangle rotates by the frame's angle in degrees,
+as the outline does; revision 1 does not reproduce the reference's
+radians-valued `rotate()` on its clip definition.
 
 Request-scoped and frame-batch physical caches MAY retain qualified source
 decodes and identical derived bytes. Each SVG target nevertheless derives the

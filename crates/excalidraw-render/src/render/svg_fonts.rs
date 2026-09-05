@@ -138,16 +138,17 @@ impl Bundle {
         Ok(())
     }
 
-    pub(super) fn write<W: super::svg::SvgSink + ?Sized>(
+    /// The `<style class="style-fonts">` block declaring every embedded face,
+    /// for the document's `<defs>`; nothing when no face is embedded.
+    pub(super) fn write_style<W: super::svg::SvgSink + ?Sized>(
         &self,
         output: &mut W,
         mut write_base64: impl FnMut(&mut W, &[u8]) -> Result<(), super::FormatEncodeError>,
     ) -> Result<(), super::FormatEncodeError> {
         if self.resources.is_empty() {
-            output.push_str("<defs></defs>");
             return Ok(());
         }
-        output.push_str("<defs><style class=\"style-fonts\">");
+        output.push_str("<style class=\"style-fonts\">");
         for resource in &self.resources {
             output.push_str("@font-face{font-family:'");
             output.push_str(resource.family);
@@ -157,7 +158,7 @@ impl Bundle {
             write_base64(output, resource.bytes.as_ref())?;
             output.push_str(")}");
         }
-        output.push_str("</style></defs>");
+        output.push_str("</style>");
         Ok(())
     }
 

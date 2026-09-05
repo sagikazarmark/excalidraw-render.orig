@@ -194,21 +194,19 @@ pub(super) fn resolve_frame_clips(
         return Ok(clips);
     };
     clips.try_reserve_exact(1)?;
-    clips.push(ResolvedClip {
-        frame_source_index: frame.source_index,
-        path: if rendering.rectangular_clip {
-            resolved_frame_rect(frame.width, frame.height)?
-        } else {
-            resolved_frame_outline(frame.width, frame.height)?
-        },
-        transform: ResolvedTransform {
+    clips.push(ResolvedClip::for_frame(
+        frame.source_index,
+        frame.width,
+        frame.height,
+        !rendering.rectangular_clip,
+        ResolvedTransform {
             translation_x: frame.x - min_x + padding,
             translation_y: frame.y - min_y + padding,
             angle_radians: frame.angle,
             center_x: frame.width / 2.0,
             center_y: frame.height / 2.0,
         },
-    });
+    )?);
     Ok(clips)
 }
 

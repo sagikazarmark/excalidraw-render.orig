@@ -152,7 +152,7 @@ fn visit_svg_font_text(
             }
             ResolvedElement::Frame(frame) => {
                 if let Some(name) = &frame.name {
-                    visit("Liberation Sans", &name.display_text)?;
+                    visit("Liberation Sans", &name.label.display_text)?;
                 }
             }
             ResolvedElement::Fallback(fallback) => {

@@ -264,6 +264,56 @@ impl ResolvedScene {
         }
         let bound_text_masks = resolve_bound_text_masks(&outlines, relationships)?;
 
+        // The reference synthesizes every frame's name as a text element before
+        // it measures the scene, so the names take part in the bounds and are
+        // shaped before them.
+        let shows_frame_names =
+            frame_rendering.enabled && frame_rendering.name && frame_rendering.emit_frame_elements;
+        let has_frames = outlines.iter().any(|(source, _)| {
+            matches!(
+                source.kind,
+                NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
+            )
+        });
+        let fallback_font = if (shows_frame_names && has_frames)
+            || fallbacks.iter().any(|fallback| fallback.paint)
+        {
+            Some(text::FallbackFont::load().map_err(|error| match error {
+                text::LabelError::Memory => ResolveSceneError::Memory,
+                text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+            })?)
+        } else {
+            None
+        };
+        let mut frame_names = Vec::<(usize, text::FrameName)>::new();
+        if shows_frame_names {
+            for (source, _) in &outlines {
+                let (NormalizedElementKind::Frame(frame)
+                | NormalizedElementKind::MagicFrame(frame)) = &source.kind
+                else {
+                    continue;
+                };
+                let title = frame.name.as_deref().unwrap_or({
+                    if matches!(source.kind, NormalizedElementKind::MagicFrame(_)) {
+                        "AI Frame"
+                    } else {
+                        "Frame"
+                    }
+                });
+                let font = fallback_font
+                    .as_ref()
+                    .ok_or(ResolveSceneError::InvalidFallbackFont)?;
+                let name =
+                    font.resolve_frame_name(title, source.width)
+                        .map_err(|error| match error {
+                            text::LabelError::Memory => ResolveSceneError::Memory,
+                            text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+                        })?;
+                frame_names.try_reserve(1)?;
+                frame_names.push((source.source.source_index(), name));
+            }
+        }
+
         let (mut min_x, mut min_y, mut max_x, mut max_y) = viewport.map_or(
             (
                 f64::INFINITY,
@@ -295,6 +345,26 @@ impl ResolvedScene {
             if is_frame && !frame_rendering.enabled {
                 continue;
             }
+            if let Some((_, name)) = frame_names
+                .iter()
+                .find(|(index, _)| *index == source.source.source_index())
+            {
+                // The name is an unrotated text element at the frame's x, its
+                // line box `nameOffsetY` above the frame's top edge. It belongs
+                // to no frame, so it extends the bounds even when the frame it
+                // names is itself a clipped child of another frame.
+                include_transformed_bounds(
+                    source.x,
+                    source.y - text::FRAME_NAME_OFFSET_Y - text::FRAME_NAME_BOX_HEIGHT,
+                    name.width,
+                    text::FRAME_NAME_BOX_HEIGHT,
+                    0.0,
+                    &mut min_x,
+                    &mut min_y,
+                    &mut max_x,
+                    &mut max_y,
+                );
+            }
             if frame_rendering.enabled
                 && frame_rendering.clip
                 && relationship_frame_target(source.source.source_index(), relationships).is_some()
@@ -304,14 +374,11 @@ impl ResolvedScene {
             if viewport.is_some() {
                 continue;
             }
-            let (local_min_x, mut local_min_y, local_max_x, local_max_y) =
+            let (local_min_x, local_min_y, local_max_x, local_max_y) =
                 geometry.as_ref().map_or_else(
                     || source_layout_bounds(source),
                     |geometry| geometry.bounds(source),
                 );
-            if is_frame && frame_rendering.name {
-                local_min_y = local_min_y.min(-24.0);
-            }
             let (center_x, center_y) = if is_frame {
                 (
                     source.x + source.width / 2.0,
@@ -443,18 +510,13 @@ impl ResolvedScene {
                 });
             }
         }
-        let needs_frame_font =
-            frame_rendering.enabled && frame_rendering.name && !semantic_frames.is_empty();
-        let fallback_font = if needs_frame_font || fallbacks.iter().any(|fallback| fallback.paint) {
-            Some(text::FallbackFont::load().map_err(|error| match error {
-                text::LabelError::Memory => ResolveSceneError::Memory,
-                text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
-            })?)
-        } else {
-            None
-        };
         let mut official_fonts = Vec::<text::OfficialFont>::new();
         let mut has_label = false;
+        let frame_name_color = match request.color_mode() {
+            crate::ColorMode::Light => FRAME_NAME_COLOR_LIGHT,
+            crate::ColorMode::Dark => FRAME_NAME_COLOR_DARK,
+        }
+        .for_mode(request.color_mode());
         for (source, geometry) in outlines {
             let frame_clips = resolve_frame_clips(
                 source.source.source_index(),
@@ -471,31 +533,30 @@ impl ResolvedScene {
                 relationships,
                 frame_rendering,
             );
-            if let NormalizedElementKind::Frame(frame) | NormalizedElementKind::MagicFrame(frame) =
-                &source.kind
-            {
+            if matches!(
+                source.kind,
+                NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
+            ) {
                 if frame_rendering.enabled && frame_rendering.emit_frame_elements {
-                    let name = if frame_rendering.name {
-                        let text = frame.name.as_deref().unwrap_or({
-                            if matches!(source.kind, NormalizedElementKind::MagicFrame(_)) {
-                                "AI Frame"
-                            } else {
-                                "Frame"
-                            }
+                    let name = frame_names
+                        .iter()
+                        .position(|(index, _)| *index == source.source.source_index())
+                        .map(|position| frame_names.swap_remove(position).1)
+                        .map(|name| ResolvedFrameName {
+                            transform: ResolvedTransform {
+                                translation_x: source.x - min_x + request.padding(),
+                                translation_y: source.y
+                                    - text::FRAME_NAME_OFFSET_Y
+                                    - text::FRAME_NAME_BOX_HEIGHT
+                                    - min_y
+                                    + request.padding(),
+                                angle_radians: 0.0,
+                                center_x: name.width / 2.0,
+                                center_y: text::FRAME_NAME_BOX_HEIGHT / 2.0,
+                            },
+                            color: frame_name_color,
+                            label: name.label,
                         });
-                        let font = fallback_font
-                            .as_ref()
-                            .ok_or(ResolveSceneError::InvalidFallbackFont)?;
-                        font.resolve(text, source.width, 20.0)
-                            .map_err(|error| match error {
-                                text::LabelError::Memory => ResolveSceneError::Memory,
-                                text::LabelError::InvalidFont => {
-                                    ResolveSceneError::InvalidFallbackFont
-                                }
-                            })?
-                    } else {
-                        None
-                    };
                     has_label |= name.is_some();
                     let outline_path = frame_rendering
                         .outline
@@ -911,17 +972,19 @@ impl ResolvedScene {
                 let mut clips = Vec::new();
                 if let Some(frame) = frame {
                     clips.try_reserve_exact(1)?;
-                    clips.push(ResolvedClip {
-                        frame_source_index: frame.source_index,
-                        path: resolved_frame_outline(frame.width, frame.height)?,
-                        transform: ResolvedTransform {
+                    clips.push(ResolvedClip::for_frame(
+                        frame.source_index,
+                        frame.width,
+                        frame.height,
+                        true,
+                        ResolvedTransform {
                             translation_x: frame.x - min_x + request.padding(),
                             translation_y: frame.y - min_y + request.padding(),
                             angle_radians: frame.angle,
                             center_x: frame.width / 2.0,
                             center_y: frame.height / 2.0,
                         },
-                    });
+                    )?);
                 }
                 clips
             };
@@ -1201,7 +1264,7 @@ pub(super) struct ResolvedFreedraw {
 pub(super) struct ResolvedFrame {
     pub(super) source_order: u64,
     pub(super) source: NormalizedElementSource,
-    pub(super) name: Option<text::ResolvedLabel>,
+    pub(super) name: Option<ResolvedFrameName>,
     pub(super) magic: bool,
     pub(super) outline_path: Option<rough::Path>,
     pub(super) frame_clips: Vec<ResolvedClip>,
@@ -1210,6 +1273,18 @@ pub(super) struct ResolvedFrame {
     pub(super) link: Option<String>,
     pub(super) width: f64,
     pub(super) height: f64,
+}
+
+/// A frame's visible name as the reference export renders it: a synthesized
+/// text element (`addFrameLabelsAsTextElements`) rather than a decoration of
+/// the frame. It has its own unrotated placement above the frame's top-left
+/// corner, full opacity, no link, and no frame clip, whatever the frame has.
+pub(super) struct ResolvedFrameName {
+    pub(super) label: text::ResolvedLabel,
+    /// Canvas placement of the label box's top-left corner; the angle is 0.
+    pub(super) transform: ResolvedTransform,
+    /// `FRAME_STYLE.nameColorLightTheme` or `nameColorDarkTheme` for the mode.
+    pub(super) color: CanonicalColor,
 }
 
 #[derive(Clone, Copy)]
@@ -1252,6 +1327,12 @@ pub(super) struct FallbackColors {
 /// label is shaped with the Liberation Sans substitute and positioned by
 /// Helvetica's metadata metrics.
 const EMBEDDABLE_LABEL_FONT_FAMILY: i32 = 2;
+
+/// `FRAME_STYLE.nameColorLightTheme` and `nameColorDarkTheme`: the frame name
+/// is a text element whose stroke color the export picks by theme, and the
+/// dark one then passes through the dark-mode filter like every other color.
+const FRAME_NAME_COLOR_LIGHT: CanonicalColor = CanonicalColor::from_rgb8(0x99, 0x99, 0x99);
+const FRAME_NAME_COLOR_DARK: CanonicalColor = CanonicalColor::from_rgb8(0x7a, 0x7a, 0x7a);
 
 /// The label is a new text element with no stored height, so its line height
 /// is its family's metadata line height (`getLineHeight`), 1.15 for Helvetica.
@@ -1317,10 +1398,46 @@ pub(super) struct SemanticFrameSource {
 pub(super) struct ResolvedClip {
     /// Source index of the frame whose outline this clip reproduces. Every
     /// element clipped by the same frame shares one clip identity, which lets
-    /// the PNG encoder build and charge that frame's alpha mask once.
+    /// the PNG encoder build and charge that frame's alpha mask once and the
+    /// SVG define it once.
     pub(super) frame_source_index: usize,
+    /// The clip outline as a path, for the backends that rasterize or emit it
+    /// as one.
     pub(super) path: rough::Path,
+    /// The same outline as the frame rectangle the reference SVG defines its
+    /// `<clipPath>` with: the frame's size and `FRAME_STYLE.radius` for a scene
+    /// export, or no radius for the rectangular frame-export clip.
+    pub(super) width: f64,
+    pub(super) height: f64,
+    pub(super) radius: f64,
     pub(super) transform: ResolvedTransform,
+}
+
+impl ResolvedClip {
+    /// The clip one frame applies to its children: the frame's rectangle with
+    /// `FRAME_STYLE.radius` corners in a scene export, or the reference's
+    /// rectangular target clip in a frame export.
+    pub(super) fn for_frame(
+        frame_source_index: usize,
+        width: f64,
+        height: f64,
+        rounded: bool,
+        transform: ResolvedTransform,
+    ) -> Result<Self, ResolveSceneError> {
+        let (path, radius) = if rounded {
+            (resolved_frame_outline(width, height)?, FRAME_RADIUS)
+        } else {
+            (resolved_frame_rect(width, height)?, 0.0)
+        };
+        Ok(Self {
+            frame_source_index,
+            path,
+            width,
+            height,
+            radius,
+            transform,
+        })
+    }
 }
 
 impl ResolvedFallback {

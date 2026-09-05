@@ -120,8 +120,7 @@ enum PdfElement {
     },
     Frame {
         source: NormalizedElementSource,
-        name: Option<super::text::ResolvedLabel>,
-        magic: bool,
+        name: Option<super::ResolvedFrameName>,
         outline_path: Option<Path>,
         frame_clips: Vec<super::ResolvedClip>,
         transform: super::ResolvedTransform,
@@ -272,7 +271,6 @@ impl PdfPlan {
                     elements.push(PdfElement::Frame {
                         source: frame.source,
                         name: frame.name,
-                        magic: frame.magic,
                         outline_path: frame.outline_path,
                         frame_clips: frame.frame_clips,
                         transform: frame.transform,
@@ -1152,8 +1150,8 @@ impl PdfPlan {
                     label: Some(label), ..
                 } => Some(label),
                 PdfElement::Frame {
-                    name: Some(label), ..
-                } => Some(label),
+                    name: Some(name), ..
+                } => Some(&name.label),
                 _ => None,
             }),
             "pdf_fallback_glyph_mappings",
@@ -1460,7 +1458,7 @@ impl PdfPlan {
                     .ok_or_else(pdf_size_error)?,
                 PdfElement::Frame { name, .. } => name
                     .as_ref()
-                    .map_or(512, |name| name.text.len().saturating_add(1_024)),
+                    .map_or(512, |name| name.label.text.len().saturating_add(1_024)),
                 PdfElement::Text { text, .. } => text.lines.iter().fold(512_usize, |size, line| {
                     size.saturating_add(line.text.len().saturating_mul(4))
                         .saturating_add(line.glyphs.len().saturating_mul(96))
@@ -1542,17 +1540,6 @@ impl PdfPlan {
                             "PDF plan outline lost its source identity".to_owned(),
                         ));
                     }
-                    let (sin, cos) = if transform.angle_radians == 0.0 {
-                        (0.0, 1.0)
-                    } else {
-                        (transform.angle_radians.sin(), transform.angle_radians.cos())
-                    };
-                    let offset_x = transform.translation_x + transform.center_x
-                        - cos * transform.center_x
-                        + sin * transform.center_y;
-                    let offset_y = transform.translation_y + transform.center_y
-                        - sin * transform.center_x
-                        - cos * transform.center_y;
                     content.push_str("q\n");
                     for frame_clip in frame_clips {
                         push_transformed_clip(&mut content, frame_clip)?;
@@ -1580,7 +1567,7 @@ impl PdfPlan {
                         push_pdf_number(&mut content, mask.height, "PDF arrow label mask height")?;
                         content.push_str(" re\nW*\nn\n");
                     }
-                    push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    push_transform_matrix(&mut content, transform)?;
                     if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
                         content.push_str("q\n");
                         let fill_opacity = *opacity * fill_color.alpha();
@@ -1736,22 +1723,11 @@ impl PdfPlan {
                             "PDF freedraw lost its source identity".to_owned(),
                         ));
                     }
-                    let (sin, cos) = if transform.angle_radians == 0.0 {
-                        (0.0, 1.0)
-                    } else {
-                        (transform.angle_radians.sin(), transform.angle_radians.cos())
-                    };
-                    let offset_x = transform.translation_x + transform.center_x
-                        - cos * transform.center_x
-                        + sin * transform.center_y;
-                    let offset_y = transform.translation_y + transform.center_y
-                        - sin * transform.center_x
-                        - cos * transform.center_y;
                     content.push_str("q\n");
                     for frame_clip in frame_clips {
                         push_transformed_clip(&mut content, frame_clip)?;
                     }
-                    push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    push_transform_matrix(&mut content, transform)?;
                     if let (Some(fill), Some(background_color)) =
                         (background_fill, background_color)
                     {
@@ -1797,7 +1773,6 @@ impl PdfPlan {
                 PdfElement::Frame {
                     source,
                     name,
-                    magic,
                     outline_path,
                     frame_clips,
                     transform,
@@ -1809,22 +1784,27 @@ impl PdfPlan {
                             "PDF frame lost its source identity".to_owned(),
                         ));
                     }
-                    let (sin, cos) = if transform.angle_radians == 0.0 {
-                        (0.0, 1.0)
-                    } else {
-                        (transform.angle_radians.sin(), transform.angle_radians.cos())
-                    };
-                    let offset_x = transform.translation_x + transform.center_x
-                        - cos * transform.center_x
-                        + sin * transform.center_y;
-                    let offset_y = transform.translation_y + transform.center_y
-                        - sin * transform.center_x
-                        - cos * transform.center_y;
+                    // The name is its own text element: unrotated, unclipped
+                    // and fully opaque, painted before the frame.
+                    if let Some(name) = name {
+                        content.push_str("q\n");
+                        push_transform_matrix(&mut content, &name.transform)?;
+                        content.push_str("/Span << /ActualText <FEFF");
+                        push_utf16be_hex(&mut content, &name.label.text)?;
+                        content.push_str("> >> BDC\n");
+                        push_pdf_label_text(
+                            &mut content,
+                            &name.label,
+                            name.color,
+                            fallback_mappings,
+                        )?;
+                        content.push_str("EMC\nQ\n");
+                    }
                     content.push_str("q\n");
                     for frame_clip in frame_clips {
                         push_transformed_clip(&mut content, frame_clip)?;
                     }
-                    push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    push_transform_matrix(&mut content, transform)?;
                     if *opacity != 1.0 {
                         push_opacity_resource(&mut content, opacity_resources, *opacity)?;
                     }
@@ -1832,18 +1812,6 @@ impl PdfPlan {
                         content.push_str("2 w\n1 J\n1 j\n/CS1 CS\n0.7333333333333333 0.7333333333333333 0.7333333333333333 SCN\n");
                         push_rough_path(&mut content, outline_path)?;
                         content.push_str("S\n");
-                    }
-                    if let Some(name) = name {
-                        content.push_str("q\n1 0 0 1 0 -24 cm\n/Span << /ActualText <FEFF");
-                        push_utf16be_hex(&mut content, &name.text)?;
-                        content.push_str("> >> BDC\n");
-                        let color = if *magic {
-                            CanonicalColor::from_rgb8(0x7a, 0xff, 0xd7)
-                        } else {
-                            CanonicalColor::from_rgb8(0x1b, 0x1b, 0x1f)
-                        };
-                        push_pdf_label_text(&mut content, name, color, fallback_mappings)?;
-                        content.push_str("EMC\nQ\n");
                     }
                     content.push_str("Q\n");
                 }
@@ -1861,22 +1829,11 @@ impl PdfPlan {
                             "PDF text lost its source identity".to_owned(),
                         ));
                     }
-                    let (sin, cos) = if transform.angle_radians == 0.0 {
-                        (0.0, 1.0)
-                    } else {
-                        (transform.angle_radians.sin(), transform.angle_radians.cos())
-                    };
-                    let offset_x = transform.translation_x + transform.center_x
-                        - cos * transform.center_x
-                        + sin * transform.center_y;
-                    let offset_y = transform.translation_y + transform.center_y
-                        - sin * transform.center_x
-                        - cos * transform.center_y;
                     content.push_str("q\n");
                     for frame_clip in frame_clips {
                         push_transformed_clip(&mut content, frame_clip)?;
                     }
-                    push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    push_transform_matrix(&mut content, transform)?;
                     let effective_opacity = *opacity * color.alpha();
                     if effective_opacity != 1.0 {
                         push_opacity_resource(&mut content, opacity_resources, effective_opacity)?;
@@ -1959,22 +1916,11 @@ impl PdfPlan {
                             "PDF image resource has no semantic owner".to_owned(),
                         )
                     })?;
-                    let (sin, cos) = if transform.angle_radians == 0.0 {
-                        (0.0, 1.0)
-                    } else {
-                        (transform.angle_radians.sin(), transform.angle_radians.cos())
-                    };
-                    let offset_x = transform.translation_x + transform.center_x
-                        - cos * transform.center_x
-                        + sin * transform.center_y;
-                    let offset_y = transform.translation_y + transform.center_y
-                        - sin * transform.center_x
-                        - cos * transform.center_y;
                     content.push_str("q\n");
                     for frame_clip in frame_clips {
                         push_transformed_clip(&mut content, frame_clip)?;
                     }
-                    push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    push_transform_matrix(&mut content, transform)?;
                     if *opacity != 1.0 {
                         push_opacity_resource(&mut content, opacity_resources, *opacity)?;
                     }
@@ -2043,22 +1989,11 @@ impl PdfPlan {
                             "PDF fallback lost its source location".to_owned(),
                         ));
                     }
-                    let (sin, cos) = if transform.angle_radians == 0.0 {
-                        (0.0, 1.0)
-                    } else {
-                        (transform.angle_radians.sin(), transform.angle_radians.cos())
-                    };
-                    let offset_x = transform.translation_x + transform.center_x
-                        - cos * transform.center_x
-                        + sin * transform.center_y;
-                    let offset_y = transform.translation_y + transform.center_y
-                        - sin * transform.center_x
-                        - cos * transform.center_y;
                     content.push_str("q\n");
                     for frame_clip in frame_clips {
                         push_transformed_clip(&mut content, frame_clip)?;
                     }
-                    push_matrix(&mut content, cos, sin, -sin, cos, offset_x, offset_y)?;
+                    push_transform_matrix(&mut content, transform)?;
                     if *opacity != 1.0 {
                         let resource = opacity_resources
                             .iter()
@@ -2737,6 +2672,26 @@ fn push_freedraw_path(
         }
     }
     Ok(())
+}
+
+/// The `cm` that places a resolved transform's local origin: rotation about
+/// the element center, then translation, as the SVG `translate() rotate()` pair
+/// composes.
+fn push_transform_matrix(
+    output: &mut String,
+    transform: &super::ResolvedTransform,
+) -> Result<(), FormatEncodeError> {
+    let (sin, cos) = if transform.angle_radians == 0.0 {
+        (0.0, 1.0)
+    } else {
+        (transform.angle_radians.sin(), transform.angle_radians.cos())
+    };
+    let offset_x = transform.translation_x + transform.center_x - cos * transform.center_x
+        + sin * transform.center_y;
+    let offset_y = transform.translation_y + transform.center_y
+        - sin * transform.center_x
+        - cos * transform.center_y;
+    push_matrix(output, cos, sin, -sin, cos, offset_x, offset_y)
 }
 
 fn push_matrix(

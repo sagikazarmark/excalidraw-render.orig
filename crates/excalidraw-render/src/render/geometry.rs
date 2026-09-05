@@ -56,11 +56,15 @@ pub(super) fn source_layout_bounds(source: &NormalizedElement) -> (f64, f64, f64
     }
 }
 
+/// `FRAME_STYLE.radius`: the corner radius of a frame's outline and of the clip
+/// it applies to its children in a scene export.
+pub(super) const FRAME_RADIUS: f64 = 8.0;
+
 pub(super) fn resolved_frame_outline(
     width: f64,
     height: f64,
 ) -> Result<rough::Path, ResolveSceneError> {
-    let radius = 8.0_f64.min(width / 2.0).min(height / 2.0).max(0.0);
+    let radius = FRAME_RADIUS.min(width / 2.0).min(height / 2.0).max(0.0);
     let kappa = 0.552_284_749_830_793_6;
     let point = |x, y| rough::Point { x, y };
     let mut operations = Vec::new();
