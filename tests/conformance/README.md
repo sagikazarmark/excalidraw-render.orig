@@ -115,12 +115,29 @@ referenced scene, report, provenance, artifact, and raw-raster byte string.
 `comparator-profiles/canonical-visual-v1.json` freezes the format-neutral
 RGBA8 projection, Pixelmatch, SSIM, crop, and visual-budget protocol. Its
 adjacent digest binds the profile; the profile in turn binds the unpublished
-Rust implementation, workspace lockfile, adversarial vectors, and imported
-Pixelmatch 7.2.0 fixtures. Verify all of them offline with:
+Rust implementation, the comparator's own dependency closure, adversarial
+vectors, and imported Pixelmatch 7.2.0 fixtures. Verify all of them offline
+with:
 
 ```sh
 cargo test --locked -p excalidraw-render-compare
 ```
+
+The closure, `comparator-profiles/canonical-visual-v1.closure.json`, is the
+set of `Cargo.lock` packages reachable from `excalidraw-render-compare` — name,
+exact version, source, and checksum — rather than the whole workspace lock, so
+a renderer dependency change moves the profile only when it also moves a
+package the comparator builds against (ADR-0005). The profile test recomputes
+the closure from the live lock and names any package that differs. When a
+comparator dependency legitimately moves, refresh the committed closure with:
+
+```sh
+cargo test --locked -p excalidraw-render-compare --test profile -- --ignored materialize
+```
+
+then repin `closure.sha256` in the profile, the profile's adjacent digest, and
+the three artifacts that bind it (the SVG and PDF viewer qualifications and the
+rectangle PDF renderer expectations), which start a fresh approval round.
 
 ## Canonical SVG viewers
 

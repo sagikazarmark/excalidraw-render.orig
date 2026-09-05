@@ -8,7 +8,6 @@
     "schema",
     "id",
     "implementation",
-    "lockfile",
     "features",
     "pixelmatch",
     "ssim",
@@ -22,18 +21,34 @@
     "implementation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["crate", "publish", "sources"],
+      "required": ["crate", "publish", "edition", "lints", "sources", "closure"],
       "properties": {
         "crate": { "const": "excalidraw-render-compare" },
         "publish": { "const": false },
+        "edition": { "const": "2021" },
+        "lints": { "const": { "rust": { "unsafe_code": "forbid" } } },
         "sources": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "#/$defs/fileDescriptor" }
+          "items": {
+            "allOf": [
+              { "$ref": "#/$defs/fileDescriptor" },
+              { "properties": { "path": { "pattern": "^crates/excalidraw-render-compare/" } } }
+            ]
+          }
+        },
+        "closure": {
+          "allOf": [
+            { "$ref": "#/$defs/fileDescriptor" },
+            {
+              "properties": {
+                "path": { "const": "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json" }
+              }
+            }
+          ]
         }
       }
     },
-    "lockfile": { "$ref": "#/$defs/fileDescriptor" },
     "features": {
       "type": "array",
       "maxItems": 0

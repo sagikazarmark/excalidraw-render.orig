@@ -2,24 +2,25 @@
   "schema": {
     "id": "excalidraw-render/conformance-comparator-profile/v1",
     "path": "tests/conformance/comparator-profile-v1.schema.json",
-    "sha256": "ea6b6f93dee7bde629f691976d075948f2be291f88219ed73d55c6dead58c334"
+    "sha256": "8070979db5c71227a163a73c320c553d5ff5bb30da2a99876be614fdd5b81ac6"
   },
   "id": "canonical-visual-comparator.v1",
   "implementation": {
     "crate": "excalidraw-render-compare",
     "publish": false,
+    "edition": "2021",
+    "lints": { "rust": { "unsafe_code": "forbid" } },
     "sources": [
-      { "path": "Cargo.toml", "sha256": "1f36293409b976883f8a65662c0aad97a2ce3c65a11cb0afe97006f31010e0d9" },
       { "path": "crates/excalidraw-render-compare/Cargo.toml", "sha256": "7fcc6d436689ebcf1e351af2dc4f0801a8ebb45380fe091b6723945df3a494c8" },
       { "path": "crates/excalidraw-render-compare/src/lib.rs", "sha256": "59f84c68a787c76ef19f2b95688201e926f0816637f247b9aa8c9ed2578bd312" },
       { "path": "crates/excalidraw-render-compare/src/comparison.rs", "sha256": "5988dd5f973171facf1ccc9712bef2e68e47af8f3947cd3213f21b1b320fb807" },
       { "path": "crates/excalidraw-render-compare/src/pixelmatch.rs", "sha256": "1c505a0a266b0aa2779dcaa237483c28fe0bdbe4543cf43f88344844872d246d" },
       { "path": "crates/excalidraw-render-compare/src/ssim.rs", "sha256": "4746f89206960465784bbddf13176b865232b472b20f02335c468e2d61aab007" }
-    ]
-  },
-  "lockfile": {
-    "path": "Cargo.lock",
-    "sha256": "8f23aa92801a49412c8f943712c066a0bd229a8827e0084820451f00e9a0174f"
+    ],
+    "closure": {
+      "path": "tests/conformance/comparator-profiles/canonical-visual-v1.closure.json",
+      "sha256": "e03f7a6101cbe9abeec43bb7895a2e48603637738152e8fb5e8016f647d6f6c4"
+    }
   },
   "features": [],
   "pixelmatch": {
