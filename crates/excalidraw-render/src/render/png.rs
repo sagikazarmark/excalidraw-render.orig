@@ -894,14 +894,17 @@ impl PngPlan {
                         }
                         if let Some(outline_path) = outline_path {
                             let path = tiny_skia_path(outline_path)?;
+                            // The reference's canvas path (`renderElement`)
+                            // recolors a magic frame's outline in light mode;
+                            // its SVG path does not.
                             let color = if *magic {
                                 CanonicalColor::from_rgb8(0x7a, 0xff, 0xd7)
                             } else {
-                                CanonicalColor::from_rgb8(0xbb, 0xbb, 0xbb)
+                                super::FRAME_OUTLINE_STROKE_COLOR
                             };
                             let paint = solid_paint(color, *opacity)?;
                             let stroke = Stroke {
-                                width: 2.0,
+                                width: super::FRAME_OUTLINE_STROKE_WIDTH as f32,
                                 miter_limit: 4.0,
                                 line_cap: LineCap::Round,
                                 line_join: LineJoin::Round,

@@ -60,6 +60,15 @@ pub(super) fn source_layout_bounds(source: &NormalizedElement) -> (f64, f64, f64
 /// it applies to its children in a scene export.
 pub(super) const FRAME_RADIUS: f64 = 8.0;
 
+/// `FRAME_STYLE.strokeColor`: the stroke of a frame's outline in a scene export.
+/// The reference's SVG paints every frame kind with it; its canvas path recolors
+/// a magic frame's outline, which the PNG backend reproduces.
+pub(super) const FRAME_OUTLINE_STROKE_COLOR: CanonicalColor =
+    CanonicalColor::from_rgb8(0xbb, 0xbb, 0xbb);
+
+/// `FRAME_STYLE.strokeWidth`: the width of a frame's outline stroke.
+pub(super) const FRAME_OUTLINE_STROKE_WIDTH: f64 = 2.0;
+
 pub(super) fn resolved_frame_outline(
     width: f64,
     height: f64,

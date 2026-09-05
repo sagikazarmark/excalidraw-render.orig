@@ -994,7 +994,21 @@ impl SvgPlan {
                         push_svg_number(&mut svg, *height, "SVG frame outline height")?;
                         svg.push('"');
                         push_svg_corner_radius(&mut svg, super::FRAME_RADIUS)?;
-                        svg.push_str(" fill=\"none\" stroke=\"#bbbbbb\" stroke-width=\"2\"/>");
+                        svg.push_str(" fill=\"none\" stroke=\"");
+                        super::FRAME_OUTLINE_STROKE_COLOR
+                            .write_hex(&mut svg)
+                            .map_err(|_| {
+                                FormatEncodeError::Encoding(
+                                    "failed to write SVG frame outline stroke".to_owned(),
+                                )
+                            })?;
+                        svg.push_str("\" stroke-width=\"");
+                        push_svg_number(
+                            &mut svg,
+                            super::FRAME_OUTLINE_STROKE_WIDTH,
+                            "SVG frame outline stroke width",
+                        )?;
+                        svg.push_str("\"/>");
                     }
                     svg.push_str("</g>");
                 }

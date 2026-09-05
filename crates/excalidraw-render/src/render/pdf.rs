@@ -1809,7 +1809,17 @@ impl PdfPlan {
                         push_opacity_resource(&mut content, opacity_resources, *opacity)?;
                     }
                     if let Some(outline_path) = outline_path {
-                        content.push_str("2 w\n1 J\n1 j\n/CS1 CS\n0.7333333333333333 0.7333333333333333 0.7333333333333333 SCN\n");
+                        push_pdf_number(
+                            &mut content,
+                            super::FRAME_OUTLINE_STROKE_WIDTH,
+                            "PDF frame outline stroke width",
+                        )?;
+                        content.push_str(" w\n1 J\n1 j\n/CS1 CS\n");
+                        push_color(
+                            &mut content,
+                            super::FRAME_OUTLINE_STROKE_COLOR.rgb_f64(),
+                            "SCN",
+                        )?;
                         push_rough_path(&mut content, outline_path)?;
                         content.push_str("S\n");
                     }
