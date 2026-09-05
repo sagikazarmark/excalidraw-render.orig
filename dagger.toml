@@ -1,0 +1,29 @@
+ignore = [".devenv", "target"]
+
+[modules.excalidraw-render]
+source = "."
+entrypoint = true
+
+# The workflows install the toolchain from tests/package-consumer/tool-manifest.json;
+# keep this tag on the same patch release.
+settings.rustVersion = "1.97.1-slim-trixie"
+
+# Registered for ad-hoc `dagger call rust ...` work only. Its own checks stay
+# skipped: this repository lints and formats a hand-picked subset of the
+# workspace (vendored forks keep upstream formatting, digest-pinned files carry
+# approved diffs), which the module's repo-wide defaults would not respect.
+[modules.rust]
+source = "github.com/sagikazarmark/daggerverse-beta/rust"
+check.skip = ["rust"]
+
+settings.version = "1.97.1-slim-trixie"
+
+[modules.dagger-gha]
+source = "github.com/sagikazarmark/daggerverse-beta/dagger-gha"
+
+# One job per check group, so a lint failure stays legible next to a test
+# failure, and actions pinned by commit like the hand-written workflows.
+[modules.dagger-gha.settings]
+expand = true
+groupLevel = 2
+pin = '"COMMIT"'

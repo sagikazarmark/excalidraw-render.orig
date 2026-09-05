@@ -99,3 +99,50 @@ cargo test --locked --release --manifest-path tests/package-consumer/Cargo.toml 
 
 The target workflow executes this consumer on all four supported native
 targets and in the pinned browser-hosted `wasm32-unknown-unknown` harness.
+
+## Containerized checks
+
+Every gate the Linux workflows run is also a Dagger check, so one command
+reproduces the whole set locally, in the same pinned container CI uses:
+
+```sh
+dagger check
+```
+
+The devenv shell carries the pinned Dagger CLI (`dagger.enable` in
+`devenv.nix`); the engine needs a working container runtime and nothing else.
+`dagger check --list` names every check, and a selector runs a subset:
+
+```sh
+dagger check --list
+dagger check excalidraw-render:lint
+dagger check excalidraw-render:test:workspace
+```
+
+The checks mirror the workflow jobs one for one: `lint` is the `conformance`
+workflow's formatting and lint gate, `test` its unit, parity, and
+whole-workspace targets, `conformance` the catalog and approval-bearing
+evidence verification the `conformance` and `Packaged public facade` workflows
+share, and `packaging` the Linux leg of the packaged public facade. The
+randomized expansions the nightly schedule runs are deliberately not checks:
+
+```sh
+dagger call nightly font-subset-fuzz
+dagger call nightly frame-batch-property --cases 64
+```
+
+`.github/workflows/dagger.yaml` is generated from `dagger.toml`. The
+`dagger-gha:generate` check fails when the committed file drifts from the
+configuration; regenerate it with:
+
+```sh
+dagger generate dagger-gha:generate
+```
+
+`dagger.lock` pins the module revisions and the base image digest, so a check
+run reproduces byte for byte until the lock moves.
+
+What stays on GitHub Actions: the macOS and Windows legs of the packaged public
+facade, and the browser-hosted `wasm32-unknown-unknown` leg. The viewer and PDF
+harness tests remain `#[ignore]`d in every environment — they still need the
+pinned Chromium, PDFium, PDF.js, and qpdf harnesses.

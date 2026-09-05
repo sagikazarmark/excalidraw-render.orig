@@ -1,0 +1,439 @@
+"""
+Continuous integration for the excalidraw-render workspace.
+
+The GitHub workflows remain the source of truth for the platform matrix
+(macOS, Windows, and the Chromium WASM leg); everything they run on Linux is
+mirrored here so the same gates are reproducible on a laptop.
+"""
+type ExcalidrawRender {
+  let rust: Rust!
+
+  new(
+    ws: Workspace!,
+    """
+    Version (image tag) to use from the official Rust image repository as a base container.
+    """
+    rustVersion: String! = "latest",
+  ) {
+    self.rust = Dagger.rust(ws: ws, version: rustVersion)
+
+    self
+  }
+
+  """
+  Formatting and lint gates.
+  """
+  lint: Lint! {
+    Lint(self.rust.container)
+  }
+
+  """
+  Verification of the sealed catalog and the approval-bearing evidence manifests.
+  """
+  conformance: Conformance! {
+    Conformance(self.rust.container)
+  }
+
+  """
+  Unit, integration, and documentation test targets.
+  """
+  test: Test! {
+    Test(self.rust.container)
+  }
+
+  """
+  The packaged crates and the public facade a downstream consumer compiles against.
+  """
+  packaging: Packaging! {
+    Packaging(self.rust.container, hostTarget)
+  }
+
+  """
+  Randomized expansions that the nightly schedule runs, not the push gates.
+  """
+  nightly: Nightly! {
+    Nightly(self.rust.container)
+  }
+}
+
+"""
+Rust target triple matching the engine's default platform.
+
+The packaging gates pass an explicit `--target`, the way the workflow matrix
+does, so the triple has to follow the platform the checks land on.
+"""
+let hostTarget: String! {
+  Dagger
+    .defaultPlatform
+    .{
+      case (_) {
+        "linux/amd64" => "x86_64-unknown-linux-gnu"
+        "linux/arm64" => "aarch64-unknown-linux-gnu"
+        else => raise "unsupported platform: " + toString(_)
+      }
+    }
+}
+
+"""
+Formatting and lint gates from the `conformance` workflow's `lint` job.
+"""
+type Lint {
+  let container: Container!
+
+  new(
+    """
+    Container with the Rust toolchain and the project source.
+    """
+    container: Container!,
+  ) {
+    self.container = container
+
+    self
+  }
+
+  """
+  Check the formatting of every repo-authored crate except xtask.
+
+  The vendored forks (brotli, skera, ttf2woff2) keep upstream formatting, and
+  xtask/src/pdf_viewers.rs is digest-pinned by the approved PDF viewer
+  qualification (issue #35) and carries one pre-existing rustfmt diff. xtask
+  joins this gate in the re-approval round that next moves that file.
+  """
+  fmt: String! @check {
+    self.run([
+      "cargo", "fmt", "--check",
+      "--package", "excalidraw-render",
+      "--package", "excalidraw-render-cli",
+      "--package", "excalidraw-render-compare",
+      "--package", "excalidraw-render-assets-base",
+      "--package", "excalidraw-render-assets-data-000",
+      "--package", "excalidraw-render-assets-data-001",
+    ])
+  }
+
+  """
+  Lint the renderer, the CLI, and xtask.
+
+  `--no-deps` keeps the vendored forks out of the gate: they are workspace
+  members, so `--exclude` alone would still lint them as dependencies of the
+  selected packages. `manual_is_multiple_of` is allowed because its one
+  occurrence sits in crates/excalidraw-render/src/render/font_subset.rs, which
+  is digest-pinned by the approved SVG font subset qualification (issue #99).
+  """
+  clippy: String! @check {
+    self.run([
+      "cargo", "clippy", "--locked", "--no-deps", "--all-targets",
+      "--package", "excalidraw-render",
+      "--package", "excalidraw-render-cli",
+      "--package", "xtask",
+      "--", "-D", "warnings", "-A", "clippy::manual_is_multiple_of",
+    ])
+  }
+
+  let run(args: [String!]!): String! {
+    self.container.withExec(args).combinedOutput
+  }
+}
+
+"""
+Catalog and evidence verification driven by xtask.
+
+These are the gates that keep the approval records honest: every one of them
+re-derives a digest from the working tree and compares it against a manifest
+that carries a human approval, so a silent edit to a pinned file fails here
+before it reaches the qualification workflows.
+"""
+type Conformance {
+  let container: Container!
+
+  new(
+    """
+    Container with the Rust toolchain and the project source.
+    """
+    container: Container!,
+  ) {
+    self.container = container
+
+    self
+  }
+
+  """
+  Verify every registered conformance case.
+  """
+  registeredCases: String! @check {
+    self.xtask(["conformance", "verify-all"])
+  }
+
+  """
+  Verify the sealed revision catalog.
+  """
+  catalog: String! @check {
+    self.xtask(["catalog", "verify"])
+  }
+
+  """
+  Verify the approved SVG font subset release evidence.
+  """
+  svgFontSubsetRelease: String! @check {
+    self.xtask(["conformance", "verify-svg-font-subset-release"])
+  }
+
+  """
+  Verify the approved SVG font subset qualification (issue #99).
+  """
+  svgFontSubsets: String! @check {
+    self.xtask(["conformance", "verify-svg-font-subsets"])
+  }
+
+  """
+  Verify the approved SVG viewer qualification (issue #34).
+  """
+  svgViewers: String! @check {
+    self.xtask(["conformance", "verify-svg-viewers"])
+  }
+
+  """
+  Verify the approved PDF viewer qualification (issue #35).
+  """
+  pdfViewers: String! @check {
+    self.xtask(["conformance", "verify-pdf-viewers"])
+  }
+
+  let xtask(args: [String!]!): String! {
+    self
+      .built
+      .withExec(["cargo", "run", "--locked", "--package", "xtask", "--"] + args)
+      .combinedOutput
+  }
+
+  """
+  Container with xtask already compiled.
+
+  Every check below runs the same binary, so compiling it once keeps the six
+  of them sharing one cached layer instead of rebuilding it six times.
+  """
+  let built: Container! {
+    self.container.withExec(["cargo", "build", "--locked", "--package", "xtask"])
+  }
+}
+
+"""
+Test targets from the `conformance` workflow.
+
+`workspace` alone covers everything below it. The parity and unit targets stay
+named so a failure is legible on its own, exactly as the workflow keeps them as
+separate steps.
+"""
+type Test {
+  let container: Container!
+
+  new(
+    """
+    Container with the Rust toolchain and the project source.
+    """
+    container: Container!,
+  ) {
+    self.container = container
+
+    self
+  }
+
+  """
+  Execute the renderer unit tests.
+  """
+  unit: String! @check {
+    self.run(["--package", "excalidraw-render", "--lib"])
+  }
+
+  """
+  Execute the registered case PNG parity target.
+  """
+  registeredCasePngParity: String! @check {
+    self.run(["--package", "excalidraw-render", "--test", "registered_case_png_parity"])
+  }
+
+  """
+  Execute the registered case SVG path parity target.
+  """
+  registeredCaseSvgPathParity: String! @check {
+    self.run(["--package", "excalidraw-render", "--test", "registered_case_svg_path_parity"])
+  }
+
+  """
+  Execute the registered case SVG raster parity target.
+  """
+  registeredCaseSvgRasterParity: String! @check {
+    self.run(["--package", "excalidraw-render", "--test", "registered_case_svg_raster_parity"])
+  }
+
+  """
+  Execute every unit, integration, and documentation test target in the workspace.
+
+  `#[ignore]`d tests stay ignored: the nightly expansions live under `nightly`,
+  and the viewer-harness gates still need the pinned browser and PDF harnesses.
+  """
+  workspace: String! @check {
+    self.run(["--workspace", "--no-fail-fast"])
+  }
+
+  let run(args: [String!]!): String! {
+    self.compiled.withExec(["cargo", "test", "--locked"] + args).combinedOutput
+  }
+
+  """
+  Container with every workspace test target already compiled.
+
+  The checks below are overlapping selections of the same targets, so they
+  build once into a shared cached layer and then only execute.
+  """
+  let compiled: Container! {
+    self.container.withExec(["cargo", "test", "--locked", "--workspace", "--no-run"])
+  }
+}
+
+"""
+The Linux leg of the `Packaged public facade` workflow.
+
+The workflow runs this across a four-target matrix; only the Linux entry is
+reproducible here, so the macOS and Windows legs stay on GitHub Actions.
+"""
+type Packaging {
+  let container: Container!
+  let target: String!
+
+  new(
+    """
+    Container with the Rust toolchain and the project source.
+    """
+    container: Container!,
+    """
+    Rust target triple to package and compile for.
+    """
+    target: String!,
+  ) {
+    self.container = container
+    self.target = target
+
+    self
+  }
+
+  """
+  Check the packaged CLI against the packaged renderer.
+  """
+  cli: String! @check {
+    self
+      .packaged
+      .withExec(["bash", "tests/package-consumer/check-packaged-cli.sh", self.target])
+      .combinedOutput
+  }
+
+  """
+  Execute the packaged public facade against the packaged renderer.
+  """
+  publicFacade: String! @check {
+    self
+      .packaged
+      .withWorkdir("tests/package-consumer")
+      .withExec([
+        "cargo", "test", "--locked", "--release",
+        "--target", self.target,
+        "--test", "public_facade",
+      ])
+      .combinedOutput
+  }
+
+  """
+  Container carrying the packaged crate archives, unpacked under target/package.
+
+  The consumer crate resolves `excalidraw-render` through a path dependency on
+  the unpacked archive, so the facade compiles against what `cargo package`
+  would publish rather than against the working tree.
+
+  The workflow lets Cargo default to `<repository>/target`, while the Rust
+  module points CARGO_TARGET_DIR at a directory outside the source tree. The
+  checked-in consumer manifest and scripts address the archives through the
+  repository-relative path, so link it back onto whatever Cargo is using.
+  """
+  let packaged: Container! {
+    self
+      .container
+      .withExec([
+        "sh", "-c",
+        "if [ -n \"$CARGO_TARGET_DIR\" ] && [ \"$CARGO_TARGET_DIR\" != \"$PWD/target\" ]; then ln -sfn \"$CARGO_TARGET_DIR\" target; fi",
+      ])
+      .withExec([
+        "cargo", "package", "--locked", "--workspace",
+        "--exclude", "xtask",
+        "--exclude", "excalidraw-render-compare",
+        "--no-verify",
+      ])
+      .withExec([
+        "sh", "-c",
+        "for archive in target/package/*.crate; do tar -xzf \"$archive\" -C target/package; done",
+      ])
+  }
+}
+
+"""
+The randomized expansions the nightly schedule runs.
+
+These are deliberately not checks: they are bounded but long, and the push
+gates should not carry them. Run one with
+`dagger call nightly font-subset-fuzz`.
+"""
+type Nightly {
+  let container: Container!
+
+  new(
+    """
+    Container with the Rust toolchain and the project source.
+    """
+    container: Container!,
+  ) {
+    self.container = container
+
+    self
+  }
+
+  """
+  Execute the bounded font subset fuzz expansion.
+  """
+  fontSubsetFuzz(
+    """
+    Number of cases to expand.
+    """
+    cases: String! = "4096",
+  ): String! {
+    self
+      .container
+      .withEnvVariable("EXCALIDRAW_FONT_SUBSET_FUZZ_CASES", cases)
+      .withExec([
+        "cargo", "test", "--locked", "--release",
+        "--package", "excalidraw-render", "--lib",
+        "render::font_subset_fuzz::nightly_font_subset_fuzz_is_bounded_and_deterministic",
+        "--", "--ignored", "--exact",
+      ])
+      .combinedOutput
+  }
+
+  """
+  Execute the deeper batch-versus-standalone frame expansion.
+  """
+  frameBatchProperty(
+    """
+    Number of cases to expand.
+    """
+    cases: String! = "512",
+  ): String! {
+    self
+      .container
+      .withEnvVariable("EXCALIDRAW_FRAME_BATCH_CASES", cases)
+      .withExec([
+        "cargo", "test", "--locked", "--release",
+        "--package", "excalidraw-render", "--lib",
+        "render::frame_batch_property::nightly_frame_batch_property_runs_a_deeper_sample",
+        "--", "--ignored", "--exact",
+      ])
+      .combinedOutput
+  }
+}
