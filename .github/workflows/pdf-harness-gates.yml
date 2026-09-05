@@ -1,0 +1,54 @@
+name: PDF harness gates
+
+# The PDF backend qualification gates are #[ignore]d because they need the
+# exact-pinned PDFium, PDF.js and qpdf harness (tools/pdf-harness/install.sh:
+# Linux x86_64, host Python 3.12.3, Docker for the PDF.js container). Nothing
+# else runs them, so their expectations drifted unnoticed (#107). This job runs
+# them on every push to main and nightly, and can be dispatched by hand; it is
+# not a required pull-request check, so a PDF-affecting change may still repin
+# the gates in its own round (#109). The PDF.js viewer runs in Docker, so this
+# leg stays on GitHub Actions rather than the Dagger mirror.
+#
+# tests/frame_conformance.rs::frame_pdfs_pass_both_canonical_pdf_visual_gates is
+# the one PDF-harness gate deliberately left out: the rotated frame's PDF page is
+# 112.12x83.84 px at 96 DPI and the PDF.js adapter requires integral dimensions.
+# Add it here once that is resolved.
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "41 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pdf-harness-gates:
+    name: Ignored PDF harness gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
+      - name: Install the exact-pinned PDF harness
+        shell: bash
+        run: |
+          python3 --version
+          docker --version
+          bash tools/pdf-harness/install.sh
+      - name: Run the ignored PDF backend qualification gates
+        shell: bash
+        run: >-
+          cargo test --locked --release -p excalidraw-render
+          --test pdf_backend_qualification -- --ignored
+      - name: Run the other PDF-harness-gated expectations
+        shell: bash
+        run: >-
+          cargo test --locked --release -p excalidraw-render
+          --test rectangle_pdf_render --test excalifont_text_render -- --ignored

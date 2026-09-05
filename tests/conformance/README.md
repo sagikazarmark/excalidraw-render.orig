@@ -240,3 +240,9 @@ Install the pinned development-only tools once, then reproduce without network:
 bash tools/pdf-harness/install.sh
 bash tools/pdf-viewer-qualification.sh reproduce
 ```
+
+The `#[ignore]`d gates that need this harness (`pdf_backend_qualification`,
+`rectangle_pdf_render`, `excalifont_text_render`) run in CI on every push to
+`main` and nightly through `.github/workflows/pdf-harness-gates.yml`, so a
+change that moves a structural digest or a viewer raster fails visibly rather
+than leaving the expectation files stale (#109).
