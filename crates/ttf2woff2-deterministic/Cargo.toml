@@ -48,10 +48,13 @@ name = "ttf2woff2"
 path = "src/lib.rs"
 
 [dependencies.brotli]
-package = "excalidraw-render-brotli"
-version = "=0.1.0"
-path = "../brotli-deterministic"
-features = ["disable-timer"]
+version = "=9.0.0"
+default-features = false
+features = [
+    "std",
+    "portable-float",
+    "disable-timer",
+]
 
 [dependencies.byteorder]
 version = "=1.5.0"

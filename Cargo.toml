@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "crates/brotli-deterministic",
     "crates/excalidraw-render",
     "crates/excalidraw-render-assets-base",
     "crates/excalidraw-render-assets-data-000",

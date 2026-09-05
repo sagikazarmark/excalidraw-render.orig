@@ -94,7 +94,7 @@ type Lint {
   """
   Check the formatting of every repo-authored crate except xtask.
 
-  The vendored forks (brotli, skera, ttf2woff2) keep upstream formatting, and
+  The vendored forks (skera, ttf2woff2) keep upstream formatting, and
   xtask/src/pdf_viewers.rs is digest-pinned by the approved PDF viewer
   qualification (issue #35) and carries one pre-existing rustfmt diff. xtask
   joins this gate in the re-approval round that next moves that file.
