@@ -593,9 +593,12 @@ preserving a safe link where the format supports one.
 
 ### 8.2 Raster and Nested-SVG Assets
 
-Accepted raster families are PNG/APNG, JPEG/JFIF, GIF, WebP, BMP, ICO, and AVIF.
-Stored payload bytes are authoritative; the renderer MUST NOT replay editor
-import, Pica, or canvas transformations or infer import history.
+Accepted raster families are PNG/APNG, JPEG/JFIF, GIF, WebP, BMP, and ICO.
+AVIF is not accepted in revision 1 (#68): an AVIF payload takes the
+`image.unsupported-format` path below and no platform decoder or weakened
+fallback stands in for it. Stored payload bytes are authoritative; the renderer
+MUST NOT replay editor import, Pica, or canvas transformations or infer import
+history.
 
 Rendering never resolves network or filesystem resources. Nested SVG is parsed
 and sanitized locally before any viewer library. DTDs, external entities,
@@ -1044,10 +1047,11 @@ against Perfect Freehand `1.2.0`; otherwise use a focused owned port with the
 official stroke-to-path wrapper.
 
 Raster codecs use individually pinned pure-Rust adapters behind one bounded,
-deterministic contract. AVIF follows the same gate; if no permissively licensed
-pure-Rust/WASM decoder qualifies, the project completes or owns one rather than
-using a platform decoder or weakening compatibility. `usvg`/`resvg` can process
-only sanitized bounded nested SVG under deny-all resource access.
+deterministic contract. When a later revision admits AVIF it follows the same
+gate; if no permissively licensed pure-Rust/WASM decoder qualifies, the project
+completes or owns one rather than using a platform decoder or weakening
+compatibility. `usvg`/`resvg` can process only sanitized bounded nested SVG
+under deny-all resource access.
 
 Compatibility revision 1 ships all 230 byte-identical official rendering WOFF2
 source files across eight families, exact Liberation Sans and Noto Emoji
@@ -1906,9 +1910,10 @@ decoded payload octets
 ```
 
 Revision-1 media-kind tags are frozen as `1` PNG/APNG, `2` JPEG/JFIF, `3` GIF,
-`4` WebP, `5` BMP, `6` ICO, `7` AVIF, and `8` sanitized SVG. Claimed MIME, ID,
-pointer, lexical spelling, parameters, path, fragment, and provenance do not
-participate. Malformed content without a validated kind has no identity.
+`4` WebP, `5` BMP, `6` ICO, `7` reserved for AVIF (not accepted in revision 1,
+so never emitted), and `8` sanitized SVG. Claimed MIME, ID, pointer, lexical
+spelling, parameters, path, fragment, and provenance do not participate.
+Malformed content without a validated kind has no identity.
 
 Intrinsic operation kinds are exactly `validate`, `sanitize-svg`,
 `decode-raster`, `select-static-frame`, `color-normalize`,

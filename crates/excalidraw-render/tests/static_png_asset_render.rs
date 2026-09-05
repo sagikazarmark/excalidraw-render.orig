@@ -1038,6 +1038,76 @@ fn missing_local_image_uses_the_format_specific_recovery() {
     }
 }
 
+/// AVIF is scoped out of compatibility revision 1 (#68, spec 8.2): a well-formed
+/// AVIF `ftyp` box is a validated-but-unaccepted media family, so it takes the
+/// `image.unsupported-format` recovery of the `/dataURL` disposition in every
+/// format, while the declared `image/avif` media type stays a legal declaration.
+#[test]
+fn avif_payload_is_not_accepted_in_revision_1_and_uses_the_unsupported_format_recovery() {
+    let avif_ftyp = b"\x00\x00\x00\x1cftypavif\x00\x00\x00\x00avifmif1miaf";
+    let data_url = format!(
+        "data:image/avif;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(avif_ftyp)
+    );
+    let scene = image_scene_with_media_type_and_size(&data_url, "image/avif", 100, 80);
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("request is valid");
+        let outcome = Renderer::new()
+            .render(&scene, &request)
+            .expect("an unaccepted raster family has a local recovery");
+
+        assert_eq!(
+            diagnostic_codes(&outcome),
+            [DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT]
+        );
+        let diagnostic = &outcome.report().diagnostics()[0];
+        assert_eq!(diagnostic.json_pointer(), "/files/asset/dataURL");
+        match format {
+            OutputFormat::Svg => {
+                let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+                assert!(!svg.contains("<image "));
+                assert!(matches!(
+                    diagnostic.details(),
+                    Some(ErrorDetails::Asset {
+                        recovery: Recovery::Omitted,
+                        recipe_id: None,
+                        ..
+                    })
+                ));
+            }
+            OutputFormat::Png => {
+                assert!(matches!(
+                    diagnostic.details(),
+                    Some(ErrorDetails::Asset {
+                        recovery: Recovery::Placeholder,
+                        recipe_id: Some(recipe),
+                        ..
+                    }) if recipe.starts_with("official.image@sha256:")
+                ));
+            }
+            OutputFormat::Pdf => {
+                assert!(!outcome
+                    .artifact()
+                    .bytes()
+                    .windows("/Subtype /Image".len())
+                    .any(|window| window == b"/Subtype /Image"));
+                assert!(matches!(
+                    diagnostic.details(),
+                    Some(ErrorDetails::Asset {
+                        recovery: Recovery::Omitted,
+                        recipe_id: None,
+                        ..
+                    })
+                ));
+            }
+            _ => panic!("revision-1 formats are covered"),
+        }
+    }
+}
+
 #[test]
 fn png_missing_image_paints_the_selected_official_placeholder() {
     let scene = SceneDocument::parse(

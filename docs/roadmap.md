@@ -70,8 +70,9 @@ freedraw elements. Its 512 bindings are 384 arrow-endpoint and 128
 container-text bindings. Non-frame elements split equally among inside,
 crossing, clipped, and overlapping placement classes.
 
-`codec-1mp` independently gates PNG, JPEG/JFIF, GIF, WebP, BMP, ICO, AVIF, and
-sanitized nested SVG. Every raster variant supplies 1,048,576 selected pixels
+`codec-1mp` independently gates PNG, JPEG/JFIF, GIF, WebP, BMP, ICO, and
+sanitized nested SVG (AVIF joins when a revision accepts it, #68). Every raster
+variant supplies 1,048,576 selected pixels
 with equivalent stable-entropy appearance; animation-capable formats include a
 contrasting non-selected frame. If one legal source cannot supply the count, use
 the minimum unique sources summing to it. Nested SVG uses a 1024x1024 viewBox.
