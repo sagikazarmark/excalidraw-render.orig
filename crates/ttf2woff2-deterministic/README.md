@@ -1,6 +1,6 @@
 # Deterministic ttf2woff2 adapter for excalidraw-render
 
-This package is a controlled fork of `ttf2woff2 0.13.2`. Its encoder implementation is unchanged; the dependency is pinned to the renderer's portable-math Brotli fork so quality-11 output is byte-identical across native and WebAssembly targets.
+This package is a controlled fork of `ttf2woff2 0.13.2`. Its encoder implementation is unchanged; the dependency is pinned to upstream `brotli 9.0.0` with the `portable-float` feature so quality-11 output is byte-identical across native and WebAssembly targets.
 
 # ttf2woff2
 

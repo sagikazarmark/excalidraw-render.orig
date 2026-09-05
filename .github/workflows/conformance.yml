@@ -19,7 +19,7 @@ jobs:
         run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
       - name: Install rustfmt and clippy for the pinned toolchain
         run: rustup component add rustfmt clippy
-      # Every repo-authored crate except xtask. Vendored forks (brotli, skera,
+      # Every repo-authored crate except xtask. Vendored forks (skera,
       # ttf2woff2) keep upstream formatting. xtask/src/pdf_viewers.rs is
       # digest-pinned by the approved PDF viewer qualification (issue #35) and
       # carries one pre-existing rustfmt diff; xtask joins this gate when the
