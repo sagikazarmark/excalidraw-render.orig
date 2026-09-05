@@ -1,10 +1,5 @@
 {
-  "approval": {
-    "approval_subject_sha256": "sha256:74ad65571aba413d42f04fd4e8193331b2febb13c5ef96232b2e0b67f9f1092d",
-    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5553306555",
-    "approved_at": "2026-09-05",
-    "approved_by": "sagikazarmark"
-  },
+  "approval": null,
   "case_id": "focused.rectangle-outline.v1",
   "case_manifest_approval_subject_sha256": "sha256:bc870d20627148871b0b2c18dc9fe67476001dc9f47aa5f0b46742e5be837008",
   "compatibility_revision": 1,
@@ -66,11 +61,11 @@
     },
     {
       "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
-      "sha256": "bebeb363d5e0decde9df47764c59cf526c6575670ffe09f580af5857eab4ad94"
+      "sha256": "9267d525bd682a338a5d7927747d508bfca17447598f7d3454c9137b091c99ad"
     },
     {
       "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
-      "sha256": "33ac5d22564bad945e419a0fc17e05810ff0b0bb1d36bb46ef099372c54d8936"
+      "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"
     },
     {
       "path": "tests/conformance/structure-profiles/canonical-pdf-structure-v1.json",

@@ -145,6 +145,9 @@ pub fn approval_subject() -> Result<String, String> {
     approval_subject_from_manifest(&manifest)
 }
 
+/// Re-derives every pinned digest from disk: first the viewer and structure
+/// profiles' own descriptors and digest sidecars, then the manifest that pins
+/// those profiles. The approval is cleared because its subject moves with them.
 pub fn refresh_dependencies() -> Result<(), String> {
     let root = repo_root();
     let path = root.join(MANIFEST_PATH);
@@ -152,6 +155,9 @@ pub fn refresh_dependencies() -> Result<(), String> {
         &fs::read(&path).map_err(|error| format!("failed to read {MANIFEST_PATH}: {error}"))?,
     )
     .map_err(|error| format!("invalid qualification manifest: {error}"))?;
+    for profile in object(&manifest["profiles"], "qualification profiles")?.values() {
+        refresh_profile(string(&profile["path"], "profile path")?, &root)?;
+    }
     manifest["approval"] = Value::Null;
     refresh_descriptors(&mut manifest, &root)?;
     let canonical = canonical_bytes(&manifest)?;
@@ -163,6 +169,20 @@ pub fn refresh_dependencies() -> Result<(), String> {
     )
     .map_err(|error| format!("failed to write {MANIFEST_DIGEST_PATH}: {error}"))?;
     verify(false)
+}
+
+/// Rewrites one profile with its file descriptors re-derived from disk, as
+/// canonical JSON plus LF, and its `.sha256` sidecar over those bytes.
+fn refresh_profile(relative: &str, root: &Path) -> Result<(), String> {
+    let mut profile: Value = serde_json::from_slice(&read_repository_file(root, relative)?)
+        .map_err(|error| format!("invalid profile {relative}: {error}"))?;
+    refresh_descriptors(&mut profile, root)?;
+    let bytes = [&canonical_bytes(&profile)?[..], b"\n"].concat();
+    fs::write(root.join(relative), &bytes)
+        .map_err(|error| format!("failed to write {relative}: {error}"))?;
+    let sidecar = relative.replace(".json", ".sha256");
+    fs::write(root.join(&sidecar), format!("{}\n", sha256(&bytes)))
+        .map_err(|error| format!("failed to write {sidecar}: {error}"))
 }
 
 fn refresh_descriptors(value: &mut Value, root: &Path) -> Result<(), String> {
@@ -750,4 +770,3 @@ fn string<'a>(value: &'a Value, subject: &str) -> Result<&'a str, String> {
         .as_str()
         .ok_or_else(|| format!("{subject} must be a string"))
 }
-

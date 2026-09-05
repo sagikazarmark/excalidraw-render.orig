@@ -30,6 +30,18 @@ annotations, XFA, WASM, and hardware acceleration, and emits canvas
 `getImageData` bytes. Both adapters reject nonconforming page shape before
 writing a canonical buffer.
 
+Both viewers render the page at exactly `96 / 72` scale with the page origin at
+the canvas origin onto a canvas of exactly the supplied `width` and `height`.
+A page is admitted when each of its 96 DPI dimensions is within one pixel of
+the supplied size, so an integral page must match exactly; a rejected request
+names the page's 96 DPI size and the supplied size. The page is never scaled,
+stretched, or offset to fit: device pixels beyond the canvas are discarded and
+canvas pixels the page does not cover stay transparent. PDFium renders through
+`FPDF_RenderPageBitmapWithMatrix` rather than pypdfium2's `PdfPage.render`,
+which would size its bitmap with `ceil` and stretch a fractional page onto it.
+The `#[ignore]`d `pdf_viewer_adapters` tests in `crates/excalidraw-render`
+pin this contract for both adapters.
+
 The PDFium library is reinitialized with the checked `empty-fonts/` directory as
 its complete user font search path. Structural admission separately requires
 every used text font to be embedded, so host font directories cannot affect a

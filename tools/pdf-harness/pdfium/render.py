@@ -16,6 +16,7 @@ from pypdfium2.version import PDFIUM_INFO, PYPDFIUM_INFO
 _FONT_PATH = None
 _FONT_PATHS = None
 _LIBRARY_CONFIG = None
+SCALE = 96 / 72
 
 
 def main() -> int:
@@ -41,23 +42,7 @@ def main() -> int:
             try:
                 if page.get_rotation() != 0:
                     raise RuntimeError("PDFium profile rejects page rotation")
-                bitmap = page.render(
-                    scale=96 / 72,
-                    rotation=0,
-                    crop=(0, 0, 0, 0),
-                    may_draw_forms=False,
-                    fill_color=(0, 0, 0, 0),
-                    grayscale=False,
-                    optimize_mode=None,
-                    draw_annots=False,
-                    no_smoothtext=False,
-                    no_smoothimage=False,
-                    no_smoothpath=False,
-                    force_halftone=False,
-                    limit_image_cache=False,
-                    rev_byteorder=True,
-                    force_bitmap_format=pdfium_c.FPDFBitmap_BGRA,
-                )
+                bitmap = render_at_exact_scale(page, expected_width, expected_height)
                 try:
                     rgba = canonicalize(bitmap)
                     width, height = bitmap.width, bitmap.height
@@ -67,10 +52,6 @@ def main() -> int:
                 page.close()
         if caught:
             raise RuntimeError(f"PDFium emitted warning: {caught[0].message}")
-    if (width, height) != (expected_width, expected_height):
-        raise RuntimeError(
-            f"PDFium produced {width}x{height}, expected {expected_width}x{expected_height}"
-        )
 
     output_path.write_bytes(rgba)
     print(
@@ -114,6 +95,47 @@ def configure_pdfium() -> None:
     )
     pdfium_c.FPDF_InitLibraryWithConfig(_LIBRARY_CONFIG)
     pdfium_i.LIBRARY_AVAILABLE.value = True
+
+
+def render_at_exact_scale(page, expected_width: int, expected_height: int):
+    """Render the page at exactly 96/72 scale onto a bitmap of the supplied size.
+
+    The page origin sits at the bitmap origin; the bitmap must lie within one
+    device pixel of the page's 96 DPI size. Device pixels beyond the bitmap are
+    discarded and bitmap pixels the page does not cover stay transparent. The
+    page is never scaled, stretched, or offset to fit the bitmap, which rules
+    out ``PdfPage.render``: it sizes its bitmap with ``ceil`` and lets
+    ``FPDF_RenderPageBitmap`` stretch a fractional page onto it.
+    """
+    if expected_width < 1 or expected_height < 1:
+        raise RuntimeError("expected dimensions must be positive integers")
+    device_width = page.get_width() * SCALE
+    device_height = page.get_height() * SCALE
+    if abs(device_width - expected_width) >= 1 or abs(device_height - expected_height) >= 1:
+        raise RuntimeError(
+            f"PDFium page is {device_size(device_width)}x{device_size(device_height)} px "
+            f"at 96 DPI, expected {expected_width}x{expected_height}"
+        )
+    bitmap = pypdfium2.PdfBitmap.new_native(
+        expected_width,
+        expected_height,
+        format=pdfium_c.FPDFBitmap_BGRA,
+        rev_byteorder=True,
+    )
+    bitmap.fill_rect((0, 0, 0, 0), 0, 0, expected_width, expected_height)
+    matrix = pdfium_c.FS_MATRIX(SCALE, 0, 0, SCALE, 0, 0)
+    clip = pdfium_c.FS_RECTF(0, 0, expected_width, expected_height)
+    pdfium_c.FPDF_RenderPageBitmapWithMatrix(
+        bitmap, page, matrix, clip, pdfium_c.FPDF_REVERSE_BYTE_ORDER
+    )
+    return bitmap
+
+
+def device_size(value: float) -> str:
+    """Format a 96 DPI dimension like the PDF.js adapter's number formatting:
+    whole pixels without a fraction, fractional pixels at full precision. The
+    value itself comes from PDFium's binary32 page size."""
+    return str(int(value)) if value.is_integer() else repr(value)
 
 
 def canonicalize(bitmap) -> bytes:

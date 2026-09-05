@@ -53,18 +53,23 @@ try {
   if (page.rotate !== 0 || page.userUnit !== 1) {
     throw new Error("PDF.js profile rejects rotation and non-default UserUnit");
   }
+  // The page is placed at exactly 96/72 scale with its origin at the canvas
+  // origin. The caller's canvas must lie within one device pixel of the page's
+  // 96 DPI size; device pixels beyond the canvas are discarded and canvas
+  // pixels the page does not cover stay transparent. The page is never scaled,
+  // stretched, or offset to fit the canvas.
   const viewport = page.getViewport({ scale: 96 / 72, rotation: 0 });
-  if (!Number.isInteger(viewport.width) || !Number.isInteger(viewport.height)) {
-    throw new Error("96 DPI page dimensions must be integral");
-  }
-  if (viewport.width !== expectedWidth || viewport.height !== expectedHeight) {
+  if (
+    Math.abs(viewport.width - expectedWidth) >= 1 ||
+    Math.abs(viewport.height - expectedHeight) >= 1
+  ) {
     throw new Error(
-      `PDF.js produced ${viewport.width}x${viewport.height}, expected ${expectedWidth}x${expectedHeight}`,
+      `PDF.js page is ${viewport.width}x${viewport.height} px at 96 DPI, expected ${expectedWidth}x${expectedHeight}`,
     );
   }
-  const canvas = createCanvas(viewport.width, viewport.height);
+  const canvas = createCanvas(expectedWidth, expectedHeight);
   const context = canvas.getContext("2d");
-  context.clearRect(0, 0, viewport.width, viewport.height);
+  context.clearRect(0, 0, expectedWidth, expectedHeight);
   await page.render({
     annotationMode: AnnotationMode.DISABLE,
     background: "rgba(0,0,0,0)",
@@ -73,7 +78,7 @@ try {
     intent: "display",
     viewport,
   }).promise;
-  const image = context.getImageData(0, 0, viewport.width, viewport.height);
+  const image = context.getImageData(0, 0, expectedWidth, expectedHeight);
   const rgba = Buffer.from(image.data.buffer, image.data.byteOffset, image.data.byteLength);
   for (let index = 0; index < rgba.length; index += 4) {
     if (rgba[index + 3] === 0) {
@@ -86,12 +91,12 @@ try {
   process.stdout.write(
     `${JSON.stringify({
       byte_length: rgba.length,
-      height: viewport.height,
+      height: expectedHeight,
       layout: "top-left-row-major",
       pdfjs: "6.1.200",
       pixel_format: "straight-alpha-srgb-rgba8",
       sha256: createHash("sha256").update(rgba).digest("hex"),
-      width: viewport.width,
+      width: expectedWidth,
     })}\n`,
   );
 } finally {

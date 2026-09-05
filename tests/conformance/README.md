@@ -242,7 +242,11 @@ bash tools/pdf-viewer-qualification.sh reproduce
 ```
 
 The `#[ignore]`d gates that need this harness (`pdf_backend_qualification`,
-`rectangle_pdf_render`, `excalifont_text_render`) run in CI on every push to
-`main` and nightly through `.github/workflows/pdf-harness-gates.yml`, so a
-change that moves a structural digest or a viewer raster fails visibly rather
-than leaving the expectation files stale (#109).
+`rectangle_pdf_render`, `excalifont_text_render`, `pdf_viewer_adapters`) run in
+CI on every push to `main` and nightly through
+`.github/workflows/pdf-harness-gates.yml`, so a change that moves a structural
+digest or a viewer raster fails visibly rather than leaving the expectation
+files stale (#109). `pdf_viewer_adapters` pins the viewer adapters' own
+contract: a page is admitted when each of its 96 DPI dimensions is within one
+pixel of the supplied canvas and is then placed at exact scale from the canvas
+origin, never stretched to fit (#119).
