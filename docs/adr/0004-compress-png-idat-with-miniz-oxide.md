@@ -36,21 +36,44 @@ The stream is driven through `compress_to_output` so output is appended with
 `try_reserve`; allocation failure surfaces as `MemoryUnavailable` like every
 other encoder buffer. The "exact size before allocation" property the stored
 encoder relied on is kept by producing the `IDAT` stream first and sizing the
-final buffer from it. The staged stream is a transient the ledger does not
-charge separately: on ordinary boards it is one to two percent of the raster
-and is dropped as soon as the chunk is copied; on an incompressible raster it
-approaches the raster size, so the physical peak there is raster plus two
-copies of the stream where the stored encoder held raster plus one. Spec §13.2
-prices canonical, not physical, peaks, and the `2 MiB + 16 * output_width`
-PNG encoder workspace row still covers the compressor state (about 320 KiB)
-plus the two scanline buffers.
+final buffer from it.
 
-Each PNG render still calls the plan's `encode()` at least twice (measurement
-and emission) and once more per optional metadata candidate, so deflate now
-runs that many times where the stored encoder copied. Rasterization at four
-times supersampling already repeated the same way and dominates; the level-6
-timings below include the multiplier. Caching the stream on the plan is a
-possible follow-up if a profile ever shows the compressor mattering.
+The stream is a pure function of the raster and independent of the metadata
+chunks, so since #117 the plan rasterizes and deflates once into a
+`PngIdatStream` and every artifact candidate — the baseline, each optional
+metadata component during selection, and the accepted one at emission — is
+assembled from that single stream as `IHDR + IDAT + tEXt?/iTXt? + IEND`.
+Codec measurement and retained emission remain two semantic passes as spec
+§13.2 requires, and the emitted bytes are still compared with the measured
+ones; only the physical recomputation between them is gone. Before #117 each
+call ran rasterization, alpha canonicalization, filtering, and deflate again,
+so a default render paid for them twice and a render with all three optional
+components up to five times.
+
+The staged stream is a transient the ledger does not charge separately. Its
+lifetime is the one the §13.2 `PNG encoder workspace` row already covers,
+"measurement/emission through encoding": it is created after the workspace is
+acquired and the `codec_measurement_input` work is charged, outlives metadata
+selection, and is dropped as soon as the accepted candidate is emitted,
+before the asset records and the workspace are released. On ordinary boards
+it is one to two percent of the raster; on an incompressible raster it
+approaches the raster size. The raster itself is dropped when compression
+ends, so while compressing the physical peak is raster plus stream, and while
+assembling it is the stream plus two artifact copies, since metadata
+selection keeps the accepted candidate while it assembles the next and
+emission keeps the measured bytes while it assembles the emitted ones. The
+stored encoder held the raster beside those same two artifact copies, and the
+first level-6 encoder, which rasterized and deflated inside every candidate,
+held raster, stream, and the two copies. Spec §13.2 prices canonical, not
+physical, peaks, and the `2 MiB + 16 * output_width` workspace row still
+covers the compressor state (about 320 KiB) plus the two scanline buffers.
+
+Rasterization at four times supersampling dominates a render and now runs
+exactly once per PNG, so the level-6 timings below, measured before #117 with
+the multiplier, are upper bounds; the same scenes rendered with all three
+optional components went from 6.6 s to 1.4 s (`music-server-architecture`) and
+10.8 s to 2.2 s (`excali-local-slides`) once the stream was shared, with
+identical bytes.
 
 ## Why level 6 and a gated adaptive filter
 

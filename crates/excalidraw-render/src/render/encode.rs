@@ -544,25 +544,34 @@ impl RenderSession {
         let mandatory_notices = plan
             .mandatory_notices()
             .map_err(|error| self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error))?;
+        // The IDAT stream is a pure function of the raster, so the plan is
+        // rasterized and deflated once here and every metadata candidate and
+        // the emission pass assemble their chunks from the same stream (#117).
+        // Measurement and emission stay two semantic passes (spec §13.2) and
+        // the emitted bytes are still compared with the measured ones. The
+        // stream itself is a physical transient the ledger does not price
+        // separately; its lifetime is the one the §13.2 PNG encoder workspace
+        // row names (ADR-0004): it lives until the accepted candidate is
+        // emitted and is dropped before the asset records are released.
+        let stream = plan
+            .compress()
+            .map_err(|error| self.format_failure(request, ErrorCode::ENCODE_PNG_FAILED, error))?;
         let (metadata, measured) = self.select_artifact_metadata(
             scene,
             request,
             mandatory_notices.as_ref(),
             ErrorCode::ENCODE_PNG_FAILED,
             rgba_bytes,
-            |metadata| {
-                plan.set_metadata(metadata.try_clone()?);
-                plan.encode()
-            },
+            |metadata| stream.assemble(Some(metadata)),
         )?;
-        plan.set_metadata(metadata);
         self.emit_premeasured_output(
             request,
             ErrorCode::ENCODE_PNG_FAILED,
             rgba_bytes,
             measured,
-            || plan.encode(),
+            || stream.assemble(Some(&metadata)),
         )?;
+        drop(stream);
         self.release_semantic_working(request, semantic_working, true)?;
         if paint_mask_bytes != 0 {
             self.release_working(request, paint_mask_surface, paint_mask_bytes)?;

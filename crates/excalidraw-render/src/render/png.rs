@@ -18,7 +18,6 @@ pub(super) struct PngPlan {
     background: Option<[u8; 4]>,
     fallback_colors: super::FallbackColors,
     image_fallback_background: CanonicalColor,
-    metadata: Option<super::metadata::ArtifactMetadata>,
     svg_trees: super::SvgTreeCache,
     elements: Vec<PngElement>,
 }
@@ -645,15 +644,16 @@ impl PngPlan {
                 crate::ColorMode::Light => CanonicalColor::from_rgb8(0xe7, 0xe7, 0xe7),
                 crate::ColorMode::Dark => CanonicalColor::from_rgb8(0x2e, 0x2e, 0x2e),
             },
-            metadata: None,
             elements,
         })
     }
 
-    pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
+    /// Rasterizes the plan once and deflates the raster into the `IDAT`
+    /// stream every artifact candidate is assembled from.
+    pub(super) fn compress(&self) -> Result<PngIdatStream, FormatEncodeError> {
         let mut rgba = self.rasterize()?;
         canonicalize_straight_alpha(&mut rgba)?;
-        encode_rgba(self.width, self.height, &rgba, self.metadata.as_ref())
+        compress_rgba(self.width, self.height, &rgba)
     }
 
     pub(super) fn mandatory_notices(
@@ -690,10 +690,6 @@ impl PngPlan {
                     "the mandatory Font Awesome notice could not be resolved".to_owned(),
                 ),
             })
-    }
-
-    pub(super) fn set_metadata(&mut self, metadata: super::metadata::ArtifactMetadata) {
-        self.metadata = Some(metadata);
     }
 
     fn rasterize(&self) -> Result<Vec<u8>, FormatEncodeError> {
@@ -1702,12 +1698,23 @@ const PIXEL_BYTES: usize = 4;
 /// own PNG export runs at this level.
 const IDAT_DEFLATE_LEVEL: u8 = 6;
 
-fn encode_rgba(
+/// One raster's `IDAT` stream, filtered and deflated once, from which every
+/// artifact candidate is assembled.
+///
+/// The stream is a pure function of the raster and independent of the
+/// metadata chunks, so metadata selection assembles each candidate and the
+/// emission pass assembles the accepted one from this single stream rather
+/// than rasterizing and compressing again per call (#117). It is a transient
+/// the ledger does not price separately; ADR-0004 documents its lifetime
+/// against the spec §13.2 PNG encoder workspace row.
+pub(super) struct PngIdatStream {
     width: u32,
     height: u32,
-    rgba: &[u8],
-    metadata: Option<&super::metadata::ArtifactMetadata>,
-) -> Result<Vec<u8>, FormatEncodeError> {
+    idat: Vec<u8>,
+}
+
+/// Validates the raster against its dimensions and deflates its scanlines.
+fn compress_rgba(width: u32, height: u32, rgba: &[u8]) -> Result<PngIdatStream, FormatEncodeError> {
     if width == 0 || height == 0 {
         return Err(FormatEncodeError::Encoding(
             "PNG dimensions must be positive".to_owned(),
@@ -1726,103 +1733,119 @@ fn encode_rgba(
         ));
     }
 
-    // The IDAT stream is produced first so the exact PNG size is known before
-    // the fallible output allocation. Deflate keeps the stream a small fraction
-    // of the raster on ordinary boards (#113); even an incompressible raster
-    // holds it only until the chunk is copied below.
+    // The IDAT stream is produced before any candidate is assembled so the
+    // exact PNG size is known before each fallible output allocation. Deflate
+    // keeps the stream a small fraction of the raster on ordinary boards
+    // (#113); even an incompressible raster holds it only until the accepted
+    // candidate is emitted.
     let idat = compress_scanlines(pixel_row_bytes, rgba)?;
-    let metadata_bytes = metadata.map_or(0, |metadata| {
-        metadata
-            .scene_wrapper()
-            .map_or(0, |wrapper| {
-                12_usize
-                    .saturating_add("application/vnd.excalidraw+json".len())
-                    .saturating_add(1)
-                    .saturating_add(wrapper.len())
-            })
-            .saturating_add(metadata.manifest().map_or(0, |manifest| {
-                12_usize
-                    .saturating_add("excalidraw-render:artifact-manifest".len())
-                    .saturating_add(5)
-                    .saturating_add(manifest.len())
-            }))
-    });
-    let output_bytes = 8_usize
-        .checked_add(12 + 13)
-        .and_then(|bytes| bytes.checked_add(12))
-        .and_then(|bytes| bytes.checked_add(idat.len()))
-        .and_then(|bytes| bytes.checked_add(metadata_bytes))
-        .and_then(|bytes| bytes.checked_add(12))
-        .ok_or_else(png_size_error)?;
+    Ok(PngIdatStream {
+        width,
+        height,
+        idat,
+    })
+}
 
-    let mut png = Vec::new();
-    png.try_reserve_exact(output_bytes)
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "artifact",
-            subject: "png_output",
-        })?;
-    png.extend_from_slice(b"\x89PNG\r\n\x1a\n");
+impl PngIdatStream {
+    /// Assembles `IHDR`, the `IDAT` stream, the metadata chunks, and `IEND`
+    /// into one artifact candidate.
+    pub(super) fn assemble(
+        &self,
+        metadata: Option<&super::metadata::ArtifactMetadata>,
+    ) -> Result<Vec<u8>, FormatEncodeError> {
+        let idat = &self.idat;
+        let metadata_bytes = metadata.map_or(0, |metadata| {
+            metadata
+                .scene_wrapper()
+                .map_or(0, |wrapper| {
+                    12_usize
+                        .saturating_add("application/vnd.excalidraw+json".len())
+                        .saturating_add(1)
+                        .saturating_add(wrapper.len())
+                })
+                .saturating_add(metadata.manifest().map_or(0, |manifest| {
+                    12_usize
+                        .saturating_add("excalidraw-render:artifact-manifest".len())
+                        .saturating_add(5)
+                        .saturating_add(manifest.len())
+                }))
+        });
+        let output_bytes = 8_usize
+            .checked_add(12 + 13)
+            .and_then(|bytes| bytes.checked_add(12))
+            .and_then(|bytes| bytes.checked_add(idat.len()))
+            .and_then(|bytes| bytes.checked_add(metadata_bytes))
+            .and_then(|bytes| bytes.checked_add(12))
+            .ok_or_else(png_size_error)?;
 
-    let mut ihdr = [0_u8; 13];
-    ihdr[..4].copy_from_slice(&width.to_be_bytes());
-    ihdr[4..8].copy_from_slice(&height.to_be_bytes());
-    ihdr[8] = 8;
-    ihdr[9] = 6;
-    append_chunk(&mut png, *b"IHDR", &ihdr)?;
-    append_chunk(&mut png, *b"IDAT", &idat)?;
-    drop(idat);
-    if let Some(metadata) = metadata {
-        if let Some(wrapper) = metadata.scene_wrapper() {
-            let mut text = Vec::new();
-            text.try_reserve_exact(
-                "application/vnd.excalidraw+json"
-                    .len()
-                    .saturating_add(1)
-                    .saturating_add(wrapper.len()),
-            )
+        let mut png = Vec::new();
+        png.try_reserve_exact(output_bytes)
             .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                subject_kind: "metadata",
-                subject: "png_scene_chunk",
+                subject_kind: "artifact",
+                subject: "png_output",
             })?;
-            text.extend_from_slice(b"application/vnd.excalidraw+json\0");
-            text.extend_from_slice(wrapper);
-            append_chunk(&mut png, *b"tEXt", &text).map_err(|_| {
-                super::metadata_embedding_error(
-                    crate::DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
-                    crate::MetadataComponent::EmbeddedScene,
-                )
-            })?;
-        }
-        if let Some(manifest) = metadata.manifest() {
-            let mut text = Vec::new();
-            text.try_reserve_exact(
-                "excalidraw-render:artifact-manifest"
-                    .len()
-                    .saturating_add(5)
-                    .saturating_add(manifest.len()),
-            )
-            .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                subject_kind: "metadata",
-                subject: "png_manifest_chunk",
-            })?;
-            text.extend_from_slice(b"excalidraw-render:artifact-manifest\0\0\0\0\0");
-            text.extend_from_slice(manifest.as_bytes());
-            append_chunk(&mut png, *b"iTXt", &text).map_err(|_| {
-                super::metadata_embedding_error(
-                    crate::DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
-                    crate::MetadataComponent::Manifest,
-                )
-            })?;
-        }
-    }
-    append_chunk(&mut png, *b"IEND", &[])?;
+        png.extend_from_slice(b"\x89PNG\r\n\x1a\n");
 
-    if png.len() != output_bytes {
-        return Err(FormatEncodeError::Encoding(
-            "PNG encoder length invariant failed".to_owned(),
-        ));
+        let mut ihdr = [0_u8; 13];
+        ihdr[..4].copy_from_slice(&self.width.to_be_bytes());
+        ihdr[4..8].copy_from_slice(&self.height.to_be_bytes());
+        ihdr[8] = 8;
+        ihdr[9] = 6;
+        append_chunk(&mut png, *b"IHDR", &ihdr)?;
+        append_chunk(&mut png, *b"IDAT", idat)?;
+        if let Some(metadata) = metadata {
+            if let Some(wrapper) = metadata.scene_wrapper() {
+                let mut text = Vec::new();
+                text.try_reserve_exact(
+                    "application/vnd.excalidraw+json"
+                        .len()
+                        .saturating_add(1)
+                        .saturating_add(wrapper.len()),
+                )
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "metadata",
+                    subject: "png_scene_chunk",
+                })?;
+                text.extend_from_slice(b"application/vnd.excalidraw+json\0");
+                text.extend_from_slice(wrapper);
+                append_chunk(&mut png, *b"tEXt", &text).map_err(|_| {
+                    super::metadata_embedding_error(
+                        crate::DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
+                        crate::MetadataComponent::EmbeddedScene,
+                    )
+                })?;
+            }
+            if let Some(manifest) = metadata.manifest() {
+                let mut text = Vec::new();
+                text.try_reserve_exact(
+                    "excalidraw-render:artifact-manifest"
+                        .len()
+                        .saturating_add(5)
+                        .saturating_add(manifest.len()),
+                )
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "metadata",
+                    subject: "png_manifest_chunk",
+                })?;
+                text.extend_from_slice(b"excalidraw-render:artifact-manifest\0\0\0\0\0");
+                text.extend_from_slice(manifest.as_bytes());
+                append_chunk(&mut png, *b"iTXt", &text).map_err(|_| {
+                    super::metadata_embedding_error(
+                        crate::DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
+                        crate::MetadataComponent::Manifest,
+                    )
+                })?;
+            }
+        }
+        append_chunk(&mut png, *b"IEND", &[])?;
+
+        if png.len() != output_bytes {
+            return Err(FormatEncodeError::Encoding(
+                "PNG encoder length invariant failed".to_owned(),
+            ));
+        }
+        Ok(png)
     }
-    Ok(png)
 }
 
 /// Filters and deflates every scanline into one RFC 1950 zlib stream.
@@ -3053,9 +3076,12 @@ fn pixel_dimension(value: f64) -> Result<u32, FormatEncodeError> {
 mod tests {
     use std::io::Cursor;
 
+    use super::super::metadata::{
+        test_fixture, ArtifactMetadata, ManifestTarget, MetadataSelection,
+    };
     use super::super::text::{LabelPath, LabelPathOperation};
     use super::{
-        append_chunk, apply_scanline_filter, encode_rgba, label_path, select_scanline_filter,
+        append_chunk, apply_scanline_filter, compress_rgba, label_path, select_scanline_filter,
         ScanlineFilter,
     };
 
@@ -3102,10 +3128,52 @@ mod tests {
     }
 
     fn encode(width: u32, height: u32, rgba: &[u8]) -> Vec<u8> {
-        let Ok(png) = encode_rgba(width, height, rgba, None) else {
+        let Ok(png) = compress_rgba(width, height, rgba).and_then(|stream| stream.assemble(None))
+        else {
             panic!("the raster encodes");
         };
         png
+    }
+
+    /// Artifact metadata carrying both PNG chunks: the `tEXt` scene wrapper
+    /// and the `iTXt` manifest with provenance and the diagnostic summary.
+    fn full_metadata() -> ArtifactMetadata {
+        let (scene, profile, report) = test_fixture();
+        ArtifactMetadata::build(
+            &scene,
+            profile,
+            &report,
+            None,
+            MetadataSelection {
+                provenance: true,
+                diagnostic_summary: true,
+                embedded_scene: true,
+            },
+            ManifestTarget::Scene,
+        )
+        .unwrap_or_else(|_| panic!("metadata with every component builds"))
+    }
+
+    /// The `tEXt` and `iTXt` chunks an independent decoder reads after the
+    /// image data, as `(chunk type, keyword, text)`.
+    fn text_chunks(png: &[u8]) -> Vec<(&'static str, String, String)> {
+        let decoder = png::Decoder::new(Cursor::new(png));
+        let mut reader = decoder.read_info().expect("PNG structure is valid");
+        let mut rgba = vec![0; reader.output_buffer_size()];
+        reader.next_frame(&mut rgba).expect("PNG pixels decode");
+        reader.finish().expect("trailing PNG chunks decode");
+        let info = reader.info();
+        info.uncompressed_latin1_text
+            .iter()
+            .map(|chunk| ("tEXt", chunk.keyword.clone(), chunk.text.clone()))
+            .chain(info.utf8_text.iter().map(|chunk| {
+                (
+                    "iTXt",
+                    chunk.keyword.clone(),
+                    chunk.get_text().expect("iTXt text is UTF-8"),
+                )
+            }))
+            .collect()
     }
 
     fn decode_rgba(png: &[u8]) -> (u32, u32, Vec<u8>) {
@@ -3175,6 +3243,83 @@ mod tests {
             "8-bit RGBA, deflate, adaptive, no interlace"
         );
         assert_eq!(decode_rgba(&first), (width, height, rgba));
+    }
+
+    /// Metadata selection assembles up to four candidates and emission one
+    /// more from the same raster, so the raster is filtered and deflated once
+    /// and every candidate is the same `IDAT` stream followed by its own
+    /// metadata chunks (#117).
+    #[test]
+    fn one_compressed_stream_assembles_every_metadata_candidate() {
+        let (width, height) = (37_u32, 23_u32);
+        let rgba = synthetic_rgba(width, height);
+        let metadata = full_metadata();
+        let Ok(stream) = compress_rgba(width, height, &rgba) else {
+            panic!("the raster compresses");
+        };
+
+        let Ok(bare) = stream.assemble(None) else {
+            panic!("the baseline candidate assembles");
+        };
+        let Ok(embedded) = stream.assemble(Some(&metadata)) else {
+            panic!("the embedded candidate assembles");
+        };
+        let Ok(emitted) = stream.assemble(None) else {
+            panic!("the stream survives assembly for the emission pass");
+        };
+
+        assert_eq!(
+            bare, emitted,
+            "assembly neither consumes nor alters the stream"
+        );
+        assert_eq!(
+            chunks(&bare)
+                .iter()
+                .map(|(kind, _)| *kind)
+                .collect::<Vec<_>>(),
+            [*b"IHDR", *b"IDAT", *b"IEND"]
+        );
+        assert_eq!(
+            chunks(&embedded)
+                .iter()
+                .map(|(kind, _)| *kind)
+                .collect::<Vec<_>>(),
+            [*b"IHDR", *b"IDAT", *b"tEXt", *b"iTXt", *b"IEND"]
+        );
+        assert_eq!(
+            idat(&bare),
+            idat(&embedded),
+            "the IDAT stream does not depend on the metadata chunks"
+        );
+        assert_eq!(decode_rgba(&bare), (width, height, rgba.clone()));
+        assert_eq!(decode_rgba(&embedded), (width, height, rgba));
+
+        let wrapper = metadata
+            .scene_wrapper()
+            .expect("the fixture embeds a scene")
+            .iter()
+            .map(|byte| char::from(*byte))
+            .collect::<String>();
+        let manifest = metadata
+            .manifest()
+            .expect("the fixture carries a manifest")
+            .to_owned();
+        assert_eq!(text_chunks(&bare), []);
+        assert_eq!(
+            text_chunks(&embedded),
+            [
+                (
+                    "tEXt",
+                    "application/vnd.excalidraw+json".to_owned(),
+                    wrapper
+                ),
+                (
+                    "iTXt",
+                    "excalidraw-render:artifact-manifest".to_owned(),
+                    manifest
+                ),
+            ]
+        );
     }
 
     #[test]

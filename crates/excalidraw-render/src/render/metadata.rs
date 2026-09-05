@@ -713,6 +713,30 @@ fn aligned(bytes: u64) -> u64 {
     bytes.saturating_add(63) / 64 * 64
 }
 
+/// The admitted scene, reference profile, and compatibility report that the
+/// metadata unit tests and the PNG chunk assembly test build artifact
+/// metadata from.
+#[cfg(test)]
+pub(super) fn test_fixture() -> (
+    SceneDocument,
+    &'static ReferenceProfileIdentity,
+    CompatibilityReport,
+) {
+    const SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"rect","type":"rectangle","x":0,"y":0,"width":40,"height":30,"updated":1}],"appState":{},"files":{}}"#;
+    let scene = SceneDocument::parse(SCENE).expect("metadata fixture scene is admitted");
+    let profile = crate::Renderer::profile_identity(crate::CompatibilityRevision::REVISION_1)
+        .expect("revision 1 exists");
+    let request = RenderRequest::builder(crate::OutputFormat::Svg)
+        .build()
+        .expect("metadata fixture request is valid");
+    let report = crate::Renderer::new()
+        .render(&scene, &request)
+        .expect("metadata fixture renders")
+        .report()
+        .clone();
+    (scene, profile, report)
+}
+
 #[cfg(test)]
 mod tests {
     use super::stored_zlib;
@@ -744,9 +768,7 @@ mod tests {
 mod agreement_tests {
     use super::super::notices::MandatoryNotices;
     use super::*;
-    use crate::{CompatibilityRevision, FrameKind, Renderer};
-
-    const SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"rect","type":"rectangle","x":0,"y":0,"width":40,"height":30,"updated":1}],"appState":{},"files":{}}"#;
+    use crate::FrameKind;
 
     /// The manifest length is estimated before the manifest is built, and the
     /// estimate is charged against the resource ledger. If the two disagree the
@@ -754,7 +776,7 @@ mod agreement_tests {
     /// than relying on the `debug_assertions`-only check inside `build`.
     #[test]
     fn manifest_length_estimate_matches_the_serialized_manifest() {
-        let (scene, profile, report) = fixture();
+        let (scene, profile, report) = test_fixture();
         for notices in [None, Some(notices())] {
             for selection in selections() {
                 for target in targets() {
@@ -808,7 +830,7 @@ mod agreement_tests {
     /// `debug_assert_eq!` inside `build`, so the agreement is asserted here too.
     #[test]
     fn metadata_estimate_matches_the_built_metadata() {
-        let (scene, profile, report) = fixture();
+        let (scene, profile, report) = test_fixture();
         for notices in [None, Some(notices())] {
             for selection in selections() {
                 for target in targets() {
@@ -841,25 +863,6 @@ mod agreement_tests {
                 }
             }
         }
-    }
-
-    fn fixture() -> (
-        SceneDocument,
-        &'static ReferenceProfileIdentity,
-        CompatibilityReport,
-    ) {
-        let scene = SceneDocument::parse(SCENE).expect("metadata fixture scene is admitted");
-        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
-            .expect("revision 1 exists");
-        let request = RenderRequest::builder(crate::OutputFormat::Svg)
-            .build()
-            .expect("metadata fixture request is valid");
-        let report = Renderer::new()
-            .render(&scene, &request)
-            .expect("metadata fixture renders")
-            .report()
-            .clone();
-        (scene, profile, report)
     }
 
     fn notices() -> MandatoryNotices {
