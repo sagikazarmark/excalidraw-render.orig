@@ -1029,9 +1029,10 @@ mod tests {
         }
     }
 
-    /// A scratch repository holding the committed release evidence and every
-    /// file it pins, with the pins re-derived from the copies so the test does
-    /// not depend on the working tree's digests being fresh.
+    /// A scratch repository holding the committed release evidence, reset to
+    /// the pending state, and every file it pins, with the pins re-derived from
+    /// the copies so the test depends neither on the working tree's digests
+    /// being fresh nor on whether an aggregate is currently recorded.
     fn scratch_repository(name: &str) -> PathBuf {
         let source = repo_root();
         let root = std::env::temp_dir().join(format!(
@@ -1050,6 +1051,12 @@ mod tests {
         copy(CROSS_TARGET_PATH);
         let mut manifest: Value =
             serde_json::from_slice(&fs::read(root.join(RELEASE_PATH)).unwrap()).unwrap();
+        manifest["decision"] = json!(TargetEvidenceState::PendingCi.decision());
+        manifest["targetEvidence"]["status"] = json!(TargetEvidenceState::PendingCi.status());
+        manifest["targetEvidence"]
+            .as_object_mut()
+            .unwrap()
+            .remove("aggregate");
         fn refresh(value: &mut Value, root: &Path, copy: &dyn Fn(&str)) {
             match value {
                 Value::Object(object) => {
