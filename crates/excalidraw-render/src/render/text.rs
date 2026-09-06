@@ -324,8 +324,9 @@ impl FallbackFont {
     }
 }
 
-/// The text the fallback face can show: every character it has a glyph for,
-/// and `?` for each it has not, with the replaced scalars in source order.
+/// The text `face` can show: every character it has a glyph for, and `?` for
+/// each it has not, with the replaced scalars in source order. `text` is one
+/// line's content; a line terminator never reaches this.
 fn fallback_display_text(
     face: &rustybuzz::Face<'_>,
     text: &str,
@@ -518,7 +519,7 @@ impl OfficialFont {
             let face = rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
             if text
                 .chars()
-                .filter(|character| *character != '\n')
+                .filter(|character| !is_line_terminator(*character))
                 .all(|character| face.glyph_index(character).is_some())
             {
                 selected = Some((record, asset, sfnt));
@@ -557,50 +558,19 @@ impl OfficialFont {
     ) -> Result<ResolvedText, LabelError> {
         let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let text_align = ResolvedTextAlign::from_normalized(layout.text_align);
-        let mut display_text = String::new();
-        display_text.try_reserve_exact(text.len())?;
         let mut missing_codepoints = Vec::new();
-        for character in text.chars() {
-            if character == '\n' || face.glyph_index(character).is_some() {
-                display_text.push(character);
-            } else {
-                display_text.push('?');
-                missing_codepoints.try_reserve(1)?;
-                missing_codepoints.push(u32::from(character));
-            }
-        }
         let mut stored_lines = Vec::new();
-        let mut line_break_steps = 0_u64;
-        let mut source_lines = text.split_inclusive('\n');
-        let mut display_lines = display_text.split_inclusive('\n');
-        loop {
-            let source_line = source_lines.next();
-            let display_line = display_lines.next();
-            let (Some(source_line), Some(display_line)) = (source_line, display_line) else {
-                break;
-            };
-            let has_newline = source_line.ends_with('\n');
-            let source_content = source_line.strip_suffix('\n').unwrap_or(source_line);
-            let display_content = display_line.strip_suffix('\n').unwrap_or(display_line);
+        for line in source_lines(text) {
+            let (display, line_missing) = fallback_display_text(&face, line.content)?;
+            missing_codepoints.try_reserve(line_missing.len())?;
+            missing_codepoints.extend(line_missing);
             stored_lines.try_reserve(1)?;
             stored_lines.push(StoredLine {
-                source: try_owned(source_content)?,
-                display: try_owned(display_content)?,
+                source: line.source()?,
+                display,
             });
-            line_break_steps = line_break_steps.saturating_add(1);
-            if has_newline {
-                let last = stored_lines.last_mut().ok_or(LabelError::InvalidFont)?;
-                last.source.push('\n');
-            }
         }
-        if text.is_empty() || text.ends_with('\n') {
-            stored_lines.try_reserve(1)?;
-            stored_lines.push(StoredLine {
-                source: String::new(),
-                display: String::new(),
-            });
-            line_break_steps = line_break_steps.saturating_add(1);
-        }
+        let line_break_steps = u64::try_from(stored_lines.len()).unwrap_or(u64::MAX);
         let line_step = layout.font_size * layout.line_height;
         let first_baseline = layout.first_baseline()?;
         let mut lines = Vec::new();
@@ -629,11 +599,8 @@ impl OfficialFont {
             noto_emoji_substituted: false,
             fallback_probes: 0,
             fallback_resources: 0,
-            prepaid_glyphs: u64::try_from(
-                text.chars().filter(|character| *character != '\n').count(),
-            )
-            .unwrap_or(u64::MAX),
-            prepaid_line_break_steps: u64::try_from(text.split('\n').count()).unwrap_or(u64::MAX),
+            prepaid_glyphs: prospective_glyph_count(text),
+            prepaid_line_break_steps: line_count(text),
         })
     }
 
@@ -793,11 +760,9 @@ pub(super) fn layout_with_fallbacks(
     let mut used_noto = false;
     let mut fallback_probes = 0_u64;
     let mut resolved_characters = Vec::<(char, usize, char, bool, bool, u64)>::new();
-    let mut line_break_steps = 0_u64;
 
-    for (line_index, source_line) in text.split_inclusive('\n').enumerate() {
-        let has_newline = source_line.ends_with('\n');
-        let source_content = source_line.strip_suffix('\n').unwrap_or(source_line);
+    for (line_index, line) in source_lines(text).enumerate() {
+        let source_content = line.content;
         let baseline = first_baseline + line_index as f64 * line_step;
         let mut selections = Vec::<(usize, bool, usize, char)>::new();
         let mut line_missing = Vec::<(usize, u32)>::new();
@@ -922,13 +887,9 @@ pub(super) fn layout_with_fallbacks(
             });
             pen_x += font.advance(&run_text, layout.font_size)?;
         }
-        let mut owned_source = try_owned(source_content)?;
-        if has_newline {
-            owned_source.push('\n');
-        }
         lines.try_reserve(1)?;
         lines.push(ResolvedLabel {
-            text: owned_source,
+            text: line.source()?,
             display_text,
             baseline,
             path: LabelPath { operations },
@@ -937,24 +898,8 @@ pub(super) fn layout_with_fallbacks(
             glyphs,
             runs,
         });
-        line_break_steps = line_break_steps.saturating_add(1);
     }
-    if text.is_empty() || text.ends_with('\n') {
-        lines.try_reserve(1)?;
-        lines.push(ResolvedLabel {
-            text: String::new(),
-            display_text: String::new(),
-            baseline: first_baseline + lines.len() as f64 * line_step,
-            path: LabelPath {
-                operations: Vec::new(),
-            },
-            glyph_count: 0,
-            missing_codepoints: Vec::new(),
-            glyphs: Vec::new(),
-            runs: Vec::new(),
-        });
-        line_break_steps = line_break_steps.saturating_add(1);
-    }
+    let line_break_steps = u64::try_from(lines.len()).unwrap_or(u64::MAX);
     let mut fallback_indexes = Vec::new();
     for run in lines.iter().flat_map(|line| &line.runs) {
         if run.font_index != primary_index && !fallback_indexes.contains(&run.font_index) {
@@ -977,11 +922,8 @@ pub(super) fn layout_with_fallbacks(
             noto_emoji_substituted: used_noto,
             fallback_probes,
             fallback_resources: u64::try_from(fallback_indexes.len()).unwrap_or(u64::MAX),
-            prepaid_glyphs: u64::try_from(
-                text.chars().filter(|character| *character != '\n').count(),
-            )
-            .unwrap_or(u64::MAX),
-            prepaid_line_break_steps: u64::try_from(text.split('\n').count()).unwrap_or(u64::MAX),
+            prepaid_glyphs: prospective_glyph_count(text),
+            prepaid_line_break_steps: line_count(text),
         },
         used_noto,
     ))
@@ -1157,6 +1099,92 @@ fn shift_label_x(label: &mut ResolvedLabel, delta: f64) {
 struct StoredLine {
     source: String,
     display: String,
+}
+
+/// One line of a text element's `text`, split the way the reference renders
+/// it. `drawElementOnCanvas` (`renderElement.ts`) and `renderElementToSvg`
+/// (`staticSvgScene.ts`) both lay out
+/// `element.text.replace(/\r\n?/g, "\n").split("\n")`, so `\r\n`, `\r`, and
+/// `\n` each end a line and the text always has at least one. Neither rewrites
+/// `text`, so the source bytes are kept, terminator included: the per-line
+/// source text (`data-source-text`, `ActualText`) still concatenates to the
+/// stored `text`.
+struct SourceLine<'a> {
+    /// The line without its terminator: what is shaped.
+    content: &'a str,
+    /// `"\r\n"`, `"\r"`, `"\n"`, or `""` on the last line.
+    terminator: &'a str,
+}
+
+impl SourceLine<'_> {
+    /// The line's source bytes, terminator included.
+    fn source(&self) -> Result<String, LabelError> {
+        let mut source = String::new();
+        source.try_reserve_exact(self.content.len().saturating_add(self.terminator.len()))?;
+        source.push_str(self.content);
+        source.push_str(self.terminator);
+        Ok(source)
+    }
+}
+
+/// The `SourceLine`s of one text, in order; `None` once the last line, the one
+/// with no terminator, has been yielded.
+struct SourceLines<'a> {
+    rest: Option<&'a str>,
+}
+
+impl<'a> Iterator for SourceLines<'a> {
+    type Item = SourceLine<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let rest = self.rest?;
+        // Terminators are ASCII, so every index here is a char boundary.
+        let Some(index) = rest.find(is_line_terminator) else {
+            self.rest = None;
+            return Some(SourceLine {
+                content: rest,
+                terminator: "",
+            });
+        };
+        let terminator_len = if rest[index..].starts_with("\r\n") {
+            2
+        } else {
+            1
+        };
+        let (line, remaining) = rest.split_at(index + terminator_len);
+        self.rest = Some(remaining);
+        Some(SourceLine {
+            content: &line[..index],
+            terminator: &line[index..],
+        })
+    }
+}
+
+/// The lines of `text` by the reference's line-ending rule; see `SourceLine`.
+fn source_lines(text: &str) -> SourceLines<'_> {
+    SourceLines { rest: Some(text) }
+}
+
+/// Whether `character` ends a line in the reference's text rendering.
+fn is_line_terminator(character: char) -> bool {
+    matches!(character, '\n' | '\r')
+}
+
+/// How many lines `text` lays out to: one more than its line terminators,
+/// counting `\r\n` once. The ledger prepays one line step per line.
+pub(super) fn line_count(text: &str) -> u64 {
+    u64::try_from(source_lines(text).count()).unwrap_or(u64::MAX)
+}
+
+/// The scalars of `text` that reach the shaper: everything but its line
+/// terminators. The ledger prepays one glyph per such scalar.
+pub(super) fn prospective_glyph_count(text: &str) -> u64 {
+    u64::try_from(
+        text.chars()
+            .filter(|character| !is_line_terminator(*character))
+            .count(),
+    )
+    .unwrap_or(u64::MAX)
 }
 
 impl ResolvedText {

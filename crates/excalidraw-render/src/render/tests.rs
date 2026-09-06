@@ -944,6 +944,150 @@ fn frame_name_is_laid_out_as_the_reference_text_element() {
     assert!(blank.width > 0.0);
 }
 
+/// The Excalifont layout the line-ending tests share: 20 px at line height
+/// 1.25, so lines sit 25 px apart.
+fn excalifont_layout() -> text::TextLayout<'static> {
+    text::TextLayout {
+        width: 100.0,
+        font_size: 20.0,
+        line_height: 1.25,
+        text_align: "left",
+        font_family: 5,
+    }
+}
+
+/// `(source, display)` per laid-out line: what `data-source-text` and
+/// `ActualText` carry beside what the glyphs show.
+fn line_texts(laid_out: &text::ResolvedText) -> Vec<(&str, &str)> {
+    laid_out
+        .lines
+        .iter()
+        .map(|line| (line.text.as_str(), line.display_text.as_str()))
+        .collect()
+}
+
+#[test]
+fn a_carriage_return_ends_a_line_like_the_reference_and_stays_in_the_source_text() {
+    // The reference renders `element.text.replace(/\r\n?/g, "\n").split("\n")`
+    // and leaves `text` alone, so `\r\n` and `\r` each end a line while the
+    // source bytes round-trip through the per-line source text (#110).
+    let font = text::OfficialFont::load(5, "a\r\nb")
+        .ok()
+        .expect("Excalifont loads");
+    let laid_out = font
+        .layout("a\r\nb", excalifont_layout())
+        .ok()
+        .expect("CRLF text lays out");
+    assert_eq!(line_texts(&laid_out), [("a\r\n", "a"), ("b", "b")]);
+    assert!((laid_out.lines[1].baseline - laid_out.lines[0].baseline - 25.0).abs() < 1e-9);
+    assert!(laid_out.missing_codepoints.is_empty(), "\\r is not a glyph");
+    assert_eq!(laid_out.line_break_steps, 2);
+    assert_eq!(laid_out.prepaid_line_break_steps, 2);
+    assert_eq!(laid_out.prepaid_glyphs, 2);
+    assert_eq!(laid_out.glyph_count(), 2);
+}
+
+#[test]
+fn every_line_ending_shape_splits_as_replace_then_split_does() {
+    // Worked through `text.replace(/\r\n?/g, "\n").split("\n")`: `\r\n` is one
+    // break, a bare `\r` is one, `\n\r` and `\r\r` are two each, a trailing
+    // terminator leaves an empty last line, and empty text is one empty line.
+    let font = text::OfficialFont::load(5, "ab")
+        .ok()
+        .expect("Excalifont loads");
+    let cases: [(&str, &[(&str, &str)]); 7] = [
+        ("a\rb", &[("a\r", "a"), ("b", "b")]),
+        ("a\n\rb", &[("a\n", "a"), ("\r", ""), ("b", "b")]),
+        ("a\r\r\nb", &[("a\r", "a"), ("\r\n", ""), ("b", "b")]),
+        ("a\r", &[("a\r", "a"), ("", "")]),
+        ("a\r\n", &[("a\r\n", "a"), ("", "")]),
+        ("\r", &[("\r", ""), ("", "")]),
+        ("", &[("", "")]),
+    ];
+    for (source, expected) in cases {
+        let laid_out = font
+            .layout(source, excalifont_layout())
+            .ok()
+            .unwrap_or_else(|| panic!("{source:?} lays out"));
+        assert_eq!(line_texts(&laid_out), expected, "{source:?}");
+        assert!(laid_out.missing_codepoints.is_empty(), "{source:?}");
+        let lines = u64::try_from(expected.len()).expect("small");
+        assert_eq!(laid_out.line_break_steps, lines, "{source:?}");
+        assert_eq!(laid_out.prepaid_line_break_steps, lines, "{source:?}");
+        assert_eq!(
+            laid_out.prepaid_glyphs,
+            laid_out.glyph_count(),
+            "{source:?} prepays exactly its shaped glyphs"
+        );
+        // The per-line source text reassembles the stored text byte for byte.
+        let reassembled = laid_out
+            .lines
+            .iter()
+            .map(|line| line.text.as_str())
+            .collect::<String>();
+        assert_eq!(reassembled, source);
+    }
+}
+
+#[test]
+fn the_fallback_layout_splits_lines_by_the_same_rule() {
+    // Missing glyphs and bidirectional text take `layout_with_fallbacks`; a
+    // `\r` there must end the line too rather than reach the fallback probes.
+    let mut fonts = vec![text::OfficialFont::load(5, "ab")
+        .ok()
+        .expect("Excalifont loads")];
+    for (source, expected) in [
+        ("a\r\nb", vec![("a\r\n", "a"), ("b", "b")]),
+        ("a\rb\r", vec![("a\r", "a"), ("b\r", "b"), ("", "")]),
+        // CJK is not in Excalifont, so each line here is a Xiaolai fallback run.
+        ("中\r\n文", vec![("中\r\n", "中"), ("文", "文")]),
+    ] {
+        let (laid_out, _) = text::layout_with_fallbacks(0, &mut fonts, source, excalifont_layout())
+            .ok()
+            .unwrap_or_else(|| panic!("{source:?} lays out with fallbacks"));
+        assert_eq!(line_texts(&laid_out), expected, "{source:?}");
+        assert!(laid_out.missing_codepoints.is_empty(), "{source:?}");
+        assert!(!laid_out.noto_emoji_substituted, "{source:?}");
+        let lines = u64::try_from(expected.len()).expect("small");
+        assert_eq!(laid_out.line_break_steps, lines, "{source:?}");
+        assert_eq!(laid_out.prepaid_line_break_steps, lines, "{source:?}");
+        assert_eq!(
+            laid_out.prepaid_glyphs,
+            laid_out.glyph_count(),
+            "{source:?}"
+        );
+        for (index, line) in laid_out.lines.iter().enumerate() {
+            let expected_baseline = laid_out.lines[0].baseline + index as f64 * 25.0;
+            assert!(
+                (line.baseline - expected_baseline).abs() < 1e-9,
+                "{source:?} line {index} baseline {}",
+                line.baseline
+            );
+        }
+    }
+}
+
+#[test]
+fn line_terminators_do_not_steer_face_selection() {
+    // Face selection asks whether every shaped scalar has a glyph; a `\r` is
+    // never shaped, so it picks the face `\n` text would.
+    for family in [1, 2, 3, 5, 6, 7, 8, 9] {
+        let identity = |text: &str| {
+            let (_, _, identity, _, _, _) = text::OfficialFont::load(family, text)
+                .ok()
+                .unwrap_or_else(|| panic!("family {family} loads for {text:?}"))
+                .into_parts();
+            identity
+        };
+        assert_eq!(identity("a\rb"), identity("a\nb"), "family {family} \\r");
+        assert_eq!(
+            identity("a\r\nb"),
+            identity("a\nb"),
+            "family {family} \\r\\n"
+        );
+    }
+}
+
 #[test]
 fn required_raster_trace_precedes_projection_work() {
     let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");

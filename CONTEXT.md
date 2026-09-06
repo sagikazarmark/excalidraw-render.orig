@@ -132,6 +132,10 @@ _Avoid_: Face metrics, hhea metrics, substitute metrics
 The line height compatibility normalization gives a text element whose source `lineHeight` is missing or non-positive, following the pinned restore path: the normalized `height` divided by the wrapped text's EOL-normalized line count and the normalized `fontSize` when the height is positive, otherwise the source family's metadata `lineHeight`. It is never one constant across families.
 _Avoid_: Default line height, 1.25 fallback, detected line height (for the family branch)
 
+**Source line**:
+One line of a text element's stored `text` as the pinned reference splits it for rendering: `\r\n`, `\r`, and `\n` each end a line, `\r\n` counting once, and the text always has at least one. Its content is what is shaped; its terminator bytes stay with it, so the per-line source text a format carries beside the glyphs (SVG `data-source-text`, PDF `ActualText`) concatenates back to the stored `text`, which is never rewritten.
+_Avoid_: Newline-split line, EOL-normalized text (for the stored bytes), wrapped line
+
 **Official font chunk**:
 An immutable bundled WOFF2 resource representing one declared Unicode-range face of a resolved font family.
 _Avoid_: System font, generated font

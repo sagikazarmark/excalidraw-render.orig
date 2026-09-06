@@ -3604,14 +3604,8 @@ impl RenderSession {
         };
         let text_scalars = u64::try_from(text.text.chars().count()).unwrap_or(u64::MAX);
         let source_bytes = u64::try_from(text.text.len()).unwrap_or(u64::MAX);
-        let prospective_glyphs = u64::try_from(
-            text.text
-                .chars()
-                .filter(|character| *character != '\n')
-                .count(),
-        )
-        .unwrap_or(u64::MAX);
-        let stored_line_steps = u64::try_from(text.text.split('\n').count()).unwrap_or(u64::MAX);
+        let prospective_glyphs = text::prospective_glyph_count(&text.text);
+        let stored_line_steps = text::line_count(&text.text);
         let prepaid_work = text_scalars
             .saturating_mul(32)
             .saturating_add(prospective_glyphs.saturating_mul(32))

@@ -672,6 +672,17 @@ is unusable and derives the same way, keeping its unsupported-value diagnostic;
 an absent `lineHeight` is silent. Generated embeddable labels have no stored
 height and take Helvetica's `1.15`.
 
+Ordinary scene text breaks into lines where the pinned reference does:
+`text.replace(/\r\n?/g, "\n").split("\n")`, so `\r\n`, `\r`, and `\n` each end
+a line, `\r\n` counts once, a trailing terminator leaves an empty last line, and
+empty text is one empty line. Every format lays out that many lines, one line
+step apart, and no line terminator reaches the shaper, face selection, or
+missing-codepoint reporting. The stored `text` and `originalText` are not
+rewritten: the per-line source text a format carries beside its glyphs (the
+SVG `data-source-text` attribute, the PDF line-level `ActualText`) keeps each
+line's own terminator bytes, so the lines concatenate back to the stored
+`text`. This is the same line count the restored line height divides by.
+
 #### 8.3.1 Semantic Demand and Face Selection
 
 The Excalidraw adapter MUST collect first-use-ordered Unicode scalar values from
