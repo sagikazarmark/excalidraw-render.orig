@@ -6,7 +6,13 @@ mod font_demand;
 mod font_subset;
 #[cfg(test)]
 mod font_subset_fuzz;
+// The SVG font subset viewer qualification manifest pins this module's digest
+// (`tests/conformance/svg-font-subset-viewer-qualification/revision-1.json`),
+// so it only changes with a re-qualification. It borrows the face range tables
+// the way the former `Vec` return required, which is now a needless borrow of a
+// `&'static` slice.
 #[cfg(test)]
+#[allow(clippy::needless_borrow)]
 mod font_subset_qualification;
 #[cfg(all(test, target_arch = "wasm32"))]
 pub(crate) use font_subset_fuzz::{

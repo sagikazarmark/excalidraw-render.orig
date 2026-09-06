@@ -434,6 +434,10 @@ pub fn import(source_root: &str) -> Result<(), String> {
             .map_err(|error| format!("failed to create {}: {error}", parent.display()))?;
     }
     write_if_changed(&generated_path, generated.as_bytes())?;
+    write_if_changed(
+        &root.join(XIAOLAI_FACES_GENERATED_PATH),
+        generate_xiaolai_faces_rust(&root)?.as_bytes(),
+    )?;
     let scene_policy = generated_scene_surface(&scene_surface)?;
     let scene_policy_path =
         root.join("crates/excalidraw-render/src/generated/scene_surface_revision_1.rs");
@@ -472,6 +476,10 @@ pub fn materialize() -> Result<(), String> {
     write_if_changed(
         &base.join("src/generated/revision_1.rs"),
         generated.as_bytes(),
+    )?;
+    write_if_changed(
+        &root.join(XIAOLAI_FACES_GENERATED_PATH),
+        generate_xiaolai_faces_rust(&root)?.as_bytes(),
     )?;
     let scene_policy = generated_scene_surface(&scene_surface)?;
     write_if_changed(
@@ -694,13 +702,6 @@ pub fn verify() -> Result<(), String> {
     let excalifont_source = verify_assets(&root, &catalog)?;
     verify_predecoded_excalifont(&root, &excalifont_source)?;
     verify_noto_emoji(&root)?;
-    let xiaolai_order =
-        root.join("crates/excalidraw-render-assets-base/catalog/order/Xiaolai-index.ts");
-    let order_bytes = fs::read(&xiaolai_order)
-        .map_err(|error| format!("failed to read {}: {error}", xiaolai_order.display()))?;
-    if sha256(&order_bytes) != XIAOLAI_ORDER_SHA256 {
-        return Err("pinned Xiaolai declaration order digest is invalid".to_owned());
-    }
 
     let generated_path = base.join("src/generated/revision_1.rs");
     let generated = fs::read_to_string(&generated_path)
@@ -708,6 +709,12 @@ pub fn verify() -> Result<(), String> {
     let expected_generated = generate_rust(&catalog, &scene_surface, &catalog_bytes)?;
     if generated != expected_generated {
         return Err("generated Rust catalog is stale".to_owned());
+    }
+    let xiaolai_faces_path = root.join(XIAOLAI_FACES_GENERATED_PATH);
+    let xiaolai_faces = fs::read_to_string(&xiaolai_faces_path)
+        .map_err(|error| format!("failed to read {}: {error}", xiaolai_faces_path.display()))?;
+    if xiaolai_faces != generate_xiaolai_faces_rust(&root)? {
+        return Err("generated Xiaolai face table is stale".to_owned());
     }
     let scene_policy_path =
         root.join("crates/excalidraw-render/src/generated/scene_surface_revision_1.rs");
@@ -1184,6 +1191,146 @@ fn generate_rust(
     output.push_str("    assets: &ASSETS,\n");
     output.push_str("};\n");
     Ok(output)
+}
+
+/// One Xiaolai face as the pinned upstream index declares it: the WOFF2 file
+/// name its `import` names and the CSS `unicode-range` its descriptor declares.
+#[derive(Debug, Eq, PartialEq)]
+struct XiaolaiIndexFace {
+    file_name: String,
+    unicode_ranges: Vec<(u32, u32)>,
+}
+
+/// Parses the pinned `Xiaolai-index.ts` into faces in `XiaolaiFontFaces`
+/// declaration order, resolving each descriptor's `uri: _N` binding to the file
+/// name its import names. Every import must be declared as exactly one face.
+fn parse_xiaolai_index(source: &str) -> Result<Vec<XiaolaiIndexFace>, String> {
+    let mut imports = BTreeMap::new();
+    for line in source.lines() {
+        let Some(import) = line.strip_prefix("import _") else {
+            continue;
+        };
+        let (binding, file_name) = import
+            .split_once(" from \"./")
+            .and_then(|(binding, tail)| Some((binding, tail.strip_suffix("\";")?)))
+            .ok_or_else(|| format!("malformed Xiaolai import: {line}"))?;
+        if imports.insert(binding, file_name).is_some() {
+            return Err(format!("Xiaolai import _{binding} is declared twice"));
+        }
+    }
+    let declarations = source
+        .split_once("export const XiaolaiFontFaces")
+        .ok_or_else(|| "Xiaolai index declares no XiaolaiFontFaces".to_owned())?
+        .1;
+    let mut faces = Vec::new();
+    let mut declared = BTreeSet::new();
+    for descriptor in declarations.split("uri: _").skip(1) {
+        let (binding, descriptor) = descriptor
+            .split_once(',')
+            .ok_or_else(|| "Xiaolai face descriptor has an unterminated uri".to_owned())?;
+        let file_name = *imports
+            .get(binding)
+            .ok_or_else(|| format!("Xiaolai face _{binding} is not imported"))?;
+        if !declared.insert(binding) {
+            return Err(format!("Xiaolai face _{binding} is declared twice"));
+        }
+        let range = descriptor
+            .split_once("unicodeRange:")
+            .and_then(|(_, after_key)| after_key.split_once('"'))
+            .and_then(|(_, after_quote)| after_quote.split_once('"'))
+            .map(|(range, _)| range)
+            .ok_or_else(|| format!("Xiaolai face _{binding} declares no unicodeRange"))?;
+        let unicode_ranges = parse_unicode_ranges(range)
+            .map_err(|error| format!("Xiaolai face _{binding} ({file_name}) {error}"))?;
+        faces.push(XiaolaiIndexFace {
+            file_name: file_name.to_owned(),
+            unicode_ranges,
+        });
+    }
+    if let Some(binding) = imports.keys().find(|binding| !declared.contains(*binding)) {
+        return Err(format!("Xiaolai import _{binding} declares no face"));
+    }
+    Ok(faces)
+}
+
+const XIAOLAI_INDEX_PATH: &str =
+    "crates/excalidraw-render-assets-base/catalog/order/Xiaolai-index.ts";
+const XIAOLAI_FACES_GENERATED_PATH: &str =
+    "crates/excalidraw-render-assets-base/src/generated/xiaolai_faces_1.rs";
+
+/// Reads the pinned Xiaolai index, checks its digest, and renders the Rust face
+/// table `assets-base` includes, so `verify` can compare it against the checked-in
+/// generated file and `import`/`materialize` can write it.
+fn generate_xiaolai_faces_rust(root: &Path) -> Result<String, String> {
+    let path = root.join(XIAOLAI_INDEX_PATH);
+    let bytes =
+        fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    if sha256(&bytes) != XIAOLAI_ORDER_SHA256 {
+        return Err("pinned Xiaolai declaration order digest is invalid".to_owned());
+    }
+    let source =
+        std::str::from_utf8(&bytes).map_err(|_| "Xiaolai index is not UTF-8".to_owned())?;
+    let faces = parse_xiaolai_index(source)?;
+    let mut output = String::from(
+        "// Generated by `cargo run --locked -p xtask -- catalog import` or `catalog materialize`\n\
+         // from `catalog/order/Xiaolai-index.ts`; do not edit.\n\n",
+    );
+    output.push_str(&format!(
+        "/// Every Xiaolai official font chunk in pinned face order with the Unicode\n\
+         /// range its upstream declaration pins. `xtask catalog verify` pins the index\n\
+         /// digest and regenerates this table, so it can only change with the index.\n\
+         #[rustfmt::skip]\nstatic XIAOLAI_FACES: [FontFaceDeclaration; {}] = [\n",
+        faces.len()
+    ));
+    for face in &faces {
+        output.push_str("    FontFaceDeclaration {\n");
+        rust_field(&mut output, "file_name", &face.file_name);
+        output.push_str("        unicode_ranges: &[\n");
+        for line in face.unicode_ranges.chunks(8) {
+            output.push_str("           ");
+            for (start, end) in line {
+                output.push_str(&format!(" (0x{start:04x}, 0x{end:04x}),"));
+            }
+            output.push('\n');
+        }
+        output.push_str("        ],\n    },\n");
+    }
+    output.push_str("];\n");
+    Ok(output)
+}
+
+/// Parses one CSS `unicode-range` value into ascending inclusive scalar ranges,
+/// with the grammar `excalidraw_render_assets_base` applies at compile time to
+/// its hand-pinned faces; `unicode_range_parsers_agree` keeps them aligned.
+fn parse_unicode_ranges(declared: &str) -> Result<Vec<(u32, u32)>, String> {
+    declared
+        .split(',')
+        .map(|token| {
+            let value = token
+                .strip_prefix("U+")
+                .or_else(|| token.strip_prefix("u+"))
+                .ok_or_else(|| format!("unicode-range token {token:?} does not start with U+"))?;
+            let (start, end) = value.split_once('-').unwrap_or((value, value));
+            let parse = |digits: &str| {
+                if digits.is_empty()
+                    || digits.len() > 6
+                    || !digits.bytes().all(|byte| byte.is_ascii_hexdigit())
+                {
+                    return Err(format!("unicode-range token {token:?} is not hexadecimal"));
+                }
+                u32::from_str_radix(digits, 16)
+                    .map_err(|_| format!("unicode-range token {token:?} is not hexadecimal"))
+            };
+            let (start, end) = (parse(start)?, parse(end)?);
+            if end > 0x10ffff {
+                return Err(format!("unicode-range token {token:?} exceeds U+10FFFF"));
+            }
+            if start > end {
+                return Err(format!("unicode-range token {token:?} is descending"));
+            }
+            Ok((start, end))
+        })
+        .collect()
 }
 
 fn generated_scene_surface(scene_surface: &Value) -> Result<String, String> {
@@ -2634,7 +2781,169 @@ fn rust_str_array(output: &mut String, name: &str, values: &[String]) {
 mod tests {
     use serde_json::{json, Value};
 
-    use super::verify_scene_surface;
+    use super::{
+        parse_unicode_ranges, parse_xiaolai_index, verify_scene_surface, XiaolaiIndexFace,
+    };
+
+    /// A pinned-index excerpt covering both descriptor layouts the upstream
+    /// formatter emits: the wrapped `unicodeRange:` on its own line and the
+    /// single-line `{ uri: _N, descriptors: { unicodeRange: "..." } }` form.
+    const XIAOLAI_INDEX_EXCERPT: &str = r#"// generated header
+import _0 from "./Xiaolai-Regular-aaaa.woff2";
+import _1 from "./Xiaolai-Regular-bbbb.woff2";
+import _2 from "./Xiaolai-Regular-cccc.woff2";
+
+import { type ExcalidrawFontFaceDescriptor } from "../Fonts";
+
+export const XiaolaiFontFaces: ExcalidrawFontFaceDescriptor[] = [
+  {
+    uri: _0,
+    descriptors: {
+      unicodeRange:
+        "U+f9b8-fa6d,U+fe32,U+fe45-fe4f",
+    },
+  },
+  { uri: _1, descriptors: { unicodeRange: "U+d7eb-d7fb,U+f900-f9b7" } },
+  {
+    uri: _2,
+    descriptors: {
+      unicodeRange:
+        "U+7f3b",
+    },
+  },
+];
+"#;
+
+    #[test]
+    fn xiaolai_index_yields_faces_in_declaration_order_with_parsed_ranges() {
+        let faces = parse_xiaolai_index(XIAOLAI_INDEX_EXCERPT).expect("excerpt parses");
+        assert_eq!(
+            faces,
+            vec![
+                XiaolaiIndexFace {
+                    file_name: "Xiaolai-Regular-aaaa.woff2".to_owned(),
+                    unicode_ranges: vec![(0xf9b8, 0xfa6d), (0xfe32, 0xfe32), (0xfe45, 0xfe4f)],
+                },
+                XiaolaiIndexFace {
+                    file_name: "Xiaolai-Regular-bbbb.woff2".to_owned(),
+                    unicode_ranges: vec![(0xd7eb, 0xd7fb), (0xf900, 0xf9b7)],
+                },
+                XiaolaiIndexFace {
+                    file_name: "Xiaolai-Regular-cccc.woff2".to_owned(),
+                    unicode_ranges: vec![(0x7f3b, 0x7f3b)],
+                },
+            ]
+        );
+    }
+
+    fn assert_xiaolai_index_rejected(expected: &str, mutate: impl FnOnce(&str) -> String) {
+        let mutated = mutate(XIAOLAI_INDEX_EXCERPT);
+        assert_ne!(
+            mutated, XIAOLAI_INDEX_EXCERPT,
+            "mutation must change the excerpt"
+        );
+        let error = parse_xiaolai_index(&mutated).expect_err("mutated index must fail closed");
+        assert!(
+            error.contains(expected),
+            "expected {expected:?} in error {error:?}"
+        );
+    }
+
+    #[test]
+    fn xiaolai_index_rejects_an_import_that_declares_no_face() {
+        assert_xiaolai_index_rejected("import _1 declares no face", |source| {
+            source.replace(
+                "  { uri: _1, descriptors: { unicodeRange: \"U+d7eb-d7fb,U+f900-f9b7\" } },\n",
+                "",
+            )
+        });
+    }
+
+    #[test]
+    fn xiaolai_index_rejects_a_face_declared_twice() {
+        assert_xiaolai_index_rejected("face _1 is declared twice", |source| {
+            source.replace("uri: _2,", "uri: _1,")
+        });
+    }
+
+    #[test]
+    fn xiaolai_index_rejects_a_face_whose_binding_is_not_imported() {
+        assert_xiaolai_index_rejected("face _3 is not imported", |source| {
+            source.replace("uri: _2,", "uri: _3,")
+        });
+    }
+
+    #[test]
+    fn xiaolai_index_rejects_a_descriptor_without_a_unicode_range() {
+        assert_xiaolai_index_rejected("face _1 declares no unicodeRange", |source| {
+            source.replace(
+                "descriptors: { unicodeRange: \"U+d7eb-d7fb,U+f900-f9b7\" }",
+                "descriptors: {}",
+            )
+        });
+    }
+
+    #[test]
+    fn xiaolai_index_rejects_a_malformed_unicode_range() {
+        assert_xiaolai_index_rejected("is descending", |source| {
+            source.replace("U+d7eb-d7fb", "U+d7fb-d7eb")
+        });
+        assert_xiaolai_index_rejected("is not hexadecimal", |source| {
+            source.replace("U+d7eb-d7fb", "U+d7eb-d7zz")
+        });
+        assert_xiaolai_index_rejected("exceeds U+10FFFF", |source| {
+            source.replace("U+d7eb-d7fb", "U+110000")
+        });
+        assert_xiaolai_index_rejected("does not start with U+", |source| {
+            source.replace("U+d7eb-d7fb", "d7eb-d7fb")
+        });
+    }
+
+    /// The generator's runtime grammar and the compile-time grammar
+    /// `excalidraw_render_assets_base` applies to its hand-pinned faces must
+    /// agree, or a re-pinned Xiaolai index could parse differently from the CSS
+    /// the other families carry. Nunito's five faces exercise the upper-case
+    /// Google Fonts subsets; Excalifont's Latin face the lower-case upstream form.
+    #[test]
+    fn unicode_range_parsers_agree() {
+        const NUNITO_CSS: [&str; 5] = [
+            "U+0460-052F,U+1C80-1C88,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F",
+            "U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116",
+            "U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB",
+            "U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF",
+            "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD",
+        ];
+        const EXCALIFONT_LATIN_CSS: &str = "U+20-7e,U+a0-a3,U+a5-a6,U+a8-ab,U+ad-b1,U+b4,U+b6-b8,U+ba-ff,U+131,U+152-153,U+2bc,U+2c6,U+2da,U+2dc,U+304,U+308,U+2013-2014,U+2018-201a,U+201c-201e,U+2020,U+2022,U+2024-2026,U+2030,U+2039-203a,U+20ac,U+2122,U+2212";
+
+        let catalog = excalidraw_render_assets_base::revision_1();
+        let mut nunito = catalog
+            .assets
+            .iter()
+            .filter(|asset| asset.family == "Nunito")
+            .collect::<Vec<_>>();
+        nunito.sort_by_key(|asset| {
+            excalidraw_render_assets_base::font_face_order("Nunito", asset.upstream_path)
+        });
+        assert_eq!(nunito.len(), NUNITO_CSS.len());
+        for (asset, css) in nunito.iter().zip(NUNITO_CSS) {
+            let compile_time = excalidraw_render_assets_base::font_face_unicode_ranges(
+                "Nunito",
+                asset.upstream_path,
+            )
+            .expect("Nunito face declares ranges");
+            assert_eq!(parse_unicode_ranges(css).expect("CSS parses"), compile_time);
+        }
+
+        let excalifont_latin = excalidraw_render_assets_base::font_face_unicode_ranges(
+            "Excalifont",
+            "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
+        )
+        .expect("Excalifont Latin face declares ranges");
+        assert_eq!(
+            parse_unicode_ranges(EXCALIFONT_LATIN_CSS).expect("CSS parses"),
+            excalifont_latin
+        );
+    }
 
     fn manifest() -> Value {
         serde_json::from_slice(include_bytes!(

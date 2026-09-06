@@ -165,6 +165,72 @@ fn every_official_face_exposes_its_pinned_declared_unicode_ranges() {
         .any(|(start, end)| *start <= u32::from('Ж') && u32::from('Ж') <= *end));
 }
 
+/// Pins concrete values transcribed from `catalog/order/Xiaolai-index.ts`: the
+/// first, third (single-line descriptor), and last of its 209 declarations.
+#[test]
+fn xiaolai_chunks_follow_the_pinned_face_order_and_declared_ranges_of_the_index() {
+    let face = |file_name: &str| {
+        let upstream_path = format!("fonts/Xiaolai/{file_name}");
+        let order = excalidraw_render_assets_base::font_face_order("Xiaolai", &upstream_path)
+            .unwrap_or_else(|| panic!("{file_name} has a pinned order"));
+        let ranges =
+            excalidraw_render_assets_base::font_face_unicode_ranges("Xiaolai", &upstream_path)
+                .unwrap_or_else(|| panic!("{file_name} has declared ranges"));
+        (order, ranges)
+    };
+
+    let (order, ranges) = face("Xiaolai-Regular-09850c4077f3fffe707905872e0e2460.woff2");
+    assert_eq!(order, 0);
+    assert_eq!(
+        ranges,
+        [
+            (0xf9b8, 0xfa6d),
+            (0xfe32, 0xfe32),
+            (0xfe45, 0xfe4f),
+            (0xff02, 0xff0b),
+            (0xff0d, 0xff1e),
+            (0xff20, 0xff2a),
+        ]
+    );
+
+    let (order, ranges) = face("Xiaolai-Regular-60a3089806700d379f11827ee9843b6b.woff2");
+    assert_eq!(order, 2);
+    assert_eq!(ranges, [(0xd7eb, 0xd7fb), (0xf900, 0xf9b7)]);
+
+    let (order, ranges) = face("Xiaolai-Regular-2b7441d46298788ac94e610ffcc709b6.woff2");
+    assert_eq!(order, 208);
+    assert_eq!(ranges.len(), 19);
+    assert_eq!(ranges.first(), Some(&(0x7e2b, 0x7e3a)));
+    assert_eq!(ranges.last(), Some(&(0x7f3b, 0x7f3b)));
+
+    assert_eq!(
+        excalidraw_render_assets_base::font_face_order(
+            "Xiaolai",
+            "fonts/Xiaolai/Xiaolai-Regular-0000000000000000000000000000000.woff2",
+        ),
+        None
+    );
+}
+
+/// Pins the upstream Google Fonts `latin` subset declaration Nunito's fifth chunk
+/// carries: 20 ranges from `U+0000-00FF` to `U+FFFD`.
+#[test]
+fn nunito_latin_chunk_declares_the_upstream_google_fonts_latin_subset() {
+    let upstream_path =
+        "fonts/Nunito/Nunito-Regular-XRXI3I6Li01BKofiOc5wtlZ2di8HDIkhdTQ3j6zbXWjgeg.woff2";
+    assert_eq!(
+        excalidraw_render_assets_base::font_face_order("Nunito", upstream_path),
+        Some(4)
+    );
+    let ranges = excalidraw_render_assets_base::font_face_unicode_ranges("Nunito", upstream_path)
+        .expect("Nunito latin ranges");
+    assert_eq!(ranges.len(), 20);
+    assert_eq!(ranges.first(), Some(&(0x0000, 0x00ff)));
+    assert_eq!(ranges.get(3), Some(&(0x02bb, 0x02bc)));
+    assert_eq!(ranges.get(10), Some(&(0x2000, 0x206f)));
+    assert_eq!(ranges.last(), Some(&(0xfffd, 0xfffd)));
+}
+
 #[test]
 fn svg_font_subset_profile_classifies_each_table_once() {
     let mut tags = FONT_SUBSET_TABLE_RULES_V1

@@ -1093,7 +1093,7 @@ struct OfficialFontChunks {
 struct OfficialFontChunk {
     order: usize,
     record: &'static excalidraw_render_assets_base::AssetRecord,
-    declared: Vec<(u32, u32)>,
+    declared: &'static [(u32, u32)],
     sfnt: Option<Vec<u8>>,
 }
 
