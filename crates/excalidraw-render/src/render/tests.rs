@@ -302,10 +302,10 @@ fn focused_pdf_expectations_are_approval_bound() {
         .remove("approval")
         .expect("PDF expectation manifest is approved");
     assert_eq!(approval["approved_by"], "sagikazarmark");
-    assert_eq!(approval["approved_at"], "2026-09-05");
+    assert_eq!(approval["approved_at"], "2026-09-06");
     assert_eq!(
         approval["approval_url"],
-        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5553306555"
+        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5560476376"
     );
     let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
     canonical.push(b'\n');
