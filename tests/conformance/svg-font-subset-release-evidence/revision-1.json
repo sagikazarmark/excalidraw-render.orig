@@ -33,13 +33,13 @@
   },
   "targetEvidence": {
     "aggregateArtifact": "svg-font-subset-target-aggregate",
-    "generatorAndAggregator": {
-      "path": "xtask/src/svg_font_subset_targets.rs",
-      "sha256": "a69d9dc5febb0d4bf71c63742b88421b0e54bb7586d28994c55811204f36621a"
-    },
     "crossTargetMeasurement": {
       "path": "tests/conformance/svg-font-subset-cross-target-measurement/revision-1.json",
       "sha256": "e6b608595af457ee1a80f6a65d6139036b15594b396c6051a7e098631ff352c1"
+    },
+    "generatorAndAggregator": {
+      "path": "xtask/src/svg_font_subset_targets.rs",
+      "sha256": "2bf512a72d907ccaa3bfff53c0ce97cf2ba4571f7e67593c6416aa5552b8b005"
     },
     "reportSchema": {
       "path": "tests/conformance/svg-font-subset-target-evidence-v2.schema.json",

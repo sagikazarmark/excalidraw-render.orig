@@ -2359,7 +2359,11 @@ warm, request-cache, and frame-batch-cache paths. Artifact bytes are evidence
 per qualification cell. Trace stability is instead evidenced as a cross-target
 equality property: each target computes its trace measurement fresh, the
 aggregation job compares all five, and the agreed measurement is committed as a
-reviewable artifact that every aggregation re-asserts. Per-cell trace digests
+reviewable artifact that every aggregation re-asserts. The five-target aggregate
+itself is recorded verbatim into the release evidence bundle, bound to the
+corpus, font subset profile, viewer approval, and committed measurement it was
+produced for; the bundle's decision stays pending until it is recorded and
+fails closed once any of those four bindings moves. Per-cell trace digests
 MUST NOT be pinned. Canonical Chromium and the controlled pure-Rust viewer each
 compare source chunks with generated subsets
 for shaping, glyph choice, metrics, line layout, selectable text, and rasterized

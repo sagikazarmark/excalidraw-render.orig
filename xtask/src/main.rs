@@ -107,8 +107,8 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
         }
         Some("verify-svg-font-subset-release") => {
             no_more_args(args)?;
-            svg_font_subset_targets::verify_release()?;
-            println!("verified pending SVG font subset release evidence");
+            let state = svg_font_subset_targets::verify_release()?;
+            println!("verified SVG font subset release evidence ({state})");
         }
         Some("materialize-svg-font-subset-target") => {
             let target = required_arg(&mut args, "target")?;
@@ -130,6 +130,13 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             svg_font_subset_targets::aggregate(&input, &output)?;
             println!("aggregated SVG font subset target evidence");
+        }
+        Some("record-svg-font-subset-target-aggregate") => {
+            let aggregate = required_arg(&mut args, "downloaded aggregate report")?;
+            let run_url = required_arg(&mut args, "workflow run URL")?;
+            no_more_args(args)?;
+            svg_font_subset_targets::record_aggregate(&aggregate, &run_url)?;
+            println!("recorded SVG font subset target aggregate into the release evidence");
         }
         Some("svg-font-subset-approval-subject") => {
             no_more_args(args)?;
@@ -253,7 +260,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify> | ",
         "conformance <generate|reproduce|verify|verify-all|approval-subject|record-approval|",
-        "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
+        "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"
     )

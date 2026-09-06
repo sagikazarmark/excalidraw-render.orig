@@ -1990,6 +1990,27 @@ pub(crate) fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
+/// Reads a repository-relative file named by an evidence manifest, refusing
+/// absolute paths, parent components, and symlinks that escape the repository.
+pub(crate) fn read_repository_file(root: &Path, relative: &str) -> Result<Vec<u8>, String> {
+    let path = Path::new(relative);
+    if path.is_absolute()
+        || path
+            .components()
+            .any(|component| !matches!(component, Component::Normal(_)))
+    {
+        return Err(format!("unsafe repository-relative path {relative:?}"));
+    }
+    let root = fs::canonicalize(root)
+        .map_err(|error| format!("failed to resolve repository root: {error}"))?;
+    let resolved = fs::canonicalize(root.join(path))
+        .map_err(|error| format!("failed to resolve {relative}: {error}"))?;
+    if !resolved.starts_with(&root) {
+        return Err(format!("path escapes repository: {relative}"));
+    }
+    fs::read(resolved).map_err(|error| format!("failed to read {relative}: {error}"))
+}
+
 fn verify_png_semantics(bytes: &[u8], expected_rgba: &[u8]) -> Result<(), String> {
     let decoder = png::Decoder::new(Cursor::new(bytes));
     let mut reader = decoder
