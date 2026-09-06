@@ -22,7 +22,7 @@
 //! the entry fails the moment the divergence moves.
 
 // Included by path rather than through `common/mod.rs` so this binary does not
-// also compile the PDF harness helpers, and the PDF binaries do not compile this.
+// also compile the PDF harness helpers.
 #[path = "common/registered_cases.rs"]
 mod registered_cases;
 
@@ -31,14 +31,12 @@ use std::fs;
 use std::io::Cursor;
 
 use excalidraw_render::{ColorMode, OutputFormat, Renderer, SceneDocument, Sizing};
-use excalidraw_render_compare::{
-    compare, CanonicalRgba8, ComparisonLimits, ComparisonMode, RegionReport, SsimOutcome,
-};
+use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonLimits, ComparisonMode};
 use png::{BitDepth, ColorType, Decoder, Transformations};
 use serde_json::Value;
 
 use registered_cases::{
-    observed, repository_root, variant_request, visual_class, PinnedDivergence,
+    divergence, exception_limits, repository_root, variant_request, visual_class, PinnedDivergence,
 };
 
 /// Diagnosed defects whose fix is pending a maintainer decision. See
@@ -145,23 +143,9 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
                     ComparisonMode::Canonical,
                 )
                 .expect("dimensions agree");
-                // The measurement is the same under either budget; only the
-                // pass judgment differs, so the exception is judged on the
-                // canonical report rather than by comparing the rasters again.
-                match (defect, exception) {
-                    (Some(defect), _) => defect.mismatch(&canonical),
-                    (None, None) => (!canonical.passed())
-                        .then(|| format!("outside the canonical budget: {}", observed(&canonical))),
-                    (None, Some(_)) if canonical.passed() => Some(format!(
-                        "passes the canonical budget, so its tolerance exception is stale and \
-                         must be withdrawn: {}",
-                        observed(&canonical)
-                    )),
-                    (None, Some(limits)) if !within(limits, &canonical.whole) => Some(format!(
-                        "exceeds its approved tolerance exception ceilings: {}",
-                        observed(&canonical)
-                    )),
-                    (None, Some(_)) => None,
+                match defect {
+                    Some(defect) => defect.mismatch(&canonical),
+                    None => divergence(&canonical, exception),
                 }
             };
 
@@ -183,8 +167,7 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
 }
 
 /// The approved tolerance exception governing one variant's whole direct PNG, if
-/// the case manifest records one. Ceilings are the exact observed values the
-/// approval bound, so they are consumed verbatim rather than rounded.
+/// the case manifest records one.
 fn tolerance_exception(manifest: &Value, variant_id: &str) -> Option<ComparisonLimits> {
     manifest["exceptions"]
         .as_array()
@@ -195,29 +178,7 @@ fn tolerance_exception(manifest: &Value, variant_id: &str) -> Option<ComparisonL
                 && exception["format"] == "png"
                 && exception["region"] == "whole"
         })
-        .map(|exception| {
-            let max_changed_pixels = exception["max_changed_pixels"]
-                .as_u64()
-                .expect("exception max_changed_pixels is an integer");
-            let minimum_ssim_bits = u64::from_str_radix(
-                exception["minimum_ssim_bits"]
-                    .as_str()
-                    .expect("exception minimum_ssim_bits is a string"),
-                16,
-            )
-            .expect("exception minimum_ssim_bits is binary64 hex");
-            ComparisonLimits::tolerance_exception(
-                max_changed_pixels,
-                f64::from_bits(minimum_ssim_bits),
-            )
-            .expect("exception SSIM floor is finite")
-        })
-}
-
-/// Whether a whole-artifact measurement meets an exception's exact ceilings.
-fn within(limits: ComparisonLimits, whole: &RegionReport) -> bool {
-    limits.changed_pixels_pass(whole.changed_pixels, whole.area)
-        && matches!(whole.ssim, SsimOutcome::Score(score) if limits.ssim_pass(score))
+        .map(exception_limits)
 }
 
 fn decode_png(bytes: &[u8]) -> CanonicalRgba8 {

@@ -1,15 +1,29 @@
+use std::collections::BTreeSet;
 use std::fs;
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[allow(dead_code)]
 mod common;
+#[path = "common/registered_cases.rs"]
+mod registered_cases;
 
 use common::pdf_harness::render_viewer;
 use excalidraw_render::{FrameRenderRequest, OutputFormat, Renderer, SceneDocument};
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
 use png::{BitDepth, ColorType, Decoder, Transformations};
+use registered_cases::{divergence, exception_limits, repository_root, visual_class};
+use sha2::{Digest, Sha256};
 use tiny_skia::{Pixmap, Transform};
+
+/// The approved PDF tolerance exceptions of `focused.frame-export`
+/// (`pdf-tolerance-exceptions.json`), one record per frame target and canonical
+/// viewer, pinned by digest so a record cannot move without a reviewed re-pin.
+/// Each record names the target's `frame_ordinal` in place of a scene variant;
+/// the rest of the shape is the `excalidraw-render/pdf-compatibility-exception/v1`
+/// record the other PDF viewer gates consume.
+const PDF_TOLERANCE_EXCEPTIONS_SHA256: &str =
+    "8bd758cce65d803ef2f6adc5b1b9af6c2f10b8c424e38282ab0a32cb936e511c";
 
 #[test]
 fn frame_svg_and_png_match_the_pinned_official_evidence() {
@@ -212,11 +226,18 @@ fn frame_pdfs_pass_both_canonical_pdf_visual_gates() {
     let targets = manifest["targets"]
         .as_array()
         .expect("reference targets exist");
+    let case_id = manifest["case_id"].as_str().expect("case id is a string");
+    let exceptions = pdf_tolerance_exceptions(&case, case_id);
     let renderer = Renderer::new();
     let stem = format!("frame-pdf-candidate-{}", std::process::id());
+    let mut failures = Vec::new();
+    let mut excepted = BTreeSet::new();
 
     for (index, (target, frame)) in targets.iter().zip(scene.frames()).enumerate() {
-        let ordinal = index + 1;
+        let ordinal = target["frame_ordinal"]
+            .as_u64()
+            .expect("target frame_ordinal is an integer");
+        assert_eq!(ordinal, index as u64 + 1, "targets are in frame order");
         let width = u32::try_from(
             target["outputs"]["svg"]["artifact"]["width"]
                 .as_u64()
@@ -246,21 +267,23 @@ fn frame_pdfs_pass_both_canonical_pdf_visual_gates() {
             .expect("frame renders to PDF");
         fs::write(root.join(&candidate_path), pdf.artifact().bytes())
             .expect("write renderer-owned frame PDF under target");
-        let visual_class = match ordinal {
+        let class = match ordinal {
             4 | 5 => VisualClass::MixedRepresentative,
             7 => VisualClass::Typography,
             _ => VisualClass::GeometryImage,
         };
-        for (viewer, script, mode) in [
+        for (viewer, script, mode, profile) in [
             (
                 "pdfjs",
                 "tools/pdf-harness/run-pdfjs.sh",
                 ComparisonMode::PdfJs,
+                "canonical-pdf.pdfjs.v1",
             ),
             (
                 "pdfium",
                 "tools/pdf-harness/run-pdfium.sh",
                 ComparisonMode::Canonical,
+                "canonical-pdf.pdfium.v1",
             ),
         ] {
             let output = format!("target/{stem}-{ordinal}-{viewer}.rgba");
@@ -278,16 +301,99 @@ fn frame_pdfs_pass_both_canonical_pdf_visual_gates() {
                 ),
             )
             .expect("canonical PDF viewer output is valid");
-            let report = compare(&reference, &candidate, visual_class, &[], mode)
+            let canonical = compare(&reference, &candidate, class, &[], mode)
                 .expect("frame PDF and official SVG dimensions agree");
-            assert!(
-                report.passed(),
-                "frame {ordinal} differs in {viewer}: changed_pixels={}, ssim={:?}",
-                report.whole.changed_pixels,
-                report.whole.ssim
-            );
+            let exception = exceptions
+                .iter()
+                .find(|record| exception_scope(record) == (ordinal, profile))
+                .map(|record| {
+                    assert_eq!(
+                        visual_class(record["visual_class"].as_str().unwrap()),
+                        class,
+                        "frame {ordinal} {viewer} exception names the target's visual class"
+                    );
+                    excepted.insert((ordinal, profile));
+                    exception_limits(record)
+                });
+            if let Some(detail) = divergence(&canonical, exception) {
+                failures.push(format!("frame {ordinal} in {viewer}: {detail}"));
+            }
         }
     }
+
+    let orphans: Vec<_> = exceptions
+        .iter()
+        .map(exception_scope)
+        .filter(|scope| !excepted.contains(scope))
+        .collect();
+    assert!(
+        orphans.is_empty(),
+        "PDF tolerance exceptions name frame targets or viewers the case does not export: \
+         {orphans:?}"
+    );
+    assert!(
+        failures.is_empty(),
+        "{} frame PDF renders diverge from the official SVG raster:\n  {}",
+        failures.len(),
+        failures.join("\n  ")
+    );
+}
+
+/// The approved PDF tolerance exceptions the frame case records, checked
+/// against their digest pin and their declared scope: this case, PDF, the
+/// whole artifact, and the official-SVG authority.
+fn pdf_tolerance_exceptions(case: &Path, case_id: &str) -> Vec<serde_json::Value> {
+    let bytes = fs::read(case.join("pdf-tolerance-exceptions.json"))
+        .expect("frame PDF tolerance exceptions are present");
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        PDF_TOLERANCE_EXCEPTIONS_SHA256,
+        "frame PDF tolerance exceptions moved without a reviewed re-pin"
+    );
+    let records: Vec<serde_json::Value> =
+        serde_json::from_slice(&bytes).expect("frame PDF tolerance exceptions are a JSON array");
+    let mut scopes = BTreeSet::new();
+    for record in &records {
+        assert_eq!(
+            record["schema"],
+            "excalidraw-render/pdf-compatibility-exception/v1"
+        );
+        assert_eq!(record["case_id"], case_id);
+        assert_eq!(record["format"], "pdf");
+        assert_eq!(record["region"], "whole");
+        assert_eq!(
+            record["authority"],
+            "official SVG rendered by canonical Chromium"
+        );
+        assert!(
+            record["approved_issue"].is_u64(),
+            "exception names the issue carrying its approval"
+        );
+        assert!(
+            record["reason"]
+                .as_str()
+                .is_some_and(|reason| !reason.is_empty()),
+            "exception documents its non-defect cause"
+        );
+        let scope = exception_scope(record);
+        assert!(
+            scopes.insert(scope),
+            "one tolerance exception per frame target and viewer: {scope:?}"
+        );
+    }
+    records
+}
+
+/// The frame target and canonical viewer one exception record governs.
+fn exception_scope(record: &serde_json::Value) -> (u64, &str) {
+    (
+        record["frame_ordinal"]
+            .as_u64()
+            .expect("exception frame_ordinal is an integer"),
+        record["viewer_profile"]
+            .as_str()
+            .expect("exception viewer_profile is a string"),
+    )
 }
 
 fn decode_png(bytes: &[u8]) -> CanonicalRgba8 {
@@ -309,12 +415,4 @@ fn rasterize_svg(bytes: &[u8], width: u32, height: u32) -> Vec<u8> {
     let mut pixmap = Pixmap::new(width, height).expect("frame raster dimensions are valid");
     resvg::render(&tree, Transform::identity(), &mut pixmap.as_mut());
     pixmap.data().to_vec()
-}
-
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("crate is inside the workspace")
-        .to_owned()
 }

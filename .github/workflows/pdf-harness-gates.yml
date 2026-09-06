@@ -8,15 +8,6 @@ name: PDF harness gates
 # not a required pull-request check, so a PDF-affecting change may still repin
 # the gates in its own round (#109). The PDF.js viewer runs in Docker, so this
 # leg stays on GitHub Actions rather than the Dagger mirror.
-#
-# tests/frame_conformance.rs::frame_pdfs_pass_both_canonical_pdf_visual_gates is
-# the one PDF-harness gate deliberately left out. Both adapters now place a
-# fractional 96 DPI page at exact scale on the caller's canvas (#119), but the
-# rotated frame's visual authority is Chromium's <img> raster of a 112.12x83.84
-# px SVG drawn into a 112x84 box, so its bottom row is a rescaling artifact no
-# exact-scale render reproduces; frame 5 fails both viewers by exactly that row.
-# The disposition is tracked on #119; add the gate here once the authority
-# raster or the gate's disposition changes.
 
 on:
   push:
@@ -56,4 +47,4 @@ jobs:
         run: >-
           cargo test --locked --release -p excalidraw-render
           --test rectangle_pdf_render --test excalifont_text_render
-          --test pdf_viewer_adapters -- --ignored
+          --test pdf_viewer_adapters --test frame_conformance -- --ignored

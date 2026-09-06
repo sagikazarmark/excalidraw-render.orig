@@ -1,7 +1,8 @@
-//! Shared plumbing for the registry-driven parity harnesses: how a registered
-//! export variant's options become a render request, and how a divergence a
-//! harness must hold in place, a known defect or a compatibility exception, is
-//! pinned at its exact measurement.
+//! Shared plumbing for the parity harnesses: how a registered export variant's
+//! options become a render request, how a recorded tolerance exception's
+//! ceilings judge a comparison, and how a divergence a harness must hold in
+//! place, a known defect or a compatibility exception, is pinned at its exact
+//! measurement.
 
 // Each harness binary includes this module by path and uses the part it needs.
 #![allow(dead_code)]
@@ -10,7 +11,9 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use excalidraw_render::{ColorMode, OutputFormat, RenderRequest, Sizing};
-use excalidraw_render_compare::{ComparisonReport, SsimOutcome, VisualClass};
+use excalidraw_render_compare::{
+    ComparisonLimits, ComparisonReport, RegionReport, SsimOutcome, VisualClass,
+};
 use serde_json::{json, Value};
 
 /// Builds the render request a registered export variant describes.
@@ -142,6 +145,61 @@ pub fn observed(report: &ComparisonReport) -> String {
             "changed_pixels={} ssim={other:?}",
             report.whole.changed_pixels
         ),
+    }
+}
+
+/// The exact no-margin ceilings a tolerance exception record carries as
+/// `max_changed_pixels` and binary64 `minimum_ssim_bits`. They are the observed
+/// values the approval bound, so they are consumed verbatim rather than rounded.
+pub fn exception_limits(record: &Value) -> ComparisonLimits {
+    let max_changed_pixels = record["max_changed_pixels"]
+        .as_u64()
+        .expect("exception max_changed_pixels is an integer");
+    let minimum_ssim_bits = u64::from_str_radix(
+        record["minimum_ssim_bits"]
+            .as_str()
+            .expect("exception minimum_ssim_bits is a string"),
+        16,
+    )
+    .expect("exception minimum_ssim_bits is binary64 hex");
+    ComparisonLimits::tolerance_exception(max_changed_pixels, f64::from_bits(minimum_ssim_bits))
+        .expect("exception SSIM floor is finite")
+}
+
+/// Whether a whole-artifact measurement meets an exception's exact ceilings.
+pub fn within(limits: ComparisonLimits, whole: &RegionReport) -> bool {
+    limits.changed_pixels_pass(whole.changed_pixels, whole.area)
+        && matches!(whole.ssim, SsimOutcome::Score(score) if limits.ssim_pass(score))
+}
+
+/// Judges one whole-artifact comparison under the canonical budget, or under
+/// the tolerance exception that governs it: `None` when the artifact is where
+/// its record says it should be, otherwise the divergence to report with the
+/// observed measurement ready to transcribe.
+///
+/// The measurement is the same under either budget; only the pass judgment
+/// differs, so the exception is judged on the canonical report rather than by
+/// comparing the rasters again. An excepted artifact must still fail the
+/// canonical budget: an exception is a recorded judgment about an observed
+/// difference, so once the difference is gone the record is stale and must be
+/// withdrawn rather than left to linger.
+pub fn divergence(
+    canonical: &ComparisonReport,
+    exception: Option<ComparisonLimits>,
+) -> Option<String> {
+    match exception {
+        None => (!canonical.passed())
+            .then(|| format!("outside the canonical budget: {}", observed(canonical))),
+        Some(_) if canonical.passed() => Some(format!(
+            "passes the canonical budget, so its tolerance exception is stale and must be \
+             withdrawn: {}",
+            observed(canonical)
+        )),
+        Some(limits) if !within(limits, &canonical.whole) => Some(format!(
+            "exceeds its approved tolerance exception ceilings: {}",
+            observed(canonical)
+        )),
+        Some(_) => None,
     }
 }
 

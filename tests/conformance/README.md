@@ -253,11 +253,28 @@ bash tools/pdf-viewer-qualification.sh reproduce
 ```
 
 The `#[ignore]`d gates that need this harness (`pdf_backend_qualification`,
-`rectangle_pdf_render`, `excalifont_text_render`, `pdf_viewer_adapters`) run in
-CI on every push to `main` and nightly through
+`rectangle_pdf_render`, `excalifont_text_render`, `pdf_viewer_adapters`,
+`frame_conformance`) run in CI on every push to `main` and nightly through
 `.github/workflows/pdf-harness-gates.yml`, so a change that moves a structural
 digest or a viewer raster fails visibly rather than leaving the expectation
 files stale (#109). `pdf_viewer_adapters` pins the viewer adapters' own
 contract: a page is admitted when each of its 96 DPI dimensions is within one
 pixel of the supplied canvas and is then placed at exact scale from the canvas
 origin, never stretched to fit (#119).
+
+A PDF viewer gate's tolerance exceptions live beside the case, outside the case
+approval subject: the consuming test pins the file's sha256 and the record
+names the issue that carries the decision. Each record is one
+`excalidraw-render/pdf-compatibility-exception/v1` judgment for one viewer
+profile, with `max_changed_pixels` and `minimum_ssim_bits` set to that viewer's
+exact observed values, so two viewers that differ get two records rather than a
+shared floor. The rectangle, Excalifont, and isolated-fallback cases each carry
+one record as `pdf-visual-exception.json`; the frame case records them per
+frame target in `pdf-tolerance-exceptions.json`, keyed by `frame_ordinal`, the
+frame analogue of a scene variant. `frame_conformance` holds an excepted target
+and viewer to those ceilings, fails when the target returns inside the
+canonical budget so the record cannot outlive the difference, and rejects a
+record naming a target or viewer the case does not export. The rotated frame's
+records (#119) absorb the one partial row of a fractional 96 DPI page, which
+Chromium's `<img>` raster of the official SVG rescales and no exact-scale
+viewer render reproduces.

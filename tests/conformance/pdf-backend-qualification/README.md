@@ -24,10 +24,10 @@ content. `isolated-fallback-structure.json` separately classifies the exact
 fallback image and soft mask, preventing either from being mistaken for source
 content or whole-page rasterization.
 
-The approved rectangle and Excalifont focused cases run through both canonical
-PDF viewers. The package-consumer risk set pins selectable text, source-image,
-native nested-SVG, and isolated-fallback artifact and report bytes on all four
-native targets and browser-hosted `wasm32-unknown-unknown`.
+The approved rectangle, Excalifont, and frame-export focused cases run through
+both canonical PDF viewers. The package-consumer risk set pins selectable text,
+source-image, native nested-SVG, and isolated-fallback artifact and report bytes
+on all four native targets and browser-hosted `wasm32-unknown-unknown`.
 
 Run the backend qualification gates after installing the pinned PDF harness:
 
@@ -38,6 +38,8 @@ cargo test --locked --release -p excalidraw-render --test rectangle_pdf_render \
   approved_rectangle_passes_both_canonical_pdf_visual_gates -- --ignored --exact
 cargo test --locked --release -p excalidraw-render --test excalifont_text_render \
   approved_excalifont_text_passes_both_canonical_pdf_gates -- --ignored --exact
+cargo test --locked --release -p excalidraw-render --test frame_conformance \
+  frame_pdfs_pass_both_canonical_pdf_visual_gates -- --ignored --exact
 ```
 
 ## Re-pinning the ignored gates
@@ -97,6 +99,18 @@ their sha256 pins in the test, and the exception record fields and its sha256
 pin in the test. The scene, official-SVG, official-RGBA, and evidence-generator
 pins in the same test never move for a re-pin; they change only through a
 reviewed reference-profile change.
+
+The frame PDF visual gate compares every frame-export target rendered by both
+viewers against its `official-svg.rgba` and records its tolerance exceptions in
+`tests/conformance/cases/focused/frame-export/pdf-tolerance-exceptions.json`,
+one record per `frame_ordinal` and `viewer_profile`, pinned by sha256 in
+`frame_conformance.rs` (`PDF_TOLERANCE_EXCEPTIONS_SHA256`). The gate renders
+every target in both viewers before judging, so one failing run prints every
+divergence with its `changed_pixels` and exact `ssim_bits`, ready to transcribe;
+a target whose record it holds must still fail the canonical budget, or the
+gate reports the record as stale. Re-measuring follows the fallback flow above,
+except that both viewers' values are already printed and each viewer keeps its
+own record.
 
 Reproduce the isolated-fallback official-SVG authority in two fresh canonical
 Chromium processes after installing the reference-oracle dependencies:
