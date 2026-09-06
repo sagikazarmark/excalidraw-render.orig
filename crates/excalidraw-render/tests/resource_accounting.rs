@@ -1,6 +1,6 @@
 use excalidraw_render::{
-    ErrorCode, OutputFormat, RenderError, RenderErrorCategory, RenderRequest, Renderer,
-    ResourceLimits, SceneDocument,
+    ErrorCode, ErrorDetails, OutputFormat, RenderError, RenderErrorCategory, RenderRequest,
+    Renderer, ResourceLimits, ResourceMeasurement, ResourceValue, SceneDocument,
 };
 use serde_json::json;
 
@@ -439,6 +439,106 @@ fn locally_rejected_text_still_participates_in_the_aggregate_limit() {
     );
 }
 
+#[test]
+fn font_fallback_probes_charge_the_exact_vector_for_every_fallback_shape() {
+    // Spec 8.3.1 and 13.2: a text element's work is 32 units for each
+    // normalized scalar, shaped glyph, line-break step, font fallback probe,
+    // and glyph-outline command. A shaped scalar the whole-text face maps pays
+    // no probe; otherwise it pays one probe per official font chunk of its
+    // family whose declared range covers it, one per Xiaolai chunk likewise
+    // when the CJK subset trigger selected Xiaolai, one for the Noto Emoji
+    // consultation, and one for the Liberation Sans replacement glyph. The
+    // scalar, glyph, and line-step rows are prepaid before shaping; the probe
+    // and outline rows are the remainder charged at layout. The outline
+    // count is that element's own geometry crossing; every other row is a
+    // literal read off the text and that rule.
+    let cases: [(&str, u64, u64, &str); 5] = [
+        ("A", 1, 0, "Excalifont's basic-Latin face maps it: no probe"),
+        (
+            "\u{20a9}",
+            1,
+            2,
+            "untriggered missing scalar: no Excalifont chunk declares the won sign, \
+             Noto Emoji lacks it, the replacement glyph serves it",
+        ),
+        (
+            "\u{4e2d}",
+            1,
+            1,
+            "triggered Xiaolai scalar: the one Xiaolai chunk declaring the ideograph",
+        ),
+        ("\u{1f600}", 1, 1, "emoji: the Noto Emoji consultation"),
+        (
+            "\u{1f600}\u{20a9}",
+            2,
+            1 + 2,
+            "a selected Noto Emoji face is consulted once for the won sign, as an \
+             unselected one is",
+        ),
+    ];
+    for (text, glyphs, probes, why) in cases {
+        let scene = excalifont_scene(&[("text", text)]);
+        let scalars = u64::try_from(text.chars().count()).expect("small");
+        let line_break_steps = 1;
+        let prepaid = 32 * (scalars + glyphs + line_break_steps);
+        let (outline_commands, work_units) = text_element_work_vector(&scene, "text", prepaid);
+        assert_eq!(
+            work_units,
+            prepaid + 32 * (probes + outline_commands),
+            "{text:?}: {why}"
+        );
+    }
+}
+
+#[test]
+fn font_fallback_probes_do_not_depend_on_which_occurrences_came_before() {
+    // Spec 8.3.1 and 13.2: once the family's whole-text face is fixed, the
+    // faces already serving the target change neither the probe count nor
+    // the order, so the won sign pays the same two probes whether or not an
+    // earlier text occurrence already selected Noto Emoji.
+    let alone = excalifont_scene(&[("won", "\u{20a9}")]);
+    let after_emoji = excalifont_scene(&[("emoji", "\u{1f600}"), ("won", "\u{20a9}")]);
+    let prepaid = 32 * (1 + 1 + 1);
+    let (alone_outline, alone_work) = text_element_work_vector(&alone, "won", prepaid);
+    let (after_outline, after_work) = text_element_work_vector(&after_emoji, "won", prepaid);
+    assert_eq!(alone_outline, after_outline, "the same replacement glyph");
+    assert_eq!(alone_work, prepaid + 32 * (2 + alone_outline));
+    assert_eq!(after_work, alone_work);
+}
+
+#[test]
+fn a_family_whole_text_face_is_fixed_by_its_first_live_occurrence() {
+    // Spec 8.3.1: a resolved family's whole-text face is fixed once per
+    // target, by the family's first live occurrence, and every later
+    // occurrence shapes with it. Excalifont's basic-Latin chunk declares and
+    // maps `A` but not U+0100; its Latin-extended chunk declares and maps
+    // U+0100 but not `A`. Alone, each scalar is mapped by the face its own
+    // text selects and pays no probe; after an occurrence that fixed the
+    // other chunk, it pays one probe for the one Excalifont chunk declaring
+    // it, whichever order the two occurrences take.
+    let prepaid = 32 * (1 + 1 + 1);
+    for (first, second) in [("A", "\u{100}"), ("\u{100}", "A")] {
+        let alone = excalifont_scene(&[("second", second)]);
+        let after_first = excalifont_scene(&[("first", first), ("second", second)]);
+        let (alone_outline, alone_work) = text_element_work_vector(&alone, "second", prepaid);
+        let (after_outline, after_work) = text_element_work_vector(&after_first, "second", prepaid);
+        assert_eq!(
+            alone_outline, after_outline,
+            "{second:?}: the same glyph outline"
+        );
+        assert_eq!(
+            alone_work,
+            prepaid + 32 * alone_outline,
+            "{second:?} alone: no probe"
+        );
+        assert_eq!(
+            after_work,
+            prepaid + 32 * (1 + after_outline),
+            "{second:?} after {first:?}: one probe for its declaring chunk"
+        );
+    }
+}
+
 fn request_with_limits(format: OutputFormat, limits: ResourceLimits) -> RenderRequest {
     RenderRequest::builder(format)
         .resource_limits(limits)
@@ -488,6 +588,91 @@ fn canonical_empty_total_work(format: OutputFormat, output_bytes: u64) -> u64 {
 
 fn logical_aligned_bytes(bytes: u64) -> u64 {
     bytes.div_ceil(64) * 64
+}
+
+/// One Excalifont text element per `(id, text)`, laid side by side.
+fn excalifont_scene(elements: &[(&str, &str)]) -> SceneDocument {
+    let elements = elements
+        .iter()
+        .enumerate()
+        .map(|(index, (id, text))| {
+            format!(
+                r#"{{"id":{},"type":"text","x":{},"y":0,"width":160,"height":40,"fontSize":20,"fontFamily":5,"text":{},"updated":1}}"#,
+                serde_json::to_string(id).expect("id serializes"),
+                index * 200,
+                serde_json::to_string(text).expect("text serializes")
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let source = format!(
+        r#"{{"type":"excalidraw","version":2,"elements":[{elements}],"appState":{{}},"files":{{}}}}"#
+    );
+    SceneDocument::parse(source.as_bytes()).expect("text scene is admitted")
+}
+
+/// One text element's `(glyph-outline commands, total work units)`, read from
+/// its two local crossings: a one-segment geometry ceiling reports the
+/// element's outline-command count, and a work ceiling equal to the work the
+/// element prepays before shaping (its scalars, prospective glyphs, and line
+/// steps) passes preflight at equality and reports the complete work at the
+/// layout crossing. Both crossings omit the element with the exact attempted
+/// value in the diagnostic, so nothing here reaches inside the ledger.
+fn text_element_work_vector(
+    scene: &SceneDocument,
+    element_id: &str,
+    prepaid_work_units: u64,
+) -> (u64, u64) {
+    let outline_commands = attempted_at_local_crossing(
+        scene,
+        element_id,
+        ResourceLimits::builder()
+            .max_geometry_segments_per_element(1)
+            .build()
+            .expect("one-segment geometry ceiling is valid"),
+        "max_geometry_segments_per_element",
+    );
+    let work_units = attempted_at_local_crossing(
+        scene,
+        element_id,
+        ResourceLimits::builder()
+            .max_element_work_units(prepaid_work_units)
+            .build()
+            .expect("prepaid work ceiling is valid"),
+        "max_element_work_units",
+    );
+    (outline_commands, work_units)
+}
+
+/// The exact attempted value `element_id`'s local crossing of `field` reports
+/// when the SVG target renders under `limits`; the element is omitted, so the
+/// render succeeds and the value is read from its diagnostic.
+fn attempted_at_local_crossing(
+    scene: &SceneDocument,
+    element_id: &str,
+    limits: ResourceLimits,
+    field: &str,
+) -> u64 {
+    let outcome = Renderer::new()
+        .render(scene, &request_with_limits(OutputFormat::Svg, limits))
+        .expect("a locally omitted text element leaves a meaningful artifact");
+    let attempted = outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .filter(|diagnostic| diagnostic.element_id() == Some(element_id))
+        .find_map(|diagnostic| match diagnostic.details() {
+            Some(ErrorDetails::ResourceLimit {
+                field: crossed,
+                measurement:
+                    ResourceMeasurement::Attempted {
+                        value: ResourceValue::Integer(value),
+                    },
+                ..
+            }) if *crossed == field => Some(*value),
+            _ => None,
+        });
+    attempted.unwrap_or_else(|| panic!("{element_id} crosses {field}"))
 }
 
 fn assert_resource_failure(

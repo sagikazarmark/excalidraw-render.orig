@@ -683,6 +683,21 @@ SVG `data-source-text` attribute, the PDF line-level `ActualText`) keeps each
 line's own terminator bytes, so the lines concatenate back to the stored
 `text`. This is the same line count the restored line height divides by.
 
+Within each source line, bidirectional text follows UAX #9 as the pinned
+`unicode-bidi 0.3.18` implements it (#122): the line's base level is detected
+from its first strong character (left-to-right when it has none), and its
+resolved levels are reordered into visual runs. Every format lays those runs
+out left to right in visual order, and each visual run is split further by the
+face that shapes its scalars under 8.3.1, so one visual run of one face is one
+glyph run: SVG emits it as one `<tspan>` carrying that face's effective family,
+`direction="rtl"` or `"ltr"`, and one `x` and `y` per glyph; PNG and PDF place
+the same glyph positions. Within a run, glyph order and placement are the
+deterministic shaper's for the run's display text. The text a format carries
+beside the glyphs stays in logical order (`data-source-text`, `ActualText`, and
+each run's `<tspan>` content), as do missing-codepoint diagnostics. An
+occurrence with no right-to-left content whose shaped scalars the whole-text
+face all maps is one run of that face per line and emits no direction.
+
 #### 8.3.1 Semantic Demand and Face Selection
 
 The Excalidraw adapter MUST collect first-use-ordered Unicode scalar values from
@@ -694,10 +709,21 @@ bundled family; source family IDs `2` and `9` resolve to the same Liberation
 family demand, while occurrence diagnostics remain source-ID-specific.
 
 The revision binds an exact CJK scalar table equivalent to the pinned Chromium
-149 predicate. If any scalar in Excalifont demand belongs to that table, the
-adapter copies the complete Excalifont scalar set to Xiaolai and prepends Xiaolai
-to resolved family order. The table bytes, digest, and selected-codepoint classes
-MUST be frozen in the compatibility asset manifest before release.
+149 predicate. The CJK subset trigger is evaluated once per target, before
+layout and before any local recovery, over the stored `text` of every live
+Excalifont text occurrence (#122). The stored `text` is the trigger's
+format-neutral carrier: compatibility normalization keeps `originalText` only
+for SVG, a well-formed scene's wrapped `text` keeps every non-whitespace scalar
+of its `originalText`, and the table contains no whitespace scalar. When any
+such scalar belongs to the table, Xiaolai is selected for the target: glyph
+face selection in every format extends every Excalifont occurrence's fallback
+chain with Xiaolai, and the SVG demand copies the complete Excalifont scalar
+set to Xiaolai and prepends Xiaolai to resolved family order. That one outcome
+is shared and never re-derived from survivors, so an occurrence that local
+recovery later omits still counts toward it, the faces glyph runs use and the
+faces the SVG declares cannot disagree, and a Xiaolai chunk's own coverage of a
+scalar never selects Xiaolai. The table bytes, digest, and selected-codepoint
+classes MUST be frozen in the compatibility asset manifest before release.
 
 For each resolved family in canonical fallback order, `svg_fonts` compares every
 unique scalar with every official face's declared Unicode range and selects each
@@ -706,6 +732,36 @@ complete ordered family scalar set, not only its range intersection. A used
 non-WOFF2 fallback, including Noto Emoji, remains complete and is emitted once;
 it is never subset. Only qualified, digest-verified built-in assets participate.
 Custom fonts and a public subset interface are forbidden.
+
+Glyph face selection is the same in every format, for ordinary scene text and
+generated embeddable labels alike, and consults declared Unicode ranges before
+any `cmap`. A resolved family's whole-text face is fixed once per target, when
+the family's first live occurrence is laid out: the first official font chunk
+of the family, in pinned face order, whose declared ranges cover every shaped
+scalar of that occurrence and whose `cmap` maps them all; failing that, the
+family's first chunk declaring and mapping `?` and `A`. Every later occurrence
+of the family shapes with that face. A shaped scalar the whole-text face maps
+takes it. Any other shaped scalar consults, in this order and stopping at the
+first face whose `cmap` maps it: each official font chunk of the family whose
+declared range covers the scalar, in pinned face order; for Excalifont when the
+trigger selected Xiaolai, each Xiaolai chunk likewise; the complete Noto Emoji
+face; and finally the Liberation Sans chunk declaring `?`, which shapes the
+replacement glyph `?` and reports `font.missing-glyph` for the scalar. A chunk
+whose declared range does not cover the scalar is never consulted, so its
+`cmap` never selects it.
+
+Each of those consultations is one font fallback probe, the event 13.2 charges
+32 work units (#122): one for each consulted chunk of the family and, when
+selected, of Xiaolai, one for the Noto Emoji consultation, and one for the
+replacement. Every shaped scalar occurrence pays its own probes, repeated
+scalars included. Once the family's whole-text face is fixed, whether a
+consulted face already serves the target changes neither the count nor the
+order; and neither the whole-text face's initial `cmap` test nor a
+declared-range test is a probe. So an untriggered Excalifont scalar that no
+Excalifont chunk declares and Noto Emoji lacks pays two probes; a triggered
+Excalifont scalar that the one Xiaolai chunk declaring it maps pays one; an
+emoji Noto Emoji maps pays one; a Liberation Sans scalar its one chunk declares
+but does not map pays three.
 
 #### 8.3.2 Subset Profile, Names, and Identity
 
@@ -1027,7 +1083,9 @@ consumes typed semantic family demand and owns family/range selection, bundling,
 measurement, CSS/data-URL writing, and its resource transcript; it knows no
 Excalidraw scene type. The Excalidraw adapter owns `originalText`, generated-label
 collection, resolved source families, omission and local-recovery decisions, and
-the CJK rule, then bridges typed demand inward. Dependencies are strictly
+the CJK subset trigger, which it evaluates once per target over the stored
+`text` of live Excalifont occurrences and shares between glyph face selection
+and the typed demand it bridges inward. Dependencies are strictly
 adapter to `svg_fonts` to `font_subset`; reverse or lateral scene dependencies
 are forbidden. Transcript ownership is `svg_fonts` for family/range/CSS/bundle
 events and `font_subset` for decode/plan/sfnt/encode/validate events.
@@ -1976,6 +2034,12 @@ The revision-1 work ledger is:
 | 32 | Each font fallback probe |
 | 32 | Each glyph-outline command |
 
+A font fallback probe is one face consultation of the per-scalar chain in
+8.3.1. Each shaped scalar occurrence pays its own probes; once the family's
+whole-text face is fixed, the faces already serving the target change neither
+their count nor their order, and neither the whole-text face's initial `cmap`
+test nor a declared-range test is a probe.
+
 Direct SVG font subsetting adds these canonical events for each target. First,
 all family-scalar-set events occur in resolved family order. Then each candidate
 face produces one considered event in pinned face order and, when selected, an
@@ -2593,6 +2657,9 @@ The frame-export amendment is specified by
 [Export Excalidraw frames as separate artifacts](https://github.com/sagikazarmark/excalidraw-render.orig/issues/97).
 The direct-SVG font-subsetting amendment is specified by
 [Add Excalidraw-compatible per-glyph SVG font subsetting](https://github.com/sagikazarmark/excalidraw-render.orig/issues/96).
+The 8.3 clarifications of the CJK subset trigger's evaluation point, the font
+fallback probe, and bidirectional layout are specified by
+[Record the CJK subset trigger's evaluation point, the fallback probe, and bidi in spec 8.3 and CONTEXT.md](https://github.com/sagikazarmark/excalidraw-render.orig/issues/122).
 Changing these bytes invalidates the original adjacent approval subject; a new
 maintainer approval is required before release.
 

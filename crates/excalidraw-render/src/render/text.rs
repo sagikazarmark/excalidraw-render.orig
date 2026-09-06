@@ -970,16 +970,23 @@ fn resolve_character_font(
             return Ok((index, character, false, false));
         }
     }
-    for (index, font) in fonts.iter().enumerate() {
-        if font.catalog_family == "NotoEmoji" {
-            *fallback_probes = fallback_probes.saturating_add(1);
-            if font.supports(character) {
-                return Ok((index, character, true, false));
-            }
-        }
-    }
+    // The Noto Emoji consultation is one font fallback probe per scalar
+    // occurrence (spec 8.3.1), whether the complete face is selected now or
+    // was selected by an earlier scalar: a face that already serves the
+    // target is asked once and never decoded again, so what a scalar pays
+    // never depends on which scalars came before it.
     *fallback_probes = fallback_probes.saturating_add(1);
-    if let Some(font) = OfficialFont::load_noto_emoji(character)? {
+    if let Some(index) = fonts
+        .iter()
+        .position(|font| font.catalog_family == "NotoEmoji")
+    {
+        if fonts
+            .get(index)
+            .is_some_and(|font| font.supports(character))
+        {
+            return Ok((index, character, true, false));
+        }
+    } else if let Some(font) = OfficialFont::load_noto_emoji(character)? {
         fonts.try_reserve(1)?;
         fonts.push(font);
         return Ok((fonts.len() - 1, character, true, false));

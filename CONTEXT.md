@@ -141,16 +141,24 @@ An immutable bundled WOFF2 resource representing one declared Unicode-range face
 _Avoid_: System font, generated font
 
 **Font family scalar set**:
-The first-use-ordered set of Unicode scalar values collected for one resolved font family from participating ordinary scene text and generated export text. A selected fallback family may receive a copy of another family's complete set.
-_Avoid_: Character string, rendered glyph set
+The first-use-ordered set of Unicode scalar values collected for one resolved font family from the participating ordinary scene text, canonically its compatibility-normalized `originalText`, and generated export text that survive local recovery. A selected fallback family may receive a copy of another family's complete set.
+_Avoid_: Character string, rendered glyph set, CJK subset trigger input
 
 **Selected font chunk**:
 An official font chunk whose declared Unicode range intersects its font family scalar set. Selected chunks follow their resolved family's pinned face order and each receives the family's complete scalar set.
 _Avoid_: Used glyph run, cmap match
 
 **CJK subset trigger**:
-The frozen, versioned scalar table corresponding to the reference renderer's Han, Hiragana, Katakana, Hangul, and explicit CJK punctuation, symbol, and currency predicate. An Excalifont scalar-set intersection selects Xiaolai with a copy of the complete Excalifont set.
-_Avoid_: Host Unicode property, Xiaolai cmap coverage
+The frozen, versioned scalar table corresponding to the reference renderer's Han, Hiragana, Katakana, Hangul, and explicit CJK punctuation, symbol, and currency predicate, and its one outcome per static-export target: evaluated once, before layout and local recovery, over the stored `text` of every live Excalifont text occurrence, the format-neutral carrier since `originalText` survives normalization only for SVG. A hit selects Xiaolai for the target, in glyph face selection for every format and in the SVG font demand alike, with a copy of the complete Excalifont font family scalar set; an occurrence omitted later still counts.
+_Avoid_: Host Unicode property, Xiaolai cmap coverage, per-occurrence trigger, survivor-derived trigger
+
+**Font fallback probe**:
+One consultation of a face for one shaped scalar occurrence that its family's whole-text face does not map, charged 32 work units in semantic resource accounting: each official font chunk of the family whose declared range covers the scalar, each Xiaolai chunk likewise when the CJK subset trigger selected it, the Noto Emoji consultation, and the Liberation Sans replacement, in that order, stopping at the first `cmap` hit. Every occurrence pays its own probes; a face already serving the target costs the same as one selected now, and declared-range tests and the whole-text face's initial `cmap` test are not probes.
+_Avoid_: Font load, cmap lookup, decode, cache miss
+
+**Bidi visual run**:
+One maximal span of a source line that UAX #9, as the pinned `unicode-bidi` implements it with the base level detected from the line's first strong character, places together in visual order, further split by the face that shapes its scalars. Every format lays visual runs out left to right; SVG emits one `<tspan>` per run with its `direction`, while the text carried beside the glyphs (`data-source-text`, `ActualText`, each run's `<tspan>` content) and missing-codepoint diagnostics stay in logical order.
+_Avoid_: Logical run, RTL segment, reordered text (for the carried source text)
 
 **Font subset profile**:
 The compatibility-revision-specific contract for glyph and layout closure, table treatment, metrics, variations, names, legal records, encoding, and validation of every derived font subset.

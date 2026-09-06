@@ -791,6 +791,109 @@ fn cjk_subset_trigger_matches_script_and_explicit_symbol_classes() {
     assert!(text::CjkSubsetTrigger::evaluate(["A", "\u{4e2d}"]).selects_xiaolai());
 }
 
+/// Lays `text` out with fallbacks against a fresh font list whose only face
+/// is the whole-text face `OfficialFont::load` selects for it, and returns the
+/// font fallback probes it charged.
+fn fallback_probes_for(font_family: i32, text: &str) -> u64 {
+    let mut fonts = vec![text::OfficialFont::load(font_family, text)
+        .ok()
+        .unwrap_or_else(|| panic!("family {font_family} loads for {text:?}"))];
+    fallback_probes_with(&mut fonts, font_family, text)
+}
+
+/// Lays `text` out with fallbacks against `fonts`, whose first face is the
+/// whole-text face of `font_family`, and returns the font fallback probes it
+/// charged.
+fn fallback_probes_with(fonts: &mut Vec<text::OfficialFont>, font_family: i32, text: &str) -> u64 {
+    let trigger = text::CjkSubsetTrigger::evaluate([text]);
+    let layout = text::TextLayout {
+        font_family,
+        ..excalifont_layout()
+    };
+    let (laid_out, _) = text::layout_with_fallbacks(0, fonts, text, layout, trigger)
+        .ok()
+        .unwrap_or_else(|| panic!("{text:?} lays out with fallbacks"));
+    laid_out.fallback_probes
+}
+
+#[test]
+fn a_font_fallback_probe_is_one_consulted_face_per_shaped_scalar_occurrence() {
+    // Spec 8.3.1: a shaped scalar the whole-text face maps pays no probe.
+    // Otherwise it pays one probe for each official font chunk of its family
+    // whose declared Unicode range covers it, in pinned face order; then, for
+    // Excalifont when the CJK subset trigger selected Xiaolai, one for each
+    // Xiaolai chunk likewise; then one for the Noto Emoji consultation; then
+    // one for the Liberation Sans replacement glyph. Every occurrence pays its
+    // own probes. Expected counts follow that rule, not the code.
+    assert_eq!(
+        fallback_probes_for(5, "A"),
+        0,
+        "the whole-text face maps it"
+    );
+    assert_eq!(
+        fallback_probes_for(5, "\u{20a9}"),
+        2,
+        "no Excalifont chunk declares the won sign: Noto Emoji, then the replacement"
+    );
+    assert_eq!(
+        fallback_probes_for(5, "\u{10ffff}"),
+        2,
+        "nothing declares it either: Noto Emoji, then the replacement"
+    );
+    assert_eq!(
+        fallback_probes_for(5, "\u{4e2d}"),
+        1,
+        "triggered: the one Xiaolai chunk declaring the ideograph maps it"
+    );
+    assert_eq!(
+        fallback_probes_for(5, "\u{1f600}"),
+        1,
+        "Noto Emoji maps the emoji on its one consultation"
+    );
+    assert_eq!(
+        fallback_probes_for(5, "\u{4e2d}\u{20a9}"),
+        2,
+        "triggered: the won sign is served by the one Xiaolai chunk declaring it"
+    );
+    assert_eq!(
+        fallback_probes_for(5, "\u{20a9}\u{20a9}"),
+        4,
+        "a repeated scalar pays its probes on every occurrence"
+    );
+    assert_eq!(
+        fallback_probes_for(9, "\u{5d0}"),
+        3,
+        "Liberation declares every scalar but maps no Hebrew: its chunk, Noto Emoji, the replacement"
+    );
+}
+
+#[test]
+fn a_selected_noto_emoji_face_is_consulted_once_per_scalar_like_an_unselected_one() {
+    // Spec 8.3.1: whether a consulted face already serves the target changes
+    // neither the probe count nor the order. The Noto Emoji consultation is
+    // one probe whether the face is being selected now, was selected by an
+    // earlier scalar of the same occurrence, or by an earlier occurrence.
+    assert_eq!(
+        fallback_probes_for(5, "\u{1f600}\u{20a9}"),
+        1 + 2,
+        "the emoji selects Noto Emoji; the won sign then pays Noto Emoji and the replacement"
+    );
+    assert_eq!(
+        fallback_probes_for(5, "\u{1f600}\u{1f601}"),
+        1 + 1,
+        "the second emoji pays the one consultation of the selected face"
+    );
+    let mut fonts = vec![text::OfficialFont::load(5, "\u{1f600}")
+        .ok()
+        .expect("Excalifont loads")];
+    assert_eq!(fallback_probes_with(&mut fonts, 5, "\u{1f600}"), 1);
+    assert_eq!(
+        fallback_probes_with(&mut fonts, 5, "\u{20a9}"),
+        2,
+        "a later occurrence pays the won sign what a first occurrence would"
+    );
+}
+
 #[test]
 fn png_frame_clip_masks_are_charged_once_per_frame_and_owned_by_no_child() {
     // Two frames with two children each, plus one unframed rectangle. With

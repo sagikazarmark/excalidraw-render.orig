@@ -455,6 +455,11 @@ fn pdf_embeds_the_pinned_face_whose_declared_range_covers_the_text() {
 
 #[test]
 fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
+    // Spec 8.3: each source line is resolved by UAX #9 into visual runs, laid
+    // out left to right in visual order and split by selected face; the text
+    // a format carries beside the glyphs stays logical. In an LTR paragraph
+    // the number after the Hebrew joins its right-to-left sequence, so the
+    // visual order is "abc ", "123", then the Hebrew run with its space.
     let scene = text_scene(9, "abc \u{5d0}\u{5d1}\u{5d2} 123");
 
     let svg_request = RenderRequest::builder(OutputFormat::Svg)
@@ -464,13 +469,46 @@ fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
         .render(&scene, &svg_request)
         .expect("bidirectional SVG renders");
     let svg = std::str::from_utf8(svg_outcome.artifact().bytes()).expect("SVG is UTF-8");
-    assert!(svg_outcome
+    let missing = svg_outcome
         .report()
         .diagnostics()
         .iter()
-        .all(|diagnostic| diagnostic.code() == DiagnosticCode::FONT_MISSING_GLYPH));
-    assert!(svg.contains("direction=\"rtl\""));
-    assert!(svg.contains("direction=\"ltr\""));
+        .map(|diagnostic| {
+            assert_eq!(diagnostic.code(), DiagnosticCode::FONT_MISSING_GLYPH);
+            match diagnostic.details() {
+                Some(ErrorDetails::MissingGlyph { codepoint, .. }) => *codepoint,
+                other => panic!("missing-glyph details, got {other:?}"),
+            }
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        missing,
+        [0x5d0, 0x5d1, 0x5d2],
+        "missing scalars are reported in logical order, not visual order"
+    );
+    assert!(svg.contains("data-source-text=\"abc \u{5d0}\u{5d1}\u{5d2} 123\""));
+    let runs = svg_text_runs(svg);
+    assert_eq!(
+        runs.iter()
+            .map(|run| (run.direction.as_str(), run.text.as_str()))
+            .collect::<Vec<_>>(),
+        [("ltr", "abc "), ("ltr", "123"), ("rtl", "??? ")],
+        "one tspan per visual run, in visual order, with the run's logical text"
+    );
+    assert!(
+        runs.iter()
+            .all(|run| run.font_family == "ExcalidrawRender-9"),
+        "every run names the one face that shaped it"
+    );
+    for run in &runs {
+        assert_eq!(run.x.len(), run.text.chars().count(), "one x per glyph");
+        assert!(run.x.windows(2).all(|pair| pair[0] < pair[1]));
+    }
+    assert!(
+        runs.windows(2)
+            .all(|pair| pair[0].x.last() < pair[1].x.first()),
+        "visual runs advance left to right across the line"
+    );
 
     let pdf_request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
@@ -484,6 +522,45 @@ fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     let pdf = String::from_utf8_lossy(first.artifact().bytes());
     assert!(pdf.contains("/ActualText <FEFF006100620063002005D005D105D20020003100320033>"));
+}
+
+/// One `<tspan>` of a run-structured SVG text element.
+struct SvgTextRun {
+    font_family: String,
+    direction: String,
+    x: Vec<f64>,
+    text: String,
+}
+
+/// The run tspans of the first `<text>` element in `svg`, in document order.
+fn svg_text_runs(svg: &str) -> Vec<SvgTextRun> {
+    let (_, text) = svg.split_once("<text ").expect("SVG has a text element");
+    let (text, _) = text.split_once("</text>").expect("text element is closed");
+    let attribute = |tspan: &str, name: &str| -> String {
+        let (_, tail) = tspan
+            .split_once(&format!(" {name}=\""))
+            .unwrap_or_else(|| panic!("tspan has {name}: {tspan}"));
+        tail.split_once('"')
+            .expect("attribute is closed")
+            .0
+            .to_owned()
+    };
+    text.split("<tspan")
+        .skip(1)
+        .map(|tspan| {
+            let (open, rest) = tspan.split_once('>').expect("tspan opens");
+            let (content, _) = rest.split_once("</tspan>").expect("tspan closes");
+            SvgTextRun {
+                font_family: attribute(open, "font-family"),
+                direction: attribute(open, "direction"),
+                x: attribute(open, "x")
+                    .split(' ')
+                    .map(|value| value.parse().expect("x is numeric"))
+                    .collect(),
+                text: content.to_owned(),
+            }
+        })
+        .collect()
 }
 
 #[test]
