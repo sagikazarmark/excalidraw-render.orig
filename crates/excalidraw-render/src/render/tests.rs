@@ -779,11 +779,16 @@ fn direct_svg_font_subset_trace_follows_semantic_selection_and_derivation_order(
 
 #[test]
 fn cjk_subset_trigger_matches_script_and_explicit_symbol_classes() {
-    assert!(is_cjk(0x4e2d));
-    assert!(is_cjk(0xd7b0));
-    assert!(is_cjk(u32::from('￥')));
-    assert!(!is_cjk(0x2ff0));
-    assert!(!is_cjk(u32::from('A')));
+    let selects = |text: &str| text::CjkSubsetTrigger::evaluate([text]).selects_xiaolai();
+    assert!(selects("\u{4e2d}"));
+    assert!(selects("\u{d7b0}"));
+    assert!(selects("￥"));
+    assert!(!selects("\u{2ff0}"));
+    assert!(!selects("A"));
+    assert!(!selects(""));
+    // The trigger is a scalar-set intersection over every occurrence, not a
+    // per-occurrence property.
+    assert!(text::CjkSubsetTrigger::evaluate(["A", "\u{4e2d}"]).selects_xiaolai());
 }
 
 #[test]
@@ -1042,9 +1047,11 @@ fn the_fallback_layout_splits_lines_by_the_same_rule() {
         // CJK is not in Excalifont, so each line here is a Xiaolai fallback run.
         ("中\r\n文", vec![("中\r\n", "中"), ("文", "文")]),
     ] {
-        let (laid_out, _) = text::layout_with_fallbacks(0, &mut fonts, source, excalifont_layout())
-            .ok()
-            .unwrap_or_else(|| panic!("{source:?} lays out with fallbacks"));
+        let trigger = text::CjkSubsetTrigger::evaluate([source]);
+        let (laid_out, _) =
+            text::layout_with_fallbacks(0, &mut fonts, source, excalifont_layout(), trigger)
+                .ok()
+                .unwrap_or_else(|| panic!("{source:?} lays out with fallbacks"));
         assert_eq!(line_texts(&laid_out), expected, "{source:?}");
         assert!(laid_out.missing_codepoints.is_empty(), "{source:?}");
         assert!(!laid_out.noto_emoji_substituted, "{source:?}");

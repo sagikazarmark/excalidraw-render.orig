@@ -35,21 +35,23 @@ pub(super) fn svg_font_demand(
     visit_svg_font_text(scene, text_order, |family, text| {
         add_svg_font_text(&mut families, family, text)
     })?;
-    if let Some(excalifont) = families.iter().find(|family| {
-        family.family == "Excalifont" && family.scalars.iter().any(|scalar| is_cjk(*scalar))
-    }) {
-        let xiaolai = svg_fonts::FamilyDemand::from_scalars("Xiaolai", &excalifont.scalars)
-            .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                subject_kind: "svg_font_demand",
-                subject: "xiaolai_scalar_set",
-            })?;
-        families
-            .try_reserve(1)
-            .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                subject_kind: "svg_font_demand",
-                subject: "xiaolai_family",
-            })?;
-        families.insert(0, xiaolai);
+    // The CJK subset trigger was evaluated once for the scene, so Xiaolai is
+    // declared exactly when glyph selection could have shaped a run with it.
+    if scene.cjk_subset_trigger.selects_xiaolai() {
+        if let Some(excalifont) = families.iter().find(|family| family.family == "Excalifont") {
+            let xiaolai = svg_fonts::FamilyDemand::from_scalars("Xiaolai", &excalifont.scalars)
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "svg_font_demand",
+                    subject: "xiaolai_scalar_set",
+                })?;
+            families
+                .try_reserve(1)
+                .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "svg_font_demand",
+                    subject: "xiaolai_family",
+                })?;
+            families.insert(0, xiaolai);
+        }
     }
     Ok(svg_fonts::Demand { families })
 }
@@ -61,7 +63,6 @@ pub(super) fn svg_font_demand_estimates(
     const UNICODE_WORDS: usize = 0x11_0000_usize.div_ceil(u64::BITS as usize);
     let mut family_order = [None; 8];
     let mut family_count = 0_usize;
-    let mut excalifont_has_cjk = false;
     visit_svg_font_text(scene, text_order, |family, text| {
         if text.is_empty() {
             return Ok(());
@@ -77,17 +78,16 @@ pub(super) fn svg_font_demand_estimates(
             *slot = Some(family);
             family_count += 1;
         }
-        if family == "Excalifont" && text.chars().map(u32::from).any(is_cjk) {
-            excalifont_has_cjk = true;
-        }
         Ok(())
     })?;
+    let xiaolai_selected = scene.cjk_subset_trigger.selects_xiaolai()
+        && family_order[..family_count].contains(&Some("Excalifont"));
 
     let mut estimates = [("", 0_usize); 9];
     let mut seen = [0_u64; UNICODE_WORDS];
-    // Slot 0 is reserved for Xiaolai when Excalifont text triggers the CJK
-    // subset; at most eight families follow, so nine slots always suffice.
-    let slots = estimates.iter_mut().skip(usize::from(excalifont_has_cjk));
+    // Slot 0 is reserved for Xiaolai when the CJK subset trigger selects it; at
+    // most eight families follow, so nine slots always suffice.
+    let slots = estimates.iter_mut().skip(usize::from(xiaolai_selected));
     for (slot, family) in slots.zip(family_order.into_iter().flatten()) {
         seen.fill(0);
         let mut unique = 0_usize;
@@ -119,7 +119,7 @@ pub(super) fn svg_font_demand_estimates(
         })?;
         *slot = (family, unique);
     }
-    if excalifont_has_cjk {
+    if xiaolai_selected {
         let excalifont = estimates
             .iter()
             .find(|(family, _)| *family == "Excalifont")
@@ -245,10 +245,6 @@ pub(super) const fn resolved_family(font_family: i32) -> &'static str {
         8 => "Comic Shanns",
         _ => "Excalifont",
     }
-}
-
-pub(super) fn is_cjk(scalar: u32) -> bool {
-    excalidraw_render_assets_base::is_cjk_scalar_v1(scalar)
 }
 
 pub(super) fn prune_unused_official_fonts(

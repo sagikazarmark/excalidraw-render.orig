@@ -1,5 +1,6 @@
 use super::*;
 use crate::font_metadata::FamilyMetrics;
+use crate::normalization::NormalizedText;
 
 pub(super) struct ResolvedScene {
     pub(super) logical_width: f64,
@@ -12,6 +13,9 @@ pub(super) struct ResolvedScene {
     pub(super) fallback_font_sfnt: Option<Vec<u8>>,
     pub(super) official_fonts: Vec<ResolvedFont>,
     pub(super) mandatory_notices: Option<notices::MandatoryNotices>,
+    /// The CJK subset trigger's outcome, shared by glyph selection and the SVG
+    /// font demand so they select Xiaolai together or not at all.
+    pub(super) cjk_subset_trigger: text::CjkSubsetTrigger,
 }
 
 pub(super) fn semantic_identity_hex(
@@ -184,6 +188,51 @@ pub(super) enum ResolveSceneError {
     UnboundedGeometry,
 }
 
+/// Whether one text element is a live text occurrence, and if so its bound-text
+/// container. Empty text and bound text whose container does not bind it back
+/// are omitted and contribute nothing, neither glyphs nor font demand.
+fn live_text_occurrence(
+    text_source: &NormalizedText,
+    source_index: usize,
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+) -> Option<Option<usize>> {
+    if text_source.text.is_empty() {
+        return None;
+    }
+    let container_source_index = relationship_element_target(
+        source_index,
+        crate::relationships::RelationshipKind::Mask,
+        relationships,
+    );
+    if container_source_index
+        .is_some_and(|container| !has_reciprocal_bound_text(container, source_index, relationships))
+    {
+        return None;
+    }
+    Some(container_source_index)
+}
+
+/// Evaluates the CJK subset trigger once for the scene, over every live
+/// Excalifont occurrence's rendered `text`. That text is the format-neutral
+/// carrier of the Excalifont font family scalar set: `originalText` only
+/// survives normalization for SVG, and a wrapped `text` keeps every
+/// non-whitespace scalar of its `originalText`. The outcome is carried on the
+/// resolved scene so glyph selection and the SVG font demand share it, even
+/// when local recovery later omits the occurrence that fired it.
+fn cjk_subset_trigger(
+    outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+) -> text::CjkSubsetTrigger {
+    text::CjkSubsetTrigger::evaluate(outlines.iter().filter_map(|(source, _)| {
+        let NormalizedElementKind::Text(text_source) = &source.kind else {
+            return None;
+        };
+        live_text_occurrence(text_source, source.source.source_index(), relationships)?;
+        (text_source.font_family == text::EXCALIFONT_FONT_FAMILY)
+            .then_some(text_source.text.as_str())
+    }))
+}
+
 pub(super) fn format_error_code(format: OutputFormat) -> ErrorCode {
     match format {
         OutputFormat::Svg => ErrorCode::ENCODE_SVG_FAILED,
@@ -232,6 +281,7 @@ impl ResolvedScene {
             fallback_font_sfnt: None,
             official_fonts: Vec::new(),
             mandatory_notices: None,
+            cjk_subset_trigger: text::CjkSubsetTrigger::default(),
         })
     }
 
@@ -511,6 +561,7 @@ impl ResolvedScene {
             }
         }
         let mut official_fonts = Vec::<text::OfficialFont>::new();
+        let cjk_subset_trigger = cjk_subset_trigger(&outlines, relationships);
         let mut has_label = false;
         let frame_name_color = match request.color_mode() {
             crate::ColorMode::Light => FRAME_NAME_COLOR_LIGHT,
@@ -585,23 +636,11 @@ impl ResolvedScene {
                 continue;
             }
             if let NormalizedElementKind::Text(text_source) = &source.kind {
-                if text_source.text.is_empty() {
+                let Some(container_source_index) =
+                    live_text_occurrence(text_source, source.source.source_index(), relationships)
+                else {
                     continue;
-                }
-                let container_source_index = relationship_element_target(
-                    source.source.source_index(),
-                    crate::relationships::RelationshipKind::Mask,
-                    relationships,
-                );
-                if container_source_index.is_some_and(|container| {
-                    !has_reciprocal_bound_text(
-                        container,
-                        source.source.source_index(),
-                        relationships,
-                    )
-                }) {
-                    continue;
-                }
+                };
                 let container_source_order = container_source_index.and_then(|container| {
                     relationships
                         .nodes
@@ -657,6 +696,7 @@ impl ResolvedScene {
                             text_align: &text_source.text_align,
                             font_family: text_source.font_family,
                         },
+                        cjk_subset_trigger,
                     )
                     .map_err(|error| match error {
                         text::LabelError::Memory => ResolveSceneError::Memory,
@@ -840,6 +880,7 @@ impl ResolvedScene {
                                         text_align: "center",
                                         font_family: EMBEDDABLE_LABEL_FONT_FAMILY,
                                     },
+                                    cjk_subset_trigger,
                                 )
                                 .map_err(|error| match error {
                                     text::LabelError::Memory => ResolveSceneError::Memory,
@@ -1068,6 +1109,7 @@ impl ResolvedScene {
             fallback_font_sfnt,
             official_fonts: resolved_fonts,
             mandatory_notices,
+            cjk_subset_trigger,
         }))
     }
 

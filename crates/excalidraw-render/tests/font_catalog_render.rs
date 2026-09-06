@@ -1,5 +1,8 @@
 use base64::Engine as _;
-use excalidraw_render::{DiagnosticCode, OutputFormat, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{
+    DiagnosticCode, ErrorDetails, OutputFormat, Recovery, RenderRequest, Renderer, ResourceLimits,
+    SceneDocument,
+};
 
 #[test]
 fn admitted_latin_font_families_render_with_their_bundled_faces() {
@@ -228,6 +231,229 @@ fn excalifont_uses_ordered_cjk_and_emoji_fallbacks_in_every_format() {
 }
 
 #[test]
+fn xiaolai_only_joins_excalifont_fallback_when_the_cjk_subset_trigger_fires() {
+    // U+20A9 WON SIGN is outside every Excalifont declared range and outside
+    // the frozen CJK scalar table, yet inside a Xiaolai chunk's declared range.
+    // Without a CJK scalar in Excalifont demand, Xiaolai is not selected, so the
+    // sign is a missing codepoint in every format rather than a Xiaolai glyph
+    // in PNG/PDF and an undeclared `font-family="Xiaolai"` run in SVG.
+    let scene = text_scene(5, "A\u{20a9}");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("request is valid");
+        let first = Renderer::new()
+            .render(&scene, &request)
+            .expect("untriggered Excalifont text renders");
+        let second = Renderer::new()
+            .render(&scene, &request)
+            .expect("repeated untriggered rendering succeeds");
+
+        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+        assert_eq!(first.report(), second.report());
+        let [diagnostic] = first.report().diagnostics() else {
+            panic!("the won sign is one missing codepoint for {format:?}");
+        };
+        assert_eq!(diagnostic.code(), DiagnosticCode::FONT_MISSING_GLYPH);
+        assert_eq!(diagnostic.element_id(), Some("text"));
+        assert!(
+            matches!(
+                diagnostic.details(),
+                Some(ErrorDetails::MissingGlyph {
+                    codepoint: 0x20a9,
+                    recovery: Recovery::Substituted,
+                })
+            ),
+            "the won sign is the substituted codepoint for {format:?}"
+        );
+
+        match format {
+            OutputFormat::Svg => {
+                let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
+                assert!(!svg.contains("Xiaolai"));
+                assert!(svg.contains("font-family:'Excalifont'"));
+                assert!(svg.contains("font-family:'ExcalidrawRender-9'"));
+                assert!(svg.contains(">A</tspan>"));
+                assert!(svg.contains("font-family=\"ExcalidrawRender-9\""));
+                assert!(svg.contains(">?</tspan>"));
+            }
+            OutputFormat::Png => assert!(first.artifact().bytes().starts_with(b"\x89PNG")),
+            OutputFormat::Pdf => {
+                let pdf = String::from_utf8_lossy(first.artifact().bytes());
+                assert!(!pdf.contains("/BaseFont /Xiaolai"));
+                assert!(pdf.contains("/BaseFont /Excalifont"));
+                assert!(pdf.contains("/BaseFont /LiberationSans"));
+                assert!(pdf.contains("/ActualText <FEFF004120A9>"));
+            }
+            _ => unreachable!("this test covers revision 1 formats"),
+        }
+    }
+}
+
+#[test]
+fn the_cjk_subset_trigger_extends_xiaolai_to_every_excalifont_text_in_the_scene() {
+    // The trigger is evaluated over the scene's complete Excalifont demand, so
+    // a CJK scalar in a later element already lets Xiaolai serve the won sign in
+    // an earlier one; the SVG declares Xiaolai once for both.
+    let scene = SceneDocument::parse(
+        br#"{"type":"excalidraw","version":2,"elements":[
+            {"id":"won","type":"text","width":160,"height":40,"fontSize":20,"fontFamily":5,"text":"\u20a9","updated":1},
+            {"id":"han","type":"text","x":180,"width":160,"height":40,"fontSize":20,"fontFamily":5,"text":"\u4e2d","updated":2}
+        ],"appState":{},"files":{}}"#,
+    )
+    .expect("triggered scene is admitted");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("request is valid");
+        let outcome = Renderer::new()
+            .render(&scene, &request)
+            .expect("triggered Excalifont scene renders");
+        assert!(
+            outcome.report().is_empty(),
+            "Xiaolai serves both elements silently for {format:?}"
+        );
+        match format {
+            OutputFormat::Svg => {
+                let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+                assert!(svg.contains("font-family:'Xiaolai'"));
+                assert_eq!(svg.matches("<tspan font-family=\"Xiaolai\"").count(), 2);
+                assert!(svg.contains(">\u{20a9}</tspan>"));
+                assert!(svg.contains(">\u{4e2d}</tspan>"));
+                assert!(!svg.contains(">?</tspan>"));
+            }
+            OutputFormat::Png => assert!(outcome.artifact().bytes().starts_with(b"\x89PNG")),
+            OutputFormat::Pdf => {
+                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                assert!(pdf.contains("/BaseFont /Xiaolai"));
+                assert!(!pdf.contains("/BaseFont /LiberationSans"));
+                assert!(pdf.contains("/ActualText <FEFF20A9>"));
+                assert!(pdf.contains("/ActualText <FEFF4E2D>"));
+            }
+            _ => unreachable!("this test covers revision 1 formats"),
+        }
+    }
+}
+
+#[test]
+fn xiaolai_stays_declared_when_local_recovery_omits_the_text_that_fired_the_trigger() {
+    // The trigger is evaluated once, before per-element local recovery, and
+    // carried with the resolved scene. When the only CJK text is then omitted
+    // for exceeding its work limit, the surviving won sign still renders with
+    // Xiaolai in every format and the SVG still declares the face it uses,
+    // rather than emitting a run in an undeclared family.
+    let han = "\u{4e2d}".repeat(400);
+    let scene = SceneDocument::parse(
+        format!(
+            r#"{{"type":"excalidraw","version":2,"elements":[
+                {{"id":"won","type":"text","width":160,"height":40,"fontSize":20,"fontFamily":5,"text":"\u20a9","updated":1}},
+                {{"id":"han","type":"text","x":180,"width":8000,"height":40,"fontSize":20,"fontFamily":5,"text":"{han}","updated":2}}
+            ],"appState":{{}},"files":{{}}}}"#
+        )
+        .as_bytes(),
+    )
+    .expect("omission scene is admitted");
+    let limits = ResourceLimits::builder()
+        .max_element_work_units(60_000)
+        .build()
+        .expect("element work limit is valid");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .resource_limits(limits.clone())
+            .build()
+            .expect("request is valid");
+        let outcome = Renderer::new()
+            .render(&scene, &request)
+            .expect("the omitted text leaves a meaningful artifact");
+        let codes = outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .map(|diagnostic| (diagnostic.element_id(), diagnostic.code()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            codes,
+            [(Some("han"), DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED)],
+            "only the CJK text is omitted for {format:?}"
+        );
+        match format {
+            OutputFormat::Svg => {
+                let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+                assert!(svg.contains("font-family:'Xiaolai'"));
+                assert_eq!(svg.matches("<tspan font-family=\"Xiaolai\"").count(), 1);
+                assert!(svg.contains(">\u{20a9}</tspan>"));
+                assert!(!svg.contains('\u{4e2d}'));
+            }
+            OutputFormat::Png => assert!(outcome.artifact().bytes().starts_with(b"\x89PNG")),
+            OutputFormat::Pdf => {
+                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                assert!(pdf.contains("/BaseFont /Xiaolai"));
+                assert!(pdf.contains("/ActualText <FEFF20A9>"));
+                assert!(!pdf.contains("4E2D"));
+            }
+            _ => unreachable!("this test covers revision 1 formats"),
+        }
+    }
+}
+
+#[test]
+fn pdf_embeds_the_pinned_face_whose_declared_range_covers_the_text() {
+    // Every Nunito chunk carries an `A` glyph, so glyph coverage alone cannot
+    // choose a face and catalog order would embed the Cyrillic chunk. Face
+    // selection follows declared Unicode ranges in pinned face order, so Latin
+    // text embeds the Latin chunk: the one mapping U+00E9 and not U+0416.
+    let scene = text_scene(6, "A");
+    let request = RenderRequest::builder(OutputFormat::Pdf)
+        .build()
+        .expect("PDF request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("Nunito renders");
+    let fonts = embedded_pdf_fonts(outcome.artifact().bytes());
+    let [font] = fonts.as_slice() else {
+        panic!("one Nunito face is embedded, found {}", fonts.len());
+    };
+    let face = rustybuzz::Face::from_slice(font, 0).expect("embedded font parses");
+
+    assert!(face.glyph_index('A').is_some());
+    assert!(
+        face.glyph_index('\u{e9}').is_some(),
+        "the Latin chunk maps é"
+    );
+    assert!(
+        face.glyph_index('\u{416}').is_none(),
+        "the Latin chunk does not map Ж"
+    );
+
+    // Text spanning two declared ranges embeds the chunk declaring each scalar,
+    // as the SVG selects them, even though the Cyrillic chunk alone maps both.
+    let scene = text_scene(6, "A\u{416}");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("multi-range Nunito renders");
+    assert!(outcome.report().is_empty());
+    let fonts = embedded_pdf_fonts(outcome.artifact().bytes());
+    let faces = fonts
+        .iter()
+        .map(|font| rustybuzz::Face::from_slice(font, 0).expect("embedded font parses"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        faces.len(),
+        2,
+        "the Latin and the Cyrillic chunk are embedded"
+    );
+    assert!(faces.iter().any(|face| {
+        face.glyph_index('\u{e9}').is_some() && face.glyph_index('\u{416}').is_none()
+    }));
+    assert!(faces.iter().any(|face| {
+        face.glyph_index('\u{416}').is_some() && face.glyph_index('\u{e9}').is_none()
+    }));
+}
+
+#[test]
 fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
     let scene = text_scene(9, "abc \u{5d0}\u{5d1}\u{5d2} 123");
 
@@ -391,6 +617,34 @@ fn embedded_woff2(svg: &str) -> Vec<Vec<u8>> {
                 .expect("font data URL is valid base64"),
         );
         remaining = rest;
+    }
+    fonts
+}
+
+/// Every embedded `FontFile2` stream: the PDF writes them uncompressed with
+/// `/Length1` naming the complete sfnt length.
+fn embedded_pdf_fonts(pdf: &[u8]) -> Vec<Vec<u8>> {
+    const MARKER: &[u8] = b"/Length1 ";
+    const STREAM: &[u8] = b">>\nstream\n";
+    let mut fonts = Vec::new();
+    let mut offset = 0;
+    while let Some(position) = pdf[offset..]
+        .windows(MARKER.len())
+        .position(|window| window == MARKER)
+    {
+        let start = offset + position + MARKER.len();
+        let digits = pdf[start..]
+            .iter()
+            .take_while(|byte| byte.is_ascii_digit())
+            .count();
+        let length = std::str::from_utf8(&pdf[start..start + digits])
+            .expect("font length is ASCII")
+            .parse::<usize>()
+            .expect("font length is numeric");
+        let stream_start = start + digits + 1 + STREAM.len();
+        assert_eq!(&pdf[start + digits + 1..stream_start], STREAM);
+        fonts.push(pdf[stream_start..stream_start + length].to_vec());
+        offset = stream_start + length;
     }
     fonts
 }
