@@ -105,7 +105,7 @@ fn materializes_a_target_report_from_one_qualification_measurement_line() {
     );
     assert_eq!(
         report["schema"],
-        json!("excalidraw-render/svg-font-subset-target-evidence/v2")
+        json!("excalidraw-render/svg-font-subset-target-evidence/v3")
     );
     assert_eq!(report["target"], json!("x86_64-unknown-linux-gnu"));
     assert_eq!(report["commit"], json!(TESTED_COMMIT));
@@ -119,7 +119,7 @@ fn materializes_a_target_report_from_one_qualification_measurement_line() {
     );
 
     let schema =
-        read_json(&root.join("tests/conformance/svg-font-subset-target-evidence-v2.schema.json"));
+        read_json(&root.join("tests/conformance/svg-font-subset-target-evidence-v3.schema.json"));
     let validator = jsonschema::validator_for(&schema).expect("target report schema compiles");
     let violations = validator
         .iter_errors(&report)
@@ -133,16 +133,11 @@ fn materializes_a_target_report_from_one_qualification_measurement_line() {
     fs::remove_dir_all(&directory).expect("remove test temp directory");
 }
 
-const TARGETS: [&str; 5] = [
-    "aarch64-apple-darwin",
-    "wasm32-unknown-unknown",
-    "x86_64-apple-darwin",
-    "x86_64-pc-windows-msvc",
-    "x86_64-unknown-linux-gnu",
-];
+/// The supported targets (spec §10, ADR-0006), in canonical order.
+const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"];
 
 /// Materializes one report per supported target from the same qualification
-/// log, the way the workflow's five target jobs do, into `directory/reports`.
+/// log, the way the workflow's target jobs do, into `directory/reports`.
 fn materialize_all_targets(directory: &Path, measurement: &Value) -> PathBuf {
     let log = directory.join("qualification.log");
     fs::write(&log, format!("{MEASUREMENT_PREFIX}{measurement}\n"))
@@ -162,7 +157,7 @@ fn materialize_all_targets(directory: &Path, measurement: &Value) -> PathBuf {
 }
 
 #[test]
-fn aggregates_five_agreeing_target_reports_into_a_passing_aggregate() {
+fn aggregates_every_supported_target_report_into_a_passing_aggregate() {
     let directory = temp_directory("aggregate-pass");
     let measurement = committed_measurement();
     let reports = materialize_all_targets(&directory, &measurement);
@@ -178,7 +173,7 @@ fn aggregates_five_agreeing_target_reports_into_a_passing_aggregate() {
     let aggregate = read_json(&aggregate);
     assert_eq!(
         aggregate["schema"],
-        json!("excalidraw-render/svg-font-subset-target-aggregate/v2")
+        json!("excalidraw-render/svg-font-subset-target-aggregate/v3")
     );
     assert_eq!(aggregate["decision"], json!("pass"));
     assert_eq!(aggregate["commit"], json!(TESTED_COMMIT));
@@ -197,7 +192,7 @@ fn aggregates_five_agreeing_target_reports_into_a_passing_aggregate() {
 
 #[test]
 fn rejects_an_incomplete_target_report_set() {
-    let directory = temp_directory("aggregate-four");
+    let directory = temp_directory("aggregate-incomplete");
     let reports = materialize_all_targets(&directory, &committed_measurement());
     fs::remove_file(reports.join("wasm32-unknown-unknown.json")).expect("drop the WASM report");
 
@@ -208,7 +203,7 @@ fn rejects_an_incomplete_target_report_set() {
             reports.to_str().unwrap(),
             directory.join("aggregate.json").to_str().unwrap(),
         ]),
-        "expected 5 target reports, got 4",
+        "expected 2 target reports, got 1",
     );
 
     fs::remove_dir_all(&directory).expect("remove test temp directory");
@@ -218,10 +213,10 @@ fn rejects_an_incomplete_target_report_set() {
 fn rejects_target_reports_that_disagree_on_the_tested_commit() {
     let directory = temp_directory("aggregate-disagree");
     let reports = materialize_all_targets(&directory, &committed_measurement());
-    let windows = reports.join("x86_64-pc-windows-msvc.json");
-    let mut report = read_json(&windows);
+    let wasm = reports.join("wasm32-unknown-unknown.json");
+    let mut report = read_json(&wasm);
     report["commit"] = json!("fedcba9876543210fedcba9876543210fedcba98");
-    fs::write(&windows, serde_json::to_vec_pretty(&report).unwrap()).expect("rewrite report");
+    fs::write(&wasm, serde_json::to_vec_pretty(&report).unwrap()).expect("rewrite report");
 
     assert_rejected(
         &xtask(&[
@@ -231,6 +226,31 @@ fn rejects_target_reports_that_disagree_on_the_tested_commit() {
             directory.join("aggregate.json").to_str().unwrap(),
         ]),
         "target reports disagree at commit",
+    );
+
+    fs::remove_dir_all(&directory).expect("remove test temp directory");
+}
+
+/// ADR-0006: a target outside the supported set has no report to give.
+#[test]
+fn rejects_a_report_for_a_target_outside_the_supported_set() {
+    let directory = temp_directory("materialize-unsupported");
+    let log = directory.join("qualification.log");
+    fs::write(
+        &log,
+        format!("{MEASUREMENT_PREFIX}{}\n", committed_measurement()),
+    )
+    .expect("write qualification log");
+
+    assert_rejected(
+        &xtask(&[
+            "conformance",
+            "materialize-svg-font-subset-target",
+            "x86_64-apple-darwin",
+            log.to_str().unwrap(),
+            directory.join("report.json").to_str().unwrap(),
+        ]),
+        "unsupported target",
     );
 
     fs::remove_dir_all(&directory).expect("remove test temp directory");

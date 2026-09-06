@@ -7,7 +7,7 @@
 
 /// `wasm32-unknown-unknown` has no stdout, so the qualification measurement
 /// line that `render/font_subset_qualification.rs` prints with `println!`
-/// never reaches `wasm-bindgen-test-runner`, and the five-target aggregate
+/// never reaches `wasm-bindgen-test-runner`, and the supported-target aggregate
 /// cannot assemble (ADR-0003). That file is pinned by the #99 approval until
 /// the refresh, so WASM test builds route `println!` to the browser console
 /// here instead — textual macro scoping applies this to every module declared

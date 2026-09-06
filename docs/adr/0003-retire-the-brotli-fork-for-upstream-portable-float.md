@@ -101,7 +101,10 @@ is dropped. `crates/excalidraw-render/src/lib.rs` — not pinned by any approval
 — now carries a `cfg(all(test, target_arch = "wasm32"))` `println!` shim that
 routes to `wasm_bindgen_test::console_log!`; textual macro scoping applies it
 inside the pinned module without changing a byte of it. The refresh still moves
-the fix to the call site and deletes the shim in the same change-set.
+the fix to the call site and deletes the shim in the same change-set. Later the
+same day ADR-0006 narrowed the supported targets to Linux and browser WASM, so
+the "five-target aggregate" this record waits for is now a two-target one; the
+macOS and Windows legs named above are no longer read at all.
 
 Two decisions taken on 2026-09-05 re-sequence the rest of stage C.
 

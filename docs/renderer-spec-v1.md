@@ -1200,13 +1200,13 @@ through ordinary reviewed dependency changes.
 Supported targets are exactly:
 
 - `x86_64-unknown-linux-gnu`.
-- `x86_64-apple-darwin`.
-- `aarch64-apple-darwin`.
-- `x86_64-pc-windows-msvc`.
 - `wasm32-unknown-unknown` in the pinned Chromium harness.
 
 Every target executes renderer and deterministic-output tests. Cross-compilation
-alone is insufficient. `rust-version` equals the official stable compiler. The
+alone is insufficient. Adding a target is a spec amendment that requires the
+target to execute the qualification with the pinned tool identities and agree
+on the committed cross-target measurement first (ADR-0006). `rust-version`
+equals the official stable compiler. The
 first release promises no explicit native deployment floor beyond the target OS
 ABI; release notes record toolchain and immutable builder identity.
 
@@ -2358,13 +2358,14 @@ supported native target and executed `wasm32-unknown-unknown`, including cold,
 warm, request-cache, and frame-batch-cache paths. Artifact bytes are evidence
 per qualification cell. Trace stability is instead evidenced as a cross-target
 equality property: each target computes its trace measurement fresh, the
-aggregation job compares all five, and the agreed measurement is committed as a
-reviewable artifact that every aggregation re-asserts. The five-target aggregate
-itself is recorded verbatim into the release evidence bundle, bound to the
-corpus, font subset profile, viewer approval, and committed measurement it was
-produced for; the bundle's decision stays pending until it is recorded and
-fails closed once any of those four bindings moves. Per-cell trace digests
-MUST NOT be pinned. Canonical Chromium and the controlled pure-Rust viewer each
+aggregation compares every supported target, and the agreed measurement is
+committed as a reviewable artifact that every aggregation re-asserts. The
+supported-target aggregate itself is recorded verbatim into the release evidence
+bundle, bound to the corpus, font subset profile, viewer approval, and committed
+measurement it was produced for; the bundle's decision stays pending until it is
+recorded and fails closed once any of those four bindings moves. Per-cell trace
+digests MUST NOT be pinned. Canonical Chromium and the controlled pure-Rust
+viewer each
 compare source chunks with generated subsets
 for shaping, glyph choice, metrics, line layout, selectable text, and rasterized
 typography. Both viewers MUST pass independently; source-vs-subset semantic
@@ -2579,8 +2580,8 @@ and only the public API. Every corpus variant renders twice through fresh
 sessions. The risk set also runs in a fresh process with reversed or
 deterministically shuffled order.
 
-Exact artifact and report bytes match canonical snapshots on all five supported
-targets. An aggregation job directly compares target uploads. The risk set
+Exact artifact and report bytes match canonical snapshots on every supported
+target. An aggregation directly compares the targets' reports. The risk set
 covers every backend, numeric/PRNG path, font/fallback, decoder/nested-SVG path,
 frame/clip/mask path, metadata/compression path, diagnostic behavior, fallback,
 and target-sensitive dependency. Pull requests run the release-mode risk set
@@ -2588,8 +2589,8 @@ without path filters. Releases rerun from the protected tag and packaged crates.
 
 ## 15. Release and Upgrade Policy
 
-One complete lockstep release ships through crates.io, GitHub source, and four
-native archives. It includes all formats, retained compatibility revisions,
+One complete lockstep release ships through crates.io, GitHub source, and one
+native archive. It includes all formats, retained compatibility revisions,
 assets, notices, and supported-target evidence.
 
 Every pull request without path filters runs asset/manifest/license/provenance,
@@ -2598,8 +2599,8 @@ checks. It runs `cargo package` and `cargo publish --dry-run` for every publishe
 package, enforces compressed-size and package-file allowlists, verifies complete
 licenses/notices and lockstep exact internal dependencies, and builds/tests from
 packaged sources. It also runs full canonical Linux conformance; release-mode
-artifact/report risk tests and direct aggregation across all four native targets
-and browser WASM; and the browser public-API smoke. Each supported target
+artifact/report risk tests and direct aggregation across every supported
+target; and the browser public-API smoke. Each supported target
 executes tests rather than only cross-compiling. Release CI repeats the complete matrix from the protected tag
 and packaged crate sources.
 

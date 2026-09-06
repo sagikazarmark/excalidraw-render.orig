@@ -39,16 +39,16 @@
     },
     "generatorAndAggregator": {
       "path": "xtask/src/svg_font_subset_targets.rs",
-      "sha256": "2bf512a72d907ccaa3bfff53c0ce97cf2ba4571f7e67593c6416aa5552b8b005"
+      "sha256": "fd65e8f15d910cd10c95183cf491a99bd9aac25e56ee5919b9c9cf46714ebf38"
     },
     "reportSchema": {
-      "path": "tests/conformance/svg-font-subset-target-evidence-v2.schema.json",
-      "sha256": "e1260b6d1e2efcd44d110e11d6e3ae356873e03dd5974cd02d74f1cc91a9187a"
+      "path": "tests/conformance/svg-font-subset-target-evidence-v3.schema.json",
+      "sha256": "705b0239114113a4543dbfea022fe0c5598f8c83475f3366fb4492d89dbf4ce5"
     },
     "status": "pending_ci",
     "workflow": {
       "path": ".github/workflows/packaged-public-facade.yml",
-      "sha256": "5c6573003b69e4db48102a5458b2e6b45b56a90a07027139f58b8503eac8be14"
+      "sha256": "51d1d972eeb799ba5fc036704cafe28ce5f91ebf4b425a29f1e3bbf7d72ea07d"
     }
   },
   "viewerEvidence": {

@@ -6,8 +6,8 @@ use std::fs;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-const REPORT_SCHEMA: &str = "excalidraw-render/svg-font-subset-target-evidence/v2";
-const AGGREGATE_SCHEMA: &str = "excalidraw-render/svg-font-subset-target-aggregate/v2";
+const REPORT_SCHEMA: &str = "excalidraw-render/svg-font-subset-target-evidence/v3";
+const AGGREGATE_SCHEMA: &str = "excalidraw-render/svg-font-subset-target-aggregate/v3";
 const CROSS_TARGET_SCHEMA: &str = "excalidraw-render/svg-font-subset-cross-target-measurement/v1";
 /// Committed cross-target qualification measurement. Canonical resource traces
 /// are held stable by cross-target equality rather than by per-cell pins
@@ -17,20 +17,19 @@ const CROSS_TARGET_PATH: &str =
     "tests/conformance/svg-font-subset-cross-target-measurement/revision-1.json";
 const RELEASE_ID: &str = "svg-font-subsets.release-evidence.revision-1.v1";
 const RELEASE_PATH: &str = "tests/conformance/svg-font-subset-release-evidence/revision-1.json";
-/// The verbatim copy of the five-target aggregate that CI uploaded, once the
-/// maintainer has recorded it into the release evidence.
+/// The verbatim copy of the supported-target aggregate, once the maintainer has
+/// recorded it into the release evidence.
 const AGGREGATE_PATH: &str = "tests/conformance/svg-font-subset-target-aggregate/revision-1.json";
-/// Only a run of this repository's workflow can have produced the aggregate.
+/// The aggregate's provenance is either one run of this repository's workflow
+/// or, while GitHub Actions is unavailable, the maintainer's attestation
+/// comment on an issue of this repository (ADR-0006).
 const RUN_URL_PREFIX: &str =
     "https://github.com/sagikazarmark/excalidraw-render.orig/actions/runs/";
+const ATTESTATION_URL_PREFIX: &str =
+    "https://github.com/sagikazarmark/excalidraw-render.orig/issues/";
 const MEASUREMENT_PREFIX: &str = "SVG_FONT_SUBSET_TARGET_MEASUREMENT=";
-const TARGETS: [&str; 5] = [
-    "aarch64-apple-darwin",
-    "wasm32-unknown-unknown",
-    "x86_64-apple-darwin",
-    "x86_64-pc-windows-msvc",
-    "x86_64-unknown-linux-gnu",
-];
+/// The supported targets (spec §10, ADR-0006), in canonical order.
+const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"];
 /// The fields every target report, and the aggregate built from them, must
 /// agree on.
 const AGREED_FIELDS: [&[&str]; 8] = [
@@ -48,9 +47,9 @@ const AGREED_FIELDS: [&[&str]; 8] = [
 /// carries the state as its `targetEvidence.status` / `decision` pair.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum TargetEvidenceState {
-    /// CI has not yet produced the five-target aggregate for this evidence.
+    /// No supported-target aggregate has been produced for this evidence yet.
     PendingCi,
-    /// The five-target aggregate is recorded and bound to this evidence.
+    /// The supported-target aggregate is recorded and bound to this evidence.
     Aggregated,
 }
 
@@ -223,7 +222,7 @@ pub(crate) fn aggregate(input: &str, output: &str) -> Result<(), String> {
 }
 
 /// Every report in the set is valid, the set names every supported target
-/// exactly once in canonical order, and all five agree on the fields the
+/// exactly once in canonical order, and all of them agree on the fields the
 /// aggregate carries.
 fn verify_report_set(reports: &[Value]) -> Result<(), String> {
     for report in reports {
@@ -249,9 +248,9 @@ fn verify_report_set(reports: &[Value]) -> Result<(), String> {
     Ok(())
 }
 
-/// A CI-produced aggregate is internally consistent: identity, a passing
-/// decision, five agreeing target reports, and top-level fields that restate
-/// what the reports agreed on.
+/// An aggregate is internally consistent: identity, a passing decision, one
+/// agreeing report per supported target, and top-level fields that restate what
+/// the reports agreed on.
 fn validate_aggregate(aggregate: &Value) -> Result<(), String> {
     if required_string(aggregate, "schema")? != AGGREGATE_SCHEMA
         || required_path(aggregate, &["compatibility_revision"]) != Ok(&json!(1))
@@ -274,24 +273,31 @@ fn validate_aggregate(aggregate: &Value) -> Result<(), String> {
     Ok(())
 }
 
-/// `<prefix><run id>` or `<prefix><run id>/attempts/<attempt>`: the URL GitHub
-/// shows for one workflow run, and nothing that merely starts with it.
-fn valid_run_url(url: &str) -> bool {
-    let Some(rest) = url.strip_prefix(RUN_URL_PREFIX) else {
-        return false;
-    };
+/// One workflow run — `<run id>` or `<run id>/attempts/<attempt>` under the
+/// Actions prefix — or one attestation comment, `<issue>#issuecomment-<id>`
+/// under the issues prefix; nothing that merely starts with either.
+fn valid_provenance_url(url: &str) -> bool {
     let digits = |value: &str| !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit());
-    match rest.split_once("/attempts/") {
-        None => digits(rest),
-        Some((run, attempt)) => digits(run) && digits(attempt),
+    if let Some(rest) = url.strip_prefix(RUN_URL_PREFIX) {
+        return match rest.split_once("/attempts/") {
+            None => digits(rest),
+            Some((run, attempt)) => digits(run) && digits(attempt),
+        };
     }
+    if let Some(rest) = url.strip_prefix(ATTESTATION_URL_PREFIX) {
+        return match rest.split_once("#issuecomment-") {
+            Some((issue, comment)) => digits(issue) && digits(comment),
+            None => false,
+        };
+    }
+    false
 }
 
 /// The release evidence bundle together with every committed file whose
 /// content the manifest binds: the viewer qualification (approval subject), the
 /// font subset profile (semantic digest), the committed cross-target
-/// measurement, and the recorded five-target aggregate once CI has produced
-/// one. Digests of pinned files are the I/O layer's business
+/// measurement, and the recorded supported-target aggregate once one has been
+/// produced. Digests of pinned files are the I/O layer's business
 /// (`verify_descriptors`); this type owns every content rule.
 struct ReleaseEvidence {
     manifest: Value,
@@ -332,8 +338,8 @@ impl ReleaseEvidence {
     }
 
     /// Verifies every content rule and returns the target-evidence state:
-    /// pending until CI has produced the five-target aggregate, or aggregated
-    /// once the aggregate is recorded and still bound to the current corpus,
+    /// pending until a supported-target aggregate exists, or aggregated once
+    /// the aggregate is recorded and still bound to the current corpus,
     /// profile, viewer approval, and committed measurement.
     fn verify(&self) -> Result<TargetEvidenceState, String> {
         let manifest = &self.manifest;
@@ -389,9 +395,10 @@ impl ReleaseEvidence {
             64,
             "recorded aggregate digest",
         )?;
-        if !valid_run_url(required_string(recorded, "runUrl")?) {
+        if !valid_provenance_url(required_string(recorded, "provenanceUrl")?) {
             return Err(format!(
-                "recorded aggregate run URL is not a {RUN_URL_PREFIX}<run> URL"
+                "recorded aggregate provenance URL is neither a {RUN_URL_PREFIX}<run> \
+                 nor a {ATTESTATION_URL_PREFIX}<issue>#issuecomment-<id> URL"
             ));
         }
         validate_aggregate(aggregate)?;
@@ -436,7 +443,7 @@ impl ReleaseEvidence {
         self,
         aggregate: Value,
         artifact_sha256: &str,
-        run_url: &str,
+        provenance_url: &str,
     ) -> Result<Self, String> {
         if self.verify()? != TargetEvidenceState::PendingCi {
             return Err(
@@ -459,7 +466,7 @@ impl ReleaseEvidence {
             json!({
                 "commit": commit,
                 "path": AGGREGATE_PATH,
-                "runUrl": run_url,
+                "provenanceUrl": provenance_url,
                 "sha256": artifact_sha256,
             }),
         );
@@ -492,34 +499,35 @@ fn verify_release_in(root: &Path) -> Result<TargetEvidenceState, String> {
     Ok(state)
 }
 
-/// Records the five-target aggregate that the packaged-public-facade workflow
-/// uploaded as `svg-font-subset-target-aggregate`: the downloaded artifact is
-/// copied verbatim to `AGGREGATE_PATH` and the release evidence moves to
-/// aggregated with decision `pass`. Both writes are reviewable diffs; nothing
-/// is written unless the pending bundle verifies today and the bound bundle
-/// verifies afterwards. The aggregate's commit must be reachable from `HEAD`;
-/// beyond that it is provenance, because the content bindings — corpus,
+/// Records the supported-target aggregate — the packaged-public-facade
+/// workflow's `svg-font-subset-target-aggregate` artifact, or the same file
+/// produced off-CI from attested target reports: it is copied verbatim to
+/// `AGGREGATE_PATH` and the release evidence moves to aggregated with decision
+/// `pass`. Both writes are reviewable diffs; nothing is written unless the
+/// pending bundle verifies today and the bound bundle verifies afterwards. The
+/// aggregate's commit must be reachable from `HEAD`; beyond that it and the
+/// provenance URL are provenance, because the content bindings — corpus,
 /// profile, viewer approval, measurement — are what keep the record honest
 /// across later commits.
-pub(crate) fn record_aggregate(aggregate_path: &str, run_url: &str) -> Result<(), String> {
+pub(crate) fn record_aggregate(aggregate_path: &str, provenance_url: &str) -> Result<(), String> {
     let root = repo_root();
     let bytes = fs::read(aggregate_path)
         .map_err(|error| format!("failed to read aggregate {aggregate_path}: {error}"))?;
     let aggregate: Value = serde_json::from_slice(&bytes)
         .map_err(|error| format!("failed to parse aggregate {aggregate_path}: {error}"))?;
     require_ancestor_of_head(&root, required_string(&aggregate, "commit")?)?;
-    record_aggregate_in(&root, &bytes, aggregate, run_url)
+    record_aggregate_in(&root, &bytes, aggregate, provenance_url)
 }
 
 fn record_aggregate_in(
     root: &Path,
     bytes: &[u8],
     aggregate: Value,
-    run_url: &str,
+    provenance_url: &str,
 ) -> Result<(), String> {
     let evidence = ReleaseEvidence::load(root)?;
     verify_descriptors(root, &evidence.manifest)?;
-    let bound = evidence.bind_aggregate(aggregate, &sha256(bytes), run_url)?;
+    let bound = evidence.bind_aggregate(aggregate, &sha256(bytes), provenance_url)?;
     write_bytes(&root.join(AGGREGATE_PATH), bytes)?;
     write_json(&root.join(RELEASE_PATH), &bound.manifest)
 }
@@ -532,8 +540,8 @@ pub(crate) fn materialize_cross_target(test_log: &str) -> Result<(), String> {
     write_cross_target(&repo_root().join(CROSS_TARGET_PATH), &measurement)
 }
 
-/// Compares the measurement all five targets agreed on against the committed
-/// evidence. On disagreement the committed file is rewritten in place before the
+/// Compares the measurement every supported target agreed on against the
+/// committed evidence. On disagreement the committed file is rewritten in place before the
 /// error is returned, so refreshing it is a mechanical step — re-run, read the
 /// diff, commit it — rather than a hand-transcribed digest.
 fn verify_cross_target_measurement(root: &Path, measurement: &Value) -> Result<(), String> {
@@ -716,9 +724,10 @@ fn write_bytes(path: &Path, bytes: &[u8]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        record_aggregate_in, valid_run_url, verify_release_in, ReleaseEvidence,
-        TargetEvidenceState, AGGREGATE_PATH, AGGREGATE_SCHEMA, CROSS_TARGET_PATH,
-        CROSS_TARGET_SCHEMA, RELEASE_PATH, REPORT_SCHEMA, RUN_URL_PREFIX, TARGETS,
+        record_aggregate_in, valid_provenance_url, verify_release_in, ReleaseEvidence,
+        TargetEvidenceState, AGGREGATE_PATH, AGGREGATE_SCHEMA, ATTESTATION_URL_PREFIX,
+        CROSS_TARGET_PATH, CROSS_TARGET_SCHEMA, RELEASE_PATH, REPORT_SCHEMA, RUN_URL_PREFIX,
+        TARGETS,
     };
     use crate::conformance::{repo_root, sha256};
     use serde_json::{json, Value};
@@ -777,7 +786,7 @@ mod tests {
         manifest["targetEvidence"]["aggregate"] = json!({
             "commit": COMMIT,
             "path": AGGREGATE_PATH,
-            "runUrl": RUN_URL,
+            "provenanceUrl": RUN_URL,
             "sha256": ARTIFACT,
         });
         manifest
@@ -797,8 +806,8 @@ mod tests {
         })
     }
 
-    /// What `aggregate-svg-font-subset-targets` uploads when all five targets
-    /// agree.
+    /// What `aggregate-svg-font-subset-targets` uploads when every supported
+    /// target agrees.
     fn aggregate() -> Value {
         json!({
             "schema": AGGREGATE_SCHEMA,
@@ -947,7 +956,7 @@ mod tests {
     #[test]
     fn binding_rejects_an_aggregate_whose_reports_do_not_back_its_summary() {
         let mut aggregate = aggregate();
-        aggregate["targets"][2]["commit"] = json!("fedcba9876543210fedcba9876543210fedcba98");
+        aggregate["targets"][1]["commit"] = json!("fedcba9876543210fedcba9876543210fedcba98");
         assert_rejected(
             bind(pending_manifest(), aggregate, RUN_URL),
             "target reports disagree at commit",
@@ -972,7 +981,7 @@ mod tests {
                 aggregate(),
                 "https://github.com/someone-else/fork/actions/runs/1",
             ),
-            "run URL",
+            "provenance URL",
         );
     }
 
@@ -988,13 +997,18 @@ mod tests {
         );
     }
 
-    /// The URL GitHub shows for a run of this repository's workflow, with or
-    /// without an attempt; nothing that merely shares the prefix.
+    /// Provenance is either the URL GitHub shows for one run of this
+    /// repository's workflow, with or without an attempt, or one attestation
+    /// comment on an issue of this repository (ADR-0006); nothing that merely
+    /// shares a prefix.
     #[test]
-    fn run_urls_are_exactly_one_workflow_run_of_this_repository() {
-        assert!(valid_run_url(&format!("{RUN_URL_PREFIX}123456789")));
-        assert!(valid_run_url(&format!(
+    fn provenance_is_one_workflow_run_or_one_attestation_comment_of_this_repository() {
+        assert!(valid_provenance_url(&format!("{RUN_URL_PREFIX}123456789")));
+        assert!(valid_provenance_url(&format!(
             "{RUN_URL_PREFIX}123456789/attempts/2"
+        )));
+        assert!(valid_provenance_url(&format!(
+            "{ATTESTATION_URL_PREFIX}101#issuecomment-5562204641"
         )));
         for rejected in [
             RUN_URL_PREFIX.to_owned(),
@@ -1002,9 +1016,16 @@ mod tests {
             format!("{RUN_URL_PREFIX}1/../../../other/repo/actions/runs/1"),
             format!("{RUN_URL_PREFIX}1?check_suite_focus=true"),
             format!("{RUN_URL_PREFIX}1/attempts/"),
+            format!("{ATTESTATION_URL_PREFIX}101"),
+            format!("{ATTESTATION_URL_PREFIX}101#issuecomment-"),
+            format!("{ATTESTATION_URL_PREFIX}abc#issuecomment-1"),
             "https://github.com/someone-else/fork/actions/runs/1".to_owned(),
+            "https://github.com/someone-else/fork/issues/1#issuecomment-1".to_owned(),
         ] {
-            assert!(!valid_run_url(&rejected), "{rejected} must be rejected");
+            assert!(
+                !valid_provenance_url(&rejected),
+                "{rejected} must be rejected"
+            );
         }
     }
 

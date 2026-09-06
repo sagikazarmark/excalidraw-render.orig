@@ -27,7 +27,7 @@ content or whole-page rasterization.
 The approved rectangle, Excalifont, and frame-export focused cases run through
 both canonical PDF viewers. The package-consumer risk set pins selectable text,
 source-image, native nested-SVG, and isolated-fallback artifact and report bytes
-on all four native targets and browser-hosted `wasm32-unknown-unknown`.
+on `x86_64-unknown-linux-gnu` and browser-hosted `wasm32-unknown-unknown`.
 
 Run the backend qualification gates after installing the pinned PDF harness:
 
