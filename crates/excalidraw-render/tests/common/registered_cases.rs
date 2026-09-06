@@ -1,6 +1,7 @@
 //! Shared plumbing for the registry-driven parity harnesses: how a registered
-//! export variant's options become a render request, and how a diagnosed but
-//! unfixed defect is pinned.
+//! export variant's options become a render request, and how a divergence a
+//! harness must hold in place, a known defect or a compatibility exception, is
+//! pinned at its exact measurement.
 
 // Each harness binary includes this module by path and uses the part it needs.
 #![allow(dead_code)]
@@ -59,13 +60,21 @@ pub fn variant_request(format: OutputFormat, options: &Value, context: &str) -> 
         .unwrap_or_else(|error| panic!("{context} request is valid: {error:?}"))
 }
 
-/// A diagnosed renderer defect whose fix is pending a decision, tracked by an
-/// issue. It is not an approved tolerance exception and never enters a case
-/// manifest: a defect has no non-defect cause to record. It lives in the harness
-/// that observes it, with its measurement pinned exactly, so the divergence
-/// moving in either direction fails the harness and the entry can neither
-/// outlive the defect nor quietly absorb a second one.
-pub struct KnownDefect {
+/// One variant's exact whole-artifact measurement, held in place by the
+/// harness that observes it and tracked by the issue that carries the decision.
+/// A pin is not a tolerance: the harness fails when the divergence moves in
+/// either direction, so an entry can neither outlive its cause nor quietly
+/// absorb a second one, and every entry must name a variant the registry still
+/// declares, so an orphan cannot pin nothing and never fail.
+///
+/// Two lists use it, and what they pin differs. A known defect is a diagnosed
+/// renderer defect whose fix awaits a decision; it has no non-defect cause to
+/// record, so it never enters a case manifest. A compatibility exception pin
+/// is a specified departure from reference behavior that the case manifest
+/// already excepts on the direct PNG, observed by a harness whose scope that
+/// exception cannot cover; the pin stands for that approved judgment and must
+/// correspond to a recorded exception for the same variant.
+pub struct PinnedDivergence {
     pub case: &'static str,
     pub variant: &'static str,
     pub issue: &'static str,
@@ -73,27 +82,23 @@ pub struct KnownDefect {
     pub ssim_bits: u64,
 }
 
-impl KnownDefect {
+impl PinnedDivergence {
     /// The entry pinning one variant, if any.
-    pub fn lookup<'a>(defects: &'a [Self], case: &str, variant: &str) -> Option<&'a Self> {
-        defects
-            .iter()
-            .find(|defect| defect.case == case && defect.variant == variant)
+    pub fn lookup<'a>(pins: &'a [Self], case: &str, variant: &str) -> Option<&'a Self> {
+        pins.iter()
+            .find(|pin| pin.case == case && pin.variant == variant)
     }
 
-    /// Every entry must name a variant the registry still declares; an entry
-    /// that outlives its variant would otherwise pin nothing and never fail.
-    pub fn assert_all_observed(defects: &[Self], observed: &BTreeSet<(String, String)>) {
-        let orphans: Vec<_> = defects
+    /// Every entry must name a variant the registry still declares.
+    pub fn assert_all_observed(pins: &[Self], observed: &BTreeSet<(String, String)>) {
+        let orphans: Vec<_> = pins
             .iter()
-            .filter(|defect| {
-                !observed.contains(&(defect.case.to_owned(), defect.variant.to_owned()))
-            })
-            .map(|defect| format!("{} [{}]", defect.case, defect.variant))
+            .filter(|pin| !observed.contains(&(pin.case.to_owned(), pin.variant.to_owned())))
+            .map(|pin| format!("{} [{}]", pin.case, pin.variant))
             .collect();
         assert!(
             orphans.is_empty(),
-            "KNOWN_DEFECTS names variants the registry no longer declares: {orphans:?}"
+            "pinned divergences name variants the registry no longer declares: {orphans:?}"
         );
     }
 
@@ -124,8 +129,8 @@ pub fn ssim_bits(report: &ComparisonReport) -> Option<u64> {
 }
 
 /// The observed whole-artifact measurement with the SSIM score's exact bits, in
-/// the form a tolerance exception or a pinned defect records it, so a failure
-/// prints values that can be transcribed verbatim.
+/// the form a tolerance exception or a pinned divergence records it, so a
+/// failure prints values that can be transcribed verbatim.
 pub fn observed(report: &ComparisonReport) -> String {
     match report.whole.ssim {
         SsimOutcome::Score(score) => format!(

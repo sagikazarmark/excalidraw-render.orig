@@ -68,6 +68,10 @@ _Avoid_: Visual exception, known-divergence suppression, test skip
 A diagnosed renderer defect whose fix awaits a maintainer decision, recorded in the parity harness that observes it with its exact measurement pinned and the issue that tracks it named. It is not an approved judgment and never enters a case manifest; the pin fails the harness when the divergence moves in either direction, so the entry can neither outlive the defect nor absorb another one.
 _Avoid_: Tolerance exception for a defect, suppression list, expected failure
 
+**Compatibility exception pin**:
+A compatibility exception's exact measurement, recorded in a parity harness whose scope the case manifest's tolerance exceptions cannot carry, with the issue that carries the decision named. It stands for the whole direct-PNG tolerance exception the same variant records and must correspond to one. Like a known defect it fails the harness when the divergence moves in either direction; unlike a known defect, nothing about it awaits a fix.
+_Avoid_: SVG tolerance exception, known defect for a compatibility exception, harness suppression
+
 **Static export**:
 A deterministic SVG, PNG, or PDF representation of either a whole scene or one frame, without interactive editor overlays or viewport state.
 _Avoid_: Editor snapshot, canvas rendering

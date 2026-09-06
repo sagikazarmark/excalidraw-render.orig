@@ -37,11 +37,13 @@ use excalidraw_render_compare::{
 use png::{BitDepth, ColorType, Decoder, Transformations};
 use serde_json::Value;
 
-use registered_cases::{observed, repository_root, variant_request, visual_class, KnownDefect};
+use registered_cases::{
+    observed, repository_root, variant_request, visual_class, PinnedDivergence,
+};
 
 /// Diagnosed defects whose fix is pending a maintainer decision. See
-/// `KnownDefect` for why these are pinned rather than excepted.
-const KNOWN_DEFECTS: &[KnownDefect] = &[];
+/// `PinnedDivergence` for why these are pinned rather than excepted.
+const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
 
 #[test]
 fn every_registered_scene_case_matches_its_official_direct_png() {
@@ -121,7 +123,7 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
             let candidate = decode_png(outcome.artifact().bytes());
 
             let exception = tolerance_exception(&manifest, variant_id);
-            let defect = KnownDefect::lookup(KNOWN_DEFECTS, id, variant_id);
+            let defect = PinnedDivergence::lookup(KNOWN_DEFECTS, id, variant_id);
             assert!(
                 exception.is_none() || defect.is_none(),
                 "{id} [{variant_id}] is both excepted and a known defect; a defect has no \
@@ -170,7 +172,7 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
     }
 
     assert!(total > 0, "the registry declared no scene cases");
-    KnownDefect::assert_all_observed(KNOWN_DEFECTS, &seen);
+    PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
     assert!(
         failures.is_empty(),
         "{} of {} registered scene cases diverge from their official direct PNG:\n  {}",

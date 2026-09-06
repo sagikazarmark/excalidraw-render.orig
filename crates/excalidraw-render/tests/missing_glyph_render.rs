@@ -1,0 +1,352 @@
+//! Scalars absent from the complete fallback chain shape as the deterministic
+//! basic-Latin `?` from Liberation Sans and report `font.missing-glyph`, while
+//! every format keeps carrying the stored scalars beside the glyphs (spec 8.3).
+//! `focused.missing-glyph.v1` (#124) is the evidence-bearing case; this pins
+//! what its PNG and SVG evidence cannot see: the PDF's embedded faces and
+//! logical text, the PDF report, and repeatability in every format.
+
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use excalidraw_render::{OutputFormat, RenderOutcome, RenderRequest, Renderer, SceneDocument};
+use serde_json::Value;
+
+const CASE: &str = "tests/conformance/cases/focused/missing-glyph";
+
+/// The stored text of both elements: Latin, Linear B U+10000 and U+10001, the
+/// noncharacter U+10FFFF, Latin.
+const SOURCE_TEXT: &str = "Latin \u{10000}\u{10001} \u{10ffff} text";
+
+/// `SOURCE_TEXT` as PDF `ActualText`: UTF-16BE with a byte-order mark, so the
+/// two supplementary-plane scalars are surrogate pairs.
+const ACTUAL_TEXT: &str =
+    "/ActualText <FEFF004C006100740069006E0020D800DC00D800DC010020DBFFDFFF00200074006500780074>";
+
+fn registered_scene() -> SceneDocument {
+    SceneDocument::parse(
+        &fs::read(repository_root().join(CASE).join("scene.excalidraw"))
+            .expect("registered scene is present"),
+    )
+    .expect("registered scene is admitted")
+}
+
+fn render(scene: &SceneDocument, format: OutputFormat) -> RenderOutcome {
+    let request = RenderRequest::builder(format)
+        .build()
+        .expect("default request is valid");
+    Renderer::new()
+        .render(scene, &request)
+        .unwrap_or_else(|error| panic!("{format:?} renders: {error:?}"))
+}
+
+/// The checked expected report for one evidence-bearing format.
+fn checked_report(format: &str) -> Value {
+    serde_json::from_slice(
+        &fs::read(
+            repository_root()
+                .join(CASE)
+                .join(format!("expected-report-{format}.json")),
+        )
+        .expect("checked report is present"),
+    )
+    .expect("checked report is valid JSON")
+}
+
+#[test]
+fn every_format_reports_the_registered_missing_glyph_diagnostics_and_repeats_byte_for_byte() {
+    let scene = registered_scene();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let first = render(&scene, format);
+        let second = render(&scene, format);
+        assert_eq!(
+            first.artifact().bytes(),
+            second.artifact().bytes(),
+            "{format:?} renders byte-identically"
+        );
+        assert_eq!(first.report(), second.report());
+
+        // PNG and SVG carry evidence and a checked report each. The PDF has
+        // neither, so its report is the SVG's six diagnostics under the PDF's
+        // format tag, the one field a diagnostic varies by format.
+        let expected = match format {
+            OutputFormat::Svg => checked_report("svg"),
+            OutputFormat::Png => checked_report("png"),
+            OutputFormat::Pdf => {
+                let mut expected = checked_report("svg");
+                let tag = serde_json::to_value(format).expect("format serializes");
+                for diagnostic in expected["diagnostics"]
+                    .as_array_mut()
+                    .expect("checked report lists diagnostics")
+                {
+                    diagnostic["format"] = tag.clone();
+                }
+                expected
+            }
+            _ => panic!("the test covers the revision-1 format set"),
+        };
+        let diagnostics = expected["diagnostics"]
+            .as_array()
+            .expect("checked report lists diagnostics");
+        assert_eq!(
+            diagnostics.len(),
+            6,
+            "three scalars on each of two elements"
+        );
+        assert!(diagnostics
+            .iter()
+            .all(|diagnostic| diagnostic["code"] == "font.missing-glyph"));
+        assert_eq!(
+            serde_json::to_value(first.report()).expect("report serializes"),
+            expected,
+            "{format:?} report is the registered expectation"
+        );
+    }
+}
+
+#[test]
+fn svg_sets_the_replacement_from_liberation_sans_and_keeps_the_stored_scalars() {
+    let outcome = render(&registered_scene(), OutputFormat::Svg);
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+
+    // The stored text travels beside the glyphs in both elements.
+    assert_eq!(
+        svg.matches(&format!("data-source-text=\"{SOURCE_TEXT}\""))
+            .count(),
+        2
+    );
+    // Excalifont shapes the Latin; the three replacements are Liberation Sans
+    // runs inside the Excalifont element, `??` then `?` around the space.
+    assert!(svg.contains("@font-face{font-family:'Excalifont'"));
+    assert!(svg.contains("@font-face{font-family:'ExcalidrawRender-9'"));
+    assert!(
+        !svg.contains("font-family:'Xiaolai'"),
+        "no scalar is in the CJK table, so Xiaolai stays out"
+    );
+    let excalifont_line = svg
+        .split("font-family=\"Excalifont\" font-size=\"20\"")
+        .nth(1)
+        .and_then(|rest| rest.split("</text>").next())
+        .expect("the Excalifont element is emitted");
+    assert_eq!(
+        excalifont_line
+            .matches("<tspan font-family=\"ExcalidrawRender-9\"")
+            .count(),
+        2
+    );
+    assert!(excalifont_line.contains(">??</tspan>"));
+    assert!(excalifont_line.contains(">?</tspan>"));
+    assert!(excalifont_line.contains(">Latin </tspan>"));
+    assert!(excalifont_line.contains("> text</tspan>"));
+    // The Liberation Sans element is one run of its own face.
+    let liberation_line = svg
+        .split("font-family=\"ExcalidrawRender-9\" font-size=\"20\"")
+        .nth(1)
+        .and_then(|rest| rest.split("</text>").next())
+        .expect("the Liberation Sans element is emitted");
+    assert_eq!(liberation_line.matches("<tspan ").count(), 1);
+    assert!(liberation_line.contains(">Latin ?? ? text</tspan>"));
+}
+
+#[test]
+fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_scalars() {
+    let outcome = render(&registered_scene(), OutputFormat::Pdf);
+    let bytes = outcome.artifact().bytes();
+    let pdf = String::from_utf8_lossy(bytes);
+
+    // One embedded face per family, and nothing from the fallback chain the
+    // scene does not reach.
+    assert!(pdf.contains("/Subtype /Type0\n/BaseFont /Excalifont\n"));
+    assert!(pdf.contains("/Subtype /Type0\n/BaseFont /LiberationSans\n"));
+    assert!(!pdf.contains("/BaseFont /Xiaolai"));
+    assert!(!pdf.contains("/BaseFont /NotoEmoji"));
+
+    // The PDF embeds each family's complete program (subsetting is an SVG
+    // contract, 8.3), so what the replacement pins is which program the `?`
+    // runs are drawn from: the manifested Liberation Sans asset, byte for byte,
+    // which maps `?`; and no embedded program maps a missing scalar, which is
+    // what makes the replacement a replacement.
+    let fonts = embedded_pdf_fonts(bytes);
+    assert_eq!(fonts.len(), 2, "one FontFile2 per family");
+    let liberation_asset =
+        excalidraw_render_assets_base::load_asset("fonts/Liberation/LiberationSans-Regular.woff2")
+            .expect("the Liberation Sans asset verifies")
+            .expect("the Liberation Sans asset is manifested");
+    let liberation_program =
+        wuff::decompress_woff2(liberation_asset.bytes()).expect("manifested WOFF2 decodes");
+    assert!(
+        fonts.contains(&liberation_program),
+        "the embedded Liberation Sans program is the manifested asset"
+    );
+    let faces: Vec<_> = fonts
+        .iter()
+        .map(|font| rustybuzz::Face::from_slice(font, 0).expect("embedded sfnt parses"))
+        .collect();
+    let liberation_face = rustybuzz::Face::from_slice(&liberation_program, 0)
+        .expect("the Liberation Sans program parses");
+    assert!(liberation_face.glyph_index('?').is_some());
+    assert!(faces.iter().any(|face| family_name(face) == "Excalifont"));
+    for face in &faces {
+        assert!(face.glyph_index('L').is_some(), "both faces shape Latin");
+        for scalar in ['\u{10000}', '\u{10001}', '\u{10ffff}'] {
+            assert!(
+                face.glyph_index(scalar).is_none(),
+                "U+{:04X} is absent from every embedded face",
+                u32::from(scalar)
+            );
+        }
+    }
+    // Liberation Sans's ToUnicode maps the replacement's CID back to `?`, so
+    // extracting the glyph run itself reads `?`; Excalifont's maps nothing to
+    // `?`, since the replacement is never drawn from the primary face.
+    let liberation_cmap = to_unicode_cmap(&pdf, "/CMapName /LiberationSans-UCS def");
+    assert!(
+        liberation_cmap.contains("<0001> <003F>"),
+        "{liberation_cmap}"
+    );
+    let excalifont_cmap = to_unicode_cmap(&pdf, "/CMapName /Excalifont-UCS def");
+    assert!(!excalifont_cmap.contains("<003F>"), "{excalifont_cmap}");
+
+    // The logical text is the stored text, once per line, in logical order.
+    assert_eq!(pdf.matches(ACTUAL_TEXT).count(), 2);
+    assert_eq!(
+        pdf_actual_text(&pdf),
+        format!("{SOURCE_TEXT}{SOURCE_TEXT}"),
+        "ActualText round-trips to the two elements' stored text"
+    );
+
+    // The Excalifont line switches to the Liberation Sans resource for the
+    // `??` and `?` runs, each drawn as the `?` CID, and back to Excalifont
+    // for the Latin around them; the Liberation Sans line never leaves its
+    // own face.
+    let liberation = font_resource(&pdf, "/BaseFont /LiberationSans");
+    let excalifont = font_resource(&pdf, "/BaseFont /Excalifont");
+    let lines: Vec<&str> = pdf
+        .split(ACTUAL_TEXT)
+        .skip(1)
+        .map(|rest| rest.split("EMC").next().expect("marked content closes"))
+        .collect();
+    let [excalifont_line, liberation_line] = lines.as_slice() else {
+        panic!("two marked-content lines carry the stored text");
+    };
+    let replacement_runs: Vec<&str> = excalifont_line
+        .split(&format!("{liberation} 20 Tf\n"))
+        .skip(1)
+        .map(|run| {
+            run.split(" Tf\n")
+                .next()
+                .expect("the run ends at a font switch")
+        })
+        .collect();
+    assert_eq!(replacement_runs.len(), 2, "`??` and `?`");
+    assert_eq!(replacement_runs[0].matches("<0001> Tj").count(), 2);
+    assert_eq!(replacement_runs[1].matches("<0001> Tj").count(), 1);
+    assert_eq!(
+        excalifont_line
+            .matches(&format!("{excalifont} 20 Tf"))
+            .count(),
+        3
+    );
+    assert_eq!(
+        liberation_line
+            .matches(&format!("{liberation} 20 Tf"))
+            .count(),
+        1
+    );
+    assert!(!liberation_line.contains(&format!("{excalifont} 20 Tf")));
+}
+
+/// The body of the ToUnicode CMap stream that declares `cmap_name`.
+fn to_unicode_cmap<'a>(pdf: &'a str, cmap_name: &str) -> &'a str {
+    pdf.split(cmap_name)
+        .nth(1)
+        .and_then(|rest| rest.split("endcmap").next())
+        .unwrap_or_else(|| panic!("the PDF carries the ToUnicode CMap {cmap_name}"))
+}
+
+/// The English family name (name ID 1) of an embedded face.
+fn family_name(face: &rustybuzz::Face<'_>) -> String {
+    face.names()
+        .into_iter()
+        .find(|name| name.name_id == 1 && name.language_id == 0x0409)
+        .and_then(|name| name.to_string())
+        .expect("embedded face keeps its English family name")
+}
+
+/// The page resource name (`/F<n>`) of the Type0 font with the given base font.
+fn font_resource(pdf: &str, base_font: &str) -> String {
+    let header = format!("<<\n/Type /Font\n/Subtype /Type0\n{base_font}\n");
+    let position = pdf.find(&header).expect("the base font has a Type0 object");
+    let object = pdf[..position]
+        .strip_suffix(" 0 obj\n")
+        .and_then(|head| head.rsplit('\n').next())
+        .expect("the Type0 font is an indirect object");
+    let fonts = pdf
+        .split("/Font << ")
+        .nth(1)
+        .and_then(|rest| rest.split(" >>").next())
+        .expect("the page declares a font resource dictionary");
+    let reference = format!(" {object} 0 R");
+    let position = fonts
+        .find(&reference)
+        .expect("the page resources reference the font");
+    fonts[..position]
+        .rsplit(' ')
+        .next()
+        .expect("the reference has a resource name")
+        .to_owned()
+}
+
+/// Every `ActualText` operand decoded from UTF-16BE, concatenated in document
+/// order: the logical text a PDF reader extracts.
+fn pdf_actual_text(pdf: &str) -> String {
+    let mut extracted = String::new();
+    for tail in pdf.split("/ActualText <FEFF").skip(1) {
+        let hex = tail.split('>').next().expect("ActualText hex terminates");
+        let units = hex
+            .as_bytes()
+            .chunks_exact(4)
+            .map(|digits| {
+                u16::from_str_radix(std::str::from_utf8(digits).expect("hex is ASCII"), 16)
+                    .expect("ActualText is hexadecimal")
+            })
+            .collect::<Vec<_>>();
+        extracted.push_str(&String::from_utf16(&units).expect("ActualText is UTF-16"));
+    }
+    extracted
+}
+
+/// Every embedded `FontFile2` stream: the PDF writes them uncompressed with
+/// `/Length1` naming the complete sfnt length.
+fn embedded_pdf_fonts(pdf: &[u8]) -> Vec<Vec<u8>> {
+    const MARKER: &[u8] = b"/Length1 ";
+    const STREAM: &[u8] = b">>\nstream\n";
+    let mut fonts = Vec::new();
+    let mut offset = 0;
+    while let Some(position) = pdf[offset..]
+        .windows(MARKER.len())
+        .position(|window| window == MARKER)
+    {
+        let start = offset + position + MARKER.len();
+        let digits = pdf[start..]
+            .iter()
+            .take_while(|byte| byte.is_ascii_digit())
+            .count();
+        let length = std::str::from_utf8(&pdf[start..start + digits])
+            .expect("font length is ASCII")
+            .parse::<usize>()
+            .expect("font length is numeric");
+        let stream_start = start + digits + 1 + STREAM.len();
+        assert_eq!(&pdf[start + digits + 1..stream_start], STREAM);
+        fonts.push(pdf[stream_start..stream_start + length].to_vec());
+        offset = stream_start + length;
+    }
+    fonts
+}
+
+fn repository_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("crate is inside the workspace")
+        .to_owned()
+}

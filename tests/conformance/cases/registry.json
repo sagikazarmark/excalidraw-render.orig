@@ -1888,6 +1888,306 @@
         "png": [],
         "svg": []
       }
+    },
+    {
+      "id": "focused.missing-glyph.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/missing-glyph",
+      "approving_issue": "124",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/missing-glyph",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-06",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/124",
+      "purpose": "Substitute scalars absent from the complete fallback chain as spec 8.3 requires: an Excalifont element and a Liberation Sans (fontFamily 9) element each mix Latin with Linear B U+10000 and U+10001 and the noncharacter U+10FFFF, which no bundled face maps. The official export has no bundled glyph for them and draws whatever the browser's system-font fallback supplies; revision 1 shapes the deterministic basic-Latin ? from Liberation Sans, so the primary face and the replacement face are both exercised, and reports one font.missing-glyph warning per scalar per occurrence in source order. No scalar belongs to the CJK table, so Xiaolai stays out of the fallback chain.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "font.missing-glyph",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:text",
+        "font:excalifont",
+        "font:liberation-sans",
+        "font:missing-glyph",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "text": 2
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "text": 2
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops"
+      ],
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/124",
+          "format": "png",
+          "max_changed_pixels": 762,
+          "minimum_ssim_bits": "3fe9c2915c201e31",
+          "reason": "Spec 8.3's replacement glyph. U+10000, U+10001 and U+10FFFF are absent from every bundled face, so revision 1 shapes each as the deterministic basic-Latin ? from Liberation Sans and reports it as font.missing-glyph (decided on #124). The official export has no glyph for them either and falls through to the pinned container's system fonts: a WenQuanYi Zen Hei placeholder box for U+10000, GNU Unifont Upper's Linear B syllabogram for U+10001, and a blank advance for the uncovered noncharacter U+10FFFF. The divergence is the region from the first unmapped scalar to the end of each of the two lines: that box, glyph and blank against three ? glyphs, and the trailing Latin word the differing advances shift. The leading Latin word on both lines differs only by the sub-pixel glyph-coverage class recorded on #104, #105, #108 and #110.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 65536,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-missing",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 65537,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-missing",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1114111,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-missing",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 65536,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "liberation-missing",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 65537,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "liberation-missing",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1114111,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "liberation-missing",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          }
+        ],
+        "svg": [
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 65536,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-missing",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 65537,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-missing",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1114111,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-missing",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 65536,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "liberation-missing",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 65537,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "liberation-missing",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1114111,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "liberation-missing",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          }
+        ]
+      }
     }
   ]
 }

@@ -37,16 +37,39 @@ use std::sync::Arc;
 
 use base64::Engine;
 use excalidraw_render::{OutputFormat, Renderer, SceneDocument};
-use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode};
+use excalidraw_render_compare::{
+    compare, CanonicalRgba8, ComparisonMode, ComparisonReport, RegionReport, SsimOutcome,
+};
 use resvg::tiny_skia::{Pixmap, Transform};
 use serde_json::Value;
 use usvg::fontdb;
 
-use registered_cases::{observed, repository_root, variant_request, visual_class, KnownDefect};
+use registered_cases::{
+    observed, repository_root, variant_request, visual_class, PinnedDivergence,
+};
 
 /// Diagnosed defects whose fix is pending a maintainer decision. See
-/// `KnownDefect` for why these are pinned rather than excepted.
-const KNOWN_DEFECTS: &[KnownDefect] = &[];
+/// `PinnedDivergence` for why these are pinned rather than excepted.
+const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
+
+/// Compatibility exceptions whose approved tolerance exception the case
+/// manifest carries for the direct PNG, observed here on the SVG document as
+/// well. The manifest admits no `format: svg` exception, so each is pinned at
+/// its exact measurement and must correspond to that recorded exception; see
+/// `PinnedDivergence`.
+const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
+    // Spec 8.3's replacement glyph (#124): the official document sets the three
+    // unmapped scalars in the embedded Excalifont and Liberation Sans subsets,
+    // which have no glyph for them, while the renderer's sets `?` from
+    // Liberation Sans, and the differing advances shift the trailing word.
+    PinnedDivergence {
+        case: "focused.missing-glyph.v1",
+        variant: "default",
+        issue: "#124",
+        changed_pixels: 473,
+        ssim_bits: 0x3fea_c711_a5b4_5706,
+    },
+];
 
 /// System families the official export names without embedding, and the
 /// renderer's manifested substitute for each. The official raster evidence was
@@ -167,9 +190,27 @@ fn every_registered_scene_case_matches_its_official_svg_document() {
                 ComparisonMode::PureRustSvg,
             )
             .expect("dimensions agree");
-            let divergence = match KnownDefect::lookup(KNOWN_DEFECTS, id, variant_id) {
-                Some(defect) => defect.mismatch(&report),
-                None => (!report.passed())
+            let defect = PinnedDivergence::lookup(KNOWN_DEFECTS, id, variant_id);
+            let exception = PinnedDivergence::lookup(COMPATIBILITY_EXCEPTION_PINS, id, variant_id);
+            assert!(
+                defect.is_none() || exception.is_none(),
+                "{context} is both a known defect and a compatibility exception; a defect has \
+                 no non-defect cause to except"
+            );
+            if exception.is_some() {
+                // The pin stands for the manifest's approved judgment on this
+                // variant, so that judgment must exist: a pin with no recorded
+                // exception would be a suppression.
+                assert!(
+                    has_recorded_exception(&manifest, variant_id),
+                    "{context} carries a compatibility exception pin but its manifest records \
+                     no direct-PNG tolerance exception for the variant"
+                );
+            }
+            let divergence = match (defect, exception) {
+                (Some(defect), _) => defect.mismatch(&report),
+                (None, Some(exception)) => exception.mismatch(&report),
+                (None, None) => (!report.passed())
                     .then(|| format!("outside the pure-Rust SVG budget: {}", observed(&report))),
             };
             if let Some(detail) = divergence {
@@ -179,13 +220,29 @@ fn every_registered_scene_case_matches_its_official_svg_document() {
     }
 
     assert!(total > 0, "the registry declared no scene cases");
-    KnownDefect::assert_all_observed(KNOWN_DEFECTS, &seen);
+    PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
+    PinnedDivergence::assert_all_observed(COMPATIBILITY_EXCEPTION_PINS, &seen);
     assert!(
         failures.is_empty(),
         "{} variant(s) across {total} cases diverge from the official SVG document:\n  {}",
         failures.len(),
         failures.join("\n  ")
     );
+}
+
+/// Whether the case manifest records a whole direct-PNG tolerance exception
+/// for the variant: the same record `registered_case_png_parity` consumes, and
+/// the approved judgment a compatibility exception pin here stands for.
+fn has_recorded_exception(manifest: &Value, variant_id: &str) -> bool {
+    manifest["exceptions"]
+        .as_array()
+        .expect("manifest exceptions are an array")
+        .iter()
+        .any(|exception| {
+            exception["variant"] == variant_id
+                && exception["format"] == "png"
+                && exception["region"] == "whole"
+        })
 }
 
 /// Rasterizes one SVG document with the workspace `resvg`, resolving text
@@ -355,6 +412,48 @@ fn referenced_families(svg: &str) -> Vec<String> {
         rest = &rest[end..];
     }
     families
+}
+
+#[test]
+fn a_pinned_divergence_holds_its_variant_to_the_exact_measurement() {
+    const PINNED_SSIM_BITS: u64 = 0x3fea_c711_a5b4_5706;
+    let pin = PinnedDivergence {
+        case: "focused.example.v1",
+        variant: "default",
+        issue: "#124",
+        changed_pixels: 473,
+        ssim_bits: PINNED_SSIM_BITS,
+    };
+    let report = |changed_pixels: u64, ssim: SsimOutcome| ComparisonReport {
+        whole: RegionReport {
+            width: 1,
+            height: 1,
+            area: 1,
+            changed_pixels,
+            changed_mask: Vec::new(),
+            ssim,
+            changed_pixels_pass: false,
+            ssim_pass: false,
+        },
+        crops: Vec::new(),
+    };
+    let pinned_score = SsimOutcome::Score(f64::from_bits(PINNED_SSIM_BITS));
+
+    assert_eq!(pin.mismatch(&report(473, pinned_score.clone())), None);
+    // The pin is exact in both directions: an improvement is as much a moved
+    // measurement as a regression, and says so with the values to transcribe.
+    let improved = pin
+        .mismatch(&report(472, pinned_score.clone()))
+        .expect("fewer changed pixels is a moved measurement");
+    assert!(improved.contains("#124"), "{improved}");
+    assert!(improved.contains("changed_pixels=472"), "{improved}");
+    assert!(pin.mismatch(&report(474, pinned_score)).is_some());
+    assert!(pin
+        .mismatch(&report(473, SsimOutcome::Score(0.9)))
+        .is_some());
+    assert!(pin
+        .mismatch(&report(473, SsimOutcome::SmallArtifactMismatch))
+        .is_some());
 }
 
 #[test]
