@@ -1544,9 +1544,8 @@ fn shape_official_line(
         let mut unicode = Vec::new();
         unicode.try_reserve_exact(cluster_text.encode_utf16().count())?;
         unicode.extend(cluster_text.encode_utf16());
-        let advance_units = face
-            .glyph_hor_advance(GlyphId(glyph_id))
-            .unwrap_or_default();
+        let advance = face.glyph_hor_advance(GlyphId(glyph_id));
+        let advance_units = advance.unwrap_or_default();
         let units_per_em =
             u64::try_from(face.units_per_em()).map_err(|_| LabelError::InvalidFont)?;
         let advance_1000 =
@@ -1569,16 +1568,19 @@ fn shape_official_line(
             glyph_y: (pen_y + i64::from(position.y_offset)) as f64,
             scale,
         };
-        if face
+        // A glyph the font defines but leaves without an outline draws
+        // nothing and keeps its advance. That is ordinary font content, not
+        // corruption: Cascadia Code spells its `calt` ligatures as empty `LIG`
+        // spacers followed by one glyph that carries the joined outline. Only
+        // a glyph the face has no metrics for at all is a sealed-font failure.
+        let outlined = face
             .outline_glyph(GlyphId(glyph_id), &mut builder)
-            .is_none()
-            && glyph_id != 0
-            && !cluster_text.chars().all(char::is_whitespace)
-        {
-            return Err(LabelError::InvalidFont);
-        }
+            .is_some();
         if builder.failed {
             return Err(LabelError::Memory);
+        }
+        if !outlined && advance.is_none() {
+            return Err(LabelError::InvalidFont);
         }
         pen_x = pen_x.saturating_add(i64::from(position.x_advance));
         pen_y = pen_y.saturating_add(i64::from(position.y_advance));

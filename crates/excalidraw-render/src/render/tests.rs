@@ -791,6 +791,67 @@ fn cjk_subset_trigger_matches_script_and_explicit_symbol_classes() {
     assert!(text::CjkSubsetTrigger::evaluate(["A", "\u{4e2d}"]).selects_xiaolai());
 }
 
+#[test]
+fn cascadia_calt_ligatures_lay_out_through_their_empty_spacer_glyphs() {
+    // Cascadia Code spells `->`, `??`, `www`, and the rest of its ligature set
+    // through `calt`: every character but the last becomes the empty `LIG`
+    // spacer glyph, and the last carries the joined outline. An empty outline
+    // in a reviewed chunk is font content, not corruption, so the text lays
+    // out and renders. Found by the scene fuzz as `fontFamily: 3` with two
+    // CJK scalars, whose `??` replacement glyphs form the same ligature.
+    for text_value in ["->", "??", "www", "a != b", "\u{4e2d}\u{6587}"] {
+        let font = text::OfficialFont::load(3, text_value)
+            .ok()
+            .unwrap_or_else(|| panic!("Cascadia Code loads for {text_value:?}"));
+        let laid_out = font
+            .layout(
+                text_value,
+                text::TextLayout {
+                    font_family: 3,
+                    ..excalifont_layout()
+                },
+            )
+            .ok()
+            .unwrap_or_else(|| panic!("{text_value:?} lays out in Cascadia Code"));
+        let glyphs = laid_out
+            .lines
+            .iter()
+            .map(|line| line.glyphs.len())
+            .sum::<usize>();
+        assert_eq!(
+            glyphs,
+            text_value.chars().count(),
+            "{text_value:?} keeps one glyph slot per scalar"
+        );
+
+        let source = format!(
+            r#"{{"type":"excalidraw","version":2,"elements":[{{"id":"code","type":"text","width":120,"height":25,"fontSize":20,"fontFamily":3,"text":{},"updated":1}}],"appState":{{}},"files":{{}}}}"#,
+            serde_json::to_string(text_value).expect("text serializes")
+        );
+        let scene = SceneDocument::parse(source.as_bytes()).expect("ligature scene is admitted");
+        let expects_replacement = !text_value.is_ascii();
+        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+            let request = RenderRequest::builder(format)
+                .build()
+                .expect("default request is valid");
+            let outcome = Renderer::new()
+                .render(&scene, &request)
+                .unwrap_or_else(|error| panic!("{text_value:?} renders to {format:?}: {error}"));
+            let replaced = outcome
+                .report()
+                .diagnostics()
+                .iter()
+                .any(|diagnostic| diagnostic.code() == DiagnosticCode::FONT_MISSING_GLYPH);
+            assert_eq!(
+                replaced,
+                expects_replacement,
+                "{text_value:?} in {format:?} replacement glyphs: {:?}",
+                outcome.report()
+            );
+        }
+    }
+}
+
 /// Lays `text` out with fallbacks against a fresh font list whose only face
 /// is the whole-text face `OfficialFont::load` selects for it, and returns the
 /// font fallback probes it charged.
