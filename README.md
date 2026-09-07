@@ -112,6 +112,40 @@ cargo test --locked --release --manifest-path tests/package-consumer/Cargo.toml 
 The target workflow executes this consumer on all four supported native
 targets and in the pinned browser-hosted `wasm32-unknown-unknown` harness.
 
+## Tests
+
+`cargo test --workspace` runs every unit, integration, and doc test target. The
+root `Cargo.toml` optimizes the `test` profile (`opt-level = 2`, keeping debug
+assertions, overflow checks, and debuginfo), because brotli quality-11 encoding,
+WOFF2 decoding, SSIM, and resvg rasterization dominate the suite and run an
+order of magnitude slower unoptimized. Dependencies are optimized under the `dev`
+profile as well, so `cargo run -p xtask` verification shares the compiled
+external dependencies with `cargo test`.
+
+Two corpus-driven tests form the release-mode qualification set and are not
+part of the push gate: the SVG font subset qualification corpus
+(`render::font_subset_qualification::complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces`)
+and the frame batch property test
+(`render::frame_batch_property::frame_batch_rendering_matches_standalone_around_resource_limits`).
+The `Packaged public facade` workflow's native leg and the
+`packaging:qualification` Dagger check run the complete renderer unit target in
+`--release` with the feature that lifts their `#[ignore]`, without a name
+filter, so a renamed test cannot drop out silently:
+
+```sh
+cargo test --locked --release -p excalidraw-render --features release-qualification --lib
+```
+
+The property test is `#[ignore]`d unless `release-qualification` is enabled.
+The corpus test's file is digest-pinned by the approved SVG font subset
+qualification (issue #99), so it keeps the same gate only from the next
+re-approval round on; until then the push gate leaves it to the release-mode run
+by skipping it at the runner:
+
+```sh
+cargo test --locked --workspace -- --skip complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces
+```
+
 ## Containerized checks
 
 Every gate the Linux workflows run is also a Dagger check, so one command
@@ -135,8 +169,9 @@ The checks mirror the workflow jobs one for one: `lint` is the `conformance`
 workflow's formatting and lint gate, `test` its unit, parity, and
 whole-workspace targets, `conformance` the catalog and approval-bearing
 evidence verification the `conformance` and `Packaged public facade` workflows
-share, and `packaging` the Linux leg of the packaged public facade. The
-randomized expansions the nightly schedule runs are deliberately not checks:
+share, and `packaging` the Linux leg of the packaged public facade, including
+the release-mode qualification set. The randomized expansions the nightly
+schedule runs are deliberately not checks:
 
 ```sh
 dagger call nightly font-subset-fuzz

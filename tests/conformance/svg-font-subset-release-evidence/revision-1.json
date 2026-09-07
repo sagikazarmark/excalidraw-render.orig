@@ -54,7 +54,7 @@
     "status": "aggregated",
     "workflow": {
       "path": ".github/workflows/packaged-public-facade.yml",
-      "sha256": "51d1d972eeb799ba5fc036704cafe28ce5f91ebf4b425a29f1e3bbf7d72ea07d"
+      "sha256": "88e5a042b72fa15ff30d2bb23bc0b1af499e6a068e82c750d61b48b4396e7950"
     }
   },
   "viewerEvidence": {

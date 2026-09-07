@@ -67,3 +67,22 @@ codegen-units = 1
 lto = true
 panic = "abort"
 strip = true
+
+# `cargo test` builds with this profile. It keeps the `dev` semantics the suite
+# relies on for diagnosis — debug assertions, overflow checks, unwinding,
+# debuginfo for backtraces — and only turns codegen optimization on: brotli
+# quality 11, WOFF2 decoding, SSIM, resvg rasterization and large-JSON parsing
+# dominate the push gate and run an order of magnitude slower unoptimized.
+# `profile.release` is deliberately not reused for tests: its single codegen
+# unit and fat LTO slow every compile, and `strip` removes backtraces.
+[profile.test]
+opt-level = 2
+
+# `cargo run -p xtask -- catalog verify` decodes all 230 official font chunks
+# and the `conformance verify-*` commands digest large evidence files, so the
+# `dev` profile optimizes dependencies too. Workspace members are excluded, which
+# keeps the edit-compile loop on the renderer itself fast. `test` inherits this
+# override, so `cargo run` and `cargo test` share the compiled external
+# dependencies and differ only in the workspace members' own opt-level.
+[profile.dev.package."*"]
+opt-level = 2

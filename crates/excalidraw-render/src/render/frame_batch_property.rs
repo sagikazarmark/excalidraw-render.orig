@@ -19,9 +19,11 @@ use super::*;
 use crate::{FrameRenderRequest, ResourceLimits};
 
 const FIXED_SEED: u64 = 0x2545_f491_4f6c_dd1d;
-/// Kept small enough to gate every pull request; `nightly_frame_batch_property`
-/// runs the same generator far deeper.
-const PR_CASES: usize = 16;
+/// The release-mode sample: small enough to run on every push in `--release`
+/// beside the font subset qualification corpus.
+/// `nightly_frame_batch_property_runs_a_deeper_sample` draws a longer sample
+/// from the same seed, so these cases are its prefix.
+const RELEASE_CASES: usize = 16;
 const MAX_FRAMES: usize = 4;
 const MAX_ELEMENTS: usize = 12;
 
@@ -303,9 +305,20 @@ fn push_element(elements: &mut String, element: &str) {
     elements.push_str(element);
 }
 
+/// Every generated case renders each frame, in each format, once cold and once
+/// through a shared batch preparation across a ladder of resource limits: several
+/// hundred renders that take minutes unoptimized. The push gate therefore leaves
+/// it ignored; the packaged-facade workflow's native leg and the Dagger
+/// `packaging:qualification` check run it in `--release` with the
+/// `release-qualification` feature and no name filter, so a rename cannot drop
+/// it silently.
 #[test]
+#[cfg_attr(
+    not(feature = "release-qualification"),
+    ignore = "release-mode qualification set; run with `--features release-qualification`"
+)]
 fn frame_batch_rendering_matches_standalone_around_resource_limits() {
-    assert_generated_cases(FIXED_SEED, PR_CASES);
+    assert_generated_cases(FIXED_SEED, RELEASE_CASES);
 }
 
 #[cfg(not(target_arch = "wasm32"))]

@@ -8,6 +8,14 @@ license.workspace = true
 [lints]
 workspace = true
 
+[features]
+# Runs the release-mode qualification set under `cargo test`: the corpus-driven
+# and generated-property tests that take minutes even when optimized, so the
+# push gate leaves them `#[ignore]`d and the release-mode workflows enable the
+# feature and run them in `--release`. The feature adds nothing to the library;
+# it only lifts the `#[ignore]` from those `#[cfg(test)]` functions.
+release-qualification = []
+
 [dependencies]
 excalidraw-render-assets-base.workspace = true
 base64.workspace = true

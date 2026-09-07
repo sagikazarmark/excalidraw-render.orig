@@ -220,9 +220,18 @@ type Conformance {
 """
 Test targets from the `conformance` workflow.
 
-`workspace` alone covers everything below it. The parity and unit targets stay
-named so a failure is legible on its own, exactly as the workflow keeps them as
-separate steps.
+`workspace` alone covers everything below it and is the only test run the
+workflow's push gate pays for. The parity and unit targets stay named here
+because every check executes from one compiled layer, so a failure is legible
+on its own at the price of a second execution rather than a second compile.
+
+The test profile in the root Cargo.toml is optimized, and the two corpus-driven
+tests the push gate does not carry are held back the way the workflow holds
+them: the frame batch property test behind the `release-qualification` feature
+(off here), and the SVG font subset qualification corpus by a runner-level skip,
+because its file is digest-pinned by issue #99 and cannot carry the feature
+gate until its next re-approval round. `packaging:qualification` runs both in
+`--release`.
 """
 type Test {
   let container: Container!
@@ -239,10 +248,10 @@ type Test {
   }
 
   """
-  Execute the renderer unit tests.
+  Execute the renderer unit tests, without the release-mode qualification corpus.
   """
   unit: String! @check {
-    self.run(["--package", "excalidraw-render", "--lib"])
+    self.run(["--package", "excalidraw-render", "--lib"] + skipQualificationCorpus)
   }
 
   """
@@ -270,10 +279,11 @@ type Test {
   Execute every unit, integration, and documentation test target in the workspace.
 
   `#[ignore]`d tests stay ignored: the nightly expansions live under `nightly`,
-  and the viewer-harness gates still need the pinned browser and PDF harnesses.
+  the viewer-harness gates still need the pinned browser and PDF harnesses, and
+  the frame batch property test waits for the `release-qualification` feature.
   """
   workspace: String! @check {
-    self.run(["--workspace", "--no-fail-fast"])
+    self.run(["--workspace", "--no-fail-fast"] + skipQualificationCorpus)
   }
 
   let run(args: [String!]!): String! {
@@ -289,6 +299,18 @@ type Test {
   let compiled: Container! {
     self.container.withExec(["cargo", "test", "--locked", "--workspace", "--no-run"])
   }
+}
+
+"""
+Runner arguments that leave the SVG font subset qualification corpus to the
+release-mode `packaging` checks, exactly as the `conformance` workflow's
+workspace suite does.
+"""
+let skipQualificationCorpus: [String!]! {
+  [
+    "--",
+    "--skip", "complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces",
+  ]
 }
 
 """
@@ -315,6 +337,28 @@ type Packaging {
     self.target = target
 
     self
+  }
+
+  """
+  Execute the release-mode qualification set.
+
+  The complete renderer unit target in `--release` with the
+  `release-qualification` feature, the way the workflow's native leg runs it
+  before materializing target evidence: the SVG font subset qualification
+  corpus and the frame batch property test, which the `test` checks leave out,
+  execute here. No name filter, so a renamed test cannot drop out of the run.
+  """
+  qualification: String! @check {
+    self
+      .container
+      .withExec([
+        "cargo", "test", "--locked", "--release",
+        "--target", self.target,
+        "--package", "excalidraw-render",
+        "--features", "release-qualification",
+        "--lib",
+      ])
+      .combinedOutput
   }
 
   """
