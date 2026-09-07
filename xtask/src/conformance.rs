@@ -1789,7 +1789,15 @@ fn verify_repo_descriptor(value: &Value, subject: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn verify_approval_for_issue(approval: &Value, subject: &str, issue: &str) -> Result<(), String> {
+/// Checks one approval object against its subject and the issue whose comment
+/// thread must carry it: exactly the four approval keys, the subject digest,
+/// a GitHub login, a calendar date, and a comment URL on that issue. Shared by
+/// every approval-bearing record that is decided on one issue.
+pub(crate) fn verify_approval_for_issue(
+    approval: &Value,
+    subject: &str,
+    issue: &str,
+) -> Result<(), String> {
     let approval = object(approval, "approval")?;
     verify_exact_keys(
         approval,

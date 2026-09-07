@@ -31,7 +31,7 @@ const SHARD_CRATES: [&str; 2] = [
 ];
 const CATALOG_SCHEMA: &str = "excalidraw-render/revision-catalog/v1";
 const CATALOG_SCHEMA_DIGEST: &str =
-    "053acdd51de993a5a9a8ba4a8a3bc4bd02255744bfc620e3c58545dda21586e0";
+    "eabf5de65012d514ef7b21e340eb80d39943f7c666f496ae6ceeb32d57e7ce5b";
 const EXCALIFONT_BASIC_LATIN_PATH: &str =
     "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2";
 const EXCALIFONT_BASIC_LATIN_SHA256: &str =
@@ -40,6 +40,25 @@ const EXCALIFONT_BASIC_LATIN_LENGTH: usize = 24_956;
 const EXCALIFONT_BASIC_LATIN_SFNT_SHA256: &str =
     "a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb";
 const EXCALIFONT_BASIC_LATIN_SFNT_LENGTH: usize = 61_948;
+/// The one reviewed decode that is additionally checked in byte for byte,
+/// relative to the assets-base crate root as the record cites it.
+const EXCALIFONT_BASIC_LATIN_SFNT_PATH: &str =
+    "catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt";
+/// The pinned decoder whose output over the exact manifested bytes is every
+/// chunk's reviewed decode (spec 8.6). `verify` holds the version to the
+/// lockfile, so a decoder bump cannot leave the record describing stale bytes.
+const DECODER_NAME: &str = "wuff";
+const DECODER_VERSION: &str = "0.2.8";
+const DECODER_INVOCATION: &str = "wuff::decompress_woff2(source_bytes)";
+const REVIEWED_DECODES_PATH: &str =
+    "crates/excalidraw-render-assets-base/catalog/reviewed-decodes/revision-1.json";
+const REVIEWED_DECODES_DIGEST_PATH: &str =
+    "crates/excalidraw-render-assets-base/catalog/reviewed-decodes/revision-1.sha256";
+const REVIEWED_DECODES_SCHEMA: &str = "excalidraw-render/reviewed-decodes/v1";
+const REVIEWED_DECODES_APPROVAL_SUBJECT_SCHEMA: &str =
+    "excalidraw-render/reviewed-decodes-approval-subject/v1";
+/// The issue whose comment thread carries the reviewed-decodes approval.
+const REVIEWED_DECODES_APPROVING_ISSUE: &str = "120";
 const NOTO_EMOJI_SHA256: &str = "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634";
 const NOTO_EMOJI_LENGTH: usize = 862_680;
 const XIAOLAI_ORDER_SHA256: &str =
@@ -390,6 +409,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
             assets.len()
         ));
     }
+    let reviewed_decodes = materialize_reviewed_decodes(&root, &assets)?;
     materialize_predecoded_excalifont(&root, &assets)?;
 
     let shards = partition(&mut assets)?;
@@ -420,7 +440,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
     }
     write_digest_sidecar(&base.join("LICENSE-BUNDLE.sha256"), bundle.as_bytes())?;
 
-    let catalog = build_catalog(&assets, &scene_surface)?;
+    let catalog = build_catalog(&assets, &scene_surface, &reviewed_decodes)?;
     let catalog_bytes = serde_json::to_vec(&catalog)
         .map_err(|error| format!("failed to serialize revision catalog: {error}"))?;
     let catalog_path = base.join("catalog/revision-1.json");
@@ -447,7 +467,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
     }
     write_if_changed(&scene_policy_path, scene_policy.as_bytes())?;
 
-    verify()
+    verify(false)
 }
 
 pub fn materialize() -> Result<(), String> {
@@ -466,7 +486,10 @@ pub fn materialize() -> Result<(), String> {
         &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
         "reference asset manifest",
     )?;
-    let catalog = expected_catalog(&reference_assets, &scene_surface)?;
+    let mut assets = expected_assets(&reference_assets)?;
+    load_shard_bytes(&root, &mut assets)?;
+    let reviewed_decodes = materialize_reviewed_decodes(&root, &assets)?;
+    let catalog = build_catalog(&assets, &scene_surface, &reviewed_decodes)?;
     let catalog_bytes = serde_json::to_vec(&catalog)
         .map_err(|error| format!("failed to serialize revision catalog: {error}"))?;
     write_if_changed(&base.join("catalog/revision-1.json"), &catalog_bytes)?;
@@ -486,7 +509,7 @@ pub fn materialize() -> Result<(), String> {
         &root.join("crates/excalidraw-render/src/generated/scene_surface_revision_1.rs"),
         scene_policy.as_bytes(),
     )?;
-    verify()
+    verify(false)
 }
 
 fn materialize_svg_font_subset_qualification_schema(root: &Path) -> Result<(), String> {
@@ -642,7 +665,10 @@ fn verify_incorporated_inventory(incorporated: &Path) -> Result<(), String> {
     Ok(())
 }
 
-pub fn verify() -> Result<(), String> {
+/// Verifies the sealed catalog offline. `require_approval` is what the CI gate
+/// passes: the reviewed-decodes record must then carry a maintainer approval,
+/// while materialization and subject derivation verify a pending record.
+pub fn verify(require_approval: bool) -> Result<(), String> {
     let root = crate::conformance::repo_root();
     let base = root.join("crates/excalidraw-render-assets-base");
     verify_incorporated_inventory(&base.join("catalog/incorporated"))?;
@@ -692,15 +718,20 @@ pub fn verify() -> Result<(), String> {
         &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
         "reference asset manifest",
     )?;
-    let expected_catalog = expected_catalog(&reference_assets, &scene_surface)?;
-    if catalog != expected_catalog {
-        return Err("revision catalog differs from its authoritative materialization".to_owned());
-    }
     verify_catalog_schema(&base, &catalog)?;
     verify_catalog_identity(&catalog, &scene_surface)?;
     verify_font_subset_qualification_corpus(&root, &catalog)?;
-    let excalifont_source = verify_assets(&root, &catalog)?;
-    verify_predecoded_excalifont(&root, &excalifont_source)?;
+    let sources = verify_assets(&root, &catalog)?;
+    let reviewed_decodes = read_reviewed_decodes(&root)?;
+    verify_reviewed_decodes(&root, &reviewed_decodes, &catalog, &sources)?;
+    let expected_catalog = expected_catalog(&reference_assets, &scene_surface, &reviewed_decodes)?;
+    if catalog != expected_catalog {
+        return Err("revision catalog differs from its authoritative materialization".to_owned());
+    }
+    let excalifont_source = sources
+        .get(EXCALIFONT_BASIC_LATIN_PATH)
+        .ok_or_else(|| "manifested Excalifont source is missing".to_owned())?;
+    verify_predecoded_excalifont(&root, excalifont_source)?;
     verify_noto_emoji(&root)?;
 
     let generated_path = base.join("src/generated/revision_1.rs");
@@ -740,7 +771,9 @@ pub fn verify() -> Result<(), String> {
             return Err(format!("license bundle copy is stale: {}", copy.display()));
         }
     }
-    Ok(())
+    // Last, so that a pending approval is reported only once everything the
+    // approval would bind has verified.
+    verify_reviewed_decodes_approval(&reviewed_decodes, require_approval)
 }
 
 fn materialize_predecoded_excalifont(root: &Path, assets: &[ImportedAsset]) -> Result<(), String> {
@@ -759,16 +792,16 @@ fn materialize_predecoded_excalifont(root: &Path, assets: &[ImportedAsset]) -> R
     }
     rustybuzz::Face::from_slice(&sfnt, 0)
         .ok_or_else(|| "predecoded Excalifont basic Latin is not a valid sfnt".to_owned())?;
-    let destination = root.join(
-        "crates/excalidraw-render-assets-base/catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt",
-    );
+    let destination = root
+        .join("crates/excalidraw-render-assets-base")
+        .join(EXCALIFONT_BASIC_LATIN_SFNT_PATH);
     write_if_changed(&destination, &sfnt)
 }
 
 fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String> {
-    let path = root.join(
-        "crates/excalidraw-render-assets-base/catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt",
-    );
+    let path = root
+        .join("crates/excalidraw-render-assets-base")
+        .join(EXCALIFONT_BASIC_LATIN_SFNT_PATH);
     let sfnt =
         fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?;
     if sfnt.len() != EXCALIFONT_BASIC_LATIN_SFNT_LENGTH
@@ -805,7 +838,7 @@ fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String
         },
         "output": {
             "length": EXCALIFONT_BASIC_LATIN_SFNT_LENGTH,
-            "path": "catalog/predecoded/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.sfnt",
+            "path": EXCALIFONT_BASIC_LATIN_SFNT_PATH,
             "sha256": EXCALIFONT_BASIC_LATIN_SFNT_SHA256
         },
         "schema_version": 1,
@@ -834,6 +867,284 @@ fn verify_predecoded_excalifont(root: &Path, source: &[u8]) -> Result<(), String
         return Err("checked-in Excalifont sfnt differs from the recorded decode".to_owned());
     }
     Ok(())
+}
+
+/// One official font chunk's reviewed decode: what the pinned decoder produces
+/// for the chunk's exact manifested bytes, identified by length and digest.
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct ReviewedDecode {
+    identity: String,
+    upstream_path: String,
+    source_length: usize,
+    source_sha256: String,
+    decoded_length: usize,
+    decoded_sha256: String,
+}
+
+/// Derives one chunk's reviewed decode. The decode must be a parseable sfnt of
+/// exactly the size the WOFF2 header declares; anything else fails closed,
+/// because the record may only ever describe what the renderer will embed.
+fn review_decode(upstream_path: &str, source: &[u8]) -> Result<ReviewedDecode, String> {
+    let declared_length = source
+        .get(0..20)
+        .filter(|header| &header[0..4] == b"wOF2")
+        .and_then(|header| header[16..20].try_into().ok())
+        .map(u32::from_be_bytes)
+        .ok_or_else(|| format!("{upstream_path} is not a WOFF2 container"))?;
+    let decoded = wuff::decompress_woff2(source)
+        .map_err(|error| format!("{upstream_path} does not decode: {error}"))?;
+    if decoded.len() != declared_length as usize {
+        return Err(format!(
+            "{upstream_path} decodes to {} bytes but declares {declared_length}",
+            decoded.len()
+        ));
+    }
+    rustybuzz::Face::from_slice(&decoded, 0)
+        .ok_or_else(|| format!("{upstream_path} does not decode to a valid sfnt"))?;
+    let source_sha256 = sha256(source);
+    Ok(ReviewedDecode {
+        identity: format!("{upstream_path}@sha256:{source_sha256}"),
+        upstream_path: upstream_path.to_owned(),
+        source_length: source.len(),
+        source_sha256,
+        decoded_length: decoded.len(),
+        decoded_sha256: sha256(&decoded),
+    })
+}
+
+/// The reviewed-decodes record: the decoder identity, the manifests that
+/// qualified it, every chunk's reviewed decode in catalog order, the one decode
+/// that is additionally checked in byte for byte, and the maintainer approval
+/// that binds all of it.
+fn reviewed_decodes_record(decodes: &[ReviewedDecode], approval: Value) -> Value {
+    json!({
+        "approval": approval,
+        "checkedInDecodes": [{
+            "identity": format!("{EXCALIFONT_BASIC_LATIN_PATH}@sha256:{EXCALIFONT_BASIC_LATIN_SHA256}"),
+            "length": EXCALIFONT_BASIC_LATIN_SFNT_LENGTH,
+            "path": EXCALIFONT_BASIC_LATIN_SFNT_PATH,
+            "sha256": EXCALIFONT_BASIC_LATIN_SFNT_SHA256,
+        }],
+        "chunks": decodes.iter().map(|decode| json!({
+            "decodedLength": decode.decoded_length,
+            "decodedSha256": decode.decoded_sha256,
+            "identity": decode.identity,
+            "sourceLength": decode.source_length,
+            "sourceSha256": decode.source_sha256,
+            "upstreamPath": decode.upstream_path,
+        })).collect::<Vec<_>>(),
+        "compatibilityRevision": REVISION,
+        "decoder": {
+            "invocation": DECODER_INVOCATION,
+            "name": DECODER_NAME,
+            "version": DECODER_VERSION,
+        },
+        "qualificationCorpusSha256": SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST,
+        "schema": REVIEWED_DECODES_SCHEMA,
+        "sourceManifestSha256": ASSET_MANIFEST_DIGEST,
+    })
+}
+
+/// The approval subject of a reviewed-decodes record: the record without its
+/// approval object, so recording the approval does not move it.
+fn reviewed_decodes_subject(record: &Value) -> Result<String, String> {
+    let mut record = record.clone();
+    record
+        .as_object_mut()
+        .ok_or_else(|| "reviewed-decodes record must be an object".to_owned())?
+        .remove("approval");
+    Ok(sha256(&crate::conformance::canonical_bytes(&json!({
+        "record": record,
+        "schema": REVIEWED_DECODES_APPROVAL_SUBJECT_SCHEMA,
+    }))?))
+}
+
+/// Carries an existing record's approval onto a freshly derived one exactly
+/// when both have the same subject; otherwise the fresh record stays pending.
+fn carry_approval(existing: Option<&Value>, fresh: &mut Value) -> Result<(), String> {
+    let Some(existing) = existing else {
+        return Ok(());
+    };
+    if existing["approval"].is_null()
+        || reviewed_decodes_subject(existing)? != reviewed_decodes_subject(fresh)?
+    {
+        return Ok(());
+    }
+    fresh["approval"] = existing["approval"].clone();
+    Ok(())
+}
+
+/// Checks the record's approval against its subject and the deciding issue.
+/// The CI gate requires one; materialization and subject derivation do not.
+fn verify_reviewed_decodes_approval(record: &Value, require_approval: bool) -> Result<(), String> {
+    let subject = reviewed_decodes_subject(record)?;
+    match &record["approval"] {
+        Value::Null if require_approval => {
+            Err("reviewed-decodes record has no approval record".to_owned())
+        }
+        Value::Null => Ok(()),
+        approval => crate::conformance::verify_approval_for_issue(
+            approval,
+            &subject,
+            REVIEWED_DECODES_APPROVING_ISSUE,
+        ),
+    }
+}
+
+/// Reviews every asset's decode and writes the record, carrying the checked-in
+/// approval forward only while its subject holds. Returns the written record.
+fn materialize_reviewed_decodes(root: &Path, assets: &[ImportedAsset]) -> Result<Value, String> {
+    let decodes = assets
+        .iter()
+        .map(|asset| review_decode(&asset.path, &asset.bytes))
+        .collect::<Result<Vec<_>, String>>()?;
+    let mut record = reviewed_decodes_record(&decodes, Value::Null);
+    let path = root.join(REVIEWED_DECODES_PATH);
+    let existing = match fs::read(&path) {
+        Ok(bytes) => Some(
+            serde_json::from_slice::<Value>(&bytes)
+                .map_err(|error| format!("invalid reviewed-decodes record: {error}"))?,
+        ),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(format!("failed to read {}: {error}", path.display())),
+    };
+    carry_approval(existing.as_ref(), &mut record)?;
+    let bytes = serde_json::to_vec(&record)
+        .map_err(|error| format!("failed to serialize reviewed-decodes record: {error}"))?;
+    write_if_changed(&path, &bytes)?;
+    write_digest_sidecar(&root.join(REVIEWED_DECODES_DIGEST_PATH), &bytes)?;
+    Ok(record)
+}
+
+/// Reads the checked-in record as canonical JSON with a current sidecar.
+fn read_reviewed_decodes(root: &Path) -> Result<Value, String> {
+    let path = root.join(REVIEWED_DECODES_PATH);
+    let bytes =
+        fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    verify_canonical_json_bytes(&bytes, "reviewed-decodes record")?;
+    verify_digest_sidecar(&root.join(REVIEWED_DECODES_DIGEST_PATH), &bytes)?;
+    serde_json::from_slice(&bytes)
+        .map_err(|error| format!("invalid reviewed-decodes record: {error}"))
+}
+
+/// The lockfile must resolve exactly one decoder package, at the version the
+/// record names: the record describes that decoder's output and no other.
+fn verify_decoder_pin(root: &Path) -> Result<(), String> {
+    let lock_path = root.join("Cargo.lock");
+    let lock = fs::read_to_string(&lock_path)
+        .map_err(|error| format!("failed to read {}: {error}", lock_path.display()))?;
+    let packages = lock
+        .matches(&format!("\nname = \"{DECODER_NAME}\"\n"))
+        .count();
+    let pinned = lock.contains(&format!(
+        "\nname = \"{DECODER_NAME}\"\nversion = \"{DECODER_VERSION}\"\n"
+    ));
+    if packages != 1 || !pinned {
+        return Err(format!(
+            "Cargo.lock does not resolve exactly one {DECODER_NAME} at {DECODER_VERSION}, \
+             the decoder the reviewed-decodes record names"
+        ));
+    }
+    Ok(())
+}
+
+/// Verifies the record's content against fresh decodes of every reassembled
+/// chunk: the decoder is the pinned one, every chunk's decode re-derives to the
+/// recorded length and digest in catalog order, and each checked-in decode is
+/// one of them byte for byte. The approval itself is checked separately, after
+/// everything it binds.
+fn verify_reviewed_decodes(
+    root: &Path,
+    record: &Value,
+    catalog: &Value,
+    sources: &BTreeMap<String, Vec<u8>>,
+) -> Result<(), String> {
+    verify_decoder_pin(root)?;
+    let decodes = array_at(catalog, &["assets"], "revision catalog assets")?
+        .iter()
+        .map(|asset| {
+            let path = string(asset, "upstreamPath", "catalog asset")?;
+            let source = sources
+                .get(path)
+                .ok_or_else(|| format!("no reassembled source for {path}"))?;
+            review_decode(path, source)
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    if decodes.len() != 230 {
+        return Err("reviewed decodes must cover all 230 official chunks".to_owned());
+    }
+    let expected = reviewed_decodes_record(&decodes, record["approval"].clone());
+    if *record != expected {
+        return Err(
+            "reviewed-decodes record differs from the pinned decoder's output over the checked-in chunks"
+                .to_owned(),
+        );
+    }
+    let base = root.join("crates/excalidraw-render-assets-base");
+    for checked_in in array_at(record, &["checkedInDecodes"], "checked-in decodes")? {
+        let identity = string(checked_in, "identity", "checked-in decode")?;
+        let relative = string(checked_in, "path", "checked-in decode")?;
+        let sfnt_path = base.join(relative);
+        let sfnt = fs::read(&sfnt_path)
+            .map_err(|error| format!("failed to read {}: {error}", sfnt_path.display()))?;
+        let decode = decodes
+            .iter()
+            .find(|decode| decode.identity == identity)
+            .ok_or_else(|| format!("checked-in decode {identity} is not an official chunk"))?;
+        if sfnt.len() != decode.decoded_length
+            || sha256(&sfnt) != decode.decoded_sha256
+            || integer(checked_in, "length", "checked-in decode")? as usize != sfnt.len()
+            || string(checked_in, "sha256", "checked-in decode")? != decode.decoded_sha256
+        {
+            return Err(format!(
+                "checked-in decode {relative} is not the reviewed decode of {identity}"
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Prints the subject a maintainer approves on the deciding issue.
+pub fn reviewed_decodes_approval_subject() -> Result<String, String> {
+    verify(false)?;
+    reviewed_decodes_subject(&read_reviewed_decodes(&crate::conformance::repo_root())?)
+}
+
+/// Records the maintainer's approval of the reviewed-decodes record after
+/// checking it names the subject the record has today.
+pub fn record_reviewed_decodes_approval(
+    approved_by: &str,
+    approved_at: &str,
+    approval_url: &str,
+    expected_subject: &str,
+) -> Result<(), String> {
+    verify(false)?;
+    let root = crate::conformance::repo_root();
+    let mut record = read_reviewed_decodes(&root)?;
+    if !record["approval"].is_null() {
+        return Err("reviewed-decodes record is already approved".to_owned());
+    }
+    let subject = reviewed_decodes_subject(&record)?;
+    let expected = expected_subject
+        .strip_prefix("sha256:")
+        .unwrap_or(expected_subject);
+    if subject != expected {
+        return Err(format!(
+            "approval subject mismatch: expected {expected}, computed {subject}"
+        ));
+    }
+    record["approval"] = json!({
+        "approved_at": approved_at,
+        "approved_by": approved_by,
+        "approval_subject_sha256": format!("sha256:{subject}"),
+        "approval_url": approval_url,
+    });
+    verify_reviewed_decodes_approval(&record, true)?;
+    let bytes = serde_json::to_vec(&record)
+        .map_err(|error| format!("failed to serialize reviewed-decodes record: {error}"))?;
+    write_if_changed(&root.join(REVIEWED_DECODES_PATH), &bytes)?;
+    write_digest_sidecar(&root.join(REVIEWED_DECODES_DIGEST_PATH), &bytes)?;
+    verify(true)
 }
 
 fn verify_noto_emoji(root: &Path) -> Result<(), String> {
@@ -881,19 +1192,29 @@ fn bundle_paths(root: &Path) -> [PathBuf; 5] {
     ]
 }
 
-fn build_catalog(assets: &[ImportedAsset], scene_surface: &Value) -> Result<Value, String> {
+fn build_catalog(
+    assets: &[ImportedAsset],
+    scene_surface: &Value,
+    reviewed_decodes: &Value,
+) -> Result<Value, String> {
     let fallback_ids = ids(scene_surface, "fallbackRecipes", "recipeId")?;
     let notice_ids = ids(scene_surface, "noticeCatalog", "id")?;
     let source_ids = ids(scene_surface, "sourceCatalog", "id")?;
+    let decodes = reviewed_decode_index(reviewed_decodes)?;
     let asset_values = assets
         .iter()
         .map(|asset| {
             let identity = format!("{}@sha256:{}", asset.path, asset.digest);
             let segment_identity = format!("{identity}/segment/0");
-            json!({
+            let (decoded_length, decoded_sha256) = decodes.get(identity.as_str()).ok_or_else(|| {
+                format!("reviewed-decodes record has no decode for {identity}")
+            })?;
+            Ok(json!({
                 "completeLength": asset.length,
                 "completeSha256": asset.digest,
                 "copyright": asset.copyright,
+                "decodedLength": decoded_length,
+                "decodedSha256": decoded_sha256,
                 "family": asset.family,
                 "identity": identity,
                 "licenseIdentity": asset.license,
@@ -917,9 +1238,9 @@ fn build_catalog(assets: &[ImportedAsset], scene_surface: &Value) -> Result<Valu
                     "https://github.com/excalidraw/excalidraw/blob/{SOURCE_COMMIT}/packages/excalidraw/{}",
                     asset.path
                 ),
-            })
+            }))
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<_>, String>>()?;
 
     Ok(json!({
         "assets": asset_values,
@@ -949,7 +1270,28 @@ fn build_catalog(assets: &[ImportedAsset], scene_surface: &Value) -> Result<Valu
     }))
 }
 
-fn expected_catalog(reference_assets: &Value, scene_surface: &Value) -> Result<Value, String> {
+/// Each chunk's reviewed decode as the record states it, keyed by asset
+/// identity, so the catalog can carry the decode beside the source digests.
+fn reviewed_decode_index(record: &Value) -> Result<BTreeMap<&str, (usize, &str)>, String> {
+    let mut index = BTreeMap::new();
+    for chunk in array_at(record, &["chunks"], "reviewed-decodes chunks")? {
+        let identity = string(chunk, "identity", "reviewed decode")?;
+        let decoded_length = integer(chunk, "decodedLength", "reviewed decode")? as usize;
+        let decoded_sha256 = string(chunk, "decodedSha256", "reviewed decode")?;
+        if index
+            .insert(identity, (decoded_length, decoded_sha256))
+            .is_some()
+        {
+            return Err(format!("reviewed-decodes record repeats {identity}"));
+        }
+    }
+    Ok(index)
+}
+
+/// The 230 official assets as the authoritative reference manifest lists them,
+/// in catalog order with the shard layout `partition` gives their bytes. The
+/// bytes themselves are empty until `load_shard_bytes` fills them.
+fn expected_assets(reference_assets: &Value) -> Result<Vec<ImportedAsset>, String> {
     let manifest_assets = array_at(
         reference_assets,
         &["officialPackage", "assets"],
@@ -993,7 +1335,64 @@ fn expected_catalog(reference_assets: &Value, scene_surface: &Value) -> Result<V
         offset += asset.length;
     }
     require_shard_crates(shard + 1)?;
-    build_catalog(&assets, scene_surface)
+    Ok(assets)
+}
+
+/// Reads one checked-in raw asset shard by its identity (`revision-1-NNN`),
+/// refusing a shard above the raw limit before anything is sliced out of it.
+fn read_shard(root: &Path, shard: &str) -> Result<Vec<u8>, String> {
+    let suffix = shard
+        .strip_prefix("revision-1-")
+        .ok_or_else(|| format!("unknown shard identity {shard}"))?;
+    let shard_path = root.join(format!(
+        "crates/excalidraw-render-assets-data-{suffix}/data/{shard}.bin"
+    ));
+    let bytes = fs::read(&shard_path)
+        .map_err(|error| format!("failed to read {}: {error}", shard_path.display()))?;
+    if bytes.len() > RAW_SHARD_LIMIT {
+        return Err(format!("asset shard {shard} exceeds 8 MiB"));
+    }
+    Ok(bytes)
+}
+
+/// Fills each asset's bytes from the checked-in shard its layout names,
+/// accepting them only when they carry the manifested digest.
+fn load_shard_bytes(root: &Path, assets: &mut [ImportedAsset]) -> Result<(), String> {
+    let mut shards = BTreeMap::<String, Vec<u8>>::new();
+    for asset in assets {
+        let shard = format!("revision-1-{:03}", asset.shard);
+        let bytes = match shards.entry(shard) {
+            std::collections::btree_map::Entry::Occupied(entry) => entry.into_mut(),
+            std::collections::btree_map::Entry::Vacant(entry) => {
+                let bytes = read_shard(root, entry.key())?;
+                entry.insert(bytes)
+            }
+        };
+        let end = asset
+            .offset
+            .checked_add(asset.length)
+            .ok_or_else(|| format!("asset {} overflows its shard", asset.path))?;
+        let bytes = bytes
+            .get(asset.offset..end)
+            .ok_or_else(|| format!("asset {} lies outside its shard", asset.path))?;
+        if sha256(bytes) != asset.digest {
+            return Err(format!("checked-in shard bytes differ for {}", asset.path));
+        }
+        asset.bytes = bytes.to_vec();
+    }
+    Ok(())
+}
+
+fn expected_catalog(
+    reference_assets: &Value,
+    scene_surface: &Value,
+    reviewed_decodes: &Value,
+) -> Result<Value, String> {
+    build_catalog(
+        &expected_assets(reference_assets)?,
+        scene_surface,
+        reviewed_decodes,
+    )
 }
 
 /// Every data crate must receive exactly one shard. Too many shards leaves a
@@ -1059,6 +1458,15 @@ fn generate_rust(
         output.push_str(&format!(
             "        complete_length: {},\n",
             integer(asset, "completeLength", "catalog asset")?
+        ));
+        rust_field(
+            &mut output,
+            "decoded_sha256",
+            string(asset, "decodedSha256", "catalog asset")?,
+        );
+        output.push_str(&format!(
+            "        decoded_length: {},\n",
+            integer(asset, "decodedLength", "catalog asset")?
         ));
         for (rust_name, json_name) in [
             ("family", "family"),
@@ -1707,7 +2115,10 @@ fn verify_catalog_identity(catalog: &Value, scene_surface: &Value) -> Result<(),
     Ok(())
 }
 
-fn verify_assets(root: &Path, catalog: &Value) -> Result<Vec<u8>, String> {
+/// Verifies every catalog asset against the reference manifest and the shards,
+/// returning each reassembled source keyed by upstream path for the checks that
+/// need the bytes themselves.
+fn verify_assets(root: &Path, catalog: &Value) -> Result<BTreeMap<String, Vec<u8>>, String> {
     let reference = read_canonical_json(
         &root.join("tests/oracle/reference-profiles/revision-1-assets.json"),
         "reference asset manifest",
@@ -1749,7 +2160,7 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<Vec<u8>, String> {
     let mut paths = BTreeSet::new();
     let mut shard_cache = BTreeMap::<String, Vec<u8>>::new();
     let mut covered_ends = BTreeMap::<String, usize>::new();
-    let mut excalifont_source = None;
+    let mut sources = BTreeMap::new();
     for asset in assets {
         let path = string(asset, "upstreamPath", "catalog asset")?;
         if !paths.insert(path) || path.starts_with("fonts/Assistant/") {
@@ -1779,18 +2190,7 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<Vec<u8>, String> {
             let bytes = if let Some(bytes) = shard_cache.get(shard) {
                 bytes
             } else {
-                let suffix = shard
-                    .strip_prefix("revision-1-")
-                    .ok_or_else(|| format!("unknown shard identity {shard}"))?;
-                let shard_path = root.join(format!(
-                    "crates/excalidraw-render-assets-data-{suffix}/data/{shard}.bin"
-                ));
-                let bytes = fs::read(&shard_path)
-                    .map_err(|error| format!("failed to read {}: {error}", shard_path.display()))?;
-                if bytes.len() > RAW_SHARD_LIMIT {
-                    return Err(format!("asset shard {shard} exceeds 8 MiB"));
-                }
-                shard_cache.insert(shard.to_owned(), bytes);
+                shard_cache.insert(shard.to_owned(), read_shard(root, shard)?);
                 shard_cache.get(shard).unwrap()
             };
             let offset = integer(segment, "offset", "asset segment")? as usize;
@@ -1816,9 +2216,7 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<Vec<u8>, String> {
         if complete.len() != *expected_length || sha256(&complete) != *expected_digest {
             return Err(format!("reassembled asset digest mismatch for {path}"));
         }
-        if path == EXCALIFONT_BASIC_LATIN_PATH {
-            excalifont_source = Some(complete);
-        }
+        sources.insert(path.to_owned(), complete);
     }
     if paths != expected.keys().map(String::as_str).collect() {
         return Err("revision catalog asset inventory is incomplete".to_owned());
@@ -1830,7 +2228,7 @@ fn verify_assets(root: &Path, catalog: &Value) -> Result<Vec<u8>, String> {
             ));
         }
     }
-    excalifont_source.ok_or_else(|| "manifested Excalifont source is missing".to_owned())
+    Ok(sources)
 }
 
 fn verify_scene_surface(root: &Path, manifest: &Value) -> Result<(), String> {
@@ -2782,7 +3180,10 @@ mod tests {
     use serde_json::{json, Value};
 
     use super::{
-        parse_unicode_ranges, parse_xiaolai_index, verify_scene_surface, XiaolaiIndexFace,
+        carry_approval, parse_unicode_ranges, parse_xiaolai_index, review_decode,
+        reviewed_decodes_record, reviewed_decodes_subject, verify_reviewed_decodes_approval,
+        verify_scene_surface, XiaolaiIndexFace, EXCALIFONT_BASIC_LATIN_PATH,
+        EXCALIFONT_BASIC_LATIN_SHA256,
     };
 
     /// A pinned-index excerpt covering both descriptor layouts the upstream
@@ -2998,5 +3399,140 @@ export const XiaolaiFontFaces: ExcalidrawFontFaceDescriptor[] = [
         assert_rejected(manifest(), |manifest| {
             manifest["recordKinds"][0]["inherits"] = json!(["scene"]);
         });
+    }
+
+    fn excalifont_basic_latin_source() -> Vec<u8> {
+        excalidraw_render_assets_base::load_asset(EXCALIFONT_BASIC_LATIN_PATH)
+            .expect("checked-in shards retain their digests")
+            .expect("the Excalifont basic-Latin chunk is manifested")
+            .bytes()
+            .to_vec()
+    }
+
+    fn excalifont_reviewed_decodes(approval: Value) -> Value {
+        let decode = review_decode(
+            EXCALIFONT_BASIC_LATIN_PATH,
+            &excalifont_basic_latin_source(),
+        )
+        .expect("the manifested chunk decodes");
+        reviewed_decodes_record(&[decode], approval)
+    }
+
+    fn approval(subject: &str, url: &str) -> Value {
+        json!({
+            "approval_subject_sha256": format!("sha256:{subject}"),
+            "approval_url": url,
+            "approved_at": "2026-09-07",
+            "approved_by": "sagikazarmark",
+        })
+    }
+
+    /// #58 approved the Excalifont basic-Latin decode after an independent
+    /// byte-level review of exactly these output bytes. Reviewing the chunk
+    /// again must land on that approved output, so the one chunk with a
+    /// checked-in decode anchors the derivation for the other 229.
+    #[test]
+    fn review_decode_reproduces_the_independently_reviewed_excalifont_decode() {
+        let decode = review_decode(
+            EXCALIFONT_BASIC_LATIN_PATH,
+            &excalifont_basic_latin_source(),
+        )
+        .expect("the manifested chunk decodes");
+
+        assert_eq!(
+            decode.identity,
+            format!("{EXCALIFONT_BASIC_LATIN_PATH}@sha256:{EXCALIFONT_BASIC_LATIN_SHA256}")
+        );
+        assert_eq!(decode.upstream_path, EXCALIFONT_BASIC_LATIN_PATH);
+        assert_eq!(decode.source_length, 24_956);
+        assert_eq!(decode.source_sha256, EXCALIFONT_BASIC_LATIN_SHA256);
+        assert_eq!(decode.decoded_length, 61_948);
+        assert_eq!(
+            decode.decoded_sha256,
+            "a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb"
+        );
+    }
+
+    #[test]
+    fn review_decode_fails_closed_on_a_source_that_does_not_decode() {
+        let source = excalifont_basic_latin_source();
+        let error = review_decode(EXCALIFONT_BASIC_LATIN_PATH, &source[..source.len() / 2])
+            .expect_err("a truncated source has no reviewed decode");
+        assert!(error.contains(EXCALIFONT_BASIC_LATIN_PATH));
+    }
+
+    /// The approval is excluded from its own subject, so recording it does not
+    /// move the subject; any recorded digest moving does, which is what makes
+    /// the record's approval bind exactly the bytes it approved.
+    #[test]
+    fn reviewed_decodes_approval_subject_excludes_the_approval_and_moves_with_a_digest() {
+        let pending = excalifont_reviewed_decodes(Value::Null);
+        let subject = reviewed_decodes_subject(&pending).expect("subject derives");
+        let approved = excalifont_reviewed_decodes(approval(
+            &subject,
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/120#issuecomment-1",
+        ));
+        assert_eq!(
+            reviewed_decodes_subject(&approved).expect("subject derives"),
+            subject
+        );
+
+        let mut moved = pending.clone();
+        moved["chunks"][0]["decodedSha256"] =
+            json!("0000000000000000000000000000000000000000000000000000000000000000");
+        assert_ne!(
+            reviewed_decodes_subject(&moved).expect("subject derives"),
+            subject
+        );
+    }
+
+    #[test]
+    fn reviewed_decodes_approval_is_required_by_the_gate_and_bound_to_issue_120() {
+        let pending = excalifont_reviewed_decodes(Value::Null);
+        assert!(verify_reviewed_decodes_approval(&pending, false).is_ok());
+        assert!(verify_reviewed_decodes_approval(&pending, true).is_err());
+
+        let subject = reviewed_decodes_subject(&pending).expect("subject derives");
+        let approved = excalifont_reviewed_decodes(approval(
+            &subject,
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/120#issuecomment-5560475310",
+        ));
+        assert!(verify_reviewed_decodes_approval(&approved, true).is_ok());
+
+        let elsewhere = excalifont_reviewed_decodes(approval(
+            &subject,
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/58#issuecomment-5051018482",
+        ));
+        assert!(verify_reviewed_decodes_approval(&elsewhere, true).is_err());
+
+        let mut stale = approved.clone();
+        stale["chunks"][0]["decodedLength"] = json!(61_949);
+        assert!(verify_reviewed_decodes_approval(&stale, true).is_err());
+    }
+
+    /// `materialize` and `import` re-derive the record from the shards; an
+    /// approval survives that only while the bytes it approved do.
+    #[test]
+    fn rematerializing_keeps_an_approval_only_while_its_subject_holds() {
+        let pending = excalifont_reviewed_decodes(Value::Null);
+        let subject = reviewed_decodes_subject(&pending).expect("subject derives");
+        let existing = excalifont_reviewed_decodes(approval(
+            &subject,
+            "https://github.com/sagikazarmark/excalidraw-render.orig/issues/120#issuecomment-1",
+        ));
+
+        let mut unchanged = pending.clone();
+        carry_approval(Some(&existing), &mut unchanged).expect("approval carries");
+        assert_eq!(unchanged["approval"], existing["approval"]);
+
+        let mut moved = pending.clone();
+        moved["chunks"][0]["decodedSha256"] =
+            json!("0000000000000000000000000000000000000000000000000000000000000000");
+        carry_approval(Some(&existing), &mut moved).expect("a moved record is not an error");
+        assert!(moved["approval"].is_null());
+
+        let mut first = pending;
+        carry_approval(None, &mut first).expect("no prior record is not an error");
+        assert!(first["approval"].is_null());
     }
 }

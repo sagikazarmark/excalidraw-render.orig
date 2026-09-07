@@ -453,6 +453,81 @@ fn pdf_embeds_the_pinned_face_whose_declared_range_covers_the_text() {
     }));
 }
 
+/// Spec 8.6: PDF embeds each selected official font chunk's reviewed decode
+/// byte for byte, the sfnt whose length and digest the revision catalog
+/// records for the chunk under the #120 approval. A Latin, a multi-range, and
+/// a Xiaolai selection each embed exactly their chunks' reviewed decodes and
+/// nothing else.
+#[test]
+fn pdf_embeds_each_selected_chunks_reviewed_decode_byte_for_byte() {
+    let request = RenderRequest::builder(OutputFormat::Pdf)
+        .build()
+        .expect("PDF request is valid");
+    let embedded_reviewed_decodes = |font_family: i32, text: &str| {
+        let outcome = Renderer::new()
+            .render(&text_scene(font_family, text), &request)
+            .expect("text renders");
+        embedded_pdf_fonts(outcome.artifact().bytes())
+            .into_iter()
+            .map(|font| {
+                reviewed_decode_of(&font).unwrap_or_else(|| {
+                    panic!("an embedded FontFile2 is no chunk's reviewed decode")
+                })
+            })
+            .collect::<Vec<_>>()
+    };
+
+    // Latin: the one chunk whose reviewed decode is also checked in (#58).
+    let [excalifont_latin] = embedded_reviewed_decodes(5, "A")[..] else {
+        panic!("Latin Excalifont text embeds one face");
+    };
+    assert_eq!(
+        excalifont_latin.upstream_path,
+        "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2"
+    );
+    assert_eq!(
+        excalifont_latin.decoded_sha256,
+        excalidraw_render_assets_base::excalifont_basic_latin_sfnt_transformation().output_sha256
+    );
+
+    // Multi-range: Nunito's Latin and Cyrillic chunks, each its own decode.
+    let nunito = embedded_reviewed_decodes(6, "A\u{416}");
+    assert_eq!(
+        nunito.len(),
+        2,
+        "the Latin and the Cyrillic chunk are embedded"
+    );
+    assert!(nunito.iter().all(|chunk| chunk.family == "Nunito"));
+    assert_ne!(nunito[0].identity, nunito[1].identity);
+    for (chunk, scalar) in nunito.iter().zip(['A', '\u{416}']) {
+        let declared = excalidraw_render_assets_base::font_face_unicode_ranges(
+            chunk.family,
+            chunk.upstream_path,
+        )
+        .expect("Nunito chunk declares ranges");
+        assert!(
+            declared
+                .iter()
+                .any(|(start, end)| (*start..=*end).contains(&u32::from(scalar))),
+            "{} declares {scalar:?}",
+            chunk.upstream_path
+        );
+    }
+
+    // Xiaolai: the CJK subset trigger adds the one Xiaolai chunk declaring U+4E2D
+    // beside the Excalifont Latin chunk; both are reviewed decodes.
+    let cjk = embedded_reviewed_decodes(5, "A\u{4e2d}");
+    assert_eq!(cjk.len(), 2, "Excalifont Latin and one Xiaolai chunk");
+    assert_eq!(cjk[0].identity, excalifont_latin.identity);
+    assert_eq!(cjk[1].family, "Xiaolai");
+    let declared =
+        excalidraw_render_assets_base::font_face_unicode_ranges("Xiaolai", cjk[1].upstream_path)
+            .expect("Xiaolai chunk declares ranges");
+    assert!(declared
+        .iter()
+        .any(|(start, end)| (*start..=*end).contains(&0x4e2d)));
+}
+
 #[test]
 fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
     // Spec 8.3: each source line is resolved by UAX #9 into visual runs, laid
@@ -696,6 +771,18 @@ fn embedded_woff2(svg: &str) -> Vec<Vec<u8>> {
         remaining = rest;
     }
     fonts
+}
+
+/// The official font chunk whose reviewed decode the embedded bytes are, by the
+/// length and digest the revision catalog records; `None` when they are no
+/// chunk's.
+fn reviewed_decode_of(font: &[u8]) -> Option<&'static excalidraw_render_assets_base::AssetRecord> {
+    use sha2::{Digest as _, Sha256};
+    let digest = format!("{:x}", Sha256::digest(font));
+    excalidraw_render_assets_base::revision_1()
+        .assets
+        .iter()
+        .find(|asset| asset.decoded_length == font.len() && asset.decoded_sha256 == digest)
 }
 
 /// Every embedded `FontFile2` stream: the PDF writes them uncompressed with

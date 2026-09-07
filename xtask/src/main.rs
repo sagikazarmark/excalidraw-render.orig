@@ -32,8 +32,26 @@ fn run_catalog(mut args: impl Iterator<Item = String>) -> Result<(), String> {
     match args.next().as_deref() {
         Some("verify") => {
             no_more_args(args)?;
-            catalog::verify()?;
+            catalog::verify(true)?;
             println!("verified compatibility revision 1 catalog");
+        }
+        Some("reviewed-decodes-approval-subject") => {
+            no_more_args(args)?;
+            println!("sha256:{}", catalog::reviewed_decodes_approval_subject()?);
+        }
+        Some("record-reviewed-decodes-approval") => {
+            let approved_by = required_arg(&mut args, "GitHub identity")?;
+            let approved_at = required_arg(&mut args, "approval date")?;
+            let approval_url = required_arg(&mut args, "approval URL")?;
+            let expected_subject = required_arg(&mut args, "approval subject")?;
+            no_more_args(args)?;
+            catalog::record_reviewed_decodes_approval(
+                &approved_by,
+                &approved_at,
+                &approval_url,
+                &expected_subject,
+            )?;
+            println!("recorded compatibility revision 1 reviewed-decodes approval");
         }
         Some("import") => {
             let source_root = required_arg(&mut args, "local Excalidraw dist/prod path")?;
@@ -258,7 +276,8 @@ fn run_reference_oracle(mode: &str, case_id: &str) -> Result<(), String> {
 fn usage() -> String {
     concat!(
         "usage: cargo run --locked -p xtask -- ",
-        "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify> | ",
+        "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
+        "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
         "conformance <generate|reproduce|verify|verify-all|approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",

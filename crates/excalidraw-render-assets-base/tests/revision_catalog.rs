@@ -1,10 +1,11 @@
 use std::collections::BTreeMap;
 
 use excalidraw_render_assets_base::{
-    excalifont_basic_latin_sfnt_transformation, load_asset, load_excalifont_basic_latin_sfnt,
-    revision_1, FontSubsetTableAction, CJK_SCALAR_COUNT_V1, CJK_SCALAR_RANGES_V1,
-    CJK_SCALAR_TABLE_BYTES_V1, CJK_SCALAR_TABLE_SHA256_V1, FONT_SUBSET_PROFILE_SETTINGS_V1,
-    FONT_SUBSET_TABLE_RULES_V1, RAW_SHARD_LIMIT,
+    excalifont_basic_latin_sfnt_transformation, find_asset, load_asset,
+    load_excalifont_basic_latin_sfnt, revision_1, verify_reviewed_decode, FontSubsetTableAction,
+    CJK_SCALAR_COUNT_V1, CJK_SCALAR_RANGES_V1, CJK_SCALAR_TABLE_BYTES_V1,
+    CJK_SCALAR_TABLE_SHA256_V1, FONT_SUBSET_PROFILE_SETTINGS_V1, FONT_SUBSET_TABLE_RULES_V1,
+    RAW_SHARD_LIMIT,
 };
 use sha2::{Digest, Sha256};
 
@@ -61,6 +62,75 @@ fn every_catalog_asset_reassembles_and_verifies_before_use() {
     assert!(load_asset("fonts/Assistant/Assistant-Regular.woff2")
         .expect("missing lookup is not an integrity error")
         .is_none());
+}
+
+/// Spec 8.6: every official font chunk's reviewed decode is what the pinned
+/// decoder produces for its exact manifested bytes, and the catalog records it
+/// by length and digest. The renderer may embed a decode only after matching
+/// it, so a decode that drifts by one byte is an integrity failure, not a font.
+#[test]
+fn every_official_font_chunk_carries_a_reviewed_decode_the_catalog_verifies() {
+    let catalog = revision_1();
+    for asset in catalog.assets {
+        let source = load_asset(asset.upstream_path)
+            .expect("source integrity")
+            .expect("source is manifested");
+        let decoded = wuff::decompress_woff2(source.bytes()).expect("qualified chunk decodes");
+        assert_eq!(
+            decoded.len(),
+            asset.decoded_length,
+            "{} decodes to its recorded length",
+            asset.upstream_path
+        );
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&decoded)),
+            asset.decoded_sha256,
+            "{} decodes to its reviewed digest",
+            asset.upstream_path
+        );
+        let verified = verify_reviewed_decode(asset, decoded.clone())
+            .expect("the pinned decoder's output is the reviewed decode");
+        assert_eq!(verified.bytes(), decoded.as_slice());
+        assert_eq!(verified.into_bytes(), decoded);
+    }
+
+    let liberation = find_asset("fonts/Liberation/LiberationSans-Regular.woff2")
+        .expect("the Liberation Sans replacement is an official chunk");
+    let mut drifted = wuff::decompress_woff2(
+        load_asset(liberation.upstream_path)
+            .expect("source integrity")
+            .expect("source is manifested")
+            .bytes(),
+    )
+    .expect("qualified chunk decodes");
+    let middle = drifted.len() / 2;
+    drifted[middle] ^= 0x01;
+    let error = verify_reviewed_decode(liberation, drifted)
+        .expect_err("a decode that is not the reviewed one is rejected");
+    assert_eq!(error.asset_identity(), liberation.identity);
+    assert_eq!(error.segment_identity(), None);
+    assert!(error.to_string().contains("reviewed decode"));
+    assert!(find_asset("fonts/Assistant/Assistant-Regular.woff2").is_none());
+}
+
+/// The one chunk whose reviewed decode is also checked in byte for byte (#58)
+/// records the same decode as the catalog, so the two paths the renderer may
+/// take to the Excalifont basic-Latin sfnt cannot disagree.
+#[test]
+fn the_checked_in_excalifont_decode_is_the_catalog_reviewed_decode() {
+    let asset =
+        find_asset("fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2")
+            .expect("the Excalifont basic-Latin chunk is an official chunk");
+    let sfnt = load_excalifont_basic_latin_sfnt().expect("predecoded sfnt integrity");
+    assert_eq!(sfnt.bytes().len(), asset.decoded_length);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(sfnt.bytes())),
+        asset.decoded_sha256
+    );
+    assert_eq!(
+        asset.decoded_sha256,
+        excalifont_basic_latin_sfnt_transformation().output_sha256
+    );
 }
 
 #[test]

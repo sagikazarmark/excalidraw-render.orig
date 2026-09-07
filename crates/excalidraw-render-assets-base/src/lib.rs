@@ -251,6 +251,12 @@ pub struct AssetSegment {
 }
 
 /// One byte-bearing entry in the sealed built-in asset catalog.
+///
+/// `decoded_length` and `decoded_sha256` identify the chunk's reviewed decode:
+/// the sfnt the pinned `wuff 0.2.8` decode of the exact stored bytes produces,
+/// as `catalog/reviewed-decodes/revision-1.json` records and its approval binds
+/// (spec 8.6). [`verify_reviewed_decode`] is the only way a decode becomes
+/// embeddable bytes.
 #[derive(Clone, Copy, Debug)]
 pub struct AssetRecord {
     pub identity: &'static str,
@@ -259,6 +265,8 @@ pub struct AssetRecord {
     pub upstream_url: &'static str,
     pub complete_sha256: &'static str,
     pub complete_length: usize,
+    pub decoded_sha256: &'static str,
+    pub decoded_length: usize,
     pub family: &'static str,
     pub license_identity: &'static str,
     pub provenance_identity: &'static str,
@@ -314,13 +322,27 @@ impl VerifiedAsset {
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
     }
+
+    /// Consumes the verification, yielding the verified bytes.
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.bytes
+    }
 }
 
 /// Indicates that checked-in asset bytes no longer match their sealed identity.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AssetIntegrityError {
     asset_identity: &'static str,
-    segment_identity: Option<&'static str>,
+    stage: IntegrityStage,
+}
+
+/// Which digest of an asset failed to verify: one stored segment, the
+/// reassembled complete bytes, or the decode measured against the reviewed one.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum IntegrityStage {
+    Segment(&'static str),
+    Complete,
+    ReviewedDecode,
 }
 
 impl AssetIntegrityError {
@@ -329,23 +351,32 @@ impl AssetIntegrityError {
         self.asset_identity
     }
 
-    /// Returns the affected segment identity, or `None` for a complete digest mismatch.
+    /// Returns the affected segment identity, or `None` when the complete
+    /// digest or the reviewed decode failed instead.
     pub const fn segment_identity(&self) -> Option<&'static str> {
-        self.segment_identity
+        match self.stage {
+            IntegrityStage::Segment(segment) => Some(segment),
+            IntegrityStage::Complete | IntegrityStage::ReviewedDecode => None,
+        }
     }
 }
 
 impl fmt::Display for AssetIntegrityError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.segment_identity {
-            Some(segment) => write!(
+        match self.stage {
+            IntegrityStage::Segment(segment) => write!(
                 formatter,
                 "asset {} has invalid segment {segment}",
                 self.asset_identity
             ),
-            None => write!(
+            IntegrityStage::Complete => write!(
                 formatter,
                 "asset {} has an invalid complete digest",
+                self.asset_identity
+            ),
+            IntegrityStage::ReviewedDecode => write!(
+                formatter,
+                "asset {} decoded to bytes that are not its reviewed decode",
                 self.asset_identity
             ),
         }
@@ -375,12 +406,33 @@ pub const fn revision_1() -> &'static RevisionCatalog {
     &REVISION_1
 }
 
+/// Looks up one built-in asset's catalog record by its upstream package path.
+pub fn find_asset(upstream_path: &str) -> Option<&'static AssetRecord> {
+    let index = ASSETS
+        .binary_search_by_key(&upstream_path, |asset| asset.upstream_path)
+        .ok()?;
+    ASSETS.get(index)
+}
+
 /// Looks up and verifies one complete built-in asset by its upstream package path.
 pub fn load_asset(upstream_path: &str) -> Result<Option<VerifiedAsset>, AssetIntegrityError> {
-    let Ok(index) = ASSETS.binary_search_by_key(&upstream_path, |asset| asset.upstream_path) else {
-        return Ok(None);
-    };
-    verify_asset(&ASSETS[index]).map(Some)
+    find_asset(upstream_path).map(verify_asset).transpose()
+}
+
+/// Accepts decoded sfnt bytes as one official font chunk's reviewed decode
+/// exactly when they have the length and digest the catalog records for it;
+/// any other bytes are an integrity failure, whatever produced them.
+pub fn verify_reviewed_decode(
+    asset: &'static AssetRecord,
+    decoded: Vec<u8>,
+) -> Result<VerifiedAsset, AssetIntegrityError> {
+    if decoded.len() != asset.decoded_length || sha256(&decoded) != asset.decoded_sha256 {
+        return Err(AssetIntegrityError {
+            asset_identity: asset.identity,
+            stage: IntegrityStage::ReviewedDecode,
+        });
+    }
+    Ok(VerifiedAsset { bytes: decoded })
 }
 
 const EXCALIFONT_BASIC_LATIN_SFNT_IDENTITY: &str = concat!(
@@ -399,7 +451,7 @@ pub fn load_excalifont_basic_latin_sfnt() -> Result<VerifiedAsset, AssetIntegrit
     {
         return Err(AssetIntegrityError {
             asset_identity: EXCALIFONT_BASIC_LATIN_SFNT_IDENTITY,
-            segment_identity: None,
+            stage: IntegrityStage::Complete,
         });
     }
     Ok(VerifiedAsset {
@@ -421,7 +473,7 @@ pub fn load_noto_emoji_sfnt() -> Result<VerifiedAsset, AssetIntegrityError> {
     {
         return Err(AssetIntegrityError {
             asset_identity: NOTO_EMOJI_SFNT_IDENTITY,
-            segment_identity: None,
+            stage: IntegrityStage::Complete,
         });
     }
     Ok(VerifiedAsset {
@@ -712,19 +764,19 @@ fn verify_asset(asset: &'static AssetRecord) -> Result<VerifiedAsset, AssetInteg
             .checked_add(segment.length)
             .ok_or(AssetIntegrityError {
                 asset_identity: asset.identity,
-                segment_identity: Some(segment.identity),
+                stage: IntegrityStage::Segment(segment.identity),
             })?;
         let bytes = segment
             .bytes
             .get(segment.offset..end)
             .ok_or(AssetIntegrityError {
                 asset_identity: asset.identity,
-                segment_identity: Some(segment.identity),
+                stage: IntegrityStage::Segment(segment.identity),
             })?;
         if segment.order != expected_order || sha256(bytes) != segment.sha256 {
             return Err(AssetIntegrityError {
                 asset_identity: asset.identity,
-                segment_identity: Some(segment.identity),
+                stage: IntegrityStage::Segment(segment.identity),
             });
         }
         complete.extend_from_slice(bytes);
@@ -732,7 +784,7 @@ fn verify_asset(asset: &'static AssetRecord) -> Result<VerifiedAsset, AssetInteg
     if complete.len() != asset.complete_length || sha256(&complete) != asset.complete_sha256 {
         return Err(AssetIntegrityError {
             asset_identity: asset.identity,
-            segment_identity: None,
+            stage: IntegrityStage::Complete,
         });
     }
     Ok(VerifiedAsset { bytes: complete })

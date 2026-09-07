@@ -1000,10 +1000,34 @@ It identifies the causative node, logical bounds, final pixel dimensions, and
 all cause pointers. Deduplicated bytes do not deduplicate diagnostics.
 
 PDF text uses deterministic `rustybuzz` shaping, explicit glyph positions,
-stored source lines, reviewed predecoded sfnt chunks, deterministic character
-codes, complete `ToUnicode`, and line-level `ActualText`. It does not reflow,
-outline, rasterize, subset, rename fonts, or consult host services.
-Only reviewed predecoded chunks selected for glyphs actually used are embedded.
+stored source lines, the reviewed decodes of official font chunks, deterministic
+character codes, complete `ToUnicode`, and line-level `ActualText`. It does not
+reflow, outline, rasterize, subset, rename fonts, or consult host services.
+Only the reviewed decodes of chunks selected for glyphs actually used are
+embedded, each as one complete `FontFile2` stream, byte for byte; the complete
+Noto Emoji fallback, when selected, is embedded the same way as its exact
+digest-verified manifested bytes (Section 10), which have no decode.
+
+An official font chunk's reviewed decode is the sfnt the pinned `wuff 0.2.8`
+decode of the chunk's exact manifested WOFF2 bytes produces (#120). The revision
+catalog records every chunk's reviewed decode beside its source digests, as a
+decoded length and SHA-256, and the reviewed-decodes record
+(`catalog/reviewed-decodes/revision-1.json`) binds all 230 under one maintainer
+approval on the Section 14.4 subject pattern: the decoder's name, version, and
+invocation; the reference asset manifest and 8.3.3 qualification-corpus
+digests; each chunk's source and decoded length and digest in catalog order;
+and the decodes that are additionally checked in byte for byte. The review is
+the 8.3.3 qualification of that decoder over all 230 chunks on every supported
+target, not a per-chunk table comparison; a decode may additionally be reviewed
+independently and checked in, as the Excalifont basic-Latin decode is, and then
+must equal the recorded decode. `xtask catalog verify` re-derives every decode
+from the checked-in shards, requires each to parse and to have the length its
+container declares, requires the record and catalog to state exactly those
+decodes, and holds the decoder version to the lockfile. The renderer admits a
+decode for shaping or embedding only after matching its recorded length and
+digest; any other bytes are a sealed-asset failure, never a font. A decoder
+change, a moved decode, or a chunk added or removed moves the subject and
+requires a new approval.
 
 Every safe linked element generates one borderless URI annotation from
 deterministic transformed-bound quadrilaterals, clipped to the page and frame
@@ -1136,13 +1160,21 @@ renaming are forbidden. Each qualified source decode and subset toolchain record
 source, intermediate, and output digests; exact versions and invocation; complete
 profile and corpus-table-manifest digest; table/name/metric/license comparison;
 workspace bounds; reviewer; and date. Any unprofiled content, metric, table, or
-name change needs new approval.
+name change needs new approval. For the source decode that record is the Section
+8.6 reviewed-decodes record. A WOFF2 decode is a lossless container
+reconstruction: it has no intermediate and no profile or workspace of its own
+beyond the 8.3.3 qualification corpus whose digest it binds; its table, name,
+metric, and license comparison is byte identity with the recorded decode, which
+`xtask catalog verify` re-derives on the verifying host and which the 8.3.3
+corpus carries across supported targets through the subsets derived from it;
+and its reviewer and date are the approval's.
 
 Reserved Font Names `Virgil`, `Cascadia Code`, `Lilita`, and `Liberation` remain
-only on exact official source bytes and approved lossless decoding equivalents;
-generated Modified Versions use the Section 8.3 aliases. Excalifont source
-content carries Excalifont and Virgil provenance. Noto Emoji `3.003` uses the
-exact manifested path/hash without a stronger historical-origin claim.
+only on exact official source bytes and approved lossless decoding equivalents,
+the reviewed decodes; generated Modified Versions use the Section 8.3 aliases.
+Excalifont source content carries Excalifont and Virgil provenance. Noto Emoji
+`3.003` uses the exact manifested path/hash without a stronger historical-origin
+claim.
 
 Fonts are OFL-1.1 except MIT-licensed Comic Shanns. Font Awesome geometry is CC
 BY 4.0. Copied or ported Excalidraw, Rough.js, Perfect Freehand, and
@@ -1151,7 +1183,8 @@ points-on-curve code retains its MIT notices. New project-authored code is
 
 The asset catalog records identity, profile, upstream path/revision/URL, complete
 and segment digests and lengths, order, license/copyright, Reserved Font Names,
-transform history, Unicode range or role, and output formats. Imported bytes,
+transform history including the reviewed decode, Unicode range or role, and
+output formats. Imported bytes,
 indexes, manifests, and notices are checked in. A repository-owned Rust `xtask`
 is the sole importer; `build.rs` never downloads or generates production assets.
 
@@ -2665,6 +2698,9 @@ The direct-SVG font-subsetting amendment is specified by
 The 8.3 clarifications of the CJK subset trigger's evaluation point, the font
 fallback probe, and bidirectional layout are specified by
 [Record the CJK subset trigger's evaluation point, the fallback probe, and bidi in spec 8.3 and CONTEXT.md](https://github.com/sagikazarmark/excalidraw-render.orig/issues/122).
+The 8.6 definition of the reviewed decode PDF embeds for every official font
+chunk is specified by
+[Decide how PDF satisfies "reviewed predecoded sfnt chunks" for the 229 runtime-decoded chunks](https://github.com/sagikazarmark/excalidraw-render.orig/issues/120).
 Changing these bytes invalidates the original adjacent approval subject; a new
 maintainer approval is required before release.
 

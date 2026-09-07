@@ -210,6 +210,8 @@ impl From<TryReserveError> for LabelError {
 
 impl FallbackFont {
     pub(super) fn load() -> Result<Self, LabelError> {
+        let record = excalidraw_render_assets_base::find_asset(LIBERATION_SANS_PATH)
+            .ok_or(LabelError::InvalidFont)?;
         let asset = excalidraw_render_assets_base::load_asset(LIBERATION_SANS_PATH)
             .map_err(|_| LabelError::InvalidFont)?
             .ok_or(LabelError::InvalidFont)?;
@@ -217,6 +219,7 @@ impl FallbackFont {
         woff2.try_reserve_exact(asset.bytes().len())?;
         woff2.extend_from_slice(asset.bytes());
         let sfnt = wuff::decompress_woff2(&woff2).map_err(|_| LabelError::InvalidFont)?;
+        let sfnt = reviewed_decode(record, sfnt)?;
         rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
         Ok(Self { woff2, sfnt })
     }
@@ -1083,6 +1086,19 @@ fn sfnt_maps(sfnt: &[u8], character: char) -> bool {
         .is_some()
 }
 
+/// Admits decoded bytes as one official font chunk's reviewed decode (spec
+/// 8.6): only the sfnt whose length and digest the catalog records for the
+/// chunk may shape text or be embedded. Anything else is a sealed-asset
+/// failure, never a font.
+fn reviewed_decode(
+    record: &'static excalidraw_render_assets_base::AssetRecord,
+    decoded: Vec<u8>,
+) -> Result<Vec<u8>, LabelError> {
+    excalidraw_render_assets_base::verify_reviewed_decode(record, decoded)
+        .map(excalidraw_render_assets_base::VerifiedAsset::into_bytes)
+        .map_err(|_| LabelError::InvalidFont)
+}
+
 /// One resolved font family's official font chunks in pinned face order, each
 /// with its declared Unicode ranges and its sfnt decoded at most once, on
 /// demand. Only chunks whose declared range is consulted ever decode.
@@ -1192,6 +1208,7 @@ impl OfficialFontChunks {
                     .ok_or(LabelError::InvalidFont)?;
                 wuff::decompress_woff2(asset.bytes()).map_err(|_| LabelError::InvalidFont)?
             };
+            let sfnt = reviewed_decode(chunk.record, sfnt)?;
             rustybuzz::Face::from_slice(&sfnt, 0).ok_or(LabelError::InvalidFont)?;
             chunk.sfnt = Some(sfnt);
         }

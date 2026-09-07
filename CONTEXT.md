@@ -172,6 +172,10 @@ _Avoid_: Subsetter defaults, compression settings
 An official font chunk whose digest, table inventory, subset behavior, safety, and deterministic encoding have passed the complete native and WASM admission gates for a font subset profile.
 _Avoid_: Parseable font, supported font family
 
+**Reviewed decode**:
+The sfnt the pinned `wuff 0.2.8` decode of one official font chunk's exact manifested bytes produces, identified by the decoded length and SHA-256 the revision catalog records for the chunk and bound, for all 230 chunks at once, by the maintainer approval on the reviewed-decodes record. The review is the decoder's qualification over every chunk on every supported target; a decode may additionally be reviewed independently and checked in byte for byte, as the Excalifont basic-Latin decode is. `xtask catalog verify` re-derives every decode against the record, and PDF embeds a decode only after matching it.
+_Avoid_: Predecoded chunk (for the 229 that are not checked in), runtime decode, cached sfnt, per-chunk review record
+
 **Semantic font subset identity**:
 The domain-separated SHA-256 digest of the compatibility revision, complete font subset profile, official source-chunk identity, and count-prefixed first-use-ordered Unicode scalar values. The full digest governs derivation deduplication and notices; generated OpenType full and PostScript names use its first 128 bits without making cache behavior part of output semantics.
 _Avoid_: Generated-byte digest, font filename

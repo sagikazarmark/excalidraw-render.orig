@@ -84,6 +84,18 @@ or generates production data during a build:
 cargo run --locked -p xtask -- catalog import <local-dist-prod>
 ```
 
+The catalog also records every official font chunk's reviewed decode, the sfnt
+the pinned `wuff 0.2.8` decode of its exact bytes produces and the only bytes
+PDF may embed for it (spec 8.6). `catalog verify` re-derives all 230 decodes
+and requires the maintainer approval that binds them; `import` and
+`materialize` regenerate the record and clear its approval when the decodes
+move. The approval round follows the other evidence families:
+
+```sh
+cargo run --locked -p xtask -- catalog reviewed-decodes-approval-subject
+cargo run --locked -p xtask -- catalog record-reviewed-decodes-approval <login> <date> <issue-comment-url> <subject>
+```
+
 ## Artifact byte stability
 
 `tests/package-consumer` depends on Cargo's unpacked package output rather than
