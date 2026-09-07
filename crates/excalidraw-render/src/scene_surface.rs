@@ -103,6 +103,17 @@ pub(crate) struct SurfaceFallback {
     pub(crate) paint: bool,
 }
 
+/// The source position of one top-level record member in the total diagnostic
+/// order: the member index in the high half, leaving the low half for the
+/// nested position that diagnostics inside the member (such as the frame
+/// rendering controls under `appState.frameRendering`) carry, so a member's
+/// own diagnostics and its nested ones sort together by the member.
+fn member_source_position(position: usize) -> u64 {
+    u64::try_from(position)
+        .unwrap_or(u64::MAX)
+        .saturating_mul(u64::from(u32::MAX) + 1)
+}
+
 pub(crate) fn classify(
     scene: &SceneDocument,
     policy: &'static SceneSurfacePolicy,
@@ -379,7 +390,7 @@ fn classify_record(
                     diagnostics.try_reserve(1)?;
                     diagnostics.push(SurfaceDiagnostic {
                         source_order: scene.source_owner_order(owner.unwrap_or(&member.key), 0),
-                        source_position: u64::try_from(position).unwrap_or(u64::MAX),
+                        source_position: member_source_position(position),
                         local_owner: None,
                         diagnostic,
                     });
@@ -391,7 +402,7 @@ fn classify_record(
         diagnostics.try_reserve(1)?;
         diagnostics.push(SurfaceDiagnostic {
             source_order: scene.source_owner_order(owner.unwrap_or(&member.key), 0),
-            source_position: u64::try_from(position).unwrap_or(u64::MAX),
+            source_position: member_source_position(position),
             local_owner: None,
             diagnostic: CompatibilityDiagnostic {
                 code: DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,

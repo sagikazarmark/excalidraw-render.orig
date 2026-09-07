@@ -405,6 +405,69 @@ fn normalization_order_respects_source_member_position() {
 }
 
 #[test]
+fn app_state_diagnostics_follow_source_member_order_across_surface_and_normalization() {
+    // The unmatched members come from the scene-surface classification and
+    // the frame-rendering control from compatibility normalization; spec §11.3
+    // orders them by the `appState` member they belong to regardless of which
+    // layer reported them. Found by the scene fuzz.
+    let source = br##"{"type":"excalidraw","version":2,"elements":[],"appState":{"frameRendering":{"clip":"yes"},"alpha":1,"beta":2},"files":{}}"##;
+
+    let outcome = render_svg(source);
+    assert_eq!(
+        outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .map(|diagnostic| diagnostic.json_pointer())
+            .collect::<Vec<_>>(),
+        vec![
+            "/appState/frameRendering/clip",
+            "/appState/alpha",
+            "/appState/beta",
+        ]
+    );
+}
+
+#[test]
+fn a_coordinate_range_crossing_follows_its_source_member_position() {
+    // The coordinate-range crossing is reported by the render layer and the
+    // `y` repair by normalization; `width` is the later source member, so its
+    // crossing sorts after the repair (spec §11.3). Found by the scene fuzz.
+    let source = br##"{"type":"excalidraw","version":2,"elements":[{"id":"r","type":"rectangle","x":0,"y":"wrong","width":500,"height":40,"seed":1,"updated":1}],"appState":{},"files":{}}"##;
+    let scene = SceneDocument::parse(source).expect("normalization vector is admitted");
+    let limits = ResourceLimits::builder()
+        .max_coordinate_magnitude(400.0)
+        .build()
+        .expect("local coordinate limits are valid");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .resource_limits(limits)
+        .build()
+        .expect("resource-limited request is valid");
+
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("the crossing recovers locally");
+    assert_eq!(
+        outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .map(|diagnostic| (diagnostic.code(), diagnostic.json_pointer()))
+            .collect::<Vec<_>>(),
+        vec![
+            (
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                "/elements/0/y",
+            ),
+            (
+                DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,
+                "/elements/0/width",
+            ),
+        ]
+    );
+}
+
+#[test]
 fn diagnostic_limit_crossing_preserves_earlier_normalization_repairs() {
     let source = br##"{"type":"excalidraw","version":2,"elements":[{"type":"rectangle","width":180,"height":100,"seed":0}],"appState":{},"files":{}}"##;
     let scene = SceneDocument::parse(source).expect("normalization vector is admitted");

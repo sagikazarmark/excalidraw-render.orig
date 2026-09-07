@@ -188,6 +188,9 @@ impl NormalizedElementSource {
         &self.pointer
     }
 
+    /// The source position of one coordinate member in the total diagnostic
+    /// order, packed the way every other element diagnostic packs its member
+    /// position so a resource crossing on `width` sorts after a repair on `y`.
     pub(crate) fn coordinate_position(&self, field: &str) -> u64 {
         let position = match field {
             "x" => self.coordinate_positions[0],
@@ -196,7 +199,7 @@ impl NormalizedElementSource {
             "height" => self.coordinate_positions[3],
             _ => usize::MAX,
         };
-        u64::try_from(position).unwrap_or(u64::MAX)
+        SourceDiagnosticPosition::top(position).as_u64()
     }
 }
 
