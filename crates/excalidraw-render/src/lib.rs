@@ -37,6 +37,8 @@ mod request;
 mod resource_accounting;
 mod resource_limits;
 mod scene;
+#[cfg(test)]
+mod scene_fuzz;
 mod scene_surface;
 
 pub use compatibility::{
@@ -86,6 +88,16 @@ pub mod wasm_tests {
     #[wasm_bindgen_test]
     fn font_subset_resource_trace_matrix_in_wasm() {
         crate::render::assert_font_subset_resource_trace_matrix();
+    }
+
+    #[wasm_bindgen_test]
+    fn scene_fuzz_regression_corpus_in_wasm() {
+        crate::scene_fuzz::assert_scene_fuzz_regression_corpus();
+    }
+
+    #[wasm_bindgen_test]
+    fn scene_fuzz_fixed_seed_smoke_in_wasm() {
+        crate::scene_fuzz::assert_scene_fuzz_smoke();
     }
 }
 

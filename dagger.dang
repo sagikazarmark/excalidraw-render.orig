@@ -436,4 +436,25 @@ type Nightly {
       ])
       .combinedOutput
   }
+
+  """
+  Execute the bounded scene admission and normalization fuzz expansion.
+  """
+  sceneFuzz(
+    """
+    Number of cases to expand.
+    """
+    cases: String! = "4096",
+  ): String! {
+    self
+      .container
+      .withEnvVariable("EXCALIDRAW_SCENE_FUZZ_CASES", cases)
+      .withExec([
+        "cargo", "test", "--locked", "--release",
+        "--package", "excalidraw-render", "--lib",
+        "scene_fuzz::nightly_scene_fuzz_is_bounded_and_deterministic",
+        "--", "--ignored", "--exact",
+      ])
+      .combinedOutput
+  }
 }

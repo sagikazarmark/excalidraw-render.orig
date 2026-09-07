@@ -1,0 +1,459 @@
+{
+  "schema": "excalidraw-render/scene-fuzz-regressions/v1",
+  "compatibilityRevision": 1,
+  "originatingIssue": 81,
+  "broaderFuzzIssue": 83,
+  "fixedSeedHex": "bb67ae8584caa73b",
+  "bounds": {
+    "maxInputBytes": 65536,
+    "maxElements": 12,
+    "maxPoints": 24,
+    "maxMutations": 16,
+    "maxNesting": 60000
+  },
+  "cases": [
+    {
+      "id": "unterminated-root-object",
+      "risk": "malformed-json",
+      "input": {
+        "text": "{\"type\":\"excalidraw\""
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.invalid-json",
+        "jsonPointer": ""
+      }
+    },
+    {
+      "id": "trailing-token-after-root",
+      "risk": "malformed-json",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[],\"appState\":{},\"files\":{}}]"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.invalid-json",
+        "jsonPointer": ""
+      }
+    },
+    {
+      "id": "lone-high-surrogate-escape",
+      "risk": "malformed-json",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"\\ud800\"}],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.invalid-json",
+        "jsonPointer": "/elements/0/id"
+      }
+    },
+    {
+      "id": "leading-zero-version-token",
+      "risk": "malformed-json",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":02,\"elements\":[],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.invalid-json",
+        "jsonPointer": "/version"
+      }
+    },
+    {
+      "id": "single-invalid-byte",
+      "risk": "invalid-utf8",
+      "input": {
+        "hex": "ff"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.invalid-utf8",
+        "jsonPointer": null
+      }
+    },
+    {
+      "id": "root-array",
+      "risk": "envelope",
+      "input": {
+        "text": "[{\"type\":\"excalidraw\",\"version\":2,\"elements\":[],\"appState\":{},\"files\":{}}]"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.invalid-envelope",
+        "jsonPointer": ""
+      }
+    },
+    {
+      "id": "version-token-with-fraction",
+      "risk": "envelope",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2.0,\"elements\":[],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.invalid-envelope",
+        "jsonPointer": "/version"
+      }
+    },
+    {
+      "id": "files-array",
+      "risk": "envelope",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[],\"appState\":{},\"files\":[]}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.invalid-envelope",
+        "jsonPointer": "/files"
+      }
+    },
+    {
+      "id": "duplicate-element-member",
+      "risk": "duplicate-member",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":1,\"id\":2}],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.duplicate-object-key",
+        "jsonPointer": "/elements/0/id"
+      }
+    },
+    {
+      "id": "duplicate-escaped-member",
+      "risk": "duplicate-member",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"~/\":1,\"~/\":2}],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.duplicate-object-key",
+        "jsonPointer": "/elements/0/~0~1"
+      }
+    },
+    {
+      "id": "depth-129",
+      "risk": "parser-ceiling",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.json-depth-exceeded",
+        "jsonPointer": "/elements/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0"
+      }
+    },
+    {
+      "id": "number-token-129-bytes",
+      "risk": "parser-ceiling",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "rejected",
+        "code": "scene.number-token-too-large",
+        "jsonPointer": "/elements/0"
+      }
+    },
+    {
+      "id": "respelled-spec-vector",
+      "risk": "canonical-preservation",
+      "input": {
+        "text": " {\n  \"\\u0074ype\" : \"excalidraw\",\n  \"version\": 2,\n  \"elements\": [ null, {\"id\": \"deleted\", \"isDeleted\": true, \"unknown\": \"\\/\\u00e9\\u2028\\uD83D\\uDE00\", \"controls\": \"\\u0000\\b\\t\\n\\f\\r\\u001F\\\"\\\\\\/\"} ],\n  \"appState\": {\"zoom\": {\"value\": 1E+00}, \"opaque\": -0},\n  \"files\": {\"unused\": {\"mimeType\": \"image/png\", \"dataURL\": \"future\"}, \"broken\": false},\n  \"futureRoot\": [3.00, 1e-2]\n}\n"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "admitted",
+        "canonicalSha256": "de0f5ca632ff5e6d20a3c955437a8fd7e9e81a52e9dcb8244135c962d5620507",
+        "report": [
+          {
+            "code": "compatibility.malformed-element",
+            "jsonPointer": "/elements/0"
+          },
+          {
+            "code": "compatibility.unsupported-property",
+            "jsonPointer": "/appState/opaque"
+          },
+          {
+            "code": "compatibility.unsupported-property",
+            "jsonPointer": "/futureRoot"
+          }
+        ],
+        "render": {
+          "kind": "artifact"
+        }
+      }
+    },
+    {
+      "id": "identity-seed-timestamp-repairs",
+      "risk": "normalization-repair",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"type\":\"rectangle\",\"width\":40,\"height\":40,\"seed\":0},{\"id\":\"same\",\"type\":\"rectangle\",\"x\":50,\"width\":40,\"height\":40,\"seed\":0},{\"id\":\"same\",\"type\":\"rectangle\",\"x\":100,\"width\":-40,\"height\":40,\"seed\":0}],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "admitted",
+        "canonicalSha256": "ec76254db83f6782376866a6904491dbd4ab85f4826f0d86a763dd84959cf860",
+        "report": [
+          {
+            "code": "normalization.missing-element-id",
+            "jsonPointer": "/elements/0/id"
+          },
+          {
+            "code": "normalization.zero-rough-seed",
+            "jsonPointer": "/elements/0/seed"
+          },
+          {
+            "code": "normalization.missing-timestamp",
+            "jsonPointer": "/elements/0/updated"
+          },
+          {
+            "code": "normalization.zero-rough-seed",
+            "jsonPointer": "/elements/1/seed"
+          },
+          {
+            "code": "normalization.missing-timestamp",
+            "jsonPointer": "/elements/1/updated"
+          },
+          {
+            "code": "normalization.duplicate-element-id",
+            "jsonPointer": "/elements/2/id"
+          },
+          {
+            "code": "normalization.zero-rough-seed",
+            "jsonPointer": "/elements/2/seed"
+          },
+          {
+            "code": "normalization.missing-timestamp",
+            "jsonPointer": "/elements/2/updated"
+          }
+        ],
+        "render": {
+          "kind": "artifact"
+        }
+      }
+    },
+    {
+      "id": "linear-origin-and-index-repairs",
+      "risk": "normalization-repair",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"line\",\"index\":\"a2\",\"type\":\"line\",\"x\":30,\"y\":40,\"width\":20,\"height\":20,\"points\":[[3,4],[5,6]],\"seed\":1,\"updated\":1},{\"id\":\"arrow\",\"index\":\"a1\",\"type\":\"arrow\",\"x\":0,\"y\":0,\"width\":100,\"height\":80,\"points\":[[0,0],[100,0],[100,80]],\"elbowed\":true,\"startBinding\":{\"elementId\":\"line\",\"gap\":1,\"fixedPoint\":[0.5,0.49991]},\"seed\":1,\"updated\":1}],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "admitted",
+        "canonicalSha256": "fe64258ef2d750d812dbf29b2b5926fcc1dd33faf8db1fdd2d3e55e133fc7633",
+        "report": [],
+        "render": {
+          "kind": "artifact"
+        }
+      }
+    },
+    {
+      "id": "missing-nested-binding-member-order",
+      "risk": "normalization-repair",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"arrow\",\"type\":\"arrow\",\"width\":10,\"height\":10,\"points\":[[0,0],[10,10]],\"startBinding\":{\"elementId\":\"target\"},\"endBinding\":{\"elementId\":\"\"},\"seed\":1,\"updated\":1}],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "admitted",
+        "canonicalSha256": "7ec3b392b1ec7ba9beff6ff4e2049b4115055403edc97ecff369b7ac989947d4",
+        "report": [
+          {
+            "code": "compatibility.unsupported-property-value",
+            "jsonPointer": "/elements/0/startBinding/gap"
+          },
+          {
+            "code": "compatibility.unsupported-property-value",
+            "jsonPointer": "/elements/0/endBinding/elementId"
+          }
+        ],
+        "render": {
+          "kind": "artifact"
+        }
+      }
+    },
+    {
+      "id": "unknown-kind-property-and-state",
+      "risk": "surface-policy",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"w\",\"type\":\"custom-widget\",\"x\":0,\"y\":0,\"width\":10,\"height\":10},{\"id\":\"r\",\"type\":\"rectangle\",\"width\":10,\"height\":10,\"seed\":1,\"updated\":1,\"futureField\":{\"nested\":true},\"strokeStyle\":\"wavy\"}],\"appState\":{\"gridSize\":null,\"zoom\":{\"value\":1},\"frameRendering\":{\"clip\":\"yes\",\"labels\":true}},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "admitted",
+        "canonicalSha256": "fab14abd2b2756e8da7430d91dba437cbacf671ee616eadd13b42ce667c5d196",
+        "report": [
+          {
+            "code": "compatibility.unsupported-element-type",
+            "jsonPointer": "/elements/0"
+          },
+          {
+            "code": "compatibility.unsupported-property",
+            "jsonPointer": "/elements/1/futureField"
+          },
+          {
+            "code": "compatibility.unsupported-property-value",
+            "jsonPointer": "/elements/1/strokeStyle"
+          },
+          {
+            "code": "compatibility.unsupported-property-value",
+            "jsonPointer": "/appState/frameRendering/clip"
+          },
+          {
+            "code": "compatibility.unsupported-property",
+            "jsonPointer": "/appState/frameRendering/labels"
+          }
+        ],
+        "render": {
+          "kind": "artifact"
+        }
+      }
+    },
+    {
+      "id": "app-state-member-order-across-layers",
+      "risk": "surface-policy",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[],\"appState\":{\"frameRendering\":{\"clip\":\"yes\"},\"alpha\":1,\"beta\":2},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "admitted",
+        "canonicalSha256": "51e1bd94787eac917e1bf966ff01a7a5e6a518eb3cca5609d644ac5307f1da75",
+        "report": [
+          {
+            "code": "compatibility.unsupported-property-value",
+            "jsonPointer": "/appState/frameRendering/clip"
+          },
+          {
+            "code": "compatibility.unsupported-property",
+            "jsonPointer": "/appState/alpha"
+          },
+          {
+            "code": "compatibility.unsupported-property",
+            "jsonPointer": "/appState/beta"
+          }
+        ],
+        "render": {
+          "kind": "artifact"
+        }
+      }
+    },
+    {
+      "id": "entity-encoded-link-decodes-once",
+      "risk": "surface-policy",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"r\",\"type\":\"rectangle\",\"width\":10,\"height\":10,\"link\":\"&#38;#106;avascript:x\",\"seed\":1,\"updated\":1}],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "admitted",
+        "canonicalSha256": "7a281fadae378952e79753d2927a8d130cddf383ec99cad9674becea478b515c",
+        "report": [],
+        "render": {
+          "kind": "artifact"
+        }
+      }
+    },
+    {
+      "id": "escaped-member-pointers",
+      "risk": "pointer-escaping",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"type\":\"rectangle\",\"width\":10,\"height\":10,\"seed\":0,\"a/b~c\":true}],\"appState\":{\"~\":1},\"files\":{\"/\":{\"id\":\"/\"}}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "admitted",
+        "canonicalSha256": "5df750fefc441715c5453a29049376a8dbc2b94a10460b41bd0f92ba6f44ccfe",
+        "report": [
+          {
+            "code": "normalization.missing-element-id",
+            "jsonPointer": "/elements/0/id"
+          },
+          {
+            "code": "normalization.zero-rough-seed",
+            "jsonPointer": "/elements/0/seed"
+          },
+          {
+            "code": "compatibility.unsupported-property",
+            "jsonPointer": "/elements/0/a~1b~0c"
+          },
+          {
+            "code": "normalization.missing-timestamp",
+            "jsonPointer": "/elements/0/updated"
+          },
+          {
+            "code": "compatibility.unsupported-property",
+            "jsonPointer": "/appState/~0"
+          }
+        ],
+        "render": {
+          "kind": "artifact"
+        }
+      }
+    },
+    {
+      "id": "cascadia-replacement-ligature",
+      "risk": "public-facade-render",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"type\":\"text\",\"fontFamily\":3,\"text\":\"中文\"}],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "admitted",
+        "canonicalSha256": "5250a3e9c71a549fb59ecd15dda57270fa846f1bfa5e5a4f59842cc24f9c55ef",
+        "report": [
+          {
+            "code": "normalization.missing-element-id",
+            "jsonPointer": "/elements/0/id"
+          },
+          {
+            "code": "font.missing-glyph",
+            "jsonPointer": "/elements/0"
+          },
+          {
+            "code": "font.missing-glyph",
+            "jsonPointer": "/elements/0"
+          },
+          {
+            "code": "normalization.missing-timestamp",
+            "jsonPointer": "/elements/0/updated"
+          }
+        ],
+        "render": {
+          "kind": "artifact"
+        }
+      }
+    },
+    {
+      "id": "cascadia-arrow-ligature",
+      "risk": "public-facade-render",
+      "input": {
+        "text": "{\"type\":\"excalidraw\",\"version\":2,\"elements\":[{\"id\":\"code\",\"type\":\"text\",\"width\":120,\"height\":25,\"fontSize\":20,\"fontFamily\":3,\"text\":\"a -> b\",\"updated\":1}],\"appState\":{},\"files\":{}}"
+      },
+      "minimized": true,
+      "expected": {
+        "kind": "admitted",
+        "canonicalSha256": "5e59c46e3fcbab52dff8aa01008954f9997f8571c6c0a29fbe4d42c62fd53c1d",
+        "report": [],
+        "render": {
+          "kind": "artifact"
+        }
+      }
+    }
+  ]
+}

@@ -141,6 +141,7 @@ randomized expansions the nightly schedule runs are deliberately not checks:
 ```sh
 dagger call nightly font-subset-fuzz
 dagger call nightly frame-batch-property --cases 64
+dagger call nightly scene-fuzz --cases 512
 ```
 
 `.github/workflows/dagger.yaml` is generated from `dagger.toml`. The

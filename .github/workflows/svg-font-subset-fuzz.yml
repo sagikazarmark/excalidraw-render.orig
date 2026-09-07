@@ -45,6 +45,24 @@ jobs:
           render::frame_batch_property::nightly_frame_batch_property_runs_a_deeper_sample
           -- --ignored --exact
 
+  scene-fuzz:
+    name: Scene admission and normalization fuzz expansion
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
+      - name: Execute bounded scene fuzz expansion
+        env:
+          EXCALIDRAW_SCENE_FUZZ_CASES: "4096"
+        run: >-
+          cargo test --locked --release -p excalidraw-render --lib
+          scene_fuzz::nightly_scene_fuzz_is_bounded_and_deterministic
+          -- --ignored --exact
+
   browser-wasm-regressions:
     name: Bounded smoke in Chromium
     runs-on: ubuntu-24.04
@@ -61,7 +79,7 @@ jobs:
       - name: Install pinned WASM test runner
         shell: bash
         run: bash tests/package-consumer/install-wasm-test-runner.sh "$RUNNER_TEMP/wasm-test-runner"
-      - name: Execute font subset fuzz smoke
+      - name: Execute font subset and scene fuzz smokes
         env:
           FONTCONFIG_FILE: ${{ github.workspace }}/tests/package-consumer/fontconfig.xml
           WASM_BINDGEN_TEST_TIMEOUT: "1800"
@@ -70,9 +88,11 @@ jobs:
         run: |
           chrome="$(jq -er '.browser.tools.chromium.binary' tests/package-consumer/tool-manifest.json)"
           driver="$(jq -er '.browser.tools.chromedriver.binary' tests/package-consumer/tool-manifest.json)"
-          PATH="$RUNNER_TEMP/browser/$(dirname "$chrome"):$PATH" \
-            CHROMEDRIVER="$RUNNER_TEMP/browser/$driver" \
-            CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner \
-            cargo test --locked --release -p excalidraw-render --lib \
-              --target wasm32-unknown-unknown \
-              wasm_tests::font_subset_fuzz_
+          for filter in wasm_tests::font_subset_fuzz_ wasm_tests::scene_fuzz_; do
+            PATH="$RUNNER_TEMP/browser/$(dirname "$chrome"):$PATH" \
+              CHROMEDRIVER="$RUNNER_TEMP/browser/$driver" \
+              CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner \
+              cargo test --locked --release -p excalidraw-render --lib \
+                --target wasm32-unknown-unknown \
+                "$filter"
+          done

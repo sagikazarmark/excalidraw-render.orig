@@ -84,7 +84,7 @@ pub(crate) struct SurfaceClassification {
     pub(crate) fallbacks: Vec<SurfaceFallback>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct SurfaceFallback {
     pub(crate) source_index: usize,
     pub(crate) source_order: u64,

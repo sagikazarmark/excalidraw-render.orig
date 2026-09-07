@@ -348,6 +348,30 @@ impl SceneDocument {
         &self.source_sha256
     }
 
+    /// The JSON kind at an RFC 6901 pointer into the admitted document, or
+    /// `None` when the pointer names nothing.
+    #[cfg(test)]
+    pub(crate) fn json_kind_at(&self, pointer: &str) -> Option<JsonKind> {
+        let mut value: &JsonValue = &self._root;
+        if pointer.is_empty() {
+            return Some(value.kind());
+        }
+        for segment in pointer.strip_prefix('/')?.split('/') {
+            let segment = segment.replace("~1", "/").replace("~0", "~");
+            value = match value {
+                JsonValue::Object(members) => member_value(members, &segment)?,
+                JsonValue::Array(values) => values.get(segment.parse::<usize>().ok()?)?,
+                JsonValue::Null
+                | JsonValue::Bool(_)
+                | JsonValue::Number(_)
+                | JsonValue::String(_) => {
+                    return None;
+                }
+            };
+        }
+        Some(value.kind())
+    }
+
     pub(crate) fn visit_original_json_entries<E>(
         &self,
         mut visit: impl FnMut(OriginalJsonEntry<'_>) -> Result<(), E>,
@@ -818,6 +842,33 @@ pub(crate) enum JsonValue {
     String(Box<str>),
     Array(Box<[JsonValue]>),
     Object(Box<[JsonMember]>),
+}
+
+/// The kind of one JSON value, with container lengths, for tests that reason
+/// about locations.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum JsonKind {
+    Null,
+    Bool,
+    Number,
+    String,
+    Array(usize),
+    Object(usize),
+}
+
+#[cfg(test)]
+impl JsonValue {
+    pub(crate) const fn kind(&self) -> JsonKind {
+        match self {
+            Self::Null => JsonKind::Null,
+            Self::Bool(_) => JsonKind::Bool,
+            Self::Number(_) => JsonKind::Number,
+            Self::String(_) => JsonKind::String,
+            Self::Array(values) => JsonKind::Array(values.len()),
+            Self::Object(members) => JsonKind::Object(members.len()),
+        }
+    }
 }
 
 #[allow(dead_code)]

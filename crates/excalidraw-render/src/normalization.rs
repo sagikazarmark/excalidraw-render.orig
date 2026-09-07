@@ -22,7 +22,7 @@ const SCALAR_REFERENCE_FIELD_COUNT: u64 = 10;
 const GENERATED_ID_BYTES: usize = "generated-".len() + 64;
 pub(crate) const NORMALIZATION_WORK_UNITS: u64 = NORMALIZED_FIELD_COUNT * 8;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct NormalizedElement {
     pub(crate) source: NormalizedElementSource,
     pub(crate) source_order: u64,
@@ -167,7 +167,7 @@ pub(crate) struct NormalizedFileRecord {
     normalization_work_units: u64,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct NormalizedElementSource {
     source_index: usize,
     id: String,
@@ -203,7 +203,7 @@ impl NormalizedElementSource {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct NormalizationOutcome {
     pub(crate) elements: Vec<NormalizedElement>,
     pub(crate) fallbacks: Vec<crate::scene_surface::SurfaceFallback>,
