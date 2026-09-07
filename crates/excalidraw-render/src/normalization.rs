@@ -3340,8 +3340,20 @@ fn normalized_roundness(
     ) {
         return None;
     }
-    let SourceField::Value(Some(roundness)) = source.roundness else {
-        return None;
+    let roundness = match source.roundness {
+        SourceField::Value(Some(roundness)) => roundness,
+        // restoreElementWithProperties consults the legacy `strokeSharpness`
+        // only when the element carries no `roundness` record: `"round"`
+        // becomes ROUNDNESS.LEGACY for the adaptive-radius kinds and
+        // PROPORTIONAL_RADIUS for every other kind, and getCornerRadius treats
+        // both alike; `"sharp"` and any other value stay `null`.
+        SourceField::Missing | SourceField::Value(None) => {
+            return matches!(source.stroke_sharpness, SourceField::Value("round"))
+                .then_some(NormalizedRoundness::Proportional);
+        }
+        // A malformed record is diagnosed at `/roundness` and, like the
+        // truthy malformed value the reference keeps verbatim, rounds nothing.
+        SourceField::Invalid => return None,
     };
     let SourceField::Value(kind @ 1..=3) = roundness.kind() else {
         return None;
@@ -3504,7 +3516,7 @@ fn push_lower_hex(output: &mut String, bytes: &[u8]) {
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_scene, NormalizedElementKind};
+    use super::{normalize_scene, NormalizedElementKind, NormalizedRoundness};
     use crate::{
         CompatibilityRevision, DiagnosticCode, DiagnosticEffect, OutputFormat, SceneDocument,
     };
@@ -4355,15 +4367,19 @@ mod tests {
         );
     }
 
-    /// Normalizes one text element and returns its line height with the
-    /// element-scoped diagnostics normalization emitted for it.
-    fn normalized_text_line_height(text_fields: &str) -> (f64, Vec<(DiagnosticCode, String)>) {
+    /// Normalizes a one-element scene whose element is `element_json` and
+    /// returns that element with the element-scoped diagnostics normalization
+    /// emitted for it.
+    fn normalized_single_element(
+        element_json: &str,
+    ) -> (super::NormalizedElement, Vec<(DiagnosticCode, String)>) {
         let scene = format!(
-            r##"{{"type":"excalidraw","version":2,"elements":[{{"id":"text","type":"text","seed":1,"updated":1,{text_fields}}}],"appState":{{}},"files":{{}}}}"##
+            r##"{{"type":"excalidraw","version":2,"elements":[{element_json}],"appState":{{}},"files":{{}}}}"##
         );
-        let scene = SceneDocument::parse(scene.as_bytes()).expect("text vector is admitted");
+        let scene =
+            SceneDocument::parse(scene.as_bytes()).expect("single-element vector is admitted");
         let mut diagnostics = Vec::new();
-        let normalized = normalize_scene(
+        let mut normalized = normalize_scene(
             &scene,
             CompatibilityRevision::REVISION_1,
             OutputFormat::Svg,
@@ -4376,9 +4392,16 @@ mod tests {
         )
         .expect("normalization succeeds")
         .expect("the scene is in the implemented normalization slice");
-        let [element] = normalized.elements.as_slice() else {
-            panic!("one text element is normalized");
-        };
+        assert_eq!(normalized.elements.len(), 1, "one element is normalized");
+        (normalized.elements.remove(0), diagnostics)
+    }
+
+    /// Normalizes one text element and returns its line height with the
+    /// element-scoped diagnostics normalization emitted for it.
+    fn normalized_text_line_height(text_fields: &str) -> (f64, Vec<(DiagnosticCode, String)>) {
+        let (element, diagnostics) = normalized_single_element(&format!(
+            r##"{{"id":"text","type":"text","seed":1,"updated":1,{text_fields}}}"##
+        ));
         let NormalizedElementKind::Text(text) = &element.kind else {
             panic!("the element retains its normalized text kind");
         };
@@ -4522,5 +4545,123 @@ mod tests {
             ));
             assert_eq!(line_height, 1.15, "lineHeight {source} without height");
         }
+    }
+
+    /// Normalizes one element of `kind` and returns its roundness with the
+    /// element-scoped diagnostics normalization emitted for it. An image has
+    /// no payload here, so its unrelated `image.missing-file` is dropped.
+    fn normalized_roundness_of(
+        kind: &str,
+        element_fields: &str,
+    ) -> (Option<NormalizedRoundness>, Vec<(DiagnosticCode, String)>) {
+        let (element, mut diagnostics) = normalized_single_element(&format!(
+            r##"{{"id":"element","type":"{kind}","width":120,"height":80,"seed":1,"updated":1,{element_fields}}}"##
+        ));
+        if kind == "image" {
+            diagnostics.retain(|(code, _)| *code != DiagnosticCode::IMAGE_MISSING_FILE);
+        }
+        (element.roundness, diagnostics)
+    }
+
+    #[test]
+    fn legacy_round_migrates_for_every_kind_whose_roundness_the_manifest_reads() {
+        // restoreElementWithProperties: no `roundness` and
+        // `strokeSharpness === "round"` gives the isUsingAdaptiveRadius kinds
+        // ROUNDNESS.LEGACY (1) and every other kind PROPORTIONAL_RADIUS (2).
+        // getCornerRadius treats both as the proportional corner radius, so
+        // the migration is kind-independent once it reaches the rendering view.
+        for kind in [
+            "rectangle",
+            "image",
+            "embeddable",
+            "iframe",
+            "diamond",
+            "line",
+            "arrow",
+        ] {
+            let (roundness, diagnostics) =
+                normalized_roundness_of(kind, r##""strokeSharpness":"round""##);
+            assert_eq!(roundness, Some(NormalizedRoundness::Proportional), "{kind}");
+            assert!(diagnostics.is_empty(), "{kind}: {diagnostics:?}");
+        }
+
+        // Kinds whose `/roundness` the revision-1 manifest ignores keep
+        // ignoring the migrated record as well.
+        for kind in ["ellipse", "text", "freedraw", "frame", "magicframe"] {
+            let (roundness, diagnostics) =
+                normalized_roundness_of(kind, r##""strokeSharpness":"round""##);
+            assert_eq!(roundness, None, "{kind}");
+            assert!(diagnostics.is_empty(), "{kind}: {diagnostics:?}");
+        }
+    }
+
+    #[test]
+    fn legacy_sharp_and_unrecognized_stroke_sharpness_round_nothing() {
+        // The restore compares `strokeSharpness === "round"` strictly; every
+        // other string leaves `roundness: null`. The manifest admits any
+        // string at `/strokeSharpness`, so neither value is diagnosed here.
+        for value in [r##""sharp""##, r##""ROUND""##] {
+            let (roundness, diagnostics) =
+                normalized_roundness_of("rectangle", &format!(r##""strokeSharpness":{value}"##));
+            assert_eq!(roundness, None, "{value}");
+            assert!(diagnostics.is_empty(), "{value}: {diagnostics:?}");
+        }
+
+        // A non-string value takes the manifest's `unsupported-property-value`
+        // substitution at `/strokeSharpness` and likewise rounds nothing.
+        let (roundness, diagnostics) =
+            normalized_roundness_of("rectangle", r##""strokeSharpness":7"##);
+        assert_eq!(roundness, None);
+        assert_eq!(
+            diagnostics,
+            [(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                "/elements/0/strokeSharpness".to_owned(),
+            )]
+        );
+    }
+
+    #[test]
+    fn an_explicit_roundness_record_wins_over_legacy_stroke_sharpness() {
+        // `element.roundness ? element.roundness : ...` — any record object,
+        // even one that resolves to no rounding, takes precedence; only a
+        // missing or `null` roundness consults the legacy value.
+        for (fields, expected) in [
+            (
+                r##""roundness":{"type":3,"value":8},"strokeSharpness":"round""##,
+                Some(NormalizedRoundness::Adaptive { radius: 8.0 }),
+            ),
+            (
+                r##""roundness":{"type":2},"strokeSharpness":"sharp""##,
+                Some(NormalizedRoundness::Proportional),
+            ),
+            (r##""roundness":{},"strokeSharpness":"round""##, None),
+            (
+                r##""roundness":null,"strokeSharpness":"round""##,
+                Some(NormalizedRoundness::Proportional),
+            ),
+            (r##""roundness":null,"strokeSharpness":"sharp""##, None),
+        ] {
+            let (roundness, diagnostics) = normalized_roundness_of("rectangle", fields);
+            assert_eq!(roundness, expected, "{fields}");
+            assert!(diagnostics.is_empty(), "{fields}: {diagnostics:?}");
+        }
+    }
+
+    #[test]
+    fn an_invalid_roundness_value_is_diagnosed_and_never_consults_stroke_sharpness() {
+        // The reference keeps a truthy malformed `roundness` verbatim, which
+        // then rounds nothing; revision 1 substitutes the same sharp result
+        // for every malformed value and reports it at `/roundness`.
+        let (roundness, diagnostics) =
+            normalized_roundness_of("rectangle", r##""roundness":5,"strokeSharpness":"round""##);
+        assert_eq!(roundness, None);
+        assert_eq!(
+            diagnostics,
+            [(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                "/elements/0/roundness".to_owned(),
+            )]
+        );
     }
 }

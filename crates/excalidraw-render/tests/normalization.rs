@@ -18,6 +18,63 @@ fn revision_1_compatibility_defaults_match_explicit_rectangle_values() {
 }
 
 #[test]
+fn legacy_stroke_sharpness_renders_as_the_official_roundness_migration_in_every_format() {
+    // Every kind whose roundness the revision-1 manifest reads, saved before
+    // `roundness` existed. The official restore gives the adaptive-radius
+    // kinds (rectangle, embeddable, iframe, image) `{ type: 1 }` and the rest
+    // `{ type: 2 }`; "sharp" stays `null`. The image kind is covered by the
+    // normalization unit tests because it needs a payload to render silently.
+    let legacy = br##"{"type":"excalidraw","version":2,"elements":[
+        {"id":"rect","type":"rectangle","x":0,"y":0,"width":120,"height":80,"seed":1,"updated":1,"strokeSharpness":"round"},
+        {"id":"embed","type":"embeddable","x":160,"y":0,"width":120,"height":80,"seed":2,"updated":1,"strokeSharpness":"round"},
+        {"id":"frame","type":"iframe","x":320,"y":0,"width":120,"height":80,"seed":3,"updated":1,"strokeSharpness":"round"},
+        {"id":"diamond","type":"diamond","x":0,"y":120,"width":120,"height":80,"seed":4,"updated":1,"strokeSharpness":"round"},
+        {"id":"line","type":"line","x":160,"y":120,"width":120,"height":80,"seed":5,"updated":1,"points":[[0,0],[60,80],[120,0]],"strokeSharpness":"round"},
+        {"id":"arrow","type":"arrow","x":320,"y":120,"width":120,"height":80,"seed":6,"updated":1,"points":[[0,0],[60,80],[120,0]],"strokeSharpness":"round"},
+        {"id":"sharp","type":"rectangle","x":0,"y":240,"width":120,"height":80,"seed":7,"updated":1,"strokeSharpness":"sharp"}
+    ],"appState":{},"files":{}}"##;
+    let explicit = br##"{"type":"excalidraw","version":2,"elements":[
+        {"id":"rect","type":"rectangle","x":0,"y":0,"width":120,"height":80,"seed":1,"updated":1,"roundness":{"type":1}},
+        {"id":"embed","type":"embeddable","x":160,"y":0,"width":120,"height":80,"seed":2,"updated":1,"roundness":{"type":1}},
+        {"id":"frame","type":"iframe","x":320,"y":0,"width":120,"height":80,"seed":3,"updated":1,"roundness":{"type":1}},
+        {"id":"diamond","type":"diamond","x":0,"y":120,"width":120,"height":80,"seed":4,"updated":1,"roundness":{"type":2}},
+        {"id":"line","type":"line","x":160,"y":120,"width":120,"height":80,"seed":5,"updated":1,"points":[[0,0],[60,80],[120,0]],"roundness":{"type":2}},
+        {"id":"arrow","type":"arrow","x":320,"y":120,"width":120,"height":80,"seed":6,"updated":1,"points":[[0,0],[60,80],[120,0]],"roundness":{"type":2}},
+        {"id":"sharp","type":"rectangle","x":0,"y":240,"width":120,"height":80,"seed":7,"updated":1,"roundness":null}
+    ],"appState":{},"files":{}}"##;
+    let unmigrated = br##"{"type":"excalidraw","version":2,"elements":[
+        {"id":"rect","type":"rectangle","x":0,"y":0,"width":120,"height":80,"seed":1,"updated":1},
+        {"id":"embed","type":"embeddable","x":160,"y":0,"width":120,"height":80,"seed":2,"updated":1},
+        {"id":"frame","type":"iframe","x":320,"y":0,"width":120,"height":80,"seed":3,"updated":1},
+        {"id":"diamond","type":"diamond","x":0,"y":120,"width":120,"height":80,"seed":4,"updated":1},
+        {"id":"line","type":"line","x":160,"y":120,"width":120,"height":80,"seed":5,"updated":1,"points":[[0,0],[60,80],[120,0]]},
+        {"id":"arrow","type":"arrow","x":320,"y":120,"width":120,"height":80,"seed":6,"updated":1,"points":[[0,0],[60,80],[120,0]]},
+        {"id":"sharp","type":"rectangle","x":0,"y":240,"width":120,"height":80,"seed":7,"updated":1}
+    ],"appState":{},"files":{}}"##;
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let legacy = render(legacy, format);
+        let explicit = render(explicit, format);
+        let unmigrated = render(unmigrated, format);
+
+        assert_eq!(
+            legacy.artifact().bytes(),
+            explicit.artifact().bytes(),
+            "{format:?}"
+        );
+        assert_ne!(
+            legacy.artifact().bytes(),
+            unmigrated.artifact().bytes(),
+            "{format:?}: the migration must change the rendering"
+        );
+        assert!(
+            legacy.report().is_empty(),
+            "{format:?}: the migration is silent"
+        );
+    }
+}
+
+#[test]
 fn zero_dimension_defaults_remain_a_meaningful_nonpainting_scene() {
     let defaulted = render_svg(
         br##"{"type":"excalidraw","version":2,"elements":[{"id":"zero","type":"rectangle","seed":1,"updated":1}],"appState":{},"files":{}}"##,
