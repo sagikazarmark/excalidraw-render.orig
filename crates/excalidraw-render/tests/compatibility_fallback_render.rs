@@ -833,9 +833,12 @@ fn scene_text_reports_missing_glyphs_and_emoji_substitution_in_every_format() {
     // The neighbouring tests cover generated compatibility labels and embeddable
     // labels. This covers the same two font paths reached from an ordinary scene
     // text element, where the renderer diverges from the official export on
-    // purpose: official draws the font's notdef box, revision 1 draws the
-    // deterministic basic-Latin replacement and reports it. That divergence is
-    // specified, so it is pinned here rather than evidenced as a parity case.
+    // purpose: official draws whatever its environment supplies, revision 1
+    // draws the deterministic basic-Latin replacement or the bundled Noto Emoji
+    // face and reports it. Both divergences are specified and each is evidenced
+    // as a parity case with a recorded exception (`focused.missing-glyph.v1`,
+    // #124; `focused.emoji-fallback.v1`, #121); this pins the two paths side by
+    // side in one scene.
     let scene = SceneDocument::parse(
         r##"{
         "type":"excalidraw","version":2,

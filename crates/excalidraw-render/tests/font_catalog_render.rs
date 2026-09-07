@@ -207,6 +207,10 @@ fn excalifont_uses_ordered_cjk_and_emoji_fallbacks_in_every_format() {
             DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED
         );
         assert_eq!(diagnostic.element_id(), Some("text"));
+        // Messages are non-normative (spec 11.1), but this one names the face
+        // the substitution used: the emoji went to Noto Emoji, not to the
+        // Liberation Sans replacement the other substitution diagnostic reports.
+        assert_eq!(diagnostic.message(), "emoji text used bundled Noto Emoji");
 
         match format {
             OutputFormat::Svg => {

@@ -70,7 +70,8 @@ outlive the difference it describes. Today only whole-artifact direct-PNG
 exceptions with no viewer are admitted.
 
 A compatibility exception, such as spec 8.3's replacement glyph for a scalar
-no bundled face maps, is therefore excepted on the direct PNG and observed
+no bundled face maps or its Noto Emoji substitution for the local-only emoji
+face, is therefore excepted on the direct PNG and observed
 just as well by `registered_case_svg_raster_parity`, whose scope the manifest
 cannot except. That harness records a compatibility exception pin: the same
 exact measurement and issue a known defect carries, plus the requirement that
@@ -78,7 +79,11 @@ the manifest record a whole direct-PNG tolerance exception for the same
 variant, so the pin stands for an approved judgment rather than suppressing an
 unrecorded difference. Admitting `format: svg` exceptions in the manifest
 would move the scene case schema every scene manifest pins by digest, so that
-is a batch re-approval round of its own.
+is a batch re-approval round of its own. The official evidence for both cases
+is what the pinned reference profile's container draws for a scalar the
+official package has no glyph for — its fontconfig fallback — since the
+profile's environment-dependent inputs are part of its identity; the case
+`purpose` and exception `reason` name the face that supplied it.
 
 `xtask` resolves every case through this file, so adding a scene case is a
 registry entry plus a case directory rather than a new generator script or a new

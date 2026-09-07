@@ -69,6 +69,18 @@ const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
         changed_pixels: 473,
         ssim_bits: 0x3fea_c711_a5b4_5706,
     },
+    // Spec 8.3's Noto Emoji substitution (#121): the official document sets
+    // the emoji in the embedded Excalifont and Liberation Sans subsets, which
+    // have no glyph for them (its `Segoe UI Emoji` fallback is unresolved
+    // here, see the module docs), while the renderer's sets them from the
+    // complete monochrome Noto Emoji face it embeds.
+    PinnedDivergence {
+        case: "focused.emoji-fallback.v1",
+        variant: "default",
+        issue: "#121",
+        changed_pixels: 577,
+        ssim_bits: 0x3fea_ff42_54bc_d188,
+    },
 ];
 
 /// System families the official export names without embedding, and the

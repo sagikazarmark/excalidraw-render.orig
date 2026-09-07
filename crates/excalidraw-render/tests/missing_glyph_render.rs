@@ -5,11 +5,20 @@
 //! what its PNG and SVG evidence cannot see: the PDF's embedded faces and
 //! logical text, the PDF report, and repeatability in every format.
 
+// Included by path rather than through `common/mod.rs` so this binary does not
+// also compile the PDF harness helpers.
+#[path = "common/pdf_inspect.rs"]
+mod pdf_inspect;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use excalidraw_render::{OutputFormat, RenderOutcome, RenderRequest, Renderer, SceneDocument};
 use serde_json::Value;
+
+use pdf_inspect::{
+    embedded_pdf_fonts, family_name, font_resource, pdf_actual_text, to_unicode_cmap,
+};
 
 const CASE: &str = "tests/conformance/cases/focused/missing-glyph";
 
@@ -253,94 +262,6 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
         1
     );
     assert!(!liberation_line.contains(&format!("{excalifont} 20 Tf")));
-}
-
-/// The body of the ToUnicode CMap stream that declares `cmap_name`.
-fn to_unicode_cmap<'a>(pdf: &'a str, cmap_name: &str) -> &'a str {
-    pdf.split(cmap_name)
-        .nth(1)
-        .and_then(|rest| rest.split("endcmap").next())
-        .unwrap_or_else(|| panic!("the PDF carries the ToUnicode CMap {cmap_name}"))
-}
-
-/// The English family name (name ID 1) of an embedded face.
-fn family_name(face: &rustybuzz::Face<'_>) -> String {
-    face.names()
-        .into_iter()
-        .find(|name| name.name_id == 1 && name.language_id == 0x0409)
-        .and_then(|name| name.to_string())
-        .expect("embedded face keeps its English family name")
-}
-
-/// The page resource name (`/F<n>`) of the Type0 font with the given base font.
-fn font_resource(pdf: &str, base_font: &str) -> String {
-    let header = format!("<<\n/Type /Font\n/Subtype /Type0\n{base_font}\n");
-    let position = pdf.find(&header).expect("the base font has a Type0 object");
-    let object = pdf[..position]
-        .strip_suffix(" 0 obj\n")
-        .and_then(|head| head.rsplit('\n').next())
-        .expect("the Type0 font is an indirect object");
-    let fonts = pdf
-        .split("/Font << ")
-        .nth(1)
-        .and_then(|rest| rest.split(" >>").next())
-        .expect("the page declares a font resource dictionary");
-    let reference = format!(" {object} 0 R");
-    let position = fonts
-        .find(&reference)
-        .expect("the page resources reference the font");
-    fonts[..position]
-        .rsplit(' ')
-        .next()
-        .expect("the reference has a resource name")
-        .to_owned()
-}
-
-/// Every `ActualText` operand decoded from UTF-16BE, concatenated in document
-/// order: the logical text a PDF reader extracts.
-fn pdf_actual_text(pdf: &str) -> String {
-    let mut extracted = String::new();
-    for tail in pdf.split("/ActualText <FEFF").skip(1) {
-        let hex = tail.split('>').next().expect("ActualText hex terminates");
-        let units = hex
-            .as_bytes()
-            .chunks_exact(4)
-            .map(|digits| {
-                u16::from_str_radix(std::str::from_utf8(digits).expect("hex is ASCII"), 16)
-                    .expect("ActualText is hexadecimal")
-            })
-            .collect::<Vec<_>>();
-        extracted.push_str(&String::from_utf16(&units).expect("ActualText is UTF-16"));
-    }
-    extracted
-}
-
-/// Every embedded `FontFile2` stream: the PDF writes them uncompressed with
-/// `/Length1` naming the complete sfnt length.
-fn embedded_pdf_fonts(pdf: &[u8]) -> Vec<Vec<u8>> {
-    const MARKER: &[u8] = b"/Length1 ";
-    const STREAM: &[u8] = b">>\nstream\n";
-    let mut fonts = Vec::new();
-    let mut offset = 0;
-    while let Some(position) = pdf[offset..]
-        .windows(MARKER.len())
-        .position(|window| window == MARKER)
-    {
-        let start = offset + position + MARKER.len();
-        let digits = pdf[start..]
-            .iter()
-            .take_while(|byte| byte.is_ascii_digit())
-            .count();
-        let length = std::str::from_utf8(&pdf[start..start + digits])
-            .expect("font length is ASCII")
-            .parse::<usize>()
-            .expect("font length is numeric");
-        let stream_start = start + digits + 1 + STREAM.len();
-        assert_eq!(&pdf[start + digits + 1..stream_start], STREAM);
-        fonts.push(pdf[stream_start..stream_start + length].to_vec());
-        offset = stream_start + length;
-    }
-    fonts
 }
 
 fn repository_root() -> PathBuf {

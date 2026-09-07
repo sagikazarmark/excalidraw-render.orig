@@ -453,8 +453,13 @@ pub(super) fn fallback_font_diagnostic(
         effects,
         element_id: element_id.map(try_owned).transpose()?,
         json_pointer: try_owned(json_pointer)?,
+        // Non-normative wording (spec 11.1). The two Liberation Sans strings are
+        // bound by approved expected reports and must not move; the Noto Emoji
+        // one names the face that substitution actually used.
         message: try_owned(if missing_codepoint.is_some() {
             "generated fallback label used the deterministic missing-glyph replacement"
+        } else if code == DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED {
+            "emoji text used bundled Noto Emoji"
         } else {
             "generated fallback label used bundled Liberation Sans"
         })?,
