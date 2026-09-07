@@ -157,6 +157,11 @@ pub(super) struct ResolvedTextRun {
     pub(super) glyph_start: usize,
     pub(super) glyph_end: usize,
     pub(super) rtl: bool,
+    /// For each scalar of `display_text` in logical order, the index into the
+    /// line's glyphs of the glyph that shows it. The glyphs themselves sit in
+    /// visual order; SVG assigns the nth `x` and `y` to the nth character of
+    /// the run's content, which is logical, so it positions through this.
+    pub(super) logical_glyphs: Vec<usize>,
 }
 
 pub(super) struct ResolvedGlyph {
@@ -165,6 +170,9 @@ pub(super) struct ResolvedGlyph {
     pub(super) y: f64,
     pub(super) advance_1000: u16,
     pub(super) unicode: Vec<u16>,
+    /// The byte offset in the shaped display text where this glyph's cluster
+    /// starts.
+    pub(super) cluster: usize,
 }
 
 pub(super) struct LabelPath {
@@ -267,7 +275,7 @@ impl FallbackFont {
             .ok_or(LabelError::InvalidFont)?
             .first_baseline(FRAME_NAME_FONT_SIZE, FRAME_NAME_BOX_HEIGHT);
         let (display_text, missing_codepoints) = fallback_display_text(&face, name)?;
-        let glyphs = shape_text(&face, &display_text);
+        let glyphs = shape_text(&face, &display_text, ShapeDirection::Guessed);
         // `measureText` measures a blank line as one space.
         let measured = if display_text.is_empty() {
             shaped_advance(&face, " ", scale)
@@ -312,7 +320,7 @@ impl FallbackFont {
         // The cut text has its own replaced scalars: the ones the cut removed
         // are not reported.
         let (display_text, missing_codepoints) = fallback_display_text(&face, &text)?;
-        let glyphs = shape_text(&face, &display_text);
+        let glyphs = shape_text(&face, &display_text, ShapeDirection::Guessed);
         let label = build_label(
             &face,
             &glyphs,
@@ -337,7 +345,7 @@ impl FallbackFont {
     ) -> Result<Option<ResolvedLabel>, LabelError> {
         let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
         let (display_text, missing_codepoints) = fallback_display_text(&face, text)?;
-        let glyphs = shape_text(&face, &display_text);
+        let glyphs = shape_text(&face, &display_text, ShapeDirection::Guessed);
         let units_per_em = f64::from(face.units_per_em());
         let scale = FALLBACK_FONT_SIZE / units_per_em;
         let advance = shaped_advance_units(&glyphs) as f64 * scale;
@@ -393,7 +401,7 @@ fn shaped_advance_units(glyphs: &rustybuzz::GlyphBuffer) -> i64 {
 
 /// The advance of `text` shaped with `face`, in logical pixels at `scale`.
 fn shaped_advance(face: &rustybuzz::Face<'_>, text: &str, scale: f64) -> f64 {
-    shaped_advance_units(&shape_text(face, text)) as f64 * scale
+    shaped_advance_units(&shape_text(face, text, ShapeDirection::Guessed)) as f64 * scale
 }
 
 /// The advance of every character-count prefix of `display_text`, from the
@@ -491,6 +499,7 @@ fn build_label(
             y: baseline - (pen_y + i64::from(position.y_offset)) as f64 * scale,
             advance_1000,
             unicode,
+            cluster,
         });
         if face
             .outline_glyph(GlyphId(glyph_id), &mut builder)
@@ -610,6 +619,7 @@ impl OfficialFont {
                 layout.font_size,
                 baseline,
                 text_align,
+                ShapeDirection::Guessed,
             )?);
         }
         Ok(ResolvedText {
@@ -646,7 +656,7 @@ impl OfficialFont {
             if line_index != 0 {
                 wrapped.push('\n');
             }
-            let width = shape_text(&face, line)
+            let width = shape_text(&face, line, ShapeDirection::Guessed)
                 .glyph_positions()
                 .iter()
                 .fold(0_i64, |sum, position| {
@@ -702,9 +712,14 @@ impl OfficialFont {
             .is_some()
     }
 
-    fn advance(&self, text: &str, font_size: f64) -> Result<f64, LabelError> {
+    fn advance(
+        &self,
+        text: &str,
+        font_size: f64,
+        direction: ShapeDirection,
+    ) -> Result<f64, LabelError> {
         let face = rustybuzz::Face::from_slice(&self.sfnt, 0).ok_or(LabelError::InvalidFont)?;
-        let units = shape_text(&face, text)
+        let units = shape_text(&face, text, direction)
             .glyph_positions()
             .iter()
             .fold(0_i64, |sum, position| {
@@ -767,37 +782,18 @@ pub(super) fn layout_with_fallbacks(
         let mut line_missing = Vec::<(usize, u32)>::new();
         selections.try_reserve_exact(source_content.chars().count())?;
         let bidi = unicode_bidi::BidiInfo::new(source_content, None);
-        let visual_ranges = if let Some(paragraph) = bidi.paragraphs.first() {
+        // Spec 8.3 keeps the reference's line rule, so a UAX #9 paragraph
+        // separator (U+2029, U+0085, U+001C..U+001E) stays inside the source
+        // line while unicode-bidi splits the line into paragraphs at it (P1).
+        // Every paragraph is content: each is laid out in order, with its own
+        // base level, and the separator ends the paragraph it belongs to. The
+        // paragraphs partition the line, so every scalar is in some visual run;
+        // an empty line has none.
+        let mut bidi_run = 0_usize;
+        for paragraph in &bidi.paragraphs {
             let (levels, ranges) = bidi.visual_runs(paragraph, paragraph.range.clone());
-            ranges
-                .into_iter()
-                .map(|range| {
-                    let rtl = levels.get(range.start).is_some_and(|level| level.is_rtl());
-                    (range, rtl)
-                })
-                .collect::<Vec<_>>()
-        } else {
-            Vec::new()
-        };
-        if visual_ranges.is_empty() {
-            for (offset, character) in source_content.char_indices() {
-                let (font_index, display, noto, missing) = resolve_character_cached(
-                    primary_index,
-                    fonts,
-                    character,
-                    trigger,
-                    &mut resolved_characters,
-                    &mut fallback_probes,
-                )?;
-                selections.push((0, false, font_index, display));
-                used_noto |= noto;
-                if missing {
-                    line_missing.try_reserve(1)?;
-                    line_missing.push((offset, u32::from(character)));
-                }
-            }
-        } else {
-            for (bidi_run, (range, rtl)) in visual_ranges.into_iter().enumerate() {
+            for range in ranges {
+                let rtl = levels.get(range.start).is_some_and(|level| level.is_rtl());
                 let run_text = source_content
                     .get(range.clone())
                     .ok_or(LabelError::InvalidFont)?;
@@ -818,6 +814,7 @@ pub(super) fn layout_with_fallbacks(
                             .push((range.start.saturating_add(offset), u32::from(character)));
                     }
                 }
+                bidi_run = bidi_run.saturating_add(1);
             }
         }
         line_missing.sort_unstable_by_key(|(offset, _)| *offset);
@@ -838,13 +835,36 @@ pub(super) fn layout_with_fallbacks(
             run_text.push(character);
             grouped.push((bidi_run, rtl, font_index, run_text));
         }
+        // A visual run's face runs were grouped in logical order. Every glyph
+        // run is placed left to right in visual order (spec 8.3), and a
+        // right-to-left visual run reads its faces right to left: the first
+        // in logical order is the rightmost, so its face runs are reversed.
+        let mut start = 0;
+        while let Some((bidi_run, rtl, ..)) = grouped.get(start) {
+            let (bidi_run, rtl) = (*bidi_run, *rtl);
+            let mut end = start.saturating_add(1);
+            while grouped.get(end).is_some_and(|(next, ..)| *next == bidi_run) {
+                end = end.saturating_add(1);
+            }
+            if rtl {
+                grouped
+                    .get_mut(start..end)
+                    .ok_or(LabelError::InvalidFont)?
+                    .reverse();
+            }
+            start = end;
+        }
 
         let mut total_advance = 0.0;
-        for (_, _, font_index, run_text) in &grouped {
+        for (_, rtl, font_index, run_text) in &grouped {
             total_advance += fonts
                 .get(*font_index)
                 .ok_or(LabelError::InvalidFont)?
-                .advance(run_text, layout.font_size)?;
+                .advance(
+                    run_text,
+                    layout.font_size,
+                    ShapeDirection::Run { rtl: *rtl },
+                )?;
         }
         let line_origin = match text_align {
             ResolvedTextAlign::Left => 0.0,
@@ -859,6 +879,7 @@ pub(super) fn layout_with_fallbacks(
         for (_, rtl, font_index, run_text) in grouped {
             let font = fonts.get(font_index).ok_or(LabelError::InvalidFont)?;
             let face = rustybuzz::Face::from_slice(&font.sfnt, 0).ok_or(LabelError::InvalidFont)?;
+            let direction = ShapeDirection::Run { rtl };
             let mut run = shape_official_line(
                 &face,
                 &run_text,
@@ -867,9 +888,11 @@ pub(super) fn layout_with_fallbacks(
                 layout.font_size,
                 baseline,
                 ResolvedTextAlign::Left,
+                direction,
             )?;
             shift_label_x(&mut run, pen_x);
             let glyph_start = glyphs.len();
+            let logical_glyphs = logical_glyph_indexes(&run.glyphs, &run_text, rtl, glyph_start)?;
             operations.try_reserve(run.path.operations.len())?;
             operations.extend(run.path.operations);
             glyphs.try_reserve(run.glyphs.len())?;
@@ -885,8 +908,9 @@ pub(super) fn layout_with_fallbacks(
                 glyph_start,
                 glyph_end,
                 rtl,
+                logical_glyphs,
             });
-            pen_x += font.advance(&run_text, layout.font_size)?;
+            pen_x += font.advance(&run_text, layout.font_size, direction)?;
         }
         lines.try_reserve(1)?;
         lines.push(ResolvedLabel {
@@ -1227,6 +1251,71 @@ impl OfficialFontChunks {
     }
 }
 
+/// For each scalar of `display_text` in logical order, the index of the glyph
+/// in `glyphs` that shows it, offset by `first_index` so the result indexes
+/// the line's glyph list the run's glyphs are appended to.
+///
+/// The shaper groups scalars and glyphs into clusters keyed by the byte offset
+/// of the cluster's first scalar. Within a cluster, the i-th scalar is shown
+/// by the i-th glyph in logical order, and scalars beyond the cluster's glyph
+/// count share its last glyph; a scalar that starts no cluster belongs to the
+/// last cluster starting before it. A one-glyph-per-scalar run therefore maps
+/// each scalar to its own glyph, and a mark keeps the position the shaper gave
+/// it over its base. `glyphs` are in the order the line places them: buffer
+/// order, which for a right-to-left run (`rtl`) is visual order, reversed from
+/// logical order clusters included.
+fn logical_glyph_indexes(
+    glyphs: &[ResolvedGlyph],
+    display_text: &str,
+    rtl: bool,
+    first_index: usize,
+) -> Result<Vec<usize>, LabelError> {
+    // `(cluster, logical position)` per glyph; sorting by that total key
+    // groups each cluster's glyphs in logical order.
+    let mut ordered = Vec::<(usize, usize, usize)>::new();
+    ordered.try_reserve_exact(glyphs.len())?;
+    for (index, glyph) in glyphs.iter().enumerate() {
+        let logical = if rtl {
+            glyphs.len().saturating_sub(1).saturating_sub(index)
+        } else {
+            index
+        };
+        ordered.push((glyph.cluster, logical, index));
+    }
+    ordered.sort_unstable_by_key(|(cluster, logical, _)| (*cluster, *logical));
+
+    let mut indexes = Vec::new();
+    indexes.try_reserve_exact(display_text.chars().count())?;
+    // The glyphs of the cluster the current scalar belongs to, as a range of
+    // `ordered`, and how many of its scalars have been mapped.
+    let mut cluster = 0..0;
+    let mut mapped = 0_usize;
+    for (offset, _) in display_text.char_indices() {
+        while let Some((start, ..)) = ordered.get(cluster.end) {
+            if *start > offset {
+                break;
+            }
+            let mut end = cluster.end.saturating_add(1);
+            while ordered.get(end).is_some_and(|(next, ..)| next == start) {
+                end = end.saturating_add(1);
+            }
+            cluster = cluster.end..end;
+            mapped = 0;
+        }
+        let (.., index) = ordered
+            .get(
+                cluster
+                    .start
+                    .saturating_add(mapped.min(cluster.len().saturating_sub(1))),
+            )
+            .filter(|_| !cluster.is_empty())
+            .ok_or(LabelError::InvalidFont)?;
+        indexes.push(index.saturating_add(first_index));
+        mapped = mapped.saturating_add(1);
+    }
+    Ok(indexes)
+}
+
 fn shift_label_x(label: &mut ResolvedLabel, delta: f64) {
     for operation in &mut label.path.operations {
         match operation {
@@ -1410,6 +1499,7 @@ impl ResolvedText {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn shape_official_line(
     face: &rustybuzz::Face<'_>,
     source_text: &str,
@@ -1418,8 +1508,9 @@ fn shape_official_line(
     font_size: f64,
     baseline: f64,
     text_align: ResolvedTextAlign,
+    direction: ShapeDirection,
 ) -> Result<ResolvedLabel, LabelError> {
-    let glyphs = shape_text(face, display_text);
+    let glyphs = shape_text(face, display_text, direction);
     let scale = font_size / f64::from(face.units_per_em());
     let advance = glyphs
         .glyph_positions()
@@ -1467,6 +1558,7 @@ fn shape_official_line(
             y: baseline - (pen_y + i64::from(position.y_offset)) as f64 * scale,
             advance_1000,
             unicode,
+            cluster,
         });
         let mut builder = GlyphOutlineBuilder {
             operations: &mut operations,
@@ -1509,15 +1601,45 @@ fn shape_official_line(
     })
 }
 
-fn shape_text(face: &rustybuzz::Face<'_>, text: &str) -> rustybuzz::GlyphBuffer {
+fn shape_text(
+    face: &rustybuzz::Face<'_>,
+    text: &str,
+    direction: ShapeDirection,
+) -> rustybuzz::GlyphBuffer {
     let mut buffer = rustybuzz::UnicodeBuffer::new();
     buffer.push_str(text);
+    if let ShapeDirection::Run { rtl } = direction {
+        buffer.set_direction(if rtl {
+            rustybuzz::Direction::RightToLeft
+        } else {
+            rustybuzz::Direction::LeftToRight
+        });
+    }
+    // Guesses the script (and the direction when none is set) from the text.
     buffer.guess_segment_properties();
     let features = [
         rustybuzz::Feature::new(Tag::from_bytes(b"liga"), 0, ..),
         rustybuzz::Feature::new(Tag::from_bytes(b"clig"), 0, ..),
     ];
     rustybuzz::shape(face, &features, buffer)
+}
+
+/// The direction text is shaped in.
+#[derive(Clone, Copy)]
+enum ShapeDirection {
+    /// The shaper's guess from the text's script: left to right unless the
+    /// text carries a right-to-left script. Text shaped this way has had no
+    /// UAX #9 resolution: the primary path's whole line, which has no
+    /// right-to-left content or it would take `layout_with_fallbacks`; the
+    /// embeddable label wrapper's width measurements; and the frame name and
+    /// placeholder labels `FallbackFont` shapes whole after `?`-replacement.
+    Guessed,
+    /// The resolved bidi level of one visual run (spec 8.3). A right-to-left
+    /// run's glyphs come back in visual order, leftmost first, with mirrored
+    /// characters showing their mirror glyph when the face has one (UAX #9
+    /// L4); guessing from the run's display text would shape replacement
+    /// glyphs and neutrals left to right instead.
+    Run { rtl: bool },
 }
 
 fn try_owned(value: &str) -> Result<String, LabelError> {

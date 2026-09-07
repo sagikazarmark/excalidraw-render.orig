@@ -686,17 +686,29 @@ line's own terminator bytes, so the lines concatenate back to the stored
 Within each source line, bidirectional text follows UAX #9 as the pinned
 `unicode-bidi 0.3.18` implements it (#122): the line's base level is detected
 from its first strong character (left-to-right when it has none), and its
-resolved levels are reordered into visual runs. Every format lays those runs
-out left to right in visual order, and each visual run is split further by the
-face that shapes its scalars under 8.3.1, so one visual run of one face is one
-glyph run: SVG emits it as one `<tspan>` carrying that face's effective family,
-`direction="rtl"` or `"ltr"`, and one `x` and `y` per glyph; PNG and PDF place
-the same glyph positions. Within a run, glyph order and placement are the
-deterministic shaper's for the run's display text. The text a format carries
-beside the glyphs stays in logical order (`data-source-text`, `ActualText`, and
-each run's `<tspan>` content), as do missing-codepoint diagnostics. An
-occurrence with no right-to-left content whose shaped scalars the whole-text
-face all maps is one run of that face per line and emits no direction.
+resolved levels are reordered into visual runs. Only the line terminators above
+end a source line, so a UAX #9 paragraph separator inside one (U+2029, U+0085,
+U+001C–U+001E) is admitted content that splits the line into paragraphs (P1):
+every paragraph is laid out, in order, with its own base level detected the
+same way, and the separator itself is shaped with the paragraph it ends, as
+the missing codepoint it is in every bundled face (#125). Every format lays
+those runs out left to right in visual order, and each visual run is split
+further by the face that shapes its scalars under 8.3.1, so one visual run of
+one face is one glyph run; the face runs of a right-to-left visual run follow
+in visual order too, the logically first rightmost (#126). SVG emits each
+glyph run as one `<tspan>` carrying that face's effective family,
+`direction="rtl"` or `"ltr"`, and one `x` and `y` per character of its
+content, in logical order, each the position of the glyph that shows that
+character; PNG and PDF place the same glyph positions. Within a run, glyph
+order and placement are the deterministic shaper's for the run's display text
+shaped in the run's direction (#126): a right-to-left run's glyphs are placed
+in visual order, leftmost first, so an asymmetric neutral inside it sits at
+its visual end, and a mirrored character shows its mirror glyph (UAX #9 L4)
+when the face has one. The text a format carries beside the glyphs stays in
+logical order (`data-source-text`, `ActualText`, and each run's `<tspan>`
+content), as do missing-codepoint diagnostics. An occurrence with no
+right-to-left content whose shaped scalars the whole-text face all maps is one
+run of that face per line and emits no direction.
 
 #### 8.3.1 Semantic Demand and Face Selection
 
@@ -2697,7 +2709,11 @@ The direct-SVG font-subsetting amendment is specified by
 [Add Excalidraw-compatible per-glyph SVG font subsetting](https://github.com/sagikazarmark/excalidraw-render.orig/issues/96).
 The 8.3 clarifications of the CJK subset trigger's evaluation point, the font
 fallback probe, and bidirectional layout are specified by
-[Record the CJK subset trigger's evaluation point, the fallback probe, and bidi in spec 8.3 and CONTEXT.md](https://github.com/sagikazarmark/excalidraw-render.orig/issues/122).
+[Record the CJK subset trigger's evaluation point, the fallback probe, and bidi in spec 8.3 and CONTEXT.md](https://github.com/sagikazarmark/excalidraw-render.orig/issues/122);
+its paragraph-separator clause by
+[Lay out every UAX #9 paragraph of a source line on the fallback text path](https://github.com/sagikazarmark/excalidraw-render.orig/issues/125)
+and its run-direction and per-character SVG position clauses by
+[Shape RTL visual runs in their own direction and map SVG per-glyph x to logical characters](https://github.com/sagikazarmark/excalidraw-render.orig/issues/126).
 The 8.6 definition of the reviewed decode PDF embeds for every official font
 chunk is specified by
 [Decide how PDF satisfies "reviewed predecoded sfnt chunks" for the 229 runtime-decoded chunks](https://github.com/sagikazarmark/excalidraw-render.orig/issues/120).

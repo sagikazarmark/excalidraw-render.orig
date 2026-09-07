@@ -1177,6 +1177,296 @@ fn the_fallback_layout_splits_lines_by_the_same_rule() {
     }
 }
 
+/// Lays `source` out with fallbacks for `font_family`, against a fresh font
+/// list whose only face is the whole-text face `OfficialFont::load` selects.
+fn fallback_layout(font_family: i32, source: &str) -> text::ResolvedText {
+    let mut fonts = vec![text::OfficialFont::load(font_family, source)
+        .ok()
+        .unwrap_or_else(|| panic!("family {font_family} loads for {source:?}"))];
+    let layout = text::TextLayout {
+        font_family,
+        ..excalifont_layout()
+    };
+    let trigger = text::CjkSubsetTrigger::evaluate([source]);
+    text::layout_with_fallbacks(0, &mut fonts, source, layout, trigger)
+        .ok()
+        .unwrap_or_else(|| panic!("{source:?} lays out with fallbacks"))
+        .0
+}
+
+/// The one line of `source` laid out with fallbacks for `font_family`.
+fn fallback_line(font_family: i32, source: &str) -> text::ResolvedLabel {
+    let mut laid_out = fallback_layout(font_family, source);
+    assert_eq!(laid_out.lines.len(), 1, "{source:?} is one line");
+    laid_out.lines.remove(0)
+}
+
+/// `(display text, rtl)` per glyph run of the one line `laid_out` has.
+fn single_line_runs(laid_out: &text::ResolvedText) -> Vec<(&str, bool)> {
+    let [line] = &laid_out.lines[..] else {
+        panic!("one source line, got {}", laid_out.lines.len());
+    };
+    runs_of(line)
+}
+
+/// `(display text, rtl)` per glyph run of `line`.
+fn runs_of(line: &text::ResolvedLabel) -> Vec<(&str, bool)> {
+    line.runs
+        .iter()
+        .map(|run| (run.display_text.as_str(), run.rtl))
+        .collect()
+}
+
+/// `(display text, rtl, face family)` per glyph run of `line`.
+fn faced_runs_of(line: &text::ResolvedLabel) -> Vec<(&str, bool, &str)> {
+    line.runs
+        .iter()
+        .map(|run| (run.display_text.as_str(), run.rtl, run.font_family))
+        .collect()
+}
+
+/// The glyphs of the run at `index`, in the order the line places them, as
+/// `(logical cluster text, glyph id, x)`.
+fn run_glyphs(line: &text::ResolvedLabel, index: usize) -> Vec<(String, u16, f64)> {
+    let run = &line.runs[index];
+    line.glyphs[run.glyph_start..run.glyph_end]
+        .iter()
+        .map(|glyph| {
+            (
+                String::from_utf16(&glyph.unicode).expect("cluster text is UTF-16"),
+                glyph.id,
+                glyph.x,
+            )
+        })
+        .collect()
+}
+
+/// The glyph id each scalar of the run at `index` is positioned by in SVG, in
+/// logical order.
+fn logical_glyph_ids(line: &text::ResolvedLabel, index: usize) -> Vec<u16> {
+    line.runs[index]
+        .logical_glyphs
+        .iter()
+        .map(|glyph| line.glyphs[*glyph].id)
+        .collect()
+}
+
+/// The glyph ids `face` maps `characters` to.
+fn glyph_ids(font_family: i32, characters: &str) -> Vec<u16> {
+    let (_, _, _, _, _, sfnt) = text::OfficialFont::load(font_family, characters)
+        .ok()
+        .unwrap_or_else(|| panic!("family {font_family} loads for {characters:?}"))
+        .into_parts();
+    let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("face parses");
+    characters
+        .chars()
+        .map(|character| {
+            face.glyph_index(character)
+                .unwrap_or_else(|| panic!("family {font_family} maps {character:?}"))
+                .0
+        })
+        .collect()
+}
+
+#[test]
+fn every_bidi_paragraph_of_a_source_line_is_laid_out() {
+    // Spec 8.3 pins the reference's line rule (`\r\n`, `\r`, `\n` only), so a
+    // UAX #9 paragraph separator stays inside one source line while
+    // unicode-bidi splits the line into paragraphs at it (P1). Every paragraph
+    // is content: each is laid out in order, and the separator itself, which
+    // no bundled face maps, is the replacement glyph between them (#125).
+    for separator in ['\u{2029}', '\u{85}', '\u{1c}', '\u{1d}', '\u{1e}'] {
+        let source = format!("ab{separator}cd");
+        let laid_out = fallback_layout(5, &source);
+        assert_eq!(
+            line_texts(&laid_out),
+            [(source.as_str(), "ab?cd")],
+            "{source:?} is one source line whose every paragraph is shown"
+        );
+        assert_eq!(
+            single_line_runs(&laid_out),
+            [("ab", false), ("?", false), ("cd", false)],
+            "{source:?} lays its paragraphs out in order"
+        );
+        assert_eq!(
+            laid_out.missing_codepoints,
+            [u32::from(separator)],
+            "{source:?} reports only the separator"
+        );
+        assert_eq!(laid_out.glyph_count(), 5, "{source:?} shapes every scalar");
+        assert_eq!(
+            laid_out.glyph_count(),
+            laid_out.prepaid_glyphs,
+            "{source:?}"
+        );
+    }
+
+    // Each paragraph detects its own base level from its own first strong
+    // character: Hebrew then a separator is one right-to-left paragraph, the
+    // Latin after it a left-to-right one.
+    let source = "\u{5d0}\u{2029}ab";
+    let laid_out = fallback_layout(9, source);
+    assert_eq!(line_texts(&laid_out), [(source, "??ab")]);
+    assert_eq!(single_line_runs(&laid_out), [("??", true), ("ab", false)]);
+    assert_eq!(laid_out.missing_codepoints, [0x5d0, 0x2029]);
+}
+
+#[test]
+fn a_right_to_left_run_is_shaped_right_to_left() {
+    // Spec 8.3: within a run, glyph order and placement are the shaper's for
+    // the run's display text in the run's direction. No bundled face maps
+    // Hebrew, so an RTL run is replacement glyphs plus neutrals; guessing the
+    // direction from that text would shape it left to right and leave an
+    // asymmetric neutral at the run's logical end instead of its visual end
+    // (#126). UAX #9 puts the space of "אבג " and the period of "אב." at the
+    // left edge of their runs.
+    let line = fallback_line(9, "abc \u{5d0}\u{5d1}\u{5d2} 123");
+    assert_eq!(
+        runs_of(&line),
+        [("abc ", false), ("123", false), ("??? ", true)]
+    );
+    let hebrew = run_glyphs(&line, 2);
+    assert_eq!(
+        hebrew
+            .iter()
+            .map(|(text, ..)| text.as_str())
+            .collect::<Vec<_>>(),
+        [" ", "?", "?", "?"],
+        "the space is the run's leftmost glyph"
+    );
+    assert!(
+        hebrew.windows(2).all(|pair| pair[0].2 < pair[1].2),
+        "glyphs are placed left to right in visual order: {hebrew:?}"
+    );
+    let digits = run_glyphs(&line, 1);
+    let digits_right_edge = digits
+        .last()
+        .map(|(_, _, x)| *x)
+        .expect("digits have glyphs");
+    assert!(
+        hebrew[0].2 > digits_right_edge,
+        "the Hebrew run starts after the digits' last glyph origin"
+    );
+
+    let line = fallback_line(9, "\u{5d0}\u{5d1}.");
+    assert_eq!(runs_of(&line), [("??.", true)]);
+    assert_eq!(
+        run_glyphs(&line, 0)
+            .iter()
+            .map(|(text, ..)| text.as_str())
+            .collect::<Vec<_>>(),
+        [".", "?", "?"],
+        "the period is the run's leftmost glyph"
+    );
+
+    // UAX #9 L4: a mirrored character in a right-to-left run shows its mirror
+    // glyph, so "(א)" still reads as an opening paren, the text, a closing
+    // paren from left to right. The cluster text each glyph carries stays the
+    // logical character.
+    let [opening, closing] = glyph_ids(9, "()")[..] else {
+        panic!("two glyphs");
+    };
+    let line = fallback_line(9, "(\u{5d0})");
+    assert_eq!(runs_of(&line), [("(?)", true)]);
+    let parens = run_glyphs(&line, 0);
+    assert_eq!(
+        parens
+            .iter()
+            .map(|(text, id, _)| (text.as_str(), *id))
+            .collect::<Vec<_>>(),
+        [(")", opening), ("?", parens[1].1), ("(", closing)],
+        "the logical closing paren shows an opening glyph at the left, and vice versa"
+    );
+}
+
+#[test]
+fn face_sub_runs_of_a_right_to_left_run_are_placed_right_to_left() {
+    // Spec 8.3: a visual run is split further by the face that shapes its
+    // scalars, and every glyph run is laid out left to right in visual order.
+    // Excalifont shapes the period of "אב." while Liberation Sans shapes the
+    // replacement glyphs, so the one right-to-left visual run is two glyph
+    // runs; the period is logically last, hence visually leftmost (#126).
+    let line = fallback_line(5, "\u{5d0}\u{5d1}.");
+    assert_eq!(
+        faced_runs_of(&line),
+        [(".", true, "Excalifont"), ("??", true, "Liberation Sans")],
+        "the face runs of a right-to-left visual run follow in visual order"
+    );
+    let period = run_glyphs(&line, 0);
+    let replacements = run_glyphs(&line, 1);
+    assert!(
+        period[0].2 < replacements[0].2,
+        "the period sits left of the replacement glyphs: {period:?} vs {replacements:?}"
+    );
+    assert!(
+        period[0].2.abs() < 1e-9,
+        "left-aligned text starts at the line origin"
+    );
+    assert_eq!(
+        line.display_text, ".??",
+        "the line's display text follows its glyph runs"
+    );
+}
+
+#[test]
+fn every_scalar_of_a_run_is_positioned_by_its_own_glyph_in_either_direction() {
+    // SVG assigns the nth x/y of a run's tspan to its nth logical character.
+    // The shaper merges a combining mark into its base's cluster, and a
+    // right-to-left run comes back reversed, marks included; each scalar is
+    // still positioned by the glyph that shows it, so the mark keeps the
+    // offset the shaper gave it over the base rather than the base's origin.
+    // Nunito's Latin chunk maps the combining dot below and keeps it a glyph
+    // of its own; Liberation's chunk maps no combining mark.
+    let [e, question, dot_below] = glyph_ids(6, "e?\u{323}")[..] else {
+        panic!("three glyphs");
+    };
+
+    // Left to right: "e" with a dot below, forced onto the fallback path by
+    // Hebrew.
+    let line = fallback_line(6, "e\u{323}\u{5d0}");
+    assert_eq!(runs_of(&line), [("e\u{323}", false), ("?", true)]);
+    assert_eq!(logical_glyph_ids(&line, 0), [e, dot_below]);
+    let [base, mark] = line.runs[0].logical_glyphs[..] else {
+        panic!("two scalars");
+    };
+    assert_ne!(base, mark, "each scalar is positioned by its own glyph");
+    assert_eq!(
+        line.glyphs[base].cluster, line.glyphs[mark].cluster,
+        "the shaper merged the mark into its base's cluster"
+    );
+    assert_ne!(
+        line.glyphs[base].x, line.glyphs[mark].x,
+        "the mark keeps the offset the shaper gave it over the base"
+    );
+
+    // Right to left: a dot below a question mark inside a Hebrew paragraph.
+    // The Hebrew is a Liberation Sans replacement glyph, the rest Nunito's,
+    // so the visual run is two glyph runs placed right to left.
+    let line = fallback_line(6, "\u{5d0}?\u{323}");
+    assert_eq!(
+        faced_runs_of(&line),
+        [("?\u{323}", true, "Nunito"), ("?", true, "Liberation Sans")]
+    );
+    assert_eq!(logical_glyph_ids(&line, 0), [question, dot_below]);
+    let mut positioned = line.runs[0].logical_glyphs.clone();
+    positioned.sort_unstable();
+    assert_eq!(
+        positioned,
+        (line.runs[0].glyph_start..line.runs[0].glyph_end).collect::<Vec<_>>(),
+        "every glyph positions exactly one scalar"
+    );
+
+    // When the shaper composes base and mark into one glyph (Nunito's `ccmp`
+    // for the acute), both scalars are positioned by that glyph.
+    let [e_acute] = glyph_ids(6, "\u{e9}")[..] else {
+        panic!("one glyph");
+    };
+    let line = fallback_line(6, "e\u{301}\u{5d0}");
+    assert_eq!(runs_of(&line), [("e\u{301}", false), ("?", true)]);
+    assert_eq!(logical_glyph_ids(&line, 0), [e_acute, e_acute]);
+    assert_eq!(line.runs[0].glyph_end - line.runs[0].glyph_start, 1);
+}
+
 #[test]
 fn line_terminators_do_not_steer_face_selection() {
     // Face selection asks whether every shaped scalar has a glyph; a `\r` is

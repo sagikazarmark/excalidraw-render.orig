@@ -579,14 +579,49 @@ fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
             .all(|run| run.font_family == "ExcalidrawRender-9"),
         "every run names the one face that shaped it"
     );
+    // SVG assigns the nth `x` to the nth character of the tspan's content,
+    // which is logical, so a right-to-left run's list runs from its rightmost
+    // glyph down to its leftmost: the trailing space of "אבג " is the run's
+    // visual left edge (#126).
     for run in &runs {
-        assert_eq!(run.x.len(), run.text.chars().count(), "one x per glyph");
-        assert!(run.x.windows(2).all(|pair| pair[0] < pair[1]));
+        assert_eq!(
+            run.x.len(),
+            run.text.chars().count(),
+            "one x per logical character"
+        );
+        if run.direction == "rtl" {
+            assert!(
+                run.x.windows(2).all(|pair| pair[0] > pair[1]),
+                "an rtl run's x list descends in logical order: {:?}",
+                run.x
+            );
+        } else {
+            assert!(
+                run.x.windows(2).all(|pair| pair[0] < pair[1]),
+                "an ltr run's x list ascends in logical order: {:?}",
+                run.x
+            );
+        }
     }
+    let extent = |run: &SvgTextRun| {
+        let min = run.x.iter().copied().fold(f64::INFINITY, f64::min);
+        let max = run.x.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        (min, max)
+    };
     assert!(
         runs.windows(2)
-            .all(|pair| pair[0].x.last() < pair[1].x.first()),
+            .all(|pair| extent(&pair[0]).1 < extent(&pair[1]).0),
         "visual runs advance left to right across the line"
+    );
+    let [_, digits, hebrew] = &runs[..] else {
+        panic!("three runs");
+    };
+    let space_x = *hebrew.x.last().expect("the Hebrew run has a space");
+    assert!(
+        space_x > digits.x[2] && space_x < hebrew.x[2],
+        "the space sits between the digits and the leftmost replacement glyph: {space_x} in {:?} .. {:?}",
+        digits.x,
+        hebrew.x
     );
 
     let pdf_request = RenderRequest::builder(OutputFormat::Pdf)
@@ -601,6 +636,108 @@ fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     let pdf = String::from_utf8_lossy(first.artifact().bytes());
     assert!(pdf.contains("/ActualText <FEFF006100620063002005D005D105D20020003100320033>"));
+}
+
+#[test]
+fn face_runs_of_a_right_to_left_visual_run_follow_in_visual_order() {
+    // Spec 8.3: a visual run is split further by the face that shapes its
+    // scalars, and glyph runs are laid out left to right in visual order.
+    // Excalifont shapes the period of "אב." and Liberation Sans the Hebrew's
+    // replacement glyphs, so the one right-to-left visual run is two tspans,
+    // and the period, logically last, comes first (#126).
+    let scene = text_scene(5, "\u{5d0}\u{5d1}.");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("SVG request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("face-split RTL SVG renders");
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains("data-source-text=\"\u{5d0}\u{5d1}.\""));
+    let runs = svg_text_runs(svg);
+    assert_eq!(
+        runs.iter()
+            .map(|run| (
+                run.font_family.as_str(),
+                run.direction.as_str(),
+                run.text.as_str()
+            ))
+            .collect::<Vec<_>>(),
+        [
+            ("Excalifont", "rtl", "."),
+            ("ExcalidrawRender-9", "rtl", "??")
+        ]
+    );
+    let [period, hebrew] = &runs[..] else {
+        panic!("two runs");
+    };
+    assert_eq!(period.x, [0.0], "the period is the line's leftmost glyph");
+    assert!(
+        hebrew.x.iter().all(|x| *x > 0.0),
+        "the replacement glyphs follow it: {:?}",
+        hebrew.x
+    );
+}
+
+#[test]
+fn a_paragraph_separator_inside_a_source_line_keeps_the_text_after_it() {
+    // Spec 8.3: only `\r\n`, `\r`, and `\n` end a source line, so U+2029 stays
+    // inside one line as content; UAX #9 splits that line into two paragraphs
+    // and both are laid out (#125). Excalifont maps the Latin, nothing maps the
+    // separator, so the line is three runs of two faces and the separator is
+    // the line's one missing glyph.
+    let scene = text_scene(5, "ab\u{2029}cd");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("SVG request is valid");
+    let outcome = Renderer::new()
+        .render(&scene, &request)
+        .expect("paragraph-separator SVG renders");
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    let missing = outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .map(|diagnostic| {
+            assert_eq!(diagnostic.code(), DiagnosticCode::FONT_MISSING_GLYPH);
+            match diagnostic.details() {
+                Some(ErrorDetails::MissingGlyph { codepoint, .. }) => *codepoint,
+                other => panic!("missing-glyph details, got {other:?}"),
+            }
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(missing, [0x2029]);
+    assert!(svg.contains("data-source-text=\"ab\u{2029}cd\""));
+    let runs = svg_text_runs(svg);
+    assert_eq!(
+        runs.iter()
+            .map(|run| (
+                run.font_family.as_str(),
+                run.direction.as_str(),
+                run.text.as_str()
+            ))
+            .collect::<Vec<_>>(),
+        [
+            ("Excalifont", "ltr", "ab"),
+            ("ExcalidrawRender-9", "ltr", "?"),
+            ("Excalifont", "ltr", "cd"),
+        ],
+        "both paragraphs of the line are laid out in order around the separator"
+    );
+    assert!(
+        runs.windows(2)
+            .all(|pair| pair[0].x.last() < pair[1].x.first()),
+        "the runs advance left to right"
+    );
+
+    let pdf_request = RenderRequest::builder(OutputFormat::Pdf)
+        .build()
+        .expect("PDF request is valid");
+    let pdf_outcome = Renderer::new()
+        .render(&scene, &pdf_request)
+        .expect("paragraph-separator PDF renders");
+    let pdf = String::from_utf8_lossy(pdf_outcome.artifact().bytes());
+    assert!(pdf.contains("/ActualText <FEFF00610062202900630064>"));
 }
 
 /// One `<tspan>` of a run-structured SVG text element.

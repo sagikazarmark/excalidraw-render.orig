@@ -161,8 +161,8 @@ One consultation of a face for one shaped scalar occurrence that its family's wh
 _Avoid_: Font load, cmap lookup, decode, cache miss
 
 **Bidi visual run**:
-One maximal span of a source line that UAX #9, as the pinned `unicode-bidi` implements it with the base level detected from the line's first strong character, places together in visual order, further split by the face that shapes its scalars. Every format lays visual runs out left to right; SVG emits one `<tspan>` per run with its `direction`, while the text carried beside the glyphs (`data-source-text`, `ActualText`, each run's `<tspan>` content) and missing-codepoint diagnostics stay in logical order.
-_Avoid_: Logical run, RTL segment, reordered text (for the carried source text)
+One maximal span of a source line that UAX #9, as the pinned `unicode-bidi` implements it with the base level detected from the line's first strong character, places together in visual order, further split by the face that shapes its scalars. A paragraph separator inside a source line (U+2029, U+0085, U+001C–U+001E) is admitted content: it splits the line into UAX #9 paragraphs, each laid out in order with its own base level. Every format lays visual runs, and the face runs within them, out left to right in visual order, each run shaped in its own direction so a right-to-left run's glyphs sit in visual order with mirrored characters showing their mirror glyph when the face has one; SVG emits one `<tspan>` per run with its `direction` and one `x`/`y` per character of its content in logical order, while the text carried beside the glyphs (`data-source-text`, `ActualText`, each run's `<tspan>` content) and missing-codepoint diagnostics stay in logical order.
+_Avoid_: Logical run, RTL segment, reordered text (for the carried source text), per-glyph x (for the SVG position lists)
 
 **Font subset profile**:
 The compatibility-revision-specific contract for glyph and layout closure, table treatment, metrics, variations, names, legal records, encoding, and validation of every derived font subset.
