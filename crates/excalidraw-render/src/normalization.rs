@@ -316,11 +316,20 @@ impl SourceDiagnosticPosition {
         }
     }
 
+    /// Packs the member position into the high half and the nested ordinal
+    /// into the low half, so a diagnostic sorts by the source member it
+    /// belongs to before its position inside that member. A missing nested
+    /// member is spelled with a saturated nested ordinal; clamping it to the
+    /// low half keeps it last within its own member rather than after every
+    /// later member of the element.
     fn as_u64(self) -> u64 {
+        let nested = u64::try_from(self.nested)
+            .unwrap_or(u64::MAX)
+            .min(u64::from(u32::MAX));
         u64::try_from(self.member)
             .unwrap_or(u64::MAX)
             .saturating_mul(u64::from(u32::MAX) + 1)
-            .saturating_add(u64::try_from(self.nested).unwrap_or(u64::MAX))
+            .saturating_add(nested)
     }
 }
 
@@ -3978,6 +3987,46 @@ mod tests {
                 })
                 .collect::<Vec<_>>(),
             ["substituted", "omitted"]
+        );
+    }
+
+    #[test]
+    fn a_missing_nested_binding_member_keeps_its_parent_members_source_order() {
+        // Spec §11.3 orders diagnostics by the owning source member before the
+        // nested position. A missing `gap` under `startBinding` therefore
+        // precedes an invalid `elementId` under the later `endBinding`, even
+        // though the missing member has no nested position of its own. Found
+        // by the scene fuzz, whose saturated nested ordinal used to spill out
+        // of the member lane and sort the diagnostic after the whole element.
+        let scene = SceneDocument::parse(
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"arrow","type":"arrow","width":10,"height":10,"points":[[0,0],[10,10]],"startBinding":{"elementId":"target"},"endBinding":{"elementId":""},"seed":1,"updated":1}],"appState":{},"files":{}}"##,
+        )
+        .expect("binding order vector is admitted");
+        let mut diagnostics = Vec::new();
+
+        normalize_scene(
+            &scene,
+            CompatibilityRevision::REVISION_1,
+            OutputFormat::Svg,
+            |event| {
+                if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
+                    diagnostics.push(diagnostic);
+                }
+                Ok::<_, ()>(())
+            },
+        )
+        .expect("normalization succeeds")
+        .expect("the scene is in the implemented normalization slice");
+
+        assert_eq!(
+            diagnostics
+                .iter()
+                .map(|diagnostic| diagnostic.json_pointer.as_str())
+                .collect::<Vec<_>>(),
+            [
+                "/elements/0/startBinding/gap",
+                "/elements/0/endBinding/elementId",
+            ]
         );
     }
 
