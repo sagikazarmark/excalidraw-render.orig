@@ -1,6 +1,7 @@
 use std::fs;
 
 use crate::common::approved_scenes::{rectangle_outline_scene, render_rectangle_outline_svg};
+use crate::common::reports::assert_report_matches;
 use crate::common::repository_root;
 use excalidraw_render::{
     ErrorCode, OutputFormat, RenderErrorCategory, RenderOutcome, RenderRequest, Renderer,
@@ -16,9 +17,10 @@ fn approved_rectangle_renders_as_deterministic_semantic_svg() {
 
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     assert_eq!(first.report(), second.report());
-    assert_eq!(
-        serde_json::to_vec(first.report()).expect("report serializes"),
-        fs::read(case.join("expected-report-svg.json")).unwrap()
+    assert_report_matches(
+        first.report(),
+        &case.join("expected-report-svg.json"),
+        "approved rectangle SVG",
     );
 
     let candidate = parse_svg(first.artifact().bytes());

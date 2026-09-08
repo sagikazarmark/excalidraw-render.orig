@@ -1,9 +1,9 @@
-use std::io::Cursor;
-
 use excalidraw_render::{
     ColorMode, DiagnosticCode, FrameOptions, OutputFormat, RenderRequest, Renderer, SceneDocument,
 };
-use png::{BitDepth, ColorType, Decoder, Transformations};
+
+use crate::common::raster::decode_png;
+use crate::common::render::render_with_request;
 
 const NESTED_FRAME_SCENE: &[u8] = br##"{
     "type":"excalidraw","version":2,
@@ -48,9 +48,9 @@ fn frame_name_box_extends_the_canvas_by_the_reference_metrics() {
     );
 
     let png = render(&scene, OutputFormat::Png, FrameOptions::default());
-    let (width, height, _) = decode_png(png.artifact().bytes());
+    let decoded = decode_png(png.artifact().bytes());
     assert_eq!(
-        (width, height),
+        (decoded.width, decoded.height),
         (600, 620),
         "PNG truncates the 620.5 extent"
     );
@@ -105,23 +105,16 @@ fn frame_name_uses_the_dark_theme_name_color_in_dark_mode() {
 fn frame_name_is_painted_grey_above_the_frame_in_png() {
     let scene = SceneDocument::parse(NAMED_FRAME_SCENE).expect("named frame is admitted");
     let png = render(&scene, OutputFormat::Png, FrameOptions::default());
-    let (width, _, rgba) = decode_png(png.artifact().bytes());
-    let pixel = |x: u32, y: u32| {
-        let offset = usize::try_from((u64::from(y) * u64::from(width) + u64::from(x)) * 4)
-            .expect("pixel offset fits usize");
-        &rgba[offset..offset + 4]
-    };
+    let decoded = decode_png(png.artifact().bytes());
 
     // The name box spans y 10..27.5 in the canvas; "Clip" at 14 px is under
     // 30 px wide, so every inked pixel is inside x 10..40.
     let mut inked = 0;
     for y in 10..28 {
         for x in 10..40 {
-            let [red, green, blue, alpha] = pixel(x, y) else {
-                unreachable!()
-            };
-            assert_eq!(*alpha, 255);
-            if [*red, *green, *blue] == [255, 255, 255] {
+            let [red, green, blue, alpha] = decoded.pixel(x, y);
+            assert_eq!(alpha, 255);
+            if [red, green, blue] == [255, 255, 255] {
                 continue;
             }
             inked += 1;
@@ -129,12 +122,16 @@ fn frame_name_is_painted_grey_above_the_frame_in_png() {
             // darker than #999999; #1b1b1f would break both.
             assert_eq!(red, green, "name ink is grey at ({x}, {y})");
             assert_eq!(green, blue, "name ink is grey at ({x}, {y})");
-            assert!(*red >= 0x99, "name ink is #999999 or lighter at ({x}, {y})");
+            assert!(red >= 0x99, "name ink is #999999 or lighter at ({x}, {y})");
         }
     }
     assert!(inked > 20, "the name is painted: {inked} inked pixels");
     for x in 10..40 {
-        assert_eq!(pixel(x, 5), [255, 255, 255, 255], "nothing above the name");
+        assert_eq!(
+            decoded.pixel(x, 5),
+            [255, 255, 255, 255],
+            "nothing above the name"
+        );
     }
 }
 
@@ -352,15 +349,9 @@ fn nested_frames_clip_direct_geometry_in_every_format() {
                 assert!(svg.contains("fill-opacity=\"0.25\""));
             }
             OutputFormat::Png => {
-                let (width, _, rgba) = decode_png(outcome.artifact().bytes());
-                let pixel = |x: u32, y: u32| {
-                    let offset =
-                        usize::try_from((u64::from(y) * u64::from(width) + u64::from(x)) * 4)
-                            .expect("pixel offset fits usize");
-                    &rgba[offset..offset + 4]
-                };
-                assert_ne!(pixel(75, 64), [255, 255, 255, 255]);
-                assert_eq!(pixel(100, 64), [255, 255, 255, 255]);
+                let decoded = decode_png(outcome.artifact().bytes());
+                assert_ne!(decoded.pixel(75, 64), [255, 255, 255, 255]);
+                assert_eq!(decoded.pixel(100, 64), [255, 255, 255, 255]);
             }
             OutputFormat::Pdf => {
                 let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
@@ -433,14 +424,9 @@ fn frame_clipping_uses_the_rounded_frame_boundary() {
         OutputFormat::Png,
         FrameOptions::new(true, true, false, false),
     );
-    let (width, _, rgba) = decode_png(outcome.artifact().bytes());
-    let pixel = |x: u32, y: u32| {
-        let offset = usize::try_from((u64::from(y) * u64::from(width) + u64::from(x)) * 4)
-            .expect("pixel offset fits usize");
-        &rgba[offset..offset + 4]
-    };
-    assert_eq!(pixel(11, 11), [255, 255, 255, 255]);
-    assert_ne!(pixel(20, 20), [255, 255, 255, 255]);
+    let decoded = decode_png(outcome.artifact().bytes());
+    assert_eq!(decoded.pixel(11, 11), [255, 255, 255, 255]);
+    assert_ne!(decoded.pixel(20, 20), [255, 255, 255, 255]);
 }
 
 #[test]
@@ -477,21 +463,7 @@ fn render(
         .frame_options(frame_options)
         .build()
         .expect("frame render request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .expect("frame scene renders")
-}
-
-fn decode_png(bytes: &[u8]) -> (u32, u32, Vec<u8>) {
-    let mut decoder = Decoder::new(Cursor::new(bytes));
-    decoder.set_transformations(Transformations::IDENTITY);
-    let mut reader = decoder.read_info().expect("PNG structure is valid");
-    assert_eq!(reader.info().color_type, ColorType::Rgba);
-    assert_eq!(reader.info().bit_depth, BitDepth::Eight);
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
-    rgba.truncate(frame.buffer_size());
-    (frame.width, frame.height, rgba)
+    render_with_request(scene, &request)
 }
 
 fn view_box_width(svg: &str) -> f64 {

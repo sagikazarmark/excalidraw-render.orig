@@ -4,6 +4,8 @@ use excalidraw_render::{
     SceneDocument,
 };
 
+use crate::common::pdf_inspect::embedded_pdf_fonts;
+
 #[test]
 fn admitted_latin_font_families_render_with_their_bundled_faces() {
     for (font_family, expected_family) in [
@@ -924,32 +926,4 @@ fn reviewed_decode_of(font: &[u8]) -> Option<&'static excalidraw_render_assets_b
         .assets
         .iter()
         .find(|asset| asset.decoded_length == font.len() && asset.decoded_sha256 == digest)
-}
-
-/// Every embedded `FontFile2` stream: the PDF writes them uncompressed with
-/// `/Length1` naming the complete sfnt length.
-fn embedded_pdf_fonts(pdf: &[u8]) -> Vec<Vec<u8>> {
-    const MARKER: &[u8] = b"/Length1 ";
-    const STREAM: &[u8] = b">>\nstream\n";
-    let mut fonts = Vec::new();
-    let mut offset = 0;
-    while let Some(position) = pdf[offset..]
-        .windows(MARKER.len())
-        .position(|window| window == MARKER)
-    {
-        let start = offset + position + MARKER.len();
-        let digits = pdf[start..]
-            .iter()
-            .take_while(|byte| byte.is_ascii_digit())
-            .count();
-        let length = std::str::from_utf8(&pdf[start..start + digits])
-            .expect("font length is ASCII")
-            .parse::<usize>()
-            .expect("font length is numeric");
-        let stream_start = start + digits + 1 + STREAM.len();
-        assert_eq!(&pdf[start + digits + 1..stream_start], STREAM);
-        fonts.push(pdf[stream_start..stream_start + length].to_vec());
-        offset = stream_start + length;
-    }
-    fonts
 }

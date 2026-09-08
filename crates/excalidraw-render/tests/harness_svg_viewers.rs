@@ -12,20 +12,21 @@ mod common;
 
 use common::approved_scenes::render_rectangle_outline_svg;
 use common::repository_root;
+use common::scratch::ScratchDir;
 
 #[test]
 #[ignore = "requires the pinned Chromium container and Rust 1.97.1 viewer toolchain"]
 fn approved_rectangle_passes_both_canonical_svg_visual_gates() {
     let root = repository_root();
-    let stem = format!("rectangle-candidate-{}", std::process::id());
-    let candidate = format!("target/{stem}.svg");
-    let chromium = format!("target/{stem}-chromium.rgba");
-    let pure_rust = format!("target/{stem}-pure-rust.rgba");
+    let scratch = ScratchDir::new("rectangle-svg-candidate");
+    let candidate = scratch.relative("candidate.svg");
+    let chromium = scratch.relative("chromium.rgba");
+    let pure_rust = scratch.relative("pure-rust.rgba");
     fs::write(
-        root.join(&candidate),
+        scratch.join("candidate.svg"),
         render_rectangle_outline_svg().artifact().bytes(),
     )
-    .expect("write renderer-owned candidate SVG under target");
+    .expect("write renderer-owned candidate SVG to scratch");
 
     let chromium_status = Command::new("bash")
         .current_dir(&root)

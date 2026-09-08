@@ -1,21 +1,23 @@
-use std::io::Cursor;
-
 use base64::Engine as _;
 use excalidraw_render::{
     DiagnosticCode, ErrorDetails, OutputFormat, RenderRequest, Renderer, ResourceLimits,
     SceneDocument,
 };
 
+use crate::common::image_scene::image_scene;
+use crate::common::raster::decode_png;
+use crate::common::render::{render, render_with_request};
+
 #[test]
 fn ico_selects_largest_area_before_highest_depth() {
     let small_blue = fixture_png(1, 1, [0, 0, 255, 255]);
     let large_red = fixture_png(2, 1, [255, 0, 0, 255]);
     let ico = fixture_ico(&[(1, 1, 32, small_blue), (2, 1, 8, large_red)]);
-    let outcome = render_outcome(&image_scene(&ico, 20, 10), OutputFormat::Png);
-    let rgba = decoded_png(outcome.artifact().bytes());
+    let outcome = render(&ico_scene(&ico, 20, 10), OutputFormat::Png);
+    let png = decode_png(outcome.artifact().bytes());
 
-    assert_eq!(pixel(&rgba, 40, 15, 15), [255, 0, 0, 255]);
-    assert_eq!(pixel(&rgba, 40, 25, 15), [255, 0, 0, 255]);
+    assert_eq!(png.pixel(15, 15), [255, 0, 0, 255]);
+    assert_eq!(png.pixel(25, 15), [255, 0, 0, 255]);
     assert!(outcome.report().diagnostics().is_empty());
 }
 
@@ -33,7 +35,7 @@ fn ico_uses_highest_depth_for_equal_area_and_first_directory_entry_for_exact_tie
 fn direct_svg_preserves_validated_ico_octets_with_canonical_mime() {
     let ico = fixture_ico(&[(1, 1, 32, fixture_png(1, 1, [24, 96, 208, 255]))]);
     let encoded = base64::engine::general_purpose::STANDARD.encode(&ico);
-    let outcome = render_outcome(&image_scene(&ico, 1, 1), OutputFormat::Svg);
+    let outcome = render(&ico_scene(&ico, 1, 1), OutputFormat::Svg);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(svg.contains(&format!("data:image/x-icon;base64,{encoded}")));
@@ -56,7 +58,7 @@ fn malformed_non_selected_ico_entry_uses_typed_decode_recovery() {
     let last = malformed.len() - 1;
     malformed[last] ^= 1;
     let ico = fixture_ico(&[(2, 1, 32, valid), (1, 1, 8, malformed)]);
-    let outcome = render_outcome(&image_scene(&ico, 2, 1), OutputFormat::Svg);
+    let outcome = render(&ico_scene(&ico, 2, 1), OutputFormat::Svg);
 
     assert_eq!(outcome.report().diagnostics().len(), 1);
     let diagnostic = &outcome.report().diagnostics()[0];
@@ -80,7 +82,7 @@ fn ico_selected_dimensions_control_decode_resource_limits() {
         .build()
         .expect("PNG request is valid");
     let outcome = Renderer::new()
-        .render(&image_scene(&ico, 2, 1), &request)
+        .render(&ico_scene(&ico, 2, 1), &request)
         .expect("ICO pixel limit has local recovery");
 
     assert_eq!(outcome.report().diagnostics().len(), 1);
@@ -94,14 +96,11 @@ fn ico_selected_dimensions_control_decode_resource_limits() {
 fn ico_pdf_and_repeated_artifacts_are_deterministic() {
     let ico = fixture_ico(&[(1, 1, 32, fixture_dib32([24, 96, 208, 128], false))]);
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let scene = image_scene(&ico, 1, 1);
-        let first = render_outcome(&scene, format);
-        let second = render_outcome(&scene, format);
+        let scene = ico_scene(&ico, 1, 1);
+        let first = render(&scene, format);
+        let second = render(&scene, format);
         assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-        assert_eq!(
-            serde_json::to_vec(first.report()).expect("report serializes"),
-            serde_json::to_vec(second.report()).expect("report serializes")
-        );
+        assert_eq!(first.report(), second.report());
         if format == OutputFormat::Pdf {
             let pdf = String::from_utf8_lossy(first.artifact().bytes());
             assert!(pdf.contains("/Width 1\n/Height 1"));
@@ -113,7 +112,7 @@ fn ico_pdf_and_repeated_artifacts_are_deterministic() {
 #[test]
 fn ico_rejects_overlapping_dib_bitfield_masks() {
     let ico = fixture_ico(&[(1, 1, 32, fixture_dib_with_overlapping_masks())]);
-    let outcome = render_outcome(&image_scene(&ico, 1, 1), OutputFormat::Svg);
+    let outcome = render(&ico_scene(&ico, 1, 1), OutputFormat::Svg);
 
     assert_eq!(outcome.report().diagnostics().len(), 1);
     assert_eq!(
@@ -196,51 +195,10 @@ fn rendered_center(ico: &[u8]) -> [u8; 4] {
         .include_background(false)
         .build()
         .expect("PNG request is valid");
-    let outcome = Renderer::new()
-        .render(&image_scene(ico, 1, 1), &request)
-        .expect("ICO alpha renders");
-    pixel(&decoded_png(outcome.artifact().bytes()), 21, 10, 10)
+    let outcome = render_with_request(&ico_scene(ico, 1, 1), &request);
+    decode_png(outcome.artifact().bytes()).pixel(10, 10)
 }
 
-fn image_scene(ico: &[u8], width: u32, height: u32) -> SceneDocument {
-    let encoded = base64::engine::general_purpose::STANDARD.encode(ico);
-    let json = format!(
-        r#"{{
-            "type":"excalidraw","version":2,
-            "elements":[{{
-                "id":"image","type":"image","x":0,"y":0,
-                "width":{width},"height":{height},"angle":0,"opacity":100,
-                "fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1
-            }}],
-            "appState":{{}},
-            "files":{{"asset":{{
-                "id":"asset","mimeType":"image/x-icon",
-                "dataURL":"data:image/x-icon;base64,{encoded}","created":1
-            }}}}
-        }}"#
-    );
-    SceneDocument::parse(json.as_bytes()).expect("ICO scene is admitted")
-}
-
-fn render_outcome(scene: &SceneDocument, format: OutputFormat) -> excalidraw_render::RenderOutcome {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("render request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .expect("ICO asset has local recovery")
-}
-
-fn decoded_png(bytes: &[u8]) -> Vec<u8> {
-    let decoder = png::Decoder::new(Cursor::new(bytes));
-    let mut reader = decoder.read_info().expect("artifact is a PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    rgba
-}
-
-fn pixel(rgba: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
-    rgba[(y * width + x) * 4..(y * width + x + 1) * 4]
-        .try_into()
-        .expect("pixel has four channels")
+fn ico_scene(ico: &[u8], width: u32, height: u32) -> SceneDocument {
+    image_scene(ico, "image/x-icon", width, height)
 }

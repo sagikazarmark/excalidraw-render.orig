@@ -1,14 +1,15 @@
 use std::fs;
-use std::io::Cursor;
 
 use excalidraw_render::{
     OutputFormat, RenderOutcome, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
 
 use crate::common::approved_scenes::rectangle_outline_scene;
+use crate::common::raster::decode_png;
+use crate::common::render::{render, render_without_background};
+use crate::common::reports::assert_report_matches;
 use crate::common::repository_root;
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
-use png::{BitDepth, ColorType, Decoder, Transformations};
 
 #[test]
 fn approved_rectangle_renders_as_a_deterministic_canvas_equivalent_png() {
@@ -20,12 +21,13 @@ fn approved_rectangle_renders_as_a_deterministic_canvas_equivalent_png() {
     assert_eq!(first.report(), second.report());
     assert_eq!(first.artifact().format(), OutputFormat::Png);
     assert_eq!(first.artifact().media_type(), "image/png");
-    assert_eq!(
-        serde_json::to_vec(first.report()).expect("report serializes"),
-        fs::read(case.join("expected-report-png.json")).unwrap()
+    assert_report_matches(
+        first.report(),
+        &case.join("expected-report-png.json"),
+        "approved rectangle PNG",
     );
 
-    let candidate = decode_png(first.artifact().bytes());
+    let candidate = decode_png(first.artifact().bytes()).into_canonical();
     assert_eq!((candidate.width(), candidate.height()), (200, 120));
     assert_eq!(
         png_chunk_types(first.artifact().bytes()),
@@ -62,16 +64,11 @@ fn approved_rectangle_renders_as_a_deterministic_canvas_equivalent_png() {
 
 #[test]
 fn transparent_rectangle_png_uses_canonical_straight_alpha() {
-    let request = RenderRequest::builder(OutputFormat::Png)
-        .include_background(false)
-        .build()
-        .expect("transparent PNG request is valid");
-    let outcome = Renderer::new()
-        .render(&rectangle_outline_scene(), &request)
-        .expect("transparent rectangle renders directly as PNG");
-    let (width, height, rgba) = decode_png_rgba(outcome.artifact().bytes());
+    let outcome = render_without_background(&rectangle_outline_scene(), OutputFormat::Png);
+    let decoded = decode_png(outcome.artifact().bytes());
+    let rgba = &decoded.rgba;
 
-    assert_eq!((width, height), (200, 120));
+    assert_eq!((decoded.width, decoded.height), (200, 120));
     assert!(rgba.chunks_exact(4).any(|pixel| pixel[3] == 0));
     assert!(rgba
         .chunks_exact(4)
@@ -102,7 +99,7 @@ fn png_vector_coverage_obeys_the_rectangle_element_work_limit() {
     let decoded = decode_png(outcome.artifact().bytes());
 
     assert!(decoded
-        .rgba()
+        .rgba
         .chunks_exact(4)
         .all(|pixel| pixel == [255, 255, 255, 255]));
     let [diagnostic] = outcome.report().diagnostics() else {
@@ -132,7 +129,7 @@ fn png_vector_coverage_is_charged_and_recovered_per_rectangle() {
     let decoded = decode_png(outcome.artifact().bytes());
 
     assert!(decoded
-        .rgba()
+        .rgba
         .chunks_exact(4)
         .any(|pixel| pixel != [255, 255, 255, 255]));
     let [diagnostic] = outcome.report().diagnostics() else {
@@ -155,33 +152,7 @@ fn pixel_delta_summary(reference: &[u8], candidate: &[u8]) -> std::collections::
 }
 
 fn render_approved_png() -> RenderOutcome {
-    let request = RenderRequest::builder(OutputFormat::Png)
-        .build()
-        .expect("default PNG request is valid");
-
-    Renderer::new()
-        .render(&rectangle_outline_scene(), &request)
-        .expect("approved rectangle renders directly as PNG")
-}
-
-fn decode_png(bytes: &[u8]) -> CanonicalRgba8 {
-    let (width, height, rgba) = decode_png_rgba(bytes);
-    CanonicalRgba8::new(width, height, rgba).expect("decoded PNG is canonical RGBA8")
-}
-
-fn decode_png_rgba(bytes: &[u8]) -> (u32, u32, Vec<u8>) {
-    let mut decoder = Decoder::new(Cursor::new(bytes));
-    decoder.set_transformations(Transformations::IDENTITY);
-    let mut reader = decoder.read_info().expect("PNG structure is valid");
-    assert_eq!(reader.info().color_type, ColorType::Rgba);
-    assert_eq!(reader.info().bit_depth, BitDepth::Eight);
-
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
-    assert_eq!(frame.color_type, ColorType::Rgba);
-    assert_eq!(frame.bit_depth, BitDepth::Eight);
-    rgba.truncate(frame.buffer_size());
-    (frame.width, frame.height, rgba)
+    render(&rectangle_outline_scene(), OutputFormat::Png)
 }
 
 fn png_chunk_types(bytes: &[u8]) -> Vec<[u8; 4]> {

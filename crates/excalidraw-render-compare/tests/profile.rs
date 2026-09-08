@@ -93,7 +93,8 @@ fn verify_closure(root: &Path, implementation: &Value) {
         "committed comparator closure differs from {LOCKFILE_PATH}\n\
          no longer locked: {stale:#?}\n\
          not committed: {missing:#?}\n\
-         refresh with: cargo test --locked -p {CRATE_NAME} --test profile -- --ignored materialize"
+         refresh with: cargo test --locked -p {CRATE_NAME} --test profile -- --ignored materialize \
+         --nocapture, then copy the staged closure it names over {CLOSURE_PATH}"
     );
 }
 
@@ -118,15 +119,25 @@ fn current_closure(root: &Path) -> Value {
     })
 }
 
+/// Stages the current closure under Cargo's scratch directory and names the copy
+/// that refreshes the committed file, so a run of every `--ignored` test leaves
+/// the source tree clean.
 #[test]
 #[ignore = "explicitly refreshes the comparator's committed dependency closure"]
 fn materialize_canonical_comparator_closure() {
     let root = repository_root();
-    fs::write(
-        root.join(CLOSURE_PATH),
-        format_closure(&current_closure(&root)),
-    )
-    .unwrap();
+    let committed = root.join(CLOSURE_PATH);
+    let staged = Path::new(env!("CARGO_TARGET_TMPDIR")).join(
+        committed
+            .file_name()
+            .expect("the committed closure has a file name"),
+    );
+    fs::write(&staged, format_closure(&current_closure(&root))).unwrap();
+    println!(
+        "staged the current comparator closure; refresh the committed one with:\n  cp {} {}",
+        staged.display(),
+        committed.display()
+    );
 }
 
 /// One package per line, so a closure diff names exactly the packages that moved.

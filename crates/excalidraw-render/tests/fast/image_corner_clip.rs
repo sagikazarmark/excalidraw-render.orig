@@ -8,8 +8,10 @@
 //! unclipped.
 
 use base64::Engine as _;
-use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
-use std::io::Cursor;
+use excalidraw_render::{OutputFormat, SceneDocument};
+
+use crate::common::raster::{decode_png, DecodedPng};
+use crate::common::render::{artifact_without_diagnostics, render_without_background};
 
 /// A one-image scene: `element_fields` complete the image element, and `png`
 /// is its file's payload, or `None` for a scene whose file is missing.
@@ -62,19 +64,15 @@ fn a_rounded_image_is_clipped_to_the_official_corner_radius_in_every_format() {
         "SVG lacks the image corner clip: {svg}"
     );
 
-    let (pixels, width, height) = render_png_pixels(&scene);
-    assert_eq!((width, height), (60, 60));
+    let png = render_png(&scene);
+    assert_eq!((png.width, png.height), (60, 60));
     // The image covers device [10, 50). Its corner pixels lie outside the
     // 10 px arcs; its edge midpoints and interior lie inside them.
     for (x, y) in [(10, 10), (49, 10), (10, 49), (49, 49)] {
-        assert_eq!(pixel(&pixels, 60, x, y), [0, 0, 0, 0], "corner ({x}, {y})");
+        assert_eq!(png.pixel(x, y), [0, 0, 0, 0], "corner ({x}, {y})");
     }
     for (x, y) in [(14, 14), (10, 30), (30, 10), (30, 30), (49, 30), (30, 49)] {
-        assert_eq!(
-            pixel(&pixels, 60, x, y),
-            [255, 0, 0, 255],
-            "inside ({x}, {y})"
-        );
+        assert_eq!(png.pixel(x, y), [255, 0, 0, 255], "inside ({x}, {y})");
     }
 
     let pdf = render_artifact(&scene, OutputFormat::Pdf);
@@ -102,9 +100,9 @@ fn an_unrounded_image_keeps_its_rectangular_bounds_in_every_format() {
     assert!(!svg.contains("clipPath"));
     assert!(svg.contains("<g transform=\"translate(10 10) rotate(0 20 20)\">"));
 
-    let (pixels, width, _) = render_png_pixels(&scene);
+    let png = render_png(&scene);
     for (x, y) in [(10, 10), (49, 10), (10, 49), (49, 49), (30, 30)] {
-        assert_eq!(pixel(&pixels, width, x, y), [255, 0, 0, 255], "({x}, {y})");
+        assert_eq!(png.pixel(x, y), [255, 0, 0, 255], "({x}, {y})");
     }
 
     let pdf = render_artifact(&scene, OutputFormat::Pdf);
@@ -152,16 +150,16 @@ fn the_corner_clip_stays_in_element_space_when_the_image_is_cropped_and_flipped(
         "<svg x=\"-10\" y=\"0\" width=\"30\" height=\"20\" overflow=\"hidden\">",
     )));
 
-    let (pixels, width, height) = render_png_pixels(&scene);
-    assert_eq!((width, height), (40, 40));
+    let png = render_png(&scene);
+    assert_eq!((png.width, png.height), (40, 40));
     for (x, y) in [(10, 10), (29, 10), (10, 29), (29, 29)] {
-        assert_eq!(pixel(&pixels, 40, x, y), [0, 0, 0, 0], "corner ({x}, {y})");
+        assert_eq!(png.pixel(x, y), [0, 0, 0, 0], "corner ({x}, {y})");
     }
     // The flipped crop still lands yellow / magenta / blue / green.
-    let yellow = pixel(&pixels, 40, 14, 14);
-    let magenta = pixel(&pixels, 40, 24, 14);
-    let blue = pixel(&pixels, 40, 14, 24);
-    let green = pixel(&pixels, 40, 24, 24);
+    let yellow = png.pixel(14, 14);
+    let magenta = png.pixel(24, 14);
+    let blue = png.pixel(14, 24);
+    let green = png.pixel(24, 24);
     assert_eq!(yellow, [255, 255, 0, 255]);
     assert!(magenta[0] > 240 && magenta[1] < 20 && magenta[2] > 240 && magenta[3] == 255);
     assert!(blue[0] < 20 && blue[1] < 20 && blue[2] > 240 && blue[3] == 255);
@@ -212,17 +210,13 @@ fn the_corner_clip_rotates_with_the_image() {
     );
     assert!(svg.contains("<rect width=\"40\" height=\"20\" rx=\"5\" ry=\"5\"/>"));
 
-    let (pixels, width, height) = render_png_pixels(&scene);
-    assert_eq!((width, height), (40, 60));
+    let png = render_png(&scene);
+    assert_eq!((png.width, png.height), (40, 60));
     for (x, y) in [(10, 10), (29, 10), (10, 49), (29, 49)] {
-        assert_eq!(pixel(&pixels, 40, x, y), [0, 0, 0, 0], "corner ({x}, {y})");
+        assert_eq!(png.pixel(x, y), [0, 0, 0, 0], "corner ({x}, {y})");
     }
     for (x, y) in [(20, 10), (20, 49), (10, 30), (29, 30), (20, 30)] {
-        assert_eq!(
-            pixel(&pixels, 40, x, y),
-            [255, 0, 0, 255],
-            "inside ({x}, {y})"
-        );
+        assert_eq!(png.pixel(x, y), [255, 0, 0, 255], "inside ({x}, {y})");
     }
 
     let pdf = render_artifact(&scene, OutputFormat::Pdf);
@@ -241,11 +235,11 @@ fn a_missing_image_fallback_is_never_corner_clipped() {
         r#""x":0,"y":0,"width":40,"height":40,"angle":0,"opacity":100,"scale":[1,1],"roundness":{"type":3}"#,
     );
 
-    let (pixels, width, _) = render_png_pixels(&scene);
+    let png = render_png(&scene);
     // The reference canvas clips only a drawn image; its placeholder fills the
     // whole element rectangle, corners included.
     for (x, y) in [(10, 10), (49, 10), (10, 49), (49, 49)] {
-        assert_eq!(pixel(&pixels, width, x, y)[3], 255, "corner ({x}, {y})");
+        assert_eq!(png.pixel(x, y)[3], 255, "corner ({x}, {y})");
     }
 }
 
@@ -265,43 +259,15 @@ fn fixture_png(width: u32, height: u32, pixels: &[[u8; 4]]) -> Vec<u8> {
 }
 
 fn render_artifact(scene: &SceneDocument, format: OutputFormat) -> Vec<u8> {
-    let request = RenderRequest::builder(format)
-        .include_background(false)
-        .build()
-        .expect("request is valid");
-    let outcome = Renderer::new()
-        .render(scene, &request)
-        .expect("rounded image renders");
-    assert!(
-        outcome.report().is_empty(),
-        "unexpected diagnostics: {:?}",
-        outcome.report().diagnostics()
-    );
-    outcome.artifact().bytes().to_vec()
+    artifact_without_diagnostics(&render_without_background(scene, format))
 }
 
-fn render_png_pixels(scene: &SceneDocument) -> (Vec<u8>, usize, usize) {
-    let request = RenderRequest::builder(OutputFormat::Png)
-        .include_background(false)
-        .build()
-        .expect("request is valid");
-    let outcome = Renderer::new()
-        .render(scene, &request)
-        .expect("rounded image renders");
-    let decoder = png::Decoder::new(Cursor::new(outcome.artifact().bytes()));
-    let mut reader = decoder.read_info().expect("artifact is a PNG");
-    let mut pixels = vec![0; reader.output_buffer_size()];
-    let output = reader.next_frame(&mut pixels).expect("PNG frame decodes");
-    pixels.truncate(output.buffer_size());
-    (
-        pixels,
-        usize::try_from(output.width).expect("width fits usize"),
-        usize::try_from(output.height).expect("height fits usize"),
+/// The transparent PNG raster, diagnosed or not: the missing-image fallback
+/// is judged here too.
+fn render_png(scene: &SceneDocument) -> DecodedPng {
+    decode_png(
+        render_without_background(scene, OutputFormat::Png)
+            .artifact()
+            .bytes(),
     )
-}
-
-fn pixel(pixels: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
-    pixels[(y * width + x) * 4..(y * width + x + 1) * 4]
-        .try_into()
-        .expect("pixel has four channels")
 }

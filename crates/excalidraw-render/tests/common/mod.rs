@@ -8,10 +8,15 @@
 use std::path::{Path, PathBuf};
 
 pub mod approved_scenes;
+pub mod image_scene;
 pub mod parse_limits;
 pub mod pdf_harness;
 pub mod pdf_inspect;
+pub mod raster;
 pub mod registered_cases;
+pub mod render;
+pub mod reports;
+pub mod scratch;
 pub mod svg_baselines;
 
 /// The workspace root, two levels above this crate.

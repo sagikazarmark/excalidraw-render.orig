@@ -13,6 +13,7 @@ use sha2::{Digest, Sha256};
 use crate::common::pdf_harness::render_viewer;
 use crate::common::registered_cases::{divergence, exception_limits, visual_class};
 use crate::common::repository_root;
+use crate::common::scratch::ScratchDir;
 
 /// The approved PDF tolerance exceptions of `focused.frame-export`
 /// (`pdf-tolerance-exceptions.json`), one record per frame target and canonical
@@ -38,7 +39,7 @@ fn frame_pdfs_pass_both_canonical_pdf_visual_gates() {
     let case_id = manifest["case_id"].as_str().expect("case id is a string");
     let exceptions = pdf_tolerance_exceptions(&case, case_id);
     let renderer = Renderer::new();
-    let stem = format!("frame-pdf-candidate-{}", std::process::id());
+    let scratch = ScratchDir::new("frame-pdf-candidate");
     let mut failures = Vec::new();
     let mut excepted = BTreeSet::new();
 
@@ -65,7 +66,8 @@ fn frame_pdfs_pass_both_canonical_pdf_visual_gates() {
             fs::read(case.join(format!("evidence/frame-{ordinal}/official-svg.rgba"))).unwrap(),
         )
         .expect("official SVG raster is canonical RGBA8");
-        let candidate_path = format!("target/{stem}-{ordinal}.pdf");
+        let candidate_name = format!("frame-{ordinal}.pdf");
+        let candidate_path = scratch.relative(&candidate_name);
         let pdf = renderer
             .render_frame(
                 frame,
@@ -74,8 +76,8 @@ fn frame_pdfs_pass_both_canonical_pdf_visual_gates() {
                     .expect("PDF frame request is valid"),
             )
             .expect("frame renders to PDF");
-        fs::write(root.join(&candidate_path), pdf.artifact().bytes())
-            .expect("write renderer-owned frame PDF under target");
+        fs::write(scratch.join(&candidate_name), pdf.artifact().bytes())
+            .expect("write renderer-owned frame PDF to scratch");
         let class = match ordinal {
             4 | 5 => VisualClass::MixedRepresentative,
             7 => VisualClass::Typography,
@@ -95,7 +97,7 @@ fn frame_pdfs_pass_both_canonical_pdf_visual_gates() {
                 "canonical-pdf.pdfium.v1",
             ),
         ] {
-            let output = format!("target/{stem}-{ordinal}-{viewer}.rgba");
+            let output = scratch.relative(&format!("frame-{ordinal}-{viewer}.rgba"));
             let candidate = CanonicalRgba8::new(
                 width,
                 height,

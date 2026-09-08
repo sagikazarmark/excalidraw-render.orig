@@ -3,41 +3,17 @@
 //! takes its line step, as it does in SVG and PDF. Diagnosed on #111, where
 //! the PNG encoder failed the whole artifact on such a line.
 
-use std::io::Cursor;
+use excalidraw_render::{OutputFormat, RenderOutcome};
 
-use excalidraw_render::{OutputFormat, RenderOutcome, RenderRequest, Renderer, SceneDocument};
-use png::{BitDepth, ColorType, Decoder, Transformations};
-
-fn render(scene: &[u8], format: OutputFormat) -> RenderOutcome {
-    let scene = SceneDocument::parse(scene).expect("scene is admitted");
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("request is valid");
-    Renderer::new()
-        .render(&scene, &request)
-        .unwrap_or_else(|error| panic!("{format:?} renders: {error:?}"))
-}
-
-fn decode_png(bytes: &[u8]) -> (u32, u32, Vec<u8>) {
-    let mut decoder = Decoder::new(Cursor::new(bytes));
-    decoder.set_transformations(Transformations::IDENTITY);
-    let mut reader = decoder.read_info().expect("PNG structure is valid");
-    assert_eq!(reader.info().color_type, ColorType::Rgba);
-    assert_eq!(reader.info().bit_depth, BitDepth::Eight);
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
-    rgba.truncate(frame.buffer_size());
-    (frame.width, frame.height, rgba)
-}
+use crate::common::raster::{decode_png, DecodedPng};
+use crate::common::render::render_source as render;
 
 /// The rows of the raster that carry any non-background ink.
-fn inked_rows(width: u32, height: u32, rgba: &[u8]) -> Vec<u32> {
-    (0..height)
+fn inked_rows(png: &DecodedPng) -> Vec<u32> {
+    (0..png.height)
         .filter(|row| {
-            (0..width).any(|column| {
-                let index = 4 * (row * width + column) as usize;
-                rgba[index..index + 3] != [0xff, 0xff, 0xff]
-            })
+            (0..png.width)
+                .any(|column| png.pixel(column as usize, *row as usize)[..3] != [0xff, 0xff, 0xff])
         })
         .collect()
 }
@@ -69,10 +45,10 @@ fn an_empty_line_between_paragraphs_paints_nothing_and_keeps_its_line_step() {
     assert_eq!(codes(&png), codes(&svg));
     assert!(png.report().is_empty());
 
-    let (width, height, rgba) = decode_png(png.artifact().bytes());
+    let decoded = decode_png(png.artifact().bytes());
     // Default padding 10; lines are 25px apart, so line 2 spans rows 35..60.
-    assert_eq!((width, height), (120, 95));
-    let rows = inked_rows(width, height, &rgba);
+    assert_eq!((decoded.width, decoded.height), (120, 95));
+    let rows = inked_rows(&decoded);
     assert!(
         rows.iter().any(|&row| (10..35).contains(&row)),
         "the first line has ink: {rows:?}"

@@ -12,6 +12,7 @@ use sha2::{Digest, Sha256};
 
 use crate::common::pdf_harness::{assert_structure, render_viewer};
 use crate::common::repository_root;
+use crate::common::scratch::ScratchDir;
 
 #[test]
 #[ignore = "requires the exact-pinned PDFium, PDF.js, and qpdf harnesses"]
@@ -43,10 +44,10 @@ fn approved_excalifont_text_passes_both_canonical_pdf_gates() {
             .expect("approved official-SVG evidence is present"),
     )
     .expect("approved evidence is canonical RGBA8");
-    let stem = format!("excalifont-pdf-candidate-{}", std::process::id());
-    let candidate = format!("target/{stem}.pdf");
-    fs::write(root.join(&candidate), outcome.artifact().bytes())
-        .expect("write renderer-owned candidate PDF under target");
+    let scratch = ScratchDir::new("excalifont-pdf-candidate");
+    let candidate = scratch.relative("candidate.pdf");
+    fs::write(scratch.join("candidate.pdf"), outcome.artifact().bytes())
+        .expect("write renderer-owned candidate PDF to scratch");
 
     for (viewer, script, mode) in [
         (
@@ -60,7 +61,7 @@ fn approved_excalifont_text_passes_both_canonical_pdf_gates() {
             ComparisonMode::Canonical,
         ),
     ] {
-        let output = format!("target/{stem}-{viewer}.rgba");
+        let output = scratch.relative(&format!("{viewer}.rgba"));
         let candidate = CanonicalRgba8::new(
             110,
             92,
@@ -89,7 +90,7 @@ fn approved_excalifont_text_passes_both_canonical_pdf_gates() {
         );
     }
 
-    let structure_output = format!("target/{stem}-structure.json");
+    let structure_output = scratch.relative("structure.json");
     assert_eq!(
         format!(
             "{:x}",

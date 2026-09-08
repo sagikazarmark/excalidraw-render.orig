@@ -10,12 +10,12 @@
 //! in PNG but compresses its contrast in SVG and, following the SVG authority,
 //! in PDF, and the PNG image placeholder passes through the theme filter.
 
-use std::io::Cursor;
-
 use base64::Engine as _;
-use excalidraw_render::{
-    ColorMode, FrameOptions, OutputFormat, RenderRequest, Renderer, SceneDocument,
-};
+use excalidraw_render::{ColorMode, FrameOptions, OutputFormat, RenderRequest, SceneDocument};
+
+use crate::common::pdf_inspect::find_bytes;
+use crate::common::raster::{decode_png, DecodedPng};
+use crate::common::render::{artifact_without_diagnostics, render_with_request};
 
 /// An ordinary 100x60 frame at the origin and a 60x40 magic frame to its
 /// right, both unnamed; the request turns frame names off so the outlines sit
@@ -54,20 +54,20 @@ fn dark_mode_frame_outlines_pass_through_the_theme_filter_in_every_format() {
     }
     assert!(!svg.contains("#bbbbbb"), "light-mode frame stroke survives");
 
-    let (pixels, width, height) = render_png(&scene, ColorMode::Dark);
-    assert_eq!((width, height), (200, 80));
-    assert_eq!(pixel(&pixels, width, 2, 2), DARK_BACKGROUND);
+    let png = render_png(&scene, ColorMode::Dark);
+    assert_eq!((png.width, png.height), (200, 80));
+    assert_eq!(png.pixel(2, 2), DARK_BACKGROUND);
     // The 2 px outline is centered on the frame edge, so the pixel just inside
     // the left edge, halfway down, is solid stroke over the background.
     assert_eq!(
-        pixel(&pixels, width, 10, 40),
+        png.pixel(10, 40),
         rgba(DARK_FRAME_OUTLINE),
         "ordinary frame outline"
     );
     // The canvas recolors a magic frame's outline `#1d8264` in the dark theme
     // and the theme filter then lowers that, not the light `#7affd7`.
     assert_eq!(
-        pixel(&pixels, width, 130, 30),
+        png.pixel(130, 30),
         rgba(DARK_MAGIC_FRAME_CANVAS_OUTLINE),
         "magic frame outline"
     );
@@ -97,9 +97,9 @@ fn light_mode_frame_outlines_keep_the_reference_light_constants() {
         assert!(frame_outline(svg, id).contains("stroke=\"#bbbbbb\""));
     }
 
-    let (pixels, width, _) = render_png(&scene, ColorMode::Light);
-    assert_eq!(pixel(&pixels, width, 10, 40), [0xbb, 0xbb, 0xbb, 255]);
-    assert_eq!(pixel(&pixels, width, 130, 30), [0x7a, 0xff, 0xd7, 255]);
+    let png = render_png(&scene, ColorMode::Light);
+    assert_eq!(png.pixel(10, 40), [0xbb, 0xbb, 0xbb, 255]);
+    assert_eq!(png.pixel(130, 30), [0x7a, 0xff, 0xd7, 255]);
 
     let pdf = render(&scene, OutputFormat::Pdf, ColorMode::Light);
     let pdf = String::from_utf8_lossy(&pdf);
@@ -246,19 +246,19 @@ fn dark_mode_png_keeps_raster_pixels_and_inverts_nested_svg_images_like_the_canv
         nested_svg_fixture(r#""x":40,"y":0,"width":20,"height":20"#),
     ]);
 
-    let (pixels, width, height) = render_png(&scene, ColorMode::Dark);
-    assert_eq!((width, height), (80, 40));
-    assert_eq!(pixel(&pixels, width, 2, 2), DARK_BACKGROUND);
+    let png = render_png(&scene, ColorMode::Dark);
+    assert_eq!((png.width, png.height), (80, 40));
+    assert_eq!(png.pixel(2, 2), DARK_BACKGROUND);
     // The reference canvas export resets its filter to `none` for a raster
     // image (`shouldResetImageFilter`), so the white pixels stay white.
-    assert_eq!(pixel(&pixels, width, 20, 20), [255, 255, 255, 255]);
+    assert_eq!(png.pixel(20, 20), [255, 255, 255, 255]);
     // A nested-SVG image keeps the context's theme filter: #1e1e1e comes out
     // #d3d3d3, exactly as a scene stroke of that color does.
-    assert_eq!(pixel(&pixels, width, 60, 20), [0xd3, 0xd3, 0xd3, 255]);
+    assert_eq!(png.pixel(60, 20), [0xd3, 0xd3, 0xd3, 255]);
 
-    let (light, ..) = render_png(&scene, ColorMode::Light);
-    assert_eq!(pixel(&light, width, 20, 20), [255, 255, 255, 255]);
-    assert_eq!(pixel(&light, width, 60, 20), [0x1e, 0x1e, 0x1e, 255]);
+    let light = render_png(&scene, ColorMode::Light);
+    assert_eq!(light.pixel(20, 20), [255, 255, 255, 255]);
+    assert_eq!(light.pixel(60, 20), [0x1e, 0x1e, 0x1e, 255]);
 }
 
 #[test]
@@ -277,25 +277,13 @@ fn dark_mode_png_image_placeholder_passes_through_the_theme_filter() {
     let band = (160, 128);
     let hole = (132, 144);
 
-    let (pixels, width, _) = render_png_with_diagnostics(&scene, ColorMode::Dark);
-    assert_eq!(
-        pixel(&pixels, width, band.0, band.1),
-        [0x78, 0x78, 0x78, 255]
-    );
-    assert_eq!(
-        pixel(&pixels, width, hole.0, hole.1),
-        [0x26, 0x26, 0x26, 255]
-    );
+    let png = render_png_with_diagnostics(&scene, ColorMode::Dark);
+    assert_eq!(png.pixel(band.0, band.1), [0x78, 0x78, 0x78, 255]);
+    assert_eq!(png.pixel(hole.0, hole.1), [0x26, 0x26, 0x26, 255]);
 
-    let (pixels, width, _) = render_png_with_diagnostics(&scene, ColorMode::Light);
-    assert_eq!(
-        pixel(&pixels, width, band.0, band.1),
-        [0x88, 0x88, 0x88, 255]
-    );
-    assert_eq!(
-        pixel(&pixels, width, hole.0, hole.1),
-        [0xe7, 0xe7, 0xe7, 255]
-    );
+    let png = render_png_with_diagnostics(&scene, ColorMode::Light);
+    assert_eq!(png.pixel(band.0, band.1), [0x88, 0x88, 0x88, 255]);
+    assert_eq!(png.pixel(hole.0, hole.1), [0xe7, 0xe7, 0xe7, 255]);
 }
 
 #[test]
@@ -486,53 +474,26 @@ fn render_outcome(
     format: OutputFormat,
     mode: ColorMode,
 ) -> excalidraw_render::RenderOutcome {
-    Renderer::new()
-        .render(scene, &request(format, mode))
-        .expect("scene renders")
+    render_with_request(scene, &request(format, mode))
 }
 
 /// Renders a scene that is expected to need no diagnostic.
 fn render(scene: &SceneDocument, format: OutputFormat, mode: ColorMode) -> Vec<u8> {
-    let outcome = render_outcome(scene, format, mode);
-    assert!(
-        outcome.report().is_empty(),
-        "unexpected diagnostics: {:?}",
-        outcome.report().diagnostics()
-    );
-    outcome.artifact().bytes().to_vec()
+    artifact_without_diagnostics(&render_outcome(scene, format, mode))
 }
 
-fn render_png(scene: &SceneDocument, mode: ColorMode) -> (Vec<u8>, usize, usize) {
+fn render_png(scene: &SceneDocument, mode: ColorMode) -> DecodedPng {
     decode_png(&render(scene, OutputFormat::Png, mode))
 }
 
 /// Renders a scene that is expected to be diagnosed (a missing image).
-fn render_png_with_diagnostics(scene: &SceneDocument, mode: ColorMode) -> (Vec<u8>, usize, usize) {
+fn render_png_with_diagnostics(scene: &SceneDocument, mode: ColorMode) -> DecodedPng {
     let outcome = render_outcome(scene, OutputFormat::Png, mode);
     assert!(
         !outcome.report().is_empty(),
         "the missing image is diagnosed"
     );
     decode_png(outcome.artifact().bytes())
-}
-
-fn decode_png(bytes: &[u8]) -> (Vec<u8>, usize, usize) {
-    let decoder = png::Decoder::new(Cursor::new(bytes));
-    let mut reader = decoder.read_info().expect("artifact is a PNG");
-    let mut pixels = vec![0; reader.output_buffer_size()];
-    let output = reader.next_frame(&mut pixels).expect("PNG frame decodes");
-    pixels.truncate(output.buffer_size());
-    (
-        pixels,
-        usize::try_from(output.width).expect("width fits usize"),
-        usize::try_from(output.height).expect("height fits usize"),
-    )
-}
-
-fn pixel(pixels: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
-    pixels[(y * width + x) * 4..(y * width + x + 1) * 4]
-        .try_into()
-        .expect("pixel has four channels")
 }
 
 fn rgba([red, green, blue]: [u8; 3]) -> [u8; 4] {
@@ -578,10 +539,4 @@ fn stream_after(pdf: &[u8], marker: &[u8]) -> Vec<u8> {
         + find_bytes(&pdf[length_end..], stream_marker).expect("dictionary opens a stream")
         + stream_marker.len();
     pdf[stream_start..stream_start + length].to_vec()
-}
-
-fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    haystack
-        .windows(needle.len())
-        .position(|window| window == needle)
 }

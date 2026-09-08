@@ -71,6 +71,7 @@ use common::registered_cases::{
     case_count, judge_each, observed, registered_scene_variants, variant_request, visual_class,
     PinnedDivergence, RegisteredVariant,
 };
+use common::reports::assert_report_matches;
 use common::repository_root;
 
 /// Diagnosed defects whose fix is pending a maintainer decision, observed on the
@@ -83,6 +84,12 @@ const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
 /// document as well. The manifest admits no `format: svg` exception, so each is
 /// pinned at its exact measurement and must correspond to that recorded
 /// exception; see `PinnedDivergence`.
+///
+/// The measurements are those of the workspace rasterizer named in
+/// [`PINNED_RASTERIZER`], which the workspace manifest holds at an exact
+/// version and the lockfile resolves; a bump of that rasterizer re-derives every
+/// pin here, and [`pins_are_measured_by_the_locked_rasterizer`] says so
+/// instead of letting the bump surface as an opaque SSIM bit mismatch.
 const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
     // Spec 8.3's replacement glyph (#124): the official document sets the three
     // unmapped scalars in the embedded Excalifont and Liberation Sans subsets,
@@ -109,6 +116,10 @@ const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
     },
 ];
 
+/// The rasterizer and its pixel backend the pins above were measured with, as
+/// the lockfile names them.
+const PINNED_RASTERIZER: &[(&str, &str)] = &[("resvg", "0.45.1"), ("tiny-skia", "0.11.4")];
+
 /// System families the official export names without embedding, and the
 /// renderer's manifested substitute for each. The official raster evidence was
 /// produced with whatever the reference container resolved these to; document
@@ -116,6 +127,34 @@ const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
 /// renderer's own SVG embeds for the same family.
 const SYSTEM_FAMILY_SUBSTITUTES: &[(&str, &str)] =
     &[("Helvetica", "fonts/Liberation/LiberationSans-Regular.woff2")];
+
+#[test]
+fn pins_are_measured_by_the_locked_rasterizer() {
+    let lockfile =
+        fs::read_to_string(repository_root().join("Cargo.lock")).expect("workspace lockfile");
+    for (package, pinned) in PINNED_RASTERIZER {
+        let locked: Vec<&str> = lockfile
+            .split("[[package]]")
+            .filter_map(|record| {
+                let mut lines = record
+                    .lines()
+                    .map(str::trim)
+                    .skip_while(|line| line.is_empty());
+                (lines.next() == Some(&format!("name = \"{package}\"")))
+                    .then(|| lines.next())
+                    .flatten()
+                    .and_then(|line| line.strip_prefix("version = \""))
+                    .and_then(|version| version.strip_suffix('"'))
+            })
+            .collect();
+        assert_eq!(
+            locked,
+            [*pinned],
+            "COMPATIBILITY_EXCEPTION_PINS were measured with {package} {pinned}; the lockfile \
+             resolves {locked:?}, so re-derive the pins and PINNED_RASTERIZER together"
+        );
+    }
+}
 
 #[test]
 fn every_registered_scene_case_matches_its_official_svg_geometry_and_raster() {
@@ -156,21 +195,14 @@ fn svg_divergences(variant: &RegisteredVariant) -> Vec<String> {
     // disagreeing with what the case declares is a contract break, not a
     // document difference. The checked report is canonical JSON and the
     // renderer's is spec-ordered, so they compare as values.
-    let expected_report: Value = serde_json::from_slice(
-        &fs::read(
-            variant.dir.join(
-                svg["expected_report"]["path"]
-                    .as_str()
-                    .expect("expected report path"),
-            ),
-        )
-        .expect("expected report present"),
-    )
-    .expect("expected report is valid JSON");
-    assert_eq!(
-        serde_json::to_value(outcome.report()).expect("report serializes"),
-        expected_report,
-        "{context}: SVG report differs from its declared expectation"
+    assert_report_matches(
+        outcome.report(),
+        &variant.dir.join(
+            svg["expected_report"]["path"]
+                .as_str()
+                .expect("expected report path"),
+        ),
+        &format!("{context}: SVG"),
     );
     let official_svg = fs::read_to_string(
         variant

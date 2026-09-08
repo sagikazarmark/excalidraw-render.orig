@@ -8,8 +8,10 @@
 //! rectangle, so a fractional edge stays a fractional edge there (#131).
 
 use base64::Engine as _;
-use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
-use std::io::Cursor;
+use excalidraw_render::{OutputFormat, SceneDocument};
+
+use crate::common::raster::{decode_png, DecodedPng};
+use crate::common::render::{artifact_without_diagnostics, render_without_background};
 
 /// A one-image scene of a 2x2 solid red PNG; `element_fields` complete the
 /// image element.
@@ -68,15 +70,15 @@ fn an_uncropped_fractional_image_fills_the_rounded_viewport_in_svg_and_pdf_and_t
     // The canvas draws the image over device [10, 50.5) x [10, 50.4) of the
     // truncated 60x60 surface: the column at 50 is half covered, the one at
     // 51 untouched.
-    let (pixels, width, height) = render_png_pixels(&scene);
-    assert_eq!((width, height), (60, 60));
-    assert_eq!(pixel(&pixels, width, 49, 30), [255, 0, 0, 255]);
-    let edge = pixel(&pixels, width, 50, 30);
+    let png = render_png(&scene);
+    assert_eq!((png.width, png.height), (60, 60));
+    assert_eq!(png.pixel(49, 30), [255, 0, 0, 255]);
+    let edge = png.pixel(50, 30);
     assert!(
         (64..=192).contains(&edge[3]),
         "PNG right edge is not a half-covered fractional edge: {edge:?}"
     );
-    assert_eq!(pixel(&pixels, width, 51, 30), [0, 0, 0, 0]);
+    assert_eq!(png.pixel(51, 30), [0, 0, 0, 0]);
 }
 
 #[test]
@@ -114,18 +116,18 @@ fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_unrounded_c
 
     // The canvas mirrors the unrounded rectangle: red now sits at the left,
     // green at the right, and the right edge is still the half-covered column.
-    let (pixels, width, _) = render_png_pixels(&scene);
-    let left = pixel(&pixels, width, 12, 30);
+    let png = render_png(&scene);
+    let left = png.pixel(12, 30);
     assert!(
         left[0] > 240 && left[1] < 20 && left[3] == 255,
         "PNG left is not red: {left:?}"
     );
-    let right = pixel(&pixels, width, 48, 30);
+    let right = png.pixel(48, 30);
     assert!(
         right[0] < 20 && right[1] > 240 && right[3] == 255,
         "PNG right is not green: {right:?}"
     );
-    let edge = pixel(&pixels, width, 50, 30);
+    let edge = png.pixel(50, 30);
     assert!(
         (64..=192).contains(&edge[3]),
         "PNG right edge is not a half-covered fractional edge: {edge:?}"
@@ -194,16 +196,16 @@ fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewport_and_unro
 
     // The canvas maps the crop into the unrounded 20.5x20.5 and flips it:
     // yellow / magenta over blue / green, as for an integer-sized element.
-    let (pixels, width, height) = render_png_pixels(&scene);
-    assert_eq!((width, height), (40, 40));
-    assert_eq!(pixel(&pixels, width, 14, 14), [255, 255, 0, 255]);
-    let magenta = pixel(&pixels, width, 25, 14);
+    let png = render_png(&scene);
+    assert_eq!((png.width, png.height), (40, 40));
+    assert_eq!(png.pixel(14, 14), [255, 255, 0, 255]);
+    let magenta = png.pixel(25, 14);
     assert!(magenta[0] > 240 && magenta[1] < 20 && magenta[2] > 240 && magenta[3] == 255);
-    let blue = pixel(&pixels, width, 14, 25);
+    let blue = png.pixel(14, 25);
     assert!(blue[0] < 20 && blue[1] < 20 && blue[2] > 240 && blue[3] == 255);
-    let green = pixel(&pixels, width, 25, 25);
+    let green = png.pixel(25, 25);
     assert!(green[0] < 20 && green[1] > 225 && green[2] < 30 && green[3] == 255);
-    let edge = pixel(&pixels, width, 30, 20);
+    let edge = png.pixel(30, 20);
     assert!(
         (64..=192).contains(&edge[3]),
         "PNG right edge is not a half-covered fractional edge: {edge:?}"
@@ -249,8 +251,8 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
         pdf.contains("0 0 20 10 re\nW\nn\n20 0 0 -20 0 20 cm\n/Svg0 Do"),
         "PDF does not invert the cropped form within its content rectangle: {pdf}"
     );
-    let (pixels, width, _) = render_png_pixels(&scene);
-    assert_eq!(pixel(&pixels, width, 20, 15), [255, 0, 0, 255]);
+    let png = render_png(&scene);
+    assert_eq!(png.pixel(20, 15), [255, 0, 0, 255]);
 
     // The same crop flipped vertically: the element's flip about its center
     // composes with the form's inversion into an upright form under the
@@ -268,8 +270,8 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
         pdf.contains("0 0 20 10 re\nW\nn\n20 0 0 20 0 -10 cm\n/Svg0 Do"),
         "PDF does not compose the flip with the form inversion: {pdf}"
     );
-    let (pixels, width, _) = render_png_pixels(&scene);
-    assert_eq!(pixel(&pixels, width, 20, 15), [255, 0, 0, 255]);
+    let png = render_png(&scene);
+    assert_eq!(png.pixel(20, 15), [255, 0, 0, 255]);
 }
 
 fn fixture_png(width: u32, height: u32, pixels: &[[u8; 4]]) -> Vec<u8> {
@@ -288,37 +290,9 @@ fn fixture_png(width: u32, height: u32, pixels: &[[u8; 4]]) -> Vec<u8> {
 }
 
 fn render_artifact(scene: &SceneDocument, format: OutputFormat) -> Vec<u8> {
-    let request = RenderRequest::builder(format)
-        .include_background(false)
-        .build()
-        .expect("request is valid");
-    let outcome = Renderer::new()
-        .render(scene, &request)
-        .expect("fractional image renders");
-    assert!(
-        outcome.report().is_empty(),
-        "unexpected diagnostics: {:?}",
-        outcome.report().diagnostics()
-    );
-    outcome.artifact().bytes().to_vec()
+    artifact_without_diagnostics(&render_without_background(scene, format))
 }
 
-fn render_png_pixels(scene: &SceneDocument) -> (Vec<u8>, usize, usize) {
-    let png = render_artifact(scene, OutputFormat::Png);
-    let decoder = png::Decoder::new(Cursor::new(png));
-    let mut reader = decoder.read_info().expect("artifact is a PNG");
-    let mut pixels = vec![0; reader.output_buffer_size()];
-    let output = reader.next_frame(&mut pixels).expect("PNG frame decodes");
-    pixels.truncate(output.buffer_size());
-    (
-        pixels,
-        usize::try_from(output.width).expect("width fits usize"),
-        usize::try_from(output.height).expect("height fits usize"),
-    )
-}
-
-fn pixel(pixels: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
-    pixels[(y * width + x) * 4..(y * width + x + 1) * 4]
-        .try_into()
-        .expect("pixel has four channels")
+fn render_png(scene: &SceneDocument) -> DecodedPng {
+    decode_png(&render_artifact(scene, OutputFormat::Png))
 }

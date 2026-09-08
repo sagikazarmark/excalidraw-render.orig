@@ -1,10 +1,11 @@
-use std::io::Cursor;
-
 use excalidraw_render::{
     ColorMode, DiagnosticCode, ErrorCode, OutputFormat, RenderErrorCategory, RenderRequest,
     Renderer, SceneDocument, Sizing,
 };
-use png::{BitDepth, ColorType, Decoder, Transformations};
+
+use crate::common::pdf_inspect::stream_data;
+use crate::common::raster::decode_png;
+use crate::common::render::render_source;
 
 const COLORED_RECTANGLE: &[u8] = br##"{
     "type":"excalidraw",
@@ -24,18 +25,21 @@ const COLORED_RECTANGLE: &[u8] = br##"{
 
 #[test]
 fn chromium_css_colors_are_canonicalized_for_every_projection() {
-    let svg = render(COLORED_RECTANGLE, OutputFormat::Svg);
+    let svg = render_source(COLORED_RECTANGLE, OutputFormat::Svg);
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains("fill=\"#663399\""));
     assert!(svg.contains("stroke=\"#4000bf\""));
 
-    let png = render(COLORED_RECTANGLE, OutputFormat::Png);
-    let (width, height, rgba) = decode_png(png.artifact().bytes());
-    assert_eq!((width, height), (40, 30));
-    assert_eq!(&rgba[..4], &[102, 51, 153, 255]);
-    assert!(rgba.chunks_exact(4).any(|pixel| pixel == [64, 0, 191, 255]));
+    let png = render_source(COLORED_RECTANGLE, OutputFormat::Png);
+    let decoded = decode_png(png.artifact().bytes());
+    assert_eq!((decoded.width, decoded.height), (40, 30));
+    assert_eq!(decoded.pixel(0, 0), [102, 51, 153, 255]);
+    assert!(decoded
+        .rgba
+        .chunks_exact(4)
+        .any(|pixel| pixel == [64, 0, 191, 255]));
 
-    let pdf = render(COLORED_RECTANGLE, OutputFormat::Pdf);
+    let pdf = render_source(COLORED_RECTANGLE, OutputFormat::Pdf);
     let content = std::str::from_utf8(stream_data(pdf.artifact().bytes(), b"4 0 obj"))
         .expect("PDF content is ASCII");
     assert!(content.contains(concat!("0.4 0.2 0.6 scn\n", "0 0 40 30 re\nf\n")));
@@ -61,15 +65,15 @@ fn canonical_color_alpha_is_preserved_by_every_projection() {
     }"##;
     const ALPHA: &str = "0.5019607843137255";
 
-    let svg = render(source, OutputFormat::Svg);
+    let svg = render_source(source, OutputFormat::Svg);
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains(&format!("fill=\"#0a141e\" fill-opacity=\"{ALPHA}\"")));
     assert!(svg.contains(&format!(
         "stroke=\"#ff0000\" stroke-width=\"2\" fill=\"none\" stroke-opacity=\"{ALPHA}\""
     )));
 
-    let png = render(source, OutputFormat::Png);
-    let (_, _, rgba) = decode_png(png.artifact().bytes());
+    let png = render_source(source, OutputFormat::Png);
+    let rgba = decode_png(png.artifact().bytes()).rgba;
     assert_eq!(&rgba[..4], &[10, 20, 30, 128]);
     let transparent_png = render_with_request(
         source,
@@ -78,10 +82,10 @@ fn canonical_color_alpha_is_preserved_by_every_projection() {
             .build()
             .expect("transparent PNG request is valid"),
     );
-    let (_, _, rgba) = decode_png(transparent_png.artifact().bytes());
+    let rgba = decode_png(transparent_png.artifact().bytes()).rgba;
     assert!(rgba.chunks_exact(4).any(|pixel| pixel == [255, 0, 0, 128]));
 
-    let pdf = render(source, OutputFormat::Pdf);
+    let pdf = render_source(source, OutputFormat::Pdf);
     let pdf_text = String::from_utf8_lossy(pdf.artifact().bytes());
     assert_eq!(pdf_text.matches("/Type /ExtGState\n").count(), 1);
     assert!(pdf_text.contains(&format!("/CA {ALPHA}\n/ca {ALPHA}\n")));
@@ -127,7 +131,7 @@ fn element_opacity_multiplies_color_alpha_in_every_projection() {
             .build()
             .expect("transparent PNG request is valid"),
     );
-    let (_, _, rgba) = decode_png(png.artifact().bytes());
+    let rgba = decode_png(png.artifact().bytes()).rgba;
     assert!(rgba.chunks_exact(4).any(|pixel| pixel == [255, 0, 0, 64]));
 
     let pdf = render_with_request(
@@ -165,7 +169,7 @@ fn dark_mode_lowers_scene_colors_before_every_projection() {
     assert!(svg.contains("stroke=\"#d3d3d3\""));
 
     let dark_png = render_dark(source, OutputFormat::Png);
-    let (_, _, rgba) = decode_png(dark_png.artifact().bytes());
+    let rgba = decode_png(dark_png.artifact().bytes()).rgba;
     assert_eq!(&rgba[..4], &[17, 17, 17, 255]);
     assert!(rgba
         .chunks_exact(4)
@@ -178,7 +182,7 @@ fn dark_mode_lowers_scene_colors_before_every_projection() {
     assert!(content.contains("0.8274509803921568 0.8274509803921568 0.8274509803921568 SCN"));
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let light = render(source, format);
+        let light = render_source(source, format);
         let dark = render_dark(source, format);
         assert_ne!(light.artifact().bytes(), dark.artifact().bytes());
         assert_eq!(light.report(), dark.report());
@@ -208,7 +212,7 @@ fn renderer_owned_fallback_colors_follow_dark_mode() {
     assert!(svg.contains("fill=\"#a4aab0\" font-family=\"ExcalidrawRender-9\""));
 
     let png = render_dark(source, OutputFormat::Png);
-    let (_, _, rgba) = decode_png(png.artifact().bytes());
+    let rgba = decode_png(png.artifact().bytes()).rgba;
     assert!(rgba.chunks_exact(4).any(|pixel| pixel == [26, 28, 30, 255]));
 
     let pdf = render_dark(source, OutputFormat::Pdf);
@@ -236,15 +240,15 @@ fn empty_and_fallback_only_scenes_use_the_scene_background() {
     }"##;
 
     for source in [empty.as_slice(), fallback.as_slice()] {
-        let svg = render(source, OutputFormat::Svg);
+        let svg = render_source(source, OutputFormat::Svg);
         let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
         assert!(svg.contains("fill=\"#663399\""));
 
-        let png = render(source, OutputFormat::Png);
-        let (_, _, rgba) = decode_png(png.artifact().bytes());
+        let png = render_source(source, OutputFormat::Png);
+        let rgba = decode_png(png.artifact().bytes()).rgba;
         assert_eq!(&rgba[..4], &[102, 51, 153, 255]);
 
-        let pdf = render(source, OutputFormat::Pdf);
+        let pdf = render_source(source, OutputFormat::Pdf);
         let content = std::str::from_utf8(stream_data(pdf.artifact().bytes(), b"4 0 obj"))
             .expect("PDF content is ASCII");
         assert!(content.contains("0.4 0.2 0.6 scn"));
@@ -275,8 +279,8 @@ fn zero_padding_empty_scenes_remain_meaningful_in_every_format() {
             .build()
             .expect("zero-padding PNG request is valid"),
     );
-    let (width, height, _) = decode_png(png.artifact().bytes());
-    assert_eq!((width, height), (1, 1));
+    let decoded = decode_png(png.artifact().bytes());
+    assert_eq!((decoded.width, decoded.height), (1, 1));
 
     let pdf = render_with_request(
         source,
@@ -343,8 +347,8 @@ fn bounds_padding_and_sizing_follow_each_format_rule() {
                 .build()
                 .expect("sized PNG request is valid"),
         );
-        let (width, height, _) = decode_png(png.artifact().bytes());
-        assert_eq!((width, height), expected);
+        let decoded = decode_png(png.artifact().bytes());
+        assert_eq!((decoded.width, decoded.height), expected);
     }
 
     for (sizing, media_box) in [
@@ -384,7 +388,7 @@ fn malformed_colors_use_field_specific_substitutions_in_source_order() {
     }"##;
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let outcome = render(source, format);
+        let outcome = render_source(source, format);
         assert_eq!(
             outcome
                 .report()
@@ -463,7 +467,7 @@ fn nested_color_mix_is_bounded_before_rendering() {
         ),
         color
     );
-    let outcome = render(source.as_bytes(), OutputFormat::Svg);
+    let outcome = render_source(source.as_bytes(), OutputFormat::Svg);
     let [diagnostic] = outcome.report().diagnostics() else {
         panic!("over-nested color has one field diagnostic");
     };
@@ -500,7 +504,7 @@ fn pinned_chromium_color_level_4_forms_lower_to_canonical_srgb() {
             ),
             color
         );
-        let svg = render(source.as_bytes(), OutputFormat::Svg);
+        let svg = render_source(source.as_bytes(), OutputFormat::Svg);
         let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
         assert!(
             svg.contains(&format!("fill=\"{expected}\"")),
@@ -509,18 +513,9 @@ fn pinned_chromium_color_level_4_forms_lower_to_canonical_srgb() {
     }
 }
 
-fn render(source: &[u8], format: OutputFormat) -> excalidraw_render::RenderOutcome {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("whole-scene control request is valid");
-    render_with_request(source, request)
-}
-
 fn render_with_request(source: &[u8], request: RenderRequest) -> excalidraw_render::RenderOutcome {
     let scene = SceneDocument::parse(source).expect("whole-scene control vector is admitted");
-    Renderer::new()
-        .render(&scene, &request)
-        .expect("whole-scene control vector renders")
+    crate::common::render::render_with_request(&scene, &request)
 }
 
 fn render_dark(source: &[u8], format: OutputFormat) -> excalidraw_render::RenderOutcome {
@@ -531,33 +526,4 @@ fn render_dark(source: &[u8], format: OutputFormat) -> excalidraw_render::Render
             .build()
             .expect("dark-mode request is valid"),
     )
-}
-
-fn decode_png(bytes: &[u8]) -> (u32, u32, Vec<u8>) {
-    let mut decoder = Decoder::new(Cursor::new(bytes));
-    decoder.set_transformations(Transformations::IDENTITY);
-    let mut reader = decoder.read_info().expect("PNG structure is valid");
-    assert_eq!(reader.info().color_type, ColorType::Rgba);
-    assert_eq!(reader.info().bit_depth, BitDepth::Eight);
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
-    rgba.truncate(frame.buffer_size());
-    (frame.width, frame.height, rgba)
-}
-
-fn stream_data<'a>(pdf: &'a [u8], object: &[u8]) -> &'a [u8] {
-    let object_start = find_bytes(pdf, object).expect("expected PDF object exists");
-    let marker = b"stream\n";
-    let stream_start = object_start
-        + find_bytes(&pdf[object_start..], marker).expect("object has a stream")
-        + marker.len();
-    let stream_end = stream_start
-        + find_bytes(&pdf[stream_start..], b"\nendstream").expect("stream has an end marker");
-    &pdf[stream_start..stream_end]
-}
-
-fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    haystack
-        .windows(needle.len())
-        .position(|window| window == needle)
 }

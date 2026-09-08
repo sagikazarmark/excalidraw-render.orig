@@ -1,16 +1,17 @@
-use std::io::Cursor;
-
 use base64::Engine as _;
 use excalidraw_render::{
     DiagnosticCode, ErrorDetails, OutputFormat, RenderRequest, Renderer, ResourceLimits,
-    SceneDocument,
 };
+
+use crate::common::image_scene::image_scene;
+use crate::common::raster::decode_png;
+use crate::common::render::{render, render_with_request};
 
 #[test]
 fn direct_svg_preserves_validated_bmp_octets_in_a_canonical_data_url() {
     let bmp = fixture_bmp24(1, 1, &[[24, 96, 208]]);
     let encoded = base64::engine::general_purpose::STANDARD.encode(&bmp);
-    let outcome = render_outcome(&image_scene(&bmp, "image/bmp", 1, 1), OutputFormat::Svg);
+    let outcome = render(&image_scene(&bmp, "image/bmp", 1, 1), OutputFormat::Svg);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(outcome.report().diagnostics().is_empty());
@@ -22,11 +23,11 @@ fn direct_svg_preserves_validated_bmp_octets_in_a_canonical_data_url() {
 #[test]
 fn png_projects_bottom_up_bmp_rows_as_canonical_rgba() {
     let bmp = fixture_bmp24(1, 2, &[[255, 0, 0], [0, 0, 255]]);
-    let outcome = render_outcome(&image_scene(&bmp, "image/bmp", 10, 20), OutputFormat::Png);
-    let rgba = decoded_png(outcome.artifact().bytes());
+    let outcome = render(&image_scene(&bmp, "image/bmp", 10, 20), OutputFormat::Png);
+    let png = decode_png(outcome.artifact().bytes());
 
-    assert_eq!(pixel(&rgba, 30, 15, 14), [255, 0, 0, 255]);
-    assert_eq!(pixel(&rgba, 30, 15, 25), [0, 0, 255, 255]);
+    assert_eq!(png.pixel(15, 14), [255, 0, 0, 255]);
+    assert_eq!(png.pixel(15, 25), [0, 0, 255, 255]);
     assert!(outcome.report().diagnostics().is_empty());
 }
 
@@ -42,7 +43,7 @@ fn legacy_bi_rgb_32_ignores_reserved_alpha_while_alpha_bitfields_preserve_it() {
 #[test]
 fn bmp_pdf_embeds_the_canonical_selected_surface() {
     let bmp = fixture_bmp32([24, 96, 208, 128], true);
-    let outcome = render_outcome(&image_scene(&bmp, "image/bmp", 1, 1), OutputFormat::Pdf);
+    let outcome = render(&image_scene(&bmp, "image/bmp", 1, 1), OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Width 1\n/Height 1"));
@@ -54,7 +55,7 @@ fn bmp_pdf_embeds_the_canonical_selected_surface() {
 fn malformed_bmp_uses_typed_decode_recovery() {
     let mut bmp = fixture_bmp24(1, 1, &[[24, 96, 208]]);
     bmp.truncate(bmp.len() - 1);
-    let outcome = render_outcome(&image_scene(&bmp, "image/png", 1, 1), OutputFormat::Svg);
+    let outcome = render(&image_scene(&bmp, "image/png", 1, 1), OutputFormat::Svg);
 
     assert_eq!(outcome.report().diagnostics().len(), 1);
     let diagnostic = &outcome.report().diagnostics()[0];
@@ -91,23 +92,20 @@ fn bmp_artifacts_and_reports_are_deterministic() {
     let bmp = fixture_bmp32([24, 96, 208, 128], true);
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let scene = image_scene(&bmp, "image/bmp", 1, 1);
-        let first = render_outcome(&scene, format);
-        let second = render_outcome(&scene, format);
+        let first = render(&scene, format);
+        let second = render(&scene, format);
         assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-        assert_eq!(
-            serde_json::to_vec(first.report()).expect("report serializes"),
-            serde_json::to_vec(second.report()).expect("report serializes")
-        );
+        assert_eq!(first.report(), second.report());
     }
 }
 
 #[test]
 fn rle8_delta_pixels_use_palette_zero_and_validation_work_is_prepaid() {
     let bmp = fixture_bmp_rle8();
-    let outcome = render_outcome(&image_scene(&bmp, "image/bmp", 20, 10), OutputFormat::Png);
-    let rgba = decoded_png(outcome.artifact().bytes());
-    assert_eq!(pixel(&rgba, 40, 14, 15), [255, 0, 0, 255]);
-    assert_eq!(pixel(&rgba, 40, 25, 15), [0, 0, 255, 255]);
+    let outcome = render(&image_scene(&bmp, "image/bmp", 20, 10), OutputFormat::Png);
+    let png = decode_png(outcome.artifact().bytes());
+    assert_eq!(png.pixel(14, 15), [255, 0, 0, 255]);
+    assert_eq!(png.pixel(25, 15), [0, 0, 255, 255]);
 
     let required = u64::try_from(bmp.len()).expect("fixture length fits u64") + 8;
     for (limit, expected) in [(required, 0), (required - 1, 1)] {
@@ -136,7 +134,7 @@ fn alphabitfields_requires_storage_for_the_alpha_mask() {
     bmp[10..14].copy_from_slice(&66_u32.to_le_bytes());
     bmp[14..18].copy_from_slice(&52_u32.to_le_bytes());
 
-    let outcome = render_outcome(&image_scene(&bmp, "image/bmp", 1, 1), OutputFormat::Svg);
+    let outcome = render(&image_scene(&bmp, "image/bmp", 1, 1), OutputFormat::Svg);
     assert_eq!(
         outcome.report().diagnostics()[0].code(),
         DiagnosticCode::IMAGE_DECODE_FAILED
@@ -222,51 +220,6 @@ fn rendered_center(bmp: &[u8]) -> [u8; 4] {
         .include_background(false)
         .build()
         .expect("PNG request is valid");
-    let outcome = Renderer::new()
-        .render(&image_scene(bmp, "image/bmp", 1, 1), &request)
-        .expect("BMP alpha renders");
-    pixel(&decoded_png(outcome.artifact().bytes()), 21, 10, 10)
-}
-
-fn image_scene(bytes: &[u8], media_type: &str, width: u32, height: u32) -> SceneDocument {
-    let encoded = base64::engine::general_purpose::STANDARD.encode(bytes);
-    let json = format!(
-        r#"{{
-            "type":"excalidraw","version":2,
-            "elements":[{{
-                "id":"image","type":"image","x":0,"y":0,
-                "width":{width},"height":{height},"angle":0,"opacity":100,
-                "fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1
-            }}],
-            "appState":{{}},
-            "files":{{"asset":{{
-                "id":"asset","mimeType":"{media_type}",
-                "dataURL":"data:{media_type};base64,{encoded}","created":1
-            }}}}
-        }}"#
-    );
-    SceneDocument::parse(json.as_bytes()).expect("image scene is admitted")
-}
-
-fn render_outcome(scene: &SceneDocument, format: OutputFormat) -> excalidraw_render::RenderOutcome {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("render request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .expect("BMP asset has local recovery")
-}
-
-fn decoded_png(bytes: &[u8]) -> Vec<u8> {
-    let decoder = png::Decoder::new(Cursor::new(bytes));
-    let mut reader = decoder.read_info().expect("artifact is a PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    rgba
-}
-
-fn pixel(rgba: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
-    rgba[(y * width + x) * 4..(y * width + x + 1) * 4]
-        .try_into()
-        .expect("pixel has four channels")
+    let outcome = render_with_request(&image_scene(bmp, "image/bmp", 1, 1), &request);
+    decode_png(outcome.artifact().bytes()).pixel(10, 10)
 }

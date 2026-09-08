@@ -1,63 +1,36 @@
 use std::fs;
-use std::io::Cursor;
 
+use crate::common::pdf_inspect::pdf_actual_text;
+use crate::common::raster::decode_png;
+use crate::common::render::{render, render_with_request};
+use crate::common::reports::assert_report_matches;
 use crate::common::repository_root;
 use excalidraw_render::{
-    DiagnosticCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
+    DiagnosticCode, OutputFormat, RenderOutcome, RenderRequest, Renderer, ResourceLimits,
+    SceneDocument,
 };
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
+
+/// The text of the focused scene: two lines, eighteen scalars.
+const FOCUSED_TEXT: &str = "One two three\nFour";
 
 #[test]
 fn excalifont_text_renders_semantically_and_deterministically_in_every_format() {
-    let scene = SceneDocument::parse(
-        br##"{
-        "type":"excalidraw",
-        "version":2,
-        "elements":[{
-            "id":"text",
-            "type":"text",
-            "x":20,
-            "y":30,
-            "width":90,
-            "height":72,
-            "angle":0.125,
-            "strokeColor":"#1e66f5",
-            "opacity":70,
-            "fontSize":20,
-            "fontFamily":5,
-            "text":"One two three\nFour",
-            "textAlign":"center",
-            "verticalAlign":"middle",
-            "lineHeight":1.2,
-            "frameId":null,
-            "updated":1
-        }],
-        "appState":{},
-        "files":{}
-    }"##,
-    )
-    .expect("normal Excalifont text is admitted");
+    let scene = focused_scene();
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let request = RenderRequest::builder(format)
-            .build()
-            .expect("default request is valid");
-        let first = Renderer::new()
-            .render(&scene, &request)
-            .expect("normal Excalifont text renders");
-        let second = Renderer::new()
-            .render(&scene, &request)
-            .expect("the same text renders again");
+        let first = render(&scene, format);
+        let second = render(&scene, format);
 
         assert_eq!(first.artifact().bytes(), second.artifact().bytes());
         assert_eq!(first.report(), second.report());
         assert!(first.report().diagnostics().is_empty());
-        assert_eq!(
-            serde_json::to_vec(first.report()).expect("report serializes"),
-            br#"{"schema_version":1,"diagnostics":[]}"#
-        );
 
+        // One whole-artifact digest per format is the artifact byte stability
+        // canary for shaped text and its embedded font subset; every other
+        // exact measurement of the same bytes would only repeat it.
         match format {
             OutputFormat::Svg => {
                 let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
@@ -93,37 +66,19 @@ fn excalifont_text_renders_semantically_and_deterministically_in_every_format() 
                 // line. The line break lives in data-source-text.
                 assert!(svg.contains(">One two three</tspan><tspan"));
                 assert!(svg.contains(">Four</tspan></text>"));
-                assert_eq!(svg_source_text(svg), "One two three\nFour");
+                assert_eq!(svg_source_text(svg), FOCUSED_TEXT);
                 assert!(!svg.contains("Unavailable: text"));
-                assert_eq!(first.artifact().bytes().len(), 9_288);
                 assert_eq!(
                     artifact_sha256(&first),
                     "a76464883d44a8535b601e0e47913e96e05d0bcfe3beac28492abe45c3053260"
                 );
             }
             OutputFormat::Png => {
-                let decoder = png::Decoder::new(Cursor::new(first.artifact().bytes()));
-                let mut reader = decoder.read_info().expect("PNG structure is valid");
-                assert_eq!((reader.info().width, reader.info().height), (118, 102));
-                let mut pixels = vec![0; reader.output_buffer_size()];
-                let frame = reader.next_frame(&mut pixels).unwrap();
-                pixels.truncate(frame.buffer_size());
-                let mut count = 0_u64;
-                let mut bbox = (u32::MAX, u32::MAX, 0, 0);
-                for (index, pixel) in pixels.chunks_exact(4).enumerate() {
-                    if pixel != [255, 255, 255, 255] {
-                        count += 1;
-                        let x = index as u32 % frame.width;
-                        let y = index as u32 / frame.width;
-                        bbox = (bbox.0.min(x), bbox.1.min(y), bbox.2.max(x), bbox.3.max(y));
-                    }
-                }
-                assert_eq!(count, 942);
-                assert_eq!(bbox, (0, 11, 117, 58));
-                assert!(pixels.chunks_exact(4).any(|pixel| {
+                let png = decode_png(first.artifact().bytes());
+                assert_eq!((png.width, png.height), (118, 102));
+                assert!(png.rgba.chunks_exact(4).any(|pixel| {
                     pixel[2] > pixel[0] && pixel[2] > pixel[1] && pixel[3] == 255
                 }));
-                assert_eq!(first.artifact().bytes().len(), 2_647);
                 assert_eq!(
                     artifact_sha256(&first),
                     "cb90c943bc71d5eec983bf2c933e1c3c16dd4ca7b5fc14ba79f0230404209534"
@@ -142,10 +97,9 @@ fn excalifont_text_renders_semantically_and_deterministically_in_every_format() 
                     "/ActualText <FEFF004F006E0065002000740077006F002000740068007200650065000A>"
                 ));
                 assert!(pdf.contains("/ActualText <FEFF0046006F00750072>"));
-                assert_eq!(pdf_actual_text(&pdf), "One two three\nFour");
+                assert_eq!(pdf_actual_text(&pdf), FOCUSED_TEXT);
                 assert!(!pdf.contains("Unavailable: text"));
                 assert!(pdf.contains("Excalifont and Virgil provenance is retained together"));
-                assert_eq!(first.artifact().bytes().len(), 71_487);
                 assert_eq!(
                     artifact_sha256(&first),
                     "5eac7a8a16860311629659f223c52509c5799da1e83c5e48805ee45ed0a32742"
@@ -156,7 +110,7 @@ fn excalifont_text_renders_semantically_and_deterministically_in_every_format() 
     }
 }
 
-fn artifact_sha256(outcome: &excalidraw_render::RenderOutcome) -> String {
+fn artifact_sha256(outcome: &RenderOutcome) -> String {
     format!("{:x}", Sha256::digest(outcome.artifact().bytes()))
 }
 
@@ -165,18 +119,14 @@ fn approved_excalifont_text_passes_the_direct_png_typography_budget() {
     let case = repository_root().join("tests/conformance/cases/focused/excalifont-text");
     let scene_bytes = fs::read(case.join("scene.excalidraw")).expect("approved scene is present");
     let scene = SceneDocument::parse(&scene_bytes).expect("approved scene is admitted");
-    let request = RenderRequest::builder(OutputFormat::Png)
-        .build()
-        .expect("default PNG request is valid");
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("approved text renders directly to PNG");
+    let outcome = render(&scene, OutputFormat::Png);
 
-    assert_eq!(
-        serde_json::to_vec(outcome.report()).expect("report serializes"),
-        fs::read(case.join("expected-report.json")).expect("approved report is present")
+    assert_report_matches(
+        outcome.report(),
+        &case.join("expected-report.json"),
+        "approved Excalifont text PNG",
     );
-    let candidate = decode_png(outcome.artifact().bytes());
+    let candidate = decode_png(outcome.artifact().bytes()).into_canonical();
     let reference = CanonicalRgba8::new(
         110,
         92,
@@ -203,19 +153,23 @@ fn approved_excalifont_text_passes_the_direct_png_typography_budget() {
 #[test]
 fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() {
     let scene = focused_scene();
+    let unconstrained = render(&scene, OutputFormat::Svg);
+    let scalars = u32::try_from(FOCUSED_TEXT.chars().count()).expect("scalar count fits u32");
+
     let accepted_limits = ResourceLimits::builder()
-        .max_text_scalars_per_element(18)
-        .max_total_text_scalars(18)
+        .max_text_scalars_per_element(scalars)
+        .max_total_text_scalars(u64::from(scalars))
         .build()
         .expect("text scalar equality is valid");
     let accepted = render_svg_with_limits(&scene, accepted_limits);
     assert!(accepted.report().is_empty());
-    assert!(std::str::from_utf8(accepted.artifact().bytes())
-        .expect("SVG is UTF-8")
-        .contains("font-family=\"Excalifont\""));
+    assert_eq!(
+        accepted.artifact().bytes(),
+        unconstrained.artifact().bytes()
+    );
 
     let crossing_limits = ResourceLimits::builder()
-        .max_text_scalars_per_element(17)
+        .max_text_scalars_per_element(scalars - 1)
         .build()
         .expect("text scalar crossing profile is valid");
     let crossing = render_svg_with_limits(&scene, crossing_limits);
@@ -246,8 +200,8 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
             "details":{
                 "kind":"resource_limit",
                 "field":"max_text_scalars_per_element",
-                "configured":17,
-                "measurement":{"kind":"attempted","value":18},
+                "configured":scalars - 1,
+                "measurement":{"kind":"attempted","value":scalars},
                 "value_kind":"count",
                 "recovery":"placeholder"
             }
@@ -261,8 +215,8 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
     let aggregate_request = RenderRequest::builder(OutputFormat::Svg)
         .resource_limits(
             ResourceLimits::builder()
-                .max_text_scalars_per_element(17)
-                .max_total_text_scalars(17)
+                .max_text_scalars_per_element(scalars - 1)
+                .max_total_text_scalars(u64::from(scalars - 1))
                 .build()
                 .expect("aggregate text crossing limits are valid"),
         )
@@ -277,38 +231,30 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
     );
     assert!(aggregate.report().is_empty());
 
+    let shaping_work = element_work_boundary(&scene, OutputFormat::Svg);
     let work_equality = render_svg_with_limits(
         &scene,
         ResourceLimits::builder()
-            .max_element_work_units(24_128)
+            .max_element_work_units(shaping_work)
             .build()
             .expect("work equality profile is valid"),
     );
     assert!(work_equality.report().is_empty());
     assert_eq!(
-        artifact_sha256(&work_equality),
-        "a76464883d44a8535b601e0e47913e96e05d0bcfe3beac28492abe45c3053260"
+        work_equality.artifact().bytes(),
+        unconstrained.artifact().bytes()
     );
     let work_crossing = render_svg_with_limits(
         &scene,
         ResourceLimits::builder()
-            .max_element_work_units(24_127)
+            .max_element_work_units(shaping_work - 1)
             .build()
             .expect("work crossing profile is valid"),
     );
-    let diagnostic = work_crossing
-        .report()
-        .diagnostics()
-        .iter()
-        .find(|diagnostic| diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED)
-        .expect("the shaping-work diagnostic is retained");
-    assert_eq!(
-        diagnostic.code(),
-        DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
-    );
-    let descriptor = serde_json::to_value(diagnostic).expect("work diagnostic serializes");
-    assert_eq!(descriptor["details"]["configured"], 24_127);
-    assert_eq!(descriptor["details"]["measurement"]["value"], 24_128);
+    let descriptor =
+        work_crossing_descriptor(&work_crossing).expect("the shaping-work diagnostic is retained");
+    assert_eq!(descriptor["details"]["configured"], shaping_work - 1);
+    assert_eq!(descriptor["details"]["measurement"]["value"], shaping_work);
     assert_eq!(descriptor["details"]["value_kind"], "work_units");
 }
 
@@ -324,12 +270,7 @@ fn excalifont_cjk_text_uses_bundled_xiaolai_without_host_fallback() {
     assert!(svg.contains("@font-face{font-family:'Excalifont'"));
     assert!(svg.contains("@font-face{font-family:'Xiaolai'"));
 
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("default PDF request is valid");
-    let pdf = Renderer::new()
-        .render(&scene, &request)
-        .expect("replacement glyph remains meaningful PDF text");
+    let pdf = render(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
     assert!(pdf.contains("/ActualText <FEFF6F226F220041>"));
     assert!(pdf.contains("/BaseFont /Xiaolai"));
@@ -368,36 +309,20 @@ fn basic_latin_svg_leaves_line_shaping_and_alignment_to_the_viewer() {
 #[test]
 fn png_text_coverage_uses_the_transformed_glyph_rectangle() {
     let scene = focused_scene();
-    let equality_request = RenderRequest::builder(OutputFormat::Png)
-        .resource_limits(
-            ResourceLimits::builder()
-                .max_element_work_units(114_760)
-                .build()
-                .expect("PNG coverage equality limits are valid"),
-        )
-        .build()
-        .expect("PNG coverage equality request is valid");
-    let equality = Renderer::new()
-        .render(&scene, &equality_request)
-        .expect("PNG glyph coverage equality is accepted");
+    let unconstrained = render(&scene, OutputFormat::Png);
+    // PNG charges the glyph coverage raster on top of the shaping work every
+    // format shares, so its boundary sits above the SVG one.
+    let coverage_work = element_work_boundary(&scene, OutputFormat::Png);
+    assert!(coverage_work > element_work_boundary(&scene, OutputFormat::Svg));
+
+    let equality = render_with_work_limit(&scene, OutputFormat::Png, coverage_work);
     assert!(equality.report().is_empty());
     assert_eq!(
-        artifact_sha256(&equality),
-        "cb90c943bc71d5eec983bf2c933e1c3c16dd4ca7b5fc14ba79f0230404209534"
+        equality.artifact().bytes(),
+        unconstrained.artifact().bytes()
     );
 
-    let crossing_request = RenderRequest::builder(OutputFormat::Png)
-        .resource_limits(
-            ResourceLimits::builder()
-                .max_element_work_units(114_759)
-                .build()
-                .expect("PNG coverage crossing limits are valid"),
-        )
-        .build()
-        .expect("PNG coverage crossing request is valid");
-    let crossing = Renderer::new()
-        .render(&scene, &crossing_request)
-        .expect("PNG coverage crossing recovers locally");
+    let crossing = render_with_work_limit(&scene, OutputFormat::Png, coverage_work - 1);
     let [diagnostic] = crossing.report().diagnostics() else {
         panic!("PNG glyph coverage crossing has one diagnostic");
     };
@@ -406,11 +331,11 @@ fn png_text_coverage_uses_the_transformed_glyph_rectangle() {
         DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
     );
     let descriptor = serde_json::to_value(diagnostic).expect("coverage diagnostic serializes");
-    assert_eq!(descriptor["details"]["configured"], 114_759);
+    assert_eq!(descriptor["details"]["configured"], coverage_work - 1);
     let attempted = descriptor["details"]["measurement"]["value"]
         .as_u64()
         .expect("coverage attempt is an integer");
-    assert_eq!(attempted, 114_760);
+    assert_eq!(attempted, coverage_work);
     assert!(
         attempted < 200_000,
         "coverage must not charge the 118x102 full surface"
@@ -420,12 +345,7 @@ fn png_text_coverage_uses_the_transformed_glyph_rectangle() {
 #[test]
 fn pdf_maps_the_same_glyph_id_to_distinct_unicode_character_codes() {
     let scene = text_scene(" \u{a0}", 40.0, 30.0);
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("default PDF request is valid");
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("space mappings render");
+    let outcome = render(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
     assert!(pdf.contains("<0001> <0020>"));
     assert!(pdf.contains("<0002> <00A0>"));
@@ -437,11 +357,13 @@ fn pdf_maps_the_same_glyph_id_to_distinct_unicode_character_codes() {
     assert_ne!(&cid_to_gid[2..4], &[0, 0]);
 }
 
+/// The focused Excalifont text: two centered lines, rotated, translucent.
 fn focused_scene() -> SceneDocument {
-    SceneDocument::parse(
-        br##"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","x":20,"y":30,"width":90,"height":72,"angle":0.125,"strokeColor":"#1e66f5","opacity":70,"fontSize":20,"fontFamily":5,"text":"One two three\nFour","textAlign":"center","verticalAlign":"middle","lineHeight":1.2,"frameId":null,"updated":1}],"appState":{},"files":{}}"##,
-    )
-    .expect("focused text scene is admitted")
+    let source = format!(
+        r##"{{"type":"excalidraw","version":2,"elements":[{{"id":"text","type":"text","x":20,"y":30,"width":90,"height":72,"angle":0.125,"strokeColor":"#1e66f5","opacity":70,"fontSize":20,"fontFamily":5,"text":{},"textAlign":"center","verticalAlign":"middle","lineHeight":1.2,"frameId":null,"updated":1}}],"appState":{{}},"files":{{}}}}"##,
+        serde_json::to_string(FOCUSED_TEXT).expect("focused text serializes")
+    );
+    SceneDocument::parse(source.as_bytes()).expect("focused text scene is admitted")
 }
 
 fn text_scene(text: &str, width: f64, height: f64) -> SceneDocument {
@@ -452,26 +374,70 @@ fn text_scene(text: &str, width: f64, height: f64) -> SceneDocument {
     SceneDocument::parse(source.as_bytes()).expect("text scene is admitted")
 }
 
-fn render_svg_with_limits(
-    scene: &SceneDocument,
-    limits: ResourceLimits,
-) -> excalidraw_render::RenderOutcome {
+fn render_svg_with_limits(scene: &SceneDocument, limits: ResourceLimits) -> RenderOutcome {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .resource_limits(limits)
         .build()
         .expect("SVG request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .expect("text recovery retains a meaningful SVG")
+    render_with_request(scene, &request)
 }
 
-fn decode_png(bytes: &[u8]) -> CanonicalRgba8 {
-    let decoder = png::Decoder::new(Cursor::new(bytes));
-    let mut reader = decoder.read_info().expect("PNG structure is valid");
-    let mut pixels = vec![0; reader.output_buffer_size()];
-    let frame = reader.next_frame(&mut pixels).expect("PNG pixels decode");
-    pixels.truncate(frame.buffer_size());
-    CanonicalRgba8::new(frame.width, frame.height, pixels).expect("PNG is canonical RGBA8")
+fn render_with_work_limit(
+    scene: &SceneDocument,
+    format: OutputFormat,
+    max_element_work_units: u64,
+) -> RenderOutcome {
+    let request = RenderRequest::builder(format)
+        .resource_limits(
+            ResourceLimits::builder()
+                .max_element_work_units(max_element_work_units)
+                .build()
+                .expect("element work limit is valid"),
+        )
+        .build()
+        .expect("work-limited request is valid");
+    render_with_request(scene, &request)
+}
+
+/// The text element's semantic work for `format`: the smallest
+/// `max_element_work_units` at which it renders without a work crossing. Each
+/// stage that meters element work refuses the whole attempt and reports it, so
+/// a probe that starts at one unit and adopts each refused attempt as its next
+/// limit settles on the boundary in as many renders as there are stages; the
+/// tests then hold the ±1 boundary against that value instead of a literal.
+fn element_work_boundary(scene: &SceneDocument, format: OutputFormat) -> u64 {
+    let mut limit = 1;
+    for _ in 0..8 {
+        let outcome = render_with_work_limit(scene, format, limit);
+        let Some(descriptor) = work_crossing_descriptor(&outcome) else {
+            return limit;
+        };
+        let attempted = descriptor["details"]["measurement"]["value"]
+            .as_u64()
+            .expect("work attempt is an integer");
+        assert!(
+            attempted > limit,
+            "a work crossing at {limit} reports a larger attempt, not {attempted}"
+        );
+        limit = attempted;
+    }
+    panic!("{format:?} element work did not settle within eight probes");
+}
+
+/// The descriptor of the text element's work crossing, if the render raised
+/// one; several stages may refuse, in which case the largest attempt is the one
+/// the next probe must clear.
+fn work_crossing_descriptor(outcome: &RenderOutcome) -> Option<Value> {
+    outcome
+        .report()
+        .diagnostics()
+        .iter()
+        .filter(|diagnostic| {
+            diagnostic.code() == DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED
+                && diagnostic.element_id() == Some("text")
+        })
+        .map(|diagnostic| serde_json::to_value(diagnostic).expect("work diagnostic serializes"))
+        .max_by_key(|descriptor| descriptor["details"]["measurement"]["value"].as_u64())
 }
 
 fn pdf_stream_referenced_after<'a>(pdf: &'a [u8], key: &str) -> &'a [u8] {
@@ -519,21 +485,4 @@ fn svg_source_text(svg: &str) -> String {
         );
     }
     source
-}
-
-fn pdf_actual_text(pdf: &str) -> String {
-    let mut extracted = String::new();
-    for tail in pdf.split("/ActualText <FEFF").skip(1) {
-        let hex = tail.split('>').next().expect("ActualText hex terminates");
-        let units = hex
-            .as_bytes()
-            .chunks_exact(4)
-            .map(|digits| {
-                u16::from_str_radix(std::str::from_utf8(digits).expect("hex is ASCII"), 16)
-                    .expect("ActualText is hexadecimal")
-            })
-            .collect::<Vec<_>>();
-        extracted.push_str(&String::from_utf16(&units).expect("ActualText is UTF-16"));
-    }
-    extracted
 }

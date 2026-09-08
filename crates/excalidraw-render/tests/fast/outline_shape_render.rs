@@ -1,10 +1,9 @@
-use std::io::Cursor;
-
 use excalidraw_render::{
     DiagnosticCode, ErrorCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
-use png::{ColorType, Decoder, Transformations};
 use sha2::{Digest, Sha256};
+
+use crate::common::raster::decode_png;
 
 const SCENE: &[u8] = br##"{
   "type":"excalidraw","version":2,
@@ -31,17 +30,25 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
         let outcome = Renderer::new()
             .render(&scene, &request)
             .expect("all outline families render");
+        // The SVG's one pin is the path-vector digest below, which holds the
+        // geometry; PNG and PDF each keep one whole-artifact digest.
         let expected_digest = match format {
-            OutputFormat::Svg => "92cb399bdb9891670afc384c84ef686513467c08acf93164bbb0ae838d4d82ca",
-            OutputFormat::Png => "5963335877cfde4ec0079ee163a4c29c2e170e44dcbfff7965f4f89bd0019d6b",
-            OutputFormat::Pdf => "58ce5d784ad2594d87b9000b1cb84248f3b40e843c51d624536c8e002dbac88e",
+            OutputFormat::Svg => None,
+            OutputFormat::Png => {
+                Some("5963335877cfde4ec0079ee163a4c29c2e170e44dcbfff7965f4f89bd0019d6b")
+            }
+            OutputFormat::Pdf => {
+                Some("58ce5d784ad2594d87b9000b1cb84248f3b40e843c51d624536c8e002dbac88e")
+            }
             _ => unreachable!("the test enumerates every revision-1 output format"),
         };
-        assert_eq!(
-            format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
-            expected_digest,
-            "exact {format:?} focused-case artifact changed"
-        );
+        if let Some(expected_digest) = expected_digest {
+            assert_eq!(
+                format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
+                expected_digest,
+                "exact {format:?} focused-case artifact changed"
+            );
+        }
 
         assert!(
             outcome.report().is_empty(),
@@ -55,13 +62,8 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
                 assert!(!svg.contains("Unavailable:"));
             }
             OutputFormat::Png => {
-                let mut decoder = Decoder::new(Cursor::new(outcome.artifact().bytes()));
-                decoder.set_transformations(Transformations::IDENTITY);
-                let mut reader = decoder.read_info().unwrap();
-                assert_eq!(reader.info().color_type, ColorType::Rgba);
-                let mut rgba = vec![0; reader.output_buffer_size()];
-                let frame = reader.next_frame(&mut rgba).unwrap();
-                assert!(rgba[..frame.buffer_size()]
+                assert!(decode_png(outcome.artifact().bytes())
+                    .rgba
                     .chunks_exact(4)
                     .any(|pixel| pixel != [255, 255, 255, 255]));
             }

@@ -1,6 +1,6 @@
-use std::fs;
-
 use crate::common::approved_scenes::{rectangle_outline_scene, render_rectangle_outline_pdf};
+use crate::common::pdf_inspect::stream_data;
+use crate::common::reports::assert_report_matches;
 use crate::common::repository_root;
 use excalidraw_render::{
     ErrorCode, OutputFormat, RenderErrorCategory, RenderOutcome, RenderRequest, Renderer,
@@ -28,9 +28,10 @@ fn approved_rectangle_renders_as_a_deterministic_vector_first_pdf() {
     assert_eq!(first.report(), second.report());
     assert_eq!(first.artifact().format(), OutputFormat::Pdf);
     assert_eq!(first.artifact().media_type(), "application/pdf");
-    assert_eq!(
-        serde_json::to_vec(first.report()).expect("report serializes"),
-        fs::read(case.join("expected-report-svg.json")).unwrap()
+    assert_report_matches(
+        first.report(),
+        &case.join("expected-report-svg.json"),
+        "approved rectangle PDF",
     );
 
     let bytes = first.artifact().bytes();
@@ -73,7 +74,12 @@ fn approved_rectangle_renders_as_a_deterministic_vector_first_pdf() {
     assert_eq!(content.lines().filter(|line| *line == "S").count(), 1);
 
     let profile = stream_data(bytes, b"5 0 obj");
-    assert_eq!(profile.len(), 820);
+    // An ICC profile opens with its own byte length, so the embedded stream is
+    // held to that field rather than to a literal length.
+    assert_eq!(
+        u32::from_be_bytes(profile[..4].try_into().expect("ICC header has a size")),
+        u32::try_from(profile.len()).expect("ICC profile length fits u32")
+    );
     assert_eq!(&profile[8..12], b"\x02\x10\0\0");
     assert_eq!(&profile[12..24], b"mntrRGB XYZ ");
     assert_eq!(&profile[36..40], b"acsp");
@@ -304,17 +310,6 @@ fn render_pdf(request: RenderRequest) -> RenderOutcome {
         .expect("approved rectangle renders directly as PDF vectors")
 }
 
-fn stream_data<'a>(pdf: &'a [u8], object: &[u8]) -> &'a [u8] {
-    let object_start = find_bytes(pdf, object).expect("expected PDF object exists");
-    let stream_marker = b"stream\n";
-    let stream_start = object_start
-        + find_bytes(&pdf[object_start..], stream_marker).expect("object has a stream")
-        + stream_marker.len();
-    let stream_end = stream_start
-        + find_bytes(&pdf[stream_start..], b"\nendstream").expect("stream has an end marker");
-    &pdf[stream_start..stream_end]
-}
-
 fn icc_tags(profile: &[u8]) -> Vec<&str> {
     let count = u32::from_be_bytes(profile[128..132].try_into().unwrap()) as usize;
     (0..count)
@@ -323,10 +318,4 @@ fn icc_tags(profile: &[u8]) -> Vec<&str> {
             std::str::from_utf8(&profile[start..start + 4]).expect("ICC tag is ASCII")
         })
         .collect()
-}
-
-fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    haystack
-        .windows(needle.len())
-        .position(|window| window == needle)
 }

@@ -3,6 +3,8 @@ use excalidraw_render::{
     Renderer, ResourceLimits, SceneDocument, SupplementalAssets,
 };
 
+use crate::common::render::render_source;
+
 #[test]
 fn revision_1_compatibility_defaults_match_explicit_rectangle_values() {
     let defaulted = render_svg(
@@ -53,9 +55,9 @@ fn legacy_stroke_sharpness_renders_as_the_official_roundness_migration_in_every_
     ],"appState":{},"files":{}}"##;
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let legacy = render(legacy, format);
-        let explicit = render(explicit, format);
-        let unmigrated = render(unmigrated, format);
+        let legacy = render_source(legacy, format);
+        let explicit = render_source(explicit, format);
+        let unmigrated = render_source(unmigrated, format);
 
         assert_eq!(
             legacy.artifact().bytes(),
@@ -108,9 +110,9 @@ fn legacy_font_strings_render_as_the_official_font_size_and_family_migration_in_
     ],"appState":{},"files":{}}"##;
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let legacy = render(legacy, format);
-        let explicit = render(explicit, format);
-        let unmigrated = render(unmigrated, format);
+        let legacy = render_source(legacy, format);
+        let explicit = render_source(explicit, format);
+        let unmigrated = render_source(unmigrated, format);
 
         assert_eq!(
             legacy.artifact().bytes(),
@@ -272,8 +274,8 @@ fn fractional_index_repair_preserves_source_paint_order_silently() {
     let descending = br##"{"type":"excalidraw","version":2,"elements":[{"id":"first","index":"a1","type":"rectangle","x":0,"y":0,"width":80,"height":60,"seed":1,"updated":1},{"id":"second","index":"a0","type":"rectangle","x":20,"y":20,"width":80,"height":60,"seed":1,"updated":1}],"appState":{},"files":{}}"##;
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let ordered = render(ordered, format);
-        let repaired = render(descending, format);
+        let ordered = render_source(ordered, format);
+        let repaired = render_source(descending, format);
         assert_eq!(ordered.artifact().bytes(), repaired.artifact().bytes());
         assert!(repaired.report().is_empty());
     }
@@ -622,23 +624,47 @@ fn diagnostic_limit_crossing_preserves_earlier_normalization_repairs() {
 fn normalized_record_limit_precedes_identity_generation_and_diagnostics() {
     let source = br##"{"type":"excalidraw","version":2,"elements":[{"type":"rectangle","width":180,"height":100,"seed":0}],"appState":{},"files":{}}"##;
     let scene = SceneDocument::parse(source).expect("normalization vector is admitted");
-    let limits = ResourceLimits::builder()
-        .max_working_bytes(5_823)
-        .build()
-        .expect("working-byte boundary is valid");
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .resource_limits(limits)
-        .build()
-        .expect("resource-limited request is valid");
+    let render_with_working_bytes = |max_working_bytes: u64| {
+        let limits = ResourceLimits::builder()
+            .max_working_bytes(max_working_bytes)
+            .build()
+            .expect("working-byte boundary is valid");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .resource_limits(limits)
+            .build()
+            .expect("resource-limited request is valid");
+        Renderer::new()
+            .render(&scene, &request)
+            .expect_err("a working-byte ceiling below the element record is fatal")
+    };
 
-    let error = Renderer::new()
-        .render(&scene, &request)
-        .expect_err("the normalized record is rejected before repair work");
+    // Walk the working-byte charges from one byte upward, adopting each refused
+    // attempt as the next ceiling, until the crossing lands on the element's
+    // normalized record: the first charge at /elements/0. Its size is read off
+    // the accounting rather than pinned as a literal.
+    let mut ceiling = 1;
+    let error = loop {
+        let error = render_with_working_bytes(ceiling);
+        assert_eq!(error.code(), ErrorCode::RESOURCE_WORKING_BYTES_EXCEEDED);
+        if error.json_pointer() == "/elements/0" {
+            break error;
+        }
+        let descriptor = serde_json::to_value(error.descriptor()).expect("error serializes");
+        let attempted = descriptor["details"]["measurement"]["value"]
+            .as_u64()
+            .expect("working-byte attempt is an integer");
+        assert!(
+            attempted > ceiling,
+            "a crossing reports the attempt it refused"
+        );
+        ceiling = attempted;
+    };
 
-    assert_eq!(error.code(), ErrorCode::RESOURCE_WORKING_BYTES_EXCEEDED);
     assert_eq!(error.element_id(), None);
-    assert_eq!(error.json_pointer(), "/elements/0");
-    assert!(error.report().is_empty());
+    assert!(
+        error.report().is_empty(),
+        "the record is rejected before identity generation and repair diagnostics"
+    );
 }
 
 #[test]
@@ -646,8 +672,8 @@ fn normalization_repairs_are_format_stable() {
     let source = br##"{"type":"excalidraw","version":2,"elements":[{"type":"rectangle","width":30,"height":20,"seed":0}],"appState":{},"files":{}}"##;
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let first = render(source, format);
-        let second = render(source, format);
+        let first = render_source(source, format);
+        let second = render_source(source, format);
         assert_eq!(first.artifact().bytes(), second.artifact().bytes());
         assert_eq!(first.report(), second.report());
         assert!(first
@@ -751,7 +777,7 @@ fn diagnostic_member_order_is_stable_across_normalization_and_semantics() {
 
 #[test]
 fn multiple_pdf_rectangles_keep_independent_opacity_resources() {
-    let outcome = render(
+    let outcome = render_source(
         br##"{"type":"excalidraw","version":2,"elements":[{"id":"first","type":"rectangle","x":0,"width":40,"height":40,"opacity":50,"seed":1,"updated":1},{"id":"second","type":"rectangle","x":50,"width":40,"height":40,"opacity":75,"seed":1,"updated":1}],"appState":{},"files":{}}"##,
         OutputFormat::Pdf,
     );
@@ -776,15 +802,5 @@ fn non_replacement_diagnostics(
 }
 
 fn render_svg(source: &[u8]) -> excalidraw_render::RenderOutcome {
-    render(source, OutputFormat::Svg)
-}
-
-fn render(source: &[u8], format: OutputFormat) -> excalidraw_render::RenderOutcome {
-    let scene = SceneDocument::parse(source).expect("normalization vector is admitted");
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("default render request is valid");
-    Renderer::new()
-        .render(&scene, &request)
-        .expect("normalization vector renders")
+    render_source(source, OutputFormat::Svg)
 }

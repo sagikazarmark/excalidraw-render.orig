@@ -34,29 +34,6 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
 
         assert_eq!(outcome.artifact().bytes(), repeated.artifact().bytes());
         assert_eq!(outcome.report(), repeated.report());
-        // The SVG digest moved when elbow arrow bounds started deriving from the
-        // declared route: the scene's `elbow` element makes the document a
-        // fraction of a pixel shorter, which the SVG records in its viewBox. PNG
-        // and PDF are unchanged because the difference does not cross the
-        // truncation boundary for this scene, so the raster is identical. An
-        // earlier PNG-only move came from fixing stroke dashing, which the
-        // `crowfeet` element exercises.
-        let expected_digest = match format {
-            OutputFormat::Svg => "cf381468226c5326196b98fda7c940636a35b3637021ea344e3fc765daf15756",
-            // Updated when PNG stroke dashing was fixed: the previous digest pinned the
-            // `crowfeet` arrow's dashed stroke rendering as solid. SVG and PDF are
-            // unchanged, which is what confirms the move was PNG-only. Moved again
-            // when IDAT switched from stored to deflate-compressed scanlines (#113);
-            // the decoded pixels are unchanged.
-            OutputFormat::Png => "09e2eb955e4134f3f3a6b19b1cee567f130b42d947248764faa036e1199fae23",
-            OutputFormat::Pdf => "99505f0a67ce2181670ec8fcc9992e68e6376e6e9700cb1a59fae74a8a192566",
-            _ => unreachable!("the test enumerates every revision-1 format"),
-        };
-        assert_eq!(
-            format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
-            expected_digest,
-            "exact arrow vector changed for {format:?}"
-        );
         assert!(
             outcome.report().is_empty(),
             "arrows must not use compatibility recovery for {format:?}: {:?}",
@@ -66,9 +43,16 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
         if format == OutputFormat::Svg {
             let svg = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
             assert!(!svg.contains("Unavailable:"));
-            assert!(
-                svg.matches("<path ").count() > 8,
-                "arrowheads are separate vectors"
+            let paths = svg_path_data(svg);
+            assert!(paths.len() > 8, "arrowheads are separate vectors");
+            // The arrow geometry is pinned as its path vectors rather than as
+            // whole artifacts: the whole-artifact digests moved for a
+            // fractional viewBox extent and for PNG IDAT compression while the
+            // vectors, which are what this test holds, did not.
+            assert_eq!(
+                format!("{:x}", Sha256::digest(paths.join("\n"))),
+                "5e25ba2ed774c760ceb3cb5389467fb12d6ef4c86ac1e453feb3951475b26c16",
+                "exact arrow vectors changed"
             );
         } else if format == OutputFormat::Pdf {
             let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
@@ -103,4 +87,12 @@ fn arrowhead_geometry_limit_recovers_locally_and_deterministically() {
                 && matches!(diagnostic.element_id(), Some("bound" | "elbow" | "dot"))
         }));
     }
+}
+
+/// Every `<path d>` value in document order.
+fn svg_path_data(svg: &str) -> Vec<&str> {
+    svg.split("<path d=\"")
+        .skip(1)
+        .map(|tail| tail.split_once('"').expect("path data terminates").0)
+        .collect()
 }

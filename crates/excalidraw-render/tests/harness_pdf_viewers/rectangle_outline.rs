@@ -12,6 +12,7 @@ use excalidraw_render_compare::{
 use crate::common::approved_scenes::render_rectangle_outline_pdf;
 use crate::common::pdf_harness::{assert_structure, render_viewer};
 use crate::common::repository_root;
+use crate::common::scratch::ScratchDir;
 
 #[test]
 #[ignore = "requires the exact-pinned PDFium and PDF.js harness"]
@@ -24,8 +25,8 @@ fn approved_rectangle_passes_both_canonical_pdf_visual_gates() {
     .expect("PDF exception is valid JSON");
     assert_eq!(exception["approved_issue"], 44);
     assert_eq!(exception["viewer_profile"], "canonical-pdf.pdfium.v1");
-    let stem = format!("rectangle-pdf-candidate-{}", std::process::id());
-    let candidate = format!("target/{stem}.pdf");
+    let scratch = ScratchDir::new("rectangle-pdf-candidate");
+    let candidate = scratch.relative("candidate.pdf");
     let reference = CanonicalRgba8::new(
         200,
         120,
@@ -37,10 +38,10 @@ fn approved_rectangle_passes_both_canonical_pdf_visual_gates() {
     )
     .expect("canonical Chromium official-SVG evidence is valid");
     fs::write(
-        root.join(&candidate),
+        scratch.join("candidate.pdf"),
         render_rectangle_outline_pdf().artifact().bytes(),
     )
-    .expect("write renderer-owned candidate PDF under target");
+    .expect("write renderer-owned candidate PDF to scratch");
 
     for (viewer, script, mode) in [
         (
@@ -54,7 +55,7 @@ fn approved_rectangle_passes_both_canonical_pdf_visual_gates() {
             ComparisonMode::Canonical,
         ),
     ] {
-        let output = format!("target/{stem}-{viewer}.rgba");
+        let output = scratch.relative(&format!("{viewer}.rgba"));
         let candidate = CanonicalRgba8::new(
             200,
             120,
@@ -94,7 +95,7 @@ fn approved_rectangle_passes_both_canonical_pdf_visual_gates() {
         );
     }
 
-    let structure_output = format!("target/{stem}-structure.json");
+    let structure_output = scratch.relative("structure.json");
     assert_structure(
         &root,
         &candidate,

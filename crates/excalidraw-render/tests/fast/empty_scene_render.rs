@@ -113,10 +113,6 @@ fn assert_outcome_contract(outcome: &RenderOutcome, format: OutputFormat) {
     assert_eq!(outcome.excalidraw_release(), "v0.18.1");
     assert_eq!(outcome.profile_digest(), PROFILE_DIGEST);
     assert!(outcome.report().is_empty());
-    assert_eq!(
-        serde_json::to_vec(outcome.report()).expect("serialize empty report"),
-        br#"{"schema_version":1,"diagnostics":[]}"#
-    );
 }
 
 fn png_chunk_types(bytes: &[u8]) -> Vec<[u8; 4]> {

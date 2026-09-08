@@ -1,10 +1,9 @@
-use std::io::Cursor;
-
 use excalidraw_render::{
     DiagnosticCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
-use png::{Decoder, Transformations};
 use sha2::{Digest, Sha256};
+
+use crate::common::raster::decode_png;
 
 const SCENE: &[u8] = br##"{
   "type":"excalidraw","version":2,
@@ -49,12 +48,8 @@ fn rough_fills_and_stroke_variants_render_directly_in_every_format() {
                 );
             }
             OutputFormat::Png => {
-                let mut decoder = Decoder::new(Cursor::new(first.artifact().bytes()));
-                decoder.set_transformations(Transformations::IDENTITY);
-                let mut reader = decoder.read_info().unwrap();
-                let mut rgba = vec![0; reader.output_buffer_size()];
-                let frame = reader.next_frame(&mut rgba).unwrap();
-                let pixels = rgba[..frame.buffer_size()].chunks_exact(4);
+                let decoded = decode_png(first.artifact().bytes());
+                let pixels = decoded.rgba.chunks_exact(4);
                 assert!(pixels.clone().any(|pixel| pixel[0] > pixel[1]));
                 assert!(pixels.clone().any(|pixel| pixel[1] > pixel[0]));
                 assert!(pixels.clone().any(|pixel| pixel[2] > pixel[0]));

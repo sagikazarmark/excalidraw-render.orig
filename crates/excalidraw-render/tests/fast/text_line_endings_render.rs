@@ -2,8 +2,9 @@
 //! as the reference's `text.replace(/\r\n?/g, "\n").split("\n")` does, while
 //! the stored bytes stay as they are. Decided on #110.
 
-use excalidraw_render::{OutputFormat, RenderOutcome, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{OutputFormat, RenderOutcome, SceneDocument};
 
+use crate::common::render::render;
 use crate::common::svg_baselines::{assert_baselines, render_svg, tspan_baselines};
 
 /// Excalifont's metadata metrics: `20 * (lineHeight / 2 + (886 - 374) / 1000 / 2)`.
@@ -21,15 +22,6 @@ fn text_scene(text: &str, height: f64, line_height: Option<f64>) -> SceneDocumen
         text = serde_json::to_string(text).expect("text serializes"),
     );
     SceneDocument::parse(scene.as_bytes()).expect("text scene is admitted")
-}
-
-fn render(scene: &SceneDocument, format: OutputFormat) -> RenderOutcome {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .unwrap_or_else(|error| panic!("{format:?} renders: {error:?}"))
 }
 
 fn svg_text(outcome: &RenderOutcome) -> &str {

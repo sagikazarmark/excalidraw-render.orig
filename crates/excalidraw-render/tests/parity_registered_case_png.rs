@@ -26,17 +26,17 @@ mod common;
 
 use std::collections::BTreeSet;
 use std::fs;
-use std::io::Cursor;
 
 use excalidraw_render::{ColorMode, OutputFormat, Renderer, Sizing};
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonLimits, ComparisonMode};
-use png::{BitDepth, ColorType, Decoder, Transformations};
 use serde_json::Value;
 
+use common::raster::decode_png;
 use common::registered_cases::{
     case_count, divergence, exception_limits, judge_each, registered_scene_variants,
     variant_request, visual_class, PinnedDivergence, RegisteredVariant,
 };
+use common::reports::assert_report_matches;
 use common::repository_root;
 
 /// Diagnosed defects whose fix is pending a maintainer decision. See
@@ -85,13 +85,10 @@ fn direct_png_divergence(variant: &RegisteredVariant) -> Option<String> {
     // diagnostics disagree with what the case declares, which is a contract
     // break rather than a pixel difference. The checked report is canonical
     // JSON and the renderer's is spec-ordered, so they compare as values.
-    let expected_report: Value =
-        serde_json::from_slice(&fs::read(&expected_report).expect("expected report present"))
-            .expect("expected report is valid JSON");
-    assert_eq!(
-        serde_json::to_value(outcome.report()).expect("report serializes"),
-        expected_report,
-        "{context}: PNG report differs from its declared expectation"
+    assert_report_matches(
+        outcome.report(),
+        &expected_report,
+        &format!("{context}: PNG"),
     );
 
     let raw = &png["raw_raster"];
@@ -104,7 +101,7 @@ fn direct_png_divergence(variant: &RegisteredVariant) -> Option<String> {
             .expect("official raster present"),
     )
     .expect("official evidence is canonical RGBA8");
-    let candidate = decode_png(outcome.artifact().bytes());
+    let candidate = decode_png(outcome.artifact().bytes()).into_canonical();
 
     let exception = tolerance_exception(&variant.manifest, &variant.variant);
     let defect = PinnedDivergence::lookup(KNOWN_DEFECTS, &variant.case, &variant.variant);
@@ -150,18 +147,6 @@ fn tolerance_exception(manifest: &Value, variant_id: &str) -> Option<ComparisonL
                 && exception["region"] == "whole"
         })
         .map(exception_limits)
-}
-
-fn decode_png(bytes: &[u8]) -> CanonicalRgba8 {
-    let mut decoder = Decoder::new(Cursor::new(bytes));
-    decoder.set_transformations(Transformations::IDENTITY);
-    let mut reader = decoder.read_info().expect("PNG structure is valid");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
-    assert_eq!(frame.color_type, ColorType::Rgba);
-    assert_eq!(frame.bit_depth, BitDepth::Eight);
-    rgba.truncate(frame.buffer_size());
-    CanonicalRgba8::new(frame.width, frame.height, rgba).expect("decoded PNG is canonical RGBA8")
 }
 
 /// The default reference export, as every registered variant declares it

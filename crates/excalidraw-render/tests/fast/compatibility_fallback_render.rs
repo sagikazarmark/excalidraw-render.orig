@@ -3,7 +3,8 @@ use excalidraw_render::{
     RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
 
-use std::io::Cursor;
+use crate::common::raster::decode_png;
+use crate::common::render::render;
 
 #[test]
 fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
@@ -150,9 +151,8 @@ fn bounded_fallback_and_unbounded_omission_succeed_in_every_format() {
                 assert!(svg.contains("Unsupported: future</text>"));
             }
             OutputFormat::Png => {
-                let decoder = png::Decoder::new(Cursor::new(first.artifact().bytes()));
-                let reader = decoder.read_info().expect("PNG structure is valid");
-                assert_eq!((reader.info().width, reader.info().height), (220, 100));
+                let decoded = decode_png(first.artifact().bytes());
+                assert_eq!((decoded.width, decoded.height), (220, 100));
             }
             OutputFormat::Pdf => {
                 let pdf = first.artifact().bytes();
@@ -190,7 +190,7 @@ fn compatibility_labels_use_full_ellipsis_or_omitted_fit_behavior() {
     assert!(svg.contains("Modified Version under font.liberation-sans.ofl-1.1."));
 
     let png = render(&scene, OutputFormat::Png);
-    let (_, _, rgba) = decode_png(png.artifact().bytes());
+    let rgba = decode_png(png.artifact().bytes()).rgba;
     assert!(rgba
         .chunks_exact(4)
         .any(|pixel| pixel == [0x49, 0x50, 0x57, 0xff]));
@@ -402,7 +402,7 @@ fn iframe_and_embeddable_render_the_official_offline_shell_in_the_final_pass() {
     assert!(svg.contains("ExcalidrawRender-9"));
 
     let png = render(&scene, OutputFormat::Png);
-    let (_, _, rgba) = decode_png(png.artifact().bytes());
+    let rgba = decode_png(png.artifact().bytes()).rgba;
     assert!(rgba
         .chunks_exact(4)
         .any(|pixel| pixel[..3] == [0xd3, 0xd3, 0xd3]));
@@ -508,7 +508,7 @@ fn compatibility_placeholder_omits_components_that_do_not_fit_source_bounds() {
     assert!(!svg.contains("<text "));
 
     let png = render(&scene, OutputFormat::Png);
-    let (_, _, rgba) = decode_png(png.artifact().bytes());
+    let rgba = decode_png(png.artifact().bytes()).rgba;
     assert!(!rgba
         .chunks_exact(4)
         .any(|pixel| pixel[..3] == [0x86, 0x8e, 0x96]));
@@ -579,14 +579,13 @@ fn compatibility_placeholder_preserves_frame_clipping_in_every_format() {
     assert!(svg.contains("<g clip-path=\"url(#frame-clip-0)\">"));
 
     let png = render(&scene, OutputFormat::Png);
-    let (width, _, rgba) = decode_png(png.artifact().bytes());
-    let pixel = |x: u32, y: u32| {
-        let offset = usize::try_from((u64::from(y) * u64::from(width) + u64::from(x)) * 4)
-            .expect("fixture pixel offset fits usize");
-        &rgba[offset..offset + 4]
-    };
-    assert_ne!(pixel(95, 64), [255, 255, 255, 255]);
-    assert_eq!(pixel(140, 64), [255, 255, 255, 255]);
+    let decoded = decode_png(png.artifact().bytes());
+    // The 100-wide frame plus padding is the whole 120-wide canvas: the
+    // placeholder paints inside the frame's right edge (x 110) and nothing
+    // survives between that edge and the canvas edge.
+    assert_eq!(decoded.width, 120);
+    assert_ne!(decoded.pixel(95, 64), [255, 255, 255, 255]);
+    assert_eq!(decoded.pixel(115, 64), [255, 255, 255, 255]);
 
     let pdf = render(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
@@ -706,7 +705,7 @@ fn png_fallback_surface_is_charged_after_the_required_main_raster() {
     let outcome = Renderer::new()
         .render(&scene, &request)
         .expect("the main and fallback surfaces fit at exact aggregate equality");
-    let (_, _, rgba) = decode_png(outcome.artifact().bytes());
+    let rgba = decode_png(outcome.artifact().bytes()).rgba;
     assert!(rgba
         .chunks_exact(4)
         .any(|pixel| pixel != [255, 255, 255, 255]));
@@ -722,13 +721,10 @@ fn compatibility_placeholder_opacity_is_applied_to_the_composited_group() {
     .expect("translucent fallback is admitted");
 
     let png = render(&scene, OutputFormat::Png);
-    let (width, _, rgba) = decode_png(png.artifact().bytes());
-    let pixel = |x: u32, y: u32| {
-        let offset = usize::try_from((u64::from(y) * u64::from(width) + u64::from(x)) * 4)
-            .expect("fixture pixel offset fits usize");
-        &rgba[offset..offset + 4]
-    };
-    assert_eq!(pixel(30, 20), [249, 250, 251, 255]);
+    assert_eq!(
+        decode_png(png.artifact().bytes()).pixel(30, 20),
+        [249, 250, 251, 255]
+    );
 
     let pdf = render(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
@@ -901,15 +897,6 @@ fn scene_text_reports_missing_glyphs_and_emoji_substitution_in_every_format() {
     );
 }
 
-fn render(scene: &SceneDocument, format: OutputFormat) -> excalidraw_render::RenderOutcome {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("default request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .expect("compatibility content renders")
-}
-
 fn boundary_diagnostics(
     outcome: &excalidraw_render::RenderOutcome,
 ) -> Vec<&excalidraw_render::CompatibilityDiagnostic> {
@@ -926,14 +913,4 @@ fn boundary_diagnostics(
             )
         })
         .collect()
-}
-
-fn decode_png(bytes: &[u8]) -> (u32, u32, Vec<u8>) {
-    let mut decoder = png::Decoder::new(Cursor::new(bytes));
-    decoder.set_transformations(png::Transformations::IDENTITY);
-    let mut reader = decoder.read_info().expect("PNG structure is valid");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
-    rgba.truncate(frame.buffer_size());
-    (frame.width, frame.height, rgba)
 }

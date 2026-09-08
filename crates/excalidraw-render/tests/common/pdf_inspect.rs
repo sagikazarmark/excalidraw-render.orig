@@ -101,3 +101,22 @@ pub fn embedded_pdf_fonts(pdf: &[u8]) -> Vec<Vec<u8>> {
     }
     fonts
 }
+
+/// The bytes of the stream that `object` (for example `b"4 0 obj"`) opens.
+pub fn stream_data<'a>(pdf: &'a [u8], object: &[u8]) -> &'a [u8] {
+    let object_start = find_bytes(pdf, object).expect("expected PDF object exists");
+    let marker = b"stream\n";
+    let stream_start = object_start
+        + find_bytes(&pdf[object_start..], marker).expect("object has a stream")
+        + marker.len();
+    let stream_end = stream_start
+        + find_bytes(&pdf[stream_start..], b"\nendstream").expect("stream has an end marker");
+    &pdf[stream_start..stream_end]
+}
+
+/// The offset of the first `needle` in `haystack`.
+pub fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack
+        .windows(needle.len())
+        .position(|window| window == needle)
+}

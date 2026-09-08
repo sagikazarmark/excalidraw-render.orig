@@ -14,6 +14,7 @@ use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualC
 
 use crate::common::pdf_harness::try_render_viewer;
 use crate::common::repository_root;
+use crate::common::scratch::ScratchDir;
 
 const VIEWERS: [(&str, &str, ComparisonMode); 2] = [
     (
@@ -39,15 +40,15 @@ const SQUARE_DEVICE_RANGE: std::ops::Range<u32> = 20..60;
 #[ignore = "requires the exact-pinned PDFium and PDF.js harnesses"]
 fn adapters_place_a_fractional_page_at_exact_scale_on_the_supplied_canvas() {
     let root = repository_root();
-    let stem = format!("pdf-viewer-adapters-fractional-{}", std::process::id());
-    let candidate = format!("target/{stem}.pdf");
-    fs::write(root.join(&candidate), fractional_page_pdf())
-        .expect("write fractional-page PDF under target");
+    let scratch = ScratchDir::new("pdf-viewer-adapters-fractional");
+    let candidate = scratch.relative("fractional.pdf");
+    fs::write(scratch.join("fractional.pdf"), fractional_page_pdf())
+        .expect("write fractional-page PDF to scratch");
 
     for (width, height) in [(112, 84), (113, 83)] {
         let mut rasters = Vec::new();
         for (viewer, script, mode) in VIEWERS {
-            let output = format!("target/{stem}-{width}x{height}-{viewer}.rgba");
+            let output = scratch.relative(&format!("{width}x{height}-{viewer}.rgba"));
             let render =
                 try_render_viewer(&root, viewer, script, &candidate, &output, width, height)
                     .unwrap_or_else(|diagnostics| {
@@ -100,10 +101,10 @@ fn adapters_place_a_fractional_page_at_exact_scale_on_the_supplied_canvas() {
 #[ignore = "requires the exact-pinned PDFium and PDF.js harnesses"]
 fn adapters_reject_a_supplied_size_a_pixel_or_more_off_the_page() {
     let root = repository_root();
-    let stem = format!("pdf-viewer-adapters-rejected-{}", std::process::id());
-    let fractional = format!("target/{stem}.pdf");
-    fs::write(root.join(&fractional), fractional_page_pdf())
-        .expect("write fractional-page PDF under target");
+    let scratch = ScratchDir::new("pdf-viewer-adapters-rejected");
+    let fractional = scratch.relative("fractional.pdf");
+    fs::write(scratch.join("fractional.pdf"), fractional_page_pdf())
+        .expect("write fractional-page PDF to scratch");
     // The qualification control is an integral 200x120 px page; the fractional
     // page is 112.12x83.84 px, so 111 and 85 miss it by more than a pixel.
     let integral =
@@ -121,7 +122,7 @@ fn adapters_reject_a_supplied_size_a_pixel_or_more_off_the_page() {
 
     for (candidate, page_size, width, height) in attempts {
         for (viewer, script, _) in VIEWERS {
-            let output = format!("target/{stem}-{width}x{height}-{viewer}.rgba");
+            let output = scratch.relative(&format!("{width}x{height}-{viewer}.rgba"));
             let diagnostics =
                 try_render_viewer(&root, viewer, script, candidate, &output, width, height)
                     .err()

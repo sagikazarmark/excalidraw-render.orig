@@ -7,11 +7,15 @@ use excalidraw_render::{
 };
 use image_webp::{ColorType, WebPEncoder};
 
+use crate::common::image_scene::image_scene;
+use crate::common::raster::decode_png;
+use crate::common::render::render;
+
 #[test]
 fn direct_svg_preserves_validated_lossless_webp_octets_in_a_canonical_data_url() {
     let webp = fixture_webp(1, 1, &[[24, 96, 208, 128]]);
     let encoded = base64::engine::general_purpose::STANDARD.encode(&webp);
-    let outcome = render_outcome(&webp_scene(&webp, 1, 1), OutputFormat::Svg);
+    let outcome = render(&webp_scene(&webp, 1, 1), OutputFormat::Svg);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(outcome.report().diagnostics().is_empty());
@@ -31,14 +35,14 @@ fn png_projects_lossless_webp_alpha_as_canonical_rgba() {
     let outcome = Renderer::new()
         .render(&scene, &request)
         .expect("WebP alpha renders");
-    let rgba = decoded_png(outcome.artifact().bytes());
+    let decoded = decode_png(outcome.artifact().bytes());
 
-    let translucent = pixel(&rgba, 40, 14, 15);
+    let translucent = decoded.pixel(14, 15);
     assert!(translucent[0].abs_diff(24) <= 1, "red: {translucent:?}");
     assert!(translucent[1].abs_diff(96) <= 1, "green: {translucent:?}");
     assert!(translucent[2].abs_diff(208) <= 1, "blue: {translucent:?}");
     assert!(translucent[3].abs_diff(128) <= 1, "alpha: {translucent:?}");
-    assert_eq!(pixel(&rgba, 40, 25, 15), [0, 0, 0, 0]);
+    assert_eq!(decoded.pixel(25, 15), [0, 0, 0, 0]);
     assert!(outcome.report().diagnostics().is_empty());
 }
 
@@ -50,7 +54,7 @@ fn png_and_pdf_flatten_animated_webp_per_rendered_occurrence() {
     let scene = two_webp_scene(&webp);
 
     for format in [OutputFormat::Png, OutputFormat::Pdf] {
-        let outcome = render_outcome(&scene, format);
+        let outcome = render(&scene, format);
         assert_eq!(outcome.report().diagnostics().len(), 2);
         for diagnostic in outcome.report().diagnostics() {
             assert_eq!(diagnostic.code(), DiagnosticCode::IMAGE_ANIMATION_FLATTENED);
@@ -64,13 +68,13 @@ fn png_and_pdf_flatten_animated_webp_per_rendered_occurrence() {
             ));
         }
         if format == OutputFormat::Png {
-            let rgba = decoded_png(outcome.artifact().bytes());
-            assert_eq!(pixel(&rgba, 23, 10, 10), [255, 0, 0, 255]);
-            assert_eq!(pixel(&rgba, 23, 12, 10), [255, 0, 0, 255]);
+            let decoded = decode_png(outcome.artifact().bytes());
+            assert_eq!(decoded.pixel(10, 10), [255, 0, 0, 255]);
+            assert_eq!(decoded.pixel(12, 10), [255, 0, 0, 255]);
         }
     }
 
-    let svg = render_outcome(&scene, OutputFormat::Svg);
+    let svg = render(&scene, OutputFormat::Svg);
     assert!(svg.report().diagnostics().is_empty());
 }
 
@@ -106,8 +110,8 @@ fn animation_validation_work_uses_additional_webp_frame_rectangles() {
 #[test]
 fn lossy_webp_decodes_to_opaque_canonical_srgb() {
     let webp = lossy_red_webp();
-    let outcome = render_outcome(&webp_scene(&webp, 2, 2), OutputFormat::Png);
-    let center = pixel(&decoded_png(outcome.artifact().bytes()), 22, 11, 11);
+    let outcome = render(&webp_scene(&webp, 2, 2), OutputFormat::Png);
+    let center = decode_png(outcome.artifact().bytes()).pixel(11, 11);
 
     assert_eq!(center, [255, 0, 2, 255]);
     assert!(outcome.report().diagnostics().is_empty());
@@ -128,13 +132,10 @@ fn static_and_animated_webp_artifacts_and_reports_are_deterministic() {
     for webp in [&static_webp, &animated] {
         for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
             let scene = webp_scene(webp, 1, 1);
-            let first = render_outcome(&scene, format);
-            let second = render_outcome(&scene, format);
+            let first = render(&scene, format);
+            let second = render(&scene, format);
             assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-            assert_eq!(
-                serde_json::to_vec(first.report()).expect("report serializes"),
-                serde_json::to_vec(second.report()).expect("report serializes")
-            );
+            assert_eq!(first.report(), second.report());
         }
     }
 }
@@ -151,19 +152,19 @@ fn png_and_pdf_apply_webp_exif_orientation_while_svg_preserves_source_bytes() {
     let encoded = base64::engine::general_purpose::STANDARD.encode(&webp);
     let scene = webp_scene(&webp, 10, 20);
 
-    let svg = render_outcome(&scene, OutputFormat::Svg);
+    let svg = render(&scene, OutputFormat::Svg);
     assert!(std::str::from_utf8(svg.artifact().bytes())
         .expect("SVG is UTF-8")
         .contains(&format!("data:image/webp;base64,{encoded}")));
 
-    let png = render_outcome(&scene, OutputFormat::Png);
-    let rgba = decoded_png(png.artifact().bytes());
-    let top = pixel(&rgba, 30, 15, 14);
-    let bottom = pixel(&rgba, 30, 15, 25);
+    let png = render(&scene, OutputFormat::Png);
+    let decoded = decode_png(png.artifact().bytes());
+    let top = decoded.pixel(15, 14);
+    let bottom = decoded.pixel(15, 25);
     assert!(top[0] > top[2], "top pixel: {top:?}");
     assert!(bottom[2] > bottom[0], "bottom pixel: {bottom:?}");
 
-    let pdf = render_outcome(&scene, OutputFormat::Pdf);
+    let pdf = render(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
     assert!(pdf.contains("/Width 1\n/Height 4"));
 }
@@ -192,7 +193,7 @@ fn malformed_and_truncated_webp_use_typed_decode_recovery() {
     let malformed = b"RIFF\x04\0\0\0WEBP".to_vec();
 
     for webp in [truncated, malformed] {
-        let outcome = render_outcome(&webp_scene(&webp, 1, 1), OutputFormat::Svg);
+        let outcome = render(&webp_scene(&webp, 1, 1), OutputFormat::Svg);
         assert_eq!(outcome.report().diagnostics().len(), 1);
         assert_eq!(
             outcome.report().diagnostics()[0].code(),
@@ -229,7 +230,7 @@ fn malformed_later_webp_frames_and_alpha_flags_use_decode_recovery() {
     missing_alpha_flag[20] &= !0x10;
 
     for webp in [outside_canvas, reserved_frame_flag, missing_alpha_flag] {
-        let outcome = render_outcome(&webp_scene(&webp, 1, 1), OutputFormat::Svg);
+        let outcome = render(&webp_scene(&webp, 1, 1), OutputFormat::Svg);
         assert_eq!(outcome.report().diagnostics().len(), 1);
         assert_eq!(
             outcome.report().diagnostics()[0].code(),
@@ -253,7 +254,7 @@ fn animated_webp_first_frame_alpha_is_canonicalized() {
         .expect("animated WebP alpha renders");
 
     assert_eq!(
-        pixel(&decoded_png(outcome.artifact().bytes()), 30, 15, 15),
+        decode_png(outcome.artifact().bytes()).pixel(15, 15),
         [24, 96, 207, 128]
     );
     assert_eq!(
@@ -384,8 +385,8 @@ fn append_xyz(profile: &mut Vec<u8>, values: [u32; 3]) {
 }
 
 fn rendered_center(webp: &[u8]) -> [u8; 4] {
-    let outcome = render_outcome(&webp_scene(webp, 1, 1), OutputFormat::Png);
-    pixel(&decoded_png(outcome.artifact().bytes()), 21, 10, 10)
+    let outcome = render(&webp_scene(webp, 1, 1), OutputFormat::Png);
+    decode_png(outcome.artifact().bytes()).pixel(10, 10)
 }
 
 fn animated_webp(width: u32, height: u32, frames: &[(u32, u32, Vec<u8>)]) -> Vec<u8> {
@@ -464,23 +465,7 @@ fn le_u24(value: u32) -> [u8; 3] {
 }
 
 fn webp_scene(webp: &[u8], width: u32, height: u32) -> SceneDocument {
-    let encoded = base64::engine::general_purpose::STANDARD.encode(webp);
-    let json = format!(
-        r#"{{
-            "type":"excalidraw","version":2,
-            "elements":[{{
-                "id":"image","type":"image","x":0,"y":0,
-                "width":{width},"height":{height},"angle":0,"opacity":100,
-                "fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1
-            }}],
-            "appState":{{}},
-            "files":{{"asset":{{
-                "id":"asset","mimeType":"image/webp",
-                "dataURL":"data:image/webp;base64,{encoded}","created":1
-            }}}}
-        }}"#
-    );
-    SceneDocument::parse(json.as_bytes()).expect("WebP scene is admitted")
+    image_scene(webp, "image/webp", width, height)
 }
 
 fn two_webp_scene(webp: &[u8]) -> SceneDocument {
@@ -499,27 +484,4 @@ fn two_webp_scene(webp: &[u8]) -> SceneDocument {
         }}"#
     );
     SceneDocument::parse(json.as_bytes()).expect("two-WebP scene is admitted")
-}
-
-fn render_outcome(scene: &SceneDocument, format: OutputFormat) -> excalidraw_render::RenderOutcome {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("render request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .expect("WebP asset has local recovery")
-}
-
-fn decoded_png(bytes: &[u8]) -> Vec<u8> {
-    let decoder = png::Decoder::new(Cursor::new(bytes));
-    let mut reader = decoder.read_info().expect("artifact is a PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    rgba
-}
-
-fn pixel(rgba: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
-    rgba[(y * width + x) * 4..(y * width + x + 1) * 4]
-        .try_into()
-        .expect("pixel has four channels")
 }

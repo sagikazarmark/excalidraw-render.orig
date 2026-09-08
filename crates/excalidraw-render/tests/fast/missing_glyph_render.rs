@@ -7,8 +7,9 @@
 
 use std::fs;
 
+use crate::common::render::render;
 use crate::common::repository_root;
-use excalidraw_render::{OutputFormat, RenderOutcome, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
 use crate::common::pdf_inspect::{
@@ -32,15 +33,6 @@ fn registered_scene() -> SceneDocument {
             .expect("registered scene is present"),
     )
     .expect("registered scene is admitted")
-}
-
-fn render(scene: &SceneDocument, format: OutputFormat) -> RenderOutcome {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("default request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .unwrap_or_else(|error| panic!("{format:?} renders: {error:?}"))
 }
 
 /// The checked expected report for one evidence-bearing format.

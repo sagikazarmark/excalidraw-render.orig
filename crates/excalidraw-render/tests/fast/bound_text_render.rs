@@ -1,4 +1,6 @@
-use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{OutputFormat, SceneDocument};
+
+use crate::common::render::render_artifact;
 
 #[test]
 fn shape_bound_text_inherits_the_container_rotation() {
@@ -81,10 +83,10 @@ fn arrow_bound_text_uses_the_resolved_arrow_midpoint() {
     assert!(svg.contains("<mask id=\"arrow-label-mask-"));
     assert!(svg.contains("mask=\"url(#arrow-label-mask-"));
 
-    let png = render(&scene, OutputFormat::Png);
+    let png = render_artifact(&scene, OutputFormat::Png);
     assert!(png.starts_with(b"\x89PNG\r\n\x1a\n"));
 
-    let pdf = String::from_utf8_lossy(&render(&scene, OutputFormat::Pdf)).into_owned();
+    let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
     assert!(pdf.contains("W*\nn\n"));
     assert!(!pdf.contains("/Subtype /Image"));
 }
@@ -154,16 +156,5 @@ fn arrow_binding_does_not_turn_standalone_text_into_a_bound_label() {
 }
 
 fn render_svg(scene: &SceneDocument) -> String {
-    String::from_utf8(render(scene, OutputFormat::Svg)).expect("SVG is UTF-8")
-}
-
-fn render(scene: &SceneDocument, format: OutputFormat) -> Vec<u8> {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("render request is valid");
-    let outcome = Renderer::new()
-        .render(scene, &request)
-        .expect("bound text renders");
-    assert!(outcome.report().is_empty());
-    outcome.artifact().bytes().to_vec()
+    String::from_utf8(render_artifact(scene, OutputFormat::Svg)).expect("SVG is UTF-8")
 }

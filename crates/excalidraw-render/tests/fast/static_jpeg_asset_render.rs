@@ -3,13 +3,16 @@ use excalidraw_render::{
     DiagnosticCode, ErrorDetails, OutputFormat, RenderRequest, Renderer, ResourceLimits,
     SceneDocument,
 };
-use std::io::Cursor;
+
+use crate::common::image_scene::{image_scene, image_scene_from_data_url};
+use crate::common::raster::decode_png;
+use crate::common::render::render;
 
 #[test]
 fn direct_svg_preserves_validated_jfif_octets_in_a_canonical_data_url() {
     let jpeg = fixture_jpeg(1, 1, &[[24, 96, 208]]);
     let encoded = base64::engine::general_purpose::STANDARD.encode(&jpeg);
-    let scene = image_scene(
+    let scene = image_scene_from_data_url(
         &format!("data:image/jpeg;base64,{encoded}"),
         "image/jpeg",
         1,
@@ -35,14 +38,11 @@ fn png_projects_jpeg_as_opaque_canonical_srgb() {
     let jpeg = fixture_jpeg(1, 1, &[[24, 96, 208]]);
     let scene = jpeg_scene(&jpeg, 1, 1);
 
-    let outcome = render_outcome(&scene, OutputFormat::Png);
-    let decoder = png::Decoder::new(Cursor::new(outcome.artifact().bytes()));
-    let mut reader = decoder.read_info().expect("artifact is a PNG");
-    let mut pixels = vec![0; reader.output_buffer_size()];
-    let output = reader.next_frame(&mut pixels).expect("PNG frame decodes");
+    let outcome = render(&scene, OutputFormat::Png);
+    let decoded = decode_png(outcome.artifact().bytes());
 
-    assert_eq!((output.width, output.height), (21, 21));
-    let center = &pixels[(10 * 21 + 10) * 4..(10 * 21 + 10) * 4 + 4];
+    assert_eq!((decoded.width, decoded.height), (21, 21));
+    let center = decoded.pixel(10, 10);
     assert!(center[0].abs_diff(24) <= 3, "red channel: {}", center[0]);
     assert!(center[1].abs_diff(96) <= 3, "green channel: {}", center[1]);
     assert!(center[2].abs_diff(208) <= 3, "blue channel: {}", center[2]);
@@ -54,7 +54,7 @@ fn png_projects_jpeg_as_opaque_canonical_srgb() {
 fn pdf_embeds_normalized_jpeg_losslessly_with_a_soft_mask_and_no_fallback() {
     let scene = jpeg_scene(&fixture_jpeg(1, 1, &[[24, 96, 208]]), 1, 1);
 
-    let outcome = render_outcome(&scene, OutputFormat::Pdf);
+    let outcome = render(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Subtype /Image"));
@@ -71,14 +71,14 @@ fn pdf_embeds_normalized_jpeg_losslessly_with_a_soft_mask_and_no_fallback() {
 fn sniffed_jpeg_type_wins_over_jfif_and_png_claims() {
     let jpeg = fixture_jpeg(1, 1, &[[24, 96, 208]]);
     let encoded = base64::engine::general_purpose::STANDARD.encode(jpeg);
-    let scene = image_scene(
+    let scene = image_scene_from_data_url(
         &format!("data:image/jfif;base64,{encoded}"),
         "image/png",
         1,
         1,
     );
 
-    let outcome = render_outcome(&scene, OutputFormat::Svg);
+    let outcome = render(&scene, OutputFormat::Svg);
 
     assert_eq!(outcome.report().diagnostics().len(), 2);
     for diagnostic in outcome.report().diagnostics() {
@@ -137,29 +137,26 @@ fn png_and_pdf_apply_jpeg_exif_orientation_while_svg_preserves_source_bytes() {
     );
     let oriented = jpeg_with_app1_exif(&source, 6);
     let encoded = base64::engine::general_purpose::STANDARD.encode(&oriented);
-    let scene = image_scene(
+    let scene = image_scene_from_data_url(
         &format!("data:image/jpeg;base64,{encoded}"),
         "image/jpeg",
         10,
         20,
     );
 
-    let svg_outcome = render_outcome(&scene, OutputFormat::Svg);
+    let svg_outcome = render(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(svg_outcome.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains(&format!("data:image/jpeg;base64,{encoded}")));
 
-    let png_outcome = render_outcome(&scene, OutputFormat::Png);
-    let decoder = png::Decoder::new(Cursor::new(png_outcome.artifact().bytes()));
-    let mut reader = decoder.read_info().expect("artifact is a PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    let output = reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    assert_eq!((output.width, output.height), (30, 40));
-    let top = pixel(&rgba, 30, 15, 14);
-    let bottom = pixel(&rgba, 30, 15, 25);
+    let png_outcome = render(&scene, OutputFormat::Png);
+    let decoded = decode_png(png_outcome.artifact().bytes());
+    assert_eq!((decoded.width, decoded.height), (30, 40));
+    let top = decoded.pixel(15, 14);
+    let bottom = decoded.pixel(15, 25);
     assert!(top[0] > top[2], "top pixel: {top:?}");
     assert!(bottom[2] > bottom[0], "bottom pixel: {bottom:?}");
 
-    let pdf_outcome = render_outcome(&scene, OutputFormat::Pdf);
+    let pdf_outcome = render(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(pdf_outcome.artifact().bytes());
     assert!(pdf.contains("/Width 4\n/Height 8"));
 }
@@ -196,7 +193,7 @@ fn malformed_and_truncated_jpegs_use_typed_decode_recovery() {
     let malformed_segment = b"\xff\xd8\xff\xe0\0\x01\xff\xd9".to_vec();
 
     for jpeg in [truncated, malformed_segment] {
-        let outcome = render_outcome(&jpeg_scene(&jpeg, 1, 1), OutputFormat::Svg);
+        let outcome = render(&jpeg_scene(&jpeg, 1, 1), OutputFormat::Svg);
         assert_eq!(outcome.report().diagnostics().len(), 1);
         assert_eq!(
             outcome.report().diagnostics()[0].code(),
@@ -228,7 +225,7 @@ fn unqualified_concatenated_jpegs_are_rejected_as_malformed_containers() {
     let mut concatenated = fixture_jpeg(1, 1, &[[24, 96, 208]]);
     concatenated.extend_from_slice(&fixture_jpeg(1, 1, &[[255, 255, 255]]));
 
-    let outcome = render_outcome(&jpeg_scene(&concatenated, 1, 1), OutputFormat::Svg);
+    let outcome = render(&jpeg_scene(&concatenated, 1, 1), OutputFormat::Svg);
 
     assert_eq!(outcome.report().diagnostics().len(), 1);
     assert_eq!(
@@ -273,7 +270,7 @@ fn malformed_multipart_jpeg_icc_metadata_uses_decode_recovery() {
     let duplicate = jpeg_with_app_segment(&duplicate, 0xe2, &duplicate_part);
 
     for malformed in [missing_part, duplicate] {
-        let outcome = render_outcome(&jpeg_scene(&malformed, 1, 1), OutputFormat::Svg);
+        let outcome = render(&jpeg_scene(&malformed, 1, 1), OutputFormat::Svg);
         assert_eq!(outcome.report().diagnostics().len(), 1);
         assert_eq!(
             outcome.report().diagnostics()[0].code(),
@@ -309,8 +306,8 @@ fn cmyk_jpeg_decodes_to_opaque_canonical_srgb() {
         .encode(&[255, 0, 0, 0], 1, 1, jpeg_encoder::ColorType::Cmyk)
         .expect("CMYK JPEG encodes");
 
-    let outcome = render_outcome(&jpeg_scene(&cmyk, 1, 1), OutputFormat::Png);
-    let pixel = decoded_png_pixel(outcome.artifact().bytes(), 21, 10, 10);
+    let outcome = render(&jpeg_scene(&cmyk, 1, 1), OutputFormat::Png);
+    let pixel = decode_png(outcome.artifact().bytes()).pixel(10, 10);
 
     assert_eq!(pixel[3], 255);
     assert!(outcome.report().diagnostics().is_empty());
@@ -418,58 +415,10 @@ fn append_xyz(profile: &mut Vec<u8>, values: [u32; 3]) {
 }
 
 fn rendered_center(jpeg: &[u8]) -> [u8; 4] {
-    let outcome = render_outcome(&jpeg_scene(jpeg, 1, 1), OutputFormat::Png);
-    decoded_png_pixel(outcome.artifact().bytes(), 21, 10, 10)
-}
-
-fn decoded_png_pixel(png: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
-    let decoder = png::Decoder::new(Cursor::new(png));
-    let mut reader = decoder.read_info().expect("artifact is a PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    pixel(&rgba, width, x, y)
-}
-
-fn pixel(rgba: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
-    rgba[(y * width + x) * 4..(y * width + x + 1) * 4]
-        .try_into()
-        .expect("pixel has four channels")
-}
-
-fn image_scene(data_url: &str, media_type: &str, width: u32, height: u32) -> SceneDocument {
-    let json = format!(
-        r#"{{
-            "type":"excalidraw","version":2,
-            "elements":[{{
-                "id":"image","type":"image","x":0,"y":0,
-                "width":{width},"height":{height},"angle":0,"opacity":100,
-                "fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1
-            }}],
-            "appState":{{}},
-            "files":{{"asset":{{
-                "id":"asset","mimeType":"{media_type}",
-                "dataURL":"{data_url}","created":1
-            }}}}
-        }}"#
-    );
-    SceneDocument::parse(json.as_bytes()).expect("image scene is admitted")
+    let outcome = render(&jpeg_scene(jpeg, 1, 1), OutputFormat::Png);
+    decode_png(outcome.artifact().bytes()).pixel(10, 10)
 }
 
 fn jpeg_scene(jpeg: &[u8], width: u32, height: u32) -> SceneDocument {
-    let encoded = base64::engine::general_purpose::STANDARD.encode(jpeg);
-    image_scene(
-        &format!("data:image/jpeg;base64,{encoded}"),
-        "image/jpeg",
-        width,
-        height,
-    )
-}
-
-fn render_outcome(scene: &SceneDocument, format: OutputFormat) -> excalidraw_render::RenderOutcome {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("render request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .expect("JPEG-family asset renders")
+    image_scene(jpeg, "image/jpeg", width, height)
 }

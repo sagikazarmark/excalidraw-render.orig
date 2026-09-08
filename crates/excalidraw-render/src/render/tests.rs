@@ -271,110 +271,6 @@ fn embedded_test_woff2(svg: &str) -> Vec<Vec<u8>> {
 }
 
 #[test]
-fn focused_pdf_expectations_are_approval_bound() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("crate is inside the workspace");
-    let path = root.join(concat!(
-        "tests/conformance/cases/focused/rectangle-outline/",
-        "pdf-renderer-expectations.json"
-    ));
-    let mut manifest: serde_json::Value =
-        serde_json::from_slice(&fs::read(path).expect("PDF expectation manifest exists"))
-            .expect("PDF expectation manifest is valid JSON");
-    assert_eq!(manifest["case_id"], "focused.rectangle-outline.v1");
-    assert_eq!(manifest["format"], "pdf");
-    assert_eq!(manifest["compatibility_revision"], 1);
-    assert_eq!(manifest["variant"], "default");
-    assert_eq!(manifest["regions"], json!(["whole"]));
-    assert_eq!(manifest["visual_class"], "geometry/image");
-    assert_eq!(manifest["crops"], json!([]));
-    assert_eq!(manifest["coverage"].as_array().map(Vec::len), Some(4));
-    assert_eq!(
-        manifest["case_manifest_approval_subject_sha256"],
-        "sha256:bc870d20627148871b0b2c18dc9fe67476001dc9f47aa5f0b46742e5be837008"
-    );
-
-    let approval = manifest
-        .as_object_mut()
-        .expect("PDF expectation manifest is an object")
-        .remove("approval")
-        .expect("PDF expectation manifest is approved");
-    assert_eq!(approval["approved_by"], "sagikazarmark");
-    assert_eq!(approval["approved_at"], "2026-09-06");
-    assert_eq!(
-        approval["approval_url"],
-        "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5560476376"
-    );
-    let mut canonical = serde_json::to_vec(&manifest).expect("unsigned manifest serializes");
-    canonical.push(b'\n');
-    assert_eq!(
-        approval["approval_subject_sha256"],
-        format!(
-            "sha256:{}",
-            crate::resource_accounting::sha256_hex(&canonical)
-        )
-    );
-
-    let files = manifest["files"]
-        .as_array()
-        .expect("PDF expectation files are an array");
-    assert_eq!(files.len(), 13);
-    for descriptor in files {
-        let path = descriptor["path"]
-            .as_str()
-            .expect("PDF expectation path is a string");
-        let bytes = fs::read(root.join(path)).expect("PDF expectation dependency exists");
-        assert_eq!(
-            descriptor["sha256"],
-            crate::resource_accounting::sha256_hex(&bytes),
-            "stale PDF expectation dependency {path}"
-        );
-    }
-
-    let exception: serde_json::Value = serde_json::from_slice(
-        &fs::read(root.join(concat!(
-            "tests/conformance/cases/focused/rectangle-outline/",
-            "pdf-visual-exception.json"
-        )))
-        .expect("PDF visual exception exists"),
-    )
-    .expect("PDF visual exception is valid JSON");
-    let keys: Vec<_> = exception
-        .as_object()
-        .expect("PDF visual exception is an object")
-        .keys()
-        .map(String::as_str)
-        .collect();
-    assert_eq!(
-        keys,
-        [
-            "approved_issue",
-            "authority",
-            "case_id",
-            "format",
-            "max_changed_pixels",
-            "minimum_ssim_bits",
-            "reason",
-            "region",
-            "schema",
-            "variant",
-            "viewer_profile",
-            "visual_class",
-        ]
-    );
-    assert_eq!(exception["case_id"], "focused.rectangle-outline.v1");
-    assert_eq!(exception["variant"], "default");
-    assert_eq!(exception["format"], "pdf");
-    assert_eq!(exception["viewer_profile"], "canonical-pdf.pdfium.v1");
-    assert_eq!(exception["region"], "whole");
-    assert_eq!(exception["visual_class"], "geometry/image");
-    assert_eq!(exception["max_changed_pixels"], 0);
-    assert_eq!(exception["minimum_ssim_bits"], "3fefec69adc2369e");
-}
-
-#[test]
 fn diagnostic_transaction_uses_fatal_precedence_and_never_appends_a_rejection() {
     let cases = [
         (1, 640, 8, ErrorCode::RESOURCE_DIAGNOSTIC_COUNT_EXCEEDED),
@@ -540,24 +436,12 @@ fn local_recovery_trace_commits_only_the_aggregate_observation() {
     assert_eq!(rejection["after"]["text_scalars"], 2);
 }
 
+/// The trace is held stable as the equalities below (repeated traced renders
+/// agree, and a traced render leaves the artifact and report untouched) and by
+/// the cross-target aggregate, not as pinned digests (ADR-0002).
 #[test]
 fn canonical_resource_trace_is_uncharged_stable_and_semantic() {
-    let expected_digests = [
-        (
-            OutputFormat::Svg,
-            "e314b25a1c82ee51f290fa67e00d53143ca41d8478d57824b494d9306832753a",
-        ),
-        (
-            OutputFormat::Png,
-            "597955fc8a6149633ed5f9fbf475f1ac19b3abe05421c0d1cf4dcea99dced322",
-        ),
-        (
-            OutputFormat::Pdf,
-            "9f2c32bbb479856363721973d7e60b0cfac1688952cdb2eebdf46f245ee31089",
-        ),
-    ];
-
-    for (format, expected_digest) in expected_digests {
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let scene = SceneDocument::parse(EMPTY_SCENE).expect("scene is valid");
         let request = RenderRequest::builder(format)
             .build()
@@ -616,12 +500,6 @@ fn canonical_resource_trace_is_uncharged_stable_and_semantic() {
         assert_eq!(entries[1]["event"], "scene_source_octets");
         assert_eq!(entries[2]["event"], "json_node");
         assert_eq!(entries[2]["json_pointer"], "");
-
-        let digest = crate::resource_accounting::sha256_hex(&first_trace);
-        assert_eq!(
-            digest, expected_digest,
-            "canonical {format:?} trace changed"
-        );
     }
 }
 

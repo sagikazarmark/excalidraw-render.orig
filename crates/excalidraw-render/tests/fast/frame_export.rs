@@ -1,12 +1,12 @@
-use std::io::Cursor;
-
 use excalidraw_render::{
     ColorMode, CompatibilityRevision, ErrorCode, ErrorFamily, FrameBatchErrorKind, FrameKind,
     FrameRenderRequest, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, Renderer,
     ResourceLimits, SceneDocument, Sizing, SupplementalAssets,
 };
-use png::{Decoder, Transformations};
 use sha2::{Digest, Sha256};
+
+use crate::common::raster::decode_png;
+use crate::common::repository_root;
 
 const FRAME_SCENE: &[u8] = br#"{
     "type":"excalidraw","version":2,
@@ -49,8 +49,8 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
 
     let frame_profile = Renderer::frame_profile_identity(CompatibilityRevision::REVISION_1)
         .expect("frame profile exists");
-    let profile_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tests/oracle/reference-profiles/revision-1-frame.json");
+    let profile_path =
+        repository_root().join("tests/oracle/reference-profiles/revision-1-frame.json");
     let profile_bytes = std::fs::read(profile_path).expect("frame profile is checked");
     assert_eq!(
         frame_profile.profile_digest(),
@@ -148,10 +148,8 @@ fn every_frame_format_uses_the_target_dimensions_independently() {
                 .expect("SVG is UTF-8")
                 .contains("viewBox=\"0 0 100 80\"")),
             OutputFormat::Png => {
-                let mut decoder = Decoder::new(Cursor::new(outcome.artifact().bytes()));
-                decoder.set_transformations(Transformations::IDENTITY);
-                let reader = decoder.read_info().expect("PNG is valid");
-                assert_eq!((reader.info().width, reader.info().height), (100, 80));
+                let decoded = decode_png(outcome.artifact().bytes());
+                assert_eq!((decoded.width, decoded.height), (100, 80));
             }
             OutputFormat::Pdf => {
                 let pdf = String::from_utf8_lossy(outcome.artifact().bytes());

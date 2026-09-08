@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::io::Cursor;
 
 use base64::Engine as _;
 use excalidraw_render::{
@@ -8,11 +7,15 @@ use excalidraw_render::{
 };
 use gif::{DisposalMethod, Encoder, Frame, Repeat};
 
+use crate::common::image_scene::image_scene;
+use crate::common::raster::decode_png;
+use crate::common::render::{render, render_without_background};
+
 #[test]
 fn direct_svg_preserves_validated_gif_octets_in_a_canonical_data_url() {
     let gif = fixture_gif(&[frame(&[0, 1], 2, 1, &[255, 0, 0, 0, 0, 255], None)]);
     let encoded = base64::engine::general_purpose::STANDARD.encode(&gif);
-    let outcome = render_outcome(&gif_scene(&gif, 2, 1), OutputFormat::Svg);
+    let outcome = render(&gif_scene(&gif, 2, 1), OutputFormat::Svg);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(outcome.report().diagnostics().is_empty());
@@ -27,10 +30,10 @@ fn png_projects_gif_palette_transparency_and_frame_offset_on_a_transparent_canva
     first.left = 1;
     let gif = fixture_gif_with_screen(2, 1, &[first], None);
     let outcome = render_without_background(&gif_scene(&gif, 20, 10), OutputFormat::Png);
-    let rgba = decoded_png(outcome.artifact().bytes());
+    let png = decode_png(outcome.artifact().bytes());
 
-    assert_eq!(pixel(&rgba, 40, 14, 15), [0, 0, 0, 0]);
-    assert_eq!(pixel(&rgba, 40, 25, 15), [255, 0, 0, 255]);
+    assert_eq!(png.pixel(14, 15), [0, 0, 0, 0]);
+    assert_eq!(png.pixel(25, 15), [255, 0, 0, 255]);
     assert!(outcome.report().diagnostics().is_empty());
 }
 
@@ -43,7 +46,7 @@ fn png_uses_the_first_gif_frame_and_reports_each_rendered_occurrence() {
     let scene = two_gif_scene(&gif);
 
     for format in [OutputFormat::Png, OutputFormat::Pdf] {
-        let outcome = render_outcome(&scene, format);
+        let outcome = render(&scene, format);
         assert_eq!(outcome.report().diagnostics().len(), 2);
         for diagnostic in outcome.report().diagnostics() {
             assert_eq!(diagnostic.code(), DiagnosticCode::IMAGE_ANIMATION_FLATTENED);
@@ -57,13 +60,13 @@ fn png_uses_the_first_gif_frame_and_reports_each_rendered_occurrence() {
             ));
         }
         if format == OutputFormat::Png {
-            let rgba = decoded_png(outcome.artifact().bytes());
-            assert_eq!(pixel(&rgba, 23, 10, 10), [255, 0, 0, 255]);
-            assert_eq!(pixel(&rgba, 23, 12, 10), [255, 0, 0, 255]);
+            let png = decode_png(outcome.artifact().bytes());
+            assert_eq!(png.pixel(10, 10), [255, 0, 0, 255]);
+            assert_eq!(png.pixel(12, 10), [255, 0, 0, 255]);
         }
     }
 
-    let svg = render_outcome(&scene, OutputFormat::Svg);
+    let svg = render(&scene, OutputFormat::Svg);
     assert!(svg.report().diagnostics().is_empty());
 }
 
@@ -77,7 +80,7 @@ fn loop_metadata_does_not_make_a_single_frame_gif_animated() {
     );
 
     for format in [OutputFormat::Png, OutputFormat::Pdf] {
-        assert!(render_outcome(&gif_scene(&gif, 1, 1), format)
+        assert!(render(&gif_scene(&gif, 1, 1), format)
             .report()
             .diagnostics()
             .is_empty());
@@ -92,7 +95,7 @@ fn direct_svg_validates_every_gif_frame_before_passthrough() {
     ]);
     gif.truncate(gif.len() - 3);
 
-    let outcome = render_outcome(&gif_scene(&gif, 1, 1), OutputFormat::Svg);
+    let outcome = render(&gif_scene(&gif, 1, 1), OutputFormat::Svg);
 
     assert_eq!(outcome.report().diagnostics().len(), 1);
     assert_eq!(
@@ -114,10 +117,10 @@ fn gif87a_and_frame_local_palettes_are_supported() {
     gif.drain(control..control + 8);
     gif[..6].copy_from_slice(b"GIF87a");
 
-    let outcome = render_outcome(&gif_scene(&gif, 1, 1), OutputFormat::Png);
-    let rgba = decoded_png(outcome.artifact().bytes());
+    let outcome = render(&gif_scene(&gif, 1, 1), OutputFormat::Png);
+    let png = decode_png(outcome.artifact().bytes());
 
-    assert_eq!(pixel(&rgba, 21, 10, 10), [255, 0, 255, 255]);
+    assert_eq!(png.pixel(10, 10), [255, 0, 255, 255]);
     assert!(outcome.report().diagnostics().is_empty());
 }
 
@@ -158,7 +161,7 @@ fn malformed_palette_references_and_fixed_extension_blocks_are_rejected() {
         invalid_transparency,
         malformed_application,
     ] {
-        let outcome = render_outcome(&gif_scene(&malformed, 1, 1), OutputFormat::Svg);
+        let outcome = render(&gif_scene(&malformed, 1, 1), OutputFormat::Svg);
         assert_eq!(outcome.report().diagnostics().len(), 1);
         assert_eq!(
             outcome.report().diagnostics()[0].code(),
@@ -176,7 +179,7 @@ fn malformed_reserved_disposal_is_rejected() {
         .expect("fixture has a graphic control extension");
     gif[control + 3] = 4 << 2;
 
-    let outcome = render_outcome(&gif_scene(&gif, 1, 1), OutputFormat::Svg);
+    let outcome = render(&gif_scene(&gif, 1, 1), OutputFormat::Svg);
 
     assert_eq!(outcome.report().diagnostics().len(), 1);
     assert_eq!(
@@ -194,7 +197,7 @@ fn malformed_image_descriptor_reserved_bits_are_rejected() {
         .expect("fixture has an image descriptor");
     gif[descriptor + 9] |= 0x08;
 
-    let outcome = render_outcome(&gif_scene(&gif, 1, 1), OutputFormat::Svg);
+    let outcome = render(&gif_scene(&gif, 1, 1), OutputFormat::Svg);
 
     assert_eq!(outcome.report().diagnostics().len(), 1);
     assert_eq!(
@@ -225,15 +228,15 @@ fn global_palette_interlacing_and_valid_disposal_modes_are_accepted() {
     }
     let gif = fixture_gif_with_global_palette(2, 2, &palette, &frames);
 
-    let svg = render_outcome(&gif_scene(&gif, 20, 20), OutputFormat::Svg);
+    let svg = render(&gif_scene(&gif, 20, 20), OutputFormat::Svg);
     assert!(svg.report().diagnostics().is_empty());
-    let png = render_outcome(&gif_scene(&gif, 20, 20), OutputFormat::Png);
+    let png = render(&gif_scene(&gif, 20, 20), OutputFormat::Png);
     assert_eq!(
         png.report().diagnostics()[0].code(),
         DiagnosticCode::IMAGE_ANIMATION_FLATTENED
     );
     assert_eq!(
-        pixel(&decoded_png(png.artifact().bytes()), 40, 14, 14),
+        decode_png(png.artifact().bytes()).pixel(14, 14),
         [255, 0, 0, 255]
     );
 }
@@ -361,13 +364,7 @@ fn fixture_gif_with_global_palette(
 }
 
 fn gif_scene(gif: &[u8], width: u32, height: u32) -> SceneDocument {
-    let encoded = base64::engine::general_purpose::STANDARD.encode(gif);
-    image_scene(
-        &format!("data:image/gif;base64,{encoded}"),
-        "image/gif",
-        width,
-        height,
-    )
+    image_scene(gif, "image/gif", width, height)
 }
 
 fn two_gif_scene(gif: &[u8]) -> SceneDocument {
@@ -386,59 +383,4 @@ fn two_gif_scene(gif: &[u8]) -> SceneDocument {
         }}"#
     );
     SceneDocument::parse(json.as_bytes()).expect("two-GIF scene is admitted")
-}
-
-fn image_scene(data_url: &str, media_type: &str, width: u32, height: u32) -> SceneDocument {
-    let json = format!(
-        r#"{{
-            "type":"excalidraw","version":2,
-            "elements":[{{
-                "id":"image","type":"image","x":0,"y":0,
-                "width":{width},"height":{height},"angle":0,"opacity":100,
-                "fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1
-            }}],
-            "appState":{{}},
-            "files":{{"asset":{{
-                "id":"asset","mimeType":"{media_type}",
-                "dataURL":"{data_url}","created":1
-            }}}}
-        }}"#
-    );
-    SceneDocument::parse(json.as_bytes()).expect("image scene is admitted")
-}
-
-fn render_outcome(scene: &SceneDocument, format: OutputFormat) -> excalidraw_render::RenderOutcome {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("render request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .expect("GIF-family asset has local recovery")
-}
-
-fn render_without_background(
-    scene: &SceneDocument,
-    format: OutputFormat,
-) -> excalidraw_render::RenderOutcome {
-    let request = RenderRequest::builder(format)
-        .include_background(false)
-        .build()
-        .expect("render request is valid");
-    Renderer::new()
-        .render(scene, &request)
-        .expect("GIF-family asset renders")
-}
-
-fn decoded_png(bytes: &[u8]) -> Vec<u8> {
-    let decoder = png::Decoder::new(Cursor::new(bytes));
-    let mut reader = decoder.read_info().expect("artifact is a PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    rgba
-}
-
-fn pixel(rgba: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
-    rgba[(y * width + x) * 4..(y * width + x + 1) * 4]
-        .try_into()
-        .expect("pixel has four channels")
 }

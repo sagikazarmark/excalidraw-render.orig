@@ -3,7 +3,10 @@ use excalidraw_render::{
     DiagnosticCode, ErrorCode, ErrorDetails, OutputFormat, PdfOptions, PdfRasterFallback, Recovery,
     RenderRequest, Renderer, ResourceLimits, SceneDocument, Sizing,
 };
-use std::io::Cursor;
+
+use crate::common::image_scene::image_scene;
+use crate::common::raster::decode_png;
+use crate::common::render::render_artifact;
 
 const PNG_BASE64: &str =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
@@ -11,23 +14,20 @@ const PNG_BASE64: &str =
 #[test]
 fn basic_nested_svg_renders_in_svg_png_and_pdf() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10" viewBox="0 0 20 10"><rect width="10" height="10" fill="#ff0000"/><rect x="10" width="10" height="10" fill="#0000ff"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
 
-    let svg = render(&scene, OutputFormat::Svg);
+    let svg = render_artifact(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("artifact SVG is UTF-8");
     assert!(svg.contains("data:image/svg+xml;base64,"));
     assert!(!svg.contains("http://example.com"));
 
-    let png = render(&scene, OutputFormat::Png);
-    let decoder = png::Decoder::new(Cursor::new(png));
-    let mut reader = decoder.read_info().expect("artifact is PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    let output = reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    assert_eq!((output.width, output.height), (40, 30));
-    assert_eq!(pixel(&rgba, 40, 15, 15), [255, 0, 0, 255]);
-    assert_eq!(pixel(&rgba, 40, 25, 15), [0, 0, 255, 255]);
+    let png = render_artifact(&scene, OutputFormat::Png);
+    let decoded = decode_png(&png);
+    assert_eq!((decoded.width, decoded.height), (40, 30));
+    assert_eq!(decoded.pixel(15, 15), [255, 0, 0, 255]);
+    assert_eq!(decoded.pixel(25, 15), [0, 0, 255, 255]);
 
-    let pdf = String::from_utf8_lossy(&render(&scene, OutputFormat::Pdf)).into_owned();
+    let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
     assert!(pdf.starts_with("%PDF-1.7"));
     assert!(pdf.contains("/Svg0 Do"));
     assert!(pdf.contains("20 0 0 -10 0 10 cm\n/Svg0 Do"));
@@ -46,7 +46,7 @@ fn unsafe_nested_svg_boundaries_are_removed_before_embedding() {
         <image href="https://example.com/tracker.png" width="20" height="10"/>
         <style>@import url(https://example.com/theme.css); rect { fill: red }</style>
     </svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("SVG request is valid");
@@ -87,7 +87,7 @@ fn unsafe_nested_svg_boundaries_are_removed_before_embedding() {
 #[test]
 fn dtds_and_declared_entities_are_removed_without_expansion() {
     let nested = br##"<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY secret "EXPANDED">]><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>&secret;</text><rect width="20" height="10" fill="#00ff00"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("SVG request is valid");
@@ -118,7 +118,7 @@ fn dtds_and_declared_entities_are_removed_without_expansion() {
 #[test]
 fn nested_svg_node_ceiling_recovers_before_viewer_parsing() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let limits = ResourceLimits::builder()
         .max_nested_svg_nodes(1)
         .build()
@@ -148,7 +148,7 @@ fn nested_data_svg_is_recursively_sanitized_before_embedding() {
     let parent = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/svg+xml;base64,{child}"/></svg>"#
     );
-    let scene = image_scene(parent.as_bytes(), 20, 10);
+    let scene = nested_svg_scene(parent.as_bytes(), 20, 10);
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("SVG request is valid");
@@ -174,7 +174,7 @@ fn nested_data_svg_depth_ceiling_stops_recursive_resolution() {
     let leaf = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
     let child = svg_with_nested_data_image(leaf);
     let parent = svg_with_nested_data_image(child.as_bytes());
-    let scene = image_scene(parent.as_bytes(), 20, 10);
+    let scene = nested_svg_scene(parent.as_bytes(), 20, 10);
     let limits = ResourceLimits::builder()
         .max_nested_asset_depth(1)
         .build()
@@ -199,7 +199,7 @@ fn nested_data_svg_depth_ceiling_stops_recursive_resolution() {
 fn malformed_nested_image_is_removed_without_discarding_valid_siblings() {
     let child = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/><image width="20" height="10" href="data:image/png;base64,AA=="/></svg>"##;
     let parent = svg_with_nested_data_image(child);
-    let scene = image_scene(parent.as_bytes(), 20, 10);
+    let scene = nested_svg_scene(parent.as_bytes(), 20, 10);
     let request = RenderRequest::builder(OutputFormat::Png)
         .build()
         .expect("PNG request is valid");
@@ -220,17 +220,14 @@ fn malformed_nested_image_is_removed_without_discarding_valid_siblings() {
     assert_eq!(*recovery, Recovery::Removed);
     assert_eq!(paths[0].segments().len(), 4);
 
-    let decoder = png::Decoder::new(Cursor::new(outcome.artifact().bytes()));
-    let mut reader = decoder.read_info().expect("artifact is PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    assert_eq!(pixel(&rgba, 40, 20, 15), [255, 0, 0, 255]);
+    let decoded = decode_png(outcome.artifact().bytes());
+    assert_eq!(decoded.pixel(20, 15), [255, 0, 0, 255]);
 }
 
 #[test]
 fn malformed_nested_payload_still_counts_as_an_asset_occurrence() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/png;base64,AA=="/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let limits = ResourceLimits::builder()
         .max_asset_entries(1)
         .build()
@@ -253,7 +250,7 @@ fn same_document_fragments_resolve_without_ambient_resources() {
         <defs><linearGradient id="paint"><stop stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/></linearGradient><rect id="tile" width="10" height="10" fill="url(#paint)"/></defs>
         <use href="#tile"/><use href="#tile" x="10"/>
     </svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let request = RenderRequest::builder(format)
@@ -273,7 +270,7 @@ fn same_document_fragments_resolve_without_ambient_resources() {
 #[test]
 fn cyclic_local_references_are_bounded_and_deterministic() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><g id="a"><use href="#b"/></g><g id="b"><use href="#a"/></g></defs><rect width="20" height="10" fill="#00ff00"/><use href="#a"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let request = RenderRequest::builder(format)
@@ -292,7 +289,7 @@ fn cyclic_local_references_are_bounded_and_deterministic() {
 
 #[test]
 fn malformed_nested_svg_reports_its_validated_media_family() {
-    let scene = image_scene(
+    let scene = nested_svg_scene(
         br#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect>"#,
         20,
         10,
@@ -322,7 +319,7 @@ fn malformed_nested_svg_reports_its_validated_media_family() {
 #[test]
 fn external_stylesheet_processing_instruction_is_diagnosed_and_removed() {
     let nested = br##"<?xml-stylesheet href="https://example.com/theme.css"?><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("request is valid");
@@ -345,7 +342,7 @@ fn external_stylesheet_processing_instruction_is_diagnosed_and_removed() {
 #[test]
 fn nested_svg_sanitizer_is_bounded_by_asset_work() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let limits = ResourceLimits::builder()
         .max_asset_work_units(u64::try_from(nested.len() - 1).expect("fixture length fits u64"))
         .build()
@@ -371,7 +368,7 @@ fn rejected_parent_svg_never_admits_or_decodes_nested_occurrences() {
     let parent = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><image width="1" height="1" href="data:image/png;base64,{PNG_BASE64}"/></svg>"#
     );
-    let scene = image_scene(parent.as_bytes(), 1, 1);
+    let scene = nested_svg_scene(parent.as_bytes(), 1, 1);
     let limits = ResourceLimits::builder()
         .max_asset_entries(1)
         .max_asset_work_units(u64::try_from(parent.len()).expect("fixture length fits u64"))
@@ -397,7 +394,7 @@ fn rejected_parent_svg_never_admits_or_decodes_nested_occurrences() {
 fn nested_data_resources_participate_in_asset_occurrence_accounting() {
     let child = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
     let parent = svg_with_nested_data_image(child);
-    let scene = image_scene(parent.as_bytes(), 20, 10);
+    let scene = nested_svg_scene(parent.as_bytes(), 20, 10);
     let limits = ResourceLimits::builder()
         .max_asset_entries(1)
         .build()
@@ -420,7 +417,7 @@ fn nested_raster_occurrences_are_admitted_before_distinct_identity_decodes() {
     let parent = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="1"><image width="1" height="1" href="data:image/png;base64,{PNG_BASE64}"/><image x="1" width="1" height="1" href="data:image/bmp;base64,{bmp}"/></svg>"#
     );
-    let scene = image_scene(parent.as_bytes(), 2, 1);
+    let scene = nested_svg_scene(parent.as_bytes(), 2, 1);
     let limits = ResourceLimits::builder()
         .max_decoded_pixels_per_asset(1)
         .max_total_decoded_pixels(1)
@@ -447,7 +444,7 @@ fn repeated_nested_occurrences_share_decode_but_not_occurrence_admission() {
     let parent = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="1"><image width="1" height="1" href="data:image/png;base64,{PNG_BASE64}"/><image x="1" width="1" height="1" href="data:image/png;base64,{PNG_BASE64}"/></svg>"#
     );
-    let scene = image_scene(parent.as_bytes(), 2, 1);
+    let scene = nested_svg_scene(parent.as_bytes(), 2, 1);
     let limits = ResourceLimits::builder()
         .max_asset_entries(3)
         .max_decoded_pixels_per_asset(1)
@@ -535,7 +532,7 @@ fn nested_raster_data_is_validated_and_canonicalized() {
     let parent = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/png;base64,{PNG_BASE64}"/></svg>"#
     );
-    let scene = image_scene(parent.as_bytes(), 20, 10);
+    let scene = nested_svg_scene(parent.as_bytes(), 20, 10);
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("request is valid");
@@ -555,7 +552,7 @@ fn data_images_are_not_admitted_as_link_actions() {
     let nested = format!(
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><a href="data:image/png;base64,{PNG_BASE64}"><rect width="20" height="10" fill="#00ff00"/></a></svg>"##
     );
-    let scene = image_scene(nested.as_bytes(), 20, 10);
+    let scene = nested_svg_scene(nested.as_bytes(), 20, 10);
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("request is valid");
@@ -611,7 +608,7 @@ fn identical_unsafe_svg_bytes_diagnose_each_authoritative_file_owner_once() {
 #[test]
 fn pdf_rasterizes_an_isolated_effect_closure_with_exact_diagnostics() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" fill="#00ff00" filter="url(#blur)"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
         .expect("request is valid");
@@ -646,7 +643,7 @@ fn pdf_rasterizes_an_isolated_effect_closure_with_exact_diagnostics() {
 #[test]
 fn pdf_forbid_rejects_the_first_effect_closure_without_a_fallback_warning() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" fill="#00ff00" filter="url(#blur)"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
         .build()
@@ -674,7 +671,7 @@ fn pdf_forbid_rejects_the_first_effect_closure_without_a_fallback_warning() {
 #[test]
 fn pdf_fallback_policy_applies_to_inline_style_filters() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" style="fill:#00ff00;filter:url(#blur)"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
         .build()
@@ -690,7 +687,7 @@ fn pdf_fallback_policy_applies_to_inline_style_filters() {
 #[test]
 fn root_local_effect_does_not_require_external_backdrop_capture() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10" filter="url(#blur)"><defs><filter id="blur"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
         .expect("request is valid");
@@ -719,7 +716,7 @@ fn pdf_forbid_ignores_empty_noop_and_fully_clipped_effects() {
     .into_iter()
     .enumerate()
     {
-        let scene = image_scene(nested, 20, 10);
+        let scene = nested_svg_scene(nested, 20, 10);
         let request = RenderRequest::builder(OutputFormat::Pdf)
             .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
             .build()
@@ -737,7 +734,7 @@ fn pdf_forbid_ignores_empty_noop_and_fully_clipped_effects() {
 #[test]
 fn pdf_merges_dependent_effects_to_the_outermost_required_closure() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="outer" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter><filter id="inner" x="0" y="0" width="100%" height="100%"><feColorMatrix type="saturate" values="0.5"/></filter></defs><g filter="url(#outer)"><rect width="20" height="10" fill="#00ff00" filter="url(#inner)"/></g></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
         .expect("request is valid");
@@ -758,7 +755,7 @@ fn pdf_merges_dependent_effects_to_the_outermost_required_closure() {
 #[test]
 fn pdf_reports_sibling_effect_closures_in_expanded_tree_order() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="a" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter><filter id="b" x="0" y="0" width="100%" height="100%"><feColorMatrix type="saturate" values="0.5"/></filter></defs><rect width="10" height="10" filter="url(#a)"/><rect x="10" width="10" height="10" filter="url(#b)"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
         .expect("request is valid");
@@ -785,7 +782,7 @@ fn pdf_reports_sibling_effect_closures_in_expanded_tree_order() {
 #[test]
 fn pdf_shared_filter_occurrences_keep_their_own_causative_nodes() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="10" height="10" filter="url(#blur)"/><rect x="10" width="10" height="10" filter="url(#blur)"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
         .expect("request is valid");
@@ -811,7 +808,7 @@ fn pdf_shared_filter_occurrences_keep_their_own_causative_nodes() {
 #[test]
 fn pdf_reports_each_expanded_effect_reuse_occurrence() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter><g id="shape" filter="url(#blur)"><rect width="10" height="10"/></g></defs><use href="#shape"/><use href="#shape" x="10"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
         .expect("request is valid");
@@ -838,7 +835,7 @@ fn pdf_reports_each_expanded_effect_reuse_occurrence() {
 #[test]
 fn pdf_rejects_effects_that_require_external_backdrop_capture() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blend" x="0" y="0" width="100%" height="100%"><feBlend in="SourceGraphic" in2="BackgroundImage" mode="multiply"/></filter></defs><rect width="20" height="10" filter="url(#blend)"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
         .expect("request is valid");
@@ -854,7 +851,7 @@ fn pdf_rejects_effects_that_require_external_backdrop_capture() {
 #[test]
 fn pdf_effect_closure_resolution_uses_the_final_device_grid() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" filter="url(#blur)"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .sizing(Sizing::Scale(2.0))
         .build()
@@ -947,7 +944,7 @@ fn repeated_effect_occurrences_share_no_diagnostics() {
 #[test]
 fn pdf_effect_surface_limit_is_preflighted_before_any_fallback_is_emitted() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" filter="url(#blur)"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
     let accepted_limits = ResourceLimits::builder()
         .max_raster_surface_pixels(200)
         .build()
@@ -1002,8 +999,8 @@ fn svg_projection_preserves_sanitized_semantics_and_selectable_text() {
         <use href="#mark" fill="#ff0000"/>
         <text x="10" y="9" font-family="Excalifont" font-size="10">A</text>
     </svg>"##;
-    let scene = image_scene(nested, 20, 10);
-    let svg = render(&scene, OutputFormat::Svg);
+    let scene = nested_svg_scene(nested, 20, 10);
+    let svg = render_artifact(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("artifact SVG is UTF-8");
     let nested = embedded_svg(svg);
 
@@ -1015,22 +1012,19 @@ fn svg_projection_preserves_sanitized_semantics_and_selectable_text() {
 #[test]
 fn png_projects_nested_vectors_at_final_device_scale() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"><circle cx="0.5" cy="0.5" r="0.5" fill="#ff0000"/></svg>"##;
-    let scene = image_scene(nested, 100, 100);
-    let png = render(&scene, OutputFormat::Png);
-    let decoder = png::Decoder::new(Cursor::new(png));
-    let mut reader = decoder.read_info().expect("artifact is PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    let output = reader.next_frame(&mut rgba).expect("PNG frame decodes");
+    let scene = nested_svg_scene(nested, 100, 100);
+    let png = render_artifact(&scene, OutputFormat::Png);
+    let decoded = decode_png(&png);
 
-    assert_eq!((output.width, output.height), (120, 120));
-    assert_eq!(pixel(&rgba, 120, 10, 10), [255, 255, 255, 255]);
-    assert_eq!(pixel(&rgba, 120, 60, 60), [255, 0, 0, 255]);
+    assert_eq!((decoded.width, decoded.height), (120, 120));
+    assert_eq!(decoded.pixel(10, 10), [255, 255, 255, 255]);
+    assert_eq!(decoded.pixel(60, 60), [255, 0, 0, 255]);
 }
 
 #[test]
 fn pdf_projects_nested_text_as_vector_outlines() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><text x="2" y="16" font-family="Excalifont" font-size="18">ABC</text></svg>"##;
-    let scene = image_scene(nested, 40, 20);
+    let scene = nested_svg_scene(nested, 40, 20);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
         .build()
@@ -1075,7 +1069,7 @@ fn closed_vector_native_families_remain_native_pdf_content() {
             <path d="M2 36L76 36" stroke="#000000" marker-end="url(#arrow)"/>
         </g>
     </svg>"##;
-    let scene = image_scene(nested, 80, 40);
+    let scene = nested_svg_scene(nested, 80, 40);
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
         .build()
@@ -1127,7 +1121,7 @@ fn every_native_blend_mode_remains_vector_pdf_content() {
         let nested = format!(
             r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/><g style="mix-blend-mode:{blend};isolation:isolate"><circle cx="10" cy="5" r="5" fill="#0000ff"/></g></svg>"##
         );
-        let scene = image_scene(nested.as_bytes(), 20, 10);
+        let scene = nested_svg_scene(nested.as_bytes(), 20, 10);
         let request = RenderRequest::builder(OutputFormat::Pdf)
             .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
             .build()
@@ -1152,14 +1146,11 @@ fn nested_raster_nodes_are_source_content_in_png_and_pdf() {
     let nested = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/png;base64,{PNG_BASE64}"/></svg>"#
     );
-    let scene = image_scene(nested.as_bytes(), 20, 10);
+    let scene = nested_svg_scene(nested.as_bytes(), 20, 10);
 
-    let png = render(&scene, OutputFormat::Png);
-    let decoder = png::Decoder::new(Cursor::new(png));
-    let mut reader = decoder.read_info().expect("artifact is PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    assert_ne!(pixel(&rgba, 40, 20, 15), [255, 255, 255, 255]);
+    let png = render_artifact(&scene, OutputFormat::Png);
+    let decoded = decode_png(&png);
+    assert_ne!(decoded.pixel(20, 15), [255, 255, 255, 255]);
 
     let request = RenderRequest::builder(OutputFormat::Pdf)
         .build()
@@ -1184,21 +1175,18 @@ fn nested_bmp_preserves_direct_svg_bytes_and_normalizes_png_and_pdf() {
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="10" height="10" fill="#ff0000"/><image x="10" width="10" height="10" href="data:image/bmp;base64,{encoded}"/></svg>"##
     );
     let parent = svg_with_nested_data_image(child.as_bytes());
-    let scene = image_scene(parent.as_bytes(), 20, 10);
+    let scene = nested_svg_scene(parent.as_bytes(), 20, 10);
 
-    let svg = render(&scene, OutputFormat::Svg);
+    let svg = render_artifact(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("artifact SVG is UTF-8");
     assert!(embedded_svg(&embedded_svg(svg)).contains(&format!("data:image/bmp;base64,{encoded}")));
 
-    let png = render(&scene, OutputFormat::Png);
-    let decoder = png::Decoder::new(Cursor::new(png));
-    let mut reader = decoder.read_info().expect("artifact is PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    assert_eq!(pixel(&rgba, 40, 15, 15), [255, 0, 0, 255]);
-    assert_eq!(pixel(&rgba, 40, 25, 15), [24, 96, 208, 255]);
+    let png = render_artifact(&scene, OutputFormat::Png);
+    let decoded = decode_png(&png);
+    assert_eq!(decoded.pixel(15, 15), [255, 0, 0, 255]);
+    assert_eq!(decoded.pixel(25, 15), [24, 96, 208, 255]);
 
-    let pdf = String::from_utf8_lossy(&render(&scene, OutputFormat::Pdf)).into_owned();
+    let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
     assert!(pdf.contains("/Subtype /Image"));
     assert!(pdf.contains("/Subtype /Form"));
 }
@@ -1206,17 +1194,14 @@ fn nested_bmp_preserves_direct_svg_bytes_and_normalizes_png_and_pdf() {
 #[test]
 fn unavailable_nested_sans_text_uses_a_deterministic_fallback_in_png_and_pdf() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40"><rect width="80" height="40" fill="#326ce5"/><text x="4" y="31" style="font-family:Sans;font-size:32px;fill:#ffffff">ABC</text></svg>"##;
-    let scene = image_scene(nested, 80, 40);
+    let scene = nested_svg_scene(nested, 80, 40);
 
-    let png = render(&scene, OutputFormat::Png);
-    let decoder = png::Decoder::new(Cursor::new(png));
-    let mut reader = decoder.read_info().expect("artifact is PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader.next_frame(&mut rgba).expect("PNG frame decodes");
+    let png = render_artifact(&scene, OutputFormat::Png);
+    let decoded = decode_png(&png);
     let white_text_pixels = (12..48)
         .flat_map(|y| (12..88).map(move |x| (x, y)))
         .filter(|(x, y)| {
-            let [red, green, blue, _] = pixel(&rgba, 100, *x, *y);
+            let [red, green, blue, _] = decoded.pixel(*x, *y);
             red > 220 && green > 220 && blue > 220
         })
         .count();
@@ -1225,7 +1210,7 @@ fn unavailable_nested_sans_text_uses_a_deterministic_fallback_in_png_and_pdf() {
         "fallback glyphs must remain visible, got {white_text_pixels} white pixels"
     );
 
-    let pdf = String::from_utf8_lossy(&render(&scene, OutputFormat::Pdf)).into_owned();
+    let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
     assert!(pdf.contains("/Subtype /Form"));
     assert!(
         pdf.contains(" c\n"),
@@ -1236,19 +1221,14 @@ fn unavailable_nested_sans_text_uses_a_deterministic_fallback_in_png_and_pdf() {
 #[test]
 fn safe_class_styles_preserve_nested_opacity_and_layer_order() {
     let inline = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" style="fill:#ff0000;opacity:0.5"/><rect x="10" width="10" height="10" style="fill:#0000ff;opacity:0.5"/></svg>"##;
-    let inline_scene = image_scene(inline, 20, 10);
-    let inline_png = render(&inline_scene, OutputFormat::Png);
-    let decoder = png::Decoder::new(Cursor::new(inline_png));
-    let mut reader = decoder.read_info().expect("inline control is PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader
-        .next_frame(&mut rgba)
-        .expect("inline control frame decodes");
-    assert_rgb_near(pixel(&rgba, 40, 15, 15), [255, 128, 128, 255]);
-    assert_rgb_near(pixel(&rgba, 40, 25, 15), [128, 64, 191, 255]);
+    let inline_scene = nested_svg_scene(inline, 20, 10);
+    let inline_png = render_artifact(&inline_scene, OutputFormat::Png);
+    let decoded = decode_png(&inline_png);
+    assert_rgb_near(decoded.pixel(15, 15), [255, 128, 128, 255]);
+    assert_rgb_near(decoded.pixel(25, 15), [128, 64, 191, 255]);
 
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><style>.back{fill:#ff0000;opacity:0.5}.front{fill:#0000ff;opacity:0.5}</style></defs><rect class="back" width="20" height="10"/><rect class="front" x="10" width="10" height="10"/></svg>"##;
-    let scene = image_scene(nested, 20, 10);
+    let scene = nested_svg_scene(nested, 20, 10);
 
     let request = RenderRequest::builder(OutputFormat::Png)
         .build()
@@ -1256,50 +1236,18 @@ fn safe_class_styles_preserve_nested_opacity_and_layer_order() {
     let outcome = Renderer::new()
         .render(&scene, &request)
         .expect("safe class styles render");
-    let decoder = png::Decoder::new(Cursor::new(outcome.artifact().bytes()));
-    let mut reader = decoder.read_info().expect("artifact is PNG");
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    reader.next_frame(&mut rgba).expect("PNG frame decodes");
-    assert_rgb_near(pixel(&rgba, 40, 15, 15), [255, 128, 128, 255]);
-    assert_rgb_near(pixel(&rgba, 40, 25, 15), [128, 64, 191, 255]);
+    let decoded = decode_png(outcome.artifact().bytes());
+    assert_rgb_near(decoded.pixel(15, 15), [255, 128, 128, 255]);
+    assert_rgb_near(decoded.pixel(25, 15), [128, 64, 191, 255]);
     assert!(outcome.report().diagnostics().is_empty());
 
-    let svg = render(&scene, OutputFormat::Svg);
+    let svg = render_artifact(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("artifact SVG is UTF-8");
     assert!(embedded_svg(svg).contains("<style>"));
 
-    let pdf = String::from_utf8_lossy(&render(&scene, OutputFormat::Pdf)).into_owned();
+    let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
     assert!(pdf.contains("/Subtype /Form"));
     assert!(pdf.contains("/ca 0.5"));
-}
-
-fn image_scene(svg: &[u8], width: u32, height: u32) -> SceneDocument {
-    let encoded = base64::engine::general_purpose::STANDARD.encode(svg);
-    let json = format!(
-        r#"{{
-            "type":"excalidraw","version":2,
-            "elements":[{{
-                "id":"image","type":"image","x":0,"y":0,"width":{width},"height":{height},
-                "angle":0,"opacity":100,"fileId":"asset","status":"saved","scale":[1,1],
-                "seed":1,"updated":1
-            }}],
-            "appState":{{}},"files":{{
-                "asset":{{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,{encoded}","created":1}}
-            }}
-        }}"#
-    );
-    SceneDocument::parse(json.as_bytes()).expect("nested-SVG scene is admitted")
-}
-
-fn render(scene: &SceneDocument, format: OutputFormat) -> Vec<u8> {
-    let request = RenderRequest::builder(format)
-        .build()
-        .expect("request is valid");
-    let outcome = Renderer::new()
-        .render(scene, &request)
-        .expect("nested SVG renders");
-    assert!(outcome.report().diagnostics().is_empty());
-    outcome.artifact().bytes().to_vec()
 }
 
 fn embedded_svg(artifact: &str) -> String {
@@ -1336,12 +1284,6 @@ fn fixture_bmp24(rgb: [u8; 3]) -> Vec<u8> {
     bytes
 }
 
-fn pixel(rgba: &[u8], width: usize, x: usize, y: usize) -> [u8; 4] {
-    rgba[(y * width + x) * 4..(y * width + x + 1) * 4]
-        .try_into()
-        .expect("pixel exists")
-}
-
 fn assert_rgb_near(actual: [u8; 4], expected: [u8; 4]) {
     for (actual_channel, expected_channel) in actual.into_iter().zip(expected) {
         assert!(
@@ -1349,4 +1291,8 @@ fn assert_rgb_near(actual: [u8; 4], expected: [u8; 4]) {
             "pixel {actual:?} differs from {expected:?}"
         );
     }
+}
+
+fn nested_svg_scene(svg: &[u8], width: u32, height: u32) -> SceneDocument {
+    image_scene(svg, "image/svg+xml", width, height)
 }

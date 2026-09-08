@@ -15,6 +15,7 @@ use crate::common::approved_scenes::{
 };
 use crate::common::pdf_harness::{assert_structure, render_viewer};
 use crate::common::repository_root;
+use crate::common::scratch::ScratchDir;
 
 #[test]
 #[ignore = "requires the exact-pinned qpdf structural harness"]
@@ -98,13 +99,13 @@ fn isolated_fallback_passes_both_canonical_pdf_visual_gates() {
         f64::from_bits(minimum_bits),
     )
     .expect("fallback exception limits are finite");
-    let stem = format!("pdf-fallback-viewers-{}", std::process::id());
-    let candidate = format!("target/{stem}.pdf");
+    let scratch = ScratchDir::new("pdf-fallback-viewers");
+    let candidate = scratch.relative("candidate.pdf");
     fs::write(
-        root.join(&candidate),
+        scratch.join("candidate.pdf"),
         render_isolated_fallback().artifact().bytes(),
     )
-    .expect("write renderer-owned fallback PDF under target");
+    .expect("write renderer-owned fallback PDF to scratch");
 
     for (viewer, script, mode) in [
         (
@@ -118,7 +119,7 @@ fn isolated_fallback_passes_both_canonical_pdf_visual_gates() {
             ComparisonMode::Canonical,
         ),
     ] {
-        let output = format!("target/{stem}-{viewer}.rgba");
+        let output = scratch.relative(&format!("{viewer}.rgba"));
         let rgba = render_viewer(&root, viewer, script, &candidate, &output, 40, 30);
         let candidate =
             CanonicalRgba8::new(40, 30, rgba).expect("canonical PDF viewer output is valid");
@@ -133,13 +134,13 @@ fn isolated_fallback_passes_both_canonical_pdf_visual_gates() {
     }
 }
 
-fn assert_structural_gate(stem_prefix: &str, outcome: RenderOutcome, expectation: &str) {
+fn assert_structural_gate(scratch_name: &str, outcome: RenderOutcome, expectation: &str) {
     let root = repository_root();
-    let stem = format!("{stem_prefix}-{}", std::process::id());
-    let candidate = format!("target/{stem}.pdf");
-    let output = format!("target/{stem}-structure.json");
-    fs::write(root.join(&candidate), outcome.artifact().bytes())
-        .expect("write renderer-owned qualification PDF under target");
+    let scratch = ScratchDir::new(scratch_name);
+    let candidate = scratch.relative("candidate.pdf");
+    let output = scratch.relative("structure.json");
+    fs::write(scratch.join("candidate.pdf"), outcome.artifact().bytes())
+        .expect("write renderer-owned qualification PDF to scratch");
 
     assert_structure(&root, &candidate, expectation, &output);
 }

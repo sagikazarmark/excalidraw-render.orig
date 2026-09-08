@@ -3,6 +3,8 @@ use excalidraw_render::{
     ResourceLimits, SceneDocument, SupplementalAssets,
 };
 
+use crate::common::render::render_source;
+
 #[test]
 fn revision_1_global_policy_is_exact_and_suppresses_unknown_descendants() {
     let source = br#"{
@@ -749,13 +751,7 @@ fn non_replacement_diagnostics(
 }
 
 fn render_svg(source: &[u8]) -> excalidraw_render::RenderOutcome {
-    let scene = SceneDocument::parse(source).expect("policy vector is admitted");
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("default request is valid");
-    Renderer::new()
-        .render(&scene, &request)
-        .expect("rectangle policy vector renders")
+    render_source(source, OutputFormat::Svg)
 }
 
 #[test]

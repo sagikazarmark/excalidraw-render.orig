@@ -3,14 +3,14 @@
 //! PDF viewer gates of the same case live in `harness_pdf_viewers`.
 
 use std::fs;
-use std::io::Cursor;
 
 mod common;
 
+use common::raster::decode_png;
+use common::reports::assert_report_matches;
 use common::repository_root;
 use excalidraw_render::{FrameRenderRequest, OutputFormat, Renderer, SceneDocument};
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
-use png::{BitDepth, ColorType, Decoder, Transformations};
 use tiny_skia::{Pixmap, Transform};
 
 #[test]
@@ -71,12 +71,12 @@ fn frame_svg_and_png_match_the_pinned_official_evidence() {
                     .expect("PNG frame request is valid"),
             )
             .unwrap_or_else(|error| panic!("frame {ordinal} renders to PNG: {error}"));
-        assert_eq!(
-            serde_json::to_vec(png.report()).expect("PNG report serializes"),
-            fs::read(case.join("expected-report.json")).unwrap(),
-            "frame {ordinal} PNG report differs"
+        assert_report_matches(
+            png.report(),
+            &case.join("expected-report.json"),
+            &format!("frame {ordinal} PNG"),
         );
-        let candidate_png = decode_png(png.artifact().bytes());
+        let candidate_png = decode_png(png.artifact().bytes()).into_canonical();
         let reference_png = CanonicalRgba8::new(
             png_width,
             png_height,
@@ -200,18 +200,6 @@ fn frame_svg_and_png_match_the_pinned_official_evidence() {
             assert!(pdf.contains("/URI (https://example.com/frame)"));
         }
     }
-}
-
-fn decode_png(bytes: &[u8]) -> CanonicalRgba8 {
-    let mut decoder = Decoder::new(Cursor::new(bytes));
-    decoder.set_transformations(Transformations::IDENTITY);
-    let mut reader = decoder.read_info().expect("PNG structure is valid");
-    assert_eq!(reader.info().color_type, ColorType::Rgba);
-    assert_eq!(reader.info().bit_depth, BitDepth::Eight);
-    let mut rgba = vec![0; reader.output_buffer_size()];
-    let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
-    rgba.truncate(frame.buffer_size());
-    CanonicalRgba8::new(frame.width, frame.height, rgba).expect("PNG is canonical RGBA8")
 }
 
 fn rasterize_svg(bytes: &[u8], width: u32, height: u32) -> Vec<u8> {
