@@ -84,19 +84,88 @@ impl CanonicalColor {
     }
 
     fn darkened(self) -> Self {
-        let invert = |channel: u8| 0.93 * (255.0 - f64::from(channel)) + 0.07 * f64::from(channel);
-        let red = invert(self.red);
-        let green = invert(self.green);
-        let blue = invert(self.blue);
-        let lower = |value: f64| value.clamp(0.0, 255.0).floor() as u8;
-
+        let [red, green, blue] = theme_filter(self.rgb8());
         Self {
-            red: lower(-0.574 * red + 1.430 * green + 0.144 * blue),
-            green: lower(0.426 * red + 0.430 * green + 0.144 * blue),
-            blue: lower(0.426 * red + 1.430 * green - 0.856 * blue),
+            red,
+            green,
+            blue,
             alpha: self.alpha,
         }
     }
+}
+
+/// The reference export's dark-mode filter, `THEME_FILTER`
+/// (`invert(93%) hue-rotate(180deg)`), on one opaque or unpremultiplied sRGB
+/// pixel. The reference's SVG carries it on the root element and its canvas
+/// export sets it on the context, so every scene color, frame outline, frame
+/// name, placeholder, and nested-SVG image pixel passes through it; the
+/// renderer lowers it into the colors instead. Evaluated as the pinned browser
+/// evaluates CSS filter functions: in gamma-encoded sRGB, with the Filter
+/// Effects hue-rotation matrix, each function's result clamped to the channel
+/// range, and the result quantized. Each channel of the `invert(93%)` result
+/// is `237.15 - 0.86 * c`, never an integer, so flooring cannot lose a channel
+/// to floating-point error the way it could for an exact gray.
+pub(crate) fn theme_filter(rgb: [u8; 3]) -> [u8; 3] {
+    let [red, green, blue] = hue_rotate_180(invert(rgb.map(f64::from), [0.93, 0.07]));
+    [red, green, blue].map(|value| value.clamp(0.0, 255.0).floor() as u8)
+}
+
+/// The filter the reference's SVG export puts on a raster image's `<use>` in
+/// dark mode, `IMAGE_INVERT_FILTER`
+/// (`invert(100%) hue-rotate(180deg) saturate(1.25)`), on one opaque or
+/// unpremultiplied sRGB pixel. It precedes the root filter, so a raster image
+/// comes out roughly as authored with its contrast compressed; nested-SVG
+/// images do not receive it and invert with the root filter alone. The result
+/// rounds to the 8-bit surface the root filter then reads, so an exact gray,
+/// which every function here maps to an exact gray, keeps its channels equal.
+pub(crate) fn image_invert_filter(rgb: [u8; 3]) -> [u8; 3] {
+    let inverted = hue_rotate_180(invert(rgb.map(f64::from), [1.0, 0.0]));
+    saturate(inverted, 1.25).map(|value| value.clamp(0.0, 255.0).round() as u8)
+}
+
+/// A raster image pixel as the reference's dark-mode SVG export shows it: the
+/// image filter, then the root filter. Official SVG is the visual authority
+/// for PDF (spec section 8.6), so PDF lowers this into its image pixels; the
+/// reference's canvas export resets the filter for raster images and PNG
+/// leaves their pixels alone.
+pub(crate) fn dark_mode_raster_image_pixel(rgb: [u8; 3]) -> [u8; 3] {
+    theme_filter(image_invert_filter(rgb))
+}
+
+/// `invert(amount)`: `feComponentTransfer` with the table `amount, 1 - amount`
+/// on each channel, which weights the inverted channel by the first value and
+/// the channel itself by the second and stays inside the channel range. The
+/// table is spelled literally so `0.07` is the constant, not `1.0 - 0.93`.
+fn invert(rgb: [f64; 3], [inverted, kept]: [f64; 2]) -> [f64; 3] {
+    rgb.map(|channel| inverted * (255.0 - channel) + kept * channel)
+}
+
+/// `hue-rotate(180deg)`: the Filter Effects `hueRotate` matrix at 180 degrees,
+/// clamped to the channel range as the browser clamps each function's result.
+fn hue_rotate_180([red, green, blue]: [f64; 3]) -> [f64; 3] {
+    [
+        -0.574 * red + 1.430 * green + 0.144 * blue,
+        0.426 * red + 0.430 * green + 0.144 * blue,
+        0.426 * red + 1.430 * green - 0.856 * blue,
+    ]
+    .map(|value| value.clamp(0.0, 255.0))
+}
+
+/// `saturate(amount)`: the Filter Effects `saturate` matrix, clamped like the
+/// hue rotation.
+fn saturate([red, green, blue]: [f64; 3], amount: f64) -> [f64; 3] {
+    [
+        (0.213 + 0.787 * amount) * red
+            + (0.715 - 0.715 * amount) * green
+            + (0.072 - 0.072 * amount) * blue,
+        (0.213 - 0.213 * amount) * red
+            + (0.715 + 0.285 * amount) * green
+            + (0.072 - 0.072 * amount) * blue,
+        (0.213 - 0.213 * amount) * red
+            + (0.715 - 0.715 * amount) * green
+            + (0.072 + 0.928 * amount) * blue,
+    ]
+    .map(|value| value.clamp(0.0, 255.0))
 }
 
 pub(crate) fn parse_css(value: &str) -> Option<CanonicalColor> {
@@ -936,4 +1005,69 @@ fn system_color(value: &str) -> Option<CanonicalColor> {
         return None;
     };
     Some(color)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn rgb(hex: u32) -> [u8; 3] {
+        [(hex >> 16) as u8, (hex >> 8) as u8, hex as u8]
+    }
+
+    /// `THEME_FILTER`, `invert(93%) hue-rotate(180deg)`, evaluated as the
+    /// pinned browser evaluates CSS filter functions: in gamma-encoded sRGB,
+    /// hue rotation by the Filter Effects matrix, each function clamped, the
+    /// result quantized. The expected values are worked from those definitions
+    /// for the export's constants: text `#1e1e1e`, white, the frame outline
+    /// `#bbb`, the canvas magic-frame outlines, and the PNG image placeholder.
+    #[test]
+    fn theme_filter_lowers_the_reference_constants() {
+        assert_eq!(theme_filter(rgb(0x1e1e1e)), rgb(0xd3d3d3));
+        assert_eq!(theme_filter(rgb(0xffffff)), rgb(0x111111));
+        assert_eq!(theme_filter(rgb(0x000000)), rgb(0xededed));
+        assert_eq!(theme_filter(rgb(0xbbbbbb)), rgb(0x4c4c4c));
+        assert_eq!(theme_filter(rgb(0x7affd7)), rgb(0x004725));
+        assert_eq!(theme_filter(rgb(0x1d8264)), rgb(0x4fa68c));
+        assert_eq!(theme_filter(rgb(0xe7e7e7)), rgb(0x262626));
+        assert_eq!(theme_filter(rgb(0x888888)), rgb(0x787878));
+        assert_eq!(theme_filter(rgb(0xa5d8ff)), rgb(0x154162));
+    }
+
+    #[test]
+    fn a_dark_mode_color_is_the_theme_filter_of_its_light_mode_color() {
+        let color = CanonicalColor::from_rgba(0xa5, 0xd8, 0xff, 0.5);
+        let dark = color.for_mode(ColorMode::Dark);
+        assert_eq!(dark.rgb8(), theme_filter(rgb(0xa5d8ff)));
+        assert_eq!(dark.alpha(), 0.5, "the filter leaves alpha alone");
+        assert_eq!(color.for_mode(ColorMode::Light), color);
+    }
+
+    /// `IMAGE_INVERT_FILTER`, `invert(100%) hue-rotate(180deg) saturate(1.25)`:
+    /// grays invert exactly, chromatic colors clamp between the functions, and
+    /// the result rounds to the 8-bit surface the root filter then reads.
+    #[test]
+    fn image_invert_filter_inverts_and_saturates_a_raster_pixel() {
+        assert_eq!(image_invert_filter(rgb(0xffffff)), rgb(0x000000));
+        assert_eq!(image_invert_filter(rgb(0x000000)), rgb(0xffffff));
+        assert_eq!(image_invert_filter(rgb(0x808080)), rgb(0x7f7f7f));
+        assert_eq!(image_invert_filter(rgb(0xff0000)), rgb(0xff8d8d));
+        assert_eq!(image_invert_filter(rgb(0x00ff00)), rgb(0x009c00));
+        assert_eq!(image_invert_filter(rgb(0x0000ff)), rgb(0xdadaff));
+        assert_eq!(image_invert_filter(rgb(0xa5d8ff)), rgb(0x00396a));
+    }
+
+    /// A raster pixel in a dark-mode SVG export passes through the image
+    /// filter and then the root filter: its contrast lands in `#111111` to
+    /// `#ededed` and its hue survives.
+    #[test]
+    fn a_dark_mode_raster_image_pixel_keeps_its_hue_with_compressed_contrast() {
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0xffffff)), rgb(0xededed));
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0x000000)), rgb(0x111111));
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0x808080)), rgb(0x7f7f7f));
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0xff0000)), rgb(0xac4a4a));
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0x00ff00)), rgb(0x2db32d));
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0x0000ff)), rgb(0x2d2d4c));
+        assert_eq!(dark_mode_raster_image_pixel(rgb(0x1e1e1e)), rgb(0x2b2b2b));
+    }
 }

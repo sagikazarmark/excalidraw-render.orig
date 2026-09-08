@@ -609,16 +609,22 @@ impl ResolvedScene {
                             label: name.label,
                         });
                     has_label |= name.is_some();
-                    let outline_path = frame_rendering
+                    let outline = frame_rendering
                         .outline
-                        .then_some(resolved_frame_outline(source.width, source.height))
+                        .then(|| {
+                            ResolvedFrameOutline::new(
+                                source.width,
+                                source.height,
+                                matches!(source.kind, NormalizedElementKind::MagicFrame(_)),
+                                request.color_mode(),
+                            )
+                        })
                         .transpose()?;
                     elements.push(ResolvedElement::Frame(ResolvedFrame {
                         source_order: source.source_order,
                         source: source.source,
                         name,
-                        magic: matches!(source.kind, NormalizedElementKind::MagicFrame(_)),
-                        outline_path,
+                        outline,
                         frame_clips,
                         transform: ResolvedTransform {
                             translation_x: source.x - min_x + request.padding(),
@@ -750,6 +756,10 @@ impl ResolvedScene {
                     elements.push(ResolvedElement::Image(ResolvedImage {
                         source_order: source.source_order,
                         source: source.source,
+                        dark_mode_filter: DarkModeImageFilter::for_image(
+                            request.color_mode(),
+                            asset,
+                        ),
                         asset: std::sync::Arc::clone(asset),
                         frame_clips,
                         corner_clip: ResolvedImageCornerClip::for_image(
@@ -1211,6 +1221,9 @@ pub(super) struct ResolvedImage {
     source_order: u64,
     pub(super) source: NormalizedElementSource,
     pub(super) asset: std::sync::Arc<ResolvedImageAsset>,
+    /// The reference's dark-mode filter chain this image passes through, or
+    /// `None` in light mode.
+    pub(super) dark_mode_filter: Option<DarkModeImageFilter>,
     pub(super) frame_clips: Vec<ResolvedClip>,
     /// The rounded-corner clip of an image with a roundness record, in the
     /// element's own space before crop, flip, and rotation; `None` without one.
@@ -1222,6 +1235,35 @@ pub(super) struct ResolvedImage {
     pub(super) link: Option<String>,
     pub(super) width: f64,
     pub(super) height: f64,
+}
+
+/// The reference export's dark-mode filters an image passes through, resolved
+/// once from the color mode and the asset kind so each format lowers the chain
+/// its authority applies (spec section 8.2). The reference SVG puts
+/// `IMAGE_INVERT_FILTER` on a raster image's `<use>` under its root
+/// `THEME_FILTER` and only the root filter on a nested-SVG image; the reference
+/// canvas export resets its filter for a raster image and keeps the theme
+/// filter for a nested-SVG image.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum DarkModeImageFilter {
+    /// `IMAGE_INVERT_FILTER` followed by `THEME_FILTER`. SVG references it and
+    /// PDF, whose authority is official SVG, lowers it into the pixels; PNG
+    /// follows the canvas and leaves a raster image's pixels alone.
+    RasterImage,
+    /// `THEME_FILTER` alone. SVG references it and PNG lowers it into the
+    /// pixels it rasterizes; PDF embeds the nested SVG's vector content
+    /// unlowered until #154 decides the mechanism.
+    NestedSvgImage,
+}
+
+impl DarkModeImageFilter {
+    fn for_image(mode: crate::ColorMode, asset: &ResolvedImageAsset) -> Option<Self> {
+        match mode {
+            crate::ColorMode::Light => None,
+            crate::ColorMode::Dark if asset.sanitized_svg.is_some() => Some(Self::NestedSvgImage),
+            crate::ColorMode::Dark => Some(Self::RasterImage),
+        }
+    }
 }
 
 /// The clip the reference applies to an image element with a `roundness`
@@ -1346,14 +1388,48 @@ pub(super) struct ResolvedFrame {
     pub(super) source_order: u64,
     pub(super) source: NormalizedElementSource,
     pub(super) name: Option<ResolvedFrameName>,
-    pub(super) magic: bool,
-    pub(super) outline_path: Option<rough::Path>,
+    pub(super) outline: Option<ResolvedFrameOutline>,
     pub(super) frame_clips: Vec<ResolvedClip>,
     pub(super) transform: ResolvedTransform,
     pub(super) opacity: f64,
     pub(super) link: Option<String>,
     pub(super) width: f64,
     pub(super) height: f64,
+}
+
+/// A frame's outline in a scene export: the frame rectangle with
+/// `FRAME_STYLE.radius` corners, stroked `FRAME_STYLE.strokeWidth` wide in the
+/// reference's outline colors, lowered into the color mode like every other
+/// color the reference paints under its dark-mode filter.
+pub(super) struct ResolvedFrameOutline {
+    pub(super) path: rough::Path,
+    /// `FRAME_STYLE.strokeColor` for the mode: the stroke the reference's SVG
+    /// export gives every frame kind, which SVG and PDF paint.
+    pub(super) stroke_color: CanonicalColor,
+    /// The stroke the reference's canvas export gives the frame for the mode,
+    /// which PNG paints: `FRAME_STYLE.strokeColor` for an ordinary frame and
+    /// the theme's magic-frame color for a magic frame.
+    pub(super) canvas_stroke_color: CanonicalColor,
+}
+
+impl ResolvedFrameOutline {
+    fn new(
+        width: f64,
+        height: f64,
+        magic: bool,
+        mode: crate::ColorMode,
+    ) -> Result<Self, ResolveSceneError> {
+        let stroke_color = FRAME_OUTLINE_STROKE_COLOR.for_mode(mode);
+        Ok(Self {
+            path: resolved_frame_outline(width, height)?,
+            stroke_color,
+            canvas_stroke_color: if magic {
+                magic_frame_canvas_outline_stroke_color(mode)
+            } else {
+                stroke_color
+            },
+        })
+    }
 }
 
 /// A frame's visible name as the reference export renders it: a synthesized

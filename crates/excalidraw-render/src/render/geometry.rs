@@ -61,10 +61,24 @@ pub(super) fn source_layout_bounds(source: &NormalizedElement) -> (f64, f64, f64
 pub(super) const FRAME_RADIUS: f64 = 8.0;
 
 /// `FRAME_STYLE.strokeColor`: the stroke of a frame's outline in a scene export.
-/// The reference's SVG paints every frame kind with it; its canvas path recolors
-/// a magic frame's outline, which the PNG backend reproduces.
+/// The reference's SVG paints every frame kind with it under its root dark-mode
+/// filter; its canvas path recolors a magic frame's outline by theme
+/// ([`magic_frame_canvas_outline_stroke_color`]) before the same filter.
 pub(super) const FRAME_OUTLINE_STROKE_COLOR: CanonicalColor =
     CanonicalColor::from_rgb8(0xbb, 0xbb, 0xbb);
+
+/// The stroke the reference's canvas path (`renderElement`) gives a magic
+/// frame's outline: `#7affd7` in the light theme and `#1d8264` in the dark
+/// theme, each then passing through the theme's filter like every other canvas
+/// color. The PNG backend reproduces it; the reference's SVG does not recolor
+/// magic frames.
+pub(super) fn magic_frame_canvas_outline_stroke_color(mode: ColorMode) -> CanonicalColor {
+    match mode {
+        ColorMode::Light => CanonicalColor::from_rgb8(0x7a, 0xff, 0xd7),
+        ColorMode::Dark => CanonicalColor::from_rgb8(0x1d, 0x82, 0x64),
+    }
+    .for_mode(mode)
+}
 
 /// `FRAME_STYLE.strokeWidth`: the width of a frame's outline stroke.
 pub(super) const FRAME_OUTLINE_STROKE_WIDTH: f64 = 2.0;

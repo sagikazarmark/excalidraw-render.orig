@@ -564,7 +564,11 @@ frame's width with the reference's ASCII `...` when its measured advance is
 wider; a frame too narrow for one character with the dots keeps its whole name
 at the frame's width. The name's line box takes part in the scene bounds exactly
 as that text element would. The frame outline is the frame rectangle with
-`FRAME_STYLE.radius` 8, stroke `#bbb`, and width 2.
+`FRAME_STYLE.radius` 8, stroke `#bbb`, and width 2; the stroke passes through
+the dark-mode filter like every other color, in every format. The reference SVG
+strokes every frame kind `#bbb`, which SVG and PDF follow; the reference canvas
+recolors a magic frame's outline `#7affd7` in the light theme and `#1d8264` in
+the dark theme before the same filter, which PNG follows.
 
 A frame export targets one live ordinary or magic frame and always uses the
 rotation-aware frame AABB as its zero-padding viewport. The target frame name and
@@ -585,6 +589,17 @@ Element colors use the CSS grammar recognized by the pinned Chromium profile and
 serialize as canonical sRGB plus alpha. Invalid colors emit `color.invalid` and
 substitute `#1e1e1e` for stroke, transparent for element background, and white
 for scene background.
+
+Dark mode is the reference export's `THEME_FILTER`,
+`invert(93%) hue-rotate(180deg)`, which the reference SVG carries on its root
+element and the reference canvas sets on its context. The renderer emits no
+filter for it; it lowers the filter into every color it paints — scene colors,
+renderer-owned fallbacks, frame outlines and names, and the PNG image
+placeholder — evaluated as the pinned browser evaluates CSS filter functions:
+in gamma-encoded sRGB, with the Filter Effects hue-rotation matrix, each
+function's result clamped to the channel range, and the result floored to
+8 bits; alpha is untouched. Images are the exception: Section 8.2 records how
+each format lowers dark mode onto them.
 
 Safe absolute and relative links are preserved under the pinned sanitizer and
 fixed origin. Unsafe links are omitted and diagnosed. PNG has no links.
@@ -644,6 +659,29 @@ only the image it draws. The reference SVG declares the same `<clipPath>` but
 does not offset its rectangle by the crop and sets `clip-path` as a namespaced
 attribute, as it does for frame clips, so browsers leave its rounded images
 square; revision 1 follows the canvas and clips in every format.
+
+In dark mode the reference SVG puts `IMAGE_INVERT_FILTER`,
+`invert(100%) hue-rotate(180deg) saturate(1.25)`, on each raster image's `<use>`
+under its root `THEME_FILTER`, so a raster image keeps roughly its authored
+appearance with its contrast compressed to about `#111111`–`#ededed`, while a
+nested-SVG image receives the root filter alone and inverts with the scene. The
+reference canvas export resets its filter to `none` for a raster image
+(`shouldResetImageFilter`) and keeps the theme filter for a nested-SVG image
+and for the image placeholder. Each format follows its authority: SVG defines
+the two filter chains once in `<defs>` as Filter Effects primitives in sRGB
+(Section 8.4) and references them from each `<image>`, leaving the payload
+octets exactly as validated; PNG leaves raster pixels alone, passes the pixels
+it rasterizes from a nested-SVG image through the theme filter, and lowers the
+placeholder's `#E7E7E7` rectangle and `#888` glyph the same way; PDF, whose
+authority is official SVG (Section 8.6), lowers the image filter followed by
+the theme filter into each visible raster pixel it embeds, leaving invisible
+RGB at its canonical zero and the soft mask untouched, rounding the image
+filter's result to 8 bits as the browser's intermediate surface does before the
+theme filter reads it; an SVG viewer evaluates the defined chain itself. None of
+this changes the semantic resource ledger: like every other color lowering, it
+is not a charged event. Revision 1 does not lower dark mode into a nested-SVG
+image's vector content in PDF; that content is embedded in its light-mode
+colors until #154 decides the mechanism.
 
 A missing local image is omitted in SVG and PDF, uses the official image/error
 fallback in PNG, and is diagnosed in every selected format. Other invalid,
@@ -906,7 +944,15 @@ used as an XML ID. The clip rectangle rotates by the frame's angle in degrees,
 as the outline does; revision 1 does not reproduce the reference's
 radians-valued `rotate()` on its clip definition. The frame clips are followed
 in `<defs>` by each rounded image's corner clip (Section 8.2), in paint order,
-keyed `image-clip-<source index>`.
+keyed `image-clip-<source index>`, and then, in a dark-mode export that has
+images, by the dark-mode image filters it references (Section 8.2), each defined
+once: `dark-mode-raster-image` (the image filter followed by the theme filter)
+before `dark-mode-nested-svg-image` (the theme filter alone). Each filter spells
+its CSS filter functions as the Filter Effects primitives they are defined as —
+`feComponentTransfer` tables for `invert`, `feColorMatrix` `hueRotate` and
+`saturate` — with `color-interpolation-filters="sRGB"`, and each `<image>`
+references its filter by `filter="url(#…)"`. A light-mode export defines and
+references no filter.
 
 Request-scoped and frame-batch physical caches MAY retain qualified source
 decodes and identical derived bytes. Each SVG target nevertheless derives the
@@ -978,9 +1024,11 @@ Every project-owned operation remains native PDF content:
   `ActualText` contract.
 - Safe URI annotations over deterministic transformed bounds.
 
-Dark mode is lowered into vector colors and image pixels before this matrix.
-Failure to encode a required operation is fatal, never fallback. Admitted scene
-raster pixels are lossless image XObjects and inherent source content.
+Dark mode is lowered into vector colors and image pixels before this matrix
+(Sections 8.1 and 8.2); nested-SVG vector content is the revision-1 exception
+Section 8.2 records. Failure to encode a required operation is fatal, never
+fallback. Admitted scene raster pixels are lossless image XObjects and inherent
+source content.
 
 After deterministic expansion and lowering, sanitized nested SVG has exactly
 this recursively vector-native subset:

@@ -55,11 +55,11 @@ use crate::{
         ResourcePhase, ResourceRecordKind,
     },
     scene::{OriginalJsonEntryKind, OriginalJsonVisitError},
-    Artifact, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode, DiagnosticEffect,
-    DiagnosticSeverity, ErrorCode, ErrorDetails, FiniteValue, Measurement, MetadataComponent,
-    MetadataOperation, OutputFormat, Recovery, ReferenceProfileIdentity, RenderError,
-    RenderErrorCategory, RenderOutcome, RenderRequest, ResourceValue, SceneDocument, Sizing,
-    ValueKind,
+    Artifact, ColorMode, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode,
+    DiagnosticEffect, DiagnosticSeverity, ErrorCode, ErrorDetails, FiniteValue, Measurement,
+    MetadataComponent, MetadataOperation, OutputFormat, Recovery, ReferenceProfileIdentity,
+    RenderError, RenderErrorCategory, RenderOutcome, RenderRequest, ResourceValue, SceneDocument,
+    Sizing, ValueKind,
 };
 use std::sync::{Arc, Mutex};
 
@@ -2944,8 +2944,8 @@ impl RenderSession {
                 continue;
             }
             if let ResolvedElement::Frame(frame) = element {
-                let outline_segments = frame.outline_path.as_ref().map_or(0, |path| {
-                    u64::try_from(path.operations.len()).unwrap_or(u64::MAX)
+                let outline_segments = frame.outline.as_ref().map_or(0, |outline| {
+                    u64::try_from(outline.path.operations.len()).unwrap_or(u64::MAX)
                 });
                 let clip_segments = frame.frame_clips.iter().fold(0_u64, |total, clip| {
                     total.saturating_add(

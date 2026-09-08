@@ -2,13 +2,14 @@ use std::fmt::Write as _;
 use std::io::Write as _;
 
 use crate::{
-    color::CanonicalColor, FiniteValue, LogicalBounds, NestedPath, NestedPathSegment,
-    NestedSegmentKind, RenderRequest,
+    color::{self, CanonicalColor},
+    FiniteValue, LogicalBounds, NestedPath, NestedPathSegment, NestedSegmentKind, RenderRequest,
 };
 
 use super::{
     rough::{self, Drawing, FillKind, Path, PathOperation},
-    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene, StrokeStyle,
+    DarkModeImageFilter, FormatEncodeError, NormalizedElementSource, ResolvedElement,
+    ResolvedScene, StrokeStyle,
 };
 
 pub(super) const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
@@ -56,6 +57,14 @@ pub(super) struct PdfPlan {
     svg_trees: super::SvgTreeCache,
     elements: Vec<PdfElement>,
     raster_closures: Vec<PdfRasterClosure>,
+}
+
+/// One raster image XObject: an asset embedded once however many elements
+/// reference it, with the dark-mode filter those elements share (the filter
+/// follows from the mode and the asset kind, so they agree).
+struct PdfImageResource {
+    asset: std::sync::Arc<super::ResolvedImageAsset>,
+    dark_mode_filter: Option<DarkModeImageFilter>,
 }
 
 pub(super) struct PdfRasterClosure {
@@ -121,7 +130,7 @@ enum PdfElement {
     Frame {
         source: NormalizedElementSource,
         name: Option<super::ResolvedFrameName>,
-        outline_path: Option<Path>,
+        outline: Option<super::ResolvedFrameOutline>,
         frame_clips: Vec<super::ResolvedClip>,
         transform: super::ResolvedTransform,
         opacity: f64,
@@ -143,6 +152,9 @@ enum PdfElement {
     Image {
         source: NormalizedElementSource,
         asset: std::sync::Arc<super::ResolvedImageAsset>,
+        /// The dark-mode filter official SVG applies to this image, which PDF
+        /// lowers into a raster asset's pixels.
+        dark_mode_filter: Option<DarkModeImageFilter>,
         frame_clips: Vec<super::ResolvedClip>,
         /// The rounded-corner clip of an image with a roundness record, in
         /// element space; without one the image clips to its rectangle.
@@ -186,9 +198,9 @@ impl PdfPlan {
         let mut counts = self
             .image_resources()?
             .iter()
-            .map(|asset| {
-                u64::from(asset.width)
-                    .checked_mul(u64::from(asset.height))
+            .map(|resource| {
+                u64::from(resource.asset.width)
+                    .checked_mul(u64::from(resource.asset.height))
                     .ok_or_else(pdf_size_error)
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -274,7 +286,7 @@ impl PdfPlan {
                     elements.push(PdfElement::Frame {
                         source: frame.source,
                         name: frame.name,
-                        outline_path: frame.outline_path,
+                        outline: frame.outline,
                         frame_clips: frame.frame_clips,
                         transform: frame.transform,
                         opacity: frame.opacity,
@@ -300,6 +312,7 @@ impl PdfPlan {
                     elements.push(PdfElement::Image {
                         source: image.source,
                         asset: image.asset,
+                        dark_mode_filter: image.dark_mode_filter,
                         frame_clips: image.frame_clips,
                         corner_clip: image.corner_clip.map(|clip| clip.path),
                         transform: image.transform,
@@ -560,10 +573,10 @@ impl PdfPlan {
             .and_then(|capacity| {
                 image_resources
                     .iter()
-                    .try_fold(capacity, |capacity, asset| {
-                        usize::try_from(asset.width)
+                    .try_fold(capacity, |capacity, resource| {
+                        usize::try_from(resource.asset.width)
                             .ok()?
-                            .checked_mul(usize::try_from(asset.height).ok()?)
+                            .checked_mul(usize::try_from(resource.asset.height).ok()?)
                             .and_then(|pixels| pixels.checked_mul(4))
                             .and_then(|bytes| bytes.checked_add(1_024))
                             .and_then(|extra| capacity.checked_add(extra))
@@ -862,7 +875,8 @@ impl PdfPlan {
                 )?;
             }
         }
-        for (index, asset) in image_resources.iter().enumerate() {
+        for (index, resource) in image_resources.iter().enumerate() {
+            let asset = &resource.asset;
             let image_object = checked_object(first_image_object, index, 2)?;
             let mask_object = image_object.checked_add(1).ok_or_else(pdf_size_error)?;
             let pixel_count = usize::try_from(asset.width)
@@ -887,8 +901,19 @@ impl PdfPlan {
                 FormatEncodeError::Encoding("PDF image has no normalized pixel resource".to_owned())
             })?;
             for pixel in rgba.chunks_exact(4) {
-                rgb.extend_from_slice(&pixel[..3]);
-                alpha.push(pixel[3]);
+                let [red, green, blue, pixel_alpha] = [pixel[0], pixel[1], pixel[2], pixel[3]];
+                // Official SVG is the visual authority for PDF images (spec
+                // section 8.6): in dark mode a raster pixel passes through
+                // the reference's image filter and root filter. An invisible
+                // pixel keeps its canonical zero RGB.
+                let lowered = match resource.dark_mode_filter {
+                    Some(DarkModeImageFilter::RasterImage) if pixel_alpha != 0 => {
+                        color::dark_mode_raster_image_pixel([red, green, blue])
+                    }
+                    _ => [red, green, blue],
+                };
+                rgb.extend_from_slice(&lowered);
+                alpha.push(pixel_alpha);
             }
             begin_object(&mut pdf, &mut offsets, image_object)?;
             write!(
@@ -1350,9 +1375,7 @@ impl PdfPlan {
         Ok(forms)
     }
 
-    fn image_resources(
-        &self,
-    ) -> Result<Vec<std::sync::Arc<super::ResolvedImageAsset>>, FormatEncodeError> {
+    fn image_resources(&self) -> Result<Vec<PdfImageResource>, FormatEncodeError> {
         let mut resources = Vec::new();
         resources
             .try_reserve_exact(self.elements.len())
@@ -1361,7 +1384,12 @@ impl PdfPlan {
                 subject: "pdf_image_resources",
             })?;
         for element in &self.elements {
-            let PdfElement::Image { asset, .. } = element else {
+            let PdfElement::Image {
+                asset,
+                dark_mode_filter,
+                ..
+            } = element
+            else {
                 continue;
             };
             if asset.sanitized_svg.is_some() {
@@ -1369,15 +1397,16 @@ impl PdfPlan {
             }
             if resources
                 .iter()
-                .any(|candidate: &std::sync::Arc<super::ResolvedImageAsset>| {
-                    candidate.identity == asset.identity
-                })
+                .any(|candidate: &PdfImageResource| candidate.asset.identity == asset.identity)
             {
                 continue;
             }
-            resources.push(std::sync::Arc::clone(asset));
+            resources.push(PdfImageResource {
+                asset: std::sync::Arc::clone(asset),
+                dark_mode_filter: *dark_mode_filter,
+            });
         }
-        resources.sort_unstable_by_key(|asset| asset.identity);
+        resources.sort_unstable_by_key(|resource| resource.asset.identity);
         Ok(resources)
     }
 
@@ -1423,7 +1452,7 @@ impl PdfPlan {
     fn encode_content(
         &self,
         opacity_resources: &[f64],
-        image_resources: &[std::sync::Arc<super::ResolvedImageAsset>],
+        image_resources: &[PdfImageResource],
         svg_resources: &[PdfSvgResource],
         fallback_mappings: &[PdfGlyphMapping],
         official_mappings: &[Vec<PdfGlyphMapping>],
@@ -1782,7 +1811,7 @@ impl PdfPlan {
                 PdfElement::Frame {
                     source,
                     name,
-                    outline_path,
+                    outline,
                     frame_clips,
                     transform,
                     opacity,
@@ -1817,19 +1846,17 @@ impl PdfPlan {
                     if *opacity != 1.0 {
                         push_opacity_resource(&mut content, opacity_resources, *opacity)?;
                     }
-                    if let Some(outline_path) = outline_path {
+                    if let Some(outline) = outline {
                         push_pdf_number(
                             &mut content,
                             super::FRAME_OUTLINE_STROKE_WIDTH,
                             "PDF frame outline stroke width",
                         )?;
                         content.push_str(" w\n1 J\n1 j\n/CS1 CS\n");
-                        push_color(
-                            &mut content,
-                            super::FRAME_OUTLINE_STROKE_COLOR.rgb_f64(),
-                            "SCN",
-                        )?;
-                        push_rough_path(&mut content, outline_path)?;
+                        // PDF follows the reference SVG's outline color, which
+                        // does not recolor magic frames.
+                        push_color(&mut content, outline.stroke_color.rgb_f64(), "SCN")?;
+                        push_rough_path(&mut content, &outline.path)?;
                         content.push_str("S\n");
                     }
                     content.push_str("Q\n");
@@ -1928,7 +1955,7 @@ impl PdfPlan {
                             "Im",
                             image_resources
                                 .iter()
-                                .position(|candidate| candidate.identity == asset.identity),
+                                .position(|candidate| candidate.asset.identity == asset.identity),
                         )
                     };
                     let resource = resource.ok_or_else(|| {

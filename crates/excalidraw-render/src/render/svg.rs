@@ -2,7 +2,8 @@ use crate::{color::CanonicalColor, RenderRequest, Sizing};
 
 use super::{
     rough::{Drawing, FillKind, Path, PathOperation},
-    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene, StrokeStyle,
+    DarkModeImageFilter, FormatEncodeError, NormalizedElementSource, ResolvedElement,
+    ResolvedScene, StrokeStyle,
 };
 
 pub(super) trait SvgSink: std::fmt::Write {
@@ -102,6 +103,65 @@ pub(super) struct SvgPlan {
     elements: Vec<SvgElement>,
 }
 
+/// The `<defs>` filter standing in for the reference filters a dark-mode image
+/// passes through ([`DarkModeImageFilter`]): the renderer lowers the root
+/// `THEME_FILTER` into its vector colors and carries no root filter, so each
+/// image references the whole chain it needs. The definitions spell the CSS
+/// filter functions as the Filter Effects primitives they are defined as, in
+/// sRGB like the functions, so a viewer without filter-function support still
+/// applies them.
+trait SvgImageFilterDefinition {
+    fn id(self) -> &'static str;
+
+    /// The definition, primitive by primitive in filter-function order.
+    fn definition(self) -> &'static str;
+}
+
+impl SvgImageFilterDefinition for DarkModeImageFilter {
+    fn id(self) -> &'static str {
+        match self {
+            Self::RasterImage => "dark-mode-raster-image",
+            Self::NestedSvgImage => "dark-mode-nested-svg-image",
+        }
+    }
+
+    fn definition(self) -> &'static str {
+        match self {
+            Self::RasterImage => concat!(
+                "<filter id=\"dark-mode-raster-image\" color-interpolation-filters=\"sRGB\">",
+                // invert(100%)
+                "<feComponentTransfer>",
+                "<feFuncR type=\"table\" tableValues=\"1 0\"/>",
+                "<feFuncG type=\"table\" tableValues=\"1 0\"/>",
+                "<feFuncB type=\"table\" tableValues=\"1 0\"/>",
+                "</feComponentTransfer>",
+                // hue-rotate(180deg) saturate(1.25)
+                "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
+                "<feColorMatrix type=\"saturate\" values=\"1.25\"/>",
+                // invert(93%) hue-rotate(180deg)
+                "<feComponentTransfer>",
+                "<feFuncR type=\"table\" tableValues=\"0.93 0.07\"/>",
+                "<feFuncG type=\"table\" tableValues=\"0.93 0.07\"/>",
+                "<feFuncB type=\"table\" tableValues=\"0.93 0.07\"/>",
+                "</feComponentTransfer>",
+                "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
+                "</filter>",
+            ),
+            Self::NestedSvgImage => concat!(
+                "<filter id=\"dark-mode-nested-svg-image\" color-interpolation-filters=\"sRGB\">",
+                // invert(93%) hue-rotate(180deg)
+                "<feComponentTransfer>",
+                "<feFuncR type=\"table\" tableValues=\"0.93 0.07\"/>",
+                "<feFuncG type=\"table\" tableValues=\"0.93 0.07\"/>",
+                "<feFuncB type=\"table\" tableValues=\"0.93 0.07\"/>",
+                "</feComponentTransfer>",
+                "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
+                "</filter>",
+            ),
+        }
+    }
+}
+
 enum SvgElement {
     RoughOutline {
         source: NormalizedElementSource,
@@ -140,7 +200,9 @@ enum SvgElement {
     Frame {
         source: NormalizedElementSource,
         name: Option<SvgFrameName>,
-        outline: bool,
+        /// The outline's stroke when the frame paints one: `FRAME_STYLE.strokeColor`
+        /// for the color mode, as the reference SVG strokes every frame kind.
+        outline_stroke_color: Option<CanonicalColor>,
         frame_clips: Vec<super::ResolvedClip>,
         transform: SvgTransform,
         opacity: f64,
@@ -162,6 +224,8 @@ enum SvgElement {
     Image {
         source: NormalizedElementSource,
         asset: std::sync::Arc<super::ResolvedImageAsset>,
+        /// The dark-mode filter the `<image>` references, defined in `<defs>`.
+        dark_mode_filter: Option<DarkModeImageFilter>,
         frame_clips: Vec<super::ResolvedClip>,
         /// The image's rounded-corner clip radius when it has a roundness
         /// record; the SVG defines the clip as a `<rect rx ry>`.
@@ -549,7 +613,7 @@ impl SvgPlan {
                             color: name.color,
                             label: name.label,
                         }),
-                        outline: frame.outline_path.is_some(),
+                        outline_stroke_color: frame.outline.map(|outline| outline.stroke_color),
                         frame_clips: frame.frame_clips,
                         transform: SvgTransform::new(&frame.transform),
                         opacity: frame.opacity,
@@ -576,6 +640,7 @@ impl SvgPlan {
                     elements.push(SvgElement::Image {
                         source: image.source,
                         asset: image.asset,
+                        dark_mode_filter: image.dark_mode_filter,
                         frame_clips: image.frame_clips,
                         corner_radius: image.corner_clip.map(|clip| clip.radius),
                         transform: image.transform,
@@ -615,6 +680,24 @@ impl SvgPlan {
             mandatory_notices,
             metadata: None,
             elements,
+        })
+    }
+
+    /// The dark-mode image filters the plan references, each once, raster
+    /// before nested-SVG.
+    fn image_filters(&self) -> impl Iterator<Item = DarkModeImageFilter> + '_ {
+        [
+            DarkModeImageFilter::RasterImage,
+            DarkModeImageFilter::NestedSvgImage,
+        ]
+        .into_iter()
+        .filter(move |filter| {
+            self.elements.iter().any(|element| {
+                matches!(
+                    element,
+                    SvgElement::Image { dark_mode_filter: Some(referenced), .. } if referenced == filter
+                )
+            })
         })
     }
 
@@ -691,6 +774,9 @@ impl SvgPlan {
             {
                 push_image_clip_definition(&mut svg, source, *width, *height, *radius)?;
             }
+        }
+        for filter in self.image_filters() {
+            svg.push_str(filter.definition());
         }
         self.font_bundle.write_style(svg, push_base64)?;
         svg.push_str("</defs>");
@@ -1022,7 +1108,7 @@ impl SvgPlan {
                 SvgElement::Frame {
                     source,
                     name: _,
-                    outline,
+                    outline_stroke_color,
                     frame_clips: _,
                     transform,
                     opacity,
@@ -1048,7 +1134,7 @@ impl SvgPlan {
                     }
                     svg.push('>');
                     push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
-                    if *outline {
+                    if let Some(stroke_color) = outline_stroke_color {
                         // The reference outline: the frame rectangle with
                         // `FRAME_STYLE.radius`, `strokeColor` and `strokeWidth`.
                         svg.push_str("<rect data-frame-outline=\"");
@@ -1060,13 +1146,11 @@ impl SvgPlan {
                         svg.push('"');
                         push_svg_corner_radius(&mut svg, super::FRAME_RADIUS)?;
                         svg.push_str(" fill=\"none\" stroke=\"");
-                        super::FRAME_OUTLINE_STROKE_COLOR
-                            .write_hex(&mut svg)
-                            .map_err(|_| {
-                                FormatEncodeError::Encoding(
-                                    "failed to write SVG frame outline stroke".to_owned(),
-                                )
-                            })?;
+                        stroke_color.write_hex(&mut svg).map_err(|_| {
+                            FormatEncodeError::Encoding(
+                                "failed to write SVG frame outline stroke".to_owned(),
+                            )
+                        })?;
                         svg.push_str("\" stroke-width=\"");
                         push_svg_number(
                             &mut svg,
@@ -1179,6 +1263,7 @@ impl SvgPlan {
                 SvgElement::Image {
                     source,
                     asset,
+                    dark_mode_filter,
                     corner_radius,
                     transform,
                     opacity,
@@ -1286,6 +1371,11 @@ impl SvgPlan {
                         },
                         "SVG image height",
                     )?;
+                    if let Some(filter) = dark_mode_filter {
+                        svg.push_str("\" filter=\"url(#");
+                        svg.push_str(filter.id());
+                        svg.push(')');
+                    }
                     svg.push_str("\"/>");
                     if transformed {
                         svg.push_str("</svg>");

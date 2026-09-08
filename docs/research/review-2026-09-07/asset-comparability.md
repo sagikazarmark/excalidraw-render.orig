@@ -20,7 +20,8 @@ never embeds, one emoji adds a 1.15 MB unsubsetted Noto Emoji TTF to the SVG
 (62–863 KB each) plus raw uncompressed image pixels, and every text-bearing SVG
 carries 5–21 KB of license text in `<metadata>`. Two behavioural gaps were not
 covered by any test: image `roundness` clipping was not implemented (fixed by
-#129), and dark-mode image handling differs from the official filter chain.
+#129), and dark-mode image handling differed from the official filter chain
+(fixed by #130; PDF nested-SVG vector content deferred to #154).
 
 ---
 
@@ -28,7 +29,7 @@ covered by any test: image `roundness` clipping was not implemented (fixed by
 
 | Aspect | Official 0.18.1 | Renderer | Consumer impact |
 |---|---|---|---|
-| Root | `<svg version="1.1" xmlns viewBox width height [filter="invert(93%) hue-rotate(180deg)"]>` — no `xmlns:xlink` | Same, minus `filter` (dark mode baked into colours, `color.rs:86-99`) | Dark-mode consumers see pre-inverted colours instead of a filter (better for PDF/Inkscape). See §1.1 for images. |
+| Root | `<svg version="1.1" xmlns viewBox width height [filter="invert(93%) hue-rotate(180deg)"]>` — no `xmlns:xlink` | Same, minus `filter` (dark mode baked into colours, `color.rs` `theme_filter`) | Dark-mode consumers see pre-inverted colours instead of a filter (better for PDF/Inkscape); only images carry a `<defs>` filter (#130). See §1.1. |
 | Preamble | `<!-- svg-source:excalidraw -->`, `<metadata>` (payload comments inside), `<defs>` (clipPaths then `<style class="style-fonts">`) | Identical order (`svg.rs:626-645`); adds `<excalidraw-render:manifest>` JSON node inside `<metadata>` | Excalidraw re-import uses regex on `payload-start/end`, so embedded scene round-trips. The manifest adds 5–21 KB (§2.2). |
 | Empty font style | `<style class="style-fonts">` always present | Omitted when no fonts (`svg_fonts.rs:148-150`) | Trivial. |
 | `@font-face` | unquoted family, `"Liberation Sans"` quoted; no `unicode-range` | `@font-face{font-family:'Excalifont';src:url(…)}` (`svg_fonts.rs:151-161`); no `unicode-range` | Equivalent. |
@@ -36,7 +37,7 @@ covered by any test: image `roundness` clipping was not implemented (fixed by
 | Text | One `<text x y font-family="Excalifont, Xiaolai, Segoe UI Emoji" font-size="20px" …>` **per line** | One `<text data-source-text xml:space="preserve" fill font-family="<single family>" font-size="20" text-anchor>` **per element**, one `<tspan x y>` per line; mixed/RTL lines become one `<tspan>` per glyph run with per-character `x` lists (`svg.rs:1069-1126`) | (a) DOM `textContent` is `"One two threeFour"` — no separator between lines (deliberate, `svg.rs:1119-1124`); (b) no fallback family list: non-browser consumers that ignore `@font-face` fall to their default font for `ExcalidrawRender-9`; (c) per-character `x` lists disable consumer kerning and break converters that read only the first `x`. |
 | Fonts named | `Helvetica`, `Cascadia`, `Virgil`, `Lilita One`, `Liberation Sans`, … | `ExcalidrawRender-1/3/7/9` for Virgil/Cascadia/Lilita/Liberation (`svg_fonts.rs:165-173`, ADR-0001 OFL RFN) | Invisible in browsers. Visible as unknown family to any tool not honouring embedded fonts. |
 | Links | `<a href>` wrapping element node | Same (`svg.rs:674-678`) | None. |
-| Images | `<defs><symbol id="image-<fileId>"><image …/></symbol>` + `<use href="#image-…" [filter=IMAGE_INVERT_FILTER]/>`; crop via `<mask>`; `roundness` via `<clipPath rx>` | Inline `<g transform opacity><image href="data:…"/></g>` per element; crop via nested `<svg viewBox … overflow="hidden">`; flip via inner `<g scale>` (`svg.rs:1145-1239`); `roundness` via `<clipPath id="image-clip-<source index>"><rect rx ry>` in `<defs>` (#129) | **No dedup**: identical file used N times is embedded N times (image-codecs: 11 `<image>` vs 8 official). **No dark-mode image filter**. |
+| Images | `<defs><symbol id="image-<fileId>"><image …/></symbol>` + `<use href="#image-…" [filter=IMAGE_INVERT_FILTER]/>`; crop via `<mask>`; `roundness` via `<clipPath rx>` | Inline `<g transform opacity><image href="data:…"/></g>` per element; crop via nested `<svg viewBox … overflow="hidden">`; flip via inner `<g scale>` (`svg.rs:1145-1239`); `roundness` via `<clipPath id="image-clip-<source index>"><rect rx ry>` in `<defs>` (#129) | **No dedup**: identical file used N times is embedded N times (image-codecs: 11 `<image>` vs 8 official). Dark-mode image filters via `<defs>` `dark-mode-raster-image` / `dark-mode-nested-svg-image` (#130). |
 | Frame clip | `<clipPath id="<frameId>"><rect transform="translate() rotate(<radians> cx cy)" rx ry/>`; children wrapped in `<g xmlns:nsN="http://www.w3.org/2000/svg" nsN:clip-path="url(#id)">` (`setAttributeNS` bug — see 1.2) | `<clipPath id="frame-clip-<sourceIndex>">` with degrees; `<g clip-path="url(#…)">` (`svg.rs:231-295, 424-430`) | Renderer's clip **works in browsers; the official's does not**. |
 | Bound-text mask | `<mask id="mask-<elementId>">` | `<defs><mask id="arrow-label-mask-<index>" maskUnits="userSpaceOnUse">` (`svg.rs:707-735`) | None. |
 | Frame name/outline | `<text font-family="Helvetica, …" font-size="14px">`, `<rect width="580px" … stroke="#bbb">` | `<text data-frame-name … font-family="ExcalidrawRender-9" font-size="14">`, `<rect data-frame-outline width="580" … stroke="#bbbbbb">` (`svg.rs:300-364, 1003-1025`) | None; baselines match exactly. |
@@ -44,16 +45,20 @@ covered by any test: image `roundness` clipping was not implemented (fixed by
 
 ### 1.1 Dark mode
 
-Official: root `filter="invert(93%) hue-rotate(180deg)"`; raster images
+Official SVG: root `filter="invert(93%) hue-rotate(180deg)"`; raster images
 additionally get `<use filter="invert(100%) hue-rotate(180deg)
 saturate(1.25)">` (net ≈ original, contrast compressed to ~[18,237]); SVG
-images stay inverted (chunk L17644). Canvas does the same (L8793). Renderer:
-colours are lowered via `CanonicalColor::darkened()` (`color.rs:86-99`); image
-bytes/pixels are untouched in both SVG and PNG — verified: `image-codecs`
-rendered light vs `--dark-mode` gives identical image pixels and identical
-`<image>` payloads. Raster images differ slightly (≤~7% per channel) and
-**nested SVG images differ completely**. No dark-mode variant exists for
-`image-codecs`, so nothing observes this.
+images stay inverted (chunk L17644). Official canvas *export* does **not** do
+the same: L8793 is the interactive element-canvas path; the `isExporting`
+branch resets `context.filter` to `none` for raster images (L9186,
+`shouldResetImageFilter`), so raster pixels are untouched in the official PNG
+while SVG-mime images and the placeholder keep the theme filter. Renderer
+(#130): colours are lowered via `color::theme_filter`; SVG references
+`<defs>` filters from each `<image>` and keeps the payload bytes; PNG keeps
+raster pixels, filters the rasterized nested-SVG layer and the placeholder; PDF
+follows official SVG and lowers `dark_mode_raster_image_pixel` into its image
+XObjects. PDF nested-SVG vector content is still light (#154). No dark-mode
+variant exists for `image-codecs`; #153 tracks official evidence.
 
 ### 1.2 Frame clipping — official SVG is unclipped in Chromium, renderer's is clipped
 
@@ -241,7 +246,7 @@ image non-reuse in SVG is not mentioned.
 | 3 | PDF applies no stream filter to content, fonts, ICC, XMP or images, contradicting spec §8.6. | `pdf.rs:700-703, 889-918, 3499` | high (size) / med (spec drift) | Digest-pinned only |
 | 4 | Frame clipping: official SVG serializes `nsN:clip-path` which Chromium ignores → official SVG renders unclipped, canvas clips; renderer clips. Undocumented and invisible to the resvg harness. | `svg.rs:285-295`; `frame-clip-mask-sharing/evidence/official.svg` | med (docs/authority) | Hidden by `registered_case_svg_raster_parity.rs:262-321` |
 | 5 | Image `roundness` not implemented. **Fixed by #129** in all three formats. | `resolve.rs` `ResolvedImageCornerClip`, `svg.rs` `push_image_clip_definition` | med-high | `tests/fast/image_corner_clip.rs` |
-| 6 | Dark mode: images left untouched. | `color.rs:86-99`, `svg.rs:1208-1211` | med | None |
+| 6 | Dark mode: images left untouched. **Fixed by #130** (SVG filters, PNG nested-SVG/placeholder, PDF raster pixels); PDF nested-SVG vector content deferred to #154. | `color.rs` `theme_filter` / `image_invert_filter`, `svg.rs` `SvgImageFilter` | med | `tests/fast/dark_mode_frame_and_image_render.rs` |
 | 7 | Helvetica substituted by an embedded Liberation subset; official never embeds Helvetica. Consumers without `@font-face` see `ExcalidrawRender-9`. | `font_demand.rs:237-248`, `svg_fonts.rs:165-173` | med | Diagnostic pinned; no size gate |
 | 8 | `<metadata>` repeats the full OFL text once per font license identity (47–61% of text-bearing SVGs). | `svg_fonts.rs:730-742`, `notices.rs` | med (size) | Presence tested; size not |
 | 9 | Images inlined per element, never shared via `<symbol>/<use>`. | `svg.rs:1208-1232` | med | None |

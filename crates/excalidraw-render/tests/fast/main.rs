@@ -17,6 +17,7 @@ mod artifact_metadata;
 mod bound_text_render;
 mod compatibility_fallback_render;
 mod compatibility_identity;
+mod dark_mode_frame_and_image_render;
 mod emoji_fallback_render;
 mod empty_scene_render;
 mod empty_text_line_render;

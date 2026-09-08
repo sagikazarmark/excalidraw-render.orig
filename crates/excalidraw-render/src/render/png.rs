@@ -1,15 +1,19 @@
-use crate::{color::CanonicalColor, RenderRequest};
+use crate::{
+    color::{self, CanonicalColor},
+    RenderRequest,
+};
 use miniz_oxide::deflate::core::{compress_to_output, CompressorOxide, TDEFLFlush, TDEFLStatus};
 use miniz_oxide::DataFormat;
 use tiny_skia::{
-    BlendMode, Color, FillRule, FilterQuality, IntSize, LineCap, LineJoin, Mask, Paint,
+    BlendMode, Color, ColorU8, FillRule, FilterQuality, IntSize, LineCap, LineJoin, Mask, Paint,
     PathBuilder, PathStroker, Pixmap, PixmapMut, PixmapPaint, PixmapRef, Rect, Shader, Stroke,
     StrokeDash, Transform,
 };
 
 use super::{
     rough::{Drawing, FillKind, Path, PathOperation, Point},
-    FormatEncodeError, NormalizedElementSource, ResolvedElement, ResolvedScene, StrokeStyle,
+    DarkModeImageFilter, FormatEncodeError, NormalizedElementSource, ResolvedElement,
+    ResolvedScene, StrokeStyle,
 };
 
 pub(super) struct PngPlan {
@@ -17,10 +21,20 @@ pub(super) struct PngPlan {
     height: u32,
     background: Option<[u8; 4]>,
     fallback_colors: super::FallbackColors,
+    /// `drawImagePlaceholder`'s `#E7E7E7` rectangle, for the color mode.
     image_fallback_background: CanonicalColor,
+    /// `drawImagePlaceholder`'s `#888` Font Awesome glyph, for the color mode.
+    image_fallback_icon_color: CanonicalColor,
     svg_trees: super::SvgTreeCache,
     elements: Vec<PngElement>,
 }
+
+/// `drawImagePlaceholder`: the reference canvas fills the missing image's
+/// rectangle `#E7E7E7` and draws the `#888` Font Awesome glyph over it. A
+/// missing image is pending in the reference's image cache, so the canvas
+/// keeps its theme filter for the placeholder and both colors pass through it.
+const IMAGE_FALLBACK_BACKGROUND: CanonicalColor = CanonicalColor::from_rgb8(0xe7, 0xe7, 0xe7);
+const IMAGE_FALLBACK_ICON_COLOR: CanonicalColor = CanonicalColor::from_rgb8(0x88, 0x88, 0x88);
 
 enum PngElement {
     RoughOutline {
@@ -58,8 +72,7 @@ enum PngElement {
     Frame {
         source: NormalizedElementSource,
         name: Option<PngFrameName>,
-        magic: bool,
-        outline_path: Option<Path>,
+        outline: Option<super::ResolvedFrameOutline>,
         frame_clips: Vec<PngFrameClip>,
         transform: PngTransform,
         opacity: f64,
@@ -78,6 +91,10 @@ enum PngElement {
     Image {
         source: NormalizedElementSource,
         asset: std::sync::Arc<super::ResolvedImageAsset>,
+        /// The dark-mode filter the canvas applies to this image. The canvas
+        /// resets its filter for a raster image, so only a nested-SVG image's
+        /// rasterized pixels are lowered here.
+        dark_mode_filter: Option<DarkModeImageFilter>,
         frame_clips: Vec<PngFrameClip>,
         /// The rounded-corner clip of an image with a roundness record, in
         /// element space; without one the image clips to its rectangle.
@@ -587,8 +604,7 @@ impl PngPlan {
                             color: name.color,
                             label: name.label,
                         }),
-                        magic: frame.magic,
-                        outline_path: frame.outline_path,
+                        outline: frame.outline,
                         frame_clips: project_frame_clips(frame.frame_clips, scale)?,
                         transform: PngTransform::new(&frame.transform, scale),
                         opacity: frame.opacity,
@@ -611,6 +627,7 @@ impl PngPlan {
                     elements.push(PngElement::Image {
                         source: image.source,
                         asset: image.asset,
+                        dark_mode_filter: image.dark_mode_filter,
                         frame_clips: project_frame_clips(image.frame_clips, scale)?,
                         corner_clip: image.corner_clip.map(|clip| clip.path),
                         transform: PngTransform::new(&image.transform, scale),
@@ -670,10 +687,8 @@ impl PngPlan {
             background,
             svg_trees: svg_trees.clone(),
             fallback_colors: scene.fallback_colors,
-            image_fallback_background: match request.color_mode() {
-                crate::ColorMode::Light => CanonicalColor::from_rgb8(0xe7, 0xe7, 0xe7),
-                crate::ColorMode::Dark => CanonicalColor::from_rgb8(0x2e, 0x2e, 0x2e),
-            },
+            image_fallback_background: IMAGE_FALLBACK_BACKGROUND.for_mode(request.color_mode()),
+            image_fallback_icon_color: IMAGE_FALLBACK_ICON_COLOR.for_mode(request.color_mode()),
             elements,
         })
     }
@@ -906,8 +921,7 @@ impl PngPlan {
                     PngElement::Frame {
                         source,
                         name,
-                        magic,
-                        outline_path,
+                        outline,
                         frame_clips: _,
                         transform,
                         opacity,
@@ -918,17 +932,12 @@ impl PngPlan {
                                 "PNG frame lost its source identity".to_owned(),
                             ));
                         }
-                        if let Some(outline_path) = outline_path {
-                            let path = tiny_skia_path(outline_path)?;
+                        if let Some(outline) = outline {
+                            let path = tiny_skia_path(&outline.path)?;
                             // The reference's canvas path (`renderElement`)
-                            // recolors a magic frame's outline in light mode;
-                            // its SVG path does not.
-                            let color = if *magic {
-                                CanonicalColor::from_rgb8(0x7a, 0xff, 0xd7)
-                            } else {
-                                super::FRAME_OUTLINE_STROKE_COLOR
-                            };
-                            let paint = solid_paint(color, *opacity)?;
+                            // recolors a magic frame's outline by theme; its
+                            // SVG path does not. Both are resolved for the mode.
+                            let paint = solid_paint(outline.canvas_stroke_color, *opacity)?;
                             let stroke = Stroke {
                                 width: super::FRAME_OUTLINE_STROKE_WIDTH as f32,
                                 miter_limit: 4.0,
@@ -990,6 +999,7 @@ impl PngPlan {
                     PngElement::Image {
                         source,
                         asset,
+                        dark_mode_filter,
                         transform,
                         width,
                         height,
@@ -1077,6 +1087,13 @@ impl PngPlan {
                                 },
                             )?;
                             resvg::render(tree, raster_transform, &mut layer.as_mut());
+                            if *dark_mode_filter == Some(DarkModeImageFilter::NestedSvgImage) {
+                                // The reference canvas keeps its theme filter
+                                // for a nested-SVG image (`shouldResetImageFilter`
+                                // resets it only for rasters), so the viewer's
+                                // light-mode pixels pass through it here.
+                                apply_theme_filter(&mut layer);
+                            }
                             surface.draw_pixmap(
                                 i32::try_from(left).map_err(|_| png_size_error())?,
                                 i32::try_from(top).map_err(|_| png_size_error())?,
@@ -1154,8 +1171,7 @@ impl PngPlan {
                                 finite_f32((*width - size) / 2.0, "PNG image fallback icon x")?,
                                 finite_f32((*height - size) / 2.0, "PNG image fallback icon y")?,
                             );
-                        let icon_paint =
-                            solid_paint(CanonicalColor::from_rgb8(0x88, 0x88, 0x88), *opacity)?;
+                        let icon_paint = solid_paint(self.image_fallback_icon_color, *opacity)?;
                         match status {
                             crate::normalization::NormalizedImageStatus::Error => {
                                 let icon_transform = icon_transform.pre_scale(
@@ -2086,6 +2102,22 @@ fn apply_scanline_filter(
 ) {
     for (index, residual) in residuals.iter_mut().enumerate().take(row.len()) {
         *residual = filter.residual(index, row, previous);
+    }
+}
+
+/// Lowers the reference canvas's theme filter into a rasterized layer: each
+/// pixel's unpremultiplied color passes through the filter and is premultiplied
+/// again, as the canvas filter reads and writes its surface; transparent pixels
+/// have no color to filter.
+fn apply_theme_filter(layer: &mut Pixmap) {
+    for pixel in layer.pixels_mut() {
+        let alpha = pixel.alpha();
+        if alpha == 0 {
+            continue;
+        }
+        let color = pixel.demultiply();
+        let [red, green, blue] = color::theme_filter([color.red(), color.green(), color.blue()]);
+        *pixel = ColorU8::from_rgba(red, green, blue, alpha).premultiply();
     }
 }
 
