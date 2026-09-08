@@ -969,3 +969,40 @@ fn corner_radius(size: f64, roundness: crate::normalization::NormalizedRoundness
         }
     }
 }
+
+/// ECMAScript `Math.round`: the closest integral value, a tie going toward
+/// positive infinity, so `-2.5` is `-2` where `f64::round` gives `-3`. A
+/// result of negative zero is canonicalized to zero. The fraction is compared
+/// rather than `(value + 0.5).floor()` taken, which would carry
+/// `0.49999999999999994` up to 1.
+pub(super) fn ecmascript_round(value: f64) -> f64 {
+    let floor = value.floor();
+    let rounded = if value - floor >= 0.5 {
+        floor + 1.0
+    } else {
+        floor
+    };
+    if rounded == 0.0 {
+        0.0
+    } else {
+        rounded
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ecmascript_round;
+
+    #[test]
+    fn ecmascript_round_carries_ties_up_and_leaves_the_near_half_alone() {
+        assert_eq!(ecmascript_round(2.5), 3.0);
+        assert_eq!(ecmascript_round(-1.5), -1.0);
+        assert_eq!(ecmascript_round(-2.5), -2.0);
+        assert_eq!(ecmascript_round(-0.5).to_bits(), 0.0_f64.to_bits());
+        assert_eq!(ecmascript_round(40.4), 40.0);
+        // `(value + 0.5).floor()` would carry the largest double below one
+        // half up to 1; `Math.round` does not.
+        assert_eq!(ecmascript_round(0.499_999_999_999_999_94), 0.0);
+        assert_eq!(ecmascript_round(96.0), 96.0);
+    }
+}

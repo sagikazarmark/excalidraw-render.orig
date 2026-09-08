@@ -15,7 +15,7 @@ fn direct_svg_preserves_validated_bmp_octets_in_a_canonical_data_url() {
 
     assert!(outcome.report().diagnostics().is_empty());
     assert!(svg.contains(&format!(
-        "<image href=\"data:image/bmp;base64,{encoded}\" width=\"1\" height=\"1\"/>"
+        "<image href=\"data:image/bmp;base64,{encoded}\" preserveAspectRatio=\"none\" width=\"1\" height=\"1\"/>"
     )));
 }
 

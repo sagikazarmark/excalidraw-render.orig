@@ -17,7 +17,7 @@ fn direct_svg_preserves_validated_gif_octets_in_a_canonical_data_url() {
 
     assert!(outcome.report().diagnostics().is_empty());
     assert!(svg.contains(&format!(
-        "<image href=\"data:image/gif;base64,{encoded}\" width=\"2\" height=\"1\"/>"
+        "<image href=\"data:image/gif;base64,{encoded}\" preserveAspectRatio=\"none\" width=\"2\" height=\"1\"/>"
     )));
 }
 

@@ -776,6 +776,11 @@ impl ResolvedScene {
                         },
                         opacity: source.opacity / 100.0 * frame_opacity,
                         source_rect,
+                        projection: ResolvedImageProjection::for_image(
+                            source.width,
+                            source.height,
+                            image.crop,
+                        ),
                         scale: image.scale,
                         link: source.link,
                         width: source.width,
@@ -1230,9 +1235,16 @@ pub(super) struct ResolvedImage {
     pub(super) corner_clip: Option<ResolvedImageCornerClip>,
     pub(super) transform: ResolvedTransform,
     pub(super) opacity: f64,
+    /// The crop in the asset's pixel grid, the canvas `drawImage` source
+    /// rectangle PNG draws from.
     pub(super) source_rect: ResolvedImageSourceRect,
+    /// The reference SVG export's viewport and content placement, which SVG
+    /// and PDF draw through.
+    pub(super) projection: ResolvedImageProjection,
     pub(super) scale: [i8; 2],
     pub(super) link: Option<String>,
+    /// The element's unrounded size: its flip axis, rotation center, corner
+    /// clip, link rectangle, and the canvas rectangle PNG draws into.
     pub(super) width: f64,
     pub(super) height: f64,
 }
@@ -1306,6 +1318,102 @@ pub(super) struct ResolvedImageFallback {
     pub(super) opacity: f64,
     pub(super) width: f64,
     pub(super) height: f64,
+}
+
+/// How the reference SVG export places an image, which SVG and PDF (whose
+/// visual authority is the official SVG, spec section 8.6) reproduce: the
+/// whole asset is drawn into the content rectangle and clipped to the
+/// viewport, both in the element's own space before its `scale` flip about the
+/// element's unrounded center and its rotation.
+///
+/// The viewport is `Math.round(width)` by `Math.round(height)`, the size of
+/// the reference's `<use>` and of its crop `<mask>`; it is the only image value
+/// that rounds (spec section 8.6). An uncropped image fills the rounded
+/// viewport, as the reference's `<symbol>` image of `width="100%"` does; a
+/// cropped image keeps the reference's unrounded `getUncroppedWidthAndHeight`
+/// size at the negative `normalizedCrop` offset of its group translation, and
+/// the viewport clips it.
+///
+/// PNG follows the canvas, which draws the crop into the element's unrounded
+/// rectangle (`drawImage(..., 0, 0, element.width, element.height)`), and
+/// does not use this.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct ResolvedImageProjection {
+    pub(super) viewport_width: f64,
+    pub(super) viewport_height: f64,
+    /// A cropped image's placement; `None` for an uncropped image, whose
+    /// content is the viewport itself.
+    pub(super) crop: Option<ResolvedImageCropPlacement>,
+}
+
+/// A cropped image's placement in the reference export: the whole image at
+/// its unrounded `getUncroppedWidthAndHeight` size, shifted up and left by the
+/// `normalizedCrop` offset so the crop's top-left corner sits at the element's
+/// origin. Neither value inherits the viewport's rounding.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct ResolvedImageCropPlacement {
+    pub(super) offset_x: f64,
+    pub(super) offset_y: f64,
+    pub(super) uncropped_width: f64,
+    pub(super) uncropped_height: f64,
+}
+
+impl ResolvedImageProjection {
+    /// The projection of an image element of the given unrounded size and
+    /// normalized crop record, if it has one.
+    pub(super) fn for_image(
+        width: f64,
+        height: f64,
+        crop: Option<crate::normalization::NormalizedImageCrop>,
+    ) -> Self {
+        Self {
+            viewport_width: ecmascript_round(width),
+            viewport_height: ecmascript_round(height),
+            crop: crop.map(|crop| {
+                // The reference's arithmetic, operation for operation, so the
+                // emitted numbers are its numbers: `getUncroppedWidthAndHeight`
+                // divides the element size by the crop's share of the natural
+                // size, and the normalized crop offset divides the crop offset
+                // by the natural-to-uncropped ratio.
+                let uncropped_width = width / (crop.width / crop.natural_width);
+                let uncropped_height = height / (crop.height / crop.natural_height);
+                ResolvedImageCropPlacement {
+                    offset_x: crop.x / (crop.natural_width / uncropped_width),
+                    offset_y: crop.y / (crop.natural_height / uncropped_height),
+                    uncropped_width,
+                    uncropped_height,
+                }
+            }),
+        }
+    }
+
+    /// The rectangle the whole asset is drawn into, as `(x, y, width, height)`
+    /// in the element's space before its flip.
+    pub(super) fn content_rect(&self) -> (f64, f64, f64, f64) {
+        match self.crop {
+            None => (0.0, 0.0, self.viewport_width, self.viewport_height),
+            Some(crop) => (
+                -crop.offset_x,
+                -crop.offset_y,
+                crop.uncropped_width,
+                crop.uncropped_height,
+            ),
+        }
+    }
+
+    /// The reference `<use>` viewport, as `(x, y, width, height)` in the
+    /// element's space before its flip: from the content's origin to the
+    /// rounded viewport's far edges, so `width + normalizedCropX` wide as the
+    /// reference sizes it, and the viewport itself for an uncropped image.
+    pub(super) fn viewport_rect(&self) -> (f64, f64, f64, f64) {
+        let (content_x, content_y, _, _) = self.content_rect();
+        (
+            content_x,
+            content_y,
+            self.viewport_width - content_x,
+            self.viewport_height - content_y,
+        )
+    }
 }
 
 #[derive(Clone, Copy)]

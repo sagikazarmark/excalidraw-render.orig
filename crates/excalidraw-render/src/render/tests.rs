@@ -2225,6 +2225,54 @@ fn an_image_corner_clip_exists_only_for_a_positive_radius_and_traces_its_rounded
 }
 
 #[test]
+fn an_image_projection_rounds_only_its_viewport_the_way_the_reference_use_does() {
+    use crate::normalization::NormalizedImageCrop;
+
+    // The reference `<use>` is `Math.round(width)` by `Math.round(height)`,
+    // and an uncropped image fills it as the reference's 100% symbol image does.
+    let projection = ResolvedImageProjection::for_image(40.5, 40.4, None);
+    assert_eq!(projection.viewport_width, 41.0);
+    assert_eq!(projection.viewport_height, 40.0);
+    assert_eq!(projection.crop, None);
+    assert_eq!(projection.content_rect(), (0.0, 0.0, 41.0, 40.0));
+
+    // `Math.round` ties go up, not away from zero as `f64::round` would.
+    let ties = ResolvedImageProjection::for_image(2.5, 0.5, None);
+    assert_eq!(ties.viewport_width, 3.0);
+    assert_eq!(ties.viewport_height, 1.0);
+    let integer = ResolvedImageProjection::for_image(96.0, 40.0, None);
+    assert_eq!(integer.viewport_width, 96.0);
+    assert_eq!(integer.viewport_height, 40.0);
+    let just_under = ResolvedImageProjection::for_image(0.499_999_999_999_999_94, 1.0, None);
+    assert_eq!(just_under.viewport_width, 0.0);
+
+    // A cropped image keeps the reference's unrounded uncropped size and crop
+    // offset: `getUncroppedWidthAndHeight` and `normalizedCropX/Y` from the
+    // oracle, for a 3x2 source cropped to its right 2x2 in a 20.5x20.4 element.
+    let crop = NormalizedImageCrop {
+        x: 1.0,
+        y: 0.5,
+        width: 2.0,
+        height: 2.0,
+        natural_width: 3.0,
+        natural_height: 2.0,
+    };
+    let projection = ResolvedImageProjection::for_image(20.5, 20.4, Some(crop));
+    assert_eq!(projection.viewport_width, 21.0);
+    assert_eq!(projection.viewport_height, 20.0);
+    assert_eq!(
+        projection.crop,
+        Some(ResolvedImageCropPlacement {
+            offset_x: 10.25,
+            offset_y: 5.1,
+            uncropped_width: 30.75,
+            uncropped_height: 20.4,
+        })
+    );
+    assert_eq!(projection.content_rect(), (-10.25, -5.1, 30.75, 20.4));
+}
+
+#[test]
 fn a_rounded_image_charges_its_corner_clip_geometry_once_per_target_and_replays() {
     // A 40x40 image with the default adaptive roundness: a 10 px corner clip
     // of nine path operations, charged like a frame clip's geometry in the

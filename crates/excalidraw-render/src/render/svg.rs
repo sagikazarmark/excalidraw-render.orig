@@ -232,9 +232,11 @@ enum SvgElement {
         corner_radius: Option<f64>,
         transform: super::ResolvedTransform,
         opacity: f64,
-        source_rect: super::ResolvedImageSourceRect,
+        /// The reference export's rounded viewport and content placement.
+        projection: super::ResolvedImageProjection,
         scale: [i8; 2],
         link: Option<String>,
+        /// The element's unrounded size: the flip axis and the link rectangle.
         width: f64,
         height: f64,
     },
@@ -645,7 +647,7 @@ impl SvgPlan {
                         corner_radius: image.corner_clip.map(|clip| clip.radius),
                         transform: image.transform,
                         opacity: image.opacity,
-                        source_rect: image.source_rect,
+                        projection: image.projection,
                         scale: image.scale,
                         link: image.link,
                         width: image.width,
@@ -1270,7 +1272,7 @@ impl SvgPlan {
                     link,
                     width,
                     height,
-                    source_rect,
+                    projection,
                     scale,
                     ..
                 } => {
@@ -1306,11 +1308,28 @@ impl SvgPlan {
                     }
                     svg.push('>');
                     push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
-                    let transformed = *scale != [1, 1]
-                        || source_rect.x != 0.0
-                        || source_rect.y != 0.0
-                        || source_rect.width != f64::from(asset.width)
-                        || source_rect.height != f64::from(asset.height);
+                    // The reference's image geometry (spec 8.6), inlined: its
+                    // `<use>` is the rounded viewport, flipped about the
+                    // element's unrounded center; an uncropped symbol image
+                    // fills the viewport, a cropped one is drawn at its
+                    // unrounded uncropped size under the crop offset, behind a
+                    // viewport-sized `<mask>` on the group outside the flip.
+                    let (_, _, content_width, content_height) = projection.content_rect();
+                    if projection.crop.is_some() {
+                        svg.push_str("<svg width=\"");
+                        push_svg_number(
+                            &mut svg,
+                            projection.viewport_width,
+                            "SVG image crop mask width",
+                        )?;
+                        svg.push_str("\" height=\"");
+                        push_svg_number(
+                            &mut svg,
+                            projection.viewport_height,
+                            "SVG image crop mask height",
+                        )?;
+                        svg.push_str("\" overflow=\"hidden\">");
+                    }
                     if *scale != [1, 1] {
                         svg.push_str("<g transform=\"translate(");
                         push_svg_number(
@@ -1332,56 +1351,43 @@ impl SvgPlan {
                         })?;
                         svg.push_str(")\">");
                     }
-                    if transformed {
-                        svg.push_str("<svg width=\"");
-                        push_svg_number(&mut svg, *width, "SVG cropped image width")?;
+                    if projection.crop.is_some() {
+                        // The `<use>` viewport, whose origin is also where the
+                        // symbol image inside it is drawn.
+                        let (viewport_x, viewport_y, viewport_width, viewport_height) =
+                            projection.viewport_rect();
+                        svg.push_str("<svg x=\"");
+                        push_svg_number(&mut svg, viewport_x, "SVG image viewport x")?;
+                        svg.push_str("\" y=\"");
+                        push_svg_number(&mut svg, viewport_y, "SVG image viewport y")?;
+                        svg.push_str("\" width=\"");
+                        push_svg_number(&mut svg, viewport_width, "SVG image viewport width")?;
                         svg.push_str("\" height=\"");
-                        push_svg_number(&mut svg, *height, "SVG cropped image height")?;
-                        svg.push_str("\" viewBox=\"");
-                        push_svg_number(&mut svg, source_rect.x, "SVG image crop x")?;
-                        svg.push(' ');
-                        push_svg_number(&mut svg, source_rect.y, "SVG image crop y")?;
-                        svg.push(' ');
-                        push_svg_number(&mut svg, source_rect.width, "SVG image crop width")?;
-                        svg.push(' ');
-                        push_svg_number(&mut svg, source_rect.height, "SVG image crop height")?;
-                        svg.push_str("\" preserveAspectRatio=\"none\" overflow=\"hidden\">");
+                        push_svg_number(&mut svg, viewport_height, "SVG image viewport height")?;
+                        svg.push_str("\" overflow=\"hidden\">");
                     }
                     svg.push_str("<image href=\"data:");
                     svg.push_str(asset.media_type);
                     svg.push_str(";base64,");
                     push_base64(&mut svg, &asset.source_bytes)?;
-                    svg.push_str("\" width=\"");
-                    push_svg_number(
-                        &mut svg,
-                        if transformed {
-                            f64::from(asset.width)
-                        } else {
-                            *width
-                        },
-                        "SVG image width",
-                    )?;
+                    svg.push_str("\" preserveAspectRatio=\"none\" width=\"");
+                    push_svg_number(&mut svg, content_width, "SVG image width")?;
                     svg.push_str("\" height=\"");
-                    push_svg_number(
-                        &mut svg,
-                        if transformed {
-                            f64::from(asset.height)
-                        } else {
-                            *height
-                        },
-                        "SVG image height",
-                    )?;
+                    push_svg_number(&mut svg, content_height, "SVG image height")?;
                     if let Some(filter) = dark_mode_filter {
                         svg.push_str("\" filter=\"url(#");
                         svg.push_str(filter.id());
                         svg.push(')');
                     }
                     svg.push_str("\"/>");
-                    if transformed {
+                    if projection.crop.is_some() {
                         svg.push_str("</svg>");
                     }
                     if *scale != [1, 1] {
                         svg.push_str("</g>");
+                    }
+                    if projection.crop.is_some() {
+                        svg.push_str("</svg>");
                     }
                     svg.push_str("</g>");
                 }

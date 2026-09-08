@@ -162,9 +162,14 @@ enum PdfElement {
         transform: super::ResolvedTransform,
         opacity: f64,
         link: Option<String>,
+        /// The element's unrounded size: the flip axis and the link rectangle.
         width: f64,
         height: f64,
+        /// The crop in the asset's pixel grid, which bounds the effect regions
+        /// a nested SVG rasterizes.
         source_rect: super::ResolvedImageSourceRect,
+        /// The reference export's rounded viewport and content placement.
+        projection: super::ResolvedImageProjection,
         scale: [i8; 2],
     },
     Fallback {
@@ -321,6 +326,7 @@ impl PdfPlan {
                         width: image.width,
                         height: image.height,
                         source_rect: image.source_rect,
+                        projection: image.projection,
                         scale: image.scale,
                     });
                 }
@@ -1930,7 +1936,7 @@ impl PdfPlan {
                     opacity,
                     width,
                     height,
-                    source_rect,
+                    projection,
                     scale,
                     ..
                 } => {
@@ -1971,52 +1977,55 @@ impl PdfPlan {
                     if *opacity != 1.0 {
                         push_opacity_resource(&mut content, opacity_resources, *opacity)?;
                     }
-                    // The element-space clip precedes the crop and flip matrix,
-                    // so a rounded corner stays at the element's corner however
+                    // The element-space clips precede the content matrix, so
+                    // a rounded corner stays at the element's corner however
                     // the source is mapped into it. Image clips keep full
                     // precision (spec 8.6): the rough two-decimal rounding does
-                    // not apply to them.
-                    match corner_clip {
-                        Some(path) => {
-                            push_mapped_clip(&mut content, path, |x, y| (x, y), "PDF image clip")?
-                        }
-                        None => {
-                            push_pdf_number(&mut content, 0.0, "PDF image clip x")?;
-                            content.push(' ');
-                            push_pdf_number(&mut content, 0.0, "PDF image clip y")?;
-                            content.push(' ');
-                            push_pdf_number(&mut content, *width, "PDF image clip width")?;
-                            content.push(' ');
-                            push_pdf_number(&mut content, *height, "PDF image clip height")?;
-                            content.push_str(" re\nW\nn\n");
-                        }
+                    // not apply to them, and only the viewport carries the
+                    // reference's integer rounding.
+                    if let Some(path) = corner_clip {
+                        push_mapped_clip(&mut content, path, |x, y| (x, y), "PDF image clip")?;
                     }
-                    let base_scale_x = *width / source_rect.width;
-                    let base_scale_y = *height / source_rect.height;
-                    let (image_scale_x, image_offset_x) = if scale[0] < 0 {
-                        (
-                            -f64::from(asset.width) * base_scale_x,
-                            *width + source_rect.x * base_scale_x,
-                        )
+                    let flip_x = scale[0] < 0;
+                    let flip_y = scale[1] < 0;
+                    let (content_x, content_y, content_width, content_height) =
+                        projection.content_rect();
+                    // A cropped image overflows the region the reference leaves
+                    // visible; an uncropped one fills its viewport, so the
+                    // clip only restates the image's own bounds and yields to
+                    // a corner clip.
+                    if projection.crop.is_some() || corner_clip.is_none() {
+                        let (x, y, visible_width, visible_height) =
+                            visible_rect(projection, *width, *height, *scale);
+                        push_rect_clip(
+                            &mut content,
+                            x,
+                            y,
+                            visible_width,
+                            visible_height,
+                            "PDF image viewport",
+                        )?;
+                    }
+                    // The asset fills the content rectangle, mirrored about the
+                    // element's unrounded center when flipped.
+                    let (image_scale_x, image_offset_x) = if flip_x {
+                        (-content_width, *width - content_x)
                     } else {
-                        (
-                            f64::from(asset.width) * base_scale_x,
-                            -source_rect.x * base_scale_x,
-                        )
+                        (content_width, content_x)
                     };
-                    // svg2pdf Forms already invert SVG's Y axis; compensate in our Y-down scene.
-                    let flip_y = (scale[1] < 0) != asset.sanitized_svg.is_some();
-                    let (image_scale_y, image_offset_y) = if flip_y {
-                        (
-                            -f64::from(asset.height) * base_scale_y,
-                            *height + source_rect.y * base_scale_y,
-                        )
+                    let (mut image_scale_y, mut image_offset_y) = if flip_y {
+                        (-content_height, *height - content_y)
                     } else {
-                        (
-                            f64::from(asset.height) * base_scale_y,
-                            -source_rect.y * base_scale_y,
-                        )
+                        (content_height, content_y)
                     };
+                    // svg2pdf Forms already invert SVG's Y axis; compensate by
+                    // drawing the form Y-inverted in place, within the
+                    // rectangle the flip has put it in, not about the
+                    // element's center.
+                    if asset.sanitized_svg.is_some() {
+                        image_offset_y += image_scale_y;
+                        image_scale_y = -image_scale_y;
+                    }
                     push_matrix(
                         &mut content,
                         image_scale_x,
@@ -2918,6 +2927,24 @@ fn push_mapped_clip(
     Ok(())
 }
 
+/// Emits an axis-aligned rectangle in the current space at full precision and
+/// installs it as the clip.
+fn push_rect_clip(
+    output: &mut String,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    subject: &str,
+) -> Result<(), FormatEncodeError> {
+    for value in [x, y, width, height] {
+        push_pdf_number(output, value, subject)?;
+        output.push(' ');
+    }
+    output.push_str("re\nW\nn\n");
+    Ok(())
+}
+
 fn xmp_metadata(manifest: &str) -> Result<String, FormatEncodeError> {
     const PREFIX: &str = concat!(
         "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"",
@@ -3233,6 +3260,7 @@ fn collect_raster_closures(
             width,
             height,
             source_rect,
+            projection,
             scale,
             ..
         } = element
@@ -3305,8 +3333,14 @@ fn collect_raster_closures(
             if right <= x || bottom <= y {
                 continue;
             }
-            let local =
-                map_asset_bounds((x, y, right, bottom), *width, *height, *source_rect, *scale);
+            let local = map_asset_bounds(
+                (x, y, right, bottom),
+                projection,
+                *width,
+                *height,
+                asset,
+                *scale,
+            );
             let (x, y, right, bottom) = transform_bounds(local, *transform);
             let mut x = x.max(0.0);
             let mut y = y.max(0.0);
@@ -3445,15 +3479,53 @@ fn nested_clip_bounds(clip: &usvg::ClipPath) -> Option<(f64, f64, f64, f64)> {
     Some(bounds)
 }
 
-fn map_asset_bounds(
-    bounds: (f64, f64, f64, f64),
+/// The rectangle of the element's space the reference leaves visible, as
+/// `(x, y, width, height)` after the flip: the `<use>` viewport as the flip
+/// mirrors it about the element's unrounded center, intersected with the crop
+/// `<mask>`, which sits on the unflipped group, when the image is cropped.
+fn visible_rect(
+    projection: &super::ResolvedImageProjection,
     width: f64,
     height: f64,
-    source: super::ResolvedImageSourceRect,
     scale: [i8; 2],
 ) -> (f64, f64, f64, f64) {
+    let (x, y, viewport_width, viewport_height) = projection.viewport_rect();
+    let mut left = if scale[0] < 0 {
+        width - x - viewport_width
+    } else {
+        x
+    };
+    let mut top = if scale[1] < 0 {
+        height - y - viewport_height
+    } else {
+        y
+    };
+    let mut right = left + viewport_width;
+    let mut bottom = top + viewport_height;
+    if projection.crop.is_some() {
+        left = left.max(0.0);
+        top = top.max(0.0);
+        right = right.min(projection.viewport_width);
+        bottom = bottom.min(projection.viewport_height);
+    }
+    (left, top, right - left, bottom - top)
+}
+
+/// Maps asset-pixel bounds into the element's space the way the content
+/// matrix draws the asset: through the projection's content rectangle,
+/// mirrored about the element's unrounded center when flipped, and bounded by
+/// the visible rectangle.
+fn map_asset_bounds(
+    bounds: (f64, f64, f64, f64),
+    projection: &super::ResolvedImageProjection,
+    width: f64,
+    height: f64,
+    asset: &super::ResolvedImageAsset,
+    scale: [i8; 2],
+) -> (f64, f64, f64, f64) {
+    let (content_x, content_y, content_width, content_height) = projection.content_rect();
     let map_x = |value: f64| {
-        let value = (value - source.x) * width / source.width;
+        let value = content_x + value / f64::from(asset.width) * content_width;
         if scale[0] < 0 {
             width - value
         } else {
@@ -3461,7 +3533,7 @@ fn map_asset_bounds(
         }
     };
     let map_y = |value: f64| {
-        let value = (value - source.y) * height / source.height;
+        let value = content_y + value / f64::from(asset.height) * content_height;
         if scale[1] < 0 {
             height - value
         } else {
@@ -3470,7 +3542,14 @@ fn map_asset_bounds(
     };
     let (x1, x2) = (map_x(bounds.0), map_x(bounds.2));
     let (y1, y2) = (map_y(bounds.1), map_y(bounds.3));
-    (x1.min(x2), y1.min(y2), x1.max(x2), y1.max(y2))
+    let (visible_x, visible_y, visible_width, visible_height) =
+        visible_rect(projection, width, height, scale);
+    (
+        x1.min(x2).max(visible_x),
+        y1.min(y2).max(visible_y),
+        x1.max(x2).min(visible_x + visible_width),
+        y1.max(y2).min(visible_y + visible_height),
+    )
 }
 
 fn transform_bounds(

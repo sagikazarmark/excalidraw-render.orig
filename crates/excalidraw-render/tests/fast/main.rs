@@ -29,6 +29,7 @@ mod frame_render;
 mod freedraw_render;
 mod helvetica_text_render;
 mod image_corner_clip;
+mod image_viewport_rounding;
 mod legacy_line_height_render;
 mod license_bundle;
 mod missing_glyph_render;

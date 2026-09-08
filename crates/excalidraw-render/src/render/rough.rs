@@ -1,5 +1,6 @@
 use std::collections::TryReserveError;
 
+use super::geometry::ecmascript_round;
 use super::FormatEncodeError;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -2068,15 +2069,6 @@ fn line(
     Ok(())
 }
 
-fn ecmascript_round(value: f64) -> f64 {
-    let rounded = (value + 0.5).floor();
-    if rounded == 0.0 {
-        0.0
-    } else {
-        rounded
-    }
-}
-
 #[allow(clippy::too_many_arguments)]
 fn control_coordinate(
     middle_displacement: f64,
@@ -2123,13 +2115,6 @@ impl Random {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn hachure_intersections_use_ecmascript_negative_half_rounding() {
-        assert_eq!(ecmascript_round(-1.5), -1.0);
-        assert_eq!(ecmascript_round(-2.5), -2.0);
-        assert_eq!(ecmascript_round(-0.5).to_bits(), 0.0_f64.to_bits());
-    }
 
     #[test]
     fn architect_solid_ellipse_consumes_both_overlap_pairs() {

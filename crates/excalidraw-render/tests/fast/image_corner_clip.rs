@@ -141,14 +141,15 @@ fn the_corner_clip_stays_in_element_space_when_the_image_is_cropped_and_flipped(
     let svg = render_artifact(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     // The clip rectangle is the element's 20x20, not the crop's, and it sits
-    // on the translated group outside the flip and crop viewport.
+    // on the translated group outside the crop mask, the flip and the viewport.
     assert!(svg.contains(
         "<clipPath id=\"image-clip-0\"><rect width=\"20\" height=\"20\" rx=\"5\" ry=\"5\"/></clipPath>"
     ));
     assert!(svg.contains(concat!(
         "<g transform=\"translate(10 10) rotate(0 10 10)\" clip-path=\"url(#image-clip-0)\">",
+        "<svg width=\"20\" height=\"20\" overflow=\"hidden\">",
         "<g transform=\"translate(20 20) scale(-1 -1)\">",
-        "<svg width=\"20\" height=\"20\" viewBox=\"1 0 2 2\"",
+        "<svg x=\"-10\" y=\"0\" width=\"30\" height=\"20\" overflow=\"hidden\">",
     )));
 
     let (pixels, width, height) = render_png_pixels(&scene);
@@ -172,8 +173,14 @@ fn the_corner_clip_stays_in_element_space_when_the_image_is_cropped_and_flipped(
         pdf.contains("5 0 m\n15 0 l\n"),
         "PDF lacks the rounded clip path: {pdf}"
     );
-    assert!(pdf.contains("W\nn\n-30 0 0 -20 30 20 cm\n/Im0 Do"));
-    assert!(!pdf.contains(" re\nW\nn\n"));
+    // The corner clip comes first, then the crop's visible rectangle (its
+    // mask meeting the mirrored viewport), then the whole 3x2 asset at its
+    // uncropped 30x20 mirrored about the center.
+    assert!(pdf.contains(concat!(
+        " c\nW\nn\n",
+        "0 0 20 20 re\nW\nn\n",
+        "-30 0 0 -20 30 20 cm\n/Im0 Do"
+    )));
 }
 
 #[test]

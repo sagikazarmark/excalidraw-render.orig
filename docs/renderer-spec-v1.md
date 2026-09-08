@@ -642,6 +642,31 @@ and color interpretation and embeds lossless unpremultiplied canonical sRGB with
 a grayscale soft mask. Source raster images are inherent raster content, not
 PDF raster fallback.
 
+SVG and PDF place an image the way the reference SVG export does, and PNG the
+way its canvas export does. The reference draws an image through a `<use>` of
+`Math.round(element.width)` by `Math.round(element.height)`, the image
+viewport, and that is the only image value that rounds (Section 8.6); the flip
+mirrors the viewport about the element's unrounded center, and the rotation
+center, corner clip, and link rectangle keep the unrounded size. An uncropped
+image fills the viewport, as the reference's `width="100%"` symbol image does
+under the `reuseImages` export default the reference profile pins. A cropped
+image is drawn whole at the reference's unrounded `getUncroppedWidthAndHeight`
+size, shifted by the unrounded `normalizedCrop` offset so the crop's corner
+sits at the element's origin, and is clipped twice as the reference clips it:
+by a viewport-sized `<mask>` on the unflipped group and by the `<use>`
+viewport, which spans from the crop offset to the rounded viewport's far edges
+and flips with the image. SVG inlines this geometry rather than sharing a
+`<symbol>`: the mask and the `<use>` viewport are nested `<svg
+overflow="hidden">` viewports, the flip a `translate(width height) scale()`
+group about the same center, and the `<image>` carries the reference's
+`preserveAspectRatio="none"` and its content size. PDF, whose clips all live in
+the element's space, installs the intersection of the two as one rectangle
+clip before the content matrix that maps the asset onto its content rectangle,
+and a nested SVG's form, whose Y axis svg2pdf inverts, is inverted back within
+that rectangle. PNG draws the crop into the element's unrounded rectangle, as
+`drawImage(..., 0, 0, element.width, element.height)` does, so a fractional
+edge stays fractional there while SVG and PDF round it.
+
 An image element with a `roundness` record is clipped to its rectangle with
 `getCornerRadius(min(width, height))` corners in every format, as the
 reference canvas clips it with `roundRect` before `drawImage`: SVG defines the

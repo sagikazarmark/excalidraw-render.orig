@@ -22,7 +22,7 @@ fn direct_svg_preserves_validated_static_png_octets_in_a_canonical_data_url() {
 
     assert!(outcome.report().diagnostics().is_empty());
     assert!(svg.contains(&format!(
-        "<image href=\"data:image/png;base64,{PNG_BASE64}\" width=\"1\" height=\"1\"/>"
+        "<image href=\"data:image/png;base64,{PNG_BASE64}\" preserveAspectRatio=\"none\" width=\"1\" height=\"1\"/>"
     )));
 }
 
@@ -956,8 +956,10 @@ fn crop_and_negative_scale_map_the_same_static_png_source_in_every_format() {
     let svg = render_artifact(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     assert!(svg.contains("<g transform=\"translate(20 20) scale(-1 -1)\">"));
-    assert!(svg.contains("viewBox=\"1 0 2 2\""));
-    assert!(svg.contains("width=\"3\" height=\"2\""));
+    // The whole 3x2 source at its uncropped 30x20 under the 10 px crop offset,
+    // through the reference's viewport from that offset to the far edges.
+    assert!(svg.contains("<svg x=\"-10\" y=\"0\" width=\"30\" height=\"20\" overflow=\"hidden\">"));
+    assert!(svg.contains("preserveAspectRatio=\"none\" width=\"30\" height=\"20\""));
 
     let png = render_artifact(&scene, OutputFormat::Png);
     let decoder = png::Decoder::new(Cursor::new(&png));
