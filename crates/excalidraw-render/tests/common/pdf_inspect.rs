@@ -5,9 +5,6 @@
 //! by path and reads the PDF as the bytes the renderer wrote, so what is pinned
 //! here is the artifact, not a viewer's interpretation of it.
 
-// Each companion test includes this module by path and uses the part it needs.
-#![allow(dead_code)]
-
 /// The body of the ToUnicode CMap stream that declares `cmap_name`.
 pub fn to_unicode_cmap<'a>(pdf: &'a str, cmap_name: &str) -> &'a str {
     pdf.split(cmap_name)

@@ -1,0 +1,75 @@
+# Test tiers for `cargo nextest run`.
+#
+# Each profile selects one tier by construction, over binary names and kinds,
+# so neither a workflow nor a developer names individual tests. The integration
+# binaries of crates/excalidraw-render/tests are named by tier:
+#
+#   fast        every unit-level, component and full-pipeline render test
+#               (one binary; each former file is a module)
+#   parity_*    parity against official evidence: the registry-driven scene
+#               harnesses and the frame-export case
+#   limits_*    fixed parser ceilings that build 64 MiB and 1M-entry scenes
+#   harness_*   #[ignore]d gates that need the pinned Chromium, PDFium, PDF.js
+#               and qpdf harnesses; a harness binary holds nothing else
+#
+# The `parity_*` and `limits_*` binaries are the render tier of the PR gate,
+# `ci-render`; everything else that runs without a harness is its fast leg,
+# `ci-fast`.
+#
+# The two release-mode qualification tests are not a tier of their own: the
+# frame batch property test is #[ignore]d unless the `release-qualification`
+# feature is on, and the SVG font subset qualification corpus is excluded here
+# by name because its file is digest-pinned by issue #99 and cannot carry the
+# feature gate until its next re-approval round. The packaged-facade workflow
+# runs both in `--release` through `cargo test`.
+#
+# nextest does not run doc tests; the workflows keep a `cargo test --doc` step.
+#
+# The workflows and the Dagger mirror install the release that
+# `tests/package-consumer/tool-manifest.json` pins, and a developer is pointed
+# at it; the floor is the release that introduced `default-filter`, which is
+# all this file needs.
+nextest-version = { required = "0.9.75", recommended = "0.9.143" }
+
+[profile.default]
+# What a developer runs: everything that needs neither an external harness nor
+# a release-mode budget. Harness binaries are excluded as binaries, so they are
+# not even listed; the developer with a harness selects them with the
+# `harness` profile below.
+default-filter = '''
+not (
+  binary(/^harness_/)
+  | test(=render::font_subset_qualification::complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces)
+)
+'''
+
+# The two registry harnesses judge their variants over every core themselves
+# (`common::registered_cases::judge_each`), so each runs alone rather than
+# beside three other processes. Overrides are inherited by every profile.
+[[profile.default.overrides]]
+filter = 'binary(/^parity_registered_case_/) & test(/^every_registered_scene_case_/)'
+threads-required = "num-cpus"
+
+# The PR gate's fast leg: the `default` set without the parity and limits
+# tiers. Together with `ci-render` it covers the `default` set exactly once.
+[profile.ci-fast]
+default-filter = '''
+not (
+  binary(/^(harness|parity|limits)_/)
+  | test(=render::font_subset_qualification::complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces)
+)
+'''
+fail-fast = false
+
+# The PR gate's render leg: the parity harnesses and the fixed parser ceilings.
+[profile.ci-render]
+default-filter = 'binary(/^(parity|limits)_/)'
+fail-fast = false
+
+# The harness gates. Every test in these binaries is #[ignore]d for plain
+# `cargo test`, so run this profile with `--run-ignored only`; a workflow that
+# installs one harness family narrows further by binary, for example
+# `-E 'binary(/^harness_pdf_/)'`.
+[profile.harness]
+default-filter = 'binary(/^harness_/)'
+fail-fast = false

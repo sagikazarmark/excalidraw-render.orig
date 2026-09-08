@@ -1,16 +1,10 @@
 use std::fs;
-use std::path::{Path, PathBuf};
 
-mod common;
-
-use common::pdf_harness::{assert_structure, render_viewer};
-
+use crate::common::approved_scenes::{rectangle_outline_scene, render_rectangle_outline_pdf};
+use crate::common::repository_root;
 use excalidraw_render::{
-    ErrorCode, OutputFormat, PdfOptions, PdfRasterFallback, RenderErrorCategory, RenderOutcome,
-    RenderRequest, Renderer, ResourceLimits, SceneDocument, Sizing,
-};
-use excalidraw_render_compare::{
-    compare, CanonicalRgba8, ComparisonMode, SsimOutcome, VisualClass,
+    ErrorCode, OutputFormat, RenderErrorCategory, RenderOutcome, RenderRequest, Renderer,
+    ResourceLimits, Sizing,
 };
 
 const EXPECTED_ROUGH_PATH: &str = concat!(
@@ -27,8 +21,8 @@ const EXPECTED_ROUGH_PATH: &str = concat!(
 #[test]
 fn approved_rectangle_renders_as_a_deterministic_vector_first_pdf() {
     let case = repository_root().join("tests/conformance/cases/focused/rectangle-outline");
-    let first = render_approved_pdf();
-    let second = render_approved_pdf();
+    let first = render_rectangle_outline_pdf();
+    let second = render_rectangle_outline_pdf();
 
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     assert_eq!(first.report(), second.report());
@@ -120,7 +114,7 @@ fn pdf_page_points_are_checked_at_equality_and_first_crossing() {
             .build()
             .expect("resource-limited PDF request is valid");
         Renderer::new()
-            .render(&approved_scene(), &request)
+            .render(&rectangle_outline_scene(), &request)
             .expect("equality and spare PDF page capacity succeed");
     }
 
@@ -133,7 +127,7 @@ fn pdf_page_points_are_checked_at_equality_and_first_crossing() {
         .build()
         .expect("resource-limited PDF request is valid");
     let error = Renderer::new()
-        .render(&approved_scene(), &request)
+        .render(&rectangle_outline_scene(), &request)
         .expect_err("the 150-point width crosses a 149-point limit");
 
     assert_eq!(error.category(), RenderErrorCategory::ResourceLimit);
@@ -161,7 +155,7 @@ fn pdf_page_points_are_checked_at_equality_and_first_crossing() {
         .build()
         .expect("rounded PDF page request is valid");
     Renderer::new()
-        .render(&approved_scene(), &request)
+        .render(&rectangle_outline_scene(), &request)
         .expect("validation and encoding use identical sizing arithmetic");
 
     let request = RenderRequest::builder(OutputFormat::Pdf)
@@ -169,7 +163,7 @@ fn pdf_page_points_are_checked_at_equality_and_first_crossing() {
         .build()
         .expect("huge finite PDF scale is a valid request");
     let error = Renderer::new()
-        .render(&approved_scene(), &request)
+        .render(&rectangle_outline_scene(), &request)
         .expect_err("overflowing page dimensions cross the point limit");
     assert_eq!(
         error.code(),
@@ -295,7 +289,7 @@ fn pdf_rectangle_resource_crossings_are_atomic_and_locally_recoverable() {
         .build()
         .expect("resource-limited PDF request is valid");
     let error = Renderer::new()
-        .render(&approved_scene(), &request)
+        .render(&rectangle_outline_scene(), &request)
         .expect_err("the sixteenth Rough operation crosses atomically");
     assert_eq!(error.category(), RenderErrorCategory::ResourceLimit);
     assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_GEOMETRY_EXCEEDED);
@@ -304,133 +298,10 @@ fn pdf_rectangle_resource_crossings_are_atomic_and_locally_recoverable() {
     assert!(error.report().is_empty());
 }
 
-#[test]
-#[ignore = "requires the exact-pinned PDFium and PDF.js harness"]
-fn approved_rectangle_passes_both_canonical_pdf_visual_gates() {
-    let root = repository_root();
-    let case = root.join("tests/conformance/cases/focused/rectangle-outline");
-    let exception: serde_json::Value = serde_json::from_slice(
-        &fs::read(case.join("pdf-visual-exception.json")).expect("PDF exception is present"),
-    )
-    .expect("PDF exception is valid JSON");
-    assert_eq!(exception["approved_issue"], 44);
-    assert_eq!(exception["viewer_profile"], "canonical-pdf.pdfium.v1");
-    let stem = format!("rectangle-pdf-candidate-{}", std::process::id());
-    let candidate = format!("target/{stem}.pdf");
-    let reference = CanonicalRgba8::new(
-        200,
-        120,
-        fs::read(root.join(concat!(
-            "tests/conformance/svg-viewer-qualification/rectangle-outline/",
-            "evidence/chromium-reference.rgba"
-        )))
-        .unwrap(),
-    )
-    .expect("canonical Chromium official-SVG evidence is valid");
-    fs::write(
-        root.join(&candidate),
-        render_approved_pdf().artifact().bytes(),
-    )
-    .expect("write renderer-owned candidate PDF under target");
-
-    for (viewer, script, mode) in [
-        (
-            "pdfjs",
-            "tools/pdf-harness/run-pdfjs.sh",
-            ComparisonMode::PdfJs,
-        ),
-        (
-            "pdfium",
-            "tools/pdf-harness/run-pdfium.sh",
-            ComparisonMode::Canonical,
-        ),
-    ] {
-        let output = format!("target/{stem}-{viewer}.rgba");
-        let candidate = CanonicalRgba8::new(
-            200,
-            120,
-            render_viewer(&root, viewer, script, &candidate, &output, 200, 120),
-        )
-        .expect("canonical PDF viewer output is valid");
-        let report = compare(
-            &reference,
-            &candidate,
-            VisualClass::GeometryImage,
-            &[],
-            mode,
-        )
-        .expect("candidate and reference dimensions agree");
-        if report.passed() {
-            continue;
-        }
-        assert_eq!(
-            viewer, "pdfium",
-            "only the approved PDFium exception applies"
-        );
-        assert_eq!(
-            report.whole.changed_pixels,
-            exception["max_changed_pixels"].as_u64().unwrap()
-        );
-        let SsimOutcome::Score(ssim) = report.whole.ssim else {
-            panic!("PDFium exception requires a finite SSIM score");
-        };
-        let minimum_bits =
-            u64::from_str_radix(exception["minimum_ssim_bits"].as_str().unwrap(), 16)
-                .expect("PDFium exception contains valid f64 bits");
-        assert!(
-            ssim >= f64::from_bits(minimum_bits),
-            "PDFium exception failed: changed_pixels={}, ssim={ssim:?}, deltas={:?}",
-            report.whole.changed_pixels,
-            pixel_delta_summary(reference.rgba(), candidate.rgba())
-        );
-    }
-
-    let structure_output = format!("target/{stem}-structure.json");
-    assert_structure(
-        &root,
-        &candidate,
-        "tests/conformance/cases/focused/rectangle-outline/expected-pdf-structure.json",
-        &structure_output,
-    );
-}
-
-fn pixel_delta_summary(reference: &[u8], candidate: &[u8]) -> std::collections::BTreeMap<i16, u64> {
-    let mut summary = std::collections::BTreeMap::new();
-    for (reference, candidate) in reference.iter().zip(candidate) {
-        if reference != candidate {
-            *summary
-                .entry(i16::from(*candidate) - i16::from(*reference))
-                .or_insert(0) += 1;
-        }
-    }
-    summary
-}
-
-fn render_approved_pdf() -> RenderOutcome {
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
-        .build()
-        .expect("default PDF request is valid");
-    Renderer::new()
-        .render(&approved_scene(), &request)
-        .expect("approved rectangle renders directly as PDF vectors")
-}
-
 fn render_pdf(request: RenderRequest) -> RenderOutcome {
     Renderer::new()
-        .render(&approved_scene(), &request)
+        .render(&rectangle_outline_scene(), &request)
         .expect("approved rectangle renders directly as PDF vectors")
-}
-
-fn approved_scene() -> SceneDocument {
-    SceneDocument::parse(
-        &fs::read(
-            repository_root()
-                .join("tests/conformance/cases/focused/rectangle-outline/scene.excalidraw"),
-        )
-        .unwrap(),
-    )
-    .expect("approved rectangle scene is admitted")
 }
 
 fn stream_data<'a>(pdf: &'a [u8], object: &[u8]) -> &'a [u8] {
@@ -458,12 +329,4 @@ fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     haystack
         .windows(needle.len())
         .position(|window| window == needle)
-}
-
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("crate is inside the workspace")
-        .to_owned()
 }

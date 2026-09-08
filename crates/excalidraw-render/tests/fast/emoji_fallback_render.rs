@@ -7,18 +7,13 @@
 //! PDF's resource switches and logical text, the PDF report, and repeatability
 //! in every format.
 
-// Included by path rather than through `common/mod.rs` so this binary does not
-// also compile the PDF harness helpers.
-#[path = "common/pdf_inspect.rs"]
-mod pdf_inspect;
-
 use std::fs;
-use std::path::{Path, PathBuf};
 
+use crate::common::repository_root;
 use excalidraw_render::{OutputFormat, RenderOutcome, RenderRequest, Renderer, SceneDocument};
 use serde_json::Value;
 
-use pdf_inspect::{
+use crate::common::pdf_inspect::{
     embedded_pdf_fonts, family_name, font_resource, marked_content_line, pdf_actual_text,
     to_unicode_cmap,
 };
@@ -332,12 +327,4 @@ fn embedded_font_payload(svg: &str, family: &str) -> (String, Vec<u8>) {
             .decode(encoded)
             .expect("font data URL is valid base64"),
     )
-}
-
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("crate is inside the workspace")
-        .to_owned()
 }

@@ -1,20 +1,38 @@
-//! SVG document parity for every registered scene case.
+//! SVG parity for every registered scene case: path geometry and the rasterized
+//! document, judged on one render of each variant.
 //!
-//! The direct-PNG harness compares rasters two different rasterizers produced,
-//! so a difference there can be the document or the rasterizer. This harness
-//! removes the rasterizer from the question: the renderer's SVG and the official
-//! export's SVG are both rasterized in-process by the same `resvg`, each with a
-//! font database built from its own embedded `@font-face` payloads, and compared
-//! under the pure-Rust SVG budgets. What is left is the document itself: path
-//! geometry, stroke and fill attributes, text placement and sizing, dark-mode
-//! filters, and embedded images.
+//! **Path geometry.** The `d` attribute of every `<path>` the renderer emits is
+//! compared against the official export's, in document order. It is a sharper
+//! check than raster comparison for geometry and a far cheaper one: no viewer,
+//! no rasterization, and no antialiasing noise to threshold against. A single
+//! wrong coordinate shows up as an exact mismatch. It exists because two
+//! geometry defects were caught this way and one wrong fix was caught only this
+//! way: zeroing the roughness of elbow arrows made a scene extent match official
+//! to fifteen digits while corrupting three paths, and path comparison rejects
+//! that immediately. The root `viewBox` is compared too, which is where
+//! scene-bounds defects live: a bounds error emits every path at identical
+//! coordinates inside a differently sized document, so path data alone cannot
+//! see it. The root `width` and `height` are compared as well: an export scale
+//! multiplies only those and leaves the `viewBox` logical, so they are the one
+//! place a scaled SVG variant differs from the default and the one place a
+//! scaling defect shows. Path data and extent are the invariants, not SVG
+//! structure: the renderer legitimately differs from the official export in how
+//! it positions text and groups elements.
 //!
-//! This is document parity, not a canonical viewer gate. The spec's canonical
-//! SVG viewers (`canonical-svg.chromium.v1`, `canonical-svg.pure-rust.v1`) are
-//! pinned, isolated and declaration-bound; neither currently admits the
-//! renderer's or the official export's text-bearing SVG, and running them is a
-//! separate piece of work. The workspace `resvg` used here is not the pinned
-//! viewer, so its output is never evidence and never approved.
+//! **Document raster.** The direct-PNG harness compares rasters two different
+//! rasterizers produced, so a difference there can be the document or the
+//! rasterizer. Here the rasterizer is removed from the question: the renderer's
+//! SVG and the official export's SVG are both rasterized in-process by the same
+//! `resvg`, each with a font database built from its own embedded `@font-face`
+//! payloads, and compared under the pure-Rust SVG budgets. What is left is the
+//! document itself: path geometry, stroke and fill attributes, text placement
+//! and sizing, dark-mode filters, and embedded images. This is document parity,
+//! not a canonical viewer gate. The spec's canonical SVG viewers
+//! (`canonical-svg.chromium.v1`, `canonical-svg.pure-rust.v1`) are pinned,
+//! isolated and declaration-bound; neither currently admits the renderer's or
+//! the official export's text-bearing SVG, and running them is a separate piece
+//! of work. The workspace `resvg` used here is not the pinned viewer, so its
+//! output is never evidence and never approved.
 //!
 //! Fonts. Both documents embed WOFF2 subsets under CSS families; each payload is
 //! decoded to its sfnt and registered under the family the document names, so
@@ -25,18 +43,23 @@
 //! about placement, not about which face the browser happened to have. A family
 //! that is neither embedded nor substituted (`Segoe UI Emoji` in a fallback
 //! list) stays unresolved and contributes nothing on either side.
+//!
+//! Every registered variant is compared on both dimensions, since dark mode and
+//! sizing must leave path geometry untouched, and each variant is rendered once:
+//! the two dimensions judge the same bytes, and a divergence in each is reported
+//! separately so that a change corrupting path data while making a raster agree
+//! produces an entry for each rather than hiding the more serious half. The
+//! variants are judged over the available cores; the comparator, not the
+//! renderer, is what takes the time.
 
-// Included by path rather than through `common/mod.rs` so this binary does not
-// also compile the PDF harness helpers, and the PDF binaries do not compile this.
-#[path = "common/registered_cases.rs"]
-mod registered_cases;
+mod common;
 
 use std::collections::BTreeSet;
 use std::fs;
 use std::sync::Arc;
 
 use base64::Engine;
-use excalidraw_render::{OutputFormat, Renderer, SceneDocument};
+use excalidraw_render::{OutputFormat, Renderer};
 use excalidraw_render_compare::{
     compare, CanonicalRgba8, ComparisonMode, ComparisonReport, RegionReport, SsimOutcome,
 };
@@ -44,19 +67,22 @@ use resvg::tiny_skia::{Pixmap, Transform};
 use serde_json::Value;
 use usvg::fontdb;
 
-use registered_cases::{
-    observed, repository_root, variant_request, visual_class, PinnedDivergence,
+use common::registered_cases::{
+    case_count, judge_each, observed, registered_scene_variants, variant_request, visual_class,
+    PinnedDivergence, RegisteredVariant,
 };
+use common::repository_root;
 
-/// Diagnosed defects whose fix is pending a maintainer decision. See
-/// `PinnedDivergence` for why these are pinned rather than excepted.
+/// Diagnosed defects whose fix is pending a maintainer decision, observed on the
+/// rasterized document. See `PinnedDivergence` for why these are pinned rather
+/// than excepted.
 const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
 
 /// Compatibility exceptions whose approved tolerance exception the case
-/// manifest carries for the direct PNG, observed here on the SVG document as
-/// well. The manifest admits no `format: svg` exception, so each is pinned at
-/// its exact measurement and must correspond to that recorded exception; see
-/// `PinnedDivergence`.
+/// manifest carries for the direct PNG, observed here on the rasterized SVG
+/// document as well. The manifest admits no `format: svg` exception, so each is
+/// pinned at its exact measurement and must correspond to that recorded
+/// exception; see `PinnedDivergence`.
 const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
     // Spec 8.3's replacement glyph (#124): the official document sets the three
     // unmapped scalars in the embedded Excalifont and Liberation Sans subsets,
@@ -92,158 +118,199 @@ const SYSTEM_FAMILY_SUBSTITUTES: &[(&str, &str)] =
     &[("Helvetica", "fonts/Liberation/LiberationSans-Regular.woff2")];
 
 #[test]
-fn every_registered_scene_case_matches_its_official_svg_document() {
-    let root = repository_root();
-    let registry: Value = serde_json::from_slice(
-        &fs::read(root.join("tests/conformance/cases/registry.json"))
-            .expect("case registry is present"),
-    )
-    .expect("case registry is valid JSON");
-
-    let mut total = 0usize;
-    let mut failures = Vec::new();
-    let mut seen = BTreeSet::new();
-
-    for case in registry["cases"]
-        .as_array()
-        .expect("registry cases are an array")
+fn every_registered_scene_case_matches_its_official_svg_geometry_and_raster() {
+    let variants = registered_scene_variants(&repository_root());
+    let seen: BTreeSet<_> = variants
         .iter()
-        .filter(|case| case["kind"] == "scene")
-    {
-        let id = case["id"].as_str().expect("case id is a string");
-        let dir = root.join(case["path"].as_str().expect("case path is a string"));
-        let manifest: Value =
-            serde_json::from_slice(&fs::read(dir.join("manifest.json")).expect("manifest present"))
-                .expect("manifest is valid JSON");
-        total += 1;
+        .map(|variant| (variant.case.clone(), variant.variant.clone()))
+        .collect();
 
-        let scene = SceneDocument::parse(
-            &fs::read(dir.join("scene.excalidraw")).expect("scene document present"),
-        )
-        .unwrap_or_else(|error| panic!("{id} scene is admitted: {error:?}"));
-        for variant in manifest["variants"]
-            .as_array()
-            .expect("manifest variants are an array")
-        {
-            let variant_id = variant["id"].as_str().expect("variant id is a string");
-            seen.insert((id.to_owned(), variant_id.to_owned()));
-            let context = format!("{id} [{variant_id}]");
-            let request = variant_request(OutputFormat::Svg, &variant["options"], &context);
-            let outcome = Renderer::new()
-                .render(&scene, &request)
-                .unwrap_or_else(|error| panic!("{context} renders as SVG: {error:?}"));
-            let candidate_svg =
-                std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+    let failures: Vec<String> = judge_each(&variants, svg_divergences)
+        .into_iter()
+        .flatten()
+        .collect();
 
-            let svg = &variant["formats"]["svg"];
-            // A report mismatch is never pinned or excepted: the renderer's
-            // diagnostics disagreeing with what the case declares is a contract
-            // break, not a document difference. The checked report is canonical
-            // JSON and the renderer's is spec-ordered, so they compare as values.
-            let expected_report: Value = serde_json::from_slice(
-                &fs::read(
-                    dir.join(
-                        svg["expected_report"]["path"]
-                            .as_str()
-                            .expect("expected report path"),
-                    ),
-                )
-                .expect("expected report present"),
-            )
-            .expect("expected report is valid JSON");
-            assert_eq!(
-                serde_json::to_value(outcome.report()).expect("report serializes"),
-                expected_report,
-                "{context}: SVG report differs from its declared expectation"
-            );
-            let official_svg = fs::read_to_string(
-                dir.join(svg["artifact"]["path"].as_str().expect("official SVG path")),
-            )
-            .expect("official SVG present");
-
-            let reference = rasterize(&official_svg, &format!("{context} official"));
-            let candidate = rasterize(candidate_svg, &format!("{context} candidate"));
-
-            // The evidence records the size Chromium rasterized the official SVG
-            // at; resvg must land on the same size or the comparison is not
-            // of the artifact the case declares.
-            let raw = &svg["raw_raster"];
-            let declared = (
-                raw["width"].as_u64().expect("raster width") as u32,
-                raw["height"].as_u64().expect("raster height") as u32,
-            );
-            if (reference.width(), reference.height()) != declared {
-                failures.push(format!(
-                    "{context}: official SVG rasterizes to {}x{}, evidence declares {}x{}",
-                    reference.width(),
-                    reference.height(),
-                    declared.0,
-                    declared.1
-                ));
-                continue;
-            }
-            if (candidate.width(), candidate.height()) != declared {
-                failures.push(format!(
-                    "{context}: candidate SVG rasterizes to {}x{}, official is {}x{}",
-                    candidate.width(),
-                    candidate.height(),
-                    declared.0,
-                    declared.1
-                ));
-                continue;
-            }
-
-            let class = visual_class(svg["visual_class"].as_str().expect("visual class"));
-            let report = compare(
-                &reference,
-                &candidate,
-                class,
-                &[],
-                ComparisonMode::PureRustSvg,
-            )
-            .expect("dimensions agree");
-            let defect = PinnedDivergence::lookup(KNOWN_DEFECTS, id, variant_id);
-            let exception = PinnedDivergence::lookup(COMPATIBILITY_EXCEPTION_PINS, id, variant_id);
-            assert!(
-                defect.is_none() || exception.is_none(),
-                "{context} is both a known defect and a compatibility exception; a defect has \
-                 no non-defect cause to except"
-            );
-            if exception.is_some() {
-                // The pin stands for the manifest's approved judgment on this
-                // variant, so that judgment must exist: a pin with no recorded
-                // exception would be a suppression.
-                assert!(
-                    has_recorded_exception(&manifest, variant_id),
-                    "{context} carries a compatibility exception pin but its manifest records \
-                     no direct-PNG tolerance exception for the variant"
-                );
-            }
-            let divergence = match (defect, exception) {
-                (Some(defect), _) => defect.mismatch(&report),
-                (None, Some(exception)) => exception.mismatch(&report),
-                (None, None) => (!report.passed())
-                    .then(|| format!("outside the pure-Rust SVG budget: {}", observed(&report))),
-            };
-            if let Some(detail) = divergence {
-                failures.push(format!("{context}: {detail}"));
-            }
-        }
-    }
-
-    assert!(total > 0, "the registry declared no scene cases");
     PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
     PinnedDivergence::assert_all_observed(COMPATIBILITY_EXCEPTION_PINS, &seen);
     assert!(
         failures.is_empty(),
-        "{} variant(s) across {total} cases diverge from the official SVG document:\n  {}",
+        "{} divergence(s) from the official SVG export across {} cases:\n  {}",
         failures.len(),
+        case_count(&variants),
         failures.join("\n  ")
     );
 }
 
+/// Renders one variant's SVG once and judges it on every dimension, one entry
+/// per dimension that diverges.
+fn svg_divergences(variant: &RegisteredVariant) -> Vec<String> {
+    let context = variant.context();
+    let request = variant_request(OutputFormat::Svg, variant.options(), &context);
+    let outcome = Renderer::new()
+        .render(&variant.scene, &request)
+        .unwrap_or_else(|error| panic!("{context} renders as SVG: {error:?}"));
+    let candidate_svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+
+    let svg = variant.format("svg");
+    // A report mismatch is never pinned or excepted: the renderer's diagnostics
+    // disagreeing with what the case declares is a contract break, not a
+    // document difference. The checked report is canonical JSON and the
+    // renderer's is spec-ordered, so they compare as values.
+    let expected_report: Value = serde_json::from_slice(
+        &fs::read(
+            variant.dir.join(
+                svg["expected_report"]["path"]
+                    .as_str()
+                    .expect("expected report path"),
+            ),
+        )
+        .expect("expected report present"),
+    )
+    .expect("expected report is valid JSON");
+    assert_eq!(
+        serde_json::to_value(outcome.report()).expect("report serializes"),
+        expected_report,
+        "{context}: SVG report differs from its declared expectation"
+    );
+    let official_svg = fs::read_to_string(
+        variant
+            .dir
+            .join(svg["artifact"]["path"].as_str().expect("official SVG path")),
+    )
+    .expect("official SVG present");
+
+    [
+        ("extent", extent_divergence(candidate_svg, &official_svg)),
+        ("paths", path_divergence(candidate_svg, &official_svg)),
+        (
+            "raster",
+            raster_divergence(variant, candidate_svg, &official_svg),
+        ),
+    ]
+    .into_iter()
+    .filter_map(|(dimension, divergence)| {
+        divergence.map(|detail| format!("{context} [{dimension}]: {detail}"))
+    })
+    .collect()
+}
+
+/// The root extent divergence, if any. The viewBox is the logical extent;
+/// width and height are that extent times the export scale.
+fn extent_divergence(candidate_svg: &str, official_svg: &str) -> Option<String> {
+    let extent = ["viewBox", "width", "height"]
+        .into_iter()
+        .filter_map(|attribute| {
+            let ours = root_attribute(candidate_svg, attribute);
+            let theirs = root_attribute(official_svg, attribute);
+            (ours != theirs).then(|| format!("{attribute} {ours:?} against official {theirs:?}"))
+        })
+        .collect::<Vec<_>>();
+    (!extent.is_empty()).then(|| extent.join("; "))
+}
+
+/// The first path-data divergence in document order, if any.
+fn path_divergence(candidate_svg: &str, official_svg: &str) -> Option<String> {
+    let candidate = path_data(candidate_svg);
+    let official = path_data(official_svg);
+    if candidate.len() != official.len() {
+        return Some(format!(
+            "emits {} paths, official has {}",
+            candidate.len(),
+            official.len()
+        ));
+    }
+    candidate
+        .iter()
+        .zip(&official)
+        .position(|(a, b)| a != b)
+        .map(|index| {
+            format!(
+                "path {index} differs\n      ours     {}\n      official {}",
+                truncate(&candidate[index]),
+                truncate(&official[index])
+            )
+        })
+}
+
+/// The rasterized-document divergence, if any: a size the evidence does not
+/// declare, a measurement off its pin, or a comparison outside the budget.
+fn raster_divergence(
+    variant: &RegisteredVariant,
+    candidate_svg: &str,
+    official_svg: &str,
+) -> Option<String> {
+    let context = variant.context();
+    let reference = rasterize(official_svg, &format!("{context} official"));
+    let candidate = rasterize(candidate_svg, &format!("{context} candidate"));
+
+    // The evidence records the size Chromium rasterized the official SVG at;
+    // resvg must land on the same size or the comparison is not of the artifact
+    // the case declares.
+    let svg = variant.format("svg");
+    let raw = &svg["raw_raster"];
+    let declared = (
+        raw["width"].as_u64().expect("raster width") as u32,
+        raw["height"].as_u64().expect("raster height") as u32,
+    );
+    if (reference.width(), reference.height()) != declared {
+        return Some(format!(
+            "official SVG rasterizes to {}x{}, evidence declares {}x{}",
+            reference.width(),
+            reference.height(),
+            declared.0,
+            declared.1
+        ));
+    }
+    if (candidate.width(), candidate.height()) != declared {
+        return Some(format!(
+            "candidate SVG rasterizes to {}x{}, official is {}x{}",
+            candidate.width(),
+            candidate.height(),
+            declared.0,
+            declared.1
+        ));
+    }
+
+    let class = visual_class(svg["visual_class"].as_str().expect("visual class"));
+    let report = compare(
+        &reference,
+        &candidate,
+        class,
+        &[],
+        ComparisonMode::PureRustSvg,
+    )
+    .expect("dimensions agree");
+    let defect = PinnedDivergence::lookup(KNOWN_DEFECTS, &variant.case, &variant.variant);
+    let exception = PinnedDivergence::lookup(
+        COMPATIBILITY_EXCEPTION_PINS,
+        &variant.case,
+        &variant.variant,
+    );
+    assert!(
+        defect.is_none() || exception.is_none(),
+        "{context} is both a known defect and a compatibility exception; a defect has no \
+         non-defect cause to except"
+    );
+    if exception.is_some() {
+        // The pin stands for the manifest's approved judgment on this variant,
+        // so that judgment must exist: a pin with no recorded exception would
+        // be a suppression.
+        assert!(
+            has_recorded_exception(&variant.manifest, &variant.variant),
+            "{context} carries a compatibility exception pin but its manifest records no \
+             direct-PNG tolerance exception for the variant"
+        );
+    }
+    match (defect, exception) {
+        (Some(defect), _) => defect.mismatch(&report),
+        (None, Some(exception)) => exception.mismatch(&report),
+        (None, None) => (!report.passed())
+            .then(|| format!("outside the pure-Rust SVG budget: {}", observed(&report))),
+    }
+}
+
 /// Whether the case manifest records a whole direct-PNG tolerance exception
-/// for the variant: the same record `registered_case_png_parity` consumes, and
+/// for the variant: the same record `parity_registered_case_png` consumes, and
 /// the approved judgment a compatibility exception pin here stands for.
 fn has_recorded_exception(manifest: &Value, variant_id: &str) -> bool {
     manifest["exceptions"]
@@ -255,6 +322,49 @@ fn has_recorded_exception(manifest: &Value, variant_id: &str) -> bool {
                 && exception["format"] == "png"
                 && exception["region"] == "whole"
         })
+}
+
+/// An attribute of the `<svg>` root, located by name within the root tag so a
+/// same-named attribute on a nested element cannot stand in for it.
+fn root_attribute(svg: &str, name: &str) -> String {
+    let start = svg.find("<svg").expect("SVG has a root element");
+    let tag = &svg[start..];
+    let tag = &tag[..tag.find('>').expect("SVG root tag closes")];
+    let marker = format!(" {name}=\"");
+    let value = &tag[tag
+        .find(&marker)
+        .unwrap_or_else(|| panic!("SVG root declares {name}"))
+        + marker.len()..];
+    value[..value.find('"').expect("attribute value closes")].to_owned()
+}
+
+/// Every `<path>` element's `d` attribute, in document order. The attribute is
+/// located by name rather than by position: the official export writes `fill`
+/// before `d` on freedraw strokes and `d` first elsewhere.
+fn path_data(svg: &str) -> Vec<String> {
+    let mut data = Vec::new();
+    let mut rest = svg;
+    while let Some(start) = rest.find("<path") {
+        rest = &rest[start + "<path".len()..];
+        let Some(end) = rest.find('>') else { break };
+        let tag = &rest[..end];
+        if let Some(attribute) = tag.find(" d=\"") {
+            let value = &tag[attribute + " d=\"".len()..];
+            if let Some(close) = value.find('"') {
+                data.push(value[..close].to_owned());
+            }
+        }
+        rest = &rest[end..];
+    }
+    data
+}
+
+fn truncate(value: &str) -> String {
+    if value.len() <= 90 {
+        value.to_owned()
+    } else {
+        format!("{}...", &value[..90])
+    }
 }
 
 /// Rasterizes one SVG document with the workspace `resvg`, resolving text
@@ -514,5 +624,33 @@ fn referenced_families_split_lists_and_keep_document_order() {
     assert_eq!(
         referenced_families(svg),
         ["Helvetica", "Segoe UI Emoji", "Excalifont", "Xiaolai"]
+    );
+}
+
+#[test]
+fn path_divergence_reports_the_first_differing_path_and_a_count_mismatch() {
+    let official = "<svg><path d=\"M0 0 L1 1\"/><path fill=\"#000\" d=\"M2 2 L3 3\"/></svg>";
+    assert_eq!(path_divergence(official, official), None);
+    let moved = "<svg><path d=\"M0 0 L1 1\"/><path fill=\"#000\" d=\"M2 2 L3 4\"/></svg>";
+    let detail = path_divergence(moved, official).expect("a moved coordinate is a divergence");
+    assert!(detail.starts_with("path 1 differs"), "{detail}");
+    assert!(detail.contains("ours     M2 2 L3 4"), "{detail}");
+    assert!(detail.contains("official M2 2 L3 3"), "{detail}");
+    let fewer = "<svg><path d=\"M0 0 L1 1\"/></svg>";
+    assert_eq!(
+        path_divergence(fewer, official).as_deref(),
+        Some("emits 1 paths, official has 2")
+    );
+}
+
+#[test]
+fn extent_divergence_compares_only_the_root_element() {
+    let official = "<svg viewBox=\"0 0 200 120\" width=\"200\" height=\"120\">\
+                    <svg viewBox=\"0 0 1 1\" width=\"1\" height=\"1\"/></svg>";
+    assert_eq!(extent_divergence(official, official), None);
+    let scaled = "<svg viewBox=\"0 0 200 120\" width=\"400\" height=\"240\"></svg>";
+    assert_eq!(
+        extent_divergence(scaled, official).as_deref(),
+        Some("width \"400\" against official \"200\"; height \"240\" against official \"120\"")
     );
 }

@@ -39,8 +39,8 @@ stretched, or offset to fit: device pixels beyond the canvas are discarded and
 canvas pixels the page does not cover stay transparent. PDFium renders through
 `FPDF_RenderPageBitmapWithMatrix` rather than pypdfium2's `PdfPage.render`,
 which would size its bitmap with `ceil` and stretch a fractional page onto it.
-The `#[ignore]`d `pdf_viewer_adapters` tests in `crates/excalidraw-render`
-pin this contract for both adapters.
+The `#[ignore]`d `harness_pdf_viewers::adapters` tests in
+`crates/excalidraw-render` pin this contract for both adapters.
 
 The PDFium library is reinitialized with the checked `empty-fonts/` directory as
 its complete user font search path. Structural admission separately requires

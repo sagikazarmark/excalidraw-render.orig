@@ -1,20 +1,156 @@
-//! Shared plumbing for the parity harnesses: how a registered export variant's
-//! options become a render request, how a recorded tolerance exception's
-//! ceilings judge a comparison, and how a divergence a harness must hold in
-//! place, a known defect or a compatibility exception, is pinned at its exact
-//! measurement.
-
-// Each harness binary includes this module by path and uses the part it needs.
-#![allow(dead_code)]
+//! Shared plumbing for the parity harnesses: which variants the case registry
+//! declares and how a harness judges each of them once, how a registered export
+//! variant's options become a render request, how a recorded tolerance
+//! exception's ceilings judge a comparison, and how a divergence a harness must
+//! hold in place, a known defect or a compatibility exception, is pinned at its
+//! exact measurement.
 
 use std::collections::BTreeSet;
+use std::fs;
+use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::thread;
 
-use excalidraw_render::{ColorMode, OutputFormat, RenderRequest, Sizing};
+use excalidraw_render::{ColorMode, OutputFormat, RenderRequest, SceneDocument, Sizing};
 use excalidraw_render_compare::{
     ComparisonLimits, ComparisonReport, RegionReport, SsimOutcome, VisualClass,
 };
 use serde_json::{json, Value};
+
+/// One export variant of a registered scene case, with everything a harness
+/// needs to render and judge it: the identifiers, the case directory, the case
+/// manifest, the variant's own record, and the admitted scene document, parsed
+/// once per case and shared by its variants.
+pub struct RegisteredVariant {
+    pub case: String,
+    pub variant: String,
+    pub dir: PathBuf,
+    pub manifest: Arc<Value>,
+    pub record: Value,
+    pub scene: Arc<SceneDocument>,
+}
+
+impl RegisteredVariant {
+    /// `case [variant]`, the prefix of every message about this variant.
+    pub fn context(&self) -> String {
+        format!("{} [{}]", self.case, self.variant)
+    }
+
+    /// The export options the variant varies from the default export.
+    pub fn options(&self) -> &Value {
+        &self.record["options"]
+    }
+
+    /// The variant's declared evidence for one format (`svg`, `png`).
+    pub fn format(&self, format: &str) -> &Value {
+        &self.record["formats"][format]
+    }
+}
+
+/// Every variant of every scene case `tests/conformance/cases/registry.json`
+/// declares, in registry order, so a case is covered the moment it is
+/// registered. Panics when the registry declares no scene case: a harness that
+/// judged nothing must not pass.
+pub fn registered_scene_variants(root: &Path) -> Vec<RegisteredVariant> {
+    let registry: Value = serde_json::from_slice(
+        &fs::read(root.join("tests/conformance/cases/registry.json"))
+            .expect("case registry is present"),
+    )
+    .expect("case registry is valid JSON");
+    let mut variants = Vec::new();
+    for case in registry["cases"]
+        .as_array()
+        .expect("registry cases are an array")
+        .iter()
+        .filter(|case| case["kind"] == "scene")
+    {
+        let id = case["id"].as_str().expect("case id is a string");
+        let dir = root.join(case["path"].as_str().expect("case path is a string"));
+        let manifest: Arc<Value> = Arc::new(
+            serde_json::from_slice(&fs::read(dir.join("manifest.json")).expect("manifest present"))
+                .expect("manifest is valid JSON"),
+        );
+        let scene = Arc::new(
+            SceneDocument::parse(
+                &fs::read(dir.join("scene.excalidraw")).expect("scene document present"),
+            )
+            .unwrap_or_else(|error| panic!("{id} scene is admitted: {error:?}")),
+        );
+        for record in manifest["variants"]
+            .as_array()
+            .expect("manifest variants are an array")
+        {
+            variants.push(RegisteredVariant {
+                case: id.to_owned(),
+                variant: record["id"]
+                    .as_str()
+                    .expect("variant id is a string")
+                    .to_owned(),
+                dir: dir.clone(),
+                manifest: Arc::clone(&manifest),
+                record: record.clone(),
+                scene: Arc::clone(&scene),
+            });
+        }
+    }
+    assert!(!variants.is_empty(), "the registry declared no scene cases");
+    variants
+}
+
+/// The number of distinct cases among the variants.
+pub fn case_count(variants: &[RegisteredVariant]) -> usize {
+    variants
+        .iter()
+        .map(|variant| variant.case.as_str())
+        .collect::<BTreeSet<_>>()
+        .len()
+}
+
+/// Judges every variant exactly once, spread over the available cores, and
+/// returns the judgments in registry order, so a failure report reads the same
+/// however the work was split. Rendering and comparison are pure functions of
+/// the variant, so the split changes nothing but the wall time; a panic in one
+/// judgment is re-raised on the calling thread with its original message.
+pub fn judge_each<T: Send>(
+    variants: &[RegisteredVariant],
+    judge: impl Fn(&RegisteredVariant) -> T + Sync,
+) -> Vec<T> {
+    let workers = thread::available_parallelism()
+        .map_or(1, NonZeroUsize::get)
+        .clamp(1, variants.len().max(1));
+    let next = AtomicUsize::new(0);
+    let mut judgments: Vec<Option<T>> = (0..variants.len()).map(|_| None).collect();
+    thread::scope(|scope| {
+        let workers: Vec<_> = (0..workers)
+            .map(|_| {
+                scope.spawn(|| {
+                    let mut judged = Vec::new();
+                    loop {
+                        let index = next.fetch_add(1, Ordering::Relaxed);
+                        let Some(variant) = variants.get(index) else {
+                            break judged;
+                        };
+                        judged.push((index, judge(variant)));
+                    }
+                })
+            })
+            .collect();
+        for worker in workers {
+            let judged = worker
+                .join()
+                .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
+            for (index, judgment) in judged {
+                judgments[index] = Some(judgment);
+            }
+        }
+    });
+    judgments
+        .into_iter()
+        .map(|judgment| judgment.expect("every variant was judged exactly once"))
+        .collect()
+}
 
 /// Builds the render request a registered export variant describes.
 ///
@@ -212,13 +348,4 @@ pub fn visual_class(name: &str) -> VisualClass {
         "mixed/representative" => VisualClass::MixedRepresentative,
         other => panic!("unknown visual class {other:?}"),
     }
-}
-
-/// The workspace root, two levels above this crate.
-pub fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("crate is inside the workspace")
-        .to_owned()
 }

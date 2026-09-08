@@ -5,18 +5,13 @@
 //! what its PNG and SVG evidence cannot see: the PDF's embedded faces and
 //! logical text, the PDF report, and repeatability in every format.
 
-// Included by path rather than through `common/mod.rs` so this binary does not
-// also compile the PDF harness helpers.
-#[path = "common/pdf_inspect.rs"]
-mod pdf_inspect;
-
 use std::fs;
-use std::path::{Path, PathBuf};
 
+use crate::common::repository_root;
 use excalidraw_render::{OutputFormat, RenderOutcome, RenderRequest, Renderer, SceneDocument};
 use serde_json::Value;
 
-use pdf_inspect::{
+use crate::common::pdf_inspect::{
     embedded_pdf_fonts, family_name, font_resource, pdf_actual_text, to_unicode_cmap,
 };
 
@@ -262,12 +257,4 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
         1
     );
     assert!(!liberation_line.contains(&format!("{excalifont} 20 Tf")));
-}
-
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("crate is inside the workspace")
-        .to_owned()
 }

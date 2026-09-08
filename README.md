@@ -114,13 +114,44 @@ targets and in the pinned browser-hosted `wasm32-unknown-unknown` harness.
 
 ## Tests
 
-`cargo test --workspace` runs every unit, integration, and doc test target. The
-root `Cargo.toml` optimizes the `test` profile (`opt-level = 2`, keeping debug
-assertions, overflow checks, and debuginfo), because brotli quality-11 encoding,
-WOFF2 decoding, SSIM, and resvg rasterization dominate the suite and run an
-order of magnitude slower unoptimized. Dependencies are optimized under the `dev`
-profile as well, so `cargo run -p xtask` verification shares the compiled
-external dependencies with `cargo test`.
+The suite is tiered, and `.config/nextest.toml` gives each tier a
+[cargo-nextest](https://nexte.st) profile that selects it by binary name and
+kind, so neither a workflow nor a developer names individual tests. The
+renderer's integration binaries under `crates/excalidraw-render/tests` are named
+by tier:
+
+| binary | tier | profile |
+|---|---|---|
+| `fast` (one module per former binary) and every other crate's targets | every unit, component and full-pipeline test | `ci-fast` |
+| `parity_registered_case_svg`, `parity_registered_case_png`, `parity_frame_export` | parity against official evidence: the registry-driven scene harnesses and the frame-export case | `ci-render` |
+| `limits_scene_admission` | fixed parser ceilings that build 64 MiB and million-entry scenes | `ci-render` |
+| `harness_pdf_viewers`, `harness_svg_viewers` | `#[ignore]`d gates that need the pinned PDFium, PDF.js, qpdf and Chromium harnesses | `harness` |
+
+```sh
+cargo nextest run --workspace                      # a developer's run: ci-fast and ci-render together
+cargo nextest run --workspace --profile ci-fast    # the push gate's fast leg
+cargo nextest run --workspace --profile ci-render  # the push gate's render leg
+cargo nextest run -p excalidraw-render --profile harness --run-ignored only
+cargo test --workspace --doc                       # nextest runs no doc tests
+```
+
+`cargo test --workspace` still runs every non-ignored test in one go, without
+the tiers. The pinned nextest release is installed from
+`tests/package-consumer/tool-manifest.json` with
+`bash tests/package-consumer/install-cargo-nextest.sh <download-directory>`.
+
+The two registry parity harnesses render each registered variant once per
+format per run: the SVG harness judges one render on path geometry, root extent
+and the rasterized document, the PNG harness one render against the direct
+official raster, and each spreads its variants over the available cores. The
+comparator, not the renderer, is what their time goes to.
+
+The root `Cargo.toml` optimizes the `test` profile (`opt-level = 2`, keeping
+debug assertions, overflow checks, and debuginfo), because brotli quality-11
+encoding, WOFF2 decoding, SSIM, and resvg rasterization dominate the suite and
+run an order of magnitude slower unoptimized. Dependencies are optimized under
+the `dev` profile as well, so `cargo run -p xtask` verification shares the
+compiled external dependencies with `cargo test`.
 
 Two corpus-driven tests form the release-mode qualification set and are not
 part of the push gate: the SVG font subset qualification corpus
@@ -139,8 +170,9 @@ cargo test --locked --release -p excalidraw-render --features release-qualificat
 The property test is `#[ignore]`d unless `release-qualification` is enabled.
 The corpus test's file is digest-pinned by the approved SVG font subset
 qualification (issue #99), so it keeps the same gate only from the next
-re-approval round on; until then the push gate leaves it to the release-mode run
-by skipping it at the runner:
+re-approval round on; until then every nextest profile excludes it by name, and
+a plain `cargo test` run leaves it to the release-mode run by skipping it at the
+runner:
 
 ```sh
 cargo test --locked --workspace -- --skip complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces
@@ -162,12 +194,12 @@ The devenv shell carries the pinned Dagger CLI (`dagger.enable` in
 ```sh
 dagger check --list
 dagger check excalidraw-render:lint
-dagger check excalidraw-render:test:workspace
+dagger check excalidraw-render:test:fast
 ```
 
 The checks mirror the workflow jobs one for one: `lint` is the `conformance`
-workflow's formatting and lint gate, `test` its unit, parity, and
-whole-workspace targets, `conformance` the catalog and approval-bearing
+workflow's formatting and lint gate, `test` its fast and render tiers and the
+doc tests, `conformance` the catalog and approval-bearing
 evidence verification the `conformance` and `Packaged public facade` workflows
 share, and `packaging` the Linux leg of the packaged public facade, including
 the release-mode qualification set. The randomized expansions the nightly

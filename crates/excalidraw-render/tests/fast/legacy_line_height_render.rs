@@ -2,14 +2,9 @@
 //! detected from its height when it has one, otherwise its source family's
 //! metadata line height. Decided on #108.
 
-// Included by path so this binary shares the baseline helpers without
-// compiling the rest of `common/`.
-#[path = "common/svg_baselines.rs"]
-mod svg_baselines;
-
 use excalidraw_render::{DiagnosticCode, SceneDocument};
 
-use svg_baselines::{assert_baselines, render_svg, tspan_baselines};
+use crate::common::svg_baselines::{assert_baselines, render_svg, tspan_baselines};
 
 /// The vertical family metadata metrics that position a first baseline.
 struct Metrics {

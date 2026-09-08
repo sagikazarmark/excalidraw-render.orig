@@ -9,13 +9,11 @@
 //! page does not cover stay transparent.
 
 use std::fs;
-use std::path::{Path, PathBuf};
-
-mod common;
-
-use common::pdf_harness::try_render_viewer;
 
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
+
+use crate::common::pdf_harness::try_render_viewer;
+use crate::common::repository_root;
 
 const VIEWERS: [(&str, &str, ComparisonMode); 2] = [
     (
@@ -224,12 +222,4 @@ fn fractional_page_pdf() -> Vec<u8> {
         .as_bytes(),
     );
     pdf
-}
-
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("crate is inside the workspace")
-        .to_path_buf()
 }

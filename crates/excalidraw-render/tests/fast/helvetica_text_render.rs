@@ -3,14 +3,9 @@
 //! Helvetica, as `getVerticalOffset` does in the reference renderer. Decided on
 //! #105.
 
-// Included by path so this binary shares the baseline helpers without
-// compiling the rest of `common/`.
-#[path = "common/svg_baselines.rs"]
-mod svg_baselines;
-
 use excalidraw_render::{DiagnosticCode, SceneDocument};
 
-use svg_baselines::{assert_baselines, render_svg, tspan_baselines};
+use crate::common::svg_baselines::{assert_baselines, render_svg, tspan_baselines};
 
 /// `1.15 / 2 + (1577 - 471) / 2048 / 2`: the first-baseline factor for
 /// Helvetica at `lineHeight: 1.15`.

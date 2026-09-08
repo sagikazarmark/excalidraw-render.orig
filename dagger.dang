@@ -220,18 +220,22 @@ type Conformance {
 """
 Test targets from the `conformance` workflow.
 
-`workspace` alone covers everything below it and is the only test run the
-workflow's push gate pays for. The parity and unit targets stay named here
-because every check executes from one compiled layer, so a failure is legible
-on its own at the price of a second execution rather than a second compile.
+The push gate is the `ci-fast` and `ci-render` profiles of `.config/nextest.toml`,
+which together cover the `default` profile exactly once. Each profile selects
+its tier by binary name and kind: the renderer's `fast` binary and every other
+crate's targets are the fast tier, the `parity_*` and `limits_*` binaries the
+render tier, and the `harness_*` binaries, which need the pinned viewer
+harnesses, belong to neither. Both checks execute from one compiled layer, so a
+failure is legible in its tier at the price of a second execution rather than a
+second compile. nextest runs no doc tests, so `doc` runs them through cargo.
 
 The test profile in the root Cargo.toml is optimized, and the two corpus-driven
 tests the push gate does not carry are held back the way the workflow holds
 them: the frame batch property test behind the `release-qualification` feature
-(off here), and the SVG font subset qualification corpus by a runner-level skip,
-because its file is digest-pinned by issue #99 and cannot carry the feature
-gate until its next re-approval round. `packaging:qualification` runs both in
-`--release`.
+(off here), and the SVG font subset qualification corpus by name in every
+profile's default filter, because its file is digest-pinned by issue #99 and
+cannot carry the feature gate until its next re-approval round.
+`packaging:qualification` runs both in `--release`.
 """
 type Test {
   let container: Container!
@@ -248,69 +252,75 @@ type Test {
   }
 
   """
-  Execute the renderer unit tests, without the release-mode qualification corpus.
+  Execute the fast tier: every test outside the parity, limits and harness binaries.
   """
-  unit: String! @check {
-    self.run(["--package", "excalidraw-render", "--lib"] + skipQualificationCorpus)
+  fast: String! @check {
+    self.nextest(["--profile", "ci-fast"])
   }
 
   """
-  Execute the registered case PNG parity target.
+  Execute the render tier: the parity harnesses and the fixed parser ceilings.
   """
-  registeredCasePngParity: String! @check {
-    self.run(["--package", "excalidraw-render", "--test", "registered_case_png_parity"])
+  render: String! @check {
+    self.nextest(["--profile", "ci-render"])
   }
 
   """
-  Execute the registered case SVG path parity target.
+  Execute every documentation test in the workspace.
   """
-  registeredCaseSvgPathParity: String! @check {
-    self.run(["--package", "excalidraw-render", "--test", "registered_case_svg_path_parity"])
+  doc: String! @check {
+    self
+      .compiled
+      .withExec(["cargo", "test", "--locked", "--workspace", "--doc"])
+      .combinedOutput
+  }
+
+  let nextest(args: [String!]!): String! {
+    self
+      .compiled
+      .withExec(["cargo", "nextest", "run", "--locked", "--workspace"] + args)
+      .combinedOutput
   }
 
   """
-  Execute the registered case SVG raster parity target.
-  """
-  registeredCaseSvgRasterParity: String! @check {
-    self.run(["--package", "excalidraw-render", "--test", "registered_case_svg_raster_parity"])
-  }
+  Container with cargo-nextest installed and every workspace test target compiled.
 
-  """
-  Execute every unit, integration, and documentation test target in the workspace.
-
-  `#[ignore]`d tests stay ignored: the nightly expansions live under `nightly`,
-  the viewer-harness gates still need the pinned browser and PDF harnesses, and
-  the frame batch property test waits for the `release-qualification` feature.
-  """
-  workspace: String! @check {
-    self.run(["--workspace", "--no-fail-fast"] + skipQualificationCorpus)
-  }
-
-  let run(args: [String!]!): String! {
-    self.compiled.withExec(["cargo", "test", "--locked"] + args).combinedOutput
-  }
-
-  """
-  Container with every workspace test target already compiled.
-
-  The checks below are overlapping selections of the same targets, so they
-  build once into a shared cached layer and then only execute.
+  The checks above are disjoint selections of the same targets, so they build
+  once into a shared cached layer and then only execute.
   """
   let compiled: Container! {
-    self.container.withExec(["cargo", "test", "--locked", "--workspace", "--no-run"])
+    self
+      .container
+      .withFile("/usr/local/bin/cargo-nextest", cargoNextestBinary(self.container))
+      .withExec(["cargo", "nextest", "run", "--locked", "--workspace", "--no-run"])
   }
 }
 
 """
-Runner arguments that leave the SVG font subset qualification corpus to the
-release-mode `packaging` checks, exactly as the `conformance` workflow's
-workspace suite does.
+The pinned cargo-nextest release for the engine's platform: the version and
+archive digest `tests/package-consumer/tool-manifest.json` records for the
+workflows, verified by the engine when the archive is fetched and unpacked in
+the given container.
 """
-let skipQualificationCorpus: [String!]! {
-  [
-    "--",
-    "--skip", "complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces",
-  ]
+let cargoNextestBinary(container: Container!): File! {
+  let target = hostTarget
+  let checksum = target.{
+    case (_) {
+      "x86_64-unknown-linux-gnu" => "sha256:66786b9abe23920d022a182d1416b1bbc8130dd4872a9553d76985a1708dcd1e"
+      "aarch64-unknown-linux-gnu" => "sha256:2a64b3566a92508550a7ab29c3e8db25472ca37730ecb4d22100b6aa440c2a68"
+      else => raise "cargo-nextest is not pinned for " + _
+    }
+  }
+  let archive = `cargo-nextest-0.9.143-${target}.tar.gz`
+
+  container
+    .withMountedFile("/tmp/" + archive, Dagger.http(
+      url: "https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9.143/" + archive,
+      name: archive,
+      checksum: checksum,
+    ))
+    .withExec(["tar", "-xzf", "/tmp/" + archive, "-C", "/tmp", "cargo-nextest"])
+    .file("/tmp/cargo-nextest")
 }
 
 """

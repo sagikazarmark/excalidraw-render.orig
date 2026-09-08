@@ -1,6 +1,6 @@
 name: PDF harness gates
 
-# The PDF backend qualification gates are #[ignore]d because they need the
+# The PDF viewer and structural gates are #[ignore]d because they need the
 # exact-pinned PDFium, PDF.js and qpdf harness (tools/pdf-harness/install.sh:
 # Linux x86_64, host Python 3.12.3, Docker for the PDF.js container). Nothing
 # else runs them, so their expectations drifted unnoticed (#107). This job runs
@@ -8,6 +8,10 @@ name: PDF harness gates
 # not a required pull-request check, so a PDF-affecting change may still repin
 # the gates in its own round (#109). The PDF.js viewer runs in Docker, so this
 # leg stays on GitHub Actions rather than the Dagger mirror.
+#
+# Every one of these gates lives in the `harness_pdf_viewers` test binary, and
+# the `harness` nextest profile selects the harness binaries by name, so a
+# gate joins this run by being written there rather than by being listed here.
 
 on:
   push:
@@ -33,20 +37,19 @@ jobs:
         run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
       - name: Restore the build cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+      - name: Install pinned cargo-nextest
+        shell: bash
+        run: bash tests/package-consumer/install-cargo-nextest.sh "$RUNNER_TEMP/nextest"
       - name: Install the exact-pinned PDF harness
         shell: bash
         run: |
           python3 --version
           docker --version
           bash tools/pdf-harness/install.sh
-      - name: Run the ignored PDF backend qualification gates
+      # The SVG viewer harness binary needs the pinned Chromium container this
+      # runner does not install, so the profile is narrowed to the PDF binaries.
+      - name: Run the PDF harness gates
         shell: bash
         run: >-
-          cargo test --locked --release -p excalidraw-render
-          --test pdf_backend_qualification -- --ignored
-      - name: Run the other PDF-harness-gated expectations
-        shell: bash
-        run: >-
-          cargo test --locked --release -p excalidraw-render
-          --test rectangle_pdf_render --test excalifont_text_render
-          --test pdf_viewer_adapters --test frame_conformance -- --ignored
+          cargo nextest run --locked --release -p excalidraw-render
+          --profile harness --run-ignored only -E 'binary(/^harness_pdf_/)'

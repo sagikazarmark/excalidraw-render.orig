@@ -29,7 +29,7 @@
 //! [`MAX_NESTING`]. The depth, key, and number-token ceilings of spec §13.1 are
 //! crossed here; the 64 MiB input and string ceilings, the structure-entry
 //! ceiling, and the parser memory ceiling need multi-megabyte inputs and are
-//! held by the `N-1`, `N`, `N+1` vectors in `tests/scene_admission.rs`
+//! held by the `N-1`, `N`, `N+1` vectors in `tests/limits_scene_admission.rs`
 //! instead. The parser and normalizer take only the byte slice — no path,
 //! URL, environment, or clock — and the one place a scene document can name an
 //! external resource is checked to be refused with its typed diagnostic. A

@@ -1,10 +1,12 @@
 use std::fs;
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
 
 use excalidraw_render::{
     OutputFormat, RenderOutcome, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
+
+use crate::common::approved_scenes::rectangle_outline_scene;
+use crate::common::repository_root;
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
 use png::{BitDepth, ColorType, Decoder, Transformations};
 
@@ -65,7 +67,7 @@ fn transparent_rectangle_png_uses_canonical_straight_alpha() {
         .build()
         .expect("transparent PNG request is valid");
     let outcome = Renderer::new()
-        .render(&approved_scene(), &request)
+        .render(&rectangle_outline_scene(), &request)
         .expect("transparent rectangle renders directly as PNG");
     let (width, height, rgba) = decode_png_rgba(outcome.artifact().bytes());
 
@@ -95,7 +97,7 @@ fn png_vector_coverage_obeys_the_rectangle_element_work_limit() {
         .build()
         .expect("resource-limited PNG request is valid");
     let outcome = Renderer::new()
-        .render(&approved_scene(), &request)
+        .render(&rectangle_outline_scene(), &request)
         .expect("local PNG coverage exhaustion retains a meaningful background");
     let decoded = decode_png(outcome.artifact().bytes());
 
@@ -158,19 +160,8 @@ fn render_approved_png() -> RenderOutcome {
         .expect("default PNG request is valid");
 
     Renderer::new()
-        .render(&approved_scene(), &request)
+        .render(&rectangle_outline_scene(), &request)
         .expect("approved rectangle renders directly as PNG")
-}
-
-fn approved_scene() -> SceneDocument {
-    SceneDocument::parse(
-        &fs::read(
-            repository_root()
-                .join("tests/conformance/cases/focused/rectangle-outline/scene.excalidraw"),
-        )
-        .unwrap(),
-    )
-    .expect("approved rectangle scene is admitted")
 }
 
 fn decode_png(bytes: &[u8]) -> CanonicalRgba8 {
@@ -212,12 +203,4 @@ fn png_chunk_types(bytes: &[u8]) -> Vec<[u8; 4]> {
     }
     assert_eq!(offset, bytes.len());
     chunks
-}
-
-fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("crate is inside the workspace")
-        .to_owned()
 }

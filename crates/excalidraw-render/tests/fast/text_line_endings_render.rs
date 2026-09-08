@@ -2,14 +2,9 @@
 //! as the reference's `text.replace(/\r\n?/g, "\n").split("\n")` does, while
 //! the stored bytes stay as they are. Decided on #110.
 
-// Included by path so this binary shares the baseline helpers without
-// compiling the rest of `common/`.
-#[path = "common/svg_baselines.rs"]
-mod svg_baselines;
-
 use excalidraw_render::{OutputFormat, RenderOutcome, RenderRequest, Renderer, SceneDocument};
 
-use svg_baselines::{assert_baselines, render_svg, tspan_baselines};
+use crate::common::svg_baselines::{assert_baselines, render_svg, tspan_baselines};
 
 /// Excalifont's metadata metrics: `20 * (lineHeight / 2 + (886 - 374) / 1000 / 2)`.
 fn excalifont_first_baseline(font_size: f64, line_height: f64) -> f64 {

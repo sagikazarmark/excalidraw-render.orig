@@ -29,17 +29,23 @@ both canonical PDF viewers. The package-consumer risk set pins selectable text,
 source-image, native nested-SVG, and isolated-fallback artifact and report bytes
 on `x86_64-unknown-linux-gnu` and browser-hosted `wasm32-unknown-unknown`.
 
-Run the backend qualification gates after installing the pinned PDF harness:
+The harness-free half of the qualification (determinism, digest pins and
+vector-first structure) is `pdf_backend_qualification` in the `fast` test
+binary; every gate that needs the pinned PDF harness is in the
+`harness_pdf_viewers` binary, which the `harness` nextest profile selects. Run
+them after installing the harness:
 
 ```sh
-cargo test --locked -p excalidraw-render --test pdf_backend_qualification
-cargo test --locked -p excalidraw-render --test pdf_backend_qualification -- --ignored
-cargo test --locked --release -p excalidraw-render --test rectangle_pdf_render \
-  approved_rectangle_passes_both_canonical_pdf_visual_gates -- --ignored --exact
-cargo test --locked --release -p excalidraw-render --test excalifont_text_render \
-  approved_excalifont_text_passes_both_canonical_pdf_gates -- --ignored --exact
-cargo test --locked --release -p excalidraw-render --test frame_conformance \
-  frame_pdfs_pass_both_canonical_pdf_visual_gates -- --ignored --exact
+cargo nextest run --locked -p excalidraw-render -E 'test(/^pdf_backend_qualification::/)'
+cargo nextest run --locked --release -p excalidraw-render \
+  --profile harness --run-ignored only -E 'binary(/^harness_pdf_/)'
+```
+
+or one gate at a time through cargo, for example:
+
+```sh
+cargo test --locked --release -p excalidraw-render --test harness_pdf_viewers \
+  frame_export::frame_pdfs_pass_both_canonical_pdf_visual_gates -- --ignored --exact
 ```
 
 ## Re-pinning the ignored gates
@@ -49,11 +55,12 @@ field checks do not cover: `operation_sha256` hashes every content operator with
 its operands, and `inventory_sha256` hashes the structural inventory, including
 the XMP metadata stream, embedded font bytes, `ToUnicode` streams, image bytes,
 clips, and `ActualText` mappings. Renderer work that moves any of those bytes
-moves the digests. The non-ignored tests in the same file pin the artifact bytes
-and the expectation file bytes, so re-pinning an artifact digest there keeps
-them green while the digests inside the expectation silently go stale. Re-run
-the ignored gates whenever a PDF artifact digest in
-`crates/excalidraw-render/tests/pdf_backend_qualification.rs` changes.
+moves the digests. The harness-free tests in
+`crates/excalidraw-render/tests/fast/pdf_backend_qualification.rs` pin the
+artifact bytes and the expectation file bytes, so re-pinning an artifact digest
+there keeps them green while the digests inside the expectation silently go
+stale. Re-run the ignored gates whenever a PDF artifact digest in that file
+changes.
 
 To re-pin after such a change, first attribute the drift to the commits that
 moved the artifact bytes, or accept the current output on review; a diff that
@@ -71,8 +78,9 @@ failed and must be treated as a defect rather than re-pinned. Then:
    the matching expectation file, keeping the existing single-line layout and
    trailing LF.
 3. Update the pinned sha256 of each edited expectation file in
-   `pdf_backend_qualification.rs` (`PROJECT_STRUCTURE`, `FALLBACK_STRUCTURE`,
-   `NESTED_NATIVE_STRUCTURE`) to `sha256sum` of the new file bytes.
+   `fast/pdf_backend_qualification.rs` (`PROJECT_STRUCTURE`,
+   `FALLBACK_STRUCTURE`, `NESTED_NATIVE_STRUCTURE`) to `sha256sum` of the new
+   file bytes.
 
 The isolated-fallback visual gate compares the fallback PDF rendered by PDFium
 and PDF.js against the official-SVG authority under the tolerance exception in
@@ -92,7 +100,7 @@ instead of choosing a floor. Re-approval sets `minimum_ssim_bits` to the
 observed binary64 bits, `max_changed_pixels` to the observed count,
 `approved_issue` to the issue carrying the decision, and `reason` to the
 diagnosed cause, then updates the pinned sha256 of the exception file in
-`pdf_backend_qualification.rs`.
+`harness_pdf_viewers/backend_qualification.rs`.
 
 The literals that move together are therefore: the expectation file digests and
 their sha256 pins in the test, and the exception record fields and its sha256
@@ -104,7 +112,7 @@ The frame PDF visual gate compares every frame-export target rendered by both
 viewers against its `official-svg.rgba` and records its tolerance exceptions in
 `tests/conformance/cases/focused/frame-export/pdf-tolerance-exceptions.json`,
 one record per `frame_ordinal` and `viewer_profile`, pinned by sha256 in
-`frame_conformance.rs` (`PDF_TOLERANCE_EXCEPTIONS_SHA256`). The gate renders
+`harness_pdf_viewers/frame_export.rs` (`PDF_TOLERANCE_EXCEPTIONS_SHA256`). The gate renders
 every target in both viewers before judging, so one failing run prints every
 divergence with its `changed_pixels` and exact `ssim_bits`, ready to transcribe;
 a target whose record it holds must still fail the canonical budget, or the

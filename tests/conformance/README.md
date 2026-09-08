@@ -37,18 +37,20 @@ a maximum-dimension export leaves the SVG untouched and downscales only the PNG.
 The verifier holds both rasters to those rules: the SVG rounds `viewBox` times
 the scale, the PNG truncates it.
 
-Three registry-driven harnesses compare the renderer against every registered
-scene case and variant, each isolating one variable:
+Two registry-driven harnesses in `crates/excalidraw-render/tests` compare the
+renderer against every registered scene case and variant, rendering each
+variant once per format and judging that one render on dimensions that each
+isolate one variable:
 
-- `registered_case_svg_path_parity` compares SVG path data and the root extent
-  as text: geometry with no rasterizer involved.
-- `registered_case_svg_raster_parity` rasterizes the renderer's SVG and the
-  official SVG through the same in-process `resvg`, each with a font database
-  built from its own embedded fonts, and compares under the pure-Rust budget:
-  the SVG document with the rasterizer held constant. It is document parity,
-  not a canonical viewer gate; the pinned canonical SVG viewers are a separate
-  piece of work and neither admits text-bearing SVG today.
-- `registered_case_png_parity` compares the renderer's PNG against the official
+- `parity_registered_case_svg` compares SVG path data and the root extent as
+  text, geometry with no rasterizer involved, and then rasterizes the
+  renderer's SVG and the official SVG through the same in-process `resvg`,
+  each with a font database built from its own embedded fonts, and compares
+  under the pure-Rust budget: the SVG document with the rasterizer held
+  constant. The raster dimension is document parity, not a canonical viewer
+  gate; the pinned canonical SVG viewers are a separate piece of work and
+  neither admits text-bearing SVG today.
+- `parity_registered_case_png` compares the renderer's PNG against the official
   browser raster under the canonical budget: the whole pipeline, rasterizer
   included, which is where tolerance exceptions apply.
 
@@ -64,7 +66,7 @@ exact observed changed-pixel count and binary64 SSIM score with no margin,
 documents the cause, and links the issue that carries the decision. The
 generator carries registered exceptions into the manifest, so the case approval
 subject binds them and any change to a record invalidates that approval;
-`registered_case_png_parity` then holds an excepted variant to those ceilings
+`parity_registered_case_png` then holds an excepted variant to those ceilings
 and fails if the variant starts passing the canonical budget, so a record cannot
 outlive the difference it describes. Today only whole-artifact direct-PNG
 exceptions with no viewer are admitted.
@@ -72,7 +74,7 @@ exceptions with no viewer are admitted.
 A compatibility exception, such as spec 8.3's replacement glyph for a scalar
 no bundled face maps or its Noto Emoji substitution for the local-only emoji
 face, is therefore excepted on the direct PNG and observed
-just as well by `registered_case_svg_raster_parity`, whose scope the manifest
+just as well by the raster dimension of `parity_registered_case_svg`, whose scope the manifest
 cannot except. That harness records a compatibility exception pin: the same
 exact measurement and issue a known defect carries, plus the requirement that
 the manifest record a whole direct-PNG tolerance exception for the same
@@ -185,7 +187,7 @@ Run the renderer-owned focused rectangle candidate through both canonical SVG
 viewers with:
 
 ```sh
-cargo test --locked -p excalidraw-render --test rectangle_svg_render \
+cargo test --locked -p excalidraw-render --test harness_svg_viewers \
   approved_rectangle_passes_both_canonical_svg_visual_gates -- \
   --ignored --exact --nocapture
 ```
@@ -239,8 +241,8 @@ the structural inspector with:
 
 ```sh
 cargo test --locked --release -p excalidraw-render \
-  --test rectangle_pdf_render \
-  approved_rectangle_passes_both_canonical_pdf_visual_gates -- \
+  --test harness_pdf_viewers \
+  rectangle_outline::approved_rectangle_passes_both_canonical_pdf_visual_gates -- \
   --ignored --exact --nocapture
 ```
 
@@ -257,15 +259,18 @@ bash tools/pdf-harness/install.sh
 bash tools/pdf-viewer-qualification.sh reproduce
 ```
 
-The `#[ignore]`d gates that need this harness (`pdf_backend_qualification`,
-`rectangle_pdf_render`, `excalifont_text_render`, `pdf_viewer_adapters`,
-`frame_conformance`) run in CI on every push to `main` and nightly through
-`.github/workflows/pdf-harness-gates.yml`, so a change that moves a structural
-digest or a viewer raster fails visibly rather than leaving the expectation
-files stale (#109). `pdf_viewer_adapters` pins the viewer adapters' own
-contract: a page is admitted when each of its 96 DPI dimensions is within one
-pixel of the supplied canvas and is then placed at exact scale from the canvas
-origin, never stretched to fit (#119).
+Every `#[ignore]`d gate that needs this harness lives in the
+`harness_pdf_viewers` test binary of `crates/excalidraw-render` (the backend
+qualification's structural gates, the rectangle-outline, Excalifont text and
+frame-export viewer gates, and the viewer adapter contract), and the `harness`
+nextest profile selects that binary by name, so the gates run in CI on every
+push to `main` and nightly through `.github/workflows/pdf-harness-gates.yml`
+without being listed there, and a change that moves a structural digest or a
+viewer raster fails visibly rather than leaving the expectation files stale
+(#109). The adapter contract (`harness_pdf_viewers::adapters`) pins the viewer
+adapters' own behavior: a page is admitted when each of its 96 DPI dimensions
+is within one pixel of the supplied canvas and is then placed at exact scale
+from the canvas origin, never stretched to fit (#119).
 
 A PDF viewer gate's tolerance exceptions live beside the case, outside the case
 approval subject: the consuming test pins the file's sha256 and the record
@@ -276,7 +281,8 @@ exact observed values, so two viewers that differ get two records rather than a
 shared floor. The rectangle, Excalifont, and isolated-fallback cases each carry
 one record as `pdf-visual-exception.json`; the frame case records them per
 frame target in `pdf-tolerance-exceptions.json`, keyed by `frame_ordinal`, the
-frame analogue of a scene variant. `frame_conformance` holds an excepted target
+frame analogue of a scene variant. The frame gate in `harness_pdf_viewers`
+holds an excepted target
 and viewer to those ceilings, fails when the target returns inside the
 canonical budget so the record cannot outlive the difference, and rejects a
 record naming a target or viewer the case does not export. The rotated frame's

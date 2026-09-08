@@ -2,9 +2,6 @@
 //! viewer adapters and the structural inspector through their process
 //! contracts.
 
-// Each harness binary includes this module by path and uses the part it needs.
-#![allow(dead_code)]
-
 use std::fs;
 use std::path::Path;
 use std::process::Command;
