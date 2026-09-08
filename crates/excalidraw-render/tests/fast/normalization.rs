@@ -75,6 +75,67 @@ fn legacy_stroke_sharpness_renders_as_the_official_roundness_migration_in_every_
 }
 
 #[test]
+fn legacy_font_strings_render_as_the_official_font_size_and_family_migration_in_every_format() {
+    // Text saved before `fontSize`/`fontFamily` existed carries a CSS-like
+    // `font` string. The official restore splits it into parseFloat(size) and
+    // FONT_FAMILY[name] (Excalifont for an unknown name) and lets it override
+    // both modern fields whenever the key is present. The restored line height
+    // still derives from the element's own fontSize, so the "both" element's
+    // explicit twin spells that line height out (50 / 1 line / 40 = 1.25).
+    let legacy = br##"{"type":"excalidraw","version":2,"elements":[
+        {"id":"virgil","type":"text","x":0,"y":0,"width":200,"height":35,"seed":1,"updated":1,"text":"Virgil","font":"28px Virgil"},
+        {"id":"helvetica","type":"text","x":0,"y":60,"width":200,"height":20,"seed":2,"updated":1,"text":"Helvetica","font":"16px Helvetica"},
+        {"id":"cascadia","type":"text","x":0,"y":120,"width":200,"height":25,"seed":3,"updated":1,"text":"Cascadia","font":"20px Cascadia"},
+        {"id":"nunito","type":"text","x":0,"y":180,"width":200,"height":30,"seed":4,"updated":1,"text":"Nunito","font":"24px Nunito"},
+        {"id":"unknown","type":"text","x":0,"y":240,"width":200,"height":25,"seed":5,"updated":1,"text":"Arial","font":"20px Arial"},
+        {"id":"both","type":"text","x":0,"y":300,"width":200,"height":50,"seed":6,"updated":1,"text":"Both","font":"28px Virgil","fontSize":40,"fontFamily":2}
+    ],"appState":{},"files":{}}"##;
+    let explicit = br##"{"type":"excalidraw","version":2,"elements":[
+        {"id":"virgil","type":"text","x":0,"y":0,"width":200,"height":35,"seed":1,"updated":1,"text":"Virgil","fontSize":28,"fontFamily":1},
+        {"id":"helvetica","type":"text","x":0,"y":60,"width":200,"height":20,"seed":2,"updated":1,"text":"Helvetica","fontSize":16,"fontFamily":2},
+        {"id":"cascadia","type":"text","x":0,"y":120,"width":200,"height":25,"seed":3,"updated":1,"text":"Cascadia","fontSize":20,"fontFamily":3},
+        {"id":"nunito","type":"text","x":0,"y":180,"width":200,"height":30,"seed":4,"updated":1,"text":"Nunito","fontSize":24,"fontFamily":6},
+        {"id":"unknown","type":"text","x":0,"y":240,"width":200,"height":25,"seed":5,"updated":1,"text":"Arial","fontSize":20,"fontFamily":5},
+        {"id":"both","type":"text","x":0,"y":300,"width":200,"height":50,"seed":6,"updated":1,"text":"Both","fontSize":28,"fontFamily":1,"lineHeight":1.25}
+    ],"appState":{},"files":{}}"##;
+    let unmigrated = br##"{"type":"excalidraw","version":2,"elements":[
+        {"id":"virgil","type":"text","x":0,"y":0,"width":200,"height":35,"seed":1,"updated":1,"text":"Virgil"},
+        {"id":"helvetica","type":"text","x":0,"y":60,"width":200,"height":20,"seed":2,"updated":1,"text":"Helvetica"},
+        {"id":"cascadia","type":"text","x":0,"y":120,"width":200,"height":25,"seed":3,"updated":1,"text":"Cascadia"},
+        {"id":"nunito","type":"text","x":0,"y":180,"width":200,"height":30,"seed":4,"updated":1,"text":"Nunito"},
+        {"id":"unknown","type":"text","x":0,"y":240,"width":200,"height":25,"seed":5,"updated":1,"text":"Arial"},
+        {"id":"both","type":"text","x":0,"y":300,"width":200,"height":50,"seed":6,"updated":1,"text":"Both","fontSize":40,"fontFamily":2}
+    ],"appState":{},"files":{}}"##;
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let legacy = render(legacy, format);
+        let explicit = render(explicit, format);
+        let unmigrated = render(unmigrated, format);
+
+        assert_eq!(
+            legacy.artifact().bytes(),
+            explicit.artifact().bytes(),
+            "{format:?}"
+        );
+        assert_ne!(
+            legacy.artifact().bytes(),
+            unmigrated.artifact().bytes(),
+            "{format:?}: the migration must change the rendering"
+        );
+        // Helvetica text reports its Liberation Sans substitution either way;
+        // the migration itself adds nothing.
+        assert_eq!(
+            legacy.report(),
+            explicit.report(),
+            "{format:?}: the migration is silent"
+        );
+        assert!(legacy.report().diagnostics().iter().all(
+            |diagnostic| diagnostic.code() == DiagnosticCode::FONT_LIBERATION_SANS_SUBSTITUTED
+        ));
+    }
+}
+
+#[test]
 fn zero_dimension_defaults_remain_a_meaningful_nonpainting_scene() {
     let defaulted = render_svg(
         br##"{"type":"excalidraw","version":2,"elements":[{"id":"zero","type":"rectangle","seed":1,"updated":1}],"appState":{},"files":{}}"##,

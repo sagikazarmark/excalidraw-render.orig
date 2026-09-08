@@ -1595,14 +1595,17 @@ fn source_accepts<T>(source: SourceField<T>, accepts: impl FnOnce(T) -> bool) ->
 ///
 /// `height` and `font_size` are the compatibility-normalized values, so a
 /// negative source height detects from its magnitude and a missing or invalid
-/// `fontSize` detects with the default rather than reproducing the reference's
+/// `fontSize` detects with the normalized size (the default, or the size a
+/// legacy `font` string migrated to) rather than reproducing the reference's
 /// `NaN`; a zero height falls through as the reference's truthiness check does.
 /// The family metadata line height is keyed on the source family, so Helvetica
-/// keeps `1.15` although Liberation Sans shapes it. Every normalized family is
-/// in the table; the Excalifont fallback mirrors the reference's for a family
-/// it has not registered. A detected value that overflows to infinity, which
-/// only a degenerate height or font size can produce, is excluded like every
-/// other non-finite metric and takes the family value too.
+/// keeps `1.15` although Liberation Sans shapes it, and a legacy `font` string
+/// never changes it because the reference reads the element's own `fontFamily`.
+/// Every normalized family is in the table; the Excalifont fallback mirrors the
+/// reference's for a family it has not registered. A detected value that
+/// overflows to infinity, which only a degenerate height or font size can
+/// produce, is excluded like every other non-finite metric and takes the family
+/// value too.
 fn restored_line_height(height: f64, text: &str, font_size: f64, font_family: i32) -> f64 {
     let family_line_height = FamilyMetrics::for_source_family(font_family)
         .unwrap_or(FamilyMetrics::EXCALIFONT)
@@ -1637,6 +1640,102 @@ fn restored_line_count(text: &str) -> usize {
         }
     }
     lines
+}
+
+/// The `fontSize` and `fontFamily` the reference renderer's restore path
+/// migrates a legacy CSS-like `font` string to, or `None` when the string
+/// yields no usable size.
+///
+/// `restoreElement` splits the string on single spaces, takes `parseFloat` of
+/// the first token (which strips the `px` unit) and looks the second token up
+/// in `FONT_FAMILY` by exact name, falling back to Excalifont for a missing or
+/// unknown name. The multi-word family names can never match through a split
+/// on spaces, so they take the same fallback. A size that is not a positive
+/// finite number is the reference's `NaN` (or an unrenderable size), which
+/// revision 1 treats as a malformed value rather than reproducing.
+fn legacy_font_migration(font: &str) -> Option<(f64, i32)> {
+    let mut tokens = font.split(' ');
+    let font_size = ecmascript_parse_float(tokens.next().unwrap_or(""));
+    if !(font_size.is_finite() && font_size > 0.0) {
+        return None;
+    }
+    let font_family = match tokens.next() {
+        Some("Virgil") => 1,
+        Some("Helvetica") => 2,
+        Some("Cascadia") => 3,
+        Some("Excalifont") => 5,
+        Some("Nunito") => 6,
+        Some(_) | None => 5,
+    };
+    Some((font_size, font_family))
+}
+
+/// The number ECMAScript `parseFloat` reads from `text`: the longest prefix
+/// after the leading white space and line terminators that is a
+/// `StrDecimalLiteral`, or `NaN` when there is none.
+fn ecmascript_parse_float(text: &str) -> f64 {
+    fn decimal_digits(bytes: &[u8]) -> usize {
+        bytes
+            .iter()
+            .take_while(|byte| byte.is_ascii_digit())
+            .count()
+    }
+    let text = text.trim_start_matches(is_ecmascript_white_space);
+    let bytes = text.as_bytes();
+    let signed = matches!(bytes.first(), Some(b'+' | b'-'));
+    let mut end = usize::from(signed);
+    if text[end..].starts_with("Infinity") {
+        return if bytes.first() == Some(&b'-') {
+            f64::NEG_INFINITY
+        } else {
+            f64::INFINITY
+        };
+    }
+    let integer_digits = decimal_digits(&bytes[end..]);
+    end += integer_digits;
+    let mut fraction_digits = 0;
+    if bytes.get(end) == Some(&b'.') {
+        fraction_digits = decimal_digits(&bytes[end + 1..]);
+        if integer_digits > 0 || fraction_digits > 0 {
+            end += 1 + fraction_digits;
+        }
+    }
+    if integer_digits == 0 && fraction_digits == 0 {
+        return f64::NAN;
+    }
+    if matches!(bytes.get(end), Some(b'e' | b'E')) {
+        let mut exponent_end = end + 1;
+        if matches!(bytes.get(exponent_end), Some(b'+' | b'-')) {
+            exponent_end += 1;
+        }
+        let exponent_digits = decimal_digits(&bytes[exponent_end..]);
+        if exponent_digits > 0 {
+            end = exponent_end + exponent_digits;
+        }
+    }
+    text[..end].parse().unwrap_or(f64::NAN)
+}
+
+/// ECMAScript `WhiteSpace` (including every Unicode `Zs` scalar) and
+/// `LineTerminator`, which `parseFloat` trims from the start of its input.
+fn is_ecmascript_white_space(character: char) -> bool {
+    matches!(character, '\u{2000}'..='\u{200A}')
+        || matches!(
+            character,
+            '\t' | '\n'
+                | '\u{000B}'
+                | '\u{000C}'
+                | '\r'
+                | ' '
+                | '\u{00A0}'
+                | '\u{1680}'
+                | '\u{2028}'
+                | '\u{2029}'
+                | '\u{202F}'
+                | '\u{205F}'
+                | '\u{3000}'
+                | '\u{FEFF}'
+        )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1867,14 +1966,45 @@ fn normalize_element_kind(
                 (OutputFormat::Svg, SourceField::Missing | SourceField::Invalid) => text,
                 (OutputFormat::Png | OutputFormat::Pdf, _) => "",
             };
-            let font_size = manifested_value(source.font_size, 20.0, |value| value > 0.0);
-            let font_family = manifested_value(source.font_family, 5, |value| {
+            let source_font_size = manifested_value(source.font_size, 20.0, |value| value > 0.0);
+            let source_font_family = manifested_value(source.font_family, 5, |value| {
                 matches!(value, 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9)
             });
+            // `if ("font" in element)`: a legacy `font` string overrides both
+            // modern fields whenever the element carries one. A value that is
+            // not a string, or a string without a usable size, takes the
+            // manifest's `/font` recovery: the independent modern fields.
+            let legacy_font = match source.font {
+                SourceField::Value(font) => legacy_font_migration(font),
+                SourceField::Missing | SourceField::Invalid => None,
+            };
+            let font_is_malformed =
+                legacy_font.is_none() && !matches!(source.font, SourceField::Missing);
+            if font_is_malformed {
+                diagnostic_context.unsupported(
+                    "font",
+                    &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+                    Recovery::Substituted,
+                    None,
+                )?;
+            }
+            let (font_size, font_family) =
+                legacy_font.unwrap_or((source_font_size, source_font_family));
+            // The restore derives lineHeight from the element's own fontSize
+            // and fontFamily before the migration lands, so the source fields
+            // decide it; only a fontSize the reference would divide NaN by
+            // gives way to the normalized size.
+            let line_height_font_size =
+                manifested_value(source.font_size, font_size, |value| value > 0.0);
             let line_height = match source.line_height {
                 SourceField::Value(value) if value > 0.0 => value,
                 SourceField::Missing | SourceField::Invalid | SourceField::Value(_) => {
-                    restored_line_height(fields.height, text, font_size, font_family)
+                    restored_line_height(
+                        fields.height,
+                        text,
+                        line_height_font_size,
+                        source_font_family,
+                    )
                 }
             };
             Ok((
@@ -4544,6 +4674,200 @@ mod tests {
                 r##""text":"one","fontSize":20,"fontFamily":2,"width":40,"lineHeight":{source}"##
             ));
             assert_eq!(line_height, 1.15, "lineHeight {source} without height");
+        }
+    }
+
+    /// Normalizes one text element and returns its font size and family with
+    /// the element-scoped diagnostics normalization emitted for it.
+    fn normalized_text_font(text_fields: &str) -> ((f64, i32), Vec<(DiagnosticCode, String)>) {
+        let (element, diagnostics) = normalized_single_element(&format!(
+            r##"{{"id":"text","type":"text","seed":1,"updated":1,"text":"one","width":40,"height":35,{text_fields}}}"##
+        ));
+        let NormalizedElementKind::Text(text) = &element.kind else {
+            panic!("the element retains its normalized text kind");
+        };
+        ((text.font_size, text.font_family), diagnostics)
+    }
+
+    #[test]
+    fn a_legacy_font_string_migrates_to_font_size_and_font_family() {
+        // restoreElement, text case: `font.split(" ")` gives the pixel token
+        // and the family name; parseFloat strips the unit and FONT_FAMILY maps
+        // the name to its id. The migration is silent.
+        let (font, diagnostics) = normalized_text_font(r##""font":"28px Virgil""##);
+        assert_eq!(font, (28.0, 1));
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+
+        let (font, diagnostics) = normalized_text_font(r##""font":"14.5px Cascadia""##);
+        assert_eq!(font, (14.5, 3));
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+    }
+
+    #[test]
+    fn a_legacy_font_family_name_maps_like_font_family_and_unknown_names_fall_back() {
+        // getFontFamilyByName: `Object.keys(FONT_FAMILY).includes(name)` is an
+        // exact, case-sensitive match; anything else is DEFAULT_FONT_FAMILY
+        // (Excalifont, 5). The lookup takes the second space-separated token
+        // only, so a multi-word name such as "Lilita One" never matches, and
+        // a missing token (`undefined`) falls back the same way, silently.
+        for (font, expected_family) in [
+            ("20px Virgil", 1),
+            ("20px Helvetica", 2),
+            ("20px Cascadia", 3),
+            ("20px Excalifont", 5),
+            ("20px Nunito", 6),
+            ("20px Lilita One", 5),
+            ("20px Comic Shanns", 5),
+            ("20px Liberation Sans", 5),
+            ("20px virgil", 5),
+            ("20px Arial", 5),
+            ("20px", 5),
+            ("20px  Virgil", 5),
+        ] {
+            let (font_values, diagnostics) = normalized_text_font(&format!(r##""font":"{font}""##));
+            assert_eq!(font_values, (20.0, expected_family), "{font:?}");
+            assert!(diagnostics.is_empty(), "{font:?}: {diagnostics:?}");
+        }
+    }
+
+    #[test]
+    fn a_legacy_font_size_reads_like_parse_float() {
+        // parseFloat takes the longest decimal-literal prefix of the first
+        // token: the unit is ignored whatever it is, a fraction may lack its
+        // integer part, and an exponent is honored only when digits follow.
+        for (font, expected_size) in [
+            ("20 Virgil", 20.0),
+            ("20em Virgil", 20.0),
+            ("+20px Virgil", 20.0),
+            (".5px Virgil", 0.5),
+            ("20.px Virgil", 20.0),
+            ("1e2px Virgil", 100.0),
+            ("1.5E+1px Virgil", 15.0),
+            ("2e Virgil", 2.0),
+            ("2e+px Virgil", 2.0),
+        ] {
+            let (font_values, diagnostics) = normalized_text_font(&format!(r##""font":"{font}""##));
+            assert_eq!(font_values, (expected_size, 1), "{font:?}");
+            assert!(diagnostics.is_empty(), "{font:?}: {diagnostics:?}");
+        }
+    }
+
+    #[test]
+    fn a_legacy_font_string_wins_over_the_modern_fields() {
+        // `if ("font" in element)` overwrites both fontSize and fontFamily
+        // whenever the key is present, and the key survives a re-save, so a
+        // legacy scene edited in a modern editor still renders at the `font`
+        // values. A modern field outside its domain keeps its own diagnostic.
+        let (font, diagnostics) =
+            normalized_text_font(r##""font":"28px Virgil","fontSize":40,"fontFamily":2"##);
+        assert_eq!(font, (28.0, 1));
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+
+        let (font, diagnostics) =
+            normalized_text_font(r##""font":"28px Virgil","fontSize":"big","fontFamily":4"##);
+        assert_eq!(font, (28.0, 1));
+        assert_eq!(
+            diagnostics,
+            [
+                (
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                    "/elements/0/fontSize".to_owned(),
+                ),
+                (
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                    "/elements/0/fontFamily".to_owned(),
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_legacy_font_string_leaves_line_height_detection_to_the_source_fields() {
+        // The restore computes lineHeight before the migration lands:
+        // `detectLineHeight` divides by the element's own fontSize and
+        // `getLineHeight` reads its own fontFamily, so the modern fields, not
+        // the parsed ones, decide the restored line height (#108).
+        let (line_height, diagnostics) = normalized_text_line_height(
+            r##""text":"one","font":"20px Virgil","fontSize":40,"width":40,"height":50"##,
+        );
+        assert_eq!(line_height, 1.25);
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+
+        // Without a modern fontSize the reference detects NaN; revision 1
+        // detects with the migrated size, as it does with the default (#108).
+        let (line_height, diagnostics) = normalized_text_line_height(
+            r##""text":"one","font":"36px Virgil","width":40,"height":45"##,
+        );
+        assert_eq!(line_height, 1.25);
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+
+        // Without a height the family metadata line height is the source
+        // family's: Cascadia's 1.2 here although Helvetica shapes the text,
+        // and Excalifont's 1.25 for the unregistered `undefined` when the
+        // legacy string is the only family the element names.
+        let (line_height, _) = normalized_text_line_height(
+            r##""text":"one","font":"20px Helvetica","fontFamily":3,"width":40"##,
+        );
+        assert_eq!(line_height, 1.2);
+        let (line_height, _) =
+            normalized_text_line_height(r##""text":"one","font":"20px Helvetica","width":40"##);
+        assert_eq!(line_height, 1.25);
+    }
+
+    #[test]
+    fn a_malformed_legacy_font_takes_the_independent_field_recovery_and_is_diagnosed() {
+        // A string whose size token parseFloat cannot read (NaN), or reads as
+        // a size nothing can render, is the reference's broken output; the
+        // manifest's `/font` recovery substitutes the independent fontSize
+        // and fontFamily dispositions and reports `unsupported-property-value`
+        // at `/font`. Present modern fields then apply as if `font` were absent.
+        for font in [
+            r##""""##,
+            r##""px Virgil""##,
+            r##""bold 20px Virgil""##,
+            r##"" 20px Virgil""##,
+            r##""0px Virgil""##,
+            r##""-20px Virgil""##,
+            r##""0x10px Virgil""##,
+            r##""Infinity Virgil""##,
+        ] {
+            let (font_values, diagnostics) = normalized_text_font(&format!(r##""font":{font}"##));
+            assert_eq!(font_values, (20.0, 5), "{font}");
+            assert_eq!(
+                diagnostics,
+                [(
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                    "/elements/0/font".to_owned(),
+                )],
+                "{font}"
+            );
+
+            let (font_values, diagnostics) =
+                normalized_text_font(&format!(r##""font":{font},"fontSize":32,"fontFamily":3"##));
+            assert_eq!(font_values, (32.0, 3), "{font} with modern fields");
+            assert_eq!(
+                diagnostics,
+                [(
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                    "/elements/0/font".to_owned(),
+                )],
+                "{font} with modern fields"
+            );
+        }
+
+        // A non-string is outside the manifest's `string` domain and takes the
+        // same recovery; the reference would throw on `.split`.
+        for font in ["null", "20", r##"{"size":20}"##] {
+            let (font_values, diagnostics) = normalized_text_font(&format!(r##""font":{font}"##));
+            assert_eq!(font_values, (20.0, 5), "{font}");
+            assert_eq!(
+                diagnostics,
+                [(
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                    "/elements/0/font".to_owned(),
+                )],
+                "{font}"
+            );
         }
     }
 
