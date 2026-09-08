@@ -15,14 +15,9 @@ name = "excalidraw-render-ttf2woff2"
 version = "0.1.0"
 authors = ["kaoru <k@warpnine.io>"]
 build = false
-exclude = [
-    "tests/fixtures/*.ttf",
-    "tests/fixtures/golden/*.woff2",
-]
 autolib = false
 autobins = false
 autoexamples = false
-autotests = false
 autobenches = false
 description = "Controlled deterministic ttf2woff2 adapter for excalidraw-render"
 homepage = "https://github.com/0x6b/ttf2woff2"

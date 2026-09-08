@@ -1,6 +1,8 @@
 # Deterministic ttf2woff2 adapter for excalidraw-render
 
-This package is a controlled fork of `ttf2woff2 0.13.2`. Its encoder implementation is unchanged; the dependency is pinned to upstream `brotli 9.0.0` with the `portable-float` feature so quality-11 output is byte-identical across native and WebAssembly targets.
+This package is a controlled fork of `ttf2woff2 0.13.2`. Its encoder implementation is unchanged; the dependency is pinned to upstream `brotli 9.0.0` with the `portable-float` feature so quality-11 output is byte-identical across native and WebAssembly targets. [CONTROLLED-FORK.md](CONTROLLED-FORK.md) records what differs from upstream and how the fork is tested.
+
+The upstream README follows. Its CLI, npm/WASM package and benchmark sections describe upstream's distribution; this fork builds only the library, ships no CLI binary, and does not carry upstream's `tests/fixtures/` fonts.
 
 # ttf2woff2
 
@@ -103,30 +105,17 @@ $ hyperfine --warmup 3 --runs 5 \
 
 ## Validation
 
-Tests generate WOFF2 files and validate against fonttools:
+This fork does not carry upstream's fonttools compatibility suite or its font fixtures; see [CONTROLLED-FORK.md](CONTROLLED-FORK.md) for what does test it. `cargo test -p excalidraw-render-ttf2woff2` runs the in-module unit tests.
 
-```console
-$ cargo test
-```
-
-Manual validation (need [`uv`](https://docs.astral.sh/uv/) installed):
+Manual validation of any TTF/WOFF2 pair against fonttools (need [`uv`](https://docs.astral.sh/uv/) installed):
 
 ```console
 $ uv run scripts/validate.py <font.ttf> <font.woff2>
 ```
 
-Regenerate pre-generated fonttools output for faster tests:
-
-```console
-$ uv run scripts/generate_golden.py
-```
-
 ## License
 
-- The [Noto Sans Japanese](https://fonts.google.com/noto/specimen/Noto+Sans+JP) font in [tests/fixtures/](tests/fixtures) is licensed under [OFL](https://fonts.google.com/noto/specimen/Noto+Sans+JP/license).
-- The [Recursive](https://github.com/arrowtype/recursive) font in [tests/fixtures/](tests/fixtures) is licensed under [OFL](https://github.com/arrowtype/recursive/blob/main/OFL.txt).
-- The [WarpnineSans](https://github.com/0x6b/warpnine-fonts) font in [tests/fixtures/](tests/fixtures) is licensed under [OFL](https://github.com/0x6b/warpnine-fonts/blob/main/OFL).
-- Everything else is dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE).
+- Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE).
 
 ## Alternatives
 
