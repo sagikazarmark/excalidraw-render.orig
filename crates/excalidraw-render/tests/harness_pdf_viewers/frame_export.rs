@@ -66,8 +66,6 @@ fn frame_pdfs_pass_both_canonical_pdf_visual_gates() {
             fs::read(case.join(format!("evidence/frame-{ordinal}/official-svg.rgba"))).unwrap(),
         )
         .expect("official SVG raster is canonical RGBA8");
-        let candidate_name = format!("frame-{ordinal}.pdf");
-        let candidate_path = scratch.relative(&candidate_name);
         let pdf = renderer
             .render_frame(
                 frame,
@@ -76,8 +74,7 @@ fn frame_pdfs_pass_both_canonical_pdf_visual_gates() {
                     .expect("PDF frame request is valid"),
             )
             .expect("frame renders to PDF");
-        fs::write(scratch.join(&candidate_name), pdf.artifact().bytes())
-            .expect("write renderer-owned frame PDF to scratch");
+        let candidate_path = scratch.write(&format!("frame-{ordinal}.pdf"), pdf.artifact().bytes());
         let class = match ordinal {
             4 | 5 => VisualClass::MixedRepresentative,
             7 => VisualClass::Typography,

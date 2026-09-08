@@ -7,32 +7,16 @@
 //! fallback is never clipped, as the reference canvas draws its placeholder
 //! unclipped.
 
-use base64::Engine as _;
 use excalidraw_render::{OutputFormat, SceneDocument};
 
+use crate::common::image_scene::image_scene_with_element_fields;
 use crate::common::raster::{decode_png, DecodedPng};
-use crate::common::render::{artifact_without_diagnostics, render_without_background};
+use crate::common::render::{render_artifact_without_background, render_without_background};
 
 /// A one-image scene: `element_fields` complete the image element, and `png`
 /// is its file's payload, or `None` for a scene whose file is missing.
 fn image_scene(png: Option<&[u8]>, element_fields: &str) -> SceneDocument {
-    let files = png.map_or_else(String::new, |png| {
-        format!(
-            r#""asset":{{"id":"asset","mimeType":"image/png","dataURL":"data:image/png;base64,{}","created":1}}"#,
-            base64::engine::general_purpose::STANDARD.encode(png)
-        )
-    });
-    let json = format!(
-        r#"{{
-            "type":"excalidraw","version":2,
-            "elements":[{{
-                "id":"image","type":"image","fileId":"asset","status":"saved",
-                "seed":1,"updated":1,{element_fields}
-            }}],
-            "appState":{{}},"files":{{{files}}}
-        }}"#
-    );
-    SceneDocument::parse(json.as_bytes()).expect("image scene is admitted")
+    image_scene_with_element_fields(png.map(|png| ("image/png", png)), element_fields)
 }
 
 /// A 40x40 image of a 2x2 solid red PNG; `extra_fields` add to the element.
@@ -52,7 +36,7 @@ fn red_square_scene(extra_fields: &str) -> SceneDocument {
 fn a_rounded_image_is_clipped_to_the_official_corner_radius_in_every_format() {
     let scene = red_square_scene(r#","roundness":{"type":3}"#);
 
-    let svg = render_artifact(&scene, OutputFormat::Svg);
+    let svg = render_artifact_without_background(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     assert!(
         svg.contains(concat!(
@@ -75,7 +59,7 @@ fn a_rounded_image_is_clipped_to_the_official_corner_radius_in_every_format() {
         assert_eq!(png.pixel(x, y), [255, 0, 0, 255], "inside ({x}, {y})");
     }
 
-    let pdf = render_artifact(&scene, OutputFormat::Pdf);
+    let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(&pdf);
     // The clip is the rounded rectangle in element space, at full precision,
     // replacing the rectangular `re` clip an unrounded image carries.
@@ -95,7 +79,7 @@ fn a_rounded_image_is_clipped_to_the_official_corner_radius_in_every_format() {
 fn an_unrounded_image_keeps_its_rectangular_bounds_in_every_format() {
     let scene = red_square_scene("");
 
-    let svg = render_artifact(&scene, OutputFormat::Svg);
+    let svg = render_artifact_without_background(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     assert!(!svg.contains("clipPath"));
     assert!(svg.contains("<g transform=\"translate(10 10) rotate(0 20 20)\">"));
@@ -105,7 +89,7 @@ fn an_unrounded_image_keeps_its_rectangular_bounds_in_every_format() {
         assert_eq!(png.pixel(x, y), [255, 0, 0, 255], "({x}, {y})");
     }
 
-    let pdf = render_artifact(&scene, OutputFormat::Pdf);
+    let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(&pdf);
     assert!(pdf.contains("0 0 40 40 re\nW\nn\n40 0 0 40 0 0 cm\n/Im0 Do"));
 }
@@ -136,7 +120,7 @@ fn the_corner_clip_stays_in_element_space_when_the_image_is_cropped_and_flipped(
         ),
     );
 
-    let svg = render_artifact(&scene, OutputFormat::Svg);
+    let svg = render_artifact_without_background(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     // The clip rectangle is the element's 20x20, not the crop's, and it sits
     // on the translated group outside the crop mask, the flip and the viewport.
@@ -165,7 +149,7 @@ fn the_corner_clip_stays_in_element_space_when_the_image_is_cropped_and_flipped(
     assert!(blue[0] < 20 && blue[1] < 20 && blue[2] > 240 && blue[3] == 255);
     assert!(green[0] < 20 && green[1] > 225 && green[2] < 30 && green[3] == 255);
 
-    let pdf = render_artifact(&scene, OutputFormat::Pdf);
+    let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(&pdf);
     assert!(
         pdf.contains("5 0 m\n15 0 l\n"),
@@ -195,7 +179,7 @@ fn the_corner_clip_rotates_with_the_image() {
         ),
     );
 
-    let svg = render_artifact(&scene, OutputFormat::Svg);
+    let svg = render_artifact_without_background(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     let clip_reference = svg
         .find("clip-path=\"url(#image-clip-0)\"")
@@ -219,7 +203,7 @@ fn the_corner_clip_rotates_with_the_image() {
         assert_eq!(png.pixel(x, y), [255, 0, 0, 255], "inside ({x}, {y})");
     }
 
-    let pdf = render_artifact(&scene, OutputFormat::Pdf);
+    let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(&pdf);
     assert!(
         pdf.contains("5 0 m\n35 0 l\n"),
@@ -256,10 +240,6 @@ fn fixture_png(width: u32, height: u32, pixels: &[[u8; 4]]) -> Vec<u8> {
             .expect("fixture PNG pixels encode");
     }
     bytes
-}
-
-fn render_artifact(scene: &SceneDocument, format: OutputFormat) -> Vec<u8> {
-    artifact_without_diagnostics(&render_without_background(scene, format))
 }
 
 /// The transparent PNG raster, diagnosed or not: the missing-image fallback

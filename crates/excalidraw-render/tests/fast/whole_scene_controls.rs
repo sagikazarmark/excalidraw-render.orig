@@ -5,7 +5,7 @@ use excalidraw_render::{
 
 use crate::common::pdf_inspect::stream_data;
 use crate::common::raster::decode_png;
-use crate::common::render::render_source;
+use crate::common::render::{render_source, render_with_request};
 
 const COLORED_RECTANGLE: &[u8] = br##"{
     "type":"excalidraw",
@@ -75,7 +75,7 @@ fn canonical_color_alpha_is_preserved_by_every_projection() {
     let png = render_source(source, OutputFormat::Png);
     let rgba = decode_png(png.artifact().bytes()).rgba;
     assert_eq!(&rgba[..4], &[10, 20, 30, 128]);
-    let transparent_png = render_with_request(
+    let transparent_png = render_source_with_request(
         source,
         RenderRequest::builder(OutputFormat::Png)
             .include_background(false)
@@ -114,7 +114,7 @@ fn element_opacity_multiplies_color_alpha_in_every_projection() {
     }"##;
     const EFFECTIVE_ALPHA: &str = "0.25098039215686274";
 
-    let svg = render_with_request(
+    let svg = render_source_with_request(
         source,
         RenderRequest::builder(OutputFormat::Svg)
             .include_background(false)
@@ -124,7 +124,7 @@ fn element_opacity_multiplies_color_alpha_in_every_projection() {
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains(&format!("stroke-opacity=\"{EFFECTIVE_ALPHA}\"")));
 
-    let png = render_with_request(
+    let png = render_source_with_request(
         source,
         RenderRequest::builder(OutputFormat::Png)
             .include_background(false)
@@ -134,7 +134,7 @@ fn element_opacity_multiplies_color_alpha_in_every_projection() {
     let rgba = decode_png(png.artifact().bytes()).rgba;
     assert!(rgba.chunks_exact(4).any(|pixel| pixel == [255, 0, 0, 64]));
 
-    let pdf = render_with_request(
+    let pdf = render_source_with_request(
         source,
         RenderRequest::builder(OutputFormat::Pdf)
             .include_background(false)
@@ -261,7 +261,7 @@ fn zero_padding_empty_scenes_remain_meaningful_in_every_format() {
         "type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}
     }"#;
 
-    let svg = render_with_request(
+    let svg = render_source_with_request(
         source,
         RenderRequest::builder(OutputFormat::Svg)
             .padding(0.0)
@@ -272,7 +272,7 @@ fn zero_padding_empty_scenes_remain_meaningful_in_every_format() {
         .expect("SVG is UTF-8")
         .contains("viewBox=\"0 0 1 1\" width=\"1\" height=\"1\""));
 
-    let png = render_with_request(
+    let png = render_source_with_request(
         source,
         RenderRequest::builder(OutputFormat::Png)
             .padding(0.0)
@@ -282,7 +282,7 @@ fn zero_padding_empty_scenes_remain_meaningful_in_every_format() {
     let decoded = decode_png(png.artifact().bytes());
     assert_eq!((decoded.width, decoded.height), (1, 1));
 
-    let pdf = render_with_request(
+    let pdf = render_source_with_request(
         source,
         RenderRequest::builder(OutputFormat::Pdf)
             .padding(0.0)
@@ -311,7 +311,7 @@ fn bounds_padding_and_sizing_follow_each_format_rule() {
         "files":{}
     }"##;
 
-    let scaled_svg = render_with_request(
+    let scaled_svg = render_source_with_request(
         source,
         RenderRequest::builder(OutputFormat::Svg)
             .padding(5.0)
@@ -323,7 +323,7 @@ fn bounds_padding_and_sizing_follow_each_format_rule() {
     assert!(scaled_svg.contains("viewBox=\"0 0 40 20\" width=\"80\" height=\"40\""));
     assert!(scaled_svg.contains("transform=\"translate(5 5)"));
 
-    let maximum_svg = render_with_request(
+    let maximum_svg = render_source_with_request(
         source,
         RenderRequest::builder(OutputFormat::Svg)
             .padding(5.0)
@@ -339,7 +339,7 @@ fn bounds_padding_and_sizing_follow_each_format_rule() {
         (Sizing::MaxDimension(20.0), (20, 10)),
         (Sizing::MaxDimension(100.0), (40, 20)),
     ] {
-        let png = render_with_request(
+        let png = render_source_with_request(
             source,
             RenderRequest::builder(OutputFormat::Png)
                 .padding(5.0)
@@ -356,7 +356,7 @@ fn bounds_padding_and_sizing_follow_each_format_rule() {
         (Sizing::MaxDimension(20.0), "/MediaBox [0 0 15 7.5]"),
         (Sizing::MaxDimension(100.0), "/MediaBox [0 0 30 15]"),
     ] {
-        let pdf = render_with_request(
+        let pdf = render_source_with_request(
             source,
             RenderRequest::builder(OutputFormat::Pdf)
                 .padding(5.0)
@@ -513,13 +513,16 @@ fn pinned_chromium_color_level_4_forms_lower_to_canonical_srgb() {
     }
 }
 
-fn render_with_request(source: &[u8], request: RenderRequest) -> excalidraw_render::RenderOutcome {
+fn render_source_with_request(
+    source: &[u8],
+    request: RenderRequest,
+) -> excalidraw_render::RenderOutcome {
     let scene = SceneDocument::parse(source).expect("whole-scene control vector is admitted");
-    crate::common::render::render_with_request(&scene, &request)
+    render_with_request(&scene, &request)
 }
 
 fn render_dark(source: &[u8], format: OutputFormat) -> excalidraw_render::RenderOutcome {
-    render_with_request(
+    render_source_with_request(
         source,
         RenderRequest::builder(format)
             .color_mode(ColorMode::Dark)

@@ -6,7 +6,7 @@
 use excalidraw_render::{OutputFormat, RenderOutcome};
 
 use crate::common::raster::{decode_png, DecodedPng};
-use crate::common::render::render_source as render;
+use crate::common::render::render_source;
 
 /// The rows of the raster that carry any non-background ink.
 fn inked_rows(png: &DecodedPng) -> Vec<u32> {
@@ -40,8 +40,8 @@ fn text_scene(text: &str, height: f64) -> Vec<u8> {
 #[test]
 fn an_empty_line_between_paragraphs_paints_nothing_and_keeps_its_line_step() {
     let scene = text_scene("a\n\nb", 75.0);
-    let png = render(&scene, OutputFormat::Png);
-    let svg = render(&scene, OutputFormat::Svg);
+    let png = render_source(&scene, OutputFormat::Png);
+    let svg = render_source(&scene, OutputFormat::Svg);
     assert_eq!(codes(&png), codes(&svg));
     assert!(png.report().is_empty());
 
@@ -67,15 +67,15 @@ fn an_empty_line_between_paragraphs_paints_nothing_and_keeps_its_line_step() {
 fn trailing_and_whitespace_only_lines_render_in_every_format() {
     for text in ["a\n", "\n", " ", "a\n \nb", "\u{a0}"] {
         let scene = text_scene(text, 50.0);
-        let png = render(&scene, OutputFormat::Png);
-        let svg = render(&scene, OutputFormat::Svg);
-        let pdf = render(&scene, OutputFormat::Pdf);
+        let png = render_source(&scene, OutputFormat::Png);
+        let svg = render_source(&scene, OutputFormat::Svg);
+        let pdf = render_source(&scene, OutputFormat::Pdf);
         assert_eq!(codes(&png), codes(&svg), "{text:?}");
         assert_eq!(codes(&png), codes(&pdf), "{text:?}");
         assert!(png.report().is_empty(), "{text:?}: {:?}", png.report());
         assert!(png.artifact().bytes().starts_with(b"\x89PNG"), "{text:?}");
 
-        let repeated = render(&scene, OutputFormat::Png);
+        let repeated = render_source(&scene, OutputFormat::Png);
         assert_eq!(png.artifact().bytes(), repeated.artifact().bytes());
     }
 }
@@ -86,8 +86,8 @@ fn bound_text_with_an_empty_line_renders_to_png() {
         {"id":"box","type":"rectangle","x":0,"y":0,"width":200,"height":120,"boundElements":[{"id":"label","type":"text"}],"seed":1,"updated":1},
         {"id":"label","type":"text","x":50,"y":22.5,"width":100,"height":75,"fontSize":20,"fontFamily":5,"lineHeight":1.25,"text":"top\n\nbottom","originalText":"top\n\nbottom","textAlign":"center","verticalAlign":"middle","containerId":"box","seed":2,"updated":2}
     ],"appState":{},"files":{}}"##;
-    let png = render(scene, OutputFormat::Png);
-    let svg = render(scene, OutputFormat::Svg);
+    let png = render_source(scene, OutputFormat::Png);
+    let svg = render_source(scene, OutputFormat::Svg);
     assert_eq!(codes(&png), codes(&svg));
     assert!(png.report().is_empty());
 }
@@ -100,8 +100,8 @@ fn a_whitespace_only_frame_name_renders_to_png() {
         {"id":"frame","type":"frame","x":0,"y":0,"width":200,"height":120,"name":" ","seed":1,"updated":1},
         {"id":"child","type":"rectangle","x":20,"y":20,"width":60,"height":40,"frameId":"frame","seed":2,"updated":2}
     ],"appState":{},"files":{}}"##;
-    let png = render(scene, OutputFormat::Png);
-    let svg = render(scene, OutputFormat::Svg);
+    let png = render_source(scene, OutputFormat::Png);
+    let svg = render_source(scene, OutputFormat::Svg);
     assert_eq!(codes(&png), codes(&svg));
     assert!(png.report().is_empty());
     assert!(png.artifact().bytes().starts_with(b"\x89PNG"));

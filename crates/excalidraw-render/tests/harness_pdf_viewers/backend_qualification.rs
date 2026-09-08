@@ -100,12 +100,10 @@ fn isolated_fallback_passes_both_canonical_pdf_visual_gates() {
     )
     .expect("fallback exception limits are finite");
     let scratch = ScratchDir::new("pdf-fallback-viewers");
-    let candidate = scratch.relative("candidate.pdf");
-    fs::write(
-        scratch.join("candidate.pdf"),
+    let candidate = scratch.write(
+        "candidate.pdf",
         render_isolated_fallback().artifact().bytes(),
-    )
-    .expect("write renderer-owned fallback PDF to scratch");
+    );
 
     for (viewer, script, mode) in [
         (
@@ -137,10 +135,8 @@ fn isolated_fallback_passes_both_canonical_pdf_visual_gates() {
 fn assert_structural_gate(scratch_name: &str, outcome: RenderOutcome, expectation: &str) {
     let root = repository_root();
     let scratch = ScratchDir::new(scratch_name);
-    let candidate = scratch.relative("candidate.pdf");
+    let candidate = scratch.write("candidate.pdf", outcome.artifact().bytes());
     let output = scratch.relative("structure.json");
-    fs::write(scratch.join("candidate.pdf"), outcome.artifact().bytes())
-        .expect("write renderer-owned qualification PDF to scratch");
 
     assert_structure(&root, &candidate, expectation, &output);
 }

@@ -19,14 +19,12 @@ use common::scratch::ScratchDir;
 fn approved_rectangle_passes_both_canonical_svg_visual_gates() {
     let root = repository_root();
     let scratch = ScratchDir::new("rectangle-svg-candidate");
-    let candidate = scratch.relative("candidate.svg");
+    let candidate = scratch.write(
+        "candidate.svg",
+        render_rectangle_outline_svg().artifact().bytes(),
+    );
     let chromium = scratch.relative("chromium.rgba");
     let pure_rust = scratch.relative("pure-rust.rgba");
-    fs::write(
-        scratch.join("candidate.svg"),
-        render_rectangle_outline_svg().artifact().bytes(),
-    )
-    .expect("write renderer-owned candidate SVG to scratch");
 
     let chromium_status = Command::new("bash")
         .current_dir(&root)

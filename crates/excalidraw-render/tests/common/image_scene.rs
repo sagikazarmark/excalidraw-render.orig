@@ -44,3 +44,30 @@ pub fn image_scene_from_data_url(
     );
     SceneDocument::parse(json.as_bytes()).expect("image scene is admitted")
 }
+
+/// A scene with one image element completed by `element_fields` (its `x`,
+/// `y`, `width`, `height` and whatever else the test varies) over the file
+/// `file` names by media type and payload, or over no file at all when `file`
+/// is `None`, for a scene whose image is missing.
+pub fn image_scene_with_element_fields(
+    file: Option<(&str, &[u8])>,
+    element_fields: &str,
+) -> SceneDocument {
+    let files = file.map_or_else(String::new, |(media_type, payload)| {
+        format!(
+            r#""asset":{{"id":"asset","mimeType":"{media_type}","dataURL":"{}","created":1}}"#,
+            data_url(media_type, payload)
+        )
+    });
+    let json = format!(
+        r#"{{
+            "type":"excalidraw","version":2,
+            "elements":[{{
+                "id":"image","type":"image","fileId":"asset","status":"saved",
+                "seed":1,"updated":1,{element_fields}
+            }}],
+            "appState":{{}},"files":{{{files}}}
+        }}"#
+    );
+    SceneDocument::parse(json.as_bytes()).expect("image scene is admitted")
+}

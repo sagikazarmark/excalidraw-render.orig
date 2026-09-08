@@ -43,15 +43,11 @@ fn registered_scene() -> SceneDocument {
 
 /// The checked expected report for one evidence-bearing format.
 fn checked_report(format: &str) -> Value {
-    serde_json::from_slice(
-        &fs::read(
-            repository_root()
-                .join(CASE)
-                .join(format!("expected-report-{format}.json")),
-        )
-        .expect("checked report is present"),
+    crate::common::reports::checked_report(
+        &repository_root()
+            .join(CASE)
+            .join(format!("expected-report-{format}.json")),
     )
-    .expect("checked report is valid JSON")
 }
 
 /// The manifested Noto Emoji 3.003 face: the bytes both vector formats must

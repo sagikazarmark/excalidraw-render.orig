@@ -40,6 +40,12 @@ pub fn render_artifact(scene: &SceneDocument, format: OutputFormat) -> Vec<u8> {
     artifact_without_diagnostics(&render(scene, format))
 }
 
+/// The artifact bytes of a background-free render of `scene` that raised no
+/// diagnostic.
+pub fn render_artifact_without_background(scene: &SceneDocument, format: OutputFormat) -> Vec<u8> {
+    artifact_without_diagnostics(&render_without_background(scene, format))
+}
+
 /// The artifact bytes of an outcome that raised no diagnostic.
 pub fn artifact_without_diagnostics(outcome: &RenderOutcome) -> Vec<u8> {
     assert!(

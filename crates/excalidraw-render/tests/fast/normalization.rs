@@ -633,38 +633,53 @@ fn normalized_record_limit_precedes_identity_generation_and_diagnostics() {
             .resource_limits(limits)
             .build()
             .expect("resource-limited request is valid");
-        Renderer::new()
-            .render(&scene, &request)
-            .expect_err("a working-byte ceiling below the element record is fatal")
+        Renderer::new().render(&scene, &request)
+    };
+    let attempted_working_bytes = |error: &excalidraw_render::RenderError| {
+        assert_eq!(error.code(), ErrorCode::RESOURCE_WORKING_BYTES_EXCEEDED);
+        let descriptor = serde_json::to_value(error.descriptor()).expect("error serializes");
+        descriptor["details"]["measurement"]["value"]
+            .as_u64()
+            .expect("working-byte attempt is an integer")
     };
 
     // Walk the working-byte charges from one byte upward, adopting each refused
     // attempt as the next ceiling, until the crossing lands on the element's
     // normalized record: the first charge at /elements/0. Its size is read off
-    // the accounting rather than pinned as a literal.
+    // the accounting rather than pinned as a literal; the walk is bounded by
+    // the few charges that precede the record.
     let mut ceiling = 1;
-    let error = loop {
-        let error = render_with_working_bytes(ceiling);
-        assert_eq!(error.code(), ErrorCode::RESOURCE_WORKING_BYTES_EXCEEDED);
-        if error.json_pointer() == "/elements/0" {
-            break error;
-        }
-        let descriptor = serde_json::to_value(error.descriptor()).expect("error serializes");
-        let attempted = descriptor["details"]["measurement"]["value"]
-            .as_u64()
-            .expect("working-byte attempt is an integer");
+    let mut record_crossing = None;
+    for _ in 0..8 {
+        let error = render_with_working_bytes(ceiling)
+            .expect_err("a working-byte ceiling below the element record is fatal");
+        let attempted = attempted_working_bytes(&error);
         assert!(
             attempted > ceiling,
             "a crossing reports the attempt it refused"
         );
+        if error.json_pointer() == "/elements/0" {
+            record_crossing = Some((error, attempted));
+            break;
+        }
         ceiling = attempted;
-    };
+    }
+    let (error, record_bytes) =
+        record_crossing.expect("the normalized record is charged within eight ceilings");
 
     assert_eq!(error.element_id(), None);
     assert!(
         error.report().is_empty(),
         "the record is rejected before identity generation and repair diagnostics"
     );
+    // At exactly its own size the record is admitted: whatever crosses next,
+    // if anything does, attempts more.
+    if let Err(later) = render_with_working_bytes(record_bytes) {
+        assert!(
+            attempted_working_bytes(&later) > record_bytes,
+            "the record is admitted at equality"
+        );
+    }
 }
 
 #[test]

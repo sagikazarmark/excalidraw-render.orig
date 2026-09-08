@@ -4,6 +4,7 @@ use excalidraw_render::{
 use sha2::{Digest, Sha256};
 
 use crate::common::raster::decode_png;
+use crate::common::svg::path_data;
 
 const SCENE: &[u8] = br##"{
   "type":"excalidraw","version":2,
@@ -83,11 +84,7 @@ fn svg_outline_operations_match_the_pinned_roughjs_vectors() {
     let request = RenderRequest::builder(OutputFormat::Svg).build().unwrap();
     let outcome = Renderer::new().render(&scene, &request).unwrap();
     let svg = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
-    let paths: Vec<_> = svg
-        .split("<path d=\"")
-        .skip(1)
-        .map(|tail| tail.split_once("\" stroke=").unwrap().0)
-        .collect();
+    let paths = path_data(svg);
 
     assert_eq!(paths.len(), 7);
     assert_eq!(
@@ -129,11 +126,25 @@ fn outline_geometry_accounting_uses_each_generated_operation_count() {
             .unwrap()
     };
 
+    // The scene's total geometry is the sum of every generated path's
+    // operations, read off the unconstrained render rather than pinned.
+    let unconstrained = Renderer::new()
+        .render(
+            &scene,
+            &RenderRequest::builder(OutputFormat::Svg).build().unwrap(),
+        )
+        .unwrap();
+    let total_operations: u64 =
+        path_data(std::str::from_utf8(unconstrained.artifact().bytes()).unwrap())
+            .iter()
+            .map(|path| path.matches(['M', 'C']).count() as u64)
+            .sum();
+
     Renderer::new()
-        .render(&scene, &request(134))
+        .render(&scene, &request(total_operations))
         .expect("the exact total Rough operation count is admitted");
     let error = Renderer::new()
-        .render(&scene, &request(133))
+        .render(&scene, &request(total_operations - 1))
         .expect_err("the first operation beyond the aggregate limit is rejected");
     assert_eq!(error.code(), ErrorCode::RESOURCE_TOTAL_GEOMETRY_EXCEEDED);
     assert_eq!(error.element_id(), Some("rounded-line"));

@@ -45,9 +45,7 @@ fn approved_excalifont_text_passes_both_canonical_pdf_gates() {
     )
     .expect("approved evidence is canonical RGBA8");
     let scratch = ScratchDir::new("excalifont-pdf-candidate");
-    let candidate = scratch.relative("candidate.pdf");
-    fs::write(scratch.join("candidate.pdf"), outcome.artifact().bytes())
-        .expect("write renderer-owned candidate PDF to scratch");
+    let candidate = scratch.write("candidate.pdf", outcome.artifact().bytes());
 
     for (viewer, script, mode) in [
         (

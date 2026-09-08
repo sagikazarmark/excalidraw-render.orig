@@ -7,11 +7,11 @@
 //! follows the canvas export, whose `drawImage` fills the unrounded element
 //! rectangle, so a fractional edge stays a fractional edge there (#131).
 
-use base64::Engine as _;
 use excalidraw_render::{OutputFormat, SceneDocument};
 
+use crate::common::image_scene::image_scene_with_element_fields;
 use crate::common::raster::{decode_png, DecodedPng};
-use crate::common::render::{artifact_without_diagnostics, render_without_background};
+use crate::common::render::render_artifact_without_background;
 
 /// A one-image scene of a 2x2 solid red PNG; `element_fields` complete the
 /// image element.
@@ -25,19 +25,7 @@ fn image_scene(png: &[u8], element_fields: &str) -> SceneDocument {
 }
 
 fn asset_image_scene(media_type: &str, payload: &[u8], element_fields: &str) -> SceneDocument {
-    let json = format!(
-        r#"{{
-            "type":"excalidraw","version":2,
-            "elements":[{{
-                "id":"image","type":"image","fileId":"asset","status":"saved",
-                "seed":1,"updated":1,{element_fields}
-            }}],
-            "appState":{{}},
-            "files":{{"asset":{{"id":"asset","mimeType":"{media_type}","dataURL":"data:{media_type};base64,{}","created":1}}}}
-        }}"#,
-        base64::engine::general_purpose::STANDARD.encode(payload)
-    );
-    SceneDocument::parse(json.as_bytes()).expect("image scene is admitted")
+    image_scene_with_element_fields(Some((media_type, payload)), element_fields)
 }
 
 #[test]
@@ -49,7 +37,7 @@ fn an_uncropped_fractional_image_fills_the_rounded_viewport_in_svg_and_pdf_and_t
         r#""x":0,"y":0,"width":40.5,"height":40.4,"angle":0,"opacity":100,"scale":[1,1]"#,
     );
 
-    let svg = render_artifact(&scene, OutputFormat::Svg);
+    let svg = render_artifact_without_background(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     assert!(
         svg.contains("<g transform=\"translate(10 10) rotate(0 20.25 20.2)\">"),
@@ -60,7 +48,7 @@ fn an_uncropped_fractional_image_fills_the_rounded_viewport_in_svg_and_pdf_and_t
         "SVG image is not the rounded reference viewport: {svg}"
     );
 
-    let pdf = render_artifact(&scene, OutputFormat::Pdf);
+    let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(&pdf);
     assert!(
         pdf.contains("0 0 41 40 re\nW\nn\n41 0 0 40 0 0 cm\n/Im0 Do"),
@@ -92,7 +80,7 @@ fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_unrounded_c
         r#""x":0,"y":0,"width":40.5,"height":40.4,"angle":0,"opacity":100,"scale":[-1,1]"#,
     );
 
-    let svg = render_artifact(&scene, OutputFormat::Svg);
+    let svg = render_artifact_without_background(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     assert!(
         svg.contains(
@@ -107,7 +95,7 @@ fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_unrounded_c
 
     // The PDF clip is the mirrored viewport and the content matrix mirrors the
     // asset about the unrounded center: `x' = 40.5 - 41 * u`.
-    let pdf = render_artifact(&scene, OutputFormat::Pdf);
+    let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(&pdf);
     assert!(
         pdf.contains("-0.5 0 41 40 re\nW\nn\n-41 0 0 40 40.5 0 cm\n/Im0 Do"),
@@ -161,7 +149,7 @@ fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewport_and_unro
         ),
     );
 
-    let svg = render_artifact(&scene, OutputFormat::Svg);
+    let svg = render_artifact_without_background(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     assert!(
         svg.contains(concat!(
@@ -184,7 +172,7 @@ fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewport_and_unro
     // meets the mirrored viewport `[-0.5, 30.75] x [-0.5, 20.5]` in
     // `[0, 21] x [0, 20.5]`; then the whole asset at its uncropped size is
     // mirrored about the center, its left edge at `width + normalizedCropX`.
-    let pdf = render_artifact(&scene, OutputFormat::Pdf);
+    let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(&pdf);
     assert!(
         pdf.contains(concat!(
@@ -226,7 +214,7 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
         nested,
         r#""x":0,"y":0,"width":40,"height":40.4,"angle":0,"opacity":100,"scale":[1,1]"#,
     );
-    let pdf = render_artifact(&scene, OutputFormat::Pdf);
+    let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(&pdf);
     assert!(
         pdf.contains("0 0 40 40 re\nW\nn\n40 0 0 -40 0 40 cm\n/Svg0 Do"),
@@ -245,7 +233,7 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
             r#""x":0,"y":0,"width":20,"height":10,"angle":0,"opacity":100,"scale":[1,1],{crop}"#
         ),
     );
-    let pdf = render_artifact(&scene, OutputFormat::Pdf);
+    let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(&pdf);
     assert!(
         pdf.contains("0 0 20 10 re\nW\nn\n20 0 0 -20 0 20 cm\n/Svg0 Do"),
@@ -264,7 +252,7 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
             r#""x":0,"y":0,"width":20,"height":10,"angle":0,"opacity":100,"scale":[1,-1],{crop}"#
         ),
     );
-    let pdf = render_artifact(&scene, OutputFormat::Pdf);
+    let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(&pdf);
     assert!(
         pdf.contains("0 0 20 10 re\nW\nn\n20 0 0 20 0 -10 cm\n/Svg0 Do"),
@@ -289,10 +277,9 @@ fn fixture_png(width: u32, height: u32, pixels: &[[u8; 4]]) -> Vec<u8> {
     bytes
 }
 
-fn render_artifact(scene: &SceneDocument, format: OutputFormat) -> Vec<u8> {
-    artifact_without_diagnostics(&render_without_background(scene, format))
-}
-
 fn render_png(scene: &SceneDocument) -> DecodedPng {
-    decode_png(&render_artifact(scene, OutputFormat::Png))
+    decode_png(&render_artifact_without_background(
+        scene,
+        OutputFormat::Png,
+    ))
 }

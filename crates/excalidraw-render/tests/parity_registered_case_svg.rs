@@ -116,9 +116,14 @@ const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
     },
 ];
 
-/// The rasterizer and its pixel backend the pins above were measured with, as
-/// the lockfile names them.
-const PINNED_RASTERIZER: &[(&str, &str)] = &[("resvg", "0.45.1"), ("tiny-skia", "0.11.4")];
+/// The rasterizer, its pixel backend and its font database — which drives the
+/// glyph fallback both pinned cases exercise — that the pins above were
+/// measured with, as the lockfile names them.
+const PINNED_RASTERIZER: &[(&str, &str)] = &[
+    ("resvg", "0.45.1"),
+    ("tiny-skia", "0.11.4"),
+    ("fontdb", "0.23.0"),
+];
 
 /// System families the official export names without embedding, and the
 /// renderer's manifested substitute for each. The official raster evidence was

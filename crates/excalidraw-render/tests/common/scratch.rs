@@ -41,6 +41,14 @@ impl ScratchDir {
         self.path.join(file)
     }
 
+    /// Writes `bytes` to `file` inside the directory and returns the path the
+    /// harness scripts accept for it, see [`Self::relative`].
+    pub fn write(&self, file: &str, bytes: &[u8]) -> String {
+        fs::write(self.join(file), bytes)
+            .unwrap_or_else(|error| panic!("{file} is written to scratch: {error}"));
+        self.relative(file)
+    }
+
     /// The path of `file` relative to the repository root, the form the harness
     /// scripts accept.
     pub fn relative(&self, file: &str) -> String {

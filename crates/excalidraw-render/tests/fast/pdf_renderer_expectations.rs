@@ -1,10 +1,11 @@
 //! The focused rectangle-outline PDF expectations
-//! (`pdf-renderer-expectations.json`) and their visual exception stay bound
-//! to the case they qualify: the approval block digests the rest of the file,
-//! every dependency descriptor still hashes to what it declares, and the case
-//! identity agrees with the case manifest. None of the approval's values are
-//! repeated here, so a re-approval round touches only the manifests; what a
-//! round cannot change is the binding.
+//! (`pdf-renderer-expectations.json`) and the PDFium tolerance exception they
+//! carry stay bound to the case they qualify: the approval block digests the
+//! rest of the file, every dependency descriptor still hashes to what it
+//! declares, the comparator profile ADR-0005 names is among those
+//! dependencies, and the case identity agrees with the case manifest. None of
+//! the approval's values are repeated here, so a re-approval round touches
+//! only the manifests; what a round cannot change is the binding.
 
 use std::fs;
 use std::path::Path;
@@ -12,9 +13,11 @@ use std::path::Path;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
-use crate::common::repository_root;
+use crate::common::{read_json, repository_root};
 
 const CASE: &str = "tests/conformance/cases/focused/rectangle-outline";
+const COMPARATOR_PROFILE: &str = "tests/conformance/comparator-profiles/canonical-visual-v1.json";
+const VIEWER_PROFILES: &str = "tests/conformance/viewer-profiles";
 
 #[test]
 fn focused_pdf_expectations_stay_bound_to_their_case_and_dependencies() {
@@ -52,6 +55,11 @@ fn focused_pdf_expectations_stay_bound_to_their_case_and_dependencies() {
         .as_array()
         .expect("coverage is an array")
         .is_empty());
+    assert!(!expectations["regions"]
+        .as_array()
+        .expect("regions are an array")
+        .is_empty());
+    assert!(expectations["crops"].is_array());
 
     let approval = expectations
         .as_object_mut()
@@ -71,14 +79,15 @@ fn focused_pdf_expectations_stay_bound_to_their_case_and_dependencies() {
         .as_array()
         .expect("PDF expectation files are an array");
     for required in [
-        "manifest.json",
-        "scene.excalidraw",
-        "pdf-visual-exception.json",
+        format!("{CASE}/manifest.json"),
+        format!("{CASE}/scene.excalidraw"),
+        format!("{CASE}/pdf-visual-exception.json"),
+        COMPARATOR_PROFILE.to_owned(),
     ] {
         assert!(
             files
                 .iter()
-                .any(|descriptor| descriptor["path"] == format!("{CASE}/{required}")),
+                .any(|descriptor| descriptor["path"] == required),
             "{required} is among the bound dependencies"
         );
     }
@@ -133,6 +142,13 @@ fn focused_pdf_expectations_stay_bound_to_their_case_and_dependencies() {
         .as_array()
         .expect("regions are an array")
         .contains(&exception["region"]));
+    let viewer_profile = exception["viewer_profile"]
+        .as_str()
+        .expect("the exception names a viewer profile");
+    assert!(
+        pdf_viewer_profile_ids(&root).contains(&viewer_profile.to_owned()),
+        "{viewer_profile} is a canonical PDF viewer profile"
+    );
     assert!(exception["max_changed_pixels"].is_u64());
     let minimum_ssim_bits = exception["minimum_ssim_bits"]
         .as_str()
@@ -209,11 +225,23 @@ fn assert_approval_shape(approval: &Value, originating_issue: &Value) -> u64 {
         .unwrap_or_else(|_| panic!("{approval_url} names an issue"))
 }
 
-fn read_json(path: &Path) -> Value {
-    serde_json::from_slice(
-        &fs::read(path).unwrap_or_else(|error| panic!("{} exists: {error}", path.display())),
-    )
-    .unwrap_or_else(|error| panic!("{} is valid JSON: {error}", path.display()))
+/// The ids of the canonical PDF viewer profiles the repository declares.
+fn pdf_viewer_profile_ids(root: &Path) -> Vec<String> {
+    fs::read_dir(root.join(VIEWER_PROFILES))
+        .expect("viewer profiles are present")
+        .map(|entry| entry.expect("viewer profile entry is readable").path())
+        .filter(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.starts_with("canonical-pdf-") && name.ends_with(".json"))
+        })
+        .map(|path| {
+            read_json(&path)["id"]
+                .as_str()
+                .expect("viewer profile has an id")
+                .to_owned()
+        })
+        .collect()
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {

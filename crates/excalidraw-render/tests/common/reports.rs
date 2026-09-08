@@ -11,12 +11,7 @@ use serde_json::Value;
 
 /// The checked expected report at `path` as a JSON value.
 pub fn checked_report(path: &Path) -> Value {
-    serde_json::from_slice(
-        &std::fs::read(path).unwrap_or_else(|error| {
-            panic!("checked report {} is present: {error}", path.display())
-        }),
-    )
-    .unwrap_or_else(|error| panic!("checked report {} is valid JSON: {error}", path.display()))
+    super::read_json(path)
 }
 
 /// The renderer's `report` as the JSON value its schema serializes to.

@@ -3,6 +3,8 @@ use excalidraw_render::{
 };
 use sha2::{Digest, Sha256};
 
+use crate::common::svg::path_data;
+
 const ARROW_SCENE: &[u8] = br##"{
   "type":"excalidraw","version":2,
   "elements":[
@@ -34,6 +36,29 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
 
         assert_eq!(outcome.artifact().bytes(), repeated.artifact().bytes());
         assert_eq!(outcome.report(), repeated.report());
+        // One pin per artifact. The SVG's is the path-vector digest below, the
+        // geometry this test holds; its whole-artifact digest moved for a
+        // fractional viewBox extent that the vectors never saw. The PNG digest
+        // is the raster canary that caught the `crowfeet` dashed stroke
+        // rendering solid; it moved once more when IDAT switched to
+        // deflate-compressed scanlines (#113) with the pixels unchanged.
+        let whole_artifact_digest = match format {
+            OutputFormat::Svg => None,
+            OutputFormat::Png => {
+                Some("09e2eb955e4134f3f3a6b19b1cee567f130b42d947248764faa036e1199fae23")
+            }
+            OutputFormat::Pdf => {
+                Some("99505f0a67ce2181670ec8fcc9992e68e6376e6e9700cb1a59fae74a8a192566")
+            }
+            _ => unreachable!("the test enumerates every revision-1 format"),
+        };
+        if let Some(expected_digest) = whole_artifact_digest {
+            assert_eq!(
+                format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
+                expected_digest,
+                "exact {format:?} arrow artifact changed"
+            );
+        }
         assert!(
             outcome.report().is_empty(),
             "arrows must not use compatibility recovery for {format:?}: {:?}",
@@ -43,12 +68,8 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
         if format == OutputFormat::Svg {
             let svg = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
             assert!(!svg.contains("Unavailable:"));
-            let paths = svg_path_data(svg);
+            let paths = path_data(svg);
             assert!(paths.len() > 8, "arrowheads are separate vectors");
-            // The arrow geometry is pinned as its path vectors rather than as
-            // whole artifacts: the whole-artifact digests moved for a
-            // fractional viewBox extent and for PNG IDAT compression while the
-            // vectors, which are what this test holds, did not.
             assert_eq!(
                 format!("{:x}", Sha256::digest(paths.join("\n"))),
                 "5e25ba2ed774c760ceb3cb5389467fb12d6ef4c86ac1e453feb3951475b26c16",
@@ -87,12 +108,4 @@ fn arrowhead_geometry_limit_recovers_locally_and_deterministically() {
                 && matches!(diagnostic.element_id(), Some("bound" | "elbow" | "dot"))
         }));
     }
-}
-
-/// Every `<path d>` value in document order.
-fn svg_path_data(svg: &str) -> Vec<&str> {
-    svg.split("<path d=\"")
-        .skip(1)
-        .map(|tail| tail.split_once('"').expect("path data terminates").0)
-        .collect()
 }

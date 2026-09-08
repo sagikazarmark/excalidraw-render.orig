@@ -7,6 +7,8 @@
 
 use std::path::{Path, PathBuf};
 
+use serde_json::Value;
+
 pub mod approved_scenes;
 pub mod image_scene;
 pub mod parse_limits;
@@ -17,6 +19,7 @@ pub mod registered_cases;
 pub mod render;
 pub mod reports;
 pub mod scratch;
+pub mod svg;
 pub mod svg_baselines;
 
 /// The workspace root, two levels above this crate.
@@ -26,4 +29,14 @@ pub fn repository_root() -> PathBuf {
         .and_then(Path::parent)
         .expect("crate is inside the workspace")
         .to_owned()
+}
+
+/// The JSON document at `path`, named in the failure when it is absent or
+/// malformed.
+pub fn read_json(path: &Path) -> Value {
+    serde_json::from_slice(
+        &std::fs::read(path)
+            .unwrap_or_else(|error| panic!("{} is present: {error}", path.display())),
+    )
+    .unwrap_or_else(|error| panic!("{} is valid JSON: {error}", path.display()))
 }

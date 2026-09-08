@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::common::pdf_inspect::pdf_actual_text;
+use crate::common::pdf_inspect::{pdf_actual_text, stream_data};
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request};
 use crate::common::reports::assert_report_matches;
@@ -399,6 +399,11 @@ fn render_with_work_limit(
     render_with_request(scene, &request)
 }
 
+/// More probes than the pipeline has stages that meter element work (shared
+/// resolution, projection and the PNG raster), so a probe that keeps crossing
+/// is a metering change rather than a slow convergence.
+const WORK_PROBE_LIMIT: usize = 8;
+
 /// The text element's semantic work for `format`: the smallest
 /// `max_element_work_units` at which it renders without a work crossing. Each
 /// stage that meters element work refuses the whole attempt and reports it, so
@@ -407,7 +412,7 @@ fn render_with_work_limit(
 /// tests then hold the ±1 boundary against that value instead of a literal.
 fn element_work_boundary(scene: &SceneDocument, format: OutputFormat) -> u64 {
     let mut limit = 1;
-    for _ in 0..8 {
+    for _ in 0..WORK_PROBE_LIMIT {
         let outcome = render_with_work_limit(scene, format, limit);
         let Some(descriptor) = work_crossing_descriptor(&outcome) else {
             return limit;
@@ -421,7 +426,7 @@ fn element_work_boundary(scene: &SceneDocument, format: OutputFormat) -> u64 {
         );
         limit = attempted;
     }
-    panic!("{format:?} element work did not settle within eight probes");
+    panic!("{format:?} element work did not settle within {WORK_PROBE_LIMIT} probes");
 }
 
 /// The descriptor of the text element's work crossing, if the render raised
@@ -440,6 +445,7 @@ fn work_crossing_descriptor(outcome: &RenderOutcome) -> Option<Value> {
         .max_by_key(|descriptor| descriptor["details"]["measurement"]["value"].as_u64())
 }
 
+/// The stream of the object that the reference following `key` names.
 fn pdf_stream_referenced_after<'a>(pdf: &'a [u8], key: &str) -> &'a [u8] {
     let text = String::from_utf8_lossy(pdf);
     let object = text
@@ -447,23 +453,7 @@ fn pdf_stream_referenced_after<'a>(pdf: &'a [u8], key: &str) -> &'a [u8] {
         .nth(1)
         .and_then(|tail| tail.split_whitespace().next())
         .expect("PDF reference has an object number");
-    let marker = format!("{object} 0 obj\n");
-    let object_start = pdf
-        .windows(marker.len())
-        .position(|window| window == marker.as_bytes())
-        .expect("referenced PDF object exists");
-    let stream_marker = b"stream\n";
-    let stream_start = pdf[object_start..]
-        .windows(stream_marker.len())
-        .position(|window| window == stream_marker)
-        .map(|offset| object_start + offset + stream_marker.len())
-        .expect("referenced object has a stream");
-    let stream_end = pdf[stream_start..]
-        .windows(b"\nendstream".len())
-        .position(|window| window == b"\nendstream")
-        .map(|offset| stream_start + offset)
-        .expect("referenced stream terminates");
-    &pdf[stream_start..stream_end]
+    stream_data(pdf, format!("{object} 0 obj\n").as_bytes())
 }
 
 fn svg_source_text(svg: &str) -> String {

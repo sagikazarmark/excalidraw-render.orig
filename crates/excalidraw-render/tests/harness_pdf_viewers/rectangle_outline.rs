@@ -26,7 +26,6 @@ fn approved_rectangle_passes_both_canonical_pdf_visual_gates() {
     assert_eq!(exception["approved_issue"], 44);
     assert_eq!(exception["viewer_profile"], "canonical-pdf.pdfium.v1");
     let scratch = ScratchDir::new("rectangle-pdf-candidate");
-    let candidate = scratch.relative("candidate.pdf");
     let reference = CanonicalRgba8::new(
         200,
         120,
@@ -37,11 +36,10 @@ fn approved_rectangle_passes_both_canonical_pdf_visual_gates() {
         .unwrap(),
     )
     .expect("canonical Chromium official-SVG evidence is valid");
-    fs::write(
-        scratch.join("candidate.pdf"),
+    let candidate = scratch.write(
+        "candidate.pdf",
         render_rectangle_outline_pdf().artifact().bytes(),
-    )
-    .expect("write renderer-owned candidate PDF to scratch");
+    );
 
     for (viewer, script, mode) in [
         (

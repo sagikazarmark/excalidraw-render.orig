@@ -8,8 +8,6 @@
 //! to fit, device pixels beyond the canvas are discarded, and canvas pixels the
 //! page does not cover stay transparent.
 
-use std::fs;
-
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
 
 use crate::common::pdf_harness::try_render_viewer;
@@ -41,9 +39,7 @@ const SQUARE_DEVICE_RANGE: std::ops::Range<u32> = 20..60;
 fn adapters_place_a_fractional_page_at_exact_scale_on_the_supplied_canvas() {
     let root = repository_root();
     let scratch = ScratchDir::new("pdf-viewer-adapters-fractional");
-    let candidate = scratch.relative("fractional.pdf");
-    fs::write(scratch.join("fractional.pdf"), fractional_page_pdf())
-        .expect("write fractional-page PDF to scratch");
+    let candidate = scratch.write("fractional.pdf", &fractional_page_pdf());
 
     for (width, height) in [(112, 84), (113, 83)] {
         let mut rasters = Vec::new();
@@ -102,9 +98,7 @@ fn adapters_place_a_fractional_page_at_exact_scale_on_the_supplied_canvas() {
 fn adapters_reject_a_supplied_size_a_pixel_or_more_off_the_page() {
     let root = repository_root();
     let scratch = ScratchDir::new("pdf-viewer-adapters-rejected");
-    let fractional = scratch.relative("fractional.pdf");
-    fs::write(scratch.join("fractional.pdf"), fractional_page_pdf())
-        .expect("write fractional-page PDF to scratch");
+    let fractional = scratch.write("fractional.pdf", &fractional_page_pdf());
     // The qualification control is an integral 200x120 px page; the fractional
     // page is 112.12x83.84 px, so 111 and 85 miss it by more than a pixel.
     let integral =
