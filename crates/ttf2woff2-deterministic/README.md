@@ -2,7 +2,7 @@
 
 This package is a controlled fork of `ttf2woff2 0.13.2`. Its encoder implementation is unchanged; the dependency is pinned to upstream `brotli 9.0.0` with the `portable-float` feature so quality-11 output is byte-identical across native and WebAssembly targets. [CONTROLLED-FORK.md](CONTROLLED-FORK.md) records what differs from upstream and how the fork is tested.
 
-The upstream README follows. Its CLI, npm/WASM package and benchmark sections describe upstream's distribution; this fork builds only the library, ships no CLI binary, and does not carry upstream's `tests/fixtures/` fonts.
+The upstream README follows. Its CLI, npm/WASM package and benchmark sections describe upstream's distribution: this fork removes the CLI (`src/main.rs`, feature `cli`), builds only the library, and does not carry upstream's `tests/fixtures/` fonts.
 
 # ttf2woff2
 

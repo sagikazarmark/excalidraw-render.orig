@@ -130,6 +130,15 @@ the aggregate runs for the first time on its evidence. If no ttf2woff2 release
 lands by 2026-12-01, the refresh proceeds with the brotli token alone and the
 ttf2woff2 fork stays until a later, separately decided refresh.
 
+Amended 2026-09-08: "a `src/` identical to released 0.13.2" is now identical
+less upstream's CLI entry point. Issue #134 found the fork's `tests/` tree was
+never compiled; the follow-up removed `src/main.rs`, its `cli` feature and the
+optional `clap` dependency as well, since the vendoring had already dropped
+upstream's `[[bin]]` stanza and nothing here builds or calls the CLI. The
+library, its output bytes, the identity token and the retirement path above
+are unchanged; `crates/ttf2woff2-deterministic/CONTROLLED-FORK.md` lists every
+difference from upstream.
+
 If no upstream release lands by 2026-12-01, the fallback is a zero-patch
 re-vendor of upstream at `fb3104d`. It is not free: the identity token becomes
 `excalidraw-render-brotli-0.2.0(upstream-fb3104d)` — the current token claims

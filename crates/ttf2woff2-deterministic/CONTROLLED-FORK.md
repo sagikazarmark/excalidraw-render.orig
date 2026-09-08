@@ -1,10 +1,19 @@
 # Deterministic ttf2woff2 adapter
 
-This directory is a controlled fork of `ttf2woff2 0.13.2`. The code is unchanged except for package identity and its exact dependency on upstream `brotli =9.0.0` with the `portable-float` feature enabled (upstream depends on `brotli ^8` with platform floating-point). It exists only to reach the deterministic brotli and retires once an upstream release carries the `portable-float` passthrough; see ADR-0003 (`docs/adr/0003-retire-the-brotli-fork-for-upstream-portable-float.md`).
+This directory is a controlled fork of `ttf2woff2 0.13.2`. It exists only to reach the deterministic brotli and retires once an upstream release carries the `portable-float` passthrough; see ADR-0003 (`docs/adr/0003-retire-the-brotli-fork-for-upstream-portable-float.md`).
+
+## What differs from upstream
+
+- **Package identity**: name `excalidraw-render-ttf2woff2`, version `0.1.0`, this repository as `repository`, and a description naming the adapter; `homepage` and `documentation` still point at upstream. The library keeps the crate name `ttf2woff2` so callers read `ttf2woff2::encode_with_options`.
+- **Dependencies**: upstream `brotli =9.0.0` with `default-features = false` and the `portable-float`, `std` and `disable-timer` features (upstream depends on `brotli ^8` with platform floating-point); `byteorder` and `thiserror` pinned to exact versions.
+- **CLI removed**: upstream's `src/main.rs`, its `cli` feature (upstream's default) and the optional `clap` dependency are gone. The vendoring had already dropped upstream's `[[bin]]` stanza, so the file was never compiled here. The workspace still consumes the crate with `default-features = false`: a no-op today, kept because the retirement swap to upstream needs exactly that line (ADR-0003) and because it keeps upstream's `default = ["cli"]` off if the fork is ever re-vendored.
+- **Not carried**: upstream's `tests/` (see below), `scripts/generate_golden.py`, and `.github/workflows/` — GitHub Actions only reads the repository root's `.github/`, so the nested `ci.yml` and `release.yml` could never run and only travelled into the packaged crate.
+
+Everything under `src/` other than the removed `main.rs` is byte-identical to the published `ttf2woff2 0.13.2` crate; `rustfmt.toml` is upstream's, and the fork is excluded from the workspace `fmt`/`clippy` gates to keep upstream formatting.
 
 ## What is built
 
-Only the library (`src/lib.rs`, exposing `encode`, `encode_with_options`, `encode_no_transform`, `EncodeOptions`, `BrotliQuality`, `Error`). Upstream's CLI (`src/main.rs`, feature `cli`) is kept for fidelity with the vendored source but is not a declared binary target and is never compiled here.
+Only the library (`src/lib.rs`, exposing `encode`, `encode_with_options`, `encode_no_transform`, `EncodeOptions`, `BrotliQuality`, `Error`). There is no binary target and no feature flag.
 
 ## Test coverage
 

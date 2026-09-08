@@ -25,7 +25,6 @@ documentation = "https://docs.rs/ttf2woff2"
 readme = "README.md"
 keywords = [
     "fonts",
-    "cli",
     "woff2",
     "ttf",
     "font-conversion",
@@ -33,10 +32,6 @@ keywords = [
 categories = ["text-processing"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/sagikazarmark/excalidraw-render.orig"
-
-[features]
-cli = ["dep:clap"]
-default = []
 
 [lib]
 name = "ttf2woff2"
@@ -53,11 +48,6 @@ features = [
 
 [dependencies.byteorder]
 version = "=1.5.0"
-
-[dependencies.clap]
-version = "=4.5.41"
-features = ["derive"]
-optional = true
 
 [dependencies.thiserror]
 version = "=2.0.19"
