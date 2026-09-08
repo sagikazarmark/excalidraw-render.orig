@@ -74,6 +74,18 @@ pub(super) fn resolved_frame_outline(
     height: f64,
 ) -> Result<rough::Path, ResolveSceneError> {
     let radius = FRAME_RADIUS.min(width / 2.0).min(height / 2.0).max(0.0);
+    rounded_rect_path(width, height, radius)
+}
+
+/// The exact rounded rectangle `(0, 0)`-`(width, height)` with `radius`
+/// corners, as an SVG `<rect rx ry>` of that size draws it: four edges joined
+/// by four kappa-approximated quarter arcs, starting and ending where the top
+/// edge meets its left arc. Callers bound `radius` to half the shorter side.
+pub(super) fn rounded_rect_path(
+    width: f64,
+    height: f64,
+    radius: f64,
+) -> Result<rough::Path, ResolveSceneError> {
     let kappa = 0.552_284_749_830_793_6;
     let point = |x, y| rough::Point { x, y };
     let mut operations = Vec::new();
@@ -920,6 +932,18 @@ pub(super) fn union_bounds(
         (Some(bounds), None) | (None, Some(bounds)) => Some(bounds),
         (None, None) => None,
     }
+}
+
+/// The corner radius the reference clips an image element to:
+/// `getCornerRadius(Math.min(element.width, element.height), element)` in both
+/// its SVG `<clipPath>` and its canvas `roundRect` clip, and 0 without a
+/// roundness record.
+pub(super) fn image_corner_radius(
+    width: f64,
+    height: f64,
+    roundness: Option<crate::normalization::NormalizedRoundness>,
+) -> f64 {
+    roundness.map_or(0.0, |roundness| corner_radius(width.min(height), roundness))
 }
 
 fn corner_radius(size: f64, roundness: crate::normalization::NormalizedRoundness) -> f64 {

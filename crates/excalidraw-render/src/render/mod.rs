@@ -2651,6 +2651,32 @@ impl RenderSession {
                 )?;
                 continue;
             }
+            if let ResolvedElement::Image(image) = element {
+                // A rounded image's corner clip is geometry the reference
+                // builds for every format; it is charged like a frame clip's,
+                // once per target, so the ledger agrees across formats and
+                // replays.
+                if let Some(clip) = &image.corner_clip {
+                    let geometry_segments =
+                        u64::try_from(clip.path.operations.len()).unwrap_or(u64::MAX);
+                    self.transact(
+                        request,
+                        ResourceContext::new(
+                            ResourcePhase::SharedSemanticResolution,
+                            "image_corner_clip_geometry",
+                            image.source.pointer(),
+                        )
+                        .with_element_id(Some(image.source.id()))
+                        .with_local_owner(Some(image.source.id())),
+                        ResourceDelta {
+                            geometry_segments,
+                            total_work_units: geometry_segments.saturating_mul(32),
+                            ..ResourceDelta::default()
+                        },
+                    )?;
+                }
+                continue;
+            }
             if let ResolvedElement::Text(text) = element {
                 let clip_segments = text.frame_clips.iter().fold(0_u64, |total, clip| {
                     total.saturating_add(

@@ -627,6 +627,24 @@ and color interpretation and embeds lossless unpremultiplied canonical sRGB with
 a grayscale soft mask. Source raster images are inherent raster content, not
 PDF raster fallback.
 
+An image element with a `roundness` record is clipped to its rectangle with
+`getCornerRadius(min(width, height))` corners in every format, as the
+reference canvas clips it with `roundRect` before `drawImage`: SVG defines the
+clip in `<defs>` beside the frame clips as a `<clipPath>` holding a `<rect>` of
+the element's size with `rx`/`ry`, keyed by the image's source index, and
+references it from the image's translated and rotated group; PNG intersects the
+image's paint mask with the same rounded rectangle; PDF installs it as the
+element-space clip in place of the rectangular one. The clip lives in the
+element's own space, before crop, `scale` flips, and rotation, so those leave
+its corners at the element's corners; a radius that is not positive clips
+nothing the rectangle does not already clip and defines none. The clip
+geometry is charged once per target in the semantic phase like a frame clip's.
+The image/error fallback is never corner-clipped, as the reference canvas clips
+only the image it draws. The reference SVG declares the same `<clipPath>` but
+does not offset its rectangle by the crop and sets `clip-path` as a namespaced
+attribute, as it does for frame clips, so browsers leave its rounded images
+square; revision 1 follows the canvas and clips in every format.
+
 A missing local image is omitted in SVG and PDF, uses the official image/error
 fallback in PNG, and is diagnosed in every selected format. Other invalid,
 forbidden, unsupported, or exhausted resources use the format-specific recipe
@@ -886,7 +904,9 @@ repeated per child. Clip IDs are renderer-owned and keyed by the frame's index
 in the source `elements` array; an element id is untrusted input and is not
 used as an XML ID. The clip rectangle rotates by the frame's angle in degrees,
 as the outline does; revision 1 does not reproduce the reference's
-radians-valued `rotate()` on its clip definition.
+radians-valued `rotate()` on its clip definition. The frame clips are followed
+in `<defs>` by each rounded image's corner clip (Section 8.2), in paint order,
+keyed `image-clip-<source index>`.
 
 Request-scoped and frame-batch physical caches MAY retain qualified source
 decodes and identical derived bytes. Each SVG target nevertheless derives the

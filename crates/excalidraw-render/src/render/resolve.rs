@@ -752,6 +752,11 @@ impl ResolvedScene {
                         source: source.source,
                         asset: std::sync::Arc::clone(asset),
                         frame_clips,
+                        corner_clip: ResolvedImageCornerClip::for_image(
+                            source.width,
+                            source.height,
+                            source.roundness,
+                        )?,
                         transform: ResolvedTransform {
                             translation_x: source.x - min_x + request.padding(),
                             translation_y: source.y - min_y + request.padding(),
@@ -1207,6 +1212,9 @@ pub(super) struct ResolvedImage {
     pub(super) source: NormalizedElementSource,
     pub(super) asset: std::sync::Arc<ResolvedImageAsset>,
     pub(super) frame_clips: Vec<ResolvedClip>,
+    /// The rounded-corner clip of an image with a roundness record, in the
+    /// element's own space before crop, flip, and rotation; `None` without one.
+    pub(super) corner_clip: Option<ResolvedImageCornerClip>,
     pub(super) transform: ResolvedTransform,
     pub(super) opacity: f64,
     pub(super) source_rect: ResolvedImageSourceRect,
@@ -1214,6 +1222,37 @@ pub(super) struct ResolvedImage {
     pub(super) link: Option<String>,
     pub(super) width: f64,
     pub(super) height: f64,
+}
+
+/// The clip the reference applies to an image element with a `roundness`
+/// record: its rectangle with `getCornerRadius(min(width, height))` corners,
+/// which its SVG defines as a `<clipPath>` holding a `<rect rx ry>` and its
+/// canvas paints through `roundRect`. Like a frame clip it carries both the
+/// radius for the SVG rectangle and the same outline as a path for the
+/// backends that rasterize or emit one.
+pub(super) struct ResolvedImageCornerClip {
+    pub(super) radius: f64,
+    pub(super) path: rough::Path,
+}
+
+impl ResolvedImageCornerClip {
+    /// The corner clip of an image element, or `None` when it has no roundness
+    /// record or its radius is not positive: a zero radius clips nothing the
+    /// image's rectangle does not already clip.
+    pub(super) fn for_image(
+        width: f64,
+        height: f64,
+        roundness: Option<crate::normalization::NormalizedRoundness>,
+    ) -> Result<Option<Self>, ResolveSceneError> {
+        let radius = image_corner_radius(width, height, roundness);
+        if !radius.is_finite() || radius <= 0.0 {
+            return Ok(None);
+        }
+        Ok(Some(Self {
+            radius,
+            path: rounded_rect_path(width, height, radius)?,
+        }))
+    }
 }
 
 pub(super) struct ResolvedImageFallback {

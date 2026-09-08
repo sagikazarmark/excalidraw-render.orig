@@ -144,6 +144,9 @@ enum PdfElement {
         source: NormalizedElementSource,
         asset: std::sync::Arc<super::ResolvedImageAsset>,
         frame_clips: Vec<super::ResolvedClip>,
+        /// The rounded-corner clip of an image with a roundness record, in
+        /// element space; without one the image clips to its rectangle.
+        corner_clip: Option<Path>,
         transform: super::ResolvedTransform,
         opacity: f64,
         link: Option<String>,
@@ -298,6 +301,7 @@ impl PdfPlan {
                         source: image.source,
                         asset: image.asset,
                         frame_clips: image.frame_clips,
+                        corner_clip: image.corner_clip.map(|clip| clip.path),
                         transform: image.transform,
                         opacity: image.opacity,
                         link: image.link,
@@ -1463,7 +1467,12 @@ impl PdfPlan {
                     size.saturating_add(line.text.len().saturating_mul(4))
                         .saturating_add(line.glyphs.len().saturating_mul(96))
                 }),
-                PdfElement::Image { .. } => 512,
+                PdfElement::Image { corner_clip, .. } => corner_clip.as_ref().map_or(512, |path| {
+                    path.operations
+                        .len()
+                        .saturating_mul(160)
+                        .saturating_add(512)
+                }),
                 PdfElement::Fallback { label, .. } => label.as_ref().map_or(1_024, |label| {
                     label
                         .path
@@ -1889,6 +1898,7 @@ impl PdfPlan {
                     source,
                     asset,
                     frame_clips,
+                    corner_clip,
                     transform,
                     opacity,
                     width,
@@ -1934,14 +1944,26 @@ impl PdfPlan {
                     if *opacity != 1.0 {
                         push_opacity_resource(&mut content, opacity_resources, *opacity)?;
                     }
-                    push_pdf_number(&mut content, 0.0, "PDF image clip x")?;
-                    content.push(' ');
-                    push_pdf_number(&mut content, 0.0, "PDF image clip y")?;
-                    content.push(' ');
-                    push_pdf_number(&mut content, *width, "PDF image clip width")?;
-                    content.push(' ');
-                    push_pdf_number(&mut content, *height, "PDF image clip height")?;
-                    content.push_str(" re\nW\nn\n");
+                    // The element-space clip precedes the crop and flip matrix,
+                    // so a rounded corner stays at the element's corner however
+                    // the source is mapped into it. Image clips keep full
+                    // precision (spec 8.6): the rough two-decimal rounding does
+                    // not apply to them.
+                    match corner_clip {
+                        Some(path) => {
+                            push_mapped_clip(&mut content, path, |x, y| (x, y), "PDF image clip")?
+                        }
+                        None => {
+                            push_pdf_number(&mut content, 0.0, "PDF image clip x")?;
+                            content.push(' ');
+                            push_pdf_number(&mut content, 0.0, "PDF image clip y")?;
+                            content.push(' ');
+                            push_pdf_number(&mut content, *width, "PDF image clip width")?;
+                            content.push(' ');
+                            push_pdf_number(&mut content, *height, "PDF image clip height")?;
+                            content.push_str(" re\nW\nn\n");
+                        }
+                    }
                     let base_scale_x = *width / source_rect.width;
                     let base_scale_y = *height / source_rect.height;
                     let (image_scale_x, image_offset_x) = if scale[0] < 0 {
@@ -2827,7 +2849,19 @@ fn push_transformed_clip(
         - sin * clip.transform.center_x
         - cos * clip.transform.center_y;
     let map = |x: f64, y: f64| (cos * x - sin * y + offset_x, sin * x + cos * y + offset_y);
-    for operation in &clip.path.operations {
+    push_mapped_clip(output, &clip.path, map, "PDF frame clip")
+}
+
+/// Emits `path` through `map` at full precision and installs it as the clip:
+/// a frame clip mapped into page space before the element's `cm`, or an
+/// image's corner clip left in element space after it.
+fn push_mapped_clip(
+    output: &mut String,
+    path: &Path,
+    map: impl Fn(f64, f64) -> (f64, f64),
+    subject: &str,
+) -> Result<(), FormatEncodeError> {
+    for operation in &path.operations {
         match operation {
             PathOperation::Move(point) => {
                 let (x, y) = map(point.x, point.y);
@@ -2844,9 +2878,9 @@ fn push_transformed_clip(
             } => {
                 for point in [control_1, control_2, end] {
                     let (x, y) = map(point.x, point.y);
-                    push_pdf_number(output, x, "PDF frame clip curve x")?;
+                    push_pdf_number(output, x, subject)?;
                     output.push(' ');
-                    push_pdf_number(output, y, "PDF frame clip curve y")?;
+                    push_pdf_number(output, y, subject)?;
                     output.push(' ');
                 }
                 output.push_str("c\n");

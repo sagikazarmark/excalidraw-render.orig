@@ -163,6 +163,9 @@ enum SvgElement {
         source: NormalizedElementSource,
         asset: std::sync::Arc<super::ResolvedImageAsset>,
         frame_clips: Vec<super::ResolvedClip>,
+        /// The image's rounded-corner clip radius when it has a roundness
+        /// record; the SVG defines the clip as a `<rect rx ry>`.
+        corner_radius: Option<f64>,
         transform: super::ResolvedTransform,
         opacity: f64,
         source_rect: super::ResolvedImageSourceRect,
@@ -266,17 +269,18 @@ fn push_frame_clip_definition<W: SvgSink + ?Sized>(
     Ok(())
 }
 
-/// `rx`/`ry` for a rounded frame rectangle; the rectangular frame-export clip
-/// has none, as in the reference.
+/// `rx`/`ry` for a rounded clip rectangle: a frame's in a scene export, or an
+/// image's corner clip. The rectangular frame-export clip has none, as in the
+/// reference.
 fn push_svg_corner_radius<W: SvgSink + ?Sized>(
     svg: &mut W,
     radius: f64,
 ) -> Result<(), FormatEncodeError> {
     if radius > 0.0 {
         svg.push_str(" rx=\"");
-        push_svg_number(svg, radius, "SVG frame corner radius")?;
+        push_svg_number(svg, radius, "SVG clip corner radius")?;
         svg.push_str("\" ry=\"");
-        push_svg_number(svg, radius, "SVG frame corner radius")?;
+        push_svg_number(svg, radius, "SVG clip corner radius")?;
         svg.push('"');
     }
     Ok(())
@@ -429,6 +433,40 @@ fn push_frame_clip_id<W: SvgSink + ?Sized>(
         .map_err(|_| FormatEncodeError::Encoding("failed to write SVG frame clip ID".to_owned()))
 }
 
+/// An image's rounded-corner clip, keyed like a frame clip by the image's
+/// source index rather than its untrusted element id. The reference defines
+/// the clip as a `<clipPath>` holding a `<rect>` of the element's size with
+/// `getCornerRadius(min(width, height))` corners and references it from the
+/// image's translated and rotated group, so the clip sits in element space,
+/// outside the crop viewport and the flip. The plan defines it in `<defs>`
+/// beside the frame clips, in paint order.
+fn push_image_clip_id<W: SvgSink + ?Sized>(
+    svg: &mut W,
+    source: &NormalizedElementSource,
+) -> Result<(), FormatEncodeError> {
+    write!(svg, "image-clip-{}", source.source_index())
+        .map_err(|_| FormatEncodeError::Encoding("failed to write SVG image clip ID".to_owned()))
+}
+
+fn push_image_clip_definition<W: SvgSink + ?Sized>(
+    svg: &mut W,
+    source: &NormalizedElementSource,
+    width: f64,
+    height: f64,
+    radius: f64,
+) -> Result<(), FormatEncodeError> {
+    svg.push_str("<clipPath id=\"");
+    push_image_clip_id(svg, source)?;
+    svg.push_str("\"><rect width=\"");
+    push_svg_number(svg, width, "SVG image clip width")?;
+    svg.push_str("\" height=\"");
+    push_svg_number(svg, height, "SVG image clip height")?;
+    svg.push('"');
+    push_svg_corner_radius(svg, radius)?;
+    svg.push_str("/></clipPath>");
+    Ok(())
+}
+
 impl SvgPlan {
     pub(super) fn new(
         scene: ResolvedScene,
@@ -539,6 +577,7 @@ impl SvgPlan {
                         source: image.source,
                         asset: image.asset,
                         frame_clips: image.frame_clips,
+                        corner_radius: image.corner_clip.map(|clip| clip.radius),
                         transform: image.transform,
                         opacity: image.opacity,
                         source_rect: image.source_rect,
@@ -640,6 +679,18 @@ impl SvgPlan {
         svg.push_str("</metadata><defs>");
         for clip in frame_clip_definitions(&self.elements)? {
             push_frame_clip_definition(&mut svg, clip)?;
+        }
+        for element in &self.elements {
+            if let SvgElement::Image {
+                source,
+                corner_radius: Some(radius),
+                width,
+                height,
+                ..
+            } = element
+            {
+                push_image_clip_definition(&mut svg, source, *width, *height, *radius)?;
+            }
         }
         self.font_bundle.write_style(svg, push_base64)?;
         svg.push_str("</defs>");
@@ -1128,6 +1179,7 @@ impl SvgPlan {
                 SvgElement::Image {
                     source,
                     asset,
+                    corner_radius,
                     transform,
                     opacity,
                     link,
@@ -1157,6 +1209,11 @@ impl SvgPlan {
                     svg.push(' ');
                     push_svg_number(&mut svg, transform.center_y, "SVG image center y")?;
                     svg.push_str(")\"");
+                    if corner_radius.is_some() {
+                        svg.push_str(" clip-path=\"url(#");
+                        push_image_clip_id(&mut svg, source)?;
+                        svg.push_str(")\"");
+                    }
                     if *opacity != 1.0 {
                         svg.push_str(" opacity=\"");
                         push_svg_number(&mut svg, *opacity, "SVG image opacity")?;

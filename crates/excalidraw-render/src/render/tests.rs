@@ -2117,3 +2117,197 @@ fn bundled_faces_carry_their_families_metadata_metrics_and_only_helvetica_differ
     );
     assert_ne!(helvetica, liberation);
 }
+
+#[test]
+fn an_image_corner_radius_follows_get_corner_radius_of_its_shorter_side() {
+    use crate::normalization::NormalizedRoundness;
+    // `getCornerRadius(Math.min(element.width, element.height), element)`:
+    // ROUNDNESS.LEGACY and PROPORTIONAL_RADIUS give a quarter of the size;
+    // ADAPTIVE_RADIUS gives its fixed value until the size drops under four
+    // times that value, where the proportional radius takes over.
+    assert_eq!(
+        geometry::image_corner_radius(100.0, 40.0, Some(NormalizedRoundness::Proportional)),
+        10.0
+    );
+    assert_eq!(
+        geometry::image_corner_radius(40.0, 100.0, Some(NormalizedRoundness::Proportional)),
+        10.0
+    );
+    let default_adaptive = Some(NormalizedRoundness::Adaptive { radius: 32.0 });
+    assert_eq!(
+        geometry::image_corner_radius(200.0, 300.0, default_adaptive),
+        32.0
+    );
+    assert_eq!(
+        geometry::image_corner_radius(128.0, 300.0, default_adaptive),
+        32.0
+    );
+    assert_eq!(
+        geometry::image_corner_radius(100.0, 300.0, default_adaptive),
+        25.0
+    );
+    assert_eq!(
+        geometry::image_corner_radius(
+            100.0,
+            40.0,
+            Some(NormalizedRoundness::Adaptive { radius: 8.0 })
+        ),
+        8.0
+    );
+    assert_eq!(geometry::image_corner_radius(100.0, 40.0, None), 0.0);
+}
+
+#[test]
+fn an_image_corner_clip_exists_only_for_a_positive_radius_and_traces_its_rounded_rectangle() {
+    use crate::normalization::NormalizedRoundness;
+
+    let Ok(Some(clip)) =
+        ResolvedImageCornerClip::for_image(40.0, 20.0, Some(NormalizedRoundness::Proportional))
+    else {
+        panic!("a rounded image has a corner clip");
+    };
+    assert_eq!(clip.radius, 5.0);
+    // The same nine-operation outline as the frame clip: four edges joined by
+    // four kappa-approximated quarter arcs, starting and ending at the top
+    // edge's left arc end.
+    assert_eq!(clip.path.operations.len(), 9);
+    let corners: Vec<(f64, f64)> = clip
+        .path
+        .operations
+        .iter()
+        .filter_map(|operation| match operation {
+            rough::PathOperation::Move(point) | rough::PathOperation::Line(point) => {
+                Some((point.x, point.y))
+            }
+            rough::PathOperation::Cubic { .. } => None,
+        })
+        .collect();
+    assert_eq!(
+        corners,
+        [
+            (5.0, 0.0),
+            (35.0, 0.0),
+            (40.0, 15.0),
+            (5.0, 20.0),
+            (0.0, 5.0)
+        ]
+    );
+    assert!(matches!(
+        clip.path.operations.last(),
+        Some(rough::PathOperation::Cubic { end, .. }) if end.x == 5.0 && end.y == 0.0
+    ));
+
+    assert!(
+        matches!(
+            ResolvedImageCornerClip::for_image(40.0, 20.0, None),
+            Ok(None)
+        ),
+        "an unrounded image has no corner clip"
+    );
+    assert!(
+        matches!(
+            ResolvedImageCornerClip::for_image(
+                40.0,
+                20.0,
+                Some(NormalizedRoundness::Adaptive { radius: 0.0 })
+            ),
+            Ok(None)
+        ),
+        "a zero radius clips nothing the rectangle does not already clip"
+    );
+    assert!(
+        matches!(
+            ResolvedImageCornerClip::for_image(0.0, 20.0, Some(NormalizedRoundness::Proportional)),
+            Ok(None)
+        ),
+        "a degenerate element has no corner to round"
+    );
+}
+
+#[test]
+fn a_rounded_image_charges_its_corner_clip_geometry_once_per_target_and_replays() {
+    // A 40x40 image with the default adaptive roundness: a 10 px corner clip
+    // of nine path operations, charged like a frame clip's geometry in the
+    // semantic phase and identically for every format.
+    let scene = SceneDocument::parse(br##"{
+        "type":"excalidraw","version":2,
+        "elements":[{
+            "id":"photo","type":"image","x":0,"y":0,"width":40,"height":40,
+            "angle":0,"opacity":100,"fileId":"asset","status":"saved","scale":[1,1],
+            "roundness":{"type":3},"seed":1,"updated":1
+        }],
+        "appState":{},
+        "files":{"asset":{"id":"asset","mimeType":"image/png","dataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=","created":1}}
+    }"##)
+    .expect("rounded image scene is admitted");
+    let profile =
+        Renderer::profile_identity(CompatibilityRevision::REVISION_1).expect("revision 1 exists");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("request is valid");
+        let cache = new_font_subset_cache();
+        let (cold_result, cold_trace) =
+            render_with_trace_and_font_subset_cache(profile, &scene, &request, &cache);
+        let cold = cold_result.expect("cold rounded image render succeeds");
+        let (warm_result, warm_trace) = render_with_trace(profile, &scene, &request);
+        let warm = warm_result.expect("warm rounded image render succeeds");
+        let (cached_result, cached_trace) =
+            render_with_trace_and_font_subset_cache(profile, &scene, &request, &cache);
+        let cached = cached_result.expect("request-cache rounded image render succeeds");
+
+        assert_eq!(
+            cold.artifact().bytes(),
+            warm.artifact().bytes(),
+            "{format:?}"
+        );
+        assert_eq!(
+            cold.artifact().bytes(),
+            cached.artifact().bytes(),
+            "{format:?}"
+        );
+        assert_eq!(cold_trace, warm_trace, "{format:?}");
+        assert_eq!(cold_trace, cached_trace, "{format:?}");
+
+        let trace: serde_json::Value =
+            serde_json::from_slice(&cold_trace).expect("trace is valid JSON");
+        let entries = trace["entries"].as_array().expect("entries are an array");
+        let clips: Vec<&serde_json::Value> = entries
+            .iter()
+            .filter(|entry| entry["event"] == "image_corner_clip_geometry")
+            .collect();
+        assert_eq!(clips.len(), 1, "{format:?} charges the corner clip once");
+        let clip = clips[0];
+        assert_eq!(clip["phase"], "shared_semantic_resolution", "{format:?}");
+        assert_eq!(clip["element_id"], "photo", "{format:?}");
+        assert_eq!(clip["local_owner"], "photo", "{format:?}");
+        assert_eq!(clip["json_pointer"], "/elements/0", "{format:?}");
+        assert_eq!(clip["deltas"]["geometry_segments"], 9, "{format:?}");
+        assert_eq!(clip["deltas"]["total_work_units"], 9 * 32, "{format:?}");
+        assert_eq!(clip["decision"], "committed", "{format:?}");
+    }
+
+    let unrounded = SceneDocument::parse(br##"{
+        "type":"excalidraw","version":2,
+        "elements":[{
+            "id":"photo","type":"image","x":0,"y":0,"width":40,"height":40,
+            "angle":0,"opacity":100,"fileId":"asset","status":"saved","scale":[1,1],
+            "seed":1,"updated":1
+        }],
+        "appState":{},
+        "files":{"asset":{"id":"asset","mimeType":"image/png","dataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=","created":1}}
+    }"##)
+    .expect("unrounded image scene is admitted");
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .build()
+        .expect("request is valid");
+    let (result, trace) = render_with_trace(profile, &unrounded, &request);
+    result.expect("unrounded image renders");
+    assert!(
+        !std::str::from_utf8(&trace)
+            .expect("trace is UTF-8 JSON")
+            .contains("image_corner_clip_geometry"),
+        "an unrounded image has no corner clip to charge"
+    );
+}

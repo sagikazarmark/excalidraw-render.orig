@@ -79,6 +79,9 @@ enum PngElement {
         source: NormalizedElementSource,
         asset: std::sync::Arc<super::ResolvedImageAsset>,
         frame_clips: Vec<PngFrameClip>,
+        /// The rounded-corner clip of an image with a roundness record, in
+        /// element space; without one the image clips to its rectangle.
+        corner_clip: Option<Path>,
         transform: PngTransform,
         width: f64,
         height: f64,
@@ -334,23 +337,49 @@ impl PngElement {
         }
     }
 
-    fn image_clip(&self) -> Option<(f64, f64, PngTransform)> {
+    /// The element-space clip an image or its placeholder paints through: the
+    /// element rectangle, or an image's rounded-corner outline when it has a
+    /// roundness record. The placeholder is never corner-clipped: the
+    /// reference's `drawElementOnCanvas` image case calls `roundRect` and
+    /// `clip` only before `drawImage`, not around `drawImagePlaceholder`.
+    fn image_clip(&self) -> Option<PngImageClip<'_>> {
         match self {
             Self::Image {
                 width,
                 height,
+                corner_clip,
                 transform,
                 ..
-            } => Some((*width, *height, *transform)),
+            } => Some(PngImageClip {
+                width: *width,
+                height: *height,
+                corner_clip: corner_clip.as_ref(),
+                transform: *transform,
+            }),
             Self::ImageFallback {
                 width,
                 height,
                 transform,
                 ..
-            } => Some((*width, *height, *transform)),
+            } => Some(PngImageClip {
+                width: *width,
+                height: *height,
+                corner_clip: None,
+                transform: *transform,
+            }),
             _ => None,
         }
     }
+}
+
+/// The clip `PaintMasks::paint_mask` intersects into an image's mask, in the
+/// element's own space under `transform`: the rounded-corner outline when the
+/// image has one, else the `width` by `height` rectangle.
+struct PngImageClip<'a> {
+    width: f64,
+    height: f64,
+    corner_clip: Option<&'a Path>,
+    transform: PngTransform,
 }
 
 #[derive(Clone, Copy)]
@@ -583,6 +612,7 @@ impl PngPlan {
                         source: image.source,
                         asset: image.asset,
                         frame_clips: project_frame_clips(image.frame_clips, scale)?,
+                        corner_clip: image.corner_clip.map(|clip| clip.path),
                         transform: PngTransform::new(&image.transform, scale),
                         width: image.width,
                         height: image.height,
@@ -2378,20 +2408,31 @@ impl PaintMasks {
         if let Some(label) = label_mask {
             self.exclude_label(&mut mask, label)?;
         }
-        if let Some((width, height, transform)) = image_clip {
-            let rect = Rect::from_xywh(
-                0.0,
-                0.0,
-                finite_f32(width, "PNG image clip width")?,
-                finite_f32(height, "PNG image clip height")?,
-            )
-            .ok_or_else(png_size_error)?;
-            mask.intersect_path(
-                &PathBuilder::from_rect(rect),
-                FillRule::Winding,
-                true,
-                transform.raster_transform(self.multiplier)?,
-            );
+        if let Some(clip) = image_clip {
+            let raster_transform = clip.transform.raster_transform(self.multiplier)?;
+            match clip.corner_clip {
+                Some(path) => mask.intersect_path(
+                    &tiny_skia_path(path)?,
+                    FillRule::Winding,
+                    true,
+                    raster_transform,
+                ),
+                None => {
+                    let rect = Rect::from_xywh(
+                        0.0,
+                        0.0,
+                        finite_f32(clip.width, "PNG image clip width")?,
+                        finite_f32(clip.height, "PNG image clip height")?,
+                    )
+                    .ok_or_else(png_size_error)?;
+                    mask.intersect_path(
+                        &PathBuilder::from_rect(rect),
+                        FillRule::Winding,
+                        true,
+                        raster_transform,
+                    );
+                }
+            }
         }
         Ok(Some(self.element.insert(mask)))
     }
