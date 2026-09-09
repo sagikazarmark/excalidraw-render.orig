@@ -3,6 +3,7 @@ use excalidraw_render::{
 };
 use sha2::{Digest, Sha256};
 
+use crate::common::pdf_inspect::pdf_text;
 use crate::common::raster::decode_png;
 
 const SCENE: &[u8] = br##"{
@@ -53,7 +54,7 @@ fn rough_fills_and_stroke_variants_render_directly_in_every_format() {
                 assert!(pixels.clone().any(|pixel| pixel[2] > pixel[0]));
             }
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(first.artifact().bytes());
+                let pdf = pdf_text(first.artifact().bytes());
                 assert!(pdf.matches("\nf\n").count() >= 1);
                 assert!(pdf.matches("\nS\n").count() >= 7);
                 assert!(pdf.contains("[8 10] 0 d"));
@@ -130,7 +131,7 @@ fn solid_fill_rules_and_joins_follow_each_backend() {
             &RenderRequest::builder(OutputFormat::Pdf).build().unwrap(),
         )
         .unwrap();
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf = pdf_text(pdf.artifact().bytes());
     assert_eq!(pdf.matches("\nf*\n").count(), 4);
     assert!(pdf.matches("\n1 J\n").count() >= 6);
     assert!(!pdf.contains("\n1 j\n"));

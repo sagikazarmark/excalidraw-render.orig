@@ -4,6 +4,7 @@
 //! (palettes, disposal, interlacing, the malformed blocks) is tested at the
 //! asset cache's own seam in `src/render/asset/tests.rs`.
 
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{DiagnosticCode, OutputFormat, RenderRequest, ResourceLimits};
 
 use crate::common::codec_fixtures::{gif, gif_frame, gif_with_screen, RED_BLUE_PALETTE};
@@ -48,7 +49,7 @@ fn pdf_embeds_the_flattened_first_gif_frame_with_a_soft_mask() {
     ]);
 
     let outcome = render(&image_scene(&gif, "image/gif", 2, 1), OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Subtype /Image"));
     assert!(pdf.contains("/Width 2\n/Height 1"));

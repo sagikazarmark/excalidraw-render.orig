@@ -14,7 +14,7 @@ use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
 use crate::common::pdf_inspect::{
-    embedded_pdf_fonts, family_name, font_resource, pdf_actual_text, to_unicode_cmap,
+    embedded_pdf_fonts, family_name, font_resource, pdf_actual_text, pdf_text, to_unicode_cmap,
 };
 
 const CASE: &str = "tests/conformance/cases/focused/missing-glyph";
@@ -146,7 +146,7 @@ fn svg_sets_the_replacement_from_liberation_sans_and_keeps_the_stored_scalars() 
 fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_scalars() {
     let outcome = render(&registered_scene(), OutputFormat::Pdf);
     let bytes = outcome.artifact().bytes();
-    let pdf = String::from_utf8_lossy(bytes);
+    let pdf = pdf_text(bytes);
 
     // One embedded face per family, and nothing from the fallback chain the
     // scene does not reach.

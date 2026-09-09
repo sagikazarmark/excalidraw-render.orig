@@ -397,10 +397,16 @@ pub(super) fn svg_chunks(
             .ok_or_else(|| {
                 FormatEncodeError::Encoding("PDF SVG resource lost its sanitized tree".to_owned())
             })?;
+        // `compress` deflates the chunk's content streams through svg2pdf's own
+        // call into the pinned miniz_oxide at level 6 with the default
+        // strategy, the one configuration every renderer-written stream uses
+        // (ADR-0008); its image streams were already Flate regardless. The
+        // canonicalizer below reads each stream body by its direct `/Length`,
+        // so a binary body renumbers and canonicalizes like a stored one.
         let (chunk, root) = svg2pdf::to_chunk(
             tree,
             svg2pdf::ConversionOptions {
-                compress: false,
+                compress: true,
                 raster_scale: resource.raster_scale as f32,
                 embed_text: false,
                 ..svg2pdf::ConversionOptions::default()

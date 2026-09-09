@@ -4,7 +4,7 @@ use excalidraw_render::{
     SceneDocument,
 };
 
-use crate::common::pdf_inspect::embedded_pdf_fonts;
+use crate::common::pdf_inspect::{embedded_pdf_fonts, pdf_text};
 use crate::common::svg::{
     font_family_attribute, CASCADIA_FAMILIES, COMIC_SHANNS_FAMILIES, EXCALIFONT_FAMILIES,
     LIBERATION_FAMILIES, LILITA_FAMILIES, NOTO_EMOJI_FAMILIES, NUNITO_FAMILIES, VIRGIL_FAMILIES,
@@ -78,7 +78,7 @@ fn retained_latin_families_embed_their_pdf_base_font_names() {
         let outcome = Renderer::new()
             .render(&scene, &request)
             .unwrap_or_else(|error| panic!("font family {font_family} renders: {error}"));
-        let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+        let pdf = pdf_text(outcome.artifact().bytes());
         assert!(
             pdf.contains(&format!("/BaseFont /{pdf_name}")),
             "font family {font_family} embeds {pdf_name}"
@@ -143,7 +143,7 @@ fn mixed_official_families_keep_independent_font_resources() {
             }
             OutputFormat::Png => assert!(outcome.artifact().bytes().starts_with(b"\x89PNG")),
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                let pdf = pdf_text(outcome.artifact().bytes());
                 assert!(pdf.contains("/BaseFont /Virgil"));
                 assert!(pdf.contains("/BaseFont /CascadiaCode"));
                 assert!(pdf.contains("/F2 20 Tf"));
@@ -216,7 +216,7 @@ fn excalifont_uses_ordered_cjk_and_emoji_fallbacks_in_every_format() {
             }
             OutputFormat::Png => assert!(first.artifact().bytes().starts_with(b"\x89PNG")),
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(first.artifact().bytes());
+                let pdf = pdf_text(first.artifact().bytes());
                 assert!(pdf.contains("/BaseFont /Excalifont"));
                 assert!(pdf.contains("/BaseFont /Xiaolai"));
                 assert!(pdf.contains("/BaseFont /NotoEmoji"));
@@ -286,7 +286,7 @@ fn xiaolai_stays_declared_when_local_recovery_omits_the_text_that_fired_the_trig
             }
             OutputFormat::Png => assert!(outcome.artifact().bytes().starts_with(b"\x89PNG")),
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                let pdf = pdf_text(outcome.artifact().bytes());
                 assert!(pdf.contains("/BaseFont /Xiaolai"));
                 assert!(pdf.contains("/ActualText <FEFF20A9>"));
                 assert!(!pdf.contains("4E2D"));
@@ -523,7 +523,7 @@ fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
     let first = Renderer::new()
         .render(&scene, &pdf_request)
         .expect("bidirectional PDF renders");
-    let pdf = String::from_utf8_lossy(first.artifact().bytes());
+    let pdf = pdf_text(first.artifact().bytes());
     assert!(pdf.contains("/ActualText <FEFF006100620063002005D005D105D20020003100320033>"));
 }
 
@@ -625,7 +625,7 @@ fn a_paragraph_separator_inside_a_source_line_keeps_the_text_after_it() {
     let pdf_outcome = Renderer::new()
         .render(&scene, &pdf_request)
         .expect("paragraph-separator PDF renders");
-    let pdf = String::from_utf8_lossy(pdf_outcome.artifact().bytes());
+    let pdf = pdf_text(pdf_outcome.artifact().bytes());
     assert!(pdf.contains("/ActualText <FEFF00610062202900630064>"));
 }
 

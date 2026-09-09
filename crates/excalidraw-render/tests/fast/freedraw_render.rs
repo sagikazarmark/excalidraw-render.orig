@@ -1,3 +1,4 @@
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     DiagnosticCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
@@ -45,7 +46,7 @@ fn simulated_pressure_freedraw_renders_directly_in_every_format() {
                 assert!(first.artifact().bytes().starts_with(b"\x89PNG\r\n\x1a\n"))
             }
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(first.artifact().bytes());
+                let pdf = pdf_text(first.artifact().bytes());
                 assert!(
                     pdf.contains("\nf\nQ\n"),
                     "freedraw remains native vector fill"
@@ -114,7 +115,7 @@ fn closed_freedraw_paints_rough_background_before_the_pressure_stroke() {
                 assert!(outcome.artifact().bytes().starts_with(b"\x89PNG\r\n\x1a\n"))
             }
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                let pdf = pdf_text(outcome.artifact().bytes());
                 assert!(pdf.contains("f*\nQ\n"));
                 assert!(pdf.contains("h\nf\nQ\n"));
             }

@@ -5,6 +5,7 @@
 //! nested clipping in every format, the grey name ink and the rounded clip
 //! mask a PNG actually paints, and group membership.
 
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{DiagnosticCode, FrameOptions, OutputFormat, RenderRequest, SceneDocument};
 
 use crate::common::raster::decode_png;
@@ -111,7 +112,7 @@ fn nested_frames_clip_direct_geometry_in_every_format() {
                 assert_eq!(decoded.pixel(100, 64), [255, 255, 255, 255]);
             }
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                let pdf = pdf_text(outcome.artifact().bytes());
                 assert!(pdf.matches("W\nn\n").count() >= 2);
                 assert!(!pdf.contains("/Subtype /Image"));
             }
@@ -196,9 +197,7 @@ fn group_membership_preserves_direct_paint_order_in_every_format() {
             diagnostic.code() != DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED
         }));
         if format == OutputFormat::Pdf {
-            assert!(
-                !String::from_utf8_lossy(outcome.artifact().bytes()).contains("/Subtype /Image")
-            );
+            assert!(!pdf_text(outcome.artifact().bytes()).contains("/Subtype /Image"));
         }
     }
 }

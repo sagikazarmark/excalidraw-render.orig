@@ -4,6 +4,7 @@
 //! ICC, gain-map containers, the malformed streams) is tested at the asset
 //! cache's own seam in `src/render/asset/tests.rs`.
 
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     DiagnosticCode, ErrorDetails, OutputFormat, RenderRequest, ResourceLimits,
 };
@@ -48,7 +49,7 @@ fn pdf_embeds_normalized_jpeg_losslessly_with_a_soft_mask_and_no_fallback() {
     let scene = image_scene(&jpeg_rgb(1, 1, &[JFIF_BLUE]), "image/jpeg", 1, 1);
 
     let outcome = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Subtype /Image"));
     assert!(pdf.contains("/ColorSpace /CS1"));

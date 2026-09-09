@@ -18,6 +18,7 @@ use crate::common::codec_fixtures::{
 use crate::common::image_scene::{
     data_url, image_scene, image_scene_from_data_url, image_scene_with_element_fields,
 };
+use crate::common::pdf_inspect::pdf_text;
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request};
 use crate::common::svg::{image_symbol, image_use};
@@ -59,7 +60,7 @@ fn pdf_embeds_static_png_as_a_lossless_rgb_image_with_a_soft_mask() {
     let scene = fixture_png_scene();
 
     let outcome = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Subtype /Image"));
     assert!(pdf.contains("/ColorSpace /CS1"));
@@ -449,7 +450,7 @@ fn duplicate_semantic_png_bytes_share_one_pdf_resource_but_render_twice() {
     let scene = two_image_scene();
 
     let outcome = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert_eq!(pdf.matches("/ColorSpace /CS1").count(), 1);
     assert_eq!(pdf.matches("/Im0 Do").count(), 2);
@@ -662,7 +663,7 @@ fn png_and_pdf_apply_png_exif_orientation_while_svg_preserves_source_bytes() {
     assert!(bottom[0] < 20 && bottom[2] > 240 && bottom[3] == 255);
 
     let pdf = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf = pdf_text(pdf.artifact().bytes());
     assert!(pdf.contains("/Width 1\n/Height 2"));
 }
 
@@ -735,7 +736,7 @@ fn crop_and_negative_scale_map_the_same_static_png_source_in_every_format() {
         .artifact()
         .bytes()
         .to_vec();
-    let pdf = String::from_utf8_lossy(&pdf_bytes);
+    let pdf = pdf_text(&pdf_bytes);
     assert!(pdf.contains("-30 0 0 -20 30 20 cm\n/Im0 Do"));
 }
 

@@ -5,6 +5,7 @@
 //! outcomes to diagnostics and errors, the accounting they participate in, and
 //! the native-versus-raster projection of each format.
 
+use crate::common::pdf_inspect::pdf_text;
 use base64::Engine as _;
 use excalidraw_render::{
     DiagnosticCode, ErrorCode, ErrorDetails, OutputFormat, PdfOptions, PdfRasterFallback, Recovery,
@@ -34,7 +35,7 @@ fn basic_nested_svg_renders_in_svg_png_and_pdf() {
     assert_eq!(decoded.pixel(15, 15), [255, 0, 0, 255]);
     assert_eq!(decoded.pixel(25, 15), [0, 0, 255, 255]);
 
-    let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
+    let pdf = pdf_text(&render_artifact(&scene, OutputFormat::Pdf));
     assert!(pdf.starts_with("%PDF-1.7"));
     assert!(pdf.contains("/Svg0 Do"));
     assert!(pdf.contains("20 0 0 -10 0 10 cm\n/Svg0 Do"));
@@ -516,7 +517,7 @@ fn pdf_rasterizes_an_isolated_effect_closure_with_exact_diagnostics() {
     let outcome = Renderer::new()
         .render(&scene, &request)
         .expect("isolated filter closure is rasterized");
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Subtype /Image"));
     assert!(pdf.contains("/Width 20"));
@@ -677,7 +678,7 @@ fn pdf_projects_nested_text_as_vector_outlines() {
     let outcome = Renderer::new()
         .render(&scene, &request)
         .expect("outlined nested text renders in PDF");
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(!pdf.contains("/Subtype /Image"));
     assert!(!pdf.contains("/Type /Font"));
@@ -722,7 +723,7 @@ fn closed_vector_native_families_remain_native_pdf_content() {
     let outcome = Renderer::new()
         .render(&scene, &request)
         .expect("closed vector-native matrix renders");
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     for structure in [
         "/PatternType 1",
@@ -774,7 +775,7 @@ fn every_native_blend_mode_remains_vector_pdf_content() {
         let outcome = Renderer::new()
             .render(&scene, &request)
             .expect("native blend renders without fallback");
-        let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+        let pdf = pdf_text(outcome.artifact().bytes());
 
         assert!(pdf.contains(pdf_name), "missing PDF blend {blend}");
         assert!(!pdf.contains("/Subtype /Image"));
@@ -803,7 +804,7 @@ fn nested_raster_nodes_are_source_content_in_png_and_pdf() {
     let outcome = Renderer::new()
         .render(&scene, &request)
         .expect("nested source raster renders in PDF");
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
     assert!(pdf.contains("/Subtype /Image"));
     assert!(!outcome
         .report()
@@ -831,7 +832,7 @@ fn nested_bmp_preserves_direct_svg_bytes_and_normalizes_png_and_pdf() {
     assert_eq!(decoded.pixel(15, 15), [255, 0, 0, 255]);
     assert_eq!(decoded.pixel(25, 15), [24, 96, 208, 255]);
 
-    let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
+    let pdf = pdf_text(&render_artifact(&scene, OutputFormat::Pdf));
     assert!(pdf.contains("/Subtype /Image"));
     assert!(pdf.contains("/Subtype /Form"));
 }
@@ -855,7 +856,7 @@ fn unavailable_nested_sans_text_uses_a_deterministic_fallback_in_png_and_pdf() {
         "fallback glyphs must remain visible, got {white_text_pixels} white pixels"
     );
 
-    let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
+    let pdf = pdf_text(&render_artifact(&scene, OutputFormat::Pdf));
     assert!(pdf.contains("/Subtype /Form"));
     assert!(
         pdf.contains(" c\n"),
@@ -890,7 +891,7 @@ fn safe_class_styles_preserve_nested_opacity_and_layer_order() {
     let svg = std::str::from_utf8(&svg).expect("artifact SVG is UTF-8");
     assert!(embedded_svg(svg).contains("<style>"));
 
-    let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
+    let pdf = pdf_text(&render_artifact(&scene, OutputFormat::Pdf));
     assert!(pdf.contains("/Subtype /Form"));
     assert!(pdf.contains("/ca 0.5"));
 }

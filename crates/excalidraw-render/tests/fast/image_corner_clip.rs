@@ -7,6 +7,7 @@
 //! fallback is never clipped, as the reference canvas draws its placeholder
 //! unclipped.
 
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{OutputFormat, SceneDocument};
 
 use crate::common::image_scene::image_scene_with_element_fields;
@@ -64,7 +65,7 @@ fn a_rounded_image_is_clipped_to_the_official_corner_radius_in_every_format() {
     }
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     // The clip is the rounded rectangle in element space, at full precision,
     // replacing the rectangular `re` clip an unrounded image carries.
     assert!(
@@ -94,7 +95,7 @@ fn an_unrounded_image_keeps_its_rectangular_bounds_in_every_format() {
     }
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     assert!(pdf.contains("0 0 40 40 re\nW\nn\n40 0 0 40 0 0 cm\n/Im0 Do"));
 }
 
@@ -154,7 +155,7 @@ fn the_corner_clip_stays_in_element_space_when_the_image_is_cropped_and_flipped(
     assert!(green[0] < 20 && green[1] > 225 && green[2] < 30 && green[3] == 255);
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     assert!(
         pdf.contains("5 0 m\n15 0 l\n"),
         "PDF lacks the rounded clip path: {pdf}"
@@ -208,7 +209,7 @@ fn the_corner_clip_rotates_with_the_image() {
     }
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     assert!(
         pdf.contains("5 0 m\n35 0 l\n"),
         "PDF lacks the rounded clip path: {pdf}"

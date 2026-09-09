@@ -1,3 +1,4 @@
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     DiagnosticCode, ErrorCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
@@ -69,7 +70,7 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
                     .any(|pixel| pixel != [255, 255, 255, 255]));
             }
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                let pdf = pdf_text(outcome.artifact().bytes());
                 assert_eq!(pdf.matches("\nS\nQ\n").count(), 7);
                 assert!(!pdf.contains("Unavailable:"));
             }

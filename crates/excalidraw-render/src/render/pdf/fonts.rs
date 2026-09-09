@@ -9,6 +9,7 @@ use std::io::Write as _;
 
 use super::super::text::{ResolvedGlyph, ResolvedLabel};
 use super::super::FormatEncodeError;
+use super::streams::{deflate_stream, write_flate_stream_object};
 use super::{begin_object, pdf_size_error, write_error, PdfElementKind, PdfPlan};
 
 #[derive(Debug)]
@@ -20,12 +21,17 @@ pub(super) struct PdfGlyphMapping {
 }
 
 impl PdfPlan {
+    /// Writes the six objects of one embedded face: `font` is the complete
+    /// sfnt the descriptor's metrics and `/Length1` come from, `program` its
+    /// deflated `FontFile2` body.
+    #[allow(clippy::too_many_arguments)]
     pub(super) fn write_font_objects(
         &self,
         pdf: &mut Vec<u8>,
         offsets: &mut [usize],
         font_object: usize,
         font: &[u8],
+        program: &[u8],
         base_font: &str,
         mappings: &[PdfGlyphMapping],
     ) -> Result<(), FormatEncodeError> {
@@ -92,19 +98,19 @@ impl PdfPlan {
         begin_object(pdf, offsets, font_file_object)?;
         write!(
             pdf,
-            "<<\n/Length {}\n/Length1 {}\n>>\nstream\n",
-            font.len(),
+            "<<\n/Filter /FlateDecode\n/Length {}\n/Length1 {}\n>>\nstream\n",
+            program.len(),
             font.len()
         )
         .map_err(write_error)?;
-        pdf.extend_from_slice(font);
+        pdf.extend_from_slice(program);
         pdf.extend_from_slice(b"\nendstream\nendobj\n");
 
-        let cmap = to_unicode_cmap(mappings, base_font)?;
-        begin_object(pdf, offsets, to_unicode_object)?;
-        write!(pdf, "<<\n/Length {}\n>>\nstream\n", cmap.len()).map_err(write_error)?;
-        pdf.extend_from_slice(cmap.as_bytes());
-        pdf.extend_from_slice(b"\nendstream\nendobj\n");
+        let cmap = deflate_stream(
+            to_unicode_cmap(mappings, base_font)?.as_bytes(),
+            "pdf_to_unicode_stream",
+        )?;
+        write_flate_stream_object(pdf, offsets, to_unicode_object, "", &cmap)?;
 
         let map_length = mappings.last().map_or(2_usize, |mapping| {
             usize::from(mapping.code)
@@ -125,10 +131,8 @@ impl PdfPlan {
             cid_to_gid[offset] = high;
             cid_to_gid[offset + 1] = low;
         }
-        begin_object(pdf, offsets, cid_to_gid_object)?;
-        write!(pdf, "<<\n/Length {}\n>>\nstream\n", cid_to_gid.len()).map_err(write_error)?;
-        pdf.extend_from_slice(&cid_to_gid);
-        pdf.extend_from_slice(b"\nendstream\nendobj\n");
+        let cid_to_gid = deflate_stream(&cid_to_gid, "pdf_cid_to_gid_stream")?;
+        write_flate_stream_object(pdf, offsets, cid_to_gid_object, "", &cid_to_gid)?;
         Ok(())
     }
 

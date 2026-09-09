@@ -1,5 +1,5 @@
 use crate::common::approved_scenes::{rectangle_outline_scene, render_rectangle_outline_pdf};
-use crate::common::pdf_inspect::stream_data;
+use crate::common::pdf_inspect::{pdf_text, stream_data, stream_text};
 use crate::common::reports::assert_report_matches;
 use crate::common::repository_root;
 use excalidraw_render::{
@@ -33,7 +33,7 @@ fn approved_rectangle_renders_as_a_vector_first_pdf() {
     let bytes = first.artifact().bytes();
     assert!(bytes.starts_with(b"%PDF-1.7\n"));
     assert!(bytes.ends_with(b"%%EOF"));
-    let pdf = String::from_utf8_lossy(bytes);
+    let pdf = pdf_text(bytes);
     assert_eq!(pdf.matches("/Type /Page\n").count(), 1);
     assert!(pdf.contains("/MediaBox [0 0 150 90]"));
     assert!(pdf.contains("/CropBox [0 0 150 90]"));
@@ -47,7 +47,7 @@ fn approved_rectangle_renders_as_a_vector_first_pdf() {
     )));
 
     let content = stream_data(bytes, b"4 0 obj");
-    let content = std::str::from_utf8(content).expect("content stream is canonical ASCII");
+    let content = std::str::from_utf8(&content).expect("content stream is canonical ASCII");
     assert!(
         content.starts_with(concat!(
             "q\n0.75 0 0 -0.75 0 90 cm\n",
@@ -81,7 +81,7 @@ fn approved_rectangle_renders_as_a_vector_first_pdf() {
     assert_eq!(&profile[36..40], b"acsp");
     assert_eq!(
         &["rXYZ", "gXYZ", "bXYZ", "wtpt", "rTRC", "gTRC", "bTRC"],
-        icc_tags(profile).as_slice()
+        icc_tags(&profile).as_slice()
     );
 
     for forbidden in [
@@ -184,11 +184,10 @@ fn pdf_sizing_and_background_follow_the_logical_pixel_mapping() {
             .build()
             .expect("scaled PDF request is valid"),
     );
-    let scaled_pdf = String::from_utf8_lossy(scaled.artifact().bytes());
+    let scaled_pdf = pdf_text(scaled.artifact().bytes());
     assert!(scaled_pdf.contains("/MediaBox [0 0 300 180]"));
     assert!(scaled_pdf.contains("/CropBox [0 0 300 180]"));
-    let scaled_content = std::str::from_utf8(stream_data(scaled.artifact().bytes(), b"4 0 obj"))
-        .expect("scaled PDF content is ASCII");
+    let scaled_content = stream_text(scaled.artifact().bytes(), b"4 0 obj");
     assert!(scaled_content.starts_with("q\n1.5 0 0 -1.5 0 180 cm\n"));
     assert!(scaled_content.contains("0 0 200 120 re\nf\n"));
 
@@ -198,12 +197,10 @@ fn pdf_sizing_and_background_follow_the_logical_pixel_mapping() {
             .build()
             .expect("maximum-dimension PDF request is valid"),
     );
-    let downscaled_pdf = String::from_utf8_lossy(downscaled.artifact().bytes());
+    let downscaled_pdf = pdf_text(downscaled.artifact().bytes());
     assert!(downscaled_pdf.contains("/MediaBox [0 0 75 45]"));
     assert!(downscaled_pdf.contains("/CropBox [0 0 75 45]"));
-    let downscaled_content =
-        std::str::from_utf8(stream_data(downscaled.artifact().bytes(), b"4 0 obj"))
-            .expect("downscaled PDF content is ASCII");
+    let downscaled_content = stream_text(downscaled.artifact().bytes(), b"4 0 obj");
     assert!(downscaled_content.starts_with("q\n0.375 0 0 -0.375 0 45 cm\n"));
 
     let transparent = render_pdf(
@@ -212,9 +209,7 @@ fn pdf_sizing_and_background_follow_the_logical_pixel_mapping() {
             .build()
             .expect("transparent PDF request is valid"),
     );
-    let transparent_content =
-        std::str::from_utf8(stream_data(transparent.artifact().bytes(), b"4 0 obj"))
-            .expect("transparent PDF content is ASCII");
+    let transparent_content = stream_text(transparent.artifact().bytes(), b"4 0 obj");
     assert!(!transparent_content.contains(" re\nf\n"));
     assert_eq!(
         transparent_content
@@ -233,8 +228,7 @@ fn pdf_numbers_are_non_exponential_round_trip_decimals_with_canonical_zero() {
             .build()
             .expect("small finite PDF scale is valid"),
     );
-    let content = std::str::from_utf8(stream_data(outcome.artifact().bytes(), b"4 0 obj"))
-        .expect("PDF content is ASCII");
+    let content = stream_text(outcome.artifact().bytes(), b"4 0 obj");
     assert!(content.starts_with("q\n0.000000075 0 0 -0.000000075 0 0.000009 cm\n"));
     for token in content.split_ascii_whitespace() {
         if token.parse::<f64>().is_ok() {
@@ -259,8 +253,7 @@ fn pdf_rectangle_resource_crossings_are_atomic_and_locally_recoverable() {
             .build()
             .expect("resource-limited PDF request is valid"),
     );
-    let content = std::str::from_utf8(stream_data(outcome.artifact().bytes(), b"4 0 obj"))
-        .expect("PDF content is ASCII");
+    let content = stream_text(outcome.artifact().bytes(), b"4 0 obj");
     assert!(content.contains("0 0 200 120 re\nf\n"));
     assert!(content.contains("[6 4] 0 d"));
     let diagnostic = outcome

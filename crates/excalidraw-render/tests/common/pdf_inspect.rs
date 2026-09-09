@@ -4,6 +4,88 @@
 //! logical text its `ActualText` carries. Each test binary includes this module
 //! by path and reads the PDF as the bytes the renderer wrote, so what is pinned
 //! here is the artifact, not a viewer's interpretation of it.
+//!
+//! Every stream the renderer writes is `/Filter /FlateDecode` (ADR-0008), so a
+//! test that reads operators, font programs or CMaps goes through
+//! [`inflate_streams`] (or [`pdf_text`]) first: the artifact with each Flate
+//! stream inflated in place and its filter entry dropped, byte-identical to the
+//! artifact everywhere else.
+
+/// The PDF with every `/Filter /FlateDecode` stream body inflated in place:
+/// the `/Filter` line is dropped, `/Length` is rewritten to the inflated
+/// length, and every other byte of the artifact is kept, so the dictionaries,
+/// object numbers and `/Length1` a test reads are the artifact's own.
+pub fn inflate_streams(pdf: &[u8]) -> Vec<u8> {
+    const FILTER_LINE: &[u8] = b"/Filter /FlateDecode\n";
+    const LENGTH: &[u8] = b"/Length ";
+    const OBJECT: &[u8] = b" 0 obj\n";
+    const STREAM: &[u8] = b"stream\n";
+    const ENDSTREAM: &[u8] = b"\nendstream";
+    let mut inflated = Vec::with_capacity(pdf.len() * 2);
+    let mut cursor = 0;
+    while let Some(relative) = find_bytes(&pdf[cursor..], STREAM) {
+        let stream_start = cursor + relative + STREAM.len();
+        // The stream dictionary runs from the object header to the keyword.
+        let dictionary_start = pdf[cursor..stream_start]
+            .windows(OBJECT.len())
+            .rposition(|window| window == OBJECT)
+            .map_or(cursor, |position| cursor + position);
+        let dictionary = &pdf[dictionary_start..stream_start];
+        let length_at = find_bytes(dictionary, LENGTH).expect("a stream declares /Length");
+        let digits_start = length_at + LENGTH.len();
+        let length_end = digits_start
+            + dictionary[digits_start..]
+                .iter()
+                .take_while(|byte| byte.is_ascii_digit())
+                .count();
+        let length = std::str::from_utf8(&dictionary[digits_start..length_end])
+            .expect("length is ASCII")
+            .parse::<usize>()
+            .expect("length is numeric");
+        let body_end = stream_start + length;
+        assert_eq!(
+            &pdf[body_end..body_end + ENDSTREAM.len()],
+            ENDSTREAM,
+            "the declared /Length ends at endstream"
+        );
+        let Some(filter) = find_bytes(dictionary, FILTER_LINE) else {
+            inflated.extend_from_slice(&pdf[cursor..body_end + ENDSTREAM.len()]);
+            cursor = body_end + ENDSTREAM.len();
+            continue;
+        };
+        let data = miniz_oxide::inflate::decompress_to_vec_zlib(&pdf[stream_start..body_end])
+            .expect("a FlateDecode stream inflates as zlib");
+        // Rewrite the dictionary: drop the filter line, restate the length.
+        let mut edits = [
+            (filter, filter + FILTER_LINE.len(), Vec::new()),
+            (
+                digits_start,
+                length_end,
+                data.len().to_string().into_bytes(),
+            ),
+        ];
+        edits.sort_by_key(|edit| edit.0);
+        inflated.extend_from_slice(&pdf[cursor..dictionary_start]);
+        let mut copied = 0;
+        for (start, end, replacement) in edits {
+            inflated.extend_from_slice(&dictionary[copied..start]);
+            inflated.extend_from_slice(&replacement);
+            copied = end;
+        }
+        inflated.extend_from_slice(&dictionary[copied..]);
+        inflated.extend_from_slice(&data);
+        inflated.extend_from_slice(ENDSTREAM);
+        cursor = body_end + ENDSTREAM.len();
+    }
+    inflated.extend_from_slice(&pdf[cursor..]);
+    inflated
+}
+
+/// The artifact as text with every Flate stream inflated: what a test reads
+/// when it looks for operators, dictionary entries or CMap lines.
+pub fn pdf_text(pdf: &[u8]) -> String {
+    String::from_utf8_lossy(&inflate_streams(pdf)).into_owned()
+}
 
 /// The body of the ToUnicode CMap stream that declares `cmap_name`.
 pub fn to_unicode_cmap<'a>(pdf: &'a str, cmap_name: &str) -> &'a str {
@@ -74,11 +156,12 @@ pub fn pdf_actual_text(pdf: &str) -> String {
     extracted
 }
 
-/// Every embedded `FontFile2` stream: the PDF writes them uncompressed with
-/// `/Length1` naming the complete sfnt length.
+/// Every embedded `FontFile2` stream, inflated: `/Length1` names the complete
+/// sfnt length, which is the inflated body's.
 pub fn embedded_pdf_fonts(pdf: &[u8]) -> Vec<Vec<u8>> {
     const MARKER: &[u8] = b"/Length1 ";
     const STREAM: &[u8] = b">>\nstream\n";
+    let pdf = inflate_streams(pdf);
     let mut fonts = Vec::new();
     let mut offset = 0;
     while let Some(position) = pdf[offset..]
@@ -102,16 +185,24 @@ pub fn embedded_pdf_fonts(pdf: &[u8]) -> Vec<Vec<u8>> {
     fonts
 }
 
-/// The bytes of the stream that `object` (for example `b"4 0 obj"`) opens.
-pub fn stream_data<'a>(pdf: &'a [u8], object: &[u8]) -> &'a [u8] {
-    let object_start = find_bytes(pdf, object).expect("expected PDF object exists");
+/// The inflated bytes of the stream that `object` (for example `b"4 0 obj"`)
+/// opens.
+pub fn stream_data(pdf: &[u8], object: &[u8]) -> Vec<u8> {
+    let pdf = inflate_streams(pdf);
+    let object_start = find_bytes(&pdf, object).expect("expected PDF object exists");
     let marker = b"stream\n";
     let stream_start = object_start
         + find_bytes(&pdf[object_start..], marker).expect("object has a stream")
         + marker.len();
     let stream_end = stream_start
         + find_bytes(&pdf[stream_start..], b"\nendstream").expect("stream has an end marker");
-    &pdf[stream_start..stream_end]
+    pdf[stream_start..stream_end].to_vec()
+}
+
+/// The inflated stream that `object` opens, as the text a content stream or
+/// CMap is.
+pub fn stream_text(pdf: &[u8], object: &[u8]) -> String {
+    String::from_utf8(stream_data(pdf, object)).expect("stream is UTF-8 text")
 }
 
 /// The offset of the first `needle` in `haystack`.

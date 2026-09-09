@@ -5,6 +5,8 @@ use excalidraw_render::{
 };
 use sha2::{Digest, Sha256};
 
+use crate::common::pdf_inspect::{inflate_streams, pdf_text};
+
 const SOURCE: &[u8] = br#"{
   "type": "excalidraw",
   "version": 2,
@@ -63,7 +65,7 @@ fn every_format_round_trips_one_canonical_artifact_manifest() {
             }
             OutputFormat::Png => assert_png_metadata_tail(outcome.artifact().bytes()),
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                let pdf = pdf_text(outcome.artifact().bytes());
                 assert!(pdf.contains("/Names << /EmbeddedFiles << /Names [(scene.excalidraw)"));
                 assert!(pdf.contains("/AFRelationship /Data"));
                 assert!(pdf.contains("/EF << /F "));
@@ -448,7 +450,7 @@ fn artifact_manifest(format: OutputFormat, artifact: &[u8]) -> Option<String> {
         }
         OutputFormat::Png => optional_png_manifest(artifact),
         OutputFormat::Pdf => {
-            let pdf = String::from_utf8_lossy(artifact);
+            let pdf = pdf_text(artifact);
             pdf.split_once("<er:manifest>")
                 .and_then(|(_, rest)| rest.split_once("</er:manifest>"))
                 .map(|(manifest, _)| xml_unescape(manifest))
@@ -492,7 +494,7 @@ fn manifest_without_scene(format: OutputFormat, artifact: &[u8]) -> String {
             extract_png_manifest(artifact)
         }
         OutputFormat::Pdf => {
-            let pdf = String::from_utf8_lossy(artifact);
+            let pdf = pdf_text(artifact);
             assert!(!pdf.contains("/Type /EmbeddedFile"));
             xml_unescape(between(&pdf, "<er:manifest>", "</er:manifest>"))
         }
@@ -610,6 +612,7 @@ fn assert_png_metadata_tail(png: &[u8]) {
 }
 
 fn extract_pdf(pdf: &[u8]) -> (String, Vec<u8>) {
+    let pdf = &inflate_streams(pdf);
     let text = String::from_utf8_lossy(pdf);
     let manifest = between(&text, "<er:manifest>", "</er:manifest>");
     let marker = b"/Type /EmbeddedFile\n/Subtype /application#2Fvnd.excalidraw+json\n";

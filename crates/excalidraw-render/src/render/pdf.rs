@@ -9,15 +9,18 @@
 //! `content` writes the page content stream and the fallback form streams,
 //! `fonts` the Type0 font objects and their deterministic glyph mappings,
 //! `nested_svg` the raster-closure analysis over sanitized `usvg` trees and
-//! the bounded svg2pdf adapter that renumbers and canonicalizes its chunks, and
-//! `raster_preflight` the session's admission of those closures.
+//! the bounded svg2pdf adapter that renumbers and canonicalizes its chunks,
+//! `streams` the one Flate configuration every renderer-written stream takes,
+//! and `raster_preflight` the session's admission of those closures.
 
 mod content;
 mod fonts;
 mod nested_svg;
 mod raster_preflight;
+mod streams;
 
 use nested_svg::{append_chunk, collect_raster_closures, renumber_svg_chunks, svg_chunks};
+use streams::{deflate_stream, write_flate_stream_object};
 
 use std::io::Write as _;
 use std::sync::Arc;
@@ -388,14 +391,30 @@ impl PdfPlan {
         let raw_svg_chunks = svg_chunks(&svg_resources, &self.svg_trees)?;
         let fallback_mappings = self.fallback_glyph_mappings()?;
         let official_mappings = self.official_glyph_mappings()?;
-        let content = self.encode_content(
-            &opacity_resources,
-            &image_resources,
-            &svg_resources,
-            &fallback_mappings,
-            &official_mappings,
+        // Every renderer-written stream is deflated before the output buffer
+        // is sized (ADR-0008), so the exact artifact size is known before the
+        // one fallible output allocation, as the PNG encoder knows its IDAT
+        // (ADR-0004). The deflated streams are transients of the §13.2 PDF
+        // stream workspace; each is dropped with the encoder.
+        let content = deflate_stream(
+            self.encode_content(
+                &opacity_resources,
+                &image_resources,
+                &svg_resources,
+                &fallback_mappings,
+                &official_mappings,
+            )?
+            .as_bytes(),
+            "pdf_content_stream",
         )?;
-        let fallback_forms = self.encode_fallback_forms(&fallback_mappings)?;
+        let fallback_forms = self
+            .encode_fallback_forms(&fallback_mappings)?
+            .iter()
+            .map(|form| deflate_stream(form.as_bytes(), "pdf_fallback_form_stream"))
+            .collect::<Result<Vec<_>, _>>()?;
+        // The XMP packet is the one stream left stored: PDF/A requires the
+        // metadata stream to be readable without a filter, and the file
+        // carries a `GTS_PDFA1` output intent (spec §8.6).
         let xmp = self
             .metadata
             .as_ref()
@@ -406,7 +425,9 @@ impl PdfPlan {
         let embedded_scene = self
             .metadata
             .as_ref()
-            .and_then(ArtifactMetadata::canonical_scene);
+            .and_then(ArtifactMetadata::canonical_scene)
+            .map(|scene| deflate_stream(scene, "pdf_embedded_scene_stream"))
+            .transpose()?;
         let attachment_object_count = usize::from(embedded_scene.is_some()) * 2;
         let mut link_count = 0_usize;
         for element in self
@@ -426,7 +447,21 @@ impl PdfPlan {
                 link_count = link_count.checked_add(1).ok_or_else(pdf_size_error)?;
             }
         }
-        let srgb_icc_profile = srgb_icc_profile()?;
+        let srgb_icc_profile = deflate_stream(&srgb_icc_profile()?, "pdf_srgb_profile_stream")?;
+        let fallback_font_program = self
+            .fallback_font_sfnt
+            .as_deref()
+            .map(|font| deflate_stream(font, "pdf_font_program_stream"))
+            .transpose()?;
+        let official_font_programs = self
+            .official_fonts
+            .iter()
+            .map(|font| deflate_stream(&font.sfnt, "pdf_font_program_stream"))
+            .collect::<Result<Vec<_>, _>>()?;
+        let image_streams = image_resources
+            .iter()
+            .map(image_planes)
+            .collect::<Result<Vec<_>, _>>()?;
         let object_count = 6_usize
             .checked_add(opacity_resources.len())
             .and_then(|count| count.checked_add(usize::from(xmp.is_some())))
@@ -448,6 +483,7 @@ impl PdfPlan {
             .and_then(|object| object.checked_add(usize::from(xmp.is_some())))
             .ok_or_else(pdf_size_error)?;
         let attachment_filespec_object = embedded_scene
+            .as_ref()
             .map(|_| {
                 first_attachment_object
                     .checked_add(1)
@@ -533,7 +569,7 @@ impl PdfPlan {
                 })
             })
             .and_then(|capacity| {
-                embedded_scene.map_or(Some(capacity), |scene| {
+                embedded_scene.as_ref().map_or(Some(capacity), |scene| {
                     scene
                         .len()
                         .checked_add(1_024)
@@ -553,7 +589,7 @@ impl PdfPlan {
                 })
             })
             .and_then(|capacity| {
-                self.fallback_font_sfnt
+                fallback_font_program
                     .as_ref()
                     .map_or(Some(capacity), |font| {
                         font.len()
@@ -562,23 +598,20 @@ impl PdfPlan {
                     })
             })
             .and_then(|capacity| {
-                self.official_fonts
+                official_font_programs
                     .iter()
                     .try_fold(capacity, |capacity, font| {
-                        font.sfnt
-                            .len()
+                        font.len()
                             .checked_add(16_384)
                             .and_then(|extra| capacity.checked_add(extra))
                     })
             })
             .and_then(|capacity| {
-                image_resources
+                image_streams
                     .iter()
-                    .try_fold(capacity, |capacity, resource| {
-                        usize::try_from(resource.asset.width)
-                            .ok()?
-                            .checked_mul(usize::try_from(resource.asset.height).ok()?)
-                            .and_then(|pixels| pixels.checked_mul(4))
+                    .try_fold(capacity, |capacity, (rgb, alpha)| {
+                        rgb.len()
+                            .checked_add(alpha.len())
                             .and_then(|bytes| bytes.checked_add(1_024))
                             .and_then(|extra| capacity.checked_add(extra))
                     })
@@ -715,20 +748,15 @@ impl PdfPlan {
         }
         pdf.extend_from_slice(b"/Contents 4 0 R\n>>\nendobj\n");
 
-        begin_object(&mut pdf, &mut offsets, 4)?;
-        write!(pdf, "<<\n/Length {}\n>>\nstream\n", content.len()).map_err(write_error)?;
-        pdf.extend_from_slice(content.as_bytes());
-        pdf.extend_from_slice(b"\nendstream\nendobj\n");
+        write_flate_stream_object(&mut pdf, &mut offsets, 4, "", &content)?;
 
-        begin_object(&mut pdf, &mut offsets, ICC_PROFILE_OBJECT)?;
-        write!(
-            pdf,
-            "<<\n/N 3\n/Alternate /DeviceRGB\n/Length {}\n>>\nstream\n",
-            srgb_icc_profile.len()
-        )
-        .map_err(write_error)?;
-        pdf.extend_from_slice(&srgb_icc_profile);
-        pdf.extend_from_slice(b"\nendstream\nendobj\n");
+        write_flate_stream_object(
+            &mut pdf,
+            &mut offsets,
+            ICC_PROFILE_OBJECT,
+            "/N 3\n/Alternate /DeviceRGB\n",
+            &srgb_icc_profile,
+        )?;
 
         begin_object(&mut pdf, &mut offsets, OUTPUT_INTENT_OBJECT)?;
         write!(
@@ -766,16 +794,15 @@ impl PdfPlan {
             pdf.extend_from_slice(xmp.as_bytes());
             pdf.extend_from_slice(b"\nendstream\nendobj\n");
         }
-        if let (Some(scene), Some(filespec)) = (embedded_scene, attachment_filespec_object) {
-            begin_object(&mut pdf, &mut offsets, first_attachment_object)?;
-            write!(
-                pdf,
-                "<<\n/Type /EmbeddedFile\n/Subtype /application#2Fvnd.excalidraw+json\n/Length {}\n>>\nstream\n",
-                scene.len()
-            )
-            .map_err(write_error)?;
-            pdf.extend_from_slice(scene);
-            pdf.extend_from_slice(b"\nendstream\nendobj\n");
+        if let (Some(scene), Some(filespec)) = (embedded_scene.as_ref(), attachment_filespec_object)
+        {
+            write_flate_stream_object(
+                &mut pdf,
+                &mut offsets,
+                first_attachment_object,
+                "/Type /EmbeddedFile\n/Subtype /application#2Fvnd.excalidraw+json\n",
+                scene,
+            )?;
 
             begin_object(&mut pdf, &mut offsets, filespec)?;
             write!(
@@ -839,22 +866,25 @@ impl PdfPlan {
                 pdf,
                 concat!(
                     " >>\n/Group << /S /Transparency /I true /CS /DeviceRGB >>\n",
-                    "/Length {}\n>>\nstream\n"
+                    "/Filter /FlateDecode\n/Length {}\n>>\nstream\n"
                 ),
                 form.len()
             )
             .map_err(write_error)?;
-            pdf.extend_from_slice(form.as_bytes());
+            pdf.extend_from_slice(form);
             pdf.extend_from_slice(b"\nendstream\nendobj\n");
         }
-        if let (Some(font_object), Some(font)) =
-            (fallback_font_object, self.fallback_font_sfnt.as_deref())
-        {
+        if let (Some(font_object), Some(font), Some(program)) = (
+            fallback_font_object,
+            self.fallback_font_sfnt.as_deref(),
+            fallback_font_program.as_deref(),
+        ) {
             self.write_font_objects(
                 &mut pdf,
                 &mut offsets,
                 font_object,
                 font,
+                program,
                 "LiberationSans",
                 &fallback_mappings,
             )?;
@@ -866,81 +896,44 @@ impl PdfPlan {
                     &mut offsets,
                     checked_object(first_object, index, 6)?,
                     &font.sfnt,
+                    &official_font_programs[index],
                     font.pdf_name,
                     &official_mappings[index],
                 )?;
             }
         }
-        for (index, resource) in image_resources.iter().enumerate() {
+        for (index, (resource, (rgb, alpha))) in
+            image_resources.iter().zip(&image_streams).enumerate()
+        {
             let asset = &resource.asset;
             let image_object = checked_object(first_image_object, index, 2)?;
             let mask_object = image_object.checked_add(1).ok_or_else(pdf_size_error)?;
-            let pixel_count = usize::try_from(asset.width)
-                .ok()
-                .and_then(|width| width.checked_mul(usize::try_from(asset.height).ok()?))
-                .ok_or_else(pdf_size_error)?;
-            let mut rgb = Vec::new();
-            let mut alpha = Vec::new();
-            let rgb_bytes = pixel_count.checked_mul(3).ok_or_else(pdf_size_error)?;
-            rgb.try_reserve_exact(rgb_bytes)
-                .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                    subject_kind: "format_resource",
-                    subject: "pdf_image_rgb",
-                })?;
-            alpha.try_reserve_exact(pixel_count).map_err(|_| {
-                FormatEncodeError::MemoryUnavailable {
-                    subject_kind: "format_resource",
-                    subject: "pdf_image_alpha",
-                }
-            })?;
-            let rgba = asset.rgba.as_deref().ok_or_else(|| {
-                FormatEncodeError::Encoding("PDF image has no normalized pixel resource".to_owned())
-            })?;
-            for pixel in rgba.as_chunks::<4>().0 {
-                let [red, green, blue, pixel_alpha] = [pixel[0], pixel[1], pixel[2], pixel[3]];
-                // Official SVG is the visual authority for PDF images (spec
-                // section 8.6): in dark mode a raster pixel passes through
-                // the reference's image filter and root filter. An invisible
-                // pixel keeps its canonical zero RGB.
-                let lowered = match resource.dark_mode_filter {
-                    Some(DarkModeImageFilter::RasterImage) if pixel_alpha != 0 => {
-                        color::dark_mode_raster_image_pixel([red, green, blue])
-                    }
-                    _ => [red, green, blue],
-                };
-                rgb.extend_from_slice(&lowered);
-                alpha.push(pixel_alpha);
-            }
-            begin_object(&mut pdf, &mut offsets, image_object)?;
-            write!(
-                pdf,
-                concat!(
-                    "<<\n/Type /XObject\n/Subtype /Image\n/Width {}\n/Height {}\n",
-                    "/ColorSpace /CS1\n/BitsPerComponent 8\n/SMask {} 0 R\n/Length {}\n",
-                    ">>\nstream\n"
+            write_flate_stream_object(
+                &mut pdf,
+                &mut offsets,
+                image_object,
+                &format!(
+                    concat!(
+                        "/Type /XObject\n/Subtype /Image\n/Width {}\n/Height {}\n",
+                        "/ColorSpace /CS1\n/BitsPerComponent 8\n/SMask {} 0 R\n"
+                    ),
+                    asset.width, asset.height, mask_object
                 ),
-                asset.width,
-                asset.height,
+                rgb,
+            )?;
+            write_flate_stream_object(
+                &mut pdf,
+                &mut offsets,
                 mask_object,
-                rgb.len()
-            )
-            .map_err(write_error)?;
-            pdf.extend_from_slice(&rgb);
-            pdf.extend_from_slice(b"\nendstream\nendobj\n");
-            begin_object(&mut pdf, &mut offsets, mask_object)?;
-            write!(
-                pdf,
-                concat!(
-                    "<<\n/Type /XObject\n/Subtype /Image\n/Width {}\n/Height {}\n",
-                    "/ColorSpace /DeviceGray\n/BitsPerComponent 8\n/Length {}\n>>\nstream\n"
+                &format!(
+                    concat!(
+                        "/Type /XObject\n/Subtype /Image\n/Width {}\n/Height {}\n",
+                        "/ColorSpace /DeviceGray\n/BitsPerComponent 8\n"
+                    ),
+                    asset.width, asset.height
                 ),
-                asset.width,
-                asset.height,
-                alpha.len()
-            )
-            .map_err(write_error)?;
-            pdf.extend_from_slice(&alpha);
-            pdf.extend_from_slice(b"\nendstream\nendobj\n");
+                alpha,
+            )?;
         }
         for resource in &svg_chunks {
             append_chunk(&mut pdf, &mut offsets, resource)?;
@@ -1372,6 +1365,52 @@ fn transformed_clip_point(
     let x = transform.translation_x + transform.center_x + delta_x * cos - delta_y * sin;
     let y = transform.translation_y + transform.center_y + delta_x * sin + delta_y * cos;
     (x * point_scale, page_height - y * point_scale)
+}
+
+/// One image XObject's two deflated planes: the RGB samples, lowered through
+/// the dark-mode filter when the mode asks for it, and the alpha soft mask.
+fn image_planes(resource: &PdfImageResource) -> Result<(Vec<u8>, Vec<u8>), FormatEncodeError> {
+    let asset = &resource.asset;
+    let pixel_count = usize::try_from(asset.width)
+        .ok()
+        .and_then(|width| width.checked_mul(usize::try_from(asset.height).ok()?))
+        .ok_or_else(pdf_size_error)?;
+    let mut rgb = Vec::new();
+    let mut alpha = Vec::new();
+    let rgb_bytes = pixel_count.checked_mul(3).ok_or_else(pdf_size_error)?;
+    rgb.try_reserve_exact(rgb_bytes)
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_resource",
+            subject: "pdf_image_rgb",
+        })?;
+    alpha
+        .try_reserve_exact(pixel_count)
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_resource",
+            subject: "pdf_image_alpha",
+        })?;
+    let rgba = asset.rgba.as_deref().ok_or_else(|| {
+        FormatEncodeError::Encoding("PDF image has no normalized pixel resource".to_owned())
+    })?;
+    for pixel in rgba.as_chunks::<4>().0 {
+        let [red, green, blue, pixel_alpha] = [pixel[0], pixel[1], pixel[2], pixel[3]];
+        // Official SVG is the visual authority for PDF images (spec
+        // section 8.6): in dark mode a raster pixel passes through
+        // the reference's image filter and root filter. An invisible
+        // pixel keeps its canonical zero RGB.
+        let lowered = match resource.dark_mode_filter {
+            Some(DarkModeImageFilter::RasterImage) if pixel_alpha != 0 => {
+                color::dark_mode_raster_image_pixel([red, green, blue])
+            }
+            _ => [red, green, blue],
+        };
+        rgb.extend_from_slice(&lowered);
+        alpha.push(pixel_alpha);
+    }
+    Ok((
+        deflate_stream(&rgb, "pdf_image_rgb_stream")?,
+        deflate_stream(&alpha, "pdf_image_alpha_stream")?,
+    ))
 }
 
 fn srgb_icc_profile() -> Result<Vec<u8>, FormatEncodeError> {

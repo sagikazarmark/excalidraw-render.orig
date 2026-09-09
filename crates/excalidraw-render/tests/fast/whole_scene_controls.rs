@@ -3,7 +3,7 @@ use excalidraw_render::{
     Renderer, SceneDocument, Sizing,
 };
 
-use crate::common::pdf_inspect::stream_data;
+use crate::common::pdf_inspect::{pdf_text, stream_text};
 use crate::common::raster::decode_png;
 use crate::common::render::{render_source, render_with_request};
 use crate::common::svg::{font_family_attribute, LIBERATION_FAMILIES};
@@ -41,8 +41,7 @@ fn chromium_css_colors_are_canonicalized_for_every_projection() {
         .any(|pixel| pixel == [64, 0, 191, 255]));
 
     let pdf = render_source(COLORED_RECTANGLE, OutputFormat::Pdf);
-    let content = std::str::from_utf8(stream_data(pdf.artifact().bytes(), b"4 0 obj"))
-        .expect("PDF content is ASCII");
+    let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");
     assert!(content.contains(concat!("0.4 0.2 0.6 scn\n", "0 0 40 30 re\nf\n")));
     assert!(content.contains("0.25098039215686274 0 0.7490196078431373 SCN\n"));
 }
@@ -87,11 +86,10 @@ fn canonical_color_alpha_is_preserved_by_every_projection() {
     assert!(rgba.chunks_exact(4).any(|pixel| pixel == [255, 0, 0, 128]));
 
     let pdf = render_source(source, OutputFormat::Pdf);
-    let pdf_text = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf_text = pdf_text(pdf.artifact().bytes());
     assert_eq!(pdf_text.matches("/Type /ExtGState\n").count(), 1);
     assert!(pdf_text.contains(&format!("/CA {ALPHA}\n/ca {ALPHA}\n")));
-    let content = std::str::from_utf8(stream_data(pdf.artifact().bytes(), b"4 0 obj"))
-        .expect("PDF content is ASCII");
+    let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");
     assert_eq!(content.matches("/GS1 gs").count(), 2);
 }
 
@@ -142,7 +140,7 @@ fn element_opacity_multiplies_color_alpha_in_every_projection() {
             .build()
             .expect("transparent PDF request is valid"),
     );
-    assert!(String::from_utf8_lossy(pdf.artifact().bytes())
+    assert!(pdf_text(pdf.artifact().bytes())
         .contains(&format!("/CA {EFFECTIVE_ALPHA}\n/ca {EFFECTIVE_ALPHA}\n")));
 }
 
@@ -177,8 +175,7 @@ fn dark_mode_lowers_scene_colors_before_every_projection() {
         .any(|pixel| pixel == [211, 211, 211, 255]));
 
     let dark_pdf = render_dark(source, OutputFormat::Pdf);
-    let content = std::str::from_utf8(stream_data(dark_pdf.artifact().bytes(), b"4 0 obj"))
-        .expect("PDF content is ASCII");
+    let content = stream_text(dark_pdf.artifact().bytes(), b"4 0 obj");
     assert!(content.contains("0.06666666666666667 0.06666666666666667 0.06666666666666667 scn"));
     assert!(content.contains("0.8274509803921568 0.8274509803921568 0.8274509803921568 SCN"));
 
@@ -220,8 +217,7 @@ fn renderer_owned_fallback_colors_follow_dark_mode() {
     assert!(rgba.chunks_exact(4).any(|pixel| pixel == [26, 28, 30, 255]));
 
     let pdf = render_dark(source, OutputFormat::Pdf);
-    let content = std::str::from_utf8(stream_data(pdf.artifact().bytes(), b"4 0 obj"))
-        .expect("PDF content is ASCII");
+    let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");
     assert!(content.contains("0.10196078431372549 0.10980392156862745 0.11764705882352941 scn"));
     assert!(content.contains("0.43137254901960786 0.4549019607843137 0.4823529411764706 SCN"));
 }
@@ -253,8 +249,7 @@ fn empty_and_fallback_only_scenes_use_the_scene_background() {
         assert_eq!(&rgba[..4], &[102, 51, 153, 255]);
 
         let pdf = render_source(source, OutputFormat::Pdf);
-        let content = std::str::from_utf8(stream_data(pdf.artifact().bytes(), b"4 0 obj"))
-            .expect("PDF content is ASCII");
+        let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");
         assert!(content.contains("0.4 0.2 0.6 scn"));
     }
 }
@@ -293,7 +288,7 @@ fn zero_padding_empty_scenes_remain_meaningful_in_every_format() {
             .build()
             .expect("zero-padding PDF request is valid"),
     );
-    assert!(String::from_utf8_lossy(pdf.artifact().bytes()).contains("/MediaBox [0 0 0.75 0.75]"));
+    assert!(pdf_text(pdf.artifact().bytes()).contains("/MediaBox [0 0 0.75 0.75]"));
 }
 
 #[test]
@@ -368,7 +363,7 @@ fn bounds_padding_and_sizing_follow_each_format_rule() {
                 .build()
                 .expect("sized PDF request is valid"),
         );
-        assert!(String::from_utf8_lossy(pdf.artifact().bytes()).contains(media_box));
+        assert!(pdf_text(pdf.artifact().bytes()).contains(media_box));
     }
 }
 

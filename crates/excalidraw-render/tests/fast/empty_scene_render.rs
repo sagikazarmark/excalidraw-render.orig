@@ -1,3 +1,4 @@
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     CompatibilityRevision, OutputFormat, RenderOutcome, RenderRequest, Renderer, SceneDocument,
 };
@@ -64,7 +65,7 @@ fn valid_empty_scene_renders_a_complete_one_page_pdf_artifact() {
     assert!(bytes.starts_with(b"%PDF-1.7\n"));
     assert!(bytes.ends_with(b"%%EOF"));
 
-    let pdf = String::from_utf8_lossy(bytes);
+    let pdf = pdf_text(bytes);
     assert_eq!(pdf.matches("/Type /Page\n").count(), 1);
     assert!(pdf.contains("/Count 1"));
     assert!(pdf.contains("/MediaBox [0 0 15 15]"));

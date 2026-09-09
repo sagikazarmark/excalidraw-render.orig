@@ -4,6 +4,7 @@
 //! EXIF, ICC, animation frames, the malformed containers) is tested at the
 //! asset cache's own seam in `src/render/asset/tests.rs`.
 
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{DiagnosticCode, OutputFormat, RenderRequest, ResourceLimits};
 
 use crate::common::codec_fixtures::{animated_webp, webp_rgba};
@@ -47,7 +48,7 @@ fn pdf_embeds_lossless_webp_with_its_alpha_as_a_soft_mask() {
     let webp = webp_rgba(2, 1, &[[24, 96, 208, 128], [200, 100, 50, 0]]);
 
     let outcome = render(&image_scene(&webp, "image/webp", 2, 1), OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Subtype /Image"));
     assert!(pdf.contains("/Width 2\n/Height 1"));

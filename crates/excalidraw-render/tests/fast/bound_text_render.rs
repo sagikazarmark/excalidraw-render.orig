@@ -2,6 +2,7 @@
 //! the reciprocity rules are asserted once on the resolved scene in
 //! `render::resolve_tests`; this keeps the arrow label reaching every format.
 
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{OutputFormat, SceneDocument};
 
 use crate::common::render::render_artifact;
@@ -41,7 +42,7 @@ fn arrow_bound_text_renders_at_the_arrow_midpoint_in_every_format() {
     let png = render_artifact(&scene, OutputFormat::Png);
     assert!(png.starts_with(b"\x89PNG\r\n\x1a\n"));
 
-    let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
+    let pdf = pdf_text(&render_artifact(&scene, OutputFormat::Pdf));
     assert!(pdf.contains("W*\nn\n"));
     assert!(!pdf.contains("/Subtype /Image"));
 }

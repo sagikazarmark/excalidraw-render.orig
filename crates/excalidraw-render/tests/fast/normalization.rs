@@ -1,3 +1,4 @@
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     DiagnosticCode, ErrorCode, FrameOptions, OutputFormat, RenderRequest, Renderer, ResourceLimits,
     SceneDocument, SupplementalAssets,
@@ -485,7 +486,7 @@ fn multiple_pdf_rectangles_keep_independent_opacity_resources() {
         br##"{"type":"excalidraw","version":2,"elements":[{"id":"first","type":"rectangle","x":0,"width":40,"height":40,"opacity":50,"seed":1,"updated":1},{"id":"second","type":"rectangle","x":50,"width":40,"height":40,"opacity":75,"seed":1,"updated":1}],"appState":{},"files":{}}"##,
         OutputFormat::Pdf,
     );
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(pdf.contains("/ExtGState << /GS1 7 0 R /GS2 8 0 R >>"));
     assert_eq!(pdf.matches("/GS1 gs").count(), 1);

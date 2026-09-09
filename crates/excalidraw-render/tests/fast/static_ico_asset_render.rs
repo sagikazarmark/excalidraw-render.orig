@@ -4,6 +4,7 @@
 //! pixel accounting. Entry selection, DIB alpha and the malformed entries are
 //! tested at the asset cache's own seam in `src/render/asset/tests.rs`.
 
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{DiagnosticCode, OutputFormat, RenderRequest, ResourceLimits};
 
 use crate::common::codec_fixtures::{dib32, ico, solid_png};
@@ -45,7 +46,7 @@ fn ico_embeds_in_pdf_as_an_image_with_its_alpha_mask() {
     let ico = ico(&[(1, 1, 32, dib32([24, 96, 208, 128], false))]);
 
     let outcome = render(&image_scene(&ico, "image/x-icon", 1, 1), OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Width 1\n/Height 1"));
     assert!(pdf.contains("/SMask"));

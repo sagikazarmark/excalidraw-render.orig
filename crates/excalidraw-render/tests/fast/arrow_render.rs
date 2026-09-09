@@ -1,3 +1,4 @@
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     DiagnosticCode, OutputFormat, RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
@@ -71,7 +72,7 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
                 "exact arrow vectors changed"
             );
         } else if format == OutputFormat::Pdf {
-            let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+            let pdf = pdf_text(outcome.artifact().bytes());
             assert!(
                 pdf.contains("[] 0 d\n"),
                 "dashed arrowheads reset the shaft dash"

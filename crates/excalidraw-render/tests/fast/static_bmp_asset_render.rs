@@ -5,6 +5,7 @@
 //! headers) is tested at the asset cache's own seam in
 //! `src/render/asset/tests.rs`.
 
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     DiagnosticCode, ErrorDetails, OutputFormat, RenderRequest, ResourceLimits,
 };
@@ -45,7 +46,7 @@ fn bmp_pdf_embeds_the_canonical_selected_surface() {
     let bmp = bmp32([24, 96, 208, 128], true);
 
     let outcome = render(&image_scene(&bmp, "image/bmp", 1, 1), OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Width 1\n/Height 1"));
     assert!(pdf.contains("/SMask"));

@@ -7,6 +7,7 @@
 //! follows the canvas export, whose `drawImage` fills the unrounded element
 //! rectangle, so a fractional edge stays a fractional edge there (#131).
 
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{OutputFormat, SceneDocument};
 
 use crate::common::image_scene::image_scene_with_element_fields;
@@ -50,7 +51,7 @@ fn an_uncropped_fractional_image_fills_the_rounded_viewport_in_svg_and_pdf_and_t
     );
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     assert!(
         pdf.contains("0 0 41 40 re\nW\nn\n41 0 0 40 0 0 cm\n/Im0 Do"),
         "PDF image viewport is not the rounded reference size: {pdf}"
@@ -94,7 +95,7 @@ fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_unrounded_c
     // The PDF clip is the mirrored viewport and the content matrix mirrors the
     // asset about the unrounded center: `x' = 40.5 - 41 * u`.
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     assert!(
         pdf.contains("-0.5 0 41 40 re\nW\nn\n-41 0 0 40 40.5 0 cm\n/Im0 Do"),
         "PDF does not mirror the rounded viewport about the unrounded center: {pdf}"
@@ -168,7 +169,7 @@ fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewport_and_unro
     // `[0, 21] x [0, 20.5]`; then the whole asset at its uncropped size is
     // mirrored about the center, its left edge at `width + normalizedCropX`.
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     assert!(
         pdf.contains(concat!(
             "0 0 21 20.5 re\nW\nn\n",
@@ -210,7 +211,7 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
         r#""x":0,"y":0,"width":40,"height":40.4,"angle":0,"opacity":100,"scale":[1,1]"#,
     );
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     assert!(
         pdf.contains("0 0 40 40 re\nW\nn\n40 0 0 -40 0 40 cm\n/Svg0 Do"),
         "PDF does not invert the form within the rounded viewport: {pdf}"
@@ -229,7 +230,7 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
         ),
     );
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     assert!(
         pdf.contains("0 0 20 10 re\nW\nn\n20 0 0 -20 0 20 cm\n/Svg0 Do"),
         "PDF does not invert the cropped form within its content rectangle: {pdf}"
@@ -248,7 +249,7 @@ fn a_nested_svg_in_pdf_inverts_its_form_within_its_own_content_rectangle() {
         ),
     );
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     assert!(
         pdf.contains("0 0 20 10 re\nW\nn\n20 0 0 20 0 -10 cm\n/Svg0 Do"),
         "PDF does not compose the flip with the form inversion: {pdf}"

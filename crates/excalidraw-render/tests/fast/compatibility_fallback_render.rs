@@ -1,3 +1,4 @@
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     DiagnosticCode, DiagnosticEffect, ErrorCode, ErrorDetails, OutputFormat, Recovery,
     RenderRequest, Renderer, ResourceLimits, SceneDocument,
@@ -146,9 +147,8 @@ fn bounded_fallback_and_unbounded_omission_succeed_in_every_format() {
                 assert_eq!((decoded.width, decoded.height), (220, 100));
             }
             OutputFormat::Pdf => {
-                let pdf = first.artifact().bytes();
-                assert!(pdf.starts_with(b"%PDF-1.7"));
-                assert!(pdf.windows(10).any(|bytes| bytes == b"[6 4] 0 d\n"));
+                assert!(first.artifact().bytes().starts_with(b"%PDF-1.7"));
+                assert!(pdf_text(first.artifact().bytes()).contains("[6 4] 0 d\n"));
             }
             _ => panic!("the test covers the revision-1 format set"),
         }
@@ -196,7 +196,7 @@ fn compatibility_placeholder_labels_carry_their_derived_font_notice_and_artifact
         .any(|window| window == b"liberation-sans.ofl-full"));
 
     let pdf = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf = pdf_text(pdf.artifact().bytes());
     assert!(pdf.contains("/ActualText <FEFF0055006E0073007500700070006F0072007400650064003A0020006600750074007500720065>"));
     assert!(pdf.contains("/ActualText <FEFF2026>"));
     assert!(pdf.contains("/Subtype /Type0"));
@@ -273,7 +273,7 @@ fn compatibility_placeholder_preserves_safe_links_only_in_semantic_formats() {
         .any(|window| window == link.as_bytes()));
 
     let pdf = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf = pdf_text(pdf.artifact().bytes());
     assert!(pdf.contains("/Subtype /Link"));
     assert!(pdf.contains("/S /URI\n/URI (https://example.com/path?x=1&y=2)"));
     assert!(pdf.contains("/QuadPoints ["));
@@ -347,7 +347,7 @@ fn supported_linked_elements_keep_navigation_in_semantic_formats() {
     assert!(svg_bytes.contains("<a href=\"/docs\">"));
 
     let pdf = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf = pdf_text(pdf.artifact().bytes());
     assert!(pdf.contains("/Subtype /Link"));
     assert!(pdf.contains("/URI (http://reference.invalid/docs)"));
 }
@@ -360,7 +360,7 @@ fn pdf_link_annotations_are_ordered_from_topmost_to_bottommost() {
     .expect("overlapping links are admitted");
 
     let pdf = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf = pdf_text(pdf.artifact().bytes());
     let top = pdf.find("/URI (https://example.com/top)").unwrap();
     let bottom = pdf.find("/URI (https://example.com/bottom)").unwrap();
     assert!(top < bottom);
@@ -408,7 +408,7 @@ fn iframe_and_embeddable_render_the_official_offline_shell_in_the_final_pass() {
         .any(|bytes| bytes == b"https://"));
 
     let pdf = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf = pdf_text(pdf.artifact().bytes());
     assert!(pdf.contains("/Subtype /Link"));
     assert!(pdf.contains("/URI (https://example.com/embed)"));
     assert!(pdf.contains("/ActualText <FEFF"));
@@ -553,7 +553,7 @@ fn compatibility_placeholder_preserves_frame_clipping_in_every_format() {
     assert_eq!(decoded.pixel(115, 64), [255, 255, 255, 255]);
 
     let pdf = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf = pdf_text(pdf.artifact().bytes());
     assert!(pdf.matches("W\nn\n").count() >= 2);
     assert!(!pdf.contains("/Subtype /Image"));
 }
@@ -692,7 +692,7 @@ fn compatibility_placeholder_opacity_is_applied_to_the_composited_group() {
     );
 
     let pdf = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf = pdf_text(pdf.artifact().bytes());
     assert!(pdf.contains("/Group << /S /Transparency /I true /CS /DeviceRGB >>"));
     assert!(pdf.contains("/FB1 Do"));
 }

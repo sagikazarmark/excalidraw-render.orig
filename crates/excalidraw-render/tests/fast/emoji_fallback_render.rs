@@ -16,7 +16,7 @@ use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
 use crate::common::pdf_inspect::{
-    embedded_pdf_fonts, family_name, font_resource, marked_content_line, pdf_actual_text,
+    embedded_pdf_fonts, family_name, font_resource, marked_content_line, pdf_actual_text, pdf_text,
     to_unicode_cmap,
 };
 
@@ -180,7 +180,7 @@ fn svg_sets_the_emoji_from_the_complete_noto_emoji_face_and_keeps_the_stored_tex
 fn pdf_embeds_the_complete_noto_emoji_face_for_the_emoji_runs_and_carries_the_stored_text() {
     let outcome = render(&registered_scene(), OutputFormat::Pdf);
     let bytes = outcome.artifact().bytes();
-    let pdf = String::from_utf8_lossy(bytes);
+    let pdf = pdf_text(bytes);
 
     // One embedded face per family plus the fallback, and nothing from the
     // chain the scene does not reach.

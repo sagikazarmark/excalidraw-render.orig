@@ -13,7 +13,7 @@
 use base64::Engine as _;
 use excalidraw_render::{ColorMode, FrameOptions, OutputFormat, RenderRequest, SceneDocument};
 
-use crate::common::pdf_inspect::find_bytes;
+use crate::common::pdf_inspect::{find_bytes, inflate_streams, pdf_text};
 use crate::common::raster::{decode_png, DecodedPng};
 use crate::common::render::{artifact_without_diagnostics, render_with_request};
 
@@ -73,7 +73,7 @@ fn dark_mode_frame_outlines_pass_through_the_theme_filter_in_every_format() {
     );
 
     let pdf = render(&scene, OutputFormat::Pdf, ColorMode::Dark);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     let dark_outline_strokes = pdf
         .matches("0.2980392156862745 0.2980392156862745 0.2980392156862745 SCN\n")
         .count();
@@ -102,7 +102,7 @@ fn light_mode_frame_outlines_keep_the_reference_light_constants() {
     assert_eq!(png.pixel(130, 30), [0x7a, 0xff, 0xd7, 255]);
 
     let pdf = render(&scene, OutputFormat::Pdf, ColorMode::Light);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     assert_eq!(
         pdf.matches("0.7333333333333333 0.7333333333333333 0.7333333333333333 SCN\n")
             .count(),
@@ -355,7 +355,7 @@ fn dark_mode_pdf_lowers_the_reference_svg_image_filters_into_raster_pixels() {
 fn dark_mode_pdf_still_embeds_nested_svg_vector_content_in_light_colors_until_154() {
     let scene = image_scene(&[nested_svg_fixture(r#""x":0,"y":0,"width":20,"height":20"#)]);
     let pdf = render(&scene, OutputFormat::Pdf, ColorMode::Dark);
-    let pdf = String::from_utf8_lossy(&pdf);
+    let pdf = pdf_text(&pdf);
     // svg2pdf spells the nested rectangle's #1e1e1e fill as 30/255 in f32; the
     // lowered #d3d3d3 would be 211/255. The page background is lowered.
     assert!(
@@ -539,13 +539,14 @@ fn assert_rgb_near(actual: [u8; 3], expected: [u8; 3]) {
 /// The RGB stream of the first image XObject and the DeviceGray stream of its
 /// soft mask.
 fn image_xobject_streams(pdf: &[u8]) -> (Vec<u8>, Vec<u8>) {
-    let rgb = stream_after(pdf, b"/ColorSpace /CS1\n/BitsPerComponent 8\n/SMask ");
-    let alpha = stream_after(pdf, b"/ColorSpace /DeviceGray\n/BitsPerComponent 8\n");
+    let pdf = inflate_streams(pdf);
+    let rgb = stream_after(&pdf, b"/ColorSpace /CS1\n/BitsPerComponent 8\n/SMask ");
+    let alpha = stream_after(&pdf, b"/ColorSpace /DeviceGray\n/BitsPerComponent 8\n");
     (rgb, alpha)
 }
 
-/// The bytes of the stream whose dictionary contains `marker`, sized by its
-/// `/Length`.
+/// The bytes of the inflated stream whose dictionary contains `marker`, sized
+/// by its `/Length`.
 fn stream_after(pdf: &[u8], marker: &[u8]) -> Vec<u8> {
     let dictionary = find_bytes(pdf, marker).expect("PDF has the image dictionary");
     let length_key = b"/Length ";

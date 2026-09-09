@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::common::pdf_inspect::{pdf_actual_text, stream_data};
+use crate::common::pdf_inspect::{pdf_actual_text, pdf_text, stream_data};
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request};
 use crate::common::reports::assert_report_matches;
@@ -86,7 +86,7 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 );
             }
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(first.artifact().bytes());
+                let pdf = pdf_text(first.artifact().bytes());
                 assert!(pdf.contains("/Subtype /Type0"));
                 assert!(pdf.contains("/BaseFont /Excalifont"));
                 assert!(pdf.contains("/ToUnicode "));
@@ -329,7 +329,7 @@ fn png_text_coverage_uses_the_transformed_glyph_rectangle() {
 fn pdf_maps_the_same_glyph_id_to_distinct_unicode_character_codes() {
     let scene = text_scene(" \u{a0}", 40.0, 30.0);
     let outcome = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
     assert!(pdf.contains("<0001> <0020>"));
     assert!(pdf.contains("<0002> <00A0>"));
     assert!(pdf.contains("<0001> Tj"));
@@ -429,8 +429,8 @@ fn work_crossing_descriptor(outcome: &RenderOutcome) -> Option<Value> {
 }
 
 /// The stream of the object that the reference following `key` names.
-fn pdf_stream_referenced_after<'a>(pdf: &'a [u8], key: &str) -> &'a [u8] {
-    let text = String::from_utf8_lossy(pdf);
+fn pdf_stream_referenced_after(pdf: &[u8], key: &str) -> Vec<u8> {
+    let text = pdf_text(pdf);
     let object = text
         .split(key)
         .nth(1)

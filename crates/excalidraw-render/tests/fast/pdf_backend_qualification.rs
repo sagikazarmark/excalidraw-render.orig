@@ -4,6 +4,7 @@
 //! qpdf structural gates and the fallback's viewer gates over the same renders
 //! live in `harness_pdf_viewers`.
 
+use crate::common::pdf_inspect::pdf_text;
 use base64::Engine as _;
 use excalidraw_render::{DiagnosticCode, OutputFormat, RenderRequest, Renderer, SceneDocument};
 use sha2::{Digest, Sha256};
@@ -51,7 +52,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
         "8e2eb6f5795e144a322649e347df0a05515655c96f874823b9a22e8a4c7da82c"
     );
 
-    let pdf = String::from_utf8_lossy(first.artifact().bytes());
+    let pdf = pdf_text(first.artifact().bytes());
     for structure in [
         "/Subtype /Type0",
         "/ToUnicode ",
@@ -94,7 +95,7 @@ fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
     };
     assert_eq!(diagnostic.code(), DiagnosticCode::PDF_RASTER_FALLBACK);
 
-    let pdf = String::from_utf8_lossy(first.artifact().bytes());
+    let pdf = pdf_text(first.artifact().bytes());
     assert_eq!(pdf.matches("/Subtype /Image").count(), 2);
     assert!(pdf.contains("/Subtype /Form"));
     assert!(pdf.contains("/Width 20"));
@@ -165,7 +166,7 @@ fn every_pixel_domain_fallback_family_is_isolated_and_deterministic() {
             "{name}"
         );
         assert!(
-            String::from_utf8_lossy(first.artifact().bytes()).contains("/Subtype /Image"),
+            pdf_text(first.artifact().bytes()).contains("/Subtype /Image"),
             "{name}"
         );
     }
@@ -183,7 +184,7 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
     );
     let outcome = render_nested_native_operations();
     let repeated = render_nested_native_operations();
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    let pdf = pdf_text(outcome.artifact().bytes());
 
     assert_eq!(outcome.artifact().bytes(), repeated.artifact().bytes());
     assert_eq!(outcome.report(), repeated.report());

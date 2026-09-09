@@ -2,6 +2,7 @@
 //! PNG against the pinned official evidence, and its PDF for structure. The
 //! PDF viewer gates of the same case live in `harness_pdf_viewers`.
 
+use common::pdf_inspect::pdf_text;
 use std::fs;
 
 mod common;
@@ -161,7 +162,7 @@ fn frame_svg_and_png_match_the_pinned_official_evidence() {
             )
             .unwrap_or_else(|error| panic!("frame {ordinal} repeats as PDF: {error}"));
         assert_eq!(pdf.artifact().bytes(), repeated_pdf.artifact().bytes());
-        let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+        let pdf = pdf_text(pdf.artifact().bytes());
         assert!(
             pdf.contains("/MediaBox [0 0 "),
             "frame {ordinal} has one PDF page"

@@ -1,3 +1,4 @@
+use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{
     ColorMode, CompatibilityRevision, ErrorCode, ErrorFamily, FrameBatchErrorKind, FrameKind,
     FrameRenderRequest, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, Renderer,
@@ -105,7 +106,7 @@ fn frame_artifacts_use_the_frame_profile_and_schema_2_target_manifest() {
         )
         .expect("frame with metadata renders to PDF");
     assert_eq!(pdf.profile_digest(), frame_profile.profile_digest());
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    let pdf = pdf_text(pdf.artifact().bytes());
     assert!(pdf.contains("<er:manifest>{\"schema_version\":2,"));
     assert!(pdf.contains("\"target\":{\"kind\":\"frame\",\"ordinal\":1,\"name\":\"Roadmap\"}"));
 
@@ -152,7 +153,7 @@ fn every_frame_format_uses_the_target_dimensions_independently() {
                 assert_eq!((decoded.width, decoded.height), (100, 80));
             }
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                let pdf = pdf_text(outcome.artifact().bytes());
                 assert!(pdf.contains("/MediaBox [0 0 75 60]"), "{pdf}");
             }
             _ => unreachable!("the test enumerates every supported frame format"),
