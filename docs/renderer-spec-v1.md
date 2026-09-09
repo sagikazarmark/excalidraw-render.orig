@@ -683,7 +683,11 @@ The image/error fallback is never corner-clipped, as the reference canvas clips
 only the image it draws. The reference SVG declares the same `<clipPath>` but
 does not offset its rectangle by the crop and sets `clip-path` as a namespaced
 attribute, as it does for frame clips, so browsers leave its rounded images
-square; revision 1 follows the canvas and clips in every format.
+square while the reference canvas rounds them; revision 1 follows the canvas
+and clips in every format. The namespaced attribute is the same reference
+authority divergence Section 8.4 records for frame clips, and a `usvg`-based
+comparison is blind to it in the same way: only the canonical Chromium raster
+of the reference SVG shows the difference.
 
 In dark mode the reference SVG puts `IMAGE_INVERT_FILTER`,
 `invert(100%) hue-rotate(180deg) saturate(1.25)`, on each raster image's `<use>`
@@ -967,17 +971,40 @@ repeated per child. Clip IDs are renderer-owned and keyed by the frame's index
 in the source `elements` array; an element id is untrusted input and is not
 used as an XML ID. The clip rectangle rotates by the frame's angle in degrees,
 as the outline does; revision 1 does not reproduce the reference's
-radians-valued `rotate()` on its clip definition. The frame clips are followed
-in `<defs>` by each rounded image's corner clip (Section 8.2), in paint order,
-keyed `image-clip-<source index>`, and then, in a dark-mode export that has
-images, by the dark-mode image filters it references (Section 8.2), each defined
-once: `dark-mode-raster-image` (the image filter followed by the theme filter)
-before `dark-mode-nested-svg-image` (the theme filter alone). Each filter spells
-its CSS filter functions as the Filter Effects primitives they are defined as —
-`feComponentTransfer` tables for `invert`, `feColorMatrix` `hueRotate` and
-`saturate` — with `color-interpolation-filters="sRGB"`, and each `<image>`
-references its filter by `filter="url(#…)"`. A light-mode export defines and
-references no filter.
+radians-valued `rotate()` on its clip definition.
+
+Nor does revision 1 reproduce the reference's attribute spelling. The reference
+SVG sets each clipped group's `clip-path` through `setAttributeNS` with the SVG
+namespace, so it serializes as
+`<g xmlns:nsN="http://www.w3.org/2000/svg" nsN:clip-path="url(#id)">`, and
+the pinned Chromium does not read a namespaced attribute as the `clip-path`
+presentation attribute: the reference SVG paints a frame's children unclipped
+there while the reference canvas clips them. This is a reference authority
+divergence, not a format difference the revision preserves. Revision 1 emits
+the plain `clip-path` attribute and follows the canvas in every format, as it
+does for the rounded-image corner clip the same spelling affects (Section 8.2).
+A `usvg`-based rasterization accepts an attribute in the SVG namespace as the
+property it names and clips the reference SVG anyway, so neither the in-process
+`resvg` raster dimension of the registered-case SVG harness nor the pure-Rust
+SVG viewer (Section 14.3) observes the divergence; only the canonical Chromium
+raster of the reference SVG shows it. A scene-export PDF gate that took that
+raster as its authority (Section 8.6) would therefore disagree with a correct
+PDF wherever a frame's children overflow the frame. The frame-export gate is
+unaffected today: in every target it exports whose children are clipped, the
+clip is an unrotated frame rectangle coinciding with the zero-padding page, so
+what the clip removes lies off the page; a rotated target with overflowing
+children would expose the divergence there too.
+
+The frame clips are followed in `<defs>` by each rounded image's corner clip
+(Section 8.2), in paint order, keyed `image-clip-<source index>`, and then, in
+a dark-mode export that has images, by the dark-mode image filters it
+references (Section 8.2), each defined once: `dark-mode-raster-image` (the
+image filter followed by the theme filter) before `dark-mode-nested-svg-image`
+(the theme filter alone). Each filter spells its CSS filter functions as the
+Filter Effects primitives they are defined as — `feComponentTransfer` tables
+for `invert`, `feColorMatrix` `hueRotate` and `saturate` — with
+`color-interpolation-filters="sRGB"`, and each `<image>` references its filter
+by `filter="url(#…)"`. A light-mode export defines and references no filter.
 
 Request-scoped and frame-batch physical caches MAY retain qualified source
 decodes and identical derived bytes. Each SVG target nevertheless derives the

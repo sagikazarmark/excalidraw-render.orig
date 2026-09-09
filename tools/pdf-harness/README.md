@@ -63,4 +63,10 @@ bash tools/pdf-viewer-qualification.sh reproduce
 
 The valid PDF is explicitly a vector-only calibration control rather than a
 renderer snapshot or reference PDF. Official SVG rendered by canonical Chromium
-remains the visual authority.
+remains the visual authority. That authority has one recorded blind spot: the
+official exporter writes frame and rounded-image clips as a namespaced
+`clip-path` attribute that Chromium does not apply, so for a scene with frames
+the authority raster is unclipped while a correct renderer PDF, which follows
+the official canvas, clips (spec 8.4). The frame-export gate escapes it because
+each exported clip coincides with its page; a scene-export PDF gate would not
+(see the Canonical PDF harnesses section of `tests/conformance/README.md`).

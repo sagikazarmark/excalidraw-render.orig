@@ -40,6 +40,10 @@ _Avoid_: Drop-in replacement, pixel-perfect rendering
 Perceptual parity judged separately against the reference renderer's SVG and PNG outputs, preserving their consumer-visible differences unless a compatibility exception applies.
 _Avoid_: Cross-format normalization
 
+**Reference authority divergence**:
+A point where the reference renderer's SVG and canvas outputs disagree because of a defect in the reference exporter's serialization rather than an intended format-specific difference, and the renderer follows one of them in every format: the canvas, for frame and rounded-image clipping, whose `clip-path` the official SVG writes as a namespaced attribute that browsers do not apply. It is recorded in the spec rather than diagnosed, excepted, or pinned, and a harness observes it only when its official evidence is the artifact the renderer does not follow.
+_Avoid_: Official SVG bug, compatibility exception (for a reference exporter defect), known defect, format-specific parity (for the unfollowed artifact)
+
 **Compatibility normalization**:
 Deterministic preprocessing that reproduces the rendering-affecting behavior of the reference renderer's public restore path without its random or time-dependent repairs.
 _Avoid_: Full restore emulation, input cleanup

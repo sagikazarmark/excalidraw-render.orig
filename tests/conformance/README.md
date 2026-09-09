@@ -87,6 +87,31 @@ official package has no glyph for — its fontconfig fallback — since the
 profile's environment-dependent inputs are part of its identity; the case
 `purpose` and exception `reason` name the face that supplied it.
 
+Not every difference between the two official artifacts is one the renderer
+preserves. The official 0.18.1 exporter sets frame clipping, and the
+rounded-image corner clip, through `setAttributeNS` with the SVG namespace, so
+its SVG carries `<g xmlns:nsN="http://www.w3.org/2000/svg"
+nsN:clip-path="url(#id)">` rather than a plain `clip-path` attribute. Chromium
+does not treat the namespaced attribute as the `clip-path` presentation
+attribute, so the official SVG renders unclipped in a browser while the
+official canvas PNG clips. `focused.frame-clip-mask-sharing.v1` shows it:
+`evidence/official.svg` reads `ns1:clip-path="url(#clip-frame)"`, and the
+approved `official-svg.rgba` (the Chromium raster) and `official-png.rgba` (the
+canvas) differ by 6,491 pixels (1.74%) inside the overflowing rectangle. This
+is a reference authority divergence (spec 8.2 and 8.4), not a known defect or
+an exception: the renderer emits a real `clip-path` and follows the canvas in
+every format, so its SVG agrees with the official PNG rather than with the
+official SVG's browser appearance. The raster dimension of
+`parity_registered_case_svg` cannot observe this, because usvg accepts an
+attribute in the SVG namespace as the property it names
+(`usvg-0.45.1/src/parser/svgtree/parse.rs:234-236`) and therefore clips the
+official SVG as well; the pure-Rust canonical viewer parses with the same rule
+and is blind the same way. Only a canonical Chromium raster of the official SVG
+shows the difference, so a gate whose authority is that raster — the canonical
+Chromium SVG viewer once it admits frame scenes, or a scene-export PDF gate
+(see Canonical PDF harnesses) — sees the renderer clip what the official SVG
+does not.
+
 `xtask` resolves every case through this file, so adding a scene case is a
 registry entry plus a case directory rather than a new generator script or a new
 constant. `conformance-case.mjs` reads the same file and refuses any entry whose
@@ -289,3 +314,17 @@ record naming a target or viewer the case does not export. The rotated frame's
 records (#119) absorb the one partial row of a fractional 96 DPI page, which
 Chromium's `<img>` raster of the official SVG rescales and no exact-scale
 viewer render reproduces.
+
+The PDF authority — official SVG rendered by canonical Chromium — carries the
+frame-clipping caveat recorded under the case registry above. Chromium applies
+no clip for the official SVG's namespaced `clip-path`, so for a scene with
+frames the authority raster shows children overflowing their frame while the
+renderer's PDF, which follows the canvas (spec 8.4 and 8.6), clips them. A
+scene-export PDF gate judged against that raster would fail a correct PDF in
+exactly the overflow, and would need the official PNG or a reviewed delta as
+its authority there before it could be approved. The frame-export gate is
+unaffected today: in every target it exports whose children are clipped, the
+frame is unrotated and its clip coincides with the zero-padding page, so what
+the clip removes lies off the page and both authorities agree on every pixel
+the viewers render. A rotated target with overflowing children would not: its
+page is the frame's AABB while its clip is the smaller rotated rectangle.
