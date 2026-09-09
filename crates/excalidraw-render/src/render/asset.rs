@@ -27,6 +27,8 @@ use super::ResolvedImageAsset;
 mod bmp;
 mod ico;
 pub(super) mod svg;
+#[cfg(test)]
+mod tests;
 
 const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
 const JPEG_SIGNATURE: &[u8; 3] = b"\xff\xd8\xff";
@@ -38,7 +40,7 @@ const BMP_SIGNATURE: &[u8; 2] = b"BM";
 const ICO_SIGNATURE: &[u8; 4] = b"\0\0\x01\0";
 const IDENTITY_DOMAIN: &[u8] = b"excalidraw-render:semantic-asset:v1\0";
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum MediaKind {
     Png,
     Jpeg,

@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 pub mod approved_scenes;
+pub mod codec_fixtures;
 pub mod image_scene;
 pub mod parse_limits;
 pub mod pdf_harness;

@@ -1,10 +1,23 @@
+//! Static PNG and APNG assets end to end: the octets a direct SVG passes
+//! through, the pixels the PNG target projects, the lossless PDF embedding,
+//! the session's asset diagnostics (media claims, supplements, animation
+//! flattening, missing and unsupported payloads) and every accounting test.
+//! Decoder behaviour (colour chunks, orientation, APNG frame validation, the
+//! malformed chunk layouts) is tested at the asset cache's own seam in
+//! `src/render/asset/tests.rs`.
+
 use base64::Engine as _;
 use excalidraw_render::{
     DiagnosticCode, ErrorCode, ErrorDetails, OutputFormat, Recovery, RenderRequest, Renderer,
     ResourceLimits, SceneDocument, SupplementalAssets,
 };
 
-use crate::common::image_scene::image_scene_from_data_url;
+use crate::common::codec_fixtures::{
+    apng, exif_orientation_tiff, png_rgba, png_with_chunks_before_idat,
+};
+use crate::common::image_scene::{
+    data_url, image_scene, image_scene_from_data_url, image_scene_with_element_fields,
+};
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request};
 
@@ -13,14 +26,9 @@ const PNG_BASE64: &str =
 
 #[test]
 fn direct_svg_preserves_validated_static_png_octets_in_a_canonical_data_url() {
-    let scene = image_scene(&format!("data:image/png;base64,{PNG_BASE64}"));
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("SVG request is valid");
+    let scene = fixture_png_scene();
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("a referenced static PNG renders");
+    let outcome = render(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(outcome.report().diagnostics().is_empty());
@@ -31,14 +39,9 @@ fn direct_svg_preserves_validated_static_png_octets_in_a_canonical_data_url() {
 
 #[test]
 fn png_projects_canonical_rgba_pixels_into_the_image_occurrence() {
-    let scene = image_scene(&format!("data:image/png;base64,{PNG_BASE64}"));
-    let request = RenderRequest::builder(OutputFormat::Png)
-        .build()
-        .expect("PNG request is valid");
+    let scene = fixture_png_scene();
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("a referenced static PNG renders");
+    let outcome = render(&scene, OutputFormat::Png);
     let decoded = decode_png(outcome.artifact().bytes());
 
     assert_eq!((decoded.width, decoded.height), (21, 21));
@@ -47,14 +50,29 @@ fn png_projects_canonical_rgba_pixels_into_the_image_occurrence() {
 }
 
 #[test]
+fn pdf_embeds_static_png_as_a_lossless_rgb_image_with_a_soft_mask() {
+    let scene = fixture_png_scene();
+
+    let outcome = render(&scene, OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+
+    assert!(pdf.contains("/Subtype /Image"));
+    assert!(pdf.contains("/ColorSpace /CS1"));
+    assert!(pdf.contains("/ColorSpace /DeviceGray"));
+    assert!(pdf.contains("/SMask "));
+    assert!(pdf.contains("/Im0 Do"));
+    assert!(!pdf.contains("pdf.raster-fallback"));
+    assert!(outcome.report().diagnostics().is_empty());
+}
+
+#[test]
 fn apng_is_preserved_in_svg_and_flattened_to_frame_zero_in_png_and_pdf() {
-    let apng = fixture_apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
-    let encoded = base64::engine::general_purpose::STANDARD.encode(&apng);
-    let scene = image_scene(&format!("data:image/png;base64,{encoded}"));
+    let apng = apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
+    let scene = image_scene(&apng, "image/png", 1, 1);
 
     let svg_outcome = render(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(svg_outcome.artifact().bytes()).expect("SVG is UTF-8");
-    assert!(svg.contains(&format!("data:image/png;base64,{encoded}")));
+    assert!(svg.contains(&data_url("image/png", &apng)));
     assert!(svg_outcome.report().diagnostics().is_empty());
 
     for format in [OutputFormat::Png, OutputFormat::Pdf] {
@@ -90,32 +108,8 @@ fn apng_is_preserved_in_svg_and_flattened_to_frame_zero_in_png_and_pdf() {
 }
 
 #[test]
-fn one_frame_apng_does_not_report_animation_flattening() {
-    let mut apng = fixture_png(1, 1, &[[255, 0, 0, 255]]);
-    apng = png_with_chunks_before_idat(
-        &apng,
-        &[
-            (
-                *b"acTL",
-                [1_u32.to_be_bytes(), 0_u32.to_be_bytes()].concat(),
-            ),
-            (*b"fcTL", apng_frame_control(0, 1, 1)),
-        ],
-    );
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(apng)
-    ));
-
-    for format in [OutputFormat::Png, OutputFormat::Pdf] {
-        let outcome = render(&scene, format);
-        assert!(outcome.report().diagnostics().is_empty());
-    }
-}
-
-#[test]
 fn shared_apng_bytes_report_each_rendered_occurrence() {
-    let apng = fixture_apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
+    let apng = apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
     let scene = two_payload_scene(&apng, &apng);
 
     let outcome = render(&scene, OutputFormat::Png);
@@ -140,12 +134,9 @@ fn shared_apng_bytes_report_each_rendered_occurrence() {
 
 #[test]
 fn apng_validation_charges_each_additional_frame_without_deriving_svg_pixels() {
-    let apng = fixture_apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
+    let apng = apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
     let payload_bytes = u64::try_from(apng.len()).expect("fixture length fits u64");
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(apng)
-    ));
+    let scene = image_scene(&apng, "image/png", 1, 1);
 
     for (limit, expected_diagnostics) in [(payload_bytes + 4, 0), (payload_bytes + 3, 1)] {
         let limits = ResourceLimits::builder()
@@ -158,9 +149,7 @@ fn apng_validation_charges_each_additional_frame_without_deriving_svg_pixels() {
             .resource_limits(limits)
             .build()
             .expect("SVG request is valid");
-        let outcome = Renderer::new()
-            .render(&scene, &request)
-            .expect("APNG validation has local resource recovery");
+        let outcome = render_with_request(&scene, &request);
 
         assert_eq!(outcome.report().diagnostics().len(), expected_diagnostics);
         if expected_diagnostics == 1 {
@@ -174,7 +163,7 @@ fn apng_validation_charges_each_additional_frame_without_deriving_svg_pixels() {
 
 #[test]
 fn png_bilinear_projection_charges_twelve_samples_per_occurrence_pixel() {
-    let scene = image_scene(&format!("data:image/png;base64,{PNG_BASE64}"));
+    let scene = fixture_png_scene();
     for (limit, expected_diagnostics) in [(32, 0), (31, 1)] {
         let limits = ResourceLimits::builder()
             .max_element_work_units(limit)
@@ -184,9 +173,7 @@ fn png_bilinear_projection_charges_twelve_samples_per_occurrence_pixel() {
             .resource_limits(limits)
             .build()
             .expect("PNG request is valid");
-        let outcome = Renderer::new()
-            .render(&scene, &request)
-            .expect("image projection has local resource recovery");
+        let outcome = render_with_request(&scene, &request);
 
         assert_eq!(outcome.report().diagnostics().len(), expected_diagnostics);
         if expected_diagnostics == 1 {
@@ -200,7 +187,7 @@ fn png_bilinear_projection_charges_twelve_samples_per_occurrence_pixel() {
 
 #[test]
 fn png_image_local_work_includes_projection_mask_and_composite_samples() {
-    let scene = image_scene(&format!("data:image/png;base64,{PNG_BASE64}"));
+    let scene = fixture_png_scene();
     for (limit, expected_diagnostics) in [(32, 0), (31, 1)] {
         let limits = ResourceLimits::builder()
             .max_element_work_units(limit)
@@ -210,9 +197,7 @@ fn png_image_local_work_includes_projection_mask_and_composite_samples() {
             .resource_limits(limits)
             .build()
             .expect("PNG request is valid");
-        let outcome = Renderer::new()
-            .render(&scene, &request)
-            .expect("image raster work has local recovery");
+        let outcome = render_with_request(&scene, &request);
 
         assert_eq!(outcome.report().diagnostics().len(), expected_diagnostics);
         if expected_diagnostics == 1 {
@@ -222,27 +207,6 @@ fn png_image_local_work_includes_projection_mask_and_composite_samples() {
             );
         }
     }
-}
-
-#[test]
-fn pdf_embeds_static_png_as_a_lossless_rgb_image_with_a_soft_mask() {
-    let scene = image_scene(&format!("data:image/png;base64,{PNG_BASE64}"));
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("PDF request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("a referenced static PNG renders");
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
-
-    assert!(pdf.contains("/Subtype /Image"));
-    assert!(pdf.contains("/ColorSpace /CS1"));
-    assert!(pdf.contains("/ColorSpace /DeviceGray"));
-    assert!(pdf.contains("/SMask "));
-    assert!(pdf.contains("/Im0 Do"));
-    assert!(!pdf.contains("pdf.raster-fallback"));
-    assert!(outcome.report().diagnostics().is_empty());
 }
 
 #[test]
@@ -258,9 +222,7 @@ fn supplemental_asset_diagnostics_sort_by_file_id_not_reference_order() {
         .build()
         .expect("SVG request is valid");
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("unsupported supplements have local recovery");
+    let outcome = render_with_request(&scene, &request);
     let asset_ids: Vec<&str> = outcome
         .report()
         .diagnostics()
@@ -276,7 +238,7 @@ fn supplemental_asset_diagnostics_sort_by_file_id_not_reference_order() {
 
 #[test]
 fn scene_payload_remains_authoritative_over_a_conflicting_supplement() {
-    let scene = image_scene(&format!("data:image/png;base64,{PNG_BASE64}"));
+    let scene = fixture_png_scene();
     let assets = SupplementalAssets::builder()
         .asset("asset", b"not the scene PNG".to_vec())
         .build()
@@ -286,9 +248,7 @@ fn scene_payload_remains_authoritative_over_a_conflicting_supplement() {
         .build()
         .expect("SVG request is valid");
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("the authoritative scene PNG renders");
+    let outcome = render_with_request(&scene, &request);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(svg.contains(&format!("data:image/png;base64,{PNG_BASE64}")));
@@ -320,9 +280,7 @@ fn malformed_scene_record_still_blocks_a_same_id_supplement() {
         .build()
         .expect("SVG request is valid");
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("malformed authoritative content has local recovery");
+    let outcome = render_with_request(&scene, &request);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(!svg.contains("<image "));
@@ -350,9 +308,7 @@ fn supplemental_only_png_fills_the_referenced_file_id() {
         .build()
         .expect("SVG request is valid");
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("the supplemental PNG renders");
+    let outcome = render_with_request(&scene, &request);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(svg.contains(&format!("data:image/png;base64,{PNG_BASE64}")));
@@ -380,9 +336,7 @@ fn referenced_non_png_and_corrupt_png_supplements_use_typed_recovery() {
             .build()
             .expect("SVG request is valid");
 
-        let outcome = Renderer::new()
-            .render(&image_scene_without_files(), &request)
-            .expect("invalid image has local recovery");
+        let outcome = render_with_request(&image_scene_without_files(), &request);
 
         assert_eq!(diagnostic_codes(&outcome), [expected]);
         assert_eq!(outcome.report().diagnostics()[0].json_pointer(), "");
@@ -391,15 +345,14 @@ fn referenced_non_png_and_corrupt_png_supplements_use_typed_recovery() {
 
 #[test]
 fn sniffed_png_type_wins_over_a_scene_media_claim() {
-    let scene =
-        image_scene_with_media_type(&format!("data:image/png;base64,{PNG_BASE64}"), "image/jpeg");
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("SVG request is valid");
+    let scene = image_scene_from_data_url(
+        &format!("data:image/png;base64,{PNG_BASE64}"),
+        "image/jpeg",
+        1,
+        1,
+    );
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("the sniffed PNG renders");
+    let outcome = render(&scene, OutputFormat::Svg);
     let [diagnostic] = outcome.report().diagnostics() else {
         panic!("one media mismatch is reported");
     };
@@ -432,13 +385,8 @@ fn identical_png_bytes_keep_each_occurrence_media_claim_and_owner() {
         }}"#
     );
     let scene = SceneDocument::parse(json.as_bytes()).expect("claim scene is admitted");
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("SVG request is valid");
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("validated shared PNG bytes render");
+    let outcome = render(&scene, OutputFormat::Svg);
 
     assert_eq!(
         outcome
@@ -485,13 +433,8 @@ fn unreferenced_png_like_records_do_not_participate_in_validation() {
         }}"#,
     )
     .expect("scene is admitted");
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("SVG request is valid");
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("unreferenced payload does not affect rendering");
+    let outcome = render(&scene, OutputFormat::Svg);
 
     assert!(outcome.report().diagnostics().is_empty());
 }
@@ -499,13 +442,8 @@ fn unreferenced_png_like_records_do_not_participate_in_validation() {
 #[test]
 fn duplicate_semantic_png_bytes_share_one_pdf_resource_but_render_twice() {
     let scene = two_image_scene();
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("PDF request is valid");
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("both PNG occurrences render");
+    let outcome = render(&scene, OutputFormat::Pdf);
     let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
 
     assert_eq!(pdf.matches("/ColorSpace /CS1").count(), 1);
@@ -547,8 +485,8 @@ fn semantic_pixel_work_shares_but_payload_occurrence_admission_does_not() {
 
 #[test]
 fn aggregate_asset_bytes_and_distinct_decoded_pixels_cross_before_second_decode() {
-    let red = fixture_png(1, 1, &[[255, 0, 0, 255]]);
-    let blue = fixture_png(1, 1, &[[0, 0, 255, 255]]);
+    let red = png_rgba(1, 1, &[[255, 0, 0, 255]]);
+    let blue = png_rgba(1, 1, &[[0, 0, 255, 255]]);
     let scene = two_payload_scene(&red, &blue);
     let total_bytes = u64::try_from(red.len() + blue.len()).expect("fixture bytes fit u64");
     let byte_limits = ResourceLimits::builder()
@@ -585,11 +523,8 @@ fn aggregate_asset_bytes_and_distinct_decoded_pixels_cross_before_second_decode(
 
 #[test]
 fn asset_byte_limit_recovers_before_static_png_validation_or_decode() {
-    let png = fixture_png(2, 1, &[[255, 0, 0, 255], [0, 0, 255, 255]]);
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(&png)
-    ));
+    let png = png_rgba(2, 1, &[[255, 0, 0, 255], [0, 0, 255, 255]]);
+    let scene = image_scene(&png, "image/png", 1, 1);
     let limits = ResourceLimits::builder()
         .max_asset_bytes(u64::try_from(png.len() - 1).expect("fixture length fits u64"))
         .build()
@@ -599,9 +534,7 @@ fn asset_byte_limit_recovers_before_static_png_validation_or_decode() {
         .build()
         .expect("SVG request is valid");
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("local asset-byte excess has format-specific recovery");
+    let outcome = render_with_request(&scene, &request);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert_eq!(
@@ -613,11 +546,8 @@ fn asset_byte_limit_recovers_before_static_png_validation_or_decode() {
 
 #[test]
 fn png_dimension_pixel_and_work_limits_recover_from_ihdr_before_decode() {
-    let png = fixture_png(2, 1, &[[255, 0, 0, 255], [0, 0, 255, 255]]);
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(&png)
-    ));
+    let png = png_rgba(2, 1, &[[255, 0, 0, 255], [0, 0, 255, 255]]);
+    let scene = image_scene(&png, "image/png", 1, 1);
     let cases = [
         (
             ResourceLimits::builder().max_raster_dimension(1),
@@ -640,20 +570,15 @@ fn png_dimension_pixel_and_work_limits_recover_from_ihdr_before_decode() {
             .resource_limits(limits.build().expect("resource limits are valid"))
             .build()
             .expect("PNG request is valid");
-        let outcome = Renderer::new()
-            .render(&scene, &request)
-            .expect("local static PNG limit has format-specific recovery");
+        let outcome = render_with_request(&scene, &request);
         assert_eq!(diagnostic_codes(&outcome), [expected]);
     }
 }
 
 #[test]
 fn direct_svg_validates_static_png_without_deriving_decoded_pixels() {
-    let png = fixture_png(2, 1, &[[255, 0, 0, 255], [0, 0, 255, 255]]);
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(&png)
-    ));
+    let png = png_rgba(2, 1, &[[255, 0, 0, 255], [0, 0, 255, 255]]);
+    let scene = image_scene(&png, "image/png", 1, 1);
     let limits = ResourceLimits::builder()
         .max_raster_dimension(1)
         .max_decoded_pixels_per_asset(1)
@@ -665,193 +590,45 @@ fn direct_svg_validates_static_png_without_deriving_decoded_pixels() {
         .build()
         .expect("SVG request is valid");
 
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("direct SVG validates compressed PNG without pixel derivation");
+    let outcome = render_with_request(&scene, &request);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(outcome.report().diagnostics().is_empty());
     assert!(svg.contains("<image "));
 }
 
-#[test]
-fn direct_svg_rejects_corrupt_idat_with_a_valid_chunk_crc() {
-    let mut png = fixture_png(1, 1, &[[255, 0, 0, 255]]);
-    mutate_first_idat(&mut png, |data| {
-        data[0] ^= 0xff;
-    });
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(png)
-    ));
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("SVG request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("corrupt image data has local recovery");
-
-    assert_eq!(
-        diagnostic_codes(&outcome),
-        [DiagnosticCode::IMAGE_DECODE_FAILED]
-    );
-}
-
-#[test]
-fn direct_svg_validates_every_apng_frame_before_passthrough() {
-    let mut apng = fixture_apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
-    mutate_first_png_chunk(&mut apng, *b"fdAT", |data| {
-        data[4] ^= 0xff;
-    });
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(apng)
-    ));
-
-    let outcome = render(&scene, OutputFormat::Svg);
-
-    assert_eq!(
-        diagnostic_codes(&outcome),
-        [DiagnosticCode::IMAGE_DECODE_FAILED]
-    );
-    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-    assert!(!svg.contains("<image "));
-}
-
-#[test]
-fn direct_svg_validates_animation_after_a_separate_apng_default_image() {
-    let apng = apng_with_separate_default(true);
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(apng)
-    ));
-
-    let outcome = render(&scene, OutputFormat::Svg);
-
-    assert_eq!(
-        diagnostic_codes(&outcome),
-        [DiagnosticCode::IMAGE_DECODE_FAILED]
-    );
-}
-
-#[test]
-fn png_selects_animation_frame_zero_instead_of_a_separate_apng_default_image() {
-    let apng = apng_with_separate_default(false);
-
-    assert_eq!(rendered_image_center(&apng), [0, 0, 255, 255]);
-}
-
-#[test]
-fn png_normalizes_gama_to_srgb_and_srgb_signaling_takes_precedence() {
-    let source = fixture_png(1, 1, &[[128, 128, 128, 255]]);
-    let linear =
-        png_with_chunks_before_idat(&source, &[(*b"gAMA", 100_000_u32.to_be_bytes().to_vec())]);
-    let srgb = png_with_chunks_before_idat(
-        &source,
-        &[
-            (*b"gAMA", 100_000_u32.to_be_bytes().to_vec()),
-            (*b"sRGB", vec![0]),
-        ],
-    );
-
-    assert_eq!(rendered_image_center(&linear), [188, 188, 188, 255]);
-    assert_eq!(rendered_image_center(&srgb), [128, 128, 128, 255]);
-}
-
-#[test]
-fn png_cicp_takes_precedence_over_legacy_color_chunks() {
-    let source = fixture_png(1, 1, &[[128, 128, 128, 255]]);
-    let tagged = png_with_chunks_before_idat(
-        &source,
-        &[
-            (*b"gAMA", 100_000_u32.to_be_bytes().to_vec()),
-            (*b"cICP", vec![1, 13, 0, 1]),
-        ],
-    );
-
-    assert_eq!(rendered_image_center(&tagged), [128, 128, 128, 255]);
-}
-
-#[test]
-fn png_standard_sdr_projection_uses_the_gain_map_base_image() {
-    let source = fixture_png(1, 1, &[[64, 128, 192, 255]]);
-    let gain_map = fixture_png(1, 1, &[[255, 255, 255, 255]]);
-    let tagged = png_with_chunks_before_idat(
-        &source,
-        &[(*b"gmAP", iso_gain_map_metadata()), (*b"gdAT", gain_map)],
-    );
-
-    assert_eq!(rendered_image_center(&tagged), [64, 128, 192, 255]);
-}
-
-#[test]
-fn png_canonicalizes_alpha_through_premultiplied_canvas_storage() {
-    let partial = fixture_png(1, 1, &[[200, 100, 50, 128]]);
-    let transparent = fixture_png(1, 1, &[[255, 17, 33, 0]]);
-
-    assert_eq!(
-        rendered_image_center_without_background(&partial),
-        [199, 100, 50, 128]
-    );
-    assert_eq!(
-        rendered_image_center_without_background(&transparent),
-        [0, 0, 0, 0]
-    );
-}
-
-#[test]
-fn png_tone_maps_hdr_cicp_instead_of_treating_samples_as_srgb() {
-    let source = fixture_png(1, 1, &[[128, 128, 128, 255]]);
-    let hdr = png_with_chunks_before_idat(&source, &[(*b"cICP", vec![9, 16, 0, 1])]);
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(&hdr)
-    ));
-    let request = RenderRequest::builder(OutputFormat::Png)
-        .build()
-        .expect("PNG request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("unsupported HDR signaling has local recovery");
-
-    assert!(outcome.report().diagnostics().is_empty());
-    assert_eq!(rendered_image_center(&hdr), [24, 24, 24, 255]);
-}
-
+/// The one cross-format orientation check: the asset cache turns the pixels
+/// and swaps the dimensions (tested at its seam for every orientation and
+/// codec), and each encoder then consumes the oriented resolution while the
+/// direct SVG keeps the source bytes.
 #[test]
 fn png_and_pdf_apply_png_exif_orientation_while_svg_preserves_source_bytes() {
-    let source = fixture_png(2, 1, &[[255, 0, 0, 255], [0, 0, 255, 255]]);
-    let exif = exif_orientation(6);
-    for oriented in [
-        png_with_chunks_before_idat(&source, &[(*b"eXIf", exif.clone())]),
-        png_with_chunk_before_iend(&source, *b"eXIf", &exif),
-    ] {
-        let encoded = base64::engine::general_purpose::STANDARD.encode(&oriented);
-        let scene = image_scene_with_size(&format!("data:image/png;base64,{encoded}"), 10, 20);
+    let oriented = png_with_chunks_before_idat(
+        &png_rgba(2, 1, &[[255, 0, 0, 255], [0, 0, 255, 255]]),
+        &[(*b"eXIf", exif_orientation_tiff(6))],
+    );
+    let scene = image_scene(&oriented, "image/png", 10, 20);
 
-        let svg_outcome = render(&scene, OutputFormat::Svg);
-        let svg = std::str::from_utf8(svg_outcome.artifact().bytes()).expect("SVG is UTF-8");
-        assert!(svg.contains(&format!("data:image/png;base64,{encoded}")));
+    let svg_outcome = render(&scene, OutputFormat::Svg);
+    let svg = std::str::from_utf8(svg_outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains(&data_url("image/png", &oriented)));
 
-        let decoded = decode_png(render(&scene, OutputFormat::Png).artifact().bytes());
-        assert_eq!((decoded.width, decoded.height), (30, 40));
-        let top = decoded.pixel(15, 14);
-        let bottom = decoded.pixel(15, 25);
-        assert!(top[0] > 240 && top[2] < 20 && top[3] == 255);
-        assert!(bottom[0] < 20 && bottom[2] > 240 && bottom[3] == 255);
+    let decoded = decode_png(render(&scene, OutputFormat::Png).artifact().bytes());
+    assert_eq!((decoded.width, decoded.height), (30, 40));
+    let top = decoded.pixel(15, 14);
+    let bottom = decoded.pixel(15, 25);
+    assert!(top[0] > 240 && top[2] < 20 && top[3] == 255);
+    assert!(bottom[0] < 20 && bottom[2] > 240 && bottom[3] == 255);
 
-        let pdf = render(&scene, OutputFormat::Pdf);
-        let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
-        assert!(pdf.contains("/Width 1\n/Height 2"));
-    }
+    let pdf = render(&scene, OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
+    assert!(pdf.contains("/Width 1\n/Height 2"));
 }
 
 #[test]
 fn malformed_base64_charges_only_complete_valid_prefix_quanta() {
     for encoded in ["AAAA$", "TQ==$", "TWFu=AAA"] {
-        let scene = image_scene(&format!("data:image/png;base64,{encoded}"));
+        let scene = png_scene(&format!("data:image/png;base64,{encoded}"));
         let limits = ResourceLimits::builder()
             .max_asset_bytes(3)
             .build()
@@ -861,9 +638,7 @@ fn malformed_base64_charges_only_complete_valid_prefix_quanta() {
             .build()
             .expect("SVG request is valid");
 
-        let outcome = Renderer::new()
-            .render(&scene, &request)
-            .expect("malformed base64 has local recovery");
+        let outcome = render_with_request(&scene, &request);
 
         assert_eq!(
             diagnostic_codes(&outcome),
@@ -874,63 +649,8 @@ fn malformed_base64_charges_only_complete_valid_prefix_quanta() {
 }
 
 #[test]
-fn direct_svg_rejects_a_png_whose_ihdr_is_not_the_first_chunk() {
-    let png = fixture_png(1, 1, &[[255, 0, 0, 255]]);
-    let mut malformed = Vec::from(&png[..8]);
-    append_png_chunk(&mut malformed, *b"tEXt", b"key\0value");
-    malformed.extend_from_slice(&png[8..]);
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(malformed)
-    ));
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("SVG request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("invalid PNG structure has local recovery");
-    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-
-    assert_eq!(
-        diagnostic_codes(&outcome),
-        [DiagnosticCode::IMAGE_DECODE_FAILED]
-    );
-    assert!(!svg.contains("<image "));
-}
-
-#[test]
-fn direct_svg_rejects_color_chunks_that_split_or_follow_image_data() {
-    let source = fixture_png(1, 1, &[[255, 0, 0, 255]]);
-    let idat = png_chunk_offset(&source, *b"IDAT");
-    let idat_length = usize::try_from(u32::from_be_bytes(
-        source[idat..idat + 4]
-            .try_into()
-            .expect("fixture IDAT length"),
-    ))
-    .expect("fixture IDAT length fits usize");
-    let idat_end = idat + 12 + idat_length;
-    let mut split = Vec::from(&source[..idat_end]);
-    append_png_chunk(&mut split, *b"cICP", &[1, 13, 0, 1]);
-    split.extend_from_slice(&source[idat..]);
-    let after = png_with_chunk_before_iend(&source, *b"cICP", &[1, 13, 0, 1]);
-
-    for malformed in [split, after] {
-        let scene = image_scene(&format!(
-            "data:image/png;base64,{}",
-            base64::engine::general_purpose::STANDARD.encode(malformed)
-        ));
-        let outcome = render(&scene, OutputFormat::Svg);
-        assert_eq!(
-            diagnostic_codes(&outcome),
-            [DiagnosticCode::IMAGE_DECODE_FAILED]
-        );
-    }
-}
-
-#[test]
 fn crop_and_negative_scale_map_the_same_static_png_source_in_every_format() {
-    let png = fixture_png(
+    let png = png_rgba(
         3,
         2,
         &[
@@ -942,11 +662,11 @@ fn crop_and_negative_scale_map_the_same_static_png_source_in_every_format() {
             [255, 255, 0, 255],
         ],
     );
-    let data_url = format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(&png)
+    let scene = image_scene_with_element_fields(
+        Some(("image/png", &png)),
+        r#""x":0,"y":0,"width":20,"height":20,"angle":0,"opacity":100,"scale":[-1,-1],
+           "crop":{"x":1,"y":0,"width":2,"height":2,"naturalWidth":3,"naturalHeight":2}"#,
     );
-    let scene = cropped_image_scene(&data_url);
 
     let svg = render(&scene, OutputFormat::Svg)
         .artifact()
@@ -983,12 +703,7 @@ fn missing_local_image_uses_the_format_specific_recovery() {
     let scene = image_scene_without_files();
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let request = RenderRequest::builder(format)
-            .build()
-            .expect("request is valid");
-        let outcome = Renderer::new()
-            .render(&scene, &request)
-            .expect("missing image has a meaningful recovery");
+        let outcome = render(&scene, format);
 
         assert_eq!(
             diagnostic_codes(&outcome),
@@ -1044,19 +759,10 @@ fn missing_local_image_uses_the_format_specific_recovery() {
 #[test]
 fn avif_payload_is_not_accepted_in_revision_1_and_uses_the_unsupported_format_recovery() {
     let avif_ftyp = b"\x00\x00\x00\x1cftypavif\x00\x00\x00\x00avifmif1miaf";
-    let data_url = format!(
-        "data:image/avif;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(avif_ftyp)
-    );
-    let scene = image_scene_from_data_url(&data_url, "image/avif", 100, 80);
+    let scene = image_scene(avif_ftyp, "image/avif", 100, 80);
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let request = RenderRequest::builder(format)
-            .build()
-            .expect("request is valid");
-        let outcome = Renderer::new()
-            .render(&scene, &request)
-            .expect("an unaccepted raster family has a local recovery");
+        let outcome = render(&scene, format);
 
         assert_eq!(
             diagnostic_codes(&outcome),
@@ -1109,18 +815,10 @@ fn avif_payload_is_not_accepted_in_revision_1_and_uses_the_unsupported_format_re
 
 #[test]
 fn png_missing_image_paints_the_selected_official_placeholder() {
-    let scene = SceneDocument::parse(
-        br#"{
-            "type":"excalidraw","version":2,
-            "elements":[{
-                "id":"image","type":"image","x":0,"y":0,"width":100,"height":80,
-                "angle":0,"opacity":100,"fileId":"missing","status":"saved","scale":[1,1],
-                "seed":1,"updated":1
-            }],
-            "appState":{},"files":{}
-        }"#,
-    )
-    .expect("missing-image scene is admitted");
+    let scene = image_scene_with_element_fields(
+        None,
+        r#""x":0,"y":0,"width":100,"height":80,"angle":0,"opacity":100,"scale":[1,1]"#,
+    );
     let decoded = decode_png(render(&scene, OutputFormat::Png).artifact().bytes());
 
     assert_eq!((decoded.width, decoded.height), (120, 100));
@@ -1129,31 +827,22 @@ fn png_missing_image_paints_the_selected_official_placeholder() {
     assert!(icon[0] < 231 && icon[0] == icon[1] && icon[1] == icon[2] && icon[3] == 255);
 }
 
-fn image_scene(data_url: &str) -> SceneDocument {
-    image_scene_with_media_type(data_url, "image/png")
+/// A one-pixel image over a PNG-typed record carrying `data_url` as written.
+fn png_scene(data_url: &str) -> SceneDocument {
+    image_scene_from_data_url(data_url, "image/png", 1, 1)
 }
 
-fn image_scene_with_media_type(data_url: &str, media_type: &str) -> SceneDocument {
-    image_scene_from_data_url(data_url, media_type, 1, 1)
+/// [`png_scene`] over the one-pixel black `PNG_BASE64` fixture.
+fn fixture_png_scene() -> SceneDocument {
+    png_scene(&format!("data:image/png;base64,{PNG_BASE64}"))
 }
 
-fn image_scene_with_size(data_url: &str, width: u32, height: u32) -> SceneDocument {
-    image_scene_from_data_url(data_url, "image/png", width, height)
-}
-
+/// A one-pixel image whose `asset` file is absent from the scene.
 fn image_scene_without_files() -> SceneDocument {
-    SceneDocument::parse(
-        br#"{
-            "type":"excalidraw","version":2,
-            "elements":[{
-                "id":"image","type":"image","x":0,"y":0,"width":1,"height":1,
-                "angle":0,"opacity":100,"fileId":"asset","status":"saved","scale":[1,1],
-                "seed":1,"updated":1
-            }],
-            "appState":{},"files":{}
-        }"#,
+    image_scene_with_element_fields(
+        None,
+        r#""x":0,"y":0,"width":1,"height":1,"angle":0,"opacity":100,"scale":[1,1]"#,
     )
-    .expect("supplement-only scene is admitted")
 }
 
 fn two_image_scene() -> SceneDocument {
@@ -1175,8 +864,8 @@ fn two_image_scene() -> SceneDocument {
 }
 
 fn two_payload_scene(first: &[u8], second: &[u8]) -> SceneDocument {
-    let first = base64::engine::general_purpose::STANDARD.encode(first);
-    let second = base64::engine::general_purpose::STANDARD.encode(second);
+    let first = data_url("image/png", first);
+    let second = data_url("image/png", second);
     let json = format!(
         r#"{{
             "type":"excalidraw","version":2,
@@ -1185,8 +874,8 @@ fn two_payload_scene(first: &[u8], second: &[u8]) -> SceneDocument {
                 {{"id":"two","type":"image","x":2,"y":0,"width":1,"height":1,"fileId":"two","status":"saved","scale":[1,1],"seed":2,"updated":1}}
             ],
             "appState":{{}},"files":{{
-                "one":{{"id":"one","mimeType":"image/png","dataURL":"data:image/png;base64,{first}","created":1}},
-                "two":{{"id":"two","mimeType":"image/png","dataURL":"data:image/png;base64,{second}","created":1}}
+                "one":{{"id":"one","mimeType":"image/png","dataURL":"{first}","created":1}},
+                "two":{{"id":"two","mimeType":"image/png","dataURL":"{second}","created":1}}
             }}
         }}"#
     );
@@ -1202,213 +891,6 @@ fn diagnostic_codes(outcome: &excalidraw_render::RenderOutcome) -> Vec<Diagnosti
         .collect()
 }
 
-fn fixture_png(width: u32, height: u32, pixels: &[[u8; 4]]) -> Vec<u8> {
-    let mut bytes = Vec::new();
-    {
-        let mut encoder = png::Encoder::new(&mut bytes, width, height);
-        encoder.set_color(png::ColorType::Rgba);
-        encoder.set_depth(png::BitDepth::Eight);
-        let mut writer = encoder.write_header().expect("fixture PNG header encodes");
-        let rgba: Vec<u8> = pixels.iter().flatten().copied().collect();
-        writer
-            .write_image_data(&rgba)
-            .expect("fixture PNG pixels encode");
-    }
-    bytes
-}
-
-fn fixture_apng(first: &[[u8; 4]], second: &[[u8; 4]]) -> Vec<u8> {
-    assert_eq!(first.len(), second.len());
-    let width = u32::try_from(first.len()).expect("fixture width fits u32");
-    let mut bytes = Vec::new();
-    {
-        let mut encoder = png::Encoder::new(&mut bytes, width, 1);
-        encoder.set_color(png::ColorType::Rgba);
-        encoder.set_depth(png::BitDepth::Eight);
-        encoder
-            .set_animated(2, 0)
-            .expect("fixture animation is valid");
-        let mut writer = encoder.write_header().expect("fixture APNG header encodes");
-        let first: Vec<u8> = first.iter().flatten().copied().collect();
-        let second: Vec<u8> = second.iter().flatten().copied().collect();
-        writer
-            .write_image_data(&first)
-            .expect("first APNG frame encodes");
-        writer
-            .write_image_data(&second)
-            .expect("second APNG frame encodes");
-    }
-    bytes
-}
-
-fn apng_with_separate_default(corrupt_animation_frame: bool) -> Vec<u8> {
-    let source = fixture_apng(&[[255, 0, 0, 255]], &[[0, 0, 255, 255]]);
-    let mut output = Vec::from(&source[..8]);
-    let mut offset = 8;
-    let mut frame_control_count = 0;
-    while offset < source.len() {
-        let length = usize::try_from(u32::from_be_bytes(
-            source[offset..offset + 4]
-                .try_into()
-                .expect("fixture chunk length"),
-        ))
-        .expect("fixture chunk length fits usize");
-        let chunk_type: [u8; 4] = source[offset + 4..offset + 8]
-            .try_into()
-            .expect("fixture chunk type");
-        let mut data = source[offset + 8..offset + 8 + length].to_vec();
-        match &chunk_type {
-            b"acTL" => data[..4].copy_from_slice(&1_u32.to_be_bytes()),
-            b"fcTL" => {
-                frame_control_count += 1;
-                if frame_control_count == 1 {
-                    offset += 12 + length;
-                    continue;
-                }
-                data[..4].copy_from_slice(&0_u32.to_be_bytes());
-            }
-            b"fdAT" => {
-                data[..4].copy_from_slice(&1_u32.to_be_bytes());
-                if corrupt_animation_frame {
-                    data[4] ^= 0xff;
-                }
-            }
-            _ => {}
-        }
-        append_png_chunk(&mut output, chunk_type, &data);
-        offset += 12 + length;
-    }
-    output
-}
-
-fn apng_frame_control(sequence: u32, width: u32, height: u32) -> Vec<u8> {
-    let mut data = Vec::with_capacity(26);
-    data.extend_from_slice(&sequence.to_be_bytes());
-    data.extend_from_slice(&width.to_be_bytes());
-    data.extend_from_slice(&height.to_be_bytes());
-    data.extend_from_slice(&0_u32.to_be_bytes());
-    data.extend_from_slice(&0_u32.to_be_bytes());
-    data.extend_from_slice(&1_u16.to_be_bytes());
-    data.extend_from_slice(&30_u16.to_be_bytes());
-    data.extend_from_slice(&[0, 0]);
-    data
-}
-
-fn exif_orientation(orientation: u16) -> Vec<u8> {
-    let mut exif = Vec::new();
-    exif.extend_from_slice(b"II");
-    exif.extend_from_slice(&42_u16.to_le_bytes());
-    exif.extend_from_slice(&8_u32.to_le_bytes());
-    exif.extend_from_slice(&1_u16.to_le_bytes());
-    exif.extend_from_slice(&0x0112_u16.to_le_bytes());
-    exif.extend_from_slice(&3_u16.to_le_bytes());
-    exif.extend_from_slice(&1_u32.to_le_bytes());
-    exif.extend_from_slice(&orientation.to_le_bytes());
-    exif.extend_from_slice(&0_u16.to_le_bytes());
-    exif.extend_from_slice(&0_u32.to_le_bytes());
-    exif
-}
-
-fn iso_gain_map_metadata() -> Vec<u8> {
-    let mut metadata = Vec::new();
-    metadata.extend_from_slice(&0_u16.to_be_bytes());
-    metadata.extend_from_slice(&0_u16.to_be_bytes());
-    metadata.push(0x40);
-    for (numerator, denominator) in [
-        (0_i32, 1_u32),
-        (1, 1),
-        (0, 1),
-        (1, 1),
-        (1, 1),
-        (0, 1),
-        (0, 1),
-    ] {
-        metadata.extend_from_slice(&numerator.to_be_bytes());
-        metadata.extend_from_slice(&denominator.to_be_bytes());
-    }
-    metadata
-}
-
-fn append_png_chunk(bytes: &mut Vec<u8>, chunk_type: [u8; 4], data: &[u8]) {
-    bytes.extend_from_slice(
-        &u32::try_from(data.len())
-            .expect("fixture chunk length fits u32")
-            .to_be_bytes(),
-    );
-    bytes.extend_from_slice(&chunk_type);
-    bytes.extend_from_slice(data);
-    let mut crc = crc32fast::Hasher::new();
-    crc.update(&chunk_type);
-    crc.update(data);
-    bytes.extend_from_slice(&crc.finalize().to_be_bytes());
-}
-
-fn png_with_chunks_before_idat(source: &[u8], chunks: &[([u8; 4], Vec<u8>)]) -> Vec<u8> {
-    let idat = png_chunk_offset(source, *b"IDAT");
-    let mut png = Vec::from(&source[..idat]);
-    for (chunk_type, data) in chunks {
-        append_png_chunk(&mut png, *chunk_type, data);
-    }
-    png.extend_from_slice(&source[idat..]);
-    png
-}
-
-fn png_with_chunk_before_iend(source: &[u8], chunk_type: [u8; 4], data: &[u8]) -> Vec<u8> {
-    let iend = png_chunk_offset(source, *b"IEND");
-    let mut png = Vec::from(&source[..iend]);
-    append_png_chunk(&mut png, chunk_type, data);
-    png.extend_from_slice(&source[iend..]);
-    png
-}
-
-fn mutate_first_idat(png: &mut [u8], mutate: impl FnOnce(&mut [u8])) {
-    mutate_first_png_chunk(png, *b"IDAT", mutate);
-}
-
-fn mutate_first_png_chunk(png: &mut [u8], chunk_type: [u8; 4], mutate: impl FnOnce(&mut [u8])) {
-    let offset = png_chunk_offset(png, chunk_type);
-    let length = u32::from_be_bytes(png[offset..offset + 4].try_into().expect("chunk length"));
-    let length = usize::try_from(length).expect("chunk length fits usize");
-    let data_start = offset + 8;
-    let data_end = data_start + length;
-    mutate(&mut png[data_start..data_end]);
-    let mut crc = crc32fast::Hasher::new();
-    crc.update(&chunk_type);
-    crc.update(&png[data_start..data_end]);
-    png[data_end..data_end + 4].copy_from_slice(&crc.finalize().to_be_bytes());
-}
-
-fn png_chunk_offset(png: &[u8], wanted: [u8; 4]) -> usize {
-    let mut offset = 8;
-    loop {
-        let length = u32::from_be_bytes(png[offset..offset + 4].try_into().expect("chunk length"));
-        if png[offset + 4..offset + 8] == wanted {
-            return offset;
-        }
-        offset += 12 + usize::try_from(length).expect("chunk length fits usize");
-    }
-}
-
-fn rendered_image_center(source: &[u8]) -> [u8; 4] {
-    rendered_image_center_with_background(source, true)
-}
-
-fn rendered_image_center_without_background(source: &[u8]) -> [u8; 4] {
-    rendered_image_center_with_background(source, false)
-}
-
-fn rendered_image_center_with_background(source: &[u8], include_background: bool) -> [u8; 4] {
-    let scene = image_scene(&format!(
-        "data:image/png;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(source)
-    ));
-    let request = RenderRequest::builder(OutputFormat::Png)
-        .include_background(include_background)
-        .build()
-        .expect("PNG request is valid");
-    decode_png(render_with_request(&scene, &request).artifact().bytes()).pixel(10, 10)
-}
-
 fn two_supplemental_image_scene(first: &str, second: &str) -> SceneDocument {
     let json = format!(
         r#"{{
@@ -1421,22 +903,4 @@ fn two_supplemental_image_scene(first: &str, second: &str) -> SceneDocument {
         }}"#
     );
     SceneDocument::parse(json.as_bytes()).expect("two-image scene is admitted")
-}
-
-fn cropped_image_scene(data_url: &str) -> SceneDocument {
-    let json = format!(
-        r#"{{
-            "type":"excalidraw","version":2,
-            "elements":[{{
-                "id":"image","type":"image","x":0,"y":0,"width":20,"height":20,
-                "angle":0,"opacity":100,"fileId":"asset","status":"saved","scale":[-1,-1],
-                "crop":{{"x":1,"y":0,"width":2,"height":2,"naturalWidth":3,"naturalHeight":2}},
-                "seed":1,"updated":1
-            }}],
-            "appState":{{}},"files":{{"asset":{{
-                "id":"asset","mimeType":"image/png","dataURL":"{data_url}","created":1
-            }}}}
-        }}"#
-    );
-    SceneDocument::parse(json.as_bytes()).expect("cropped image scene is admitted")
 }

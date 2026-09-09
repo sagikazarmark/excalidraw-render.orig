@@ -766,4 +766,67 @@ mod tests {
             ]
         );
     }
+
+    /// Each codec's typed decode failure is one `image.decode-failed`
+    /// diagnostic that names the media type the asset cache sniffed, with the
+    /// format's recovery: the PNG placeholder, or omission for SVG and PDF.
+    #[test]
+    fn each_typed_decode_failure_names_its_sniffed_media_type() {
+        let typed = [
+            (asset::ResolveError::DecodeFailed, "image/png"),
+            (asset::ResolveError::JpegDecodeFailed, "image/jpeg"),
+            (asset::ResolveError::GifDecodeFailed, "image/gif"),
+            (asset::ResolveError::WebPDecodeFailed, "image/webp"),
+            (asset::ResolveError::BmpDecodeFailed, "image/bmp"),
+            (asset::ResolveError::IcoDecodeFailed, "image/x-icon"),
+            (asset::ResolveError::SvgDecodeFailed, "image/svg+xml"),
+        ];
+        for (failure, media_type) in typed {
+            for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+                let diagnostic = image_asset_failure_diagnostic(
+                    failure,
+                    format,
+                    "asset",
+                    "image",
+                    "/elements/0/fileId",
+                    crate::normalization::NormalizedImageStatus::Saved,
+                    &crate::ResourceLimits::default(),
+                )
+                .expect("the diagnostic allocates");
+
+                assert_eq!(diagnostic.code, DiagnosticCode::IMAGE_DECODE_FAILED);
+                assert_eq!(diagnostic.effects, [DiagnosticEffect::Visual]);
+                assert_eq!(diagnostic.element_id.as_deref(), Some("image"));
+                assert_eq!(diagnostic.json_pointer, "/elements/0/fileId");
+                let Some(details) = diagnostic.details.as_deref() else {
+                    panic!("{failure:?} carries asset details");
+                };
+                let ErrorDetails::Asset {
+                    asset_id,
+                    claimed_media_type,
+                    validated_media_type,
+                    recovery,
+                    recipe_id,
+                } = details
+                else {
+                    panic!("{failure:?} carries asset details, not {details:?}");
+                };
+                assert_eq!(asset_id, "asset");
+                assert_eq!(claimed_media_type.as_deref(), None);
+                assert_eq!(validated_media_type.as_deref(), Some(media_type));
+                match format {
+                    OutputFormat::Png => {
+                        assert_eq!(*recovery, Recovery::Placeholder);
+                        assert!(recipe_id
+                            .as_deref()
+                            .is_some_and(|recipe| recipe.starts_with("official.image@sha256:")));
+                    }
+                    _ => {
+                        assert_eq!(*recovery, Recovery::Omitted);
+                        assert_eq!(recipe_id.as_deref(), None);
+                    }
+                }
+            }
+        }
+    }
 }

@@ -1,19 +1,38 @@
-use base64::Engine as _;
-use excalidraw_render::{
-    DiagnosticCode, ErrorDetails, OutputFormat, RenderRequest, Renderer, ResourceLimits,
-    SceneDocument,
-};
+//! ICO assets end to end: the octets a direct SVG passes through under the
+//! canonical `image/x-icon`, the selected entry the PNG target projects, the
+//! PDF embedding with the DIB's alpha as a soft mask and the selected entry's
+//! pixel accounting. Entry selection, DIB alpha and the malformed entries are
+//! tested at the asset cache's own seam in `src/render/asset/tests.rs`.
 
-use crate::common::image_scene::image_scene;
+use excalidraw_render::{DiagnosticCode, OutputFormat, RenderRequest, ResourceLimits};
+
+use crate::common::codec_fixtures::{dib32, ico, solid_png};
+use crate::common::image_scene::{data_url, image_scene};
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request};
 
 #[test]
-fn ico_selects_largest_area_before_highest_depth() {
-    let small_blue = fixture_png(1, 1, [0, 0, 255, 255]);
-    let large_red = fixture_png(2, 1, [255, 0, 0, 255]);
-    let ico = fixture_ico(&[(1, 1, 32, small_blue), (2, 1, 8, large_red)]);
-    let outcome = render(&ico_scene(&ico, 20, 10), OutputFormat::Png);
+fn direct_svg_preserves_validated_ico_octets_with_canonical_mime() {
+    let ico = ico(&[(1, 1, 32, solid_png(1, 1, [24, 96, 208, 255]))]);
+    let data_url = data_url("image/x-icon", &ico);
+
+    let outcome = render(&image_scene(&ico, "image/x-icon", 1, 1), OutputFormat::Svg);
+    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
+
+    assert!(svg.contains(&data_url));
+    assert!(outcome.report().diagnostics().is_empty());
+}
+
+#[test]
+fn png_projects_the_selected_largest_ico_entry() {
+    let small_blue = solid_png(1, 1, [0, 0, 255, 255]);
+    let large_red = solid_png(2, 1, [255, 0, 0, 255]);
+    let ico = ico(&[(1, 1, 32, small_blue), (2, 1, 8, large_red)]);
+
+    let outcome = render(
+        &image_scene(&ico, "image/x-icon", 20, 10),
+        OutputFormat::Png,
+    );
     let png = decode_png(outcome.artifact().bytes());
 
     assert_eq!(png.pixel(15, 15), [255, 0, 0, 255]);
@@ -22,57 +41,20 @@ fn ico_selects_largest_area_before_highest_depth() {
 }
 
 #[test]
-fn ico_uses_highest_depth_for_equal_area_and_first_directory_entry_for_exact_ties() {
-    let blue = fixture_png(1, 1, [0, 0, 255, 255]);
-    let red = fixture_png(1, 1, [255, 0, 0, 255]);
-    let green = fixture_png(1, 1, [0, 255, 0, 255]);
-    let ico = fixture_ico(&[(1, 1, 8, blue), (1, 1, 32, red), (1, 1, 32, green)]);
+fn ico_embeds_in_pdf_as_an_image_with_its_alpha_mask() {
+    let ico = ico(&[(1, 1, 32, dib32([24, 96, 208, 128], false))]);
 
-    assert_eq!(rendered_center(&ico), [255, 0, 0, 255]);
-}
+    let outcome = render(&image_scene(&ico, "image/x-icon", 1, 1), OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
 
-#[test]
-fn direct_svg_preserves_validated_ico_octets_with_canonical_mime() {
-    let ico = fixture_ico(&[(1, 1, 32, fixture_png(1, 1, [24, 96, 208, 255]))]);
-    let encoded = base64::engine::general_purpose::STANDARD.encode(&ico);
-    let outcome = render(&ico_scene(&ico, 1, 1), OutputFormat::Svg);
-    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-
-    assert!(svg.contains(&format!("data:image/x-icon;base64,{encoded}")));
+    assert!(pdf.contains("/Width 1\n/Height 1"));
+    assert!(pdf.contains("/SMask"));
     assert!(outcome.report().diagnostics().is_empty());
 }
 
 #[test]
-fn ico_dib_uses_meaningful_alpha_and_legacy_and_mask_fallback() {
-    let translucent = fixture_ico(&[(1, 1, 32, fixture_dib32([24, 96, 208, 128], false))]);
-    let masked = fixture_ico(&[(1, 1, 32, fixture_dib32([24, 96, 208, 0], true))]);
-
-    assert_eq!(rendered_center(&translucent), [24, 96, 207, 128]);
-    assert_eq!(rendered_center(&masked), [0, 0, 0, 0]);
-}
-
-#[test]
-fn malformed_non_selected_ico_entry_uses_typed_decode_recovery() {
-    let valid = fixture_png(2, 1, [255, 0, 0, 255]);
-    let mut malformed = fixture_png(1, 1, [0, 0, 255, 255]);
-    let last = malformed.len() - 1;
-    malformed[last] ^= 1;
-    let ico = fixture_ico(&[(2, 1, 32, valid), (1, 1, 8, malformed)]);
-    let outcome = render(&ico_scene(&ico, 2, 1), OutputFormat::Svg);
-
-    assert_eq!(outcome.report().diagnostics().len(), 1);
-    let diagnostic = &outcome.report().diagnostics()[0];
-    assert_eq!(diagnostic.code(), DiagnosticCode::IMAGE_DECODE_FAILED);
-    assert!(matches!(
-        diagnostic.details(),
-        Some(ErrorDetails::Asset { validated_media_type: Some(media_type), .. })
-            if media_type == "image/x-icon"
-    ));
-}
-
-#[test]
 fn ico_selected_dimensions_control_decode_resource_limits() {
-    let ico = fixture_ico(&[(2, 1, 32, fixture_png(2, 1, [255, 0, 0, 255]))]);
+    let ico = ico(&[(2, 1, 32, solid_png(2, 1, [255, 0, 0, 255]))]);
     let limits = ResourceLimits::builder()
         .max_decoded_pixels_per_asset(1)
         .build()
@@ -81,119 +63,12 @@ fn ico_selected_dimensions_control_decode_resource_limits() {
         .resource_limits(limits)
         .build()
         .expect("PNG request is valid");
-    let outcome = Renderer::new()
-        .render(&ico_scene(&ico, 2, 1), &request)
-        .expect("ICO pixel limit has local recovery");
+
+    let outcome = render_with_request(&image_scene(&ico, "image/x-icon", 2, 1), &request);
 
     assert_eq!(outcome.report().diagnostics().len(), 1);
     assert_eq!(
         outcome.report().diagnostics()[0].code(),
         DiagnosticCode::RESOURCE_IMAGE_PIXELS_EXCEEDED
     );
-}
-
-#[test]
-fn ico_embeds_in_pdf_as_an_image_with_its_alpha_mask() {
-    let ico = fixture_ico(&[(1, 1, 32, fixture_dib32([24, 96, 208, 128], false))]);
-    let outcome = render(&ico_scene(&ico, 1, 1), OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
-    assert!(pdf.contains(
-        "/Width 1
-/Height 1"
-    ));
-    assert!(pdf.contains("/SMask"));
-}
-
-#[test]
-fn ico_rejects_overlapping_dib_bitfield_masks() {
-    let ico = fixture_ico(&[(1, 1, 32, fixture_dib_with_overlapping_masks())]);
-    let outcome = render(&ico_scene(&ico, 1, 1), OutputFormat::Svg);
-
-    assert_eq!(outcome.report().diagnostics().len(), 1);
-    assert_eq!(
-        outcome.report().diagnostics()[0].code(),
-        DiagnosticCode::IMAGE_DECODE_FAILED
-    );
-}
-
-fn fixture_png(width: u32, height: u32, color: [u8; 4]) -> Vec<u8> {
-    let mut bytes = Vec::new();
-    let mut encoder = png::Encoder::new(&mut bytes, width, height);
-    encoder.set_color(png::ColorType::Rgba);
-    encoder.set_depth(png::BitDepth::Eight);
-    let mut writer = encoder.write_header().expect("PNG header encodes");
-    writer
-        .write_image_data(&color.repeat((width * height) as usize))
-        .expect("PNG pixels encode");
-    drop(writer);
-    bytes
-}
-
-fn fixture_ico(images: &[(u16, u16, u16, Vec<u8>)]) -> Vec<u8> {
-    let directory_size = 6 + images.len() * 16;
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(&0_u16.to_le_bytes());
-    bytes.extend_from_slice(&1_u16.to_le_bytes());
-    bytes.extend_from_slice(&(images.len() as u16).to_le_bytes());
-    let mut offset = directory_size;
-    for (width, height, depth, image) in images {
-        bytes.push(if *width == 256 { 0 } else { *width as u8 });
-        bytes.push(if *height == 256 { 0 } else { *height as u8 });
-        bytes.extend_from_slice(&[0, 0]);
-        bytes.extend_from_slice(&1_u16.to_le_bytes());
-        bytes.extend_from_slice(&depth.to_le_bytes());
-        bytes.extend_from_slice(&(image.len() as u32).to_le_bytes());
-        bytes.extend_from_slice(&(offset as u32).to_le_bytes());
-        offset += image.len();
-    }
-    for (_, _, _, image) in images {
-        bytes.extend_from_slice(image);
-    }
-    bytes
-}
-
-fn fixture_dib32(pixel: [u8; 4], transparent_mask: bool) -> Vec<u8> {
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(&40_u32.to_le_bytes());
-    bytes.extend_from_slice(&1_i32.to_le_bytes());
-    bytes.extend_from_slice(&2_i32.to_le_bytes());
-    bytes.extend_from_slice(&1_u16.to_le_bytes());
-    bytes.extend_from_slice(&32_u16.to_le_bytes());
-    bytes.extend_from_slice(&0_u32.to_le_bytes());
-    bytes.extend_from_slice(&4_u32.to_le_bytes());
-    bytes.extend_from_slice(&[0; 16]);
-    bytes.extend_from_slice(&[pixel[2], pixel[1], pixel[0], pixel[3]]);
-    bytes.extend_from_slice(&[if transparent_mask { 0x80 } else { 0 }, 0, 0, 0]);
-    bytes
-}
-
-fn fixture_dib_with_overlapping_masks() -> Vec<u8> {
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(&40_u32.to_le_bytes());
-    bytes.extend_from_slice(&1_i32.to_le_bytes());
-    bytes.extend_from_slice(&2_i32.to_le_bytes());
-    bytes.extend_from_slice(&1_u16.to_le_bytes());
-    bytes.extend_from_slice(&32_u16.to_le_bytes());
-    bytes.extend_from_slice(&3_u32.to_le_bytes());
-    bytes.extend_from_slice(&4_u32.to_le_bytes());
-    bytes.extend_from_slice(&[0; 16]);
-    bytes.extend_from_slice(&0x00ff_0000_u32.to_le_bytes());
-    bytes.extend_from_slice(&0x00ff_0000_u32.to_le_bytes());
-    bytes.extend_from_slice(&0x0000_00ff_u32.to_le_bytes());
-    bytes.extend_from_slice(&[208, 96, 24, 255]);
-    bytes.extend_from_slice(&[0; 4]);
-    bytes
-}
-
-fn rendered_center(ico: &[u8]) -> [u8; 4] {
-    let request = RenderRequest::builder(OutputFormat::Png)
-        .include_background(false)
-        .build()
-        .expect("PNG request is valid");
-    let outcome = render_with_request(&ico_scene(ico, 1, 1), &request);
-    decode_png(outcome.artifact().bytes()).pixel(10, 10)
-}
-
-fn ico_scene(ico: &[u8], width: u32, height: u32) -> SceneDocument {
-    image_scene(ico, "image/x-icon", width, height)
 }
