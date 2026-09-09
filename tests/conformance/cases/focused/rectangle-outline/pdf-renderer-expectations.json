@@ -1,5 +1,10 @@
 {
-  "approval": null,
+  "approval": {
+    "approval_subject_sha256": "sha256:672b680eca22562a6d5b7fec8234011ff8414a591b7d213f93983bf299ebce51",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5610419569",
+    "approved_at": "2026-09-09",
+    "approved_by": "sagikazarmark"
+  },
   "case_id": "focused.rectangle-outline.v1",
   "case_manifest_approval_subject_sha256": "sha256:8d89c6875dac672f9ef0a4797cea734897db7beeff6ceb4b7538e4341ed5e8b0",
   "compatibility_revision": 1,
