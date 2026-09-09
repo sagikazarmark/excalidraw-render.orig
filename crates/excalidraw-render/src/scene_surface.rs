@@ -41,13 +41,12 @@ pub(crate) struct SceneFieldPolicy {
     pub(crate) ordinal: usize,
 }
 
+/// One record kind of the scene surface. The manifest's `fieldPaths` are not
+/// emitted: `xtask catalog verify` checks that they own exactly the field
+/// dispositions, and the renderer reads a field's owner from the field.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct SceneRecordPolicy {
     pub(crate) identity: &'static str,
-    /// Read only by the table-integrity test, which checks that the field
-    /// policies cover exactly the paths each record kind declares.
-    #[cfg_attr(not(test), allow(dead_code))]
-    pub(crate) field_paths: &'static [&'static str],
     pub(crate) inherits: &'static [&'static str],
 }
 
@@ -59,14 +58,14 @@ pub(crate) struct SceneElementPolicy {
     pub(crate) ignored_inherited_paths: &'static [&'static str],
 }
 
+/// The sealed revision-1 scene-surface policy. The manifest's registry
+/// mappings are not emitted: `xtask catalog verify` pins their count and
+/// uniqueness, and diagnostics mint their codes from the field policies.
 #[derive(Debug)]
 pub(crate) struct SceneSurfacePolicy {
     pub(crate) record_kinds: &'static [SceneRecordPolicy],
     pub(crate) fields: &'static [SceneFieldPolicy],
     pub(crate) element_kinds: &'static [SceneElementPolicy],
-    /// Read only by the table-integrity test, which pins the registry's size.
-    #[cfg_attr(not(test), allow(dead_code))]
-    pub(crate) diagnostic_codes: &'static [&'static str],
 }
 
 include!("generated/scene_surface_revision_1.rs");
@@ -1660,13 +1659,16 @@ mod tests {
         assert!(!css_color_is_admitted("rgb(future)"));
     }
 
+    /// The generated table's shape: the manifest's counts, one field policy
+    /// per `(record kind, path)` in manifest order, and the disposition
+    /// split. Field-path ownership and registry-mapping uniqueness are the
+    /// manifest's own invariants, checked by `xtask catalog verify`.
     #[test]
-    fn generated_policy_has_exact_unique_manifest_ownership() {
+    fn generated_policy_has_the_manifest_shape() {
         let policy = &SCENE_SURFACE_POLICY;
         assert_eq!(policy.record_kinds.len(), 29);
         assert_eq!(policy.fields.len(), 202);
         assert_eq!(policy.element_kinds.len(), 13);
-        assert_eq!(policy.diagnostic_codes.len(), 42);
 
         let fields = policy
             .fields
@@ -1677,17 +1679,7 @@ mod tests {
                 (field.record_kind, field.path)
             })
             .collect::<BTreeSet<_>>();
-        let declared = policy
-            .record_kinds
-            .iter()
-            .flat_map(|record| {
-                record
-                    .field_paths
-                    .iter()
-                    .map(move |path| (record.identity, *path))
-            })
-            .collect::<BTreeSet<_>>();
-        assert_eq!(fields, declared);
+        assert_eq!(fields.len(), policy.fields.len());
         assert_eq!(
             policy
                 .fields

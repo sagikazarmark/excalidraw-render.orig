@@ -4,147 +4,118 @@
 static SCENE_RECORD_POLICIES: &[SceneRecordPolicy] = &[
     SceneRecordPolicy {
         identity: "scene",
-        field_paths: &["/appState","/elements","/files","/libraryItems","/scrollToContent","/source","/type","/version",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "app_state",
-        field_paths: &["/activeEmbeddable","/activeTool","/collaborators","/contextMenu","/croppingElementId","/currentChartType","/currentHoveredFontFamily","/currentItemArrowType","/currentItemBackgroundColor","/currentItemEndArrowhead","/currentItemFillStyle","/currentItemFontFamily","/currentItemFontSize","/currentItemOpacity","/currentItemRoughness","/currentItemRoundness","/currentItemStartArrowhead","/currentItemStrokeColor","/currentItemStrokeStyle","/currentItemStrokeWidth","/currentItemTextAlign","/cursorButton","/defaultSidebarDockedPreference","/editingFrame","/editingGroupId","/editingLinearElement","/editingTextElement","/elementsToHighlight","/errorMessage","/exportBackground","/exportEmbedScene","/exportScale","/exportWithDarkMode","/fileHandle","/followedBy","/frameRendering","/frameToHighlight","/gridModeEnabled","/gridSize","/gridStep","/height","/hoveredElementIds","/isBindingEnabled","/isCropping","/isLoading","/isResizing","/isRotating","/isSidebarDocked","/lastPointerDownWith","/multiElement","/name","/newElement","/objectsSnapModeEnabled","/offsetLeft","/offsetTop","/openDialog","/openMenu","/openPopup","/openSidebar","/originSnapOffset","/pasteDialog","/penDetected","/penMode","/pendingImageElementId","/previousSelectedElementIds","/resizingElement","/scrollX","/scrollY","/scrolledOutside","/searchMatches","/selectedElementIds","/selectedElementsAreBeingDragged","/selectedGroupIds","/selectedLinearElement","/selectionElement","/shouldCacheIgnoreZoom","/showHyperlinkPopup","/showWelcomeScreen","/snapLines","/startBoundElement","/stats","/suggestedBindings","/theme","/toast","/userToFollow","/viewBackgroundColor","/viewModeEnabled","/width","/zenModeEnabled","/zoom",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "file_record",
-        field_paths: &["/$key","/created","/dataURL","/id","/lastRetrieved","/mimeType","/version",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "frame_rendering",
-        field_paths: &["/clip","/enabled","/name","/outline",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "element.common",
-        field_paths: &["/angle","/backgroundColor","/boundElementIds","/boundElements","/customData","/fillStyle","/frameId","/groupIds","/height","/id","/index","/isDeleted","/link","/locked","/opacity","/roughness","/roundness","/seed","/strokeColor","/strokeSharpness","/strokeStyle","/strokeWidth","/type","/updated","/version","/versionNonce","/width","/x","/y",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "element.selection",
-        field_paths: &[],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.rectangle",
-        field_paths: &[],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.diamond",
-        field_paths: &[],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.ellipse",
-        field_paths: &[],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.text",
-        field_paths: &["/autoResize","/baseline","/containerId","/font","/fontFamily","/fontSize","/lineHeight","/originalText","/rawText","/text","/textAlign","/verticalAlign",],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.linear",
-        field_paths: &["/endBinding","/lastCommittedPoint","/points","/startBinding",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "element.line",
-        field_paths: &["/endArrowhead","/startArrowhead",],
         inherits: &["element.linear","element.common",],
     },
     SceneRecordPolicy {
         identity: "element.arrow",
-        field_paths: &["/elbowed","/endArrowhead","/endIsSpecial","/fixedSegments","/startArrowhead","/startIsSpecial",],
         inherits: &["element.linear","element.common",],
     },
     SceneRecordPolicy {
         identity: "element.freedraw",
-        field_paths: &["/lastCommittedPoint","/points","/pressures","/simulatePressure",],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.image",
-        field_paths: &["/crop","/fileId","/scale","/status",],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.frame",
-        field_paths: &["/name",],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.magicframe",
-        field_paths: &["/name",],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.iframe",
-        field_paths: &["/customData/generationData",],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.embeddable",
-        field_paths: &["/validated",],
         inherits: &["element.common",],
     },
     SceneRecordPolicy {
         identity: "element.legacy_draw",
-        field_paths: &["/type",],
         inherits: &["element.linear","element.common",],
     },
     SceneRecordPolicy {
         identity: "nested.roundness",
-        field_paths: &["/type","/value",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "nested.bound_element",
-        field_paths: &["/id","/type",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "nested.point",
-        field_paths: &["/0","/1",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "nested.point_binding",
-        field_paths: &["/elementId","/focus","/gap",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "nested.fixed_point_binding",
-        field_paths: &["/elementId","/fixedPoint","/focus","/gap",],
         inherits: &["nested.point_binding",],
     },
     SceneRecordPolicy {
         identity: "nested.fixed_segment",
-        field_paths: &["/end","/index","/start",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "nested.image_crop",
-        field_paths: &["/height","/naturalHeight","/naturalWidth","/width","/x","/y",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "nested.generation_data",
-        field_paths: &["/code","/html","/message","/status",],
         inherits: &[],
     },
     SceneRecordPolicy {
         identity: "nested.local_svg_resource",
-        field_paths: &["/*",],
         inherits: &[],
     },
 ];
@@ -3467,56 +3438,9 @@ static SCENE_ELEMENT_POLICIES: &[SceneElementPolicy] = &[
     },
 ];
 
-#[rustfmt::skip]
-static SCENE_DIAGNOSTIC_CODES: &[&str] = &[
-    "normalization.missing-element-id",
-    "normalization.duplicate-element-id",
-    "normalization.missing-timestamp",
-    "normalization.zero-rough-seed",
-    "normalization.relationship-cycle",
-    "compatibility.unsupported-element-type",
-    "compatibility.malformed-element",
-    "compatibility.unsupported-property",
-    "compatibility.unsupported-property-value",
-    "compatibility.known-element-replaced",
-    "asset.supplement-conflict",
-    "asset.media-type-mismatch",
-    "asset.malformed-file-record",
-    "image.missing-file",
-    "image.forbidden-resource",
-    "image.animation-flattened",
-    "image.unsupported-format",
-    "image.decode-failed",
-    "image.unsafe-svg-content-removed",
-    "link.unsafe-omitted",
-    "color.invalid",
-    "font.liberation-sans-substituted",
-    "font.noto-emoji-substituted",
-    "font.missing-glyph",
-    "resource.element-complexity-replaced",
-    "resource.element-work-exceeded",
-    "resource.asset-bytes-exceeded",
-    "resource.asset-work-exceeded",
-    "resource.image-dimensions-exceeded",
-    "resource.image-pixels-exceeded",
-    "resource.nested-svg-complexity-exceeded",
-    "resource.nested-asset-depth-exceeded",
-    "resource.coordinate-range-exceeded",
-    "resource.optional-metadata-omitted",
-    "metadata.provenance-serialization-failed",
-    "metadata.diagnostic-summary-serialization-failed",
-    "metadata.scene-serialization-failed",
-    "metadata.scene-compression-failed",
-    "metadata.scene-embedding-failed",
-    "metadata.manifest-serialization-failed",
-    "metadata.manifest-embedding-failed",
-    "pdf.raster-fallback",
-];
-
 pub(crate) static SCENE_SURFACE_POLICY: SceneSurfacePolicy = SceneSurfacePolicy {
     record_kinds: SCENE_RECORD_POLICIES,
     fields: SCENE_FIELD_POLICIES,
     element_kinds: SCENE_ELEMENT_POLICIES,
-    diagnostic_codes: SCENE_DIAGNOSTIC_CODES,
 };
 

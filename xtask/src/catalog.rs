@@ -1763,12 +1763,6 @@ fn generate_scene_surface_rust(output: &mut String, scene_surface: &Value) -> Re
         );
         rust_string_values(
             output,
-            "field_paths",
-            &record["fieldPaths"],
-            "scene record fieldPaths",
-        )?;
-        rust_string_values(
-            output,
             "inherits",
             &record["inherits"],
             "scene record inherits",
@@ -1848,18 +1842,12 @@ fn generate_scene_surface_rust(output: &mut String, scene_surface: &Value) -> Re
     }
     output.push_str("];\n\n");
 
-    rust_str_array(
-        output,
-        "SCENE_DIAGNOSTIC_CODES",
-        &ids(scene_surface, "registryMappings", "code")?,
-    );
     output.push_str(
         "pub(crate) static SCENE_SURFACE_POLICY: SceneSurfacePolicy = SceneSurfacePolicy {\n",
     );
     output.push_str("    record_kinds: SCENE_RECORD_POLICIES,\n");
     output.push_str("    fields: SCENE_FIELD_POLICIES,\n");
     output.push_str("    element_kinds: SCENE_ELEMENT_POLICIES,\n");
-    output.push_str("    diagnostic_codes: SCENE_DIAGNOSTIC_CODES,\n");
     output.push_str("};\n\n");
     Ok(())
 }
