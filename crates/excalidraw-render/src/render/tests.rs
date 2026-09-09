@@ -2223,10 +2223,10 @@ fn an_image_corner_clip_exists_only_for_a_positive_radius_and_traces_its_rounded
         .operations
         .iter()
         .filter_map(|operation| match operation {
-            rough::PathOperation::Move(point) | rough::PathOperation::Line(point) => {
+            geometry::PathOperation::Move(point) | geometry::PathOperation::Line(point) => {
                 Some((point.x, point.y))
             }
-            rough::PathOperation::Cubic { .. } => None,
+            geometry::PathOperation::Cubic { .. } => None,
         })
         .collect();
     assert_eq!(
@@ -2241,7 +2241,7 @@ fn an_image_corner_clip_exists_only_for_a_positive_radius_and_traces_its_rounded
     );
     assert!(matches!(
         clip.path.operations.last(),
-        Some(rough::PathOperation::Cubic { end, .. }) if end.x == 5.0 && end.y == 0.0
+        Some(geometry::PathOperation::Cubic { end, .. }) if end.x == 5.0 && end.y == 0.0
     ));
 
     assert!(
@@ -2452,7 +2452,7 @@ fn rough_svg_paths(source: &NormalizedElement) -> Vec<String> {
     )
     .ok()
     .unwrap_or_else(|| panic!("{} generates", source.source.id()));
-    let path_data = |path: &rough::Path| {
+    let path_data = |path: &geometry::Path| {
         let mut data = String::new();
         svg::push_rough_path(&mut data, path).expect("path data writes");
         data

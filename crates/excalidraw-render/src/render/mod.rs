@@ -33,6 +33,7 @@ mod geometry;
 mod image;
 mod metadata;
 mod notices;
+mod number_format;
 mod pdf;
 #[cfg(test)]
 mod plan_tests;

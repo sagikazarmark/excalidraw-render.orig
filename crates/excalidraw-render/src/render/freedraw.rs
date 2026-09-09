@@ -1,7 +1,9 @@
 // Perfect Freehand 1.2.0 compatibility port. The upstream implementation is
 // MIT licensed; its notice is included in the renderer license bundle.
 
-use super::rough::{GenerationBudget, GenerationError, Point};
+use super::geometry::Point;
+use super::number_format::ecmascript_number;
+use super::rough::{GenerationBudget, GenerationError};
 use super::FormatEncodeError;
 use crate::normalization::NormalizedFreedraw;
 use std::collections::TryReserveError;
@@ -522,28 +524,6 @@ fn push_reduced_number(output: &mut String, value: f64) -> Result<(), FormatEnco
         output.push_str(&token);
     }
     Ok(())
-}
-
-pub(super) fn ecmascript_number(value: f64) -> String {
-    if value == 0.0 {
-        return "0".to_owned();
-    }
-    let magnitude = value.abs();
-    if !(1e-6..1e21).contains(&magnitude) {
-        let token = format!("{value:e}");
-        if let Some(exponent) = token.find('e') {
-            if !token[exponent + 1..].starts_with('-') {
-                let mut javascript = String::with_capacity(token.len() + 1);
-                javascript.push_str(&token[..=exponent]);
-                javascript.push('+');
-                javascript.push_str(&token[exponent + 1..]);
-                return javascript;
-            }
-        }
-        token
-    } else {
-        value.to_string()
-    }
 }
 
 fn projected_point(value: Point) -> Result<Point, FormatEncodeError> {

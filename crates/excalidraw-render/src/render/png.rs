@@ -11,8 +11,9 @@ use tiny_skia::{
     StrokeDash, Transform,
 };
 
+use super::geometry::{Path, PathOperation, Point};
 use super::resolve::{DarkModeImageFilter, ResolvedElement, ResolvedScene, StrokeStyle};
-use super::rough::{Drawing, FillKind, Path, PathOperation, Point};
+use super::rough::{Drawing, FillKind};
 use super::FormatEncodeError;
 
 #[derive(Debug)]

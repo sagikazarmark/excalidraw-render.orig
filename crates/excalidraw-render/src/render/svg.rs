@@ -1,8 +1,10 @@
 use crate::normalization::NormalizedElementSource;
 use crate::{color::CanonicalColor, RenderRequest, Sizing};
 
+use super::geometry::{Path, PathOperation, Point};
+use super::number_format::{ecmascript_number, push_rough_number, push_svg_number};
 use super::resolve::{DarkModeImageFilter, ResolvedElement, ResolvedScene, StrokeStyle};
-use super::rough::{Drawing, FillKind, Path, PathOperation};
+use super::rough::{Drawing, FillKind};
 use super::FormatEncodeError;
 
 pub(super) trait SvgSink: std::fmt::Write {
@@ -1685,15 +1687,15 @@ pub(super) fn push_rough_path<W: SvgSink + ?Sized>(
         match operation {
             PathOperation::Move(point) => {
                 output.push('M');
-                super::rough::push_number(output, point.x)?;
+                push_rough_number(output, point.x)?;
                 output.push(' ');
-                super::rough::push_number(output, point.y)?;
+                push_rough_number(output, point.y)?;
             }
             PathOperation::Line(point) => {
                 output.push('L');
-                super::rough::push_number(output, point.x)?;
+                push_rough_number(output, point.x)?;
                 output.push(' ');
-                super::rough::push_number(output, point.y)?;
+                push_rough_number(output, point.y)?;
             }
             PathOperation::Cubic {
                 control_1,
@@ -1701,17 +1703,17 @@ pub(super) fn push_rough_path<W: SvgSink + ?Sized>(
                 end,
             } => {
                 output.push('C');
-                super::rough::push_number(output, control_1.x)?;
+                push_rough_number(output, control_1.x)?;
                 output.push(' ');
-                super::rough::push_number(output, control_1.y)?;
+                push_rough_number(output, control_1.y)?;
                 output.push_str(", ");
-                super::rough::push_number(output, control_2.x)?;
+                push_rough_number(output, control_2.x)?;
                 output.push(' ');
-                super::rough::push_number(output, control_2.y)?;
+                push_rough_number(output, control_2.y)?;
                 output.push_str(", ");
-                super::rough::push_number(output, end.x)?;
+                push_rough_number(output, end.x)?;
                 output.push(' ');
-                super::rough::push_number(output, end.y)?;
+                push_rough_number(output, end.y)?;
             }
         }
     }
@@ -1754,10 +1756,7 @@ pub(super) fn freedraw_path_data(
     Ok(output)
 }
 
-fn push_freedraw_point(
-    output: &mut String,
-    point: super::rough::Point,
-) -> Result<(), FormatEncodeError> {
+fn push_freedraw_point(output: &mut String, point: Point) -> Result<(), FormatEncodeError> {
     push_freedraw_number(output, point.x)?;
     output.push(',');
     push_freedraw_number(output, point.y)
@@ -1769,7 +1768,7 @@ fn push_freedraw_number(output: &mut String, value: f64) -> Result<(), FormatEnc
             "SVG freedraw path contains a non-finite coordinate".to_owned(),
         ));
     }
-    let token = super::freedraw::ecmascript_number(value);
+    let token = ecmascript_number(value);
     let Some(decimal) = token.find('.') else {
         output.push_str(&token);
         return Ok(());
@@ -1788,21 +1787,6 @@ fn push_freedraw_number(output: &mut String, value: f64) -> Result<(), FormatEnc
     output.push_str(&token[..retained_end]);
     output.push_str(&token[consumed_end..]);
     Ok(())
-}
-
-fn push_svg_number<W: SvgSink + ?Sized>(
-    output: &mut W,
-    value: f64,
-    subject: &str,
-) -> Result<(), FormatEncodeError> {
-    if !value.is_finite() {
-        return Err(FormatEncodeError::Encoding(format!(
-            "{subject} must be finite"
-        )));
-    }
-    let value = if value == 0.0 { 0.0 } else { value };
-    write!(output, "{value}")
-        .map_err(|_| FormatEncodeError::Encoding(format!("failed to write {subject}")))
 }
 
 fn push_escaped_attribute<W: SvgSink + ?Sized>(output: &mut W, value: &str) {

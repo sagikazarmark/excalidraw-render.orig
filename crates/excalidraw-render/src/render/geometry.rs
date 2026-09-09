@@ -1,9 +1,163 @@
+//! Target-neutral geometry: the `Point`, `PathOperation` and `Path` primitives
+//! every backend and the Rough.js port build on, the frame and image outline
+//! shapes, element bounds, the arrowhead and elbow construction that feeds the
+//! Rough generators, and the ECMAScript rounding the reference applies to
+//! coordinates. `rough` owns only the Rough.js 4.6.4 generators themselves.
+
 use crate::color::CanonicalColor;
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
 use crate::ColorMode;
 
 use super::resolve::ResolveSceneError;
 use super::{freedraw, rough};
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct Point {
+    pub(super) x: f64,
+    pub(super) y: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) enum PathOperation {
+    Move(Point),
+    Line(Point),
+    Cubic {
+        control_1: Point,
+        control_2: Point,
+        end: Point,
+    },
+}
+
+#[derive(Debug, PartialEq)]
+pub(super) struct Path {
+    pub(super) operations: Vec<PathOperation>,
+}
+
+impl Path {
+    pub(super) fn cubic_bounds(&self) -> Option<(f64, f64, f64, f64)> {
+        let mut current = None;
+        let mut bounds = None;
+        for operation in &self.operations {
+            match *operation {
+                PathOperation::Move(point) | PathOperation::Line(point) => current = Some(point),
+                PathOperation::Cubic {
+                    control_1,
+                    control_2,
+                    end,
+                } => {
+                    let start = current?;
+                    include_cubic_bounds(&mut bounds, start, control_1, control_2, end);
+                    current = Some(end);
+                }
+            }
+        }
+        bounds
+    }
+}
+
+fn include_cubic_bounds(
+    bounds: &mut Option<(f64, f64, f64, f64)>,
+    start: Point,
+    control_1: Point,
+    control_2: Point,
+    end: Point,
+) {
+    let mut values_x = [start.x, end.x, 0.0, 0.0];
+    let mut values_y = [start.y, end.y, 0.0, 0.0];
+    let count_x = 2 + cubic_extrema(start.x, control_1.x, control_2.x, end.x, &mut values_x[2..]);
+    let count_y = 2 + cubic_extrema(start.y, control_1.y, control_2.y, end.y, &mut values_y[2..]);
+    let min_x = values_x[..count_x]
+        .iter()
+        .copied()
+        .fold(f64::INFINITY, f64::min);
+    let min_y = values_y[..count_y]
+        .iter()
+        .copied()
+        .fold(f64::INFINITY, f64::min);
+    let max_x = values_x[..count_x]
+        .iter()
+        .copied()
+        .fold(f64::NEG_INFINITY, f64::max);
+    let max_y = values_y[..count_y]
+        .iter()
+        .copied()
+        .fold(f64::NEG_INFINITY, f64::max);
+    *bounds = Some(bounds.map_or((min_x, min_y, max_x, max_y), |current| {
+        (
+            current.0.min(min_x),
+            current.1.min(min_y),
+            current.2.max(max_x),
+            current.3.max(max_y),
+        )
+    }));
+}
+
+fn cubic_extrema(
+    start: f64,
+    control_1: f64,
+    control_2: f64,
+    end: f64,
+    output: &mut [f64],
+) -> usize {
+    let a = -start + 3.0 * control_1 - 3.0 * control_2 + end;
+    let b = 2.0 * (start - 2.0 * control_1 + control_2);
+    let c = control_1 - start;
+    let mut count = 0;
+    if a.abs() <= f64::EPSILON {
+        if b != 0.0 {
+            count += retain_cubic_extremum(
+                -c / b,
+                start,
+                control_1,
+                control_2,
+                end,
+                &mut output[count..],
+            );
+        }
+        return count;
+    }
+    let discriminant = b * b - 4.0 * a * c;
+    if discriminant < 0.0 {
+        return 0;
+    }
+    let root = discriminant.sqrt();
+    count += retain_cubic_extremum(
+        (-b + root) / (2.0 * a),
+        start,
+        control_1,
+        control_2,
+        end,
+        &mut output[count..],
+    );
+    count += retain_cubic_extremum(
+        (-b - root) / (2.0 * a),
+        start,
+        control_1,
+        control_2,
+        end,
+        &mut output[count..],
+    );
+    count
+}
+
+fn retain_cubic_extremum(
+    t: f64,
+    start: f64,
+    control_1: f64,
+    control_2: f64,
+    end: f64,
+    output: &mut [f64],
+) -> usize {
+    if !(0.0..=1.0).contains(&t) || output.is_empty() {
+        return 0;
+    }
+    let inverse = 1.0 - t;
+    output[0] = inverse.powi(3) * start
+        + 3.0 * inverse.powi(2) * t * control_1
+        + 3.0 * inverse * t.powi(2) * control_2
+        + t.powi(3) * end;
+    1
+}
 
 pub(super) enum GeneratedGeometry {
     Rough(rough::Drawing),
@@ -88,10 +242,7 @@ pub(super) fn magic_frame_canvas_outline_stroke_color(mode: ColorMode) -> Canoni
 /// `FRAME_STYLE.strokeWidth`: the width of a frame's outline stroke.
 pub(super) const FRAME_OUTLINE_STROKE_WIDTH: f64 = 2.0;
 
-pub(super) fn resolved_frame_outline(
-    width: f64,
-    height: f64,
-) -> Result<rough::Path, ResolveSceneError> {
+pub(super) fn resolved_frame_outline(width: f64, height: f64) -> Result<Path, ResolveSceneError> {
     let radius = FRAME_RADIUS.min(width / 2.0).min(height / 2.0).max(0.0);
     rounded_rect_path(width, height, radius)
 }
@@ -104,52 +255,49 @@ pub(super) fn rounded_rect_path(
     width: f64,
     height: f64,
     radius: f64,
-) -> Result<rough::Path, ResolveSceneError> {
+) -> Result<Path, ResolveSceneError> {
     let kappa = 0.552_284_749_830_793_6;
-    let point = |x, y| rough::Point { x, y };
+    let point = |x, y| Point { x, y };
     let mut operations = Vec::new();
     operations.try_reserve_exact(10)?;
-    operations.push(rough::PathOperation::Move(point(radius, 0.0)));
-    operations.push(rough::PathOperation::Line(point(width - radius, 0.0)));
-    operations.push(rough::PathOperation::Cubic {
+    operations.push(PathOperation::Move(point(radius, 0.0)));
+    operations.push(PathOperation::Line(point(width - radius, 0.0)));
+    operations.push(PathOperation::Cubic {
         control_1: point(width - radius + radius * kappa, 0.0),
         control_2: point(width, radius - radius * kappa),
         end: point(width, radius),
     });
-    operations.push(rough::PathOperation::Line(point(width, height - radius)));
-    operations.push(rough::PathOperation::Cubic {
+    operations.push(PathOperation::Line(point(width, height - radius)));
+    operations.push(PathOperation::Cubic {
         control_1: point(width, height - radius + radius * kappa),
         control_2: point(width - radius + radius * kappa, height),
         end: point(width - radius, height),
     });
-    operations.push(rough::PathOperation::Line(point(radius, height)));
-    operations.push(rough::PathOperation::Cubic {
+    operations.push(PathOperation::Line(point(radius, height)));
+    operations.push(PathOperation::Cubic {
         control_1: point(radius - radius * kappa, height),
         control_2: point(0.0, height - radius + radius * kappa),
         end: point(0.0, height - radius),
     });
-    operations.push(rough::PathOperation::Line(point(0.0, radius)));
-    operations.push(rough::PathOperation::Cubic {
+    operations.push(PathOperation::Line(point(0.0, radius)));
+    operations.push(PathOperation::Cubic {
         control_1: point(0.0, radius - radius * kappa),
         control_2: point(radius - radius * kappa, 0.0),
         end: point(radius, 0.0),
     });
-    Ok(rough::Path { operations })
+    Ok(Path { operations })
 }
 
-pub(super) fn resolved_frame_rect(
-    width: f64,
-    height: f64,
-) -> Result<rough::Path, ResolveSceneError> {
-    let point = |x, y| rough::Point { x, y };
+pub(super) fn resolved_frame_rect(width: f64, height: f64) -> Result<Path, ResolveSceneError> {
+    let point = |x, y| Point { x, y };
     let mut operations = Vec::new();
     operations.try_reserve_exact(5)?;
-    operations.push(rough::PathOperation::Move(point(0.0, 0.0)));
-    operations.push(rough::PathOperation::Line(point(width, 0.0)));
-    operations.push(rough::PathOperation::Line(point(width, height)));
-    operations.push(rough::PathOperation::Line(point(0.0, height)));
-    operations.push(rough::PathOperation::Line(point(0.0, 0.0)));
-    Ok(rough::Path { operations })
+    operations.push(PathOperation::Move(point(0.0, 0.0)));
+    operations.push(PathOperation::Line(point(width, 0.0)));
+    operations.push(PathOperation::Line(point(width, height)));
+    operations.push(PathOperation::Line(point(0.0, height)));
+    operations.push(PathOperation::Line(point(0.0, 0.0)));
+    Ok(Path { operations })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -208,7 +356,7 @@ pub(super) fn rough_drawing(
     roughness: f64,
     budget: &mut rough::GenerationBudget,
 ) -> Result<rough::Drawing, rough::GenerationError> {
-    use rough::{Point, RoundedSegment};
+    use rough::RoundedSegment;
 
     let width = source.width;
     let height = source.height;
@@ -485,13 +633,13 @@ pub(super) fn rough_drawing(
 }
 
 fn elbow_drawing(
-    points: &[rough::Point],
+    points: &[Point],
     seed: i32,
     roughness: f64,
     disable_multi_stroke: bool,
     budget: &mut rough::GenerationBudget,
 ) -> Result<rough::Drawing, rough::GenerationError> {
-    use rough::{Point, RoundedSegment};
+    use rough::RoundedSegment;
 
     let start = points[0];
     let mut segments = Vec::new();
@@ -506,7 +654,7 @@ fn elbow_drawing(
         let previous_is_horizontal = (previous.x - corner.x).abs() >= (previous.y - corner.y).abs();
         let next_is_horizontal = (next.x - corner.x).abs() >= (next.y - corner.y).abs();
         let approach = if previous_is_horizontal {
-            rough::Point {
+            Point {
                 x: corner.x
                     + if previous.x < corner.x {
                         -radius
@@ -516,7 +664,7 @@ fn elbow_drawing(
                 y: corner.y,
             }
         } else {
-            rough::Point {
+            Point {
                 x: corner.x,
                 y: corner.y
                     + if previous.y < corner.y {
@@ -527,12 +675,12 @@ fn elbow_drawing(
             }
         };
         let departure = if next_is_horizontal {
-            rough::Point {
+            Point {
                 x: corner.x + if next.x < corner.x { -radius } else { radius },
                 y: corner.y,
             }
         } else {
-            rough::Point {
+            Point {
                 x: corner.x,
                 y: corner.y + if next.y < corner.y { -radius } else { radius },
             }
@@ -617,16 +765,16 @@ fn add_arrowheads(
             "triangle" | "triangle_outline" => {
                 let [tip_x, tip_y, left_x, left_y, right_x, right_y, ..] = points;
                 let head_points = [
-                    rough::Point { x: tip_x, y: tip_y },
-                    rough::Point {
+                    Point { x: tip_x, y: tip_y },
+                    Point {
                         x: left_x,
                         y: left_y,
                     },
-                    rough::Point {
+                    Point {
                         x: right_x,
                         y: right_y,
                     },
-                    rough::Point { x: tip_x, y: tip_y },
+                    Point { x: tip_x, y: tip_y },
                 ];
                 let head = rough::polygon_drawing(
                     &head_points,
@@ -650,23 +798,23 @@ fn add_arrowheads(
             }
             "diamond" | "diamond_outline" => {
                 let head_points = [
-                    rough::Point {
+                    Point {
                         x: points[0],
                         y: points[1],
                     },
-                    rough::Point {
+                    Point {
                         x: points[2],
                         y: points[3],
                     },
-                    rough::Point {
+                    Point {
                         x: points[4],
                         y: points[5],
                     },
-                    rough::Point {
+                    Point {
                         x: points[6],
                         y: points[7],
                     },
-                    rough::Point {
+                    Point {
                         x: points[0],
                         y: points[1],
                     },
@@ -728,15 +876,15 @@ fn add_open_arrowhead(
     roughness: f64,
     budget: &mut rough::GenerationBudget,
 ) -> Result<(), rough::GenerationError> {
-    let tip = rough::Point {
+    let tip = Point {
         x: points[0],
         y: points[1],
     };
-    let first = rough::Point {
+    let first = Point {
         x: points[2],
         y: points[3],
     };
-    let second = rough::Point {
+    let second = Point {
         x: points[4],
         y: points[5],
     };
@@ -775,7 +923,6 @@ fn arrowhead_points(
     arrowhead: &str,
     stroke_width: f64,
 ) -> Option<[f64; 8]> {
-    use rough::PathOperation;
     let operations = &drawing.outline.operations;
     let index = if start {
         1
@@ -796,14 +943,14 @@ fn arrowhead_points(
         PathOperation::Line(point) => *point,
     };
     let p3 = *end;
-    let equation = |coordinate: fn(rough::Point) -> f64| {
+    let equation = |coordinate: fn(Point) -> f64| {
         let t = 0.3_f64;
         (1.0 - t).powi(3) * coordinate(p3)
             + 3.0 * t * (1.0 - t).powi(2) * coordinate(*control_2)
             + 3.0 * t.powi(2) * (1.0 - t) * coordinate(*control_1)
             + t.powi(3) * coordinate(p0)
     };
-    let near = rough::Point {
+    let near = Point {
         x: equation(|p| p.x),
         y: equation(|p| p.y),
     };
@@ -812,7 +959,7 @@ fn arrowhead_points(
     if distance == 0.0 {
         return None;
     }
-    let normal = rough::Point {
+    let normal = Point {
         x: (tip.x - near.x) / distance,
         y: (tip.y - near.y) / distance,
     };
@@ -834,7 +981,7 @@ fn arrowhead_points(
                 0.5
             },
     );
-    let base = rough::Point {
+    let base = Point {
         x: tip.x - normal.x * minimum,
         y: tip.y - normal.y * minimum,
     };
@@ -857,11 +1004,11 @@ fn arrowhead_points(
     } else {
         25.0
     };
-    let rotate = |point: rough::Point, center: rough::Point, degrees: f64| {
+    let rotate = |point: Point, center: Point, degrees: f64| {
         let radians = degrees.to_radians();
         let dx = point.x - center.x;
         let dy = point.y - center.y;
-        rough::Point {
+        Point {
             x: center.x + dx * radians.cos() - dy * radians.sin(),
             y: center.y + dx * radians.sin() + dy * radians.cos(),
         }
@@ -882,7 +1029,7 @@ fn arrowhead_points(
         } else {
             (tip.y - adjacent[1]).atan2(tip.x - adjacent[0])
         };
-        let opposite = rough::Point {
+        let opposite = Point {
             x: tip.x + if start { minimum * 2.0 } else { -minimum * 2.0 } * direction.cos(),
             y: tip.y + if start { minimum * 2.0 } else { -minimum * 2.0 } * direction.sin(),
         };
@@ -894,14 +1041,14 @@ fn arrowhead_points(
 }
 
 fn translate_drawing(drawing: &mut rough::Drawing, x: f64, y: f64) {
-    fn translate(path: &mut rough::Path, x: f64, y: f64) {
+    fn translate(path: &mut Path, x: f64, y: f64) {
         for operation in &mut path.operations {
             match operation {
-                rough::PathOperation::Move(point) | rough::PathOperation::Line(point) => {
+                PathOperation::Move(point) | PathOperation::Line(point) => {
                     point.x += x;
                     point.y += y;
                 }
-                rough::PathOperation::Cubic {
+                PathOperation::Cubic {
                     control_1,
                     control_2,
                     end,

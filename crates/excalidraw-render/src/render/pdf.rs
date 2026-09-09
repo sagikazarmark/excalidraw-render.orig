@@ -9,8 +9,10 @@ use crate::{
     FiniteValue, LogicalBounds, NestedPath, NestedPathSegment, NestedSegmentKind, RenderRequest,
 };
 
+use super::geometry::{Path, PathOperation, Point};
+use super::number_format::{format_pdf_number, push_rough_number};
 use super::resolve::{DarkModeImageFilter, ResolvedElement, ResolvedScene, StrokeStyle};
-use super::rough::{self, Drawing, FillKind, Path, PathOperation};
+use super::rough::{Drawing, Fill, FillKind};
 use super::FormatEncodeError;
 
 pub(super) const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
@@ -123,7 +125,7 @@ enum PdfElement {
     Freedraw {
         source: NormalizedElementSource,
         path: super::freedraw::ProjectedPath,
-        background_fill: Option<super::rough::Fill>,
+        background_fill: Option<Fill>,
         frame_clips: Vec<super::resolve::ResolvedClip>,
         transform: super::resolve::ResolvedTransform,
         color: CanonicalColor,
@@ -2371,7 +2373,7 @@ fn transformed_clip_path(
             subject_kind: "format_workspace",
             subject: "pdf_link_frame_clip",
         })?;
-    let mut current = rough::Point { x: 0.0, y: 0.0 };
+    let mut current = Point { x: 0.0, y: 0.0 };
     for operation in &clip.path.operations {
         match operation {
             PathOperation::Move(point) => {
@@ -2401,7 +2403,7 @@ fn transformed_clip_path(
                 for step in 1..=CURVE_STEPS {
                     let t = step as f64 / CURVE_STEPS as f64;
                     let inverse = 1.0 - t;
-                    let point = rough::Point {
+                    let point = Point {
                         x: inverse.powi(3) * start.x
                             + 3.0 * inverse * inverse * t * control_1.x
                             + 3.0 * inverse * t * t * control_2.x
@@ -2426,7 +2428,7 @@ fn transformed_clip_path(
 }
 
 fn transformed_clip_point(
-    point: rough::Point,
+    point: Point,
     transform: &super::resolve::ResolvedTransform,
     point_scale: f64,
     page_height: f64,
@@ -2654,15 +2656,15 @@ fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeE
     for operation in &path.operations {
         match operation {
             PathOperation::Move(point) => {
-                rough::push_number(output, point.x)?;
+                push_rough_number(output, point.x)?;
                 output.push(' ');
-                rough::push_number(output, point.y)?;
+                push_rough_number(output, point.y)?;
                 output.push_str(" m\n");
             }
             PathOperation::Line(point) => {
-                rough::push_number(output, point.x)?;
+                push_rough_number(output, point.x)?;
                 output.push(' ');
-                rough::push_number(output, point.y)?;
+                push_rough_number(output, point.y)?;
                 output.push_str(" l\n");
             }
             PathOperation::Cubic {
@@ -2684,7 +2686,7 @@ fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeE
                     if index != 0 {
                         output.push(' ');
                     }
-                    rough::push_number(output, value)?;
+                    push_rough_number(output, value)?;
                 }
                 output.push_str(" c\n");
             }
@@ -2713,11 +2715,11 @@ fn push_freedraw_path(
                         "PDF freedraw quadratic has no current point".to_owned(),
                     )
                 })?;
-                let control_1 = super::rough::Point {
+                let control_1 = Point {
                     x: start.x + (control.x - start.x) * (2.0 / 3.0),
                     y: start.y + (control.y - start.y) * (2.0 / 3.0),
                 };
-                let control_2 = super::rough::Point {
+                let control_2 = Point {
                     x: end.x + (control.x - end.x) * (2.0 / 3.0),
                     y: end.y + (control.y - end.y) * (2.0 / 3.0),
                 };
@@ -3136,87 +3138,6 @@ fn push_pdf_number(
 ) -> Result<(), FormatEncodeError> {
     output.push_str(&format_pdf_number(value, subject)?);
     Ok(())
-}
-
-fn format_pdf_number(value: f64, subject: &str) -> Result<String, FormatEncodeError> {
-    if !value.is_finite() {
-        return Err(FormatEncodeError::Encoding(format!(
-            "{subject} must be finite"
-        )));
-    }
-    let value = if value == 0.0 { 0.0 } else { value };
-    let mut rendered = String::new();
-    rendered
-        .try_reserve_exact(32)
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_number",
-        })?;
-    write!(rendered, "{value}")
-        .map_err(|_| FormatEncodeError::Encoding(format!("failed to write {subject}")))?;
-    let Some(exponent_marker) = rendered.find(['e', 'E']) else {
-        return Ok(rendered);
-    };
-    expand_exponent(&rendered, exponent_marker, subject)
-}
-
-fn expand_exponent(
-    rendered: &str,
-    exponent_marker: usize,
-    subject: &str,
-) -> Result<String, FormatEncodeError> {
-    let (mantissa, exponent) = rendered.split_at(exponent_marker);
-    let exponent = exponent[1..]
-        .parse::<i32>()
-        .map_err(|_| FormatEncodeError::Encoding(format!("failed to expand {subject} exponent")))?;
-    let (negative, unsigned) = mantissa
-        .strip_prefix('-')
-        .map_or((false, mantissa), |unsigned| (true, unsigned));
-    let decimal = unsigned.find('.').unwrap_or(unsigned.len());
-    let mut digits = String::new();
-    digits
-        .try_reserve_exact(unsigned.len())
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_number",
-        })?;
-    digits.extend(unsigned.chars().filter(|character| *character != '.'));
-    let decimal = i32::try_from(decimal)
-        .map_err(|_| FormatEncodeError::Encoding(format!("{subject} is too long")))?
-        + exponent;
-    let mut output = String::new();
-    output
-        .try_reserve(
-            rendered
-                .len()
-                .saturating_add(exponent.unsigned_abs() as usize),
-        )
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_number",
-        })?;
-    if negative {
-        output.push('-');
-    }
-    if decimal <= 0 {
-        output.push_str("0.");
-        for _ in 0..decimal.unsigned_abs() {
-            output.push('0');
-        }
-        output.push_str(&digits);
-    } else if usize::try_from(decimal).is_ok_and(|decimal| decimal >= digits.len()) {
-        output.push_str(&digits);
-        for _ in digits.len()..usize::try_from(decimal).unwrap_or(digits.len()) {
-            output.push('0');
-        }
-    } else {
-        let decimal = usize::try_from(decimal)
-            .map_err(|_| FormatEncodeError::Encoding(format!("{subject} is too long")))?;
-        output.push_str(&digits[..decimal]);
-        output.push('.');
-        output.push_str(&digits[decimal..]);
-    }
-    Ok(output)
 }
 
 fn begin_object(

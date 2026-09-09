@@ -22,7 +22,7 @@ use super::frame_target::{
 use super::geometry::{
     ecmascript_round, image_corner_radius, include_transformed_bounds,
     magic_frame_canvas_outline_stroke_color, resolved_frame_outline, resolved_frame_rect,
-    rounded_rect_path, source_layout_bounds, GeneratedGeometry, FRAME_OUTLINE_STROKE_COLOR,
+    rounded_rect_path, source_layout_bounds, GeneratedGeometry, Path, FRAME_OUTLINE_STROKE_COLOR,
     FRAME_RADIUS,
 };
 use super::{asset, freedraw, notices, rough, text, try_owned};
@@ -1318,7 +1318,7 @@ impl DarkModeImageFilter {
 #[derive(Debug)]
 pub(super) struct ResolvedImageCornerClip {
     pub(super) radius: f64,
-    pub(super) path: rough::Path,
+    pub(super) path: Path,
 }
 
 impl ResolvedImageCornerClip {
@@ -1548,7 +1548,7 @@ pub(super) struct ResolvedFrame {
 /// color the reference paints under its dark-mode filter.
 #[derive(Debug)]
 pub(super) struct ResolvedFrameOutline {
-    pub(super) path: rough::Path,
+    pub(super) path: Path,
     /// `FRAME_STYLE.strokeColor` for the mode: the stroke the reference's SVG
     /// export gives every frame kind, which SVG and PDF paint.
     pub(super) stroke_color: CanonicalColor,
@@ -1710,7 +1710,7 @@ pub(super) struct ResolvedClip {
     pub(super) frame_source_index: usize,
     /// The clip outline as a path, for the backends that rasterize or emit it
     /// as one.
-    pub(super) path: rough::Path,
+    pub(super) path: Path,
     /// The same outline as the frame rectangle the reference SVG defines its
     /// `<clipPath>` with: the frame's size and `FRAME_STYLE.radius` for a scene
     /// export, or no radius for the rectangular frame-export clip.

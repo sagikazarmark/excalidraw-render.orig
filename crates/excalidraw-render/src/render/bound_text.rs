@@ -3,9 +3,8 @@ use crate::normalization::{
 };
 use crate::relationships::{RelationshipKind, RelationshipTarget, ResolvedRelationshipGraph};
 
-use super::geometry::{source_layout_bounds, GeneratedGeometry};
+use super::geometry::{source_layout_bounds, GeneratedGeometry, Path, PathOperation, Point};
 use super::resolve::{relationship_element_target, ResolveSceneError};
-use super::rough;
 
 #[derive(Clone, Copy, Debug)]
 pub(super) struct BoundTextPlacement {
@@ -121,16 +120,16 @@ fn linear_midpoint(
     ])
 }
 
-fn rough_segment_midpoint(path: &rough::Path, target: [f64; 2]) -> Option<[f64; 2]> {
+fn rough_segment_midpoint(path: &Path, target: [f64; 2]) -> Option<[f64; 2]> {
     let mut current = None;
     let mut closest = None;
     let mut closest_distance = f64::INFINITY;
     for operation in &path.operations {
         match *operation {
-            rough::PathOperation::Move(point) | rough::PathOperation::Line(point) => {
+            PathOperation::Move(point) | PathOperation::Line(point) => {
                 current = Some(point);
             }
-            rough::PathOperation::Cubic {
+            PathOperation::Cubic {
                 control_1,
                 control_2,
                 end,
@@ -173,13 +172,7 @@ fn rough_segment_midpoint(path: &rough::Path, target: [f64; 2]) -> Option<[f64; 
     Some(cubic_point(start, control_1, control_2, end, t))
 }
 
-fn cubic_point(
-    start: rough::Point,
-    control_1: rough::Point,
-    control_2: rough::Point,
-    end: rough::Point,
-    t: f64,
-) -> [f64; 2] {
+fn cubic_point(start: Point, control_1: Point, control_2: Point, end: Point, t: f64) -> [f64; 2] {
     let inverse = 1.0 - t;
     let coordinate = |start: f64, control_1: f64, control_2: f64, end: f64| {
         inverse.powi(3) * end
