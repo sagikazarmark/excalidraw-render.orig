@@ -3082,7 +3082,7 @@ fn fallback_coverage_bounds(
 }
 
 fn canonicalize_straight_alpha(rgba: &mut [u8]) -> Result<(), FormatEncodeError> {
-    for pixel in rgba.chunks_exact_mut(4) {
+    for pixel in rgba.as_chunks_mut::<4>().0 {
         let (channels, alpha) = pixel.split_at_mut(3);
         let alpha = alpha.first().copied().ok_or_else(|| {
             FormatEncodeError::Encoding("PNG alpha layout invariant failed".to_owned())

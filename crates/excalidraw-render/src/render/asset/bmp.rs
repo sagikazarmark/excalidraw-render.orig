@@ -46,7 +46,7 @@ pub(super) fn decode(bytes: &[u8], info: &Info) -> Result<Vec<u8>, ()> {
     rgba.resize(rgba_size, 0);
     if matches!(info.compression, 1 | 2) {
         let background = palette_color(bytes, info, 0)?;
-        for pixel in rgba.chunks_exact_mut(4) {
+        for pixel in rgba.as_chunks_mut::<4>().0 {
             pixel.copy_from_slice(&background);
         }
         walk_rle(bytes, info, Some(&mut rgba))?;

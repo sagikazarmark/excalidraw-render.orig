@@ -119,6 +119,10 @@ type Lint {
   selected packages. `manual_is_multiple_of` is allowed because its one
   occurrence sits in crates/excalidraw-render/src/render/font_subset.rs, which
   is digest-pinned by the approved SVG font subset qualification (issue #99).
+  `chunks_exact_to_as_chunks` (Rust 1.98) is allowed for the same reason: its
+  remaining occurrences sit in that file, in xtask/src/svg_font_subset_runner.rs
+  (also pinned by issue #99) and in xtask/src/pdf_viewers.rs (pinned by the PDF
+  viewer qualification along with xtask/src/main.rs).
   """
   clippy: String! @check {
     self.run([
@@ -127,6 +131,7 @@ type Lint {
       "--package", "excalidraw-render-cli",
       "--package", "xtask",
       "--", "-D", "warnings", "-A", "clippy::manual_is_multiple_of",
+      "-A", "clippy::chunks_exact_to_as_chunks",
     ])
   }
 

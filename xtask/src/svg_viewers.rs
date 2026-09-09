@@ -266,7 +266,9 @@ fn verify_raster_descriptor(descriptor: &Value) -> Result<Vec<u8>, String> {
         return Err("viewer raster descriptor is invalid".to_owned());
     }
     if bytes
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .any(|pixel| pixel[3] == 0 && pixel[..3] != [0, 0, 0])
     {
         return Err("viewer raster has nonzero RGB below zero alpha".to_owned());

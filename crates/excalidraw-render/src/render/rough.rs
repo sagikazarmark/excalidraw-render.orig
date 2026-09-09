@@ -1898,7 +1898,7 @@ fn hachure_lines(
         budget.work(u64::try_from(active.len()).unwrap_or(u64::MAX))?;
         active.sort_by(|first, second| first.x.total_cmp(&second.x));
         if step != 1.0 || iteration as f64 % gap == 0.0 {
-            for pair in active.chunks_exact(2) {
+            for pair in active.as_chunks::<2>().0 {
                 let start = rotate_point(
                     Point {
                         x: ecmascript_round(pair[0].x),

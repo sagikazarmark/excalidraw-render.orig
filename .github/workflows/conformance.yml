@@ -40,11 +40,19 @@ jobs:
       # font_subset.rs, which is digest-pinned by the approved SVG font subset
       # qualification (issue #99). Drop the allowance in the re-approval round
       # that next moves that file.
+      # `chunks_exact_to_as_chunks` (Rust 1.98) is allowed for the same reason:
+      # every editable occurrence is `as_chunks` already, and the three left are
+      # in files an approval pins: font_subset.rs and xtask/src/
+      # svg_font_subset_runner.rs (issue #99), and xtask/src/pdf_viewers.rs
+      # (the PDF viewer qualification, which also pins xtask/src/main.rs, so no
+      # module-level allowance can stand in). Drop it once both rounds have
+      # moved their files.
       - name: Lint the renderer, CLI, and xtask
         run: >-
           cargo clippy --locked --no-deps --all-targets
           -p excalidraw-render -p excalidraw-render-cli -p xtask
           -- -D warnings -A clippy::manual_is_multiple_of
+          -A clippy::chunks_exact_to_as_chunks
 
   registered-cases:
     name: registered conformance cases

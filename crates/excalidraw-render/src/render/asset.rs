@@ -1495,7 +1495,7 @@ fn decode_webp_default_frame(
         }
         rgba.extend_from_slice(&decoded);
     } else {
-        for pixel in decoded.chunks_exact(3) {
+        for pixel in decoded.as_chunks::<3>().0 {
             rgba.extend_from_slice(&[pixel[0], pixel[1], pixel[2], 255]);
         }
         if rgba.len() != rgba_size {
@@ -1669,13 +1669,13 @@ fn decode_gif_default_frame(
             }
         }
     }
-    for pixel in rgba.chunks_exact_mut(4) {
+    for pixel in rgba.as_chunks_mut::<4>().0 {
         if pixel[3] == 0 {
             pixel[..3].fill(0);
         }
     }
     let mut premultiplied_rgba = try_copy(&rgba)?;
-    for pixel in premultiplied_rgba.chunks_exact_mut(4) {
+    for pixel in premultiplied_rgba.as_chunks_mut::<4>().0 {
         let alpha = u16::from(pixel[3]);
         for channel in &mut pixel[..3] {
             *channel = ((u16::from(*channel) * alpha + 127) / 255) as u8;
@@ -2468,7 +2468,7 @@ fn decode_static_png(
     match output.color_type {
         png::ColorType::Rgba => frame_rgba.extend_from_slice(&decoded),
         png::ColorType::Rgb => {
-            for pixel in decoded.chunks_exact(3) {
+            for pixel in decoded.as_chunks::<3>().0 {
                 frame_rgba.extend_from_slice(&[pixel[0], pixel[1], pixel[2], 255]);
             }
         }
@@ -2478,7 +2478,7 @@ fn decode_static_png(
             }
         }
         png::ColorType::GrayscaleAlpha => {
-            for pixel in decoded.chunks_exact(2) {
+            for pixel in decoded.as_chunks::<2>().0 {
                 frame_rgba.extend_from_slice(&[pixel[0], pixel[0], pixel[0], pixel[1]]);
             }
         }
@@ -2542,7 +2542,7 @@ fn normalize_rgba(
     match color_normalization {
         ColorNormalization::None => Ok(()),
         ColorNormalization::LinearSrgb => {
-            for pixel in rgba.chunks_exact_mut(4) {
+            for pixel in rgba.as_chunks_mut::<4>().0 {
                 for channel in &mut pixel[..3] {
                     *channel = LINEAR_TO_SRGB[usize::from(*channel)];
                 }
@@ -2568,13 +2568,13 @@ fn normalize_rgba(
 }
 
 fn finish_rgba(mut rgba: Vec<u8>) -> Result<DecodedRaster, ResolveError> {
-    for pixel in rgba.chunks_exact_mut(4) {
+    for pixel in rgba.as_chunks_mut::<4>().0 {
         if pixel[3] == 0 {
             pixel[..3].fill(0);
         }
     }
     let mut premultiplied_rgba = try_copy(&rgba)?;
-    for pixel in premultiplied_rgba.chunks_exact_mut(4) {
+    for pixel in premultiplied_rgba.as_chunks_mut::<4>().0 {
         let alpha = u16::from(pixel[3]);
         for channel in &mut pixel[..3] {
             *channel = ((u16::from(*channel) * alpha + 127) / 255) as u8;
@@ -2650,7 +2650,7 @@ fn decode_static_jpeg(
     let mut rgba = Vec::new();
     rgba.try_reserve_exact(rgba_size)
         .map_err(|_| ResolveError::Memory)?;
-    for pixel in rgb.chunks_exact(3) {
+    for pixel in rgb.as_chunks::<3>().0 {
         rgba.extend_from_slice(&[pixel[0], pixel[1], pixel[2], 255]);
     }
     if let Some(orientation) = orientation {

@@ -913,7 +913,7 @@ impl PdfPlan {
             let rgba = asset.rgba.as_deref().ok_or_else(|| {
                 FormatEncodeError::Encoding("PDF image has no normalized pixel resource".to_owned())
             })?;
-            for pixel in rgba.chunks_exact(4) {
+            for pixel in rgba.as_chunks::<4>().0 {
                 let [red, green, blue, pixel_alpha] = [pixel[0], pixel[1], pixel[2], pixel[3]];
                 // Official SVG is the visual authority for PDF images (spec
                 // section 8.6): in dark mode a raster pixel passes through
