@@ -550,6 +550,18 @@ Scene-export bounds, paint order, clipping, masking, frames, bound text, links,
 dark mode, application state, and embedded files participate according to the
 scene-surface manifest.
 
+The scene document's own export options — `appState.exportBackground`,
+`exportWithDarkMode`, `exportScale`, and `exportEmbedScene` — are validated and
+diagnosed under that manifest but never consumed: background, color mode,
+scale, and embedding come from the request alone. In the pinned release's
+`APP_STATE_STORAGE_CONF` all four carry `export: false`, so
+`cleanAppStateForExport` strips them from every scene document the official
+application writes; a value found in one is hand-edited, and honoring it would
+darken or rescale a render nobody asked for. `frameRendering`, stored under the
+same flag, is the one application-state export option a scene export honors:
+each frame control is on only when the persisted member and the request's
+control are both on.
+
 In a scene export with frame rendering and frame names on, each live frame's
 visible name is generated export text laid out as the text element the
 reference synthesizes for it rather than as a decoration of the frame:
