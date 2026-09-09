@@ -16,10 +16,12 @@ pub(crate) enum SceneFieldDisposition {
     OpaqueMetadata,
 }
 
+/// The manifested recovery of one malformed (`invalid`) field. The manifest's
+/// `missing` fallbacks and every fallback's `action` are not emitted: the
+/// renderer settles missing fields from the restore-path defaults normalization
+/// hardcodes, and the frozen JSON manifest keeps the data.
 #[derive(Clone, Copy, Debug)]
-#[allow(dead_code)]
 pub(crate) struct SceneFieldFallback {
-    pub(crate) action: &'static str,
     pub(crate) code: Option<&'static str>,
     pub(crate) effects: &'static [&'static str],
     pub(crate) recovery: Option<&'static str>,
@@ -28,32 +30,28 @@ pub(crate) struct SceneFieldFallback {
 }
 
 #[derive(Clone, Copy, Debug)]
-#[allow(dead_code)]
 pub(crate) struct SceneFieldPolicy {
     pub(crate) record_kind: &'static str,
     pub(crate) path: &'static str,
     pub(crate) accepted_domain: &'static str,
     pub(crate) disposition: SceneFieldDisposition,
-    pub(crate) required: bool,
-    pub(crate) normalization: &'static str,
     pub(crate) participation: &'static str,
     pub(crate) formats: &'static [&'static str],
-    pub(crate) options: &'static [&'static str],
-    pub(crate) missing: SceneFieldFallback,
     pub(crate) invalid: SceneFieldFallback,
     pub(crate) ordinal: usize,
 }
 
 #[derive(Clone, Copy, Debug)]
-#[allow(dead_code)]
 pub(crate) struct SceneRecordPolicy {
     pub(crate) identity: &'static str,
+    /// Read only by the table-integrity test, which checks that the field
+    /// policies cover exactly the paths each record kind declares.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) field_paths: &'static [&'static str],
     pub(crate) inherits: &'static [&'static str],
 }
 
 #[derive(Clone, Copy, Debug)]
-#[allow(dead_code)]
 pub(crate) struct SceneElementPolicy {
     pub(crate) kind: &'static str,
     pub(crate) record_kind: &'static str,
@@ -62,11 +60,12 @@ pub(crate) struct SceneElementPolicy {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]
 pub(crate) struct SceneSurfacePolicy {
     pub(crate) record_kinds: &'static [SceneRecordPolicy],
     pub(crate) fields: &'static [SceneFieldPolicy],
     pub(crate) element_kinds: &'static [SceneElementPolicy],
+    /// Read only by the table-integrity test, which pins the registry's size.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) diagnostic_codes: &'static [&'static str],
 }
 

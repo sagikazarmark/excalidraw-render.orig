@@ -1803,26 +1803,17 @@ fn generate_scene_surface_rust(output: &mut String, scene_surface: &Value) -> Re
             );
         }
         output.push_str(&format!("        disposition: {disposition},\n"));
-        output.push_str(&format!(
-            "        required: {},\n",
-            field["required"]
-                .as_bool()
-                .ok_or_else(|| "scene field required must be a boolean".to_owned())?
-        ));
-        rust_field(
-            output,
-            "normalization",
-            string(field, "normalization", "scene field disposition")?,
-        );
         rust_field(
             output,
             "participation",
             string(&field["scope"], "participation", "scene field scope")?,
         );
-        for name in ["formats", "options"] {
-            rust_string_values(output, name, &field["scope"][name], "scene field scope")?;
-        }
-        generate_scene_field_fallback(output, "missing", &field["missing"])?;
+        rust_string_values(
+            output,
+            "formats",
+            &field["scope"]["formats"],
+            "scene field scope",
+        )?;
         generate_scene_field_fallback(output, "invalid", &field["invalid"])?;
         output.push_str(&format!("        ordinal: {ordinal},\n"));
         output.push_str("    },\n");
@@ -1879,12 +1870,6 @@ fn generate_scene_field_fallback(
     fallback: &Value,
 ) -> Result<(), String> {
     output.push_str(&format!("        {name}: SceneFieldFallback {{\n"));
-    rust_field_indented(
-        output,
-        "action",
-        string(fallback, "action", "scene field fallback")?,
-        12,
-    );
     for field in ["code", "recovery", "recipe"] {
         generate_optional_rust_string(output, field, &fallback[field], 12)?;
     }
