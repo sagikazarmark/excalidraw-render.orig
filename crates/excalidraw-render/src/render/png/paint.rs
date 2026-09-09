@@ -18,7 +18,8 @@ use super::super::rough::{Drawing, FillKind};
 use super::super::text::{LabelPath, LabelPathOperation};
 use super::super::{freedraw, FormatEncodeError};
 use super::coverage::frame_clip_coverage_bounds;
-use super::{frame_clip_set_key, png_size_error, PngElement, PngFrameClip, PngLabelMask};
+use super::encoder::png_size_error;
+use super::{frame_clip_set_key, PngElement, PngFrameClip, PngLabelMask};
 
 pub(super) fn downsample_rgba(
     source: &[u8],

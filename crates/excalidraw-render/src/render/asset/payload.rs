@@ -1,4 +1,4 @@
-//! Asset payload access: the bytes of one file id from the scene's file
+//! Asset payload access: the bytes one `fileId` names in the scene's file
 //! records (a `data:` URL whose base64 body is sized and validated before it is
 //! decoded) or from the caller's supplemental assets, each bounded by the
 //! request's asset byte ceiling, together with the media-type claims the

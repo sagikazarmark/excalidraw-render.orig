@@ -7,7 +7,8 @@
 //! painting.
 //!
 //! `encoder` is the owned PNG encoder ADR-0004 describes — scanline filtering,
-//! deflate, chunk assembly — with no dependency on the plan; `paint` lowers
+//! deflate, chunk assembly and the size-error vocabulary — with no dependency
+//! on the plan or the painter; `paint` lowers
 //! Rough drawings, freedraw outlines, labels and the Font Awesome placeholder
 //! into tiny-skia paths and owns the shared frame-clip masks; `coverage` holds
 //! the conservative device-space area estimators the ledger reads, which are
@@ -18,6 +19,18 @@ mod encoder;
 mod paint;
 
 pub(super) use encoder::PngIdatStream;
+
+use coverage::{
+    conservative_coverage_area, conservative_fallback_coverage_area,
+    conservative_freedraw_coverage_area, conservative_text_coverage_area, fallback_coverage_bounds,
+    frame_clip_coverage_area, frame_clip_coverage_bounds, label_mask_coverage_area,
+};
+use encoder::{canonicalize_straight_alpha, compress_rgba, png_size_error};
+use paint::{
+    apply_theme_filter, downsample_rgba, fallback_paths, finite_f32, label_path,
+    paint_rough_drawing, solid_paint, svg_path, tiny_skia_freedraw_path, tiny_skia_path,
+    PaintMasks, OFFICIAL_IMAGE_ERROR_BAN_PATH, OFFICIAL_IMAGE_ERROR_PATH, OFFICIAL_IMAGE_PATH,
+};
 
 use std::sync::Arc;
 
@@ -38,18 +51,6 @@ use super::resolve::{
 use super::rough::{Drawing, Fill, FillKind};
 use super::text::{ResolvedLabel, ResolvedText};
 use super::{freedraw, FormatEncodeError, SvgTreeCache};
-
-use coverage::{
-    conservative_coverage_area, conservative_fallback_coverage_area,
-    conservative_freedraw_coverage_area, conservative_text_coverage_area, fallback_coverage_bounds,
-    frame_clip_coverage_area, frame_clip_coverage_bounds, label_mask_coverage_area,
-};
-use encoder::{canonicalize_straight_alpha, compress_rgba};
-use paint::{
-    apply_theme_filter, downsample_rgba, fallback_paths, finite_f32, label_path,
-    paint_rough_drawing, solid_paint, svg_path, tiny_skia_freedraw_path, tiny_skia_path,
-    PaintMasks, OFFICIAL_IMAGE_ERROR_BAN_PATH, OFFICIAL_IMAGE_ERROR_PATH, OFFICIAL_IMAGE_PATH,
-};
 
 #[derive(Debug)]
 pub(super) struct PngPlan {
@@ -1602,10 +1603,6 @@ impl PngPlan {
     pub(super) const fn height(&self) -> u32 {
         self.height
     }
-}
-
-pub(super) fn png_size_error() -> FormatEncodeError {
-    FormatEncodeError::Encoding("PNG dimensions exceed encoder capacity".to_owned())
 }
 
 fn pixel_dimension(value: f64) -> Result<u32, FormatEncodeError> {

@@ -2,8 +2,9 @@
 //! raster's declared ICC profile, cICP tags, gAMA/cHRM chunks or linear
 //! encoding to sRGB with `moxcms`, the EXIF orientation that stands a raster
 //! upright, and the final pass that zeroes invisible pixels' color and derives
-//! the premultiplied copy. Every codec's RGBA passes through here before it
-//! becomes a `DecodedRaster`.
+//! the premultiplied copy. The PNG, JPEG, WebP, BMP and ICO decoders finish
+//! their RGBA here; GIF composites its indexed frame straight into both
+//! buffers itself.
 
 use std::io::Cursor;
 use std::sync::Arc;
@@ -13,10 +14,8 @@ use moxcms::{
     Layout, MatrixCoefficients, ToneReprCurve, TransferCharacteristics, TransformOptions, XyY,
 };
 
-use super::jpeg::jpeg_decoder;
 use super::png::PngSemantics;
-use super::webp::{map_webp_error, webp_decoder};
-use super::{try_copy, DecodedRaster, IcoPayloadSemantics, RasterSemantics, ResolveError};
+use super::{try_copy, DecodedRaster, ResolveError};
 
 pub(super) enum ColorNormalization {
     None,
@@ -184,57 +183,7 @@ pub(super) fn orient_rgba(
     Ok(output)
 }
 
-pub(super) fn prepare_color_normalization(
-    bytes: &[u8],
-    semantics: &RasterSemantics,
-    workspace_bytes: u64,
-) -> Result<ColorNormalization, ResolveError> {
-    match semantics {
-        RasterSemantics::Png(semantics) => {
-            prepare_png_color_normalization(bytes, semantics, workspace_bytes)
-        }
-        RasterSemantics::Jpeg(_) => {
-            let mut decoder = jpeg_decoder(bytes);
-            decoder
-                .decode_headers()
-                .map_err(|_| ResolveError::JpegDecodeFailed)?;
-            decoder
-                .icc_profile()
-                .map_or(Ok(ColorNormalization::None), |profile| {
-                    ColorProfile::new_from_slice(&profile)
-                        .map(Box::new)
-                        .map(ColorNormalization::Profile)
-                        .map_err(|_| ResolveError::Unsupported)
-                })
-        }
-        RasterSemantics::Gif(_) => Ok(ColorNormalization::None),
-        RasterSemantics::WebP(_) => {
-            let mut decoder = webp_decoder(bytes)?;
-            decoder.icc_profile().map_err(map_webp_error)?.map_or(
-                Ok(ColorNormalization::None),
-                |profile| {
-                    ColorProfile::new_from_slice(&profile)
-                        .map(Box::new)
-                        .map(ColorNormalization::Profile)
-                        .map_err(|_| ResolveError::Unsupported)
-                },
-            )
-        }
-        RasterSemantics::Bmp(_) => Ok(ColorNormalization::None),
-        RasterSemantics::Ico(semantics) => match &semantics.payload {
-            IcoPayloadSemantics::Png(png) => {
-                let payload = bytes
-                    .get(semantics.offset..semantics.offset + semantics.length)
-                    .ok_or(ResolveError::IcoDecodeFailed)?;
-                prepare_png_color_normalization(payload, png, workspace_bytes)
-                    .map_err(|_| ResolveError::IcoDecodeFailed)
-            }
-            IcoPayloadSemantics::Dib(_) => Ok(ColorNormalization::None),
-        },
-    }
-}
-
-fn prepare_png_color_normalization(
+pub(super) fn prepare_png_color_normalization(
     bytes: &[u8],
     semantics: &PngSemantics,
     workspace_bytes: u64,

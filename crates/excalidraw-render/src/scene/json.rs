@@ -6,7 +6,8 @@
 //! in source order; the envelope is the parent's concern. `JsonValue` is the
 //! preserved tree, `member_value` and the typed scalar readers look into it,
 //! `pointer_child` and `pointer_index` build RFC 6901 pointers, and
-//! `write_canonical_json` spells the tree the normative way. Failures are
+//! `write_canonical_json` and `visit_canonical_json` spell the tree the
+//! normative way, into a buffer or to a visitor. Failures are
 //! `SceneParseError`s because the parser's ceilings are the scene admission
 //! contract.
 

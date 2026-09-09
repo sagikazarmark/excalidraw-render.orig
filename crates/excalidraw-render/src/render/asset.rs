@@ -1,26 +1,14 @@
-//! Image assets (stage 3): `Cache` is the deep module — one semantic identity
-//! per compatibility revision, media kind and byte string; validation, color
-//! normalization and decoding each charged once through the caller's
+//! Image assets (stage 3): `Cache` is the deep module — one semantic asset
+//! identity per compatibility revision, media kind and byte string; validation,
+//! color normalization and decoding each charged once through the caller's
 //! `IntrinsicTransaction`s and shared across every occurrence and every target
 //! of a frame batch — and this file keeps the media kinds, the error and
-//! transaction vocabulary, the raster dispatch `Cache::resolve` and the nested
-//! raster path drive, and the thin adapters over the `bmp` and `ico` format
-//! modules. `payload` fetches the bytes from a scene file record or a
-//! supplemental asset, `png`, `jpeg`, `gif` and `webp` validate and decode
-//! their formats, `color` normalizes decoded pixels to upright straight and
-//! premultiplied sRGB, and `svg` sanitizes nested SVG.
-
-use std::collections::BTreeMap;
-use std::sync::Arc;
-
-use sha2::{Digest as _, Sha256};
-
-use crate::{
-    CompatibilityRevision, OutputFormat, RenderError, ResourceLimits, SceneDocument,
-    SupplementalAssets,
-};
-
-use super::resolve::ResolvedImageAsset;
+//! transaction vocabulary, the per-kind dispatch (`Cache::resolve`, the nested
+//! raster drive and the color-normalization selection), and the thin adapters
+//! over the `bmp` and `ico` format modules. `payload` fetches the bytes from a
+//! scene file record or a supplemental asset, `png`, `jpeg`, `gif` and `webp`
+//! validate and decode their formats, `color` normalizes decoded pixels to
+//! upright straight and premultiplied sRGB, and `svg` sanitizes nested SVG.
 
 mod bmp;
 mod color;
@@ -36,13 +24,14 @@ mod webp;
 
 pub(super) use payload::data_url_decoded_len;
 
-use color::{finish_rgba, prepare_color_normalization, ColorNormalization};
+use color::{finish_rgba, prepare_png_color_normalization, ColorNormalization};
 use gif::{
     decode_gif_default_frame, gif_animation_validation_work, read_gif_dimensions, validate_gif,
     GifSemantics, GIF87A_SIGNATURE, GIF89A_SIGNATURE,
 };
 use jpeg::{
-    decode_static_jpeg, read_jpeg_dimensions, validate_static_jpeg, JpegSemantics, JPEG_SIGNATURE,
+    decode_static_jpeg, jpeg_decoder, read_jpeg_dimensions, validate_static_jpeg, JpegSemantics,
+    JPEG_SIGNATURE,
 };
 use payload::{payload, Payload};
 use png::{
@@ -50,9 +39,23 @@ use png::{
     validate_static_png, PngSemantics, PNG_SIGNATURE,
 };
 use webp::{
-    decode_webp_default_frame, read_webp_dimensions, validate_webp, webp_animation_validation_work,
-    WebPSemantics, WEBP_RIFF_SIGNATURE, WEBP_SIGNATURE,
+    decode_webp_default_frame, map_webp_error, read_webp_dimensions, validate_webp,
+    webp_animation_validation_work, webp_decoder, WebPSemantics, WEBP_RIFF_SIGNATURE,
+    WEBP_SIGNATURE,
 };
+
+use std::collections::BTreeMap;
+use std::sync::Arc;
+
+use moxcms::ColorProfile;
+use sha2::{Digest as _, Sha256};
+
+use crate::{
+    CompatibilityRevision, OutputFormat, RenderError, ResourceLimits, SceneDocument,
+    SupplementalAssets,
+};
+
+use super::resolve::ResolvedImageAsset;
 
 const BMP_SIGNATURE: &[u8; 2] = b"BM";
 const ICO_SIGNATURE: &[u8; 4] = b"\0\0\x01\0";
@@ -973,7 +976,7 @@ fn validate_nested_raster_semantics(
     })
 }
 
-pub(super) fn sniff_media_kind(bytes: &[u8]) -> Result<MediaKind, ResolveError> {
+fn sniff_media_kind(bytes: &[u8]) -> Result<MediaKind, ResolveError> {
     if bytes.starts_with(PNG_SIGNATURE) {
         Ok(MediaKind::Png)
     } else if bytes.starts_with(JPEG_SIGNATURE) {
@@ -1099,13 +1102,63 @@ fn decode_ico(
     }
 }
 
-pub(super) fn decoder_workspace_bytes(width: u32, height: u32) -> Result<u64, ResolveError> {
+fn prepare_color_normalization(
+    bytes: &[u8],
+    semantics: &RasterSemantics,
+    workspace_bytes: u64,
+) -> Result<ColorNormalization, ResolveError> {
+    match semantics {
+        RasterSemantics::Png(semantics) => {
+            prepare_png_color_normalization(bytes, semantics, workspace_bytes)
+        }
+        RasterSemantics::Jpeg(_) => {
+            let mut decoder = jpeg_decoder(bytes);
+            decoder
+                .decode_headers()
+                .map_err(|_| ResolveError::JpegDecodeFailed)?;
+            decoder
+                .icc_profile()
+                .map_or(Ok(ColorNormalization::None), |profile| {
+                    ColorProfile::new_from_slice(&profile)
+                        .map(Box::new)
+                        .map(ColorNormalization::Profile)
+                        .map_err(|_| ResolveError::Unsupported)
+                })
+        }
+        RasterSemantics::Gif(_) => Ok(ColorNormalization::None),
+        RasterSemantics::WebP(_) => {
+            let mut decoder = webp_decoder(bytes)?;
+            decoder.icc_profile().map_err(map_webp_error)?.map_or(
+                Ok(ColorNormalization::None),
+                |profile| {
+                    ColorProfile::new_from_slice(&profile)
+                        .map(Box::new)
+                        .map(ColorNormalization::Profile)
+                        .map_err(|_| ResolveError::Unsupported)
+                },
+            )
+        }
+        RasterSemantics::Bmp(_) => Ok(ColorNormalization::None),
+        RasterSemantics::Ico(semantics) => match &semantics.payload {
+            IcoPayloadSemantics::Png(png) => {
+                let payload = bytes
+                    .get(semantics.offset..semantics.offset + semantics.length)
+                    .ok_or(ResolveError::IcoDecodeFailed)?;
+                prepare_png_color_normalization(payload, png, workspace_bytes)
+                    .map_err(|_| ResolveError::IcoDecodeFailed)
+            }
+            IcoPayloadSemantics::Dib(_) => Ok(ColorNormalization::None),
+        },
+    }
+}
+
+fn decoder_workspace_bytes(width: u32, height: u32) -> Result<u64, ResolveError> {
     1_048_576_u64
         .checked_add(32_u64.saturating_mul(u64::from(width.max(height))))
         .ok_or(ResolveError::Memory)
 }
 
-pub(super) fn semantic_identity(
+fn semantic_identity(
     revision: CompatibilityRevision,
     media_kind: MediaKind,
     bytes: &[u8],
@@ -1119,7 +1172,7 @@ pub(super) fn semantic_identity(
     hasher.finalize().into()
 }
 
-pub(super) fn try_copy(bytes: &[u8]) -> Result<Vec<u8>, ResolveError> {
+fn try_copy(bytes: &[u8]) -> Result<Vec<u8>, ResolveError> {
     let mut copy = Vec::new();
     copy.try_reserve_exact(bytes.len())
         .map_err(|_| ResolveError::Memory)?;
@@ -1127,7 +1180,7 @@ pub(super) fn try_copy(bytes: &[u8]) -> Result<Vec<u8>, ResolveError> {
     Ok(copy)
 }
 
-pub(super) fn try_owned(value: &str) -> Result<String, ResolveError> {
+fn try_owned(value: &str) -> Result<String, ResolveError> {
     let mut owned = String::new();
     owned
         .try_reserve_exact(value.len())

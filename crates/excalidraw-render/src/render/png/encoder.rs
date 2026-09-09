@@ -13,7 +13,6 @@ use crate::{DiagnosticCode, MetadataComponent};
 
 use super::super::metadata::ArtifactMetadata;
 use super::super::{metadata_embedding_error, FormatEncodeError};
-use super::png_size_error;
 
 /// Bytes per RGBA sample; the filter distance to the left neighbour.
 const PIXEL_BYTES: usize = 4;
@@ -431,6 +430,10 @@ fn crc32(bytes: &[u8]) -> u32 {
         }
     }
     !crc
+}
+
+pub(super) fn png_size_error() -> FormatEncodeError {
+    FormatEncodeError::Encoding("PNG dimensions exceed encoder capacity".to_owned())
 }
 
 #[cfg(test)]

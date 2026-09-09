@@ -1,3 +1,9 @@
+//! The Rough.js 4.6.4 port: the seeded generators that turn element outlines
+//! into sketched `Drawing`s — rectangle, polygon, linear, rounded, curve and
+//! ellipse strokes with hachure, cross-hatch, zigzag and solid fills — and the
+//! PRNG they draw from, reproduced operation for operation. The `Point`,
+//! `PathOperation` and `Path` primitives it emits are `geometry`'s.
+
 use std::collections::TryReserveError;
 
 use super::geometry::{ecmascript_round, Path, PathOperation, Point};

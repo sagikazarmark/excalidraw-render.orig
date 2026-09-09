@@ -1,8 +1,9 @@
 //! Target-neutral geometry: the `Point`, `PathOperation` and `Path` primitives
 //! every backend and the Rough.js port build on, the frame and image outline
 //! shapes, element bounds, the arrowhead and elbow construction that feeds the
-//! Rough generators, and the ECMAScript rounding the reference applies to
-//! coordinates. `rough` owns only the Rough.js 4.6.4 generators themselves.
+//! Rough generators, convex polygon clipping, and the ECMAScript rounding the
+//! reference applies to coordinates. `rough` owns only the Rough.js 4.6.4
+//! generators themselves.
 
 use crate::color::CanonicalColor;
 use crate::normalization::{NormalizedElement, NormalizedElementKind};

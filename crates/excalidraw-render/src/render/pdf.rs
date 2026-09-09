@@ -17,6 +17,8 @@ mod fonts;
 mod nested_svg;
 mod raster_preflight;
 
+use nested_svg::{append_chunk, collect_raster_closures, renumber_svg_chunks, svg_chunks};
+
 use std::io::Write as _;
 use std::sync::Arc;
 
@@ -40,8 +42,6 @@ use super::resolve::{
 use super::rough::{Drawing, Fill};
 use super::text::{ResolvedLabel, ResolvedText};
 use super::{freedraw, metadata_embedding_error, FormatEncodeError, SvgTreeCache};
-
-use nested_svg::{append_chunk, collect_raster_closures, renumber_svg_chunks, svg_chunks};
 
 pub(super) const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
 const ICC_PROFILE_OBJECT: usize = 5;
@@ -1589,7 +1589,7 @@ fn push_pdf_link(output: &mut Vec<u8>, link: &str) {
     push_pdf_literal_string(output, link);
 }
 
-pub(super) fn begin_object(
+fn begin_object(
     output: &mut Vec<u8>,
     offsets: &mut [usize],
     id: usize,
@@ -1598,7 +1598,7 @@ pub(super) fn begin_object(
     writeln!(output, "{id} 0 obj").map_err(write_error)
 }
 
-pub(super) fn pdf_size_error() -> FormatEncodeError {
+fn pdf_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("PDF plan exceeds serializer capacity".to_owned())
 }
 
@@ -1628,7 +1628,7 @@ fn width_scale(element: &PdfElement) -> f64 {
 /// `(x, y, width, height)` after the flip: the `<use>` viewport as the flip
 /// mirrors it about the element's unrounded center, intersected with the crop
 /// `<mask>`, which sits on the unflipped group, when the image is cropped.
-pub(super) fn visible_rect(
+fn visible_rect(
     projection: &ResolvedImageProjection,
     width: f64,
     height: f64,
@@ -1673,6 +1673,6 @@ fn point_dimension(logical: f64) -> Result<f64, FormatEncodeError> {
     Ok(points)
 }
 
-pub(super) fn write_error(_: std::io::Error) -> FormatEncodeError {
+fn write_error(_: std::io::Error) -> FormatEncodeError {
     FormatEncodeError::Encoding("failed to encode PDF bytes".to_owned())
 }
