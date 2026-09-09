@@ -1,3 +1,5 @@
+mod raster_preflight;
+
 use std::fmt::Write as _;
 use std::io::Write as _;
 
