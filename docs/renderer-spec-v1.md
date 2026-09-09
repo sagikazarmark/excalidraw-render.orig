@@ -1231,10 +1231,12 @@ all cause pointers. Deduplicated bytes do not deduplicate diagnostics.
 PDF text uses deterministic `rustybuzz` shaping, explicit glyph positions,
 stored source lines, the reviewed decodes of official font chunks, deterministic
 character codes, complete `ToUnicode`, and line-level `ActualText`. It does not
-reflow, outline, rasterize, subset, rename fonts, or consult host services.
-Only the reviewed decodes of chunks selected for glyphs actually used are
-embedded, each as one complete `FontFile2` stream, byte for byte; the complete
-Noto Emoji fallback, when selected, is embedded the same way as its exact
+reflow, outline, rasterize, subset, or consult host services, and never
+rewrites a program's own name table; the PDF-level names of an official font
+chunk's program carry the subset tag below. Only the reviewed decodes of
+chunks selected for glyphs actually used are embedded, each as one complete
+`FontFile2` stream, byte for byte before the stream filter; the complete Noto
+Emoji fallback, when selected, is embedded the same way as its exact
 digest-verified manifested bytes (Section 10), which have no decode.
 
 An official font chunk's reviewed decode is the sfnt the pinned `wuff 0.2.8`
@@ -1270,9 +1272,41 @@ sRGB, unpremultiplied, with invisible RGB canonicalized and alpha in a grayscale
 soft mask. Source profiles, lossy re-encoding, timestamps, random IDs,
 encryption, signatures, incremental revisions, and linearization are forbidden.
 
+Every stream the renderer itself writes is one `/Filter /FlateDecode` zlib
+stream produced by the pinned `miniz_oxide 0.8.9` at compression level 6 with
+the default strategy, the configuration the PNG encoder uses for `IDAT`
+(ADR-0004, ADR-0008): the page content stream, the fallback Form XObject
+streams, the ICC profile, the `scene.excalidraw` embedded file, every
+`FontFile2` program (whose `/Length1` is the complete sfnt length), every
+`ToUnicode` CMap and `CIDToGIDMap`, and each image's RGB plane and gray soft
+mask. Nested-SVG Form chunks are requested from `svg2pdf` with compression on,
+which deflates their content streams through the same crate at the same
+level. The one stored stream is the XMP metadata stream: PDF/A requires the
+metadata stream to be readable without a filter, and the file carries a
+`GTS_PDFA1` output intent. No other filter, predictor, or filter chain is
+emitted.
+
+Every embedded program that is an official font chunk — a Unicode-range chunk
+of its family, including the single Liberation Sans chunk — is named with a
+subset tag on the Type0 `/BaseFont`, the CIDFontType2 `/BaseFont`, and the
+descriptor `/FontName`: six uppercase letters and `+` before the family's PDF
+name, the letters spelling the first six nibbles of the chunk's manifested
+WOFF2 digest with `A` for 0 through `P` for 15, so two chunks of one family
+never share a name (`OEECDL+Excalifont`, `AAGKCL+LiberationSans`). The
+complete Noto Emoji face is not a subset and carries no tag. The `ToUnicode`
+`/CMapName` is the untagged `<PDF name>-UCS`.
+
+The trailer carries `/ID [<hex> <hex>]` with both entries equal: the first 16
+bytes of the SHA-256 over every byte of the file preceding the `trailer`
+keyword (the header, the objects, and the cross-reference table), as 32
+uppercase hexadecimal digits. No `/Info` dictionary is written, and the XMP
+carries no `pdfaid` schema: the output intent is stated, but no PDF/A
+conformance is claimed.
+
 Complete bytes are stable through fixed semantic object numbering, classic
-xref/trailer, one revision, canonical decimals and zero, fixed stream filters
-and Flate settings, and fixed dictionary and metadata order.
+xref/trailer, one revision, canonical decimals and zero, the fixed stream
+filter and Flate configuration above, the content-derived file identifier, and
+fixed dictionary and metadata order.
 
 PDF backend qualification MUST proceed in this order:
 
@@ -2046,9 +2080,13 @@ one uncompressed `iTXt` manifest with keyword
 `excalidraw-render:artifact-manifest`, compression flag/method zero, and empty
 language and translated keyword. No other `tEXt` or `iTXt` is emitted.
 
-PDF attaches raw canonical scene bytes as `scene.excalidraw` with media type
-`application/vnd.excalidraw+json`; it does not use the wrapper. The artifact
-manifest is the sole custom value in this exact bare, unpadded UTF-8 XMP tree:
+PDF attaches the raw canonical scene bytes as `scene.excalidraw` with media
+type `application/vnd.excalidraw+json`; it does not use the wrapper. The
+`EmbeddedFile` stream body is Flate-filtered like every other renderer-written
+stream (Section 8.6); its decoded content is the canonical scene bytes and
+nothing else. The artifact manifest is the sole custom value in this exact
+bare, unpadded UTF-8 XMP tree, carried in the one stream the file leaves
+stored:
 
 ```xml
 <x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:er="urn:excalidraw-render:pdf:metadata:1"><er:manifest>...canonical manifest JSON...</er:manifest></rdf:Description></rdf:RDF></x:xmpmeta>
