@@ -1,7 +1,7 @@
 {
   "approval": null,
   "case_id": "focused.rectangle-outline.v1",
-  "case_manifest_approval_subject_sha256": "sha256:bc870d20627148871b0b2c18dc9fe67476001dc9f47aa5f0b46742e5be837008",
+  "case_manifest_approval_subject_sha256": "sha256:8d89c6875dac672f9ef0a4797cea734897db7beeff6ceb4b7538e4341ed5e8b0",
   "compatibility_revision": 1,
   "coverage": [
     {
@@ -25,7 +25,7 @@
   "files": [
     {
       "path": "tests/conformance/cases/focused/rectangle-outline/manifest.json",
-      "sha256": "c0a575d3538308220215fcca26d42bb2d0682292d54b320c755b89a9bc99f2cc"
+      "sha256": "6df0efea0f98027be19697a637a8f2dcfce3fe999c3296d210abd44d3ee9646c"
     },
     {
       "path": "tests/conformance/cases/focused/rectangle-outline/scene.excalidraw",
