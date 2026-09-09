@@ -896,7 +896,7 @@ const DOMAIN_CATALOG = {
   cursor_button: domain(["string"], [], ["up", "down"]),
   data_url: domain(["string"], ["bounded canonical data: URL with a validated local payload"]),
   element_type: domain(["string"], [], ELEMENT_KINDS),
-  fill_style: domain(["string"], [], ["hachure", "cross-hatch", "solid", "zigzag"]),
+  fill_style: domain(["string"], [], ["hachure", "cross-hatch", "solid", "zigzag", "zigzag-line", "dots", "dashed"]),
   finite_number: domain(["number"], ["finite"]),
   finite_number_array: domain(["array"], ["every item finite"]),
   freedraw_points: domain(["array"], ["zero or more nested.point records"]),
@@ -1099,13 +1099,26 @@ function buildFieldDispositions(evidenceByClassification) {
     frameRendering: ["frame_rendering", { clip: true, enabled: true, name: true, outline: true }, ["visual"]],
     viewBackgroundColor: ["css_color", "#ffffff", ["visual"]],
   };
+  // The four export options the pinned APP_STATE_STORAGE_CONF stores with
+  // `export: false`, so cleanAppStateForExport strips them from every scene
+  // document the official application writes; the request alone selects what
+  // they name (spec section 8.1, decided on #137). frameRendering shares the
+  // flag but is the one export option a scene export honors, scene AND request.
+  const requestOnlyAppState = {
+    exportBackground: "whether the background paints",
+    exportEmbedScene: "whether the canonicalized original scene document is embedded",
+    exportScale: "the scale",
+    exportWithDarkMode: "the color mode",
+  };
   for (const [name, [domainId, defaultValue, effects]] of Object.entries(supportedAppState)) {
     add("app_state", name, domainId, "supported", {
       invalid: name === "viewBackgroundColor"
         ? fallback("substitute", { code: "color.invalid", effects: ["input_repair", "visual"], recovery: "substituted", value: defaultValue })
         : unsupportedValue(defaultValue, ["input_repair", ...effects]),
       missing: fallback("default", { value: defaultValue }),
-      normalization: "The public render request overrides the scene value when explicitly supplied; otherwise the revision-1 default is used.",
+      normalization: Object.hasOwn(requestOnlyAppState, name)
+        ? `Request-only. The scene value is validated and diagnosed under this manifest but never consumed: the public render request alone selects ${requestOnlyAppState[name]}, and the revision-1 default applies when the request leaves it unset. In the pinned release's APP_STATE_STORAGE_CONF this field carries export: false, so cleanAppStateForExport strips it from every scene document the official application writes; a value found in one is hand-edited, and honoring it would change a render nobody asked to change.`
+        : "The public render request overrides the scene value when explicitly supplied; otherwise the revision-1 default is used.",
       scope: scope(effects, "global", FORMATS, [name]),
       sourceIds: ["excalidraw.app-state", "excalidraw.public-export", "excalidraw.scene-export"],
     });
