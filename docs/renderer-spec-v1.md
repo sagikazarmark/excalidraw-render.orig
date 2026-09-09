@@ -1323,7 +1323,13 @@ Geometry uses owned target-neutral `f64` points, transforms, bounds, and
 move/line/quadratic/cubic/close paths. Operation order is deterministic,
 target-specific fast paths are forbidden, non-finite and negative-zero handling
 is canonical, and quantization occurs only at declared projection boundaries.
-No observable order may depend on hash iteration.
+Transcendental functions (`sin`, `cos`, `atan2`, `pow`, `hypot`, `cbrt`, and any
+later addition) are called only through one package-private module that routes
+them to the pinned pure-Rust `libm` crate so every supported target computes the
+same double, `powi` is not used, and only the functions IEEE 754 makes exact or
+correctly rounded (`sqrt`, `abs`, rounding, `min`/`max`, `copysign`,
+`rem_euclid`, `mul_add`) may be called on `std` (ADR-0007). No observable order
+may depend on hash iteration.
 
 SVG, PNG, and PDF have separate typed plans. A universal display list,
 scattered backend conditionals, and serialized-SVG pivot are forbidden.
