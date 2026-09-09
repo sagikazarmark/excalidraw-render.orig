@@ -104,9 +104,13 @@ pub fn family_name(face: &rustybuzz::Face<'_>) -> String {
         .expect("embedded face keeps its English family name")
 }
 
-/// The page resource name (`/F<n>`) of the Type0 font with the given base font.
-pub fn font_resource(pdf: &str, base_font: &str) -> String {
-    let header = format!("<<\n/Type /Font\n/Subtype /Type0\n{base_font}\n");
+/// The page resource name (`/F<n>`) of the Type0 font whose base font is
+/// `pdf_name`, with or without its subset tag.
+pub fn font_resource(pdf: &str, pdf_name: &str) -> String {
+    let header = format!(
+        "<<\n/Type /Font\n/Subtype /Type0\n/BaseFont /{}\n",
+        base_font(pdf, pdf_name)
+    );
     let position = pdf.find(&header).expect("the base font has a Type0 object");
     let object = pdf[..position]
         .strip_suffix(" 0 obj\n")
@@ -203,6 +207,62 @@ pub fn stream_data(pdf: &[u8], object: &[u8]) -> Vec<u8> {
 /// CMap is.
 pub fn stream_text(pdf: &[u8], object: &[u8]) -> String {
     String::from_utf8(stream_data(pdf, object)).expect("stream is UTF-8 text")
+}
+
+/// Every `/BaseFont` name the PDF's Type0 fonts declare, in document order,
+/// subset tag included: `OEECDL+Excalifont` for an official font chunk's
+/// program, `NotoEmoji` for the complete face.
+pub fn type0_base_fonts(pdf: &str) -> Vec<&str> {
+    pdf.split("/Type /Font\n/Subtype /Type0\n/BaseFont /")
+        .skip(1)
+        .map(|tail| tail.split('\n').next().expect("the base font line ends"))
+        .collect()
+}
+
+/// The program name that spells `pdf_name` once its subset tag is removed:
+/// six uppercase letters and `+` for an official font chunk (ADR-0008), or
+/// the bare name of a complete face.
+pub fn strip_subset_tag(base_font: &str) -> &str {
+    match base_font.split_once('+') {
+        Some((tag, name))
+            if tag.len() == 6 && tag.bytes().all(|byte| (b'A'..=b'P').contains(&byte)) =>
+        {
+            name
+        }
+        _ => base_font,
+    }
+}
+
+/// Whether the PDF declares a Type0 font for `pdf_name`, tagged or not.
+pub fn declares_base_font(pdf: &str, pdf_name: &str) -> bool {
+    type0_base_fonts(pdf)
+        .into_iter()
+        .any(|base_font| strip_subset_tag(base_font) == pdf_name)
+}
+
+/// The declared `/BaseFont` of `pdf_name`'s first Type0 font, tag included.
+pub fn base_font<'a>(pdf: &'a str, pdf_name: &str) -> &'a str {
+    type0_base_fonts(pdf)
+        .into_iter()
+        .find(|base_font| strip_subset_tag(base_font) == pdf_name)
+        .unwrap_or_else(|| panic!("the PDF declares a Type0 font for {pdf_name}"))
+}
+
+/// The two equal file identifiers of the trailer `/ID`, as the PDF spells
+/// them: 32 uppercase hex digits each (ADR-0008).
+pub fn trailer_file_identifiers(pdf: &[u8]) -> (String, String) {
+    let text = String::from_utf8_lossy(pdf);
+    let trailer = text
+        .rsplit("\ntrailer\n")
+        .next()
+        .expect("the PDF ends in a trailer");
+    let ids = trailer
+        .split("/ID [<")
+        .nth(1)
+        .and_then(|rest| rest.split(">]").next())
+        .expect("the trailer carries /ID");
+    let (first, second) = ids.split_once("> <").expect("/ID carries two strings");
+    (first.to_owned(), second.to_owned())
 }
 
 /// The offset of the first `needle` in `haystack`.

@@ -1,11 +1,12 @@
 use crate::common::approved_scenes::{rectangle_outline_scene, render_rectangle_outline_pdf};
-use crate::common::pdf_inspect::{pdf_text, stream_data, stream_text};
+use crate::common::pdf_inspect::{pdf_text, stream_data, stream_text, trailer_file_identifiers};
 use crate::common::reports::assert_report_matches;
 use crate::common::repository_root;
 use excalidraw_render::{
     ErrorCode, OutputFormat, RenderErrorCategory, RenderOutcome, RenderRequest, Renderer,
     ResourceLimits, Sizing,
 };
+use sha2::{Digest, Sha256};
 
 const EXPECTED_ROUGH_PATH: &str = concat!(
     "0 0 m\n60.36 0.51 117.93 -1.29 180 0 c\n",
@@ -91,10 +92,8 @@ fn approved_rectangle_renders_as_a_vector_first_pdf() {
         "/ArtBox",
         "/Rotate",
         "/UserUnit",
-        "/ID ",
         "/Encrypt",
         "/Linearized",
-        "/Filter",
     ] {
         assert!(
             !pdf.contains(forbidden),
@@ -102,6 +101,37 @@ fn approved_rectangle_renders_as_a_vector_first_pdf() {
         );
     }
     assert!(!bytes.windows(4).any(|window| window == b"<svg"));
+
+    // Every stream the renderer writes is one Flate stream (ADR-0008): the
+    // content stream and the ICC profile here, and nothing else is filtered.
+    let raw = String::from_utf8_lossy(bytes);
+    assert_eq!(raw.matches("/Filter /FlateDecode\n").count(), 2);
+    assert_eq!(raw.matches("\nstream\n").count(), 2);
+    assert!(
+        !pdf.contains("/Filter"),
+        "inflating drops every filter entry"
+    );
+
+    // The trailer identifier is the first 16 bytes of the SHA-256 over every
+    // byte before `trailer`, repeated, so it is a pure function of the
+    // artifact (ADR-0008).
+    let trailer_at = bytes
+        .windows(b"\ntrailer\n".len())
+        .rposition(|window| window == b"\ntrailer\n")
+        .expect("the PDF has one trailer")
+        + 1;
+    assert!(
+        !String::from_utf8_lossy(&bytes[trailer_at..]).contains("/Info"),
+        "the trailer carries no document information dictionary"
+    );
+    let expected_identifier = Sha256::digest(&bytes[..trailer_at])[..16]
+        .iter()
+        .map(|byte| format!("{byte:02X}"))
+        .collect::<String>();
+    assert_eq!(
+        trailer_file_identifiers(bytes),
+        (expected_identifier.clone(), expected_identifier)
+    );
 }
 
 #[test]

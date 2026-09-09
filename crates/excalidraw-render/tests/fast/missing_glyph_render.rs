@@ -14,7 +14,8 @@ use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
 use crate::common::pdf_inspect::{
-    embedded_pdf_fonts, family_name, font_resource, pdf_actual_text, pdf_text, to_unicode_cmap,
+    declares_base_font, embedded_pdf_fonts, family_name, font_resource, pdf_actual_text, pdf_text,
+    to_unicode_cmap,
 };
 
 const CASE: &str = "tests/conformance/cases/focused/missing-glyph";
@@ -150,10 +151,10 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
 
     // One embedded face per family, and nothing from the fallback chain the
     // scene does not reach.
-    assert!(pdf.contains("/Subtype /Type0\n/BaseFont /Excalifont\n"));
-    assert!(pdf.contains("/Subtype /Type0\n/BaseFont /LiberationSans\n"));
-    assert!(!pdf.contains("/BaseFont /Xiaolai"));
-    assert!(!pdf.contains("/BaseFont /NotoEmoji"));
+    assert!(declares_base_font(&pdf, "Excalifont"));
+    assert!(declares_base_font(&pdf, "LiberationSans"));
+    assert!(!declares_base_font(&pdf, "Xiaolai"));
+    assert!(!declares_base_font(&pdf, "NotoEmoji"));
 
     // The PDF embeds each family's complete program (subsetting is an SVG
     // contract, 8.3), so what the replacement pins is which program the `?`
@@ -213,8 +214,8 @@ fn pdf_embeds_liberation_sans_for_the_replacement_runs_and_carries_the_stored_sc
     // `??` and `?` runs, each drawn as the `?` CID, and back to Excalifont
     // for the Latin around them; the Liberation Sans line never leaves its
     // own face.
-    let liberation = font_resource(&pdf, "/BaseFont /LiberationSans");
-    let excalifont = font_resource(&pdf, "/BaseFont /Excalifont");
+    let liberation = font_resource(&pdf, "LiberationSans");
+    let excalifont = font_resource(&pdf, "Excalifont");
     let lines: Vec<&str> = pdf
         .split(ACTUAL_TEXT)
         .skip(1)

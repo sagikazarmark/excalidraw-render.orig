@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::common::pdf_inspect::{pdf_actual_text, pdf_text, stream_data};
+use crate::common::pdf_inspect::{declares_base_font, pdf_actual_text, pdf_text, stream_data};
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request};
 use crate::common::reports::assert_report_matches;
@@ -88,7 +88,7 @@ fn excalifont_text_renders_semantically_in_every_format() {
             OutputFormat::Pdf => {
                 let pdf = pdf_text(first.artifact().bytes());
                 assert!(pdf.contains("/Subtype /Type0"));
-                assert!(pdf.contains("/BaseFont /Excalifont"));
+                assert!(declares_base_font(&pdf, "Excalifont"));
                 assert!(pdf.contains("/ToUnicode "));
                 assert!(pdf.contains("/FontFile2 "));
                 assert!(pdf.contains("/CIDToGIDMap "));

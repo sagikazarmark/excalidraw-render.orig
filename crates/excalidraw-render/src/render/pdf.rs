@@ -19,11 +19,14 @@ mod nested_svg;
 mod raster_preflight;
 mod streams;
 
+use fonts::embedded_font_name;
 use nested_svg::{append_chunk, collect_raster_closures, renumber_svg_chunks, svg_chunks};
 use streams::{deflate_stream, write_flate_stream_object};
 
 use std::io::Write as _;
 use std::sync::Arc;
+
+use sha2::{Digest as _, Sha256};
 
 use crate::diagnostic_registry::MetadataFailure;
 use crate::normalization::NormalizedElementSource;
@@ -46,7 +49,7 @@ use super::resolve::{
     ResolvedTransform, StrokeStyle,
 };
 use super::rough::{Drawing, Fill};
-use super::text::{ResolvedLabel, ResolvedText};
+use super::text::{ResolvedLabel, ResolvedText, LIBERATION_SANS_IDENTITY};
 use super::{freedraw, FormatEncodeError, SvgTreeCache};
 
 pub(super) const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
@@ -885,6 +888,7 @@ impl PdfPlan {
                 font_object,
                 font,
                 program,
+                &embedded_font_name(LIBERATION_SANS_IDENTITY, "LiberationSans")?,
                 "LiberationSans",
                 &fallback_mappings,
             )?;
@@ -897,6 +901,7 @@ impl PdfPlan {
                     checked_object(first_object, index, 6)?,
                     &font.sfnt,
                     &official_font_programs[index],
+                    &embedded_font_name(font.identity, font.pdf_name)?,
                     font.pdf_name,
                     &official_mappings[index],
                 )?;
@@ -944,10 +949,28 @@ impl PdfPlan {
         for offset in &offsets {
             writeln!(pdf, "{offset:010} 00000 n\r").map_err(write_error)?;
         }
+        // The file identifier is a pure function of the bytes before it: the
+        // first 16 bytes of the SHA-256 over everything written so far, the
+        // objects and the cross-reference table, spelled as one uppercase hex
+        // string and repeated, since a first revision's two entries are the
+        // same identifier (ADR-0008). No timestamp or random input is involved,
+        // so identical artifacts carry identical identifiers.
+        let mut file_identifier = String::new();
+        for byte in &Sha256::digest(&pdf)[..16] {
+            std::fmt::Write::write_fmt(&mut file_identifier, format_args!("{byte:02X}")).map_err(
+                |_| FormatEncodeError::Encoding("failed to encode PDF file identifier".to_owned()),
+            )?;
+        }
         write!(
             pdf,
-            "trailer\n<<\n/Size {}\n/Root 1 0 R\n>>\nstartxref\n{xref_offset}\n%%EOF",
-            object_count + 1
+            concat!(
+                "trailer\n<<\n/Size {}\n/Root 1 0 R\n/ID [<{}> <{}>]\n>>\n",
+                "startxref\n{}\n%%EOF"
+            ),
+            object_count + 1,
+            file_identifier,
+            file_identifier,
+            xref_offset
         )
         .map_err(write_error)?;
         Ok(pdf)

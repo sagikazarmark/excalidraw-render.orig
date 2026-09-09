@@ -4,7 +4,7 @@ use excalidraw_render::{
     SceneDocument,
 };
 
-use crate::common::pdf_inspect::{embedded_pdf_fonts, pdf_text};
+use crate::common::pdf_inspect::{declares_base_font, embedded_pdf_fonts, pdf_text};
 use crate::common::svg::{
     font_family_attribute, CASCADIA_FAMILIES, COMIC_SHANNS_FAMILIES, EXCALIFONT_FAMILIES,
     LIBERATION_FAMILIES, LILITA_FAMILIES, NOTO_EMOJI_FAMILIES, NUNITO_FAMILIES, VIRGIL_FAMILIES,
@@ -80,7 +80,7 @@ fn retained_latin_families_embed_their_pdf_base_font_names() {
             .unwrap_or_else(|error| panic!("font family {font_family} renders: {error}"));
         let pdf = pdf_text(outcome.artifact().bytes());
         assert!(
-            pdf.contains(&format!("/BaseFont /{pdf_name}")),
+            declares_base_font(&pdf, pdf_name),
             "font family {font_family} embeds {pdf_name}"
         );
         assert!(pdf.contains("/ActualText <FEFF0043006100740061006C006F0067>"));
@@ -144,8 +144,8 @@ fn mixed_official_families_keep_independent_font_resources() {
             OutputFormat::Png => assert!(outcome.artifact().bytes().starts_with(b"\x89PNG")),
             OutputFormat::Pdf => {
                 let pdf = pdf_text(outcome.artifact().bytes());
-                assert!(pdf.contains("/BaseFont /Virgil"));
-                assert!(pdf.contains("/BaseFont /CascadiaCode"));
+                assert!(declares_base_font(&pdf, "Virgil"));
+                assert!(declares_base_font(&pdf, "CascadiaCode"));
                 assert!(pdf.contains("/F2 20 Tf"));
                 assert!(pdf.contains("/F3 20 Tf"));
             }
@@ -217,9 +217,9 @@ fn excalifont_uses_ordered_cjk_and_emoji_fallbacks_in_every_format() {
             OutputFormat::Png => assert!(first.artifact().bytes().starts_with(b"\x89PNG")),
             OutputFormat::Pdf => {
                 let pdf = pdf_text(first.artifact().bytes());
-                assert!(pdf.contains("/BaseFont /Excalifont"));
-                assert!(pdf.contains("/BaseFont /Xiaolai"));
-                assert!(pdf.contains("/BaseFont /NotoEmoji"));
+                assert!(declares_base_font(&pdf, "Excalifont"));
+                assert!(declares_base_font(&pdf, "Xiaolai"));
+                assert!(declares_base_font(&pdf, "NotoEmoji"));
                 assert!(pdf.contains("/ActualText <FEFF00414E2DD83DDE00>"));
             }
             _ => unreachable!("this test covers revision 1 formats"),
@@ -287,7 +287,7 @@ fn xiaolai_stays_declared_when_local_recovery_omits_the_text_that_fired_the_trig
             OutputFormat::Png => assert!(outcome.artifact().bytes().starts_with(b"\x89PNG")),
             OutputFormat::Pdf => {
                 let pdf = pdf_text(outcome.artifact().bytes());
-                assert!(pdf.contains("/BaseFont /Xiaolai"));
+                assert!(declares_base_font(&pdf, "Xiaolai"));
                 assert!(pdf.contains("/ActualText <FEFF20A9>"));
                 assert!(!pdf.contains("4E2D"));
             }

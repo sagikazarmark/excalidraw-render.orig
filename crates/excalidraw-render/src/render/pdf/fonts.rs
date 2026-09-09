@@ -2,10 +2,15 @@
 //! descendant, descriptor, FontFile2 stream, ToUnicode CMap and CIDToGIDMap —
 //! and every shaped glyph the content stream shows is assigned a deterministic
 //! Identity-H character code in first-use order, one mapping table for the
-//! Liberation Sans fallback face and one per official font.
+//! Liberation Sans fallback face and one per official font. An official font
+//! chunk's program is named with a subset tag derived from the chunk's
+//! manifested digest (ADR-0008), so two chunks of one family never share a
+//! `/BaseFont`.
 
 use std::fmt::Write as _;
 use std::io::Write as _;
+
+use excalidraw_render_assets_base::AssetRecord;
 
 use super::super::text::{ResolvedGlyph, ResolvedLabel};
 use super::super::FormatEncodeError;
@@ -20,10 +25,60 @@ pub(super) struct PdfGlyphMapping {
     pub(super) unicode: Vec<u16>,
 }
 
+/// The `/BaseFont` and `/FontName` of one embedded program: a subset-tagged
+/// name for an official font chunk, the family's PDF name alone for a
+/// complete face.
+///
+/// The tag is the one PDF reserves for embedded subsets — six uppercase
+/// letters and `+` — and here it spells the first six nibbles of the chunk's
+/// manifested WOFF2 digest, `A` for 0 through `P` for 15, so it is a pure
+/// function of the chunk and the three Xiaolai chunks a scene can embed carry
+/// three names. A program that is not a Unicode-range chunk of its family, the
+/// complete Noto Emoji face, carries no tag. The CMap name stays untagged.
+pub(super) fn embedded_font_name(
+    identity: &str,
+    pdf_name: &str,
+) -> Result<String, FormatEncodeError> {
+    let Some(record) = official_chunk_record(identity) else {
+        return Ok(pdf_name.to_owned());
+    };
+    let mut name = String::new();
+    name.try_reserve_exact(7_usize.saturating_add(pdf_name.len()))
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_workspace",
+            subject: "pdf_font_name",
+        })?;
+    for nibble in record.complete_sha256.bytes().take(6) {
+        let value = (nibble as char).to_digit(16).ok_or_else(|| {
+            FormatEncodeError::Encoding("official font chunk digest is not hexadecimal".to_owned())
+        })?;
+        name.push(char::from(b'A' + value as u8));
+    }
+    if name.len() != 6 {
+        return Err(FormatEncodeError::Encoding(
+            "official font chunk digest is shorter than a subset tag".to_owned(),
+        ));
+    }
+    name.push('+');
+    name.push_str(pdf_name);
+    Ok(name)
+}
+
+/// The catalog record of the official font chunk `identity` names
+/// (`<upstream path>@sha256:<manifested digest>`), or `None` for a face the
+/// catalog does not list as a chunk.
+fn official_chunk_record(identity: &str) -> Option<&'static AssetRecord> {
+    let (upstream_path, _) = identity.split_once("@sha256:")?;
+    excalidraw_render_assets_base::find_asset(upstream_path)
+        .filter(|record| record.identity == identity)
+}
+
 impl PdfPlan {
     /// Writes the six objects of one embedded face: `font` is the complete
     /// sfnt the descriptor's metrics and `/Length1` come from, `program` its
-    /// deflated `FontFile2` body.
+    /// deflated `FontFile2` body, `base_font` the tagged or complete name the
+    /// Type0 font, its descendant and the descriptor carry, and `cmap_name`
+    /// the family's PDF name the ToUnicode CMap is registered under.
     #[allow(clippy::too_many_arguments)]
     pub(super) fn write_font_objects(
         &self,
@@ -33,6 +88,7 @@ impl PdfPlan {
         font: &[u8],
         program: &[u8],
         base_font: &str,
+        cmap_name: &str,
         mappings: &[PdfGlyphMapping],
     ) -> Result<(), FormatEncodeError> {
         let cid_font_object = font_object.checked_add(1).ok_or_else(pdf_size_error)?;
@@ -107,7 +163,7 @@ impl PdfPlan {
         pdf.extend_from_slice(b"\nendstream\nendobj\n");
 
         let cmap = deflate_stream(
-            to_unicode_cmap(mappings, base_font)?.as_bytes(),
+            to_unicode_cmap(mappings, cmap_name)?.as_bytes(),
             "pdf_to_unicode_stream",
         )?;
         write_flate_stream_object(pdf, offsets, to_unicode_object, "", &cmap)?;
@@ -335,4 +391,52 @@ fn to_unicode_cmap(
     }
     cmap.push_str("endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend");
     Ok(cmap)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn official_chunk_programs_carry_a_digest_derived_subset_tag() {
+        // Liberation Sans: manifested digest 006a2b28… → nibbles 0 0 6 a 2 b.
+        assert_eq!(
+            embedded_font_name(
+                super::super::super::text::LIBERATION_SANS_IDENTITY,
+                "LiberationSans"
+            )
+            .expect("tag derives"),
+            "AAGKCL+LiberationSans"
+        );
+        let excalifont = excalidraw_render_assets_base::find_asset(
+            "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
+        )
+        .expect("the Excalifont basic-Latin chunk is catalogued");
+        assert!(excalifont.complete_sha256.starts_with("e4423b"));
+        assert_eq!(
+            embedded_font_name(excalifont.identity, "Excalifont").expect("tag derives"),
+            "OEECDL+Excalifont"
+        );
+    }
+
+    #[test]
+    fn the_complete_noto_emoji_face_is_not_a_subset_and_carries_no_tag() {
+        let identity = concat!(
+            "scripts/woff2/assets/NotoEmoji-Regular.ttf@sha256:",
+            "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634"
+        );
+        assert_eq!(
+            embedded_font_name(identity, "NotoEmoji").expect("name derives"),
+            "NotoEmoji"
+        );
+    }
+
+    #[test]
+    fn an_identity_whose_digest_disagrees_with_the_catalog_is_not_a_chunk() {
+        let identity = concat!(
+            "fonts/Liberation/LiberationSans-Regular.woff2@sha256:",
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        );
+        assert!(official_chunk_record(identity).is_none());
+    }
 }

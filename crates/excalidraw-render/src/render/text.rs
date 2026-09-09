@@ -7,7 +7,7 @@ use crate::font_metadata::FamilyMetrics;
 const LIBERATION_SANS_PATH: &str = "fonts/Liberation/LiberationSans-Regular.woff2";
 const EXCALIFONT_LATIN_PATH: &str =
     "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2";
-const LIBERATION_SANS_IDENTITY: &str = concat!(
+pub(super) const LIBERATION_SANS_IDENTITY: &str = concat!(
     "fonts/Liberation/LiberationSans-Regular.woff2@sha256:",
     "006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8"
 );

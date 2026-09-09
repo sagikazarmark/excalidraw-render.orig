@@ -16,8 +16,8 @@ use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
 use crate::common::pdf_inspect::{
-    embedded_pdf_fonts, family_name, font_resource, marked_content_line, pdf_actual_text, pdf_text,
-    to_unicode_cmap,
+    declares_base_font, embedded_pdf_fonts, family_name, font_resource, marked_content_line,
+    pdf_actual_text, pdf_text, to_unicode_cmap,
 };
 
 const CASE: &str = "tests/conformance/cases/focused/emoji-fallback";
@@ -184,10 +184,10 @@ fn pdf_embeds_the_complete_noto_emoji_face_for_the_emoji_runs_and_carries_the_st
 
     // One embedded face per family plus the fallback, and nothing from the
     // chain the scene does not reach.
-    assert!(pdf.contains("/Subtype /Type0\n/BaseFont /Excalifont\n"));
-    assert!(pdf.contains("/Subtype /Type0\n/BaseFont /NotoEmoji\n"));
-    assert!(pdf.contains("/Subtype /Type0\n/BaseFont /LiberationSans\n"));
-    assert!(!pdf.contains("/BaseFont /Xiaolai"));
+    assert!(declares_base_font(&pdf, "Excalifont"));
+    assert!(declares_base_font(&pdf, "NotoEmoji"));
+    assert!(declares_base_font(&pdf, "LiberationSans"));
+    assert!(!declares_base_font(&pdf, "Xiaolai"));
 
     // Spec 8.6: the complete Noto Emoji fallback is embedded as its exact
     // manifested bytes, which have no decode. It is the only embedded program
@@ -242,9 +242,9 @@ fn pdf_embeds_the_complete_noto_emoji_face_for_the_emoji_runs_and_carries_the_st
     // Each line switches to the Noto Emoji resource for exactly one run, two
     // CIDs on the Excalifont line and one on the Liberation Sans line, and
     // back to its own face for the Latin around it.
-    let noto = font_resource(&pdf, "/BaseFont /NotoEmoji");
-    let excalifont = font_resource(&pdf, "/BaseFont /Excalifont");
-    let liberation = font_resource(&pdf, "/BaseFont /LiberationSans");
+    let noto = font_resource(&pdf, "NotoEmoji");
+    let excalifont = font_resource(&pdf, "Excalifont");
+    let liberation = font_resource(&pdf, "LiberationSans");
     let excalifont_line = marked_content_line(&pdf, EXCALIFONT_ACTUAL_TEXT);
     let liberation_line = marked_content_line(&pdf, LIBERATION_ACTUAL_TEXT);
     let emoji_runs = |line: &str| -> Vec<usize> {
