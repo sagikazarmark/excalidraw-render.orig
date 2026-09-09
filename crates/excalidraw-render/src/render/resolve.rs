@@ -4,6 +4,7 @@ use crate::normalization::{
     NormalizedElement, NormalizedElementKind, NormalizedElementSource, NormalizedText,
 };
 use crate::outcome::DiagnosticOrder;
+use crate::relationships::ResolvedRelationshipGraph;
 use crate::resource_accounting::ResourceDelta;
 use crate::{
     CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, DiagnosticSeverity, ErrorCode,
@@ -13,6 +14,7 @@ use crate::{
 
 use super::bound_text::{
     has_reciprocal_bound_text, resolve_bound_text_masks, resolve_bound_text_placements,
+    BoundTextMaskSource,
 };
 use super::font_demand::{prune_unused_official_fonts, ResolvedFont};
 use super::frame_target::{
@@ -274,6 +276,92 @@ impl From<std::collections::TryReserveError> for ResolveSceneError {
     }
 }
 
+/// The scene-level failure a label, frame name, official font or fallback font
+/// error becomes. `mandatory_notices_json` is the one caller that maps
+/// `InvalidFont` elsewhere, to `InvalidMandatoryNotice`, so this stays a named
+/// function rather than a `From` impl `?` would apply there too.
+fn label_error(error: text::LabelError) -> ResolveSceneError {
+    match error {
+        text::LabelError::Memory => ResolveSceneError::Memory,
+        text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+    }
+}
+
+/// What every element's resolution reads once the scene's bounds are settled:
+/// the request, the relationship graph, the effective frame rendering, the
+/// semantic frames that clip and fade their children, the bound-text masks,
+/// the canvas background, the CJK subset trigger's outcome, and the layout
+/// origin every canvas placement subtracts. Per-element state — the frame
+/// clips and opacity the loop computes first, and the official fonts the text
+/// and label resolutions load — travels beside it.
+struct ResolveContext<'a> {
+    request: &'a RenderRequest,
+    relationships: &'a ResolvedRelationshipGraph,
+    frame_rendering: EffectiveFrameRendering,
+    semantic_frames: &'a [SemanticFrameSource],
+    bound_text_masks: &'a [BoundTextMaskSource],
+    background_color: CanonicalColor,
+    cjk_subset_trigger: text::CjkSubsetTrigger,
+    min_x: f64,
+    min_y: f64,
+}
+
+impl ResolveContext<'_> {
+    /// Canvas placement of a source box whose top-left corner is `(x, y)`: the
+    /// scene origin moves to the padding, and the rotation is about the given
+    /// center in the box's own space.
+    fn transform(
+        &self,
+        x: f64,
+        y: f64,
+        angle_radians: f64,
+        center_x: f64,
+        center_y: f64,
+    ) -> ResolvedTransform {
+        ResolvedTransform {
+            translation_x: x - self.min_x + self.request.padding(),
+            translation_y: y - self.min_y + self.request.padding(),
+            angle_radians,
+            center_x,
+            center_y,
+        }
+    }
+
+    /// The placement of an element rotated about the center of its own box.
+    fn box_transform(&self, source: &NormalizedElement) -> ResolvedTransform {
+        self.transform(
+            source.x,
+            source.y,
+            source.angle,
+            source.width / 2.0,
+            source.height / 2.0,
+        )
+    }
+
+    /// The clips the frame that owns `source_index` applies to it.
+    fn frame_clips(&self, source_index: usize) -> Result<Vec<ResolvedClip>, ResolveSceneError> {
+        resolve_frame_clips(
+            source_index,
+            self.semantic_frames,
+            self.relationships,
+            self.frame_rendering,
+            self.min_x,
+            self.min_y,
+            self.request.padding(),
+        )
+    }
+
+    /// The opacity the frame that owns `source_index` multiplies into it.
+    fn frame_opacity(&self, source_index: usize) -> f64 {
+        resolve_frame_opacity(
+            source_index,
+            self.semantic_frames,
+            self.relationships,
+            self.frame_rendering,
+        )
+    }
+}
+
 impl ResolvedScene {
     pub(super) fn empty(
         background_color: &str,
@@ -355,10 +443,7 @@ impl ResolvedScene {
         let fallback_font = if (shows_frame_names && has_frames)
             || fallbacks.iter().any(|fallback| fallback.paint)
         {
-            Some(text::FallbackFont::load().map_err(|error| match error {
-                text::LabelError::Memory => ResolveSceneError::Memory,
-                text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
-            })?)
+            Some(text::FallbackFont::load().map_err(label_error)?)
         } else {
             None
         };
@@ -380,12 +465,9 @@ impl ResolvedScene {
                 let font = fallback_font
                     .as_ref()
                     .ok_or(ResolveSceneError::InvalidFallbackFont)?;
-                let name =
-                    font.resolve_frame_name(title, source.width)
-                        .map_err(|error| match error {
-                            text::LabelError::Memory => ResolveSceneError::Memory,
-                            text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
-                        })?;
+                let name = font
+                    .resolve_frame_name(title, source.width)
+                    .map_err(label_error)?;
                 frame_names.try_reserve(1)?;
                 frame_names.push((source.source.source_index(), name));
             }
@@ -595,22 +677,20 @@ impl ResolvedScene {
             crate::ColorMode::Dark => FRAME_NAME_COLOR_DARK,
         }
         .for_mode(request.color_mode());
+        let context = ResolveContext {
+            request,
+            relationships,
+            frame_rendering,
+            semantic_frames: &semantic_frames,
+            bound_text_masks: &bound_text_masks,
+            background_color,
+            cjk_subset_trigger,
+            min_x,
+            min_y,
+        };
         for (source, geometry) in outlines {
-            let frame_clips = resolve_frame_clips(
-                source.source.source_index(),
-                &semantic_frames,
-                relationships,
-                frame_rendering,
-                min_x,
-                min_y,
-                request.padding(),
-            )?;
-            let frame_opacity = resolve_frame_opacity(
-                source.source.source_index(),
-                &semantic_frames,
-                relationships,
-                frame_rendering,
-            );
+            let frame_clips = context.frame_clips(source.source.source_index())?;
+            let frame_opacity = context.frame_opacity(source.source.source_index());
             if matches!(
                 source.kind,
                 NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
@@ -621,17 +701,13 @@ impl ResolvedScene {
                         .position(|(index, _)| *index == source.source.source_index())
                         .map(|position| frame_names.swap_remove(position).1)
                         .map(|name| ResolvedFrameName {
-                            transform: ResolvedTransform {
-                                translation_x: source.x - min_x + request.padding(),
-                                translation_y: source.y
-                                    - text::FRAME_NAME_OFFSET_Y
-                                    - text::FRAME_NAME_BOX_HEIGHT
-                                    - min_y
-                                    + request.padding(),
-                                angle_radians: 0.0,
-                                center_x: name.width / 2.0,
-                                center_y: text::FRAME_NAME_BOX_HEIGHT / 2.0,
-                            },
+                            transform: context.transform(
+                                source.x,
+                                source.y - text::FRAME_NAME_OFFSET_Y - text::FRAME_NAME_BOX_HEIGHT,
+                                0.0,
+                                name.width / 2.0,
+                                text::FRAME_NAME_BOX_HEIGHT / 2.0,
+                            ),
                             color: frame_name_color,
                             label: name.label,
                         });
@@ -647,19 +723,14 @@ impl ResolvedScene {
                             )
                         })
                         .transpose()?;
+                    let transform = context.box_transform(&source);
                     elements.push(ResolvedElement::Frame(ResolvedFrame {
                         source_order: source.source_order,
                         source: source.source,
                         name,
                         outline,
                         frame_clips,
-                        transform: ResolvedTransform {
-                            translation_x: source.x - min_x + request.padding(),
-                            translation_y: source.y - min_y + request.padding(),
-                            angle_radians: source.angle,
-                            center_x: source.width / 2.0,
-                            center_y: source.height / 2.0,
-                        },
+                        transform,
                         opacity: source.opacity / 100.0 * frame_opacity,
                         link: source.link,
                         width: source.width,
@@ -690,12 +761,7 @@ impl ResolvedScene {
                     official_fonts.try_reserve(1)?;
                     official_fonts.push(
                         text::OfficialFont::load(text_source.font_family, &text_source.text)
-                            .map_err(|error| match error {
-                                text::LabelError::Memory => ResolveSceneError::Memory,
-                                text::LabelError::InvalidFont => {
-                                    ResolveSceneError::InvalidFallbackFont
-                                }
-                            })?,
+                            .map_err(label_error)?,
                     );
                     official_fonts.len() - 1
                 };
@@ -710,10 +776,7 @@ impl ResolvedScene {
                             font_family: text_source.font_family,
                         },
                     )
-                    .map_err(|error| match error {
-                        text::LabelError::Memory => ResolveSceneError::Memory,
-                        text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
-                    })?;
+                    .map_err(label_error)?;
                 laid_out.font_index = font_index;
                 if !laid_out.missing_codepoints.is_empty()
                     || text::contains_bidirectional_text(&text_source.text)
@@ -729,14 +792,12 @@ impl ResolvedScene {
                             text_align: &text_source.text_align,
                             font_family: text_source.font_family,
                         },
-                        cjk_subset_trigger,
+                        context.cjk_subset_trigger,
                     )
-                    .map_err(|error| match error {
-                        text::LabelError::Memory => ResolveSceneError::Memory,
-                        text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
-                    })?
+                    .map_err(label_error)?
                     .0;
                 }
+                let transform = context.box_transform(&source);
                 elements.push(ResolvedElement::Text(ResolvedTextElement {
                     source_order: source.source_order,
                     source: source.source,
@@ -744,13 +805,7 @@ impl ResolvedScene {
                     original_text: try_owned(&text_source.original_text)?,
                     text: laid_out,
                     frame_clips,
-                    transform: ResolvedTransform {
-                        translation_x: source.x - min_x + request.padding(),
-                        translation_y: source.y - min_y + request.padding(),
-                        angle_radians: source.angle,
-                        center_x: source.width / 2.0,
-                        center_y: source.height / 2.0,
-                    },
+                    transform,
                     color: color::parse_css(&source.stroke_color)
                         .ok_or(ResolveSceneError::InvalidColor)?
                         .for_mode(request.color_mode()),
@@ -780,6 +835,7 @@ impl ResolvedScene {
                             height: crop.height * f64::from(asset.height) / crop.natural_height,
                         },
                     );
+                    let transform = context.box_transform(&source);
                     elements.push(ResolvedElement::Image(ResolvedImage {
                         source_order: source.source_order,
                         source: source.source,
@@ -794,13 +850,7 @@ impl ResolvedScene {
                             source.height,
                             source.roundness,
                         )?,
-                        transform: ResolvedTransform {
-                            translation_x: source.x - min_x + request.padding(),
-                            translation_y: source.y - min_y + request.padding(),
-                            angle_radians: source.angle,
-                            center_x: source.width / 2.0,
-                            center_y: source.height / 2.0,
-                        },
+                        transform,
                         opacity: source.opacity / 100.0 * frame_opacity,
                         source_rect,
                         projection: ResolvedImageProjection::for_image(
@@ -818,18 +868,13 @@ impl ResolvedScene {
                     .iter()
                     .find(|(source_index, _)| *source_index == source.source.source_index())
                 {
+                    let transform = context.box_transform(&source);
                     elements.push(ResolvedElement::ImageFallback(ResolvedImageFallback {
                         source_order: source.source_order,
                         source: source.source,
                         status: *status,
                         frame_clips,
-                        transform: ResolvedTransform {
-                            translation_x: source.x - min_x + request.padding(),
-                            translation_y: source.y - min_y + request.padding(),
-                            angle_radians: source.angle,
-                            center_x: source.width / 2.0,
-                            center_y: source.height / 2.0,
-                        },
+                        transform,
                         opacity: source.opacity / 100.0 * frame_opacity,
                         width: source.width,
                         height: source.height,
@@ -844,13 +889,13 @@ impl ResolvedScene {
                 .unwrap_or(u64::MAX)
                 .saturating_mul(32);
             let (local_min_x, local_min_y, local_max_x, local_max_y) = geometry.bounds(&source);
-            let transform = ResolvedTransform {
-                translation_x: source.x - min_x + request.padding(),
-                translation_y: source.y - min_y + request.padding(),
-                angle_radians: source.angle,
-                center_x: (local_min_x + local_max_x) / 2.0,
-                center_y: (local_min_y + local_max_y) / 2.0,
-            };
+            let transform = context.transform(
+                source.x,
+                source.y,
+                source.angle,
+                (local_min_x + local_max_x) / 2.0,
+                (local_min_y + local_max_y) / 2.0,
+            );
             let stroke_color = color::parse_css(&source.stroke_color)
                 .ok_or(ResolveSceneError::InvalidColor)?
                 .for_mode(request.color_mode());
@@ -878,23 +923,13 @@ impl ResolvedScene {
                                 official_fonts.try_reserve(1)?;
                                 official_fonts.push(
                                     text::OfficialFont::load(EMBEDDABLE_LABEL_FONT_FAMILY, label)
-                                        .map_err(|error| match error {
-                                        text::LabelError::Memory => ResolveSceneError::Memory,
-                                        text::LabelError::InvalidFont => {
-                                            ResolveSceneError::InvalidFallbackFont
-                                        }
-                                    })?,
+                                        .map_err(label_error)?,
                                 );
                                 official_fonts.len() - 1
                             };
                             let wrapped_label = official_fonts[font_index]
                                 .wrap_embeddable_label(label, font_size, source.width - 20.0)
-                                .map_err(|error| match error {
-                                    text::LabelError::Memory => ResolveSceneError::Memory,
-                                    text::LabelError::InvalidFont => {
-                                        ResolveSceneError::InvalidFallbackFont
-                                    }
-                                })?;
+                                .map_err(label_error)?;
                             let mut laid_out = official_fonts[font_index]
                                 .layout(
                                     &wrapped_label,
@@ -906,12 +941,7 @@ impl ResolvedScene {
                                         font_family: EMBEDDABLE_LABEL_FONT_FAMILY,
                                     },
                                 )
-                                .map_err(|error| match error {
-                                    text::LabelError::Memory => ResolveSceneError::Memory,
-                                    text::LabelError::InvalidFont => {
-                                        ResolveSceneError::InvalidFallbackFont
-                                    }
-                                })?;
+                                .map_err(label_error)?;
                             laid_out.font_index = font_index;
                             if !laid_out.missing_codepoints.is_empty()
                                 || text::contains_bidirectional_text(&wrapped_label)
@@ -927,14 +957,9 @@ impl ResolvedScene {
                                         text_align: "center",
                                         font_family: EMBEDDABLE_LABEL_FONT_FAMILY,
                                     },
-                                    cjk_subset_trigger,
+                                    context.cjk_subset_trigger,
                                 )
-                                .map_err(|error| match error {
-                                    text::LabelError::Memory => ResolveSceneError::Memory,
-                                    text::LabelError::InvalidFont => {
-                                        ResolveSceneError::InvalidFallbackFont
-                                    }
-                                })?
+                                .map_err(label_error)?
                                 .0;
                             }
                             let line_count = laid_out.lines.len() as f64;
@@ -978,8 +1003,9 @@ impl ResolvedScene {
                         source_stroke_width: source.stroke_width,
                         opacity: source.opacity / 100.0 * frame_opacity,
                         element_opacity: source.opacity / 100.0,
-                        background_color,
-                        label_mask: bound_text_masks
+                        background_color: context.background_color,
+                        label_mask: context
+                            .bound_text_masks
                             .iter()
                             .find(|mask| mask.container_source_index == source_index)
                             .map(|mask| ResolvedLabelMask {
@@ -1029,10 +1055,7 @@ impl ResolvedScene {
             };
             let label = font
                 .resolve(&fallback.label, fallback.width, fallback.height)
-                .map_err(|error| match error {
-                    text::LabelError::Memory => ResolveSceneError::Memory,
-                    text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
-                })?;
+                .map_err(label_error)?;
             has_label |= label.is_some();
             let source_index = fallback.element_id.as_deref().and_then(|id| {
                 relationships
@@ -1042,15 +1065,7 @@ impl ResolvedScene {
                     .map(|node| node.source_index)
             });
             let frame_clips = if let Some(source_index) = source_index {
-                resolve_frame_clips(
-                    source_index,
-                    &semantic_frames,
-                    relationships,
-                    frame_rendering,
-                    min_x,
-                    min_y,
-                    request.padding(),
-                )?
+                context.frame_clips(source_index)?
             } else {
                 let frame = fallback.frame_id.as_deref().and_then(|frame_id| {
                     fallback_frame_clips
@@ -1065,25 +1080,26 @@ impl ResolvedScene {
                         frame.width,
                         frame.height,
                         true,
-                        ResolvedTransform {
-                            translation_x: frame.x - min_x + request.padding(),
-                            translation_y: frame.y - min_y + request.padding(),
-                            angle_radians: frame.angle,
-                            center_x: frame.width / 2.0,
-                            center_y: frame.height / 2.0,
-                        },
+                        context.transform(
+                            frame.x,
+                            frame.y,
+                            frame.angle,
+                            frame.width / 2.0,
+                            frame.height / 2.0,
+                        ),
                     )?);
                 }
                 clips
             };
-            let frame_opacity = source_index.map_or(1.0, |source_index| {
-                resolve_frame_opacity(
-                    source_index,
-                    &semantic_frames,
-                    relationships,
-                    frame_rendering,
-                )
-            });
+            let frame_opacity =
+                source_index.map_or(1.0, |source_index| context.frame_opacity(source_index));
+            let transform = context.transform(
+                fallback.x,
+                fallback.y,
+                fallback.angle,
+                fallback.width / 2.0,
+                fallback.height / 2.0,
+            );
             elements.push(ResolvedElement::Fallback(ResolvedFallback {
                 source_order: fallback.source_order,
                 source: FallbackSource {
@@ -1095,13 +1111,7 @@ impl ResolvedScene {
                 frame_clips,
                 width: fallback.width,
                 height: fallback.height,
-                transform: ResolvedTransform {
-                    translation_x: fallback.x - min_x + request.padding(),
-                    translation_y: fallback.y - min_y + request.padding(),
-                    angle_radians: fallback.angle,
-                    center_x: fallback.width / 2.0,
-                    center_y: fallback.height / 2.0,
-                },
+                transform,
                 opacity: fallback.opacity / 100.0 * frame_opacity,
                 render: true,
             }));
