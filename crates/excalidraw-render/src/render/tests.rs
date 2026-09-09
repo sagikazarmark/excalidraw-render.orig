@@ -2607,8 +2607,170 @@ fn rough_fill_vectors_match_the_pinned_geometry_families() {
     assert_eq!(
         sha256_hex(&paths.join("\n")),
         // Moved with the diamond vertex fix: the scene carries two diamonds.
+        // `tools/rough-filler-vectors/derive.mjs` reproduces this digest from
+        // the pinned npm Rough.js, which is how that derivation was itself
+        // checked before it pinned the three fillers below.
         "d4e7528ff1a10f3ebbfbb8f3b404728ce7bef805930d56384652c2be6dc53f6d"
     );
+}
+
+/// The three fillers ported for #137 — dots, dashed and zigzag-line — over
+/// every shape family and option that changes what they draw: the dot
+/// filler's ellipses under an ellipse element's `curveFitting` 1, a dashed
+/// stroke style's single stroke and roughness 0's core stroke; the dashed
+/// filler under roughness 2, where the fill lines no longer preserve their
+/// vertices; the zigzag-line filler over a rounded path's sampled boundary
+/// and at roughness 0; and stroke widths 1 and 4, which scale the gap, the
+/// fill weight and the dot scatter.
+const FILLER_FAMILIES: &[u8] = br##"{
+  "type":"excalidraw","version":2,
+  "elements":[
+    {"id":"dots-rectangle","type":"rectangle","x":10,"y":10,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"dots","seed":41,"updated":1},
+    {"id":"dashed-ellipse","type":"ellipse","x":110,"y":10,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"dashed","seed":42,"updated":1},
+    {"id":"zigzag-line-diamond","type":"diamond","x":210,"y":10,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"zigzag-line","seed":43,"updated":1},
+    {"id":"dots-loop","type":"line","x":310,"y":10,"width":80,"height":50,"points":[[0,0],[80,0],[80,50],[0,50],[0,0]],"backgroundColor":"#e03131","fillStyle":"dots","seed":44,"updated":1},
+    {"id":"dots-ellipse","type":"ellipse","x":10,"y":110,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"dots","seed":45,"updated":1},
+    {"id":"dots-dashed-stroke","type":"rectangle","x":110,"y":110,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"dots","strokeStyle":"dashed","seed":46,"updated":1},
+    {"id":"zigzag-line-architect","type":"rectangle","x":210,"y":110,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"zigzag-line","roughness":0,"seed":47,"updated":1},
+    {"id":"dots-architect","type":"rectangle","x":310,"y":110,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"dots","roughness":0,"seed":48,"updated":1},
+    {"id":"dashed-cartoonist","type":"diamond","x":10,"y":210,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"dashed","roughness":2,"seed":49,"updated":1},
+    {"id":"zigzag-line-rounded","type":"rectangle","x":110,"y":210,"width":80,"height":50,"roundness":{"type":3},"backgroundColor":"#e03131","fillStyle":"zigzag-line","seed":50,"updated":1},
+    {"id":"dots-thin","type":"rectangle","x":210,"y":210,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"dots","strokeWidth":1,"seed":51,"updated":1},
+    {"id":"dashed-thick","type":"rectangle","x":310,"y":210,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"dashed","strokeWidth":4,"seed":52,"updated":1}
+  ],
+  "appState":{},"files":{}
+}"##;
+
+#[test]
+fn dots_dashed_and_zigzag_line_fills_match_the_pinned_roughjs_vectors() {
+    // Every digest here is the pinned npm Rough.js 4.6.4's, computed with
+    //
+    //   node tools/rough-filler-vectors/derive.mjs \
+    //     tools/reference-oracle/node_modules/roughjs/bundled/rough.esm.js \
+    //     <<< "$FILLER_FAMILIES"
+    //
+    // under Node 24.19.0 after `tools/reference-oracle/run-container.sh
+    // install`. The script drives the generator exactly as Excalidraw
+    // 0.18.1's `generateRoughOptions` does and serializes each set with
+    // `opsToPath(set, 2)`; it reproduces the digest of the four older fill
+    // families above before it derives these. The dot filler's `Math.random()`
+    // scatter is stubbed there with a second `Random(seed)`, the sample the
+    // renderer draws (`rough::dots_fill`, #137).
+    const EXPECTED: &[(&str, usize, &str)] = &[
+        (
+            "dots-rectangle",
+            1188,
+            "3e71799dc22c6afd54dfbe1034b6f7104760ebfcf3d2a814f21f923f73cea877",
+        ),
+        (
+            "dashed-ellipse",
+            84,
+            "86d629cf4d59ca89c11c073e8279b5f6a09eb11f0d47c920f49439f7c614b0cf",
+        ),
+        (
+            "zigzag-line-diamond",
+            64,
+            "b323939a39be484b021100620064bab064c5bb7ef4fa8121e1182710c52e30b5",
+        ),
+        (
+            "dots-loop",
+            1188,
+            "76d1235c7c0a3fd46fb490ff13c8ab44134efaaa03a15bb9ba921309e73b8a60",
+        ),
+        (
+            "dots-ellipse",
+            880,
+            "77df6210a6c16cb8fdde92bf1cc8e423d9f790ef1e5c52b85acf93a643ced89e",
+        ),
+        (
+            "dots-dashed-stroke",
+            594,
+            "dcfdccfb6ac6856ad5237f2257af7eca8ff6eea0354d67f6c01dbe88e9eef57f",
+        ),
+        (
+            "zigzag-line-architect",
+            128,
+            "03e2ade75433cf28e905e69618977a8e75522ee991742ca8805a660df7e7d223",
+        ),
+        (
+            "dots-architect",
+            2052,
+            "42851d1b624c63f7e7706a2276e9e64e33f603269a63ec04a9a76a348570e4a0",
+        ),
+        (
+            "dashed-cartoonist",
+            48,
+            "1a5f688a815924ae900ac630a78df606a4944419cfb81c6980b57bfa4cf5fd8a",
+        ),
+        (
+            "zigzag-line-rounded",
+            112,
+            "347d6745eda4b217c930cee4004f5e8cb16775d5eeb65ab4907cbba366981af7",
+        ),
+        (
+            "dots-thin",
+            5016,
+            "ebe7c571ae6a35408d58e83c8a72817ed5ecc1792f6a31b7889c28ea1bd46d85",
+        ),
+        (
+            "dashed-thick",
+            32,
+            "7de2fa24211308f4421c2213a8568cd803dea719023bc3f3e78d0cd88dd7651f",
+        ),
+    ];
+    let elements = normalized_elements(FILLER_FAMILIES);
+    assert_eq!(elements.len(), EXPECTED.len());
+    let mut all_paths = Vec::new();
+    for (element, (id, fill_operations, fill_digest)) in elements.iter().zip(EXPECTED) {
+        assert_eq!(element.source.id(), *id);
+        let style = ["zigzag-line", "dots", "dashed"]
+            .into_iter()
+            .find(|style| id.starts_with(style))
+            .expect("every filler family is named after its filler");
+        assert_eq!(
+            element.fill_style, style,
+            "{id} keeps its fill style through normalization"
+        );
+        let paths = rough_svg_paths(element);
+        assert_eq!(paths.len(), 2, "{id} writes its fill and then its outline");
+        assert_eq!(
+            paths[0].matches(['M', 'C', 'L']).count(),
+            *fill_operations,
+            "{id} fill operation count"
+        );
+        assert_eq!(sha256_hex(&paths[0]), *fill_digest, "{id} fill vector");
+        all_paths.extend(paths);
+    }
+    assert_eq!(
+        sha256_hex(&all_paths.join("\n")),
+        "a36d0d5ee959954f66696483f640460a68608e36f3c7e214b3b9e4e0bc39dbb3",
+        "every fill and outline of the filler families"
+    );
+}
+
+#[test]
+fn dot_scatter_is_seeded_apart_from_the_dot_ellipses() {
+    // The reference scatters dot centres with `Math.random()`; revision 1
+    // draws that scatter from a second generator seeded with the element
+    // seed, so the same element draws the same dots twice, two seeds draw
+    // different dots, and the scatter never touches the outline, which is
+    // generated before the fill from the same seeded stream.
+    let element = |seed: u32| {
+        format!(
+            r##"{{"type":"excalidraw","version":2,"elements":[{{"id":"dots","type":"rectangle","width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"dots","seed":{seed},"updated":1}}],"appState":{{}},"files":{{}}}}"##
+        )
+    };
+    let first = rough_svg_paths_of(element(41).as_bytes());
+    assert_eq!(first, rough_svg_paths_of(element(41).as_bytes()));
+    let second = rough_svg_paths_of(element(42).as_bytes());
+    assert_ne!(first[0], second[0]);
+    let plain = rough_svg_paths_of(
+        element(41)
+            .replace(r##""backgroundColor":"#e03131","fillStyle":"dots","##, "")
+            .as_bytes(),
+    );
+    assert_eq!(plain.len(), 1);
+    assert_eq!(first[1], plain[0], "the outline does not see the scatter");
 }
 
 #[test]

@@ -150,7 +150,7 @@ and tested. The gaps below are *undeclared*.
 |---|---|---|---|
 | `strokeStyle` solid/dashed/dotted | dash `[8, 8+sw]` / `[1.5, 6+sw]` | `svg.rs:1491-1503`, `resolve.rs:921-930` | fully handled |
 | `fillStyle` hachure/cross-hatch/solid/zigzag | Rough.js fillers | `rough.rs:329-334` | fully handled |
-| `fillStyle` zigzag-line / dots / dashed | restore does **not** validate → Rough.js renders them | domain rejects → `unsupported-property-value`, substitute `solid` (`normalization.rs:1525-1531, 1669-1676`) | diagnosed exception; visually farther than official (G8) |
+| `fillStyle` zigzag-line / dots / dashed | restore does **not** validate → Rough.js renders them | the three fillers are ported (`rough.rs` `zigzag_line_fill`, `dots_fill`, `dashed_fill`), the domain admits them | fully handled (G8 fixed) |
 | `roughness` 0/1/2 + `adjustRoughness` | size rule | `mod.rs:1521-1528` | handled; roughness=2 **no official evidence** |
 | `roundness` type 1/2/3 | `getCornerRadius` | `normalization.rs:3343-3346`, `geometry.rs:925-931` | handled; **no official evidence for any roundness** |
 | `opacity` | per-primitive opacity × frame opacity | `resolve.rs:630, 724, 932`, `frame_target.rs:213-226` | handled; **no official evidence** |
@@ -198,7 +198,7 @@ tested.
 
 | # | Item |
 |---|---|
-| **G8** | `fillStyle` `zigzag-line`/`dots`/`dashed` are Rough.js-renderable and pass official restore unvalidated; renderer substitutes `solid` with a warning. Consider porting the three fillers or substituting `hachure`. |
+| **G8** | `fillStyle` `zigzag-line`/`dots`/`dashed` are Rough.js-renderable and pass official restore unvalidated; renderer substitutes `solid` with a warning. Consider porting the three fillers or substituting `hachure`. **Fixed under #137**: the three Rough.js 4.6.4 fillers are ported beside hachure/cross-hatch/zigzag (`rough.rs` `FillStyle::{ZigzagLine, Dots, Dashed}`), pinned against the npm Rough.js through `tools/rough-filler-vectors/derive.mjs` over twelve filler families, the `fill_style` domain admits the three values in normalization and in the scene-surface manifest, and all three formats share the one `Drawing` dispatch. The dot filler's `Math.random()` centre scatter — unseeded in the reference, so its own output is not reproducible — is drawn from a second Rough.js generator seeded with the element seed, leaving the seeded stream the dot ellipses consume untouched (spec §8.1). Official evidence (a focused case) is the next round's. |
 | G9 | Scene `appState.exportWithDarkMode/exportScale/exportBackground/exportEmbedScene` never consumed (request-only) while `frameRendering` is ANDed with the request — inconsistent with the manifest's identical wording for all five. |
 
 ### (b) Evidence-coverage gaps

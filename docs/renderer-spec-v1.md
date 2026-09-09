@@ -608,6 +608,23 @@ serialize as canonical sRGB plus alpha. Invalid colors emit `color.invalid` and
 substitute `#1e1e1e` for stroke, transparent for element background, and white
 for scene background.
 
+An element's `fillStyle` names one of the seven fillers Rough.js `4.6.4`'s
+`getFiller` dispatches — `solid`, `hachure`, `cross-hatch`, `zigzag`,
+`zigzag-line`, `dots`, and `dashed` — and the reference passes the value
+through `generateRoughOptions` unvalidated, so every format renders all seven
+through the ported fillers (#137); a value outside that domain takes the
+manifest fallback, `solid`, with `compatibility.unsupported-property-value`.
+Every pattern filler scans the element's fill polygon with `hachureGap` four
+times the element's own `strokeWidth` and strokes its pattern at `fillWeight`
+half of it, whatever a dashed or dotted stroke style adds to the outline's
+width; the dots filler's ellipses alone also read `disableMultiStroke` and the
+element's `curveFitting`. The dots filler is the one place the reference draws
+from the unseeded `Math.random()`, for each dot's centre, so its own export of
+a dotted fill is not reproducible from one run to the next. Revision 1 draws
+that scatter from a second Rough.js generator seeded with the element seed and
+leaves the seeded stream the dot ellipses consume untouched: the dot shapes are
+the reference's own and the centres are one deterministic sample of its jitter.
+
 Dark mode is the reference export's `THEME_FILTER`,
 `invert(93%) hue-rotate(180deg)`, which the reference SVG carries on its root
 element and the reference canvas sets on its context. The renderer emits no

@@ -362,13 +362,8 @@ pub(super) fn rough_drawing(
     let width = source.width;
     let height = source.height;
     let preserve_vertices = source.roundness.is_some() || source.roughness < 2.0;
-    let fill_style =
-        (source.background_color != "transparent").then_some(match source.fill_style.as_str() {
-            "hachure" => rough::FillStyle::Hachure,
-            "cross-hatch" => rough::FillStyle::CrossHatch,
-            "zigzag" => rough::FillStyle::Zigzag,
-            _ => rough::FillStyle::Solid,
-        });
+    let fill_style = (source.background_color != "transparent")
+        .then(|| rough::FillStyle::from_normalized(&source.fill_style));
     let disable_multi_stroke = source.stroke_style != "solid";
     match &source.kind {
         NormalizedElementKind::Rectangle | NormalizedElementKind::Embeddable { .. } => {

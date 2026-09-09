@@ -75,8 +75,19 @@ pub(super) fn element_fields<'a>(
         fill_style: if ignored("/fillStyle") {
             "solid"
         } else {
+            // The seven fillers Rough.js 4.6.4 dispatches; the reference passes
+            // the element's value through unvalidated (#137).
             manifested_value(source.fill_style, "solid", |value| {
-                matches!(value, "hachure" | "cross-hatch" | "solid" | "zigzag")
+                matches!(
+                    value,
+                    "hachure"
+                        | "cross-hatch"
+                        | "solid"
+                        | "zigzag"
+                        | "zigzag-line"
+                        | "dots"
+                        | "dashed"
+                )
             })
         },
         stroke_width: if ignored("/strokeWidth") {
@@ -211,7 +222,15 @@ fn diagnose_common_fields(
         !matches!(
             source.fill_style,
             SourceField::Missing
-                | SourceField::Value("hachure" | "cross-hatch" | "solid" | "zigzag")
+                | SourceField::Value(
+                    "hachure"
+                        | "cross-hatch"
+                        | "solid"
+                        | "zigzag"
+                        | "zigzag-line"
+                        | "dots"
+                        | "dashed"
+                )
         )
     );
     diagnose_common!(

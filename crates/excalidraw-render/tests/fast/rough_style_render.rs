@@ -67,6 +67,89 @@ fn rough_fills_and_stroke_variants_render_directly_in_every_format() {
 }
 
 #[test]
+fn dots_dashed_and_zigzag_line_fills_render_undiagnosed_in_every_format() {
+    // The three fillers ported for #137 render through the same Rough
+    // `Drawing` as the other four, so every format paints them and none
+    // diagnoses the value; before the port each was substituted by `solid`
+    // under `compatibility.unsupported-property-value`, as a value outside
+    // the domain still is.
+    let scene = SceneDocument::parse(br##"{
+      "type":"excalidraw","version":2,
+      "elements":[
+        {"id":"dots","type":"rectangle","x":10,"y":10,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"dots","seed":41,"updated":1},
+        {"id":"dashed","type":"ellipse","x":110,"y":10,"width":80,"height":50,"backgroundColor":"#2f9e44","fillStyle":"dashed","seed":42,"updated":1},
+        {"id":"zigzag-line","type":"diamond","x":210,"y":10,"width":80,"height":50,"backgroundColor":"#1971c2","fillStyle":"zigzag-line","seed":43,"updated":1},
+        {"id":"unknown","type":"rectangle","x":310,"y":10,"width":80,"height":50,"backgroundColor":"#f08c00","fillStyle":"stipple","seed":44,"updated":1}
+      ],
+      "appState":{"viewBackgroundColor":"#ffffff"},"files":{}
+    }"##)
+    .expect("filler scene is admitted");
+
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format).build().unwrap();
+        let outcome = Renderer::new().render(&scene, &request).unwrap();
+        let diagnostics = outcome.report().diagnostics();
+        assert_eq!(
+            diagnostics.len(),
+            1,
+            "{format:?}: only the unknown value is diagnosed"
+        );
+        assert_eq!(
+            diagnostics[0].code(),
+            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE
+        );
+        assert_eq!(diagnostics[0].json_pointer(), "/elements/3/fillStyle");
+
+        match format {
+            OutputFormat::Svg => {
+                let svg = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
+                // Three sketched fills stroked at the fill weight, one solid
+                // fill for the substituted value, and four outlines.
+                assert_eq!(svg.matches("<path ").count(), 8);
+                assert_eq!(svg.matches("stroke-width=\"1\"").count(), 3);
+                let paths = svg
+                    .split("<path d=\"")
+                    .skip(1)
+                    .map(|tail| tail.split_once('"').unwrap().0)
+                    .collect::<Vec<_>>();
+                // The three fills are the vectors
+                // `render::tests::dots_dashed_and_zigzag_line_fills_match_the_pinned_roughjs_vectors`
+                // pins for the same elements against the npm Rough.js.
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(paths[0])),
+                    "3e71799dc22c6afd54dfbe1034b6f7104760ebfcf3d2a814f21f923f73cea877"
+                );
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(paths[2])),
+                    "86d629cf4d59ca89c11c073e8279b5f6a09eb11f0d47c920f49439f7c614b0cf"
+                );
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(paths[4])),
+                    "b323939a39be484b021100620064bab064c5bb7ef4fa8121e1182710c52e30b5"
+                );
+            }
+            OutputFormat::Png => {
+                let decoded = decode_png(outcome.artifact().bytes());
+                let pixels = decoded.rgba.chunks_exact(4);
+                assert!(pixels.clone().any(|pixel| pixel[0] > pixel[1]));
+                assert!(pixels.clone().any(|pixel| pixel[1] > pixel[0]));
+                assert!(pixels.clone().any(|pixel| pixel[2] > pixel[0]));
+            }
+            OutputFormat::Pdf => {
+                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                // The page background and the substituted solid fill are the
+                // only fills; the three sketched fills and four outlines
+                // stroke.
+                assert_eq!(pdf.matches("\nf\n").count(), 2);
+                assert!(pdf.matches("\nS\n").count() >= 7);
+                assert!(!pdf.contains("/Subtype /Image"));
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+#[test]
 fn patterned_curved_boundaries_match_pinned_js_sampling() {
     let scene = SceneDocument::parse(br##"{
       "type":"excalidraw","version":2,

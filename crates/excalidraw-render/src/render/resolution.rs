@@ -320,17 +320,12 @@ impl RenderSession {
                                 let background_fill = if source.background_color == "transparent" {
                                     None
                                 } else {
-                                    let fill_style = match source.fill_style.as_str() {
-                                        "hachure" => rough::FillStyle::Hachure,
-                                        "cross-hatch" => rough::FillStyle::CrossHatch,
-                                        "zigzag" => rough::FillStyle::Zigzag,
-                                        _ => rough::FillStyle::Solid,
-                                    };
                                     freedraw::background_fill(
                                         &freedraw.points,
                                         source.seed,
                                         roughness,
-                                        fill_style,
+                                        source.stroke_style != "solid",
+                                        rough::FillStyle::from_normalized(&source.fill_style),
                                         source.stroke_width,
                                         &mut budget,
                                     )?

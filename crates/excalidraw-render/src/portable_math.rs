@@ -45,6 +45,13 @@ pub(crate) fn sin_cos(radians: f64) -> (f64, f64) {
     (sin(radians), cos(radians))
 }
 
+/// Arctangent of `value`, in radians within `[-π/2, π/2]`; JavaScript's
+/// `Math.atan`, which the Rough.js dashed and zigzag-line fillers take of a
+/// hachure line's slope.
+pub(crate) fn atan(value: f64) -> f64 {
+    libm::atan(value)
+}
+
 /// Four-quadrant arctangent of `y / x`, in radians.
 pub(crate) fn atan2(y: f64, x: f64) -> f64 {
     libm::atan2(y, x)

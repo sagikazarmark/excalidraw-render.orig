@@ -523,7 +523,15 @@ fn value_matches_domain(value: &JsonValue, domain: &str) -> bool {
             "iframe",
             "embeddable",
         ]),
-        "fill_style" => string_is(&["hachure", "cross-hatch", "solid", "zigzag"]),
+        "fill_style" => string_is(&[
+            "hachure",
+            "cross-hatch",
+            "solid",
+            "zigzag",
+            "zigzag-line",
+            "dots",
+            "dashed",
+        ]),
         "finite_number" => finite_json_number(value).is_some(),
         "finite_number_array" => number_array(|_| true),
         "fixed_segment_array" => matches!(value, JsonValue::Null)
