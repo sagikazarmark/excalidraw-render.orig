@@ -1775,6 +1775,11 @@ Recoverable mappings are:
 | `resource.coordinate-range-exceeded` | `max_coordinate_magnitude` | coordinate |
 | `resource.optional-metadata-omitted` | exact crossed limit | that limit's kind |
 
+The PNG compatibility-fallback surface crossing reports under the
+`resource.image-pixels-exceeded` row; the encoder was aligned to it while
+revision 1 was a draft (#157), so no retained report carried the earlier
+`resource.element-complexity-replaced` spelling.
+
 Metadata component/operation bindings are provenance/serialization,
 diagnostic_summary/serialization, embedded_scene/serialization,
 embedded_scene/compression, embedded_scene/embedding,

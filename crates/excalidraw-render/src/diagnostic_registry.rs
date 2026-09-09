@@ -173,11 +173,9 @@ impl ImageRecovery {
 pub(crate) enum LocalLimit {
     GeometrySegmentsPerElement,
     TextScalarsPerElement,
-    /// The raster surface a PNG compatibility fallback would need. Reported
-    /// under `resource.element-complexity-replaced` as the encoder has always
-    /// done; spec section 11.3 lists `max_raster_surface_pixels` under
-    /// `resource.image-pixels-exceeded`, a discrepancy kept byte-for-byte
-    /// until #157 decides which side moves.
+    /// The raster surface a PNG compatibility fallback would need, reported
+    /// under `resource.image-pixels-exceeded` with `max_raster_surface_pixels`
+    /// in pixels, the row spec section 11.3 gives it (#157).
     FallbackRasterSurfacePixels,
     ElementWorkUnits,
     AssetBytes,
@@ -192,16 +190,16 @@ pub(crate) enum LocalLimit {
 impl LocalLimit {
     pub(crate) const fn code(self) -> DiagnosticCode {
         match self {
-            Self::GeometrySegmentsPerElement
-            | Self::TextScalarsPerElement
-            | Self::FallbackRasterSurfacePixels => {
+            Self::GeometrySegmentsPerElement | Self::TextScalarsPerElement => {
                 DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
             }
             Self::ElementWorkUnits => DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
             Self::AssetBytes => DiagnosticCode::RESOURCE_ASSET_BYTES_EXCEEDED,
             Self::AssetWorkUnits => DiagnosticCode::RESOURCE_ASSET_WORK_EXCEEDED,
             Self::RasterDimension => DiagnosticCode::RESOURCE_IMAGE_DIMENSIONS_EXCEEDED,
-            Self::DecodedPixelsPerAsset => DiagnosticCode::RESOURCE_IMAGE_PIXELS_EXCEEDED,
+            Self::DecodedPixelsPerAsset | Self::FallbackRasterSurfacePixels => {
+                DiagnosticCode::RESOURCE_IMAGE_PIXELS_EXCEEDED
+            }
             Self::NestedSvgNodes => DiagnosticCode::RESOURCE_NESTED_SVG_COMPLEXITY_EXCEEDED,
             Self::NestedAssetDepth => DiagnosticCode::RESOURCE_NESTED_ASSET_DEPTH_EXCEEDED,
             Self::CoordinateMagnitude => DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,

@@ -2926,3 +2926,40 @@ fn a_legacy_draw_element_normalizes_as_the_equivalent_line() {
     );
     assert_eq!(rough_svg_paths(&legacy[0]), rough_svg_paths(&line[0]));
 }
+
+#[test]
+fn fallback_raster_surface_crossing_reports_image_pixels_exceeded() {
+    // The PNG encoder diagnoses a compatibility placeholder whose raster
+    // surface exceeds `max_raster_surface_pixels` through this crossing, and
+    // spec section 11.3 lists that field under `resource.image-pixels-exceeded`
+    // in pixels (#157). No scene reaches the crossing: the placeholder's
+    // surface is clamped to the canvas, which the same ceiling has already
+    // admitted (#159), so the crossing is driven here with the encoder's
+    // exact shape.
+    let diagnostic = resolve::ElementLocalCrossing {
+        limit: crate::diagnostic_registry::LocalLimit::FallbackRasterSurfacePixels,
+        configured: crate::ResourceValue::Integer(17_600),
+        attempted: crate::ResourceValue::Integer(17_601),
+        pointer_field: None,
+        message: "compatibility fallback omitted because its raster surface exceeds its limit",
+    }
+    .diagnostic(OutputFormat::Png, Some("unknown"), "/elements/0")
+    .expect("crossing diagnostic allocates");
+    assert_eq!(
+        diagnostic.code(),
+        DiagnosticCode::RESOURCE_IMAGE_PIXELS_EXCEEDED
+    );
+    assert_eq!(diagnostic.json_pointer(), "/elements/0");
+    assert_eq!(
+        diagnostic.details(),
+        Some(&ErrorDetails::ResourceLimit {
+            field: "max_raster_surface_pixels",
+            configured: crate::ResourceValue::Integer(17_600),
+            value_kind: crate::ValueKind::Pixels,
+            measurement: crate::Measurement::Attempted {
+                value: crate::ResourceValue::Integer(17_601),
+            },
+            recovery: Some(crate::Recovery::Omitted),
+        })
+    );
+}
