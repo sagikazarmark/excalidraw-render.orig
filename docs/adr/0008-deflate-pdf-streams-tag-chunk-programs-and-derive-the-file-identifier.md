@@ -161,9 +161,10 @@ sha256 pins that bind them in `fast/pdf_backend_qualification.rs`,
 `harness_pdf_viewers/excalifont_text.rs` and the rectangle case's
 `pdf-renderer-expectations.json` (#44). The tolerance exceptions do not move
 — no raster did. The PDF viewer qualification manifest (#35) moves in the
-same round only for the #141 ride-along (its implementation list and
-`xtask/src/pdf_viewers.rs`), not for anything this decision produced: its
-fixtures are project-authored controls, not renderer output.
+same round only for the #141 ride-along (its implementation list, the
+schema's `minItems` that list must satisfy, and `xtask/src/pdf_viewers.rs`),
+not for anything this decision produced: its fixtures are project-authored
+controls, not renderer output.
 
 Tests read the artifact through `tests/common/pdf_inspect.rs`, which inflates
 every Flate stream in place before a test looks for an operator, a font

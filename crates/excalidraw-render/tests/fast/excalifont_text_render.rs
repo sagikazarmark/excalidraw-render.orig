@@ -103,7 +103,7 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert!(pdf.contains("Excalifont and Virgil provenance is retained together"));
                 assert_eq!(
                     artifact_sha256(&first),
-                    "5eac7a8a16860311629659f223c52509c5799da1e83c5e48805ee45ed0a32742"
+                    "b73cb9eb11265d548f0859e10f0ec1662106a304da2cbd285968465d6faf3f83"
                 );
             }
             _ => panic!("the test covers the revision-1 format set"),

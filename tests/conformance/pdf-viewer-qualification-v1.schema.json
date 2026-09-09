@@ -30,7 +30,7 @@
     },
     "profiles": {"type":"object","additionalProperties":false,"required":["pdfium","pdfjs","structure"],"properties":{"pdfium":{"$ref":"#/$defs/fileDescriptor"},"pdfjs":{"$ref":"#/$defs/fileDescriptor"},"structure":{"$ref":"#/$defs/fileDescriptor"}}},
     "comparator": { "$ref": "#/$defs/fileDescriptor" },
-    "implementation": { "type":"array", "minItems":5, "items":{"$ref":"#/$defs/fileDescriptor"} },
+    "implementation": { "type":"array", "minItems":4, "items":{"$ref":"#/$defs/fileDescriptor"} },
     "outputs": {
       "type":"object","additionalProperties":false,"required":["pdfium","pdfjs"],
       "properties":{"pdfium":{"$ref":"#/$defs/viewerOutput"},"pdfjs":{"$ref":"#/$defs/viewerOutput"}}

@@ -551,12 +551,17 @@ fn stdout_failure_before_first_byte_reports_that_no_artifact_bytes_escaped() {
 fn interrupted_stdout_after_bytes_escape_reports_possibly_partial() {
     let temp = temp_directory_named("partial-stdout");
     let report_path = temp.join("report.json");
+    // The artifact must outgrow the pipe buffer (64 KiB on Linux) so the
+    // write is still in flight when the reader closes: a 4x PNG of the fixture
+    // is ~240 KB, where its PDF fell under the buffer once every stream was
+    // Flate (ADR-0008).
     let mut child = Command::new(env!("CARGO_BIN_EXE_excalidraw-render"))
         .arg(corpus_scene("basic-shapes.excalidraw"))
         .args([
             "-o",
             "-",
-            "--format=pdf",
+            "--format=png",
+            "--scale=4",
             "--report-output",
             report_path.to_str().unwrap(),
             "--report-format=json",
@@ -648,7 +653,8 @@ fn renders_fixture_to_svg_png_and_pdf_deterministically() {
     assert_eq!(pixmap.height(), 2220);
     assert!(pdf_bytes.starts_with(b"%PDF-"));
     let pdf_text = String::from_utf8_lossy(&pdf_bytes);
-    assert!(pdf_text.contains("/BaseFont /Excalifont"));
+    // The chunk program is named with its subset tag (ADR-0008).
+    assert!(pdf_text.contains("/BaseFont /OEECDL+Excalifont\n"));
 
     fs::remove_dir_all(temp).expect("remove test temp directory");
 }
@@ -679,8 +685,10 @@ fn preserves_embedded_images_across_cli_formats() {
 
     let pdf = fs::read(pdf).expect("read PDF image output");
     let pdf = String::from_utf8_lossy(&pdf);
+    // The content stream is Flate (ADR-0008), so the image is observed through
+    // its XObject dictionary and the page's resource entry for it.
     assert!(pdf.contains("/Subtype /Image"));
-    assert!(pdf.contains("/Im0 Do"));
+    assert!(pdf.contains("/XObject << /Im0 "));
 
     fs::remove_dir_all(temp).expect("remove test temp directory");
 }

@@ -35,7 +35,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(PROJECT_STRUCTURE)),
-        "2e59dad185c4aabcb0c29a11a6354806dd31d42d6bc3a70cb685e157a2bf7076"
+        "a307eccb831bc9250b576d8f0914238b0e88d61c7348cc37d11637707cc43dc5"
     );
     let first = render_project_operations();
     let second = render_project_operations();
@@ -49,7 +49,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
         .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "8e2eb6f5795e144a322649e347df0a05515655c96f874823b9a22e8a4c7da82c"
+        "78176e1c4a67a69c0bb0884c48ee2d6f37b5172a7eb3fd878def1f0000b9a6cb"
     );
 
     let pdf = pdf_text(first.artifact().bytes());
@@ -79,7 +79,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
 fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
     assert_eq!(
         format!("{:x}", Sha256::digest(FALLBACK_STRUCTURE)),
-        "20c6ab1a6d4026cf57668323cdc3a21e7a187238275cb69be6c5c5dba036da10"
+        "207ff3e6b4261d7293e8bb195160c4bf4b59f84814ff35701c83270b6373660f"
     );
     let first = render_isolated_fallback();
     let second = render_isolated_fallback();
@@ -88,7 +88,7 @@ fn isolated_fallback_is_deterministic_and_confined_to_the_nested_svg() {
     assert_eq!(first.report(), second.report());
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "fca49caf756b24b7191d5773ba083af96979650eb830cc1d48c96d32b2f93d28"
+        "64bee9cbb44081c7202b47b392fbc8859164ca3a3f383bdc4f54d7cc87b50513"
     );
     let [diagnostic] = first.report().diagnostics() else {
         panic!("one isolated closure produces one diagnostic");
@@ -180,7 +180,7 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(NESTED_NATIVE_STRUCTURE)),
-        "5c2041e7ed4506d931187a453626c91470815549bfa8d3301bb28b213b19df4c"
+        "c767ae971e4d3bd73e7bee8a44cfd91ea1cdd3cbfaf2909db2ba4ade8ccb8f71"
     );
     let outcome = render_nested_native_operations();
     let repeated = render_nested_native_operations();
@@ -190,7 +190,7 @@ fn complete_nested_svg_native_matrix_never_uses_raster_fallback() {
     assert_eq!(outcome.report(), repeated.report());
     assert_eq!(
         format!("{:x}", Sha256::digest(outcome.artifact().bytes())),
-        "ddc239fdeea14a6cfc72d7c8eadbdfd2130647a4cec5f5afd9fdbeb3e61af4b5"
+        "8dea3f9c57db8bd680076875802bc7b39e144b27e6638e1cf79b4d88dd979ddc"
     );
     assert!(outcome.report().diagnostics().is_empty());
     for structure in [

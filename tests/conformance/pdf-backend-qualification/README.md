@@ -108,6 +108,17 @@ pin in the test. The scene, official-SVG, official-RGBA, and evidence-generator
 pins in the same test never move for a re-pin; they change only through a
 reviewed reference-profile change.
 
+The two case-level expectations the viewer gates bind follow the same
+procedure: `cases/focused/excalifont-text/expected-pdf-structure.json` is
+pinned by sha256 in `harness_pdf_viewers/excalifont_text.rs`, and
+`cases/focused/rectangle-outline/expected-pdf-structure.json` is a bound
+dependency of that case's `pdf-renderer-expectations.json` (issue #44), so a
+digest that moves there moves the expectations' approval subject and needs a
+fresh approval on #44. The report's readable checks tell a re-pin from a
+defect the same way: the #133/#150 round, for instance, moved only
+`inventory_sha256`, for the trailer `/ID` and the tagged `base_font` names,
+while `operation_sha256` and every count held.
+
 The frame PDF visual gate compares every frame-export target rendered by both
 viewers against its `official-svg.rgba` and records its tolerance exceptions in
 `tests/conformance/cases/focused/frame-export/pdf-tolerance-exceptions.json`,

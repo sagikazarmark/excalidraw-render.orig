@@ -37,14 +37,17 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
         // fractional viewBox extent that the vectors never saw. The PNG digest
         // is the raster canary that caught the `crowfeet` dashed stroke
         // rendering solid; it moved once more when IDAT switched to
-        // deflate-compressed scanlines (#113) with the pixels unchanged.
+        // deflate-compressed scanlines (#113) with the pixels unchanged. The
+        // PDF digest moved when every stream became Flate and the trailer
+        // gained its content-derived /ID (#133, #150; ADR-0008), with the
+        // viewer rasters and operator sequence unchanged.
         let whole_artifact_digest = match format {
             OutputFormat::Svg => None,
             OutputFormat::Png => {
                 Some("09e2eb955e4134f3f3a6b19b1cee567f130b42d947248764faa036e1199fae23")
             }
             OutputFormat::Pdf => {
-                Some("99505f0a67ce2181670ec8fcc9992e68e6376e6e9700cb1a59fae74a8a192566")
+                Some("4b0564decfc9e118380e17e3f87adc1831e59f8da380a7fcd41493f5026f6537")
             }
             _ => unreachable!("the test enumerates every revision-1 format"),
         };

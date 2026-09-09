@@ -97,7 +97,7 @@ fn approved_excalifont_text_passes_both_canonical_pdf_gates() {
                     .expect("PDF structure expectation is present")
             )
         ),
-        "0fb4ce18336d021a5f3b5a7c1c5436f5ce8a2aef98269cf2f5d341f283fdc82e"
+        "016ba9734a8e77425cb0728028e9c87e5d7a799caa3ea12a6efe233122f7f12f"
     );
     assert_structure(
         &root,

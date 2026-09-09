@@ -180,8 +180,10 @@ change-set per the draft-revision upgrade policy.
 The unpinned xtask evidence modules (`conformance.rs`, `svg_viewers.rs`,
 `catalog.rs`) now share one canonical-JSON serializer and digest/approval
 helpers, with the ASCII-key guard applied uniformly. The pinned modules —
-`pdf_viewers.rs` and `main.rs` (approval subject on issue #35),
-`svg_font_subsets.rs` and `svg_font_subset_runner.rs` (issue #99), and
+`pdf_viewers.rs` (approval subject on issue #35; `main.rs` left that
+manifest in the #133/#150 round under the producer-only pinning rule of
+`tests/conformance/README.md`), `svg_font_subsets.rs` and
+`svg_font_subset_runner.rs` (issue #99), and
 `svg_font_subset_targets.rs` (cross-checked against #99's subject) — keep
 their duplicate copies deliberately: editing a pinned file invalidates its
 human approval record, and spending re-approval ceremonies on provably

@@ -33,14 +33,16 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
             .render(&scene, &request)
             .expect("all outline families render");
         // The SVG's one pin is the path-vector digest below, which holds the
-        // geometry; PNG and PDF each keep one whole-artifact digest.
+        // geometry; PNG and PDF each keep one whole-artifact digest. The PDF's
+        // moved for Flate streams and the trailer /ID (ADR-0008), pixels and
+        // operators unchanged.
         let expected_digest = match format {
             OutputFormat::Svg => None,
             OutputFormat::Png => {
                 Some("5963335877cfde4ec0079ee163a4c29c2e170e44dcbfff7965f4f89bd0019d6b")
             }
             OutputFormat::Pdf => {
-                Some("58ce5d784ad2594d87b9000b1cb84248f3b40e843c51d624536c8e002dbac88e")
+                Some("0a1c464641d8e323df5c876befaf3b418da5f0d1271d47c0157309f12b3daf73")
             }
             _ => unreachable!("the test enumerates every revision-1 output format"),
         };

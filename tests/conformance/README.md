@@ -153,6 +153,23 @@ hashes the canonical bytes without that LF. The approval subject excludes only
 the four-field approval object and binds the remaining manifest plus every
 referenced scene, report, provenance, artifact, and raw-raster byte string.
 
+An approval subject pins the code that *produces* its evidence — the harness
+scripts, fixture generators, materializers and comparator invocations that
+wrote the bytes under approval, and the module that re-derives and records the
+manifest — and never the code that only *consumes* it: not the tests that check
+the evidence against the manifest, and not the CLI wiring that dispatches to a
+verifier. A consumer can change without a byte of evidence changing, so pinning
+it spends a human re-approval round on nothing, and it also keeps the pinned
+file out of the ordinary formatting and lint gates (#141). Under this rule the
+PDF viewer qualification pins `tools/pdf-viewer-qualification.sh`,
+`tools/pdf-harness/generate-fixtures.py`, the comparator's `compare_pdf_rgba`
+example and `xtask/src/pdf_viewers.rs`, and no longer `xtask/src/main.rs`,
+`xtask/tests/pdf_viewer_verify.rs` or the comparator crate's
+`pdf_viewer_qualification` test. A manifest whose `implementation` list still
+names a consumer drops it in the next round that re-approves that manifest
+anyway (the ride-along rule in `docs/cleanup-plan.md`), never in a round of its
+own.
+
 ## Visual comparator
 
 `comparator-profiles/canonical-visual-v1.json` freezes the format-neutral

@@ -21,17 +21,16 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       - name: Install rustfmt and clippy for the pinned toolchain
         run: rustup component add rustfmt clippy
-      # Every repo-authored crate except xtask. Vendored forks (skera,
-      # ttf2woff2) keep upstream formatting. xtask/src/pdf_viewers.rs is
-      # digest-pinned by the approved PDF viewer qualification (issue #35) and
-      # carries one pre-existing rustfmt diff; xtask joins this gate when the
-      # next re-approval round moves that file anyway.
+      # Every repo-authored crate. Vendored forks (skera, ttf2woff2) keep
+      # upstream formatting. xtask joined when the #133/#150 PDF round
+      # re-pinned xtask/src/pdf_viewers.rs (issue #35).
       - name: Check formatting
         run: >-
           cargo fmt --check
           -p excalidraw-render -p excalidraw-render-cli -p excalidraw-render-compare
           -p excalidraw-render-assets-base
           -p excalidraw-render-assets-data-000 -p excalidraw-render-assets-data-001
+          -p xtask
       # `--no-deps` keeps the vendored forks out of the gate: they are
       # workspace members, so `--exclude` alone would still lint them as
       # dependencies of the selected packages.
@@ -41,12 +40,10 @@ jobs:
       # qualification (issue #99). Drop the allowance in the re-approval round
       # that next moves that file.
       # `chunks_exact_to_as_chunks` (Rust 1.98) is allowed for the same reason:
-      # every editable occurrence is `as_chunks` already, and the three left are
-      # in files an approval pins: font_subset.rs and xtask/src/
-      # svg_font_subset_runner.rs (issue #99), and xtask/src/pdf_viewers.rs
-      # (the PDF viewer qualification, which also pins xtask/src/main.rs, so no
-      # module-level allowance can stand in). Drop it once both rounds have
-      # moved their files.
+      # every editable occurrence is `as_chunks` already, and the two left are
+      # in files the SVG font subset qualification pins: font_subset.rs and
+      # xtask/src/svg_font_subset_runner.rs (issue #99). Drop it in the round
+      # that moves those files.
       - name: Lint the renderer, CLI, and xtask
         run: >-
           cargo clippy --locked --no-deps --all-targets

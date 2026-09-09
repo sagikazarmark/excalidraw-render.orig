@@ -42,34 +42,40 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
         "2557fb95fd4972c5ceaea2b0b1b8a3a73f157c2fe147bd5d348be0f639186922",
     ),
     (
+        // The PDF artifact moved with #133/#150 (ADR-0008): every stream is
+        // Flate, the Liberation Sans program carries its subset tag and the
+        // trailer its content-derived /ID; the report is unchanged.
         OutputFormat::Pdf,
-        "255af458e3d0f21dff334dfac5329702f3c9c6b2f8c2d1f804b8dbebca2f272b",
+        "89771fb8be59bb1324fa99e5226da497f42056bd956d8fde866e9975408dac17",
         "737130c9efaa38327d3fe31ecdeddc35ad72a01ea8dc7c11e3a57942c4867247",
     ),
 ];
+// Every PDF artifact digest here and in PDF_FALLBACK_FAMILIES moved with
+// #133/#150 (ADR-0008: Flate streams, subset-tagged chunk programs, the
+// trailer /ID); no report digest moved.
 const PDF_RISK_SET: &[(&str, &[u8], &str, &str)] = &[
     (
         "selectable-text",
         TEXT_SCENE,
-        "f91353d32aa938ca0255660d8078e5067c7f0c6ac83f59c21001e0acfb50e642",
+        "98b21e5dead45fe8ea1f2d81453f98cd94e563aa64c3374542b26f77dce209d6",
         "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
     ),
     (
         "source-image",
         SOURCE_IMAGE_SCENE,
-        "720658af87ff8f784d304cc462784a439ffcda57d7c4f909747877843caf5788",
+        "aaffc9250c9abe30efa9e220d86adefed2d3ccb8f2b0e4aab4e83219565e1b0f",
         "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
     ),
     (
         "native-nested-svg",
         NATIVE_NESTED_SVG_SCENE,
-        "1c2a27e1a1f2af9c2eb6814d447a403c3069c03918e57dec8e87b9f06df61eb7",
+        "d90654a7e1c9c5f9ab1fbf49cf4d2c462e5c7f438e6823f7e948b5431e6d2f47",
         "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
     ),
     (
         "isolated-raster-fallback",
         RASTER_FALLBACK_SCENE,
-        "fca49caf756b24b7191d5773ba083af96979650eb830cc1d48c96d32b2f93d28",
+        "64bee9cbb44081c7202b47b392fbc8859164ca3a3f383bdc4f54d7cc87b50513",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
 ];
@@ -77,49 +83,49 @@ const PDF_FALLBACK_FAMILIES: &[(&str, &str, &str, &str)] = &[
     (
         "blur",
         r#"<feGaussianBlur stdDeviation="1"/>"#,
-        "fca49caf756b24b7191d5773ba083af96979650eb830cc1d48c96d32b2f93d28",
+        "64bee9cbb44081c7202b47b392fbc8859164ca3a3f383bdc4f54d7cc87b50513",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "convolution",
         r#"<feConvolveMatrix order="3" kernelMatrix="0 -1 0 -1 5 -1 0 -1 0"/>"#,
-        "16dc9cf785d79522c0a6202464886cce34fdbdfb402b706c18e63bf646ea78b0",
+        "0fe2d6a6f9b16d30a95164b29688dd8cd39f4b3cc029907636ef78b68a434a4e",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "morphology",
         r#"<feMorphology operator="dilate" radius="1"/>"#,
-        "16dc9cf785d79522c0a6202464886cce34fdbdfb402b706c18e63bf646ea78b0",
+        "0fe2d6a6f9b16d30a95164b29688dd8cd39f4b3cc029907636ef78b68a434a4e",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "displacement",
         r#"<feTurbulence baseFrequency="0.1" numOctaves="1" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>"#,
-        "295f0cb00ac7ad55a8cfb5955d6b1482486fb0520139e6386a5218b6892d6984",
+        "d2bbe4eb43451ab42c5277d331d51748fbfe76bc40b9d5e9914a7a8635f9325b",
         "a39664c294a12af60d1c206a0772a78ee73fccc76833b995d02cfdec127433c7",
     ),
     (
         "turbulence",
         r#"<feTurbulence baseFrequency="0.1" numOctaves="1"/>"#,
-        "cd3b355a69f4a6c0ec1be30955bdc4e7efbff7ac800b2ea04c9bc6758a1f70df",
+        "ad1525688146b4016063c2ac96bcc2b066d7b5d0faf8c5148b48b272dda5d528",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "lighting",
         r#"<feDiffuseLighting surfaceScale="2"><feDistantLight azimuth="45" elevation="60"/></feDiffuseLighting>"#,
-        "582a0ea6832f735c7f3788c3ab828cddd6fb7e9ec14cdb95267520dc5e5c5a3f",
+        "15216996f0649383e233ff69c26b47c2f69c3b75fc14bcfa2262b8992b6df311",
         "130660f6f7c8091d99e2976c06043b1fa657c21159e98104dd50c5cd2128c14b",
     ),
     (
         "post-composite-color",
         r#"<feColorMatrix type="saturate" values="0.5"/>"#,
-        "cbf36a25edfd96f08697c1fa2612612d6e0e2c127e2fb313c23ff2d0eb6e6e88",
+        "f11515db8aef148eab30b4933e3e97a4b5e60192d362f8661c6d9200cdd63bc2",
         "38c2893242335a84eb4573a767700fe3b0357fb6bbe237726e146c9950319c9e",
     ),
     (
         "filter-blend",
         r#"<feBlend in="SourceGraphic" in2="SourceGraphic" mode="overlay"/>"#,
-        "16dc9cf785d79522c0a6202464886cce34fdbdfb402b706c18e63bf646ea78b0",
+        "0fe2d6a6f9b16d30a95164b29688dd8cd39f4b3cc029907636ef78b68a434a4e",
         "7867f55c810c54ffd7d671366bad5db3de847cf44fecae17fd93323df6b56c31",
     ),
 ];

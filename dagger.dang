@@ -92,12 +92,10 @@ type Lint {
   }
 
   """
-  Check the formatting of every repo-authored crate except xtask.
+  Check the formatting of every repo-authored crate.
 
-  The vendored forks (skera, ttf2woff2) keep upstream formatting, and
-  xtask/src/pdf_viewers.rs is digest-pinned by the approved PDF viewer
-  qualification (issue #35) and carries one pre-existing rustfmt diff. xtask
-  joins this gate in the re-approval round that next moves that file.
+  The vendored forks (skera, ttf2woff2) keep upstream formatting. xtask joined
+  when the #133/#150 PDF round re-pinned xtask/src/pdf_viewers.rs (issue #35).
   """
   fmt: String! @check {
     self.run([
@@ -108,6 +106,7 @@ type Lint {
       "--package", "excalidraw-render-assets-base",
       "--package", "excalidraw-render-assets-data-000",
       "--package", "excalidraw-render-assets-data-001",
+      "--package", "xtask",
     ])
   }
 
@@ -120,9 +119,8 @@ type Lint {
   occurrence sits in crates/excalidraw-render/src/render/font_subset.rs, which
   is digest-pinned by the approved SVG font subset qualification (issue #99).
   `chunks_exact_to_as_chunks` (Rust 1.98) is allowed for the same reason: its
-  remaining occurrences sit in that file, in xtask/src/svg_font_subset_runner.rs
-  (also pinned by issue #99) and in xtask/src/pdf_viewers.rs (pinned by the PDF
-  viewer qualification along with xtask/src/main.rs).
+  remaining occurrences sit in that file and in
+  xtask/src/svg_font_subset_runner.rs (also pinned by issue #99).
   """
   clippy: String! @check {
     self.run([
