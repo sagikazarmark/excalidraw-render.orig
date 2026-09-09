@@ -1025,15 +1025,14 @@ children would expose the divergence there too.
 The frame clips are followed in `<defs>` by each rounded image's corner clip
 (Section 8.2), in paint order, keyed `image-clip-<source index>`; then by the
 shared image definitions; and then, in a dark-mode export that has images, by
-the dark-mode image filters it
-references (Section 8.2), each defined once: `dark-mode-raster-image` (the
-image filter followed by the theme filter) before `dark-mode-nested-svg-image`
-(the theme filter alone). Each filter spells its CSS filter functions as the
-Filter Effects primitives they are defined as — `feComponentTransfer` tables
-for `invert`, `feColorMatrix` `hueRotate` and `saturate` — with
-`color-interpolation-filters="sRGB"`, and each image element's `<use>`
-references its filter by `filter="url(#…)"`. A light-mode export defines and
-references no filter.
+the dark-mode image filters it references (Section 8.2), each defined once:
+`dark-mode-raster-image` (the image filter followed by the theme filter) before
+`dark-mode-nested-svg-image` (the theme filter alone). Each filter spells its
+CSS filter functions as the Filter Effects primitives they are defined as —
+`feComponentTransfer` tables for `invert`, `feColorMatrix` `hueRotate` and
+`saturate` — with `color-interpolation-filters="sRGB"`, and each image element's
+`<use>` references its filter by `filter="url(#…)"`. A light-mode export defines
+and references no filter.
 
 Every accepted image asset is defined once, as the reference's `reuseImages`
 export defines it (#151): `<symbol id="image-<source index>"
