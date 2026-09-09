@@ -1,19 +1,47 @@
+//! The vector-first PDF backend (stage 5 and 6): `PdfPlan` lowers the resolved
+//! scene into paint-ordered `PdfElement`s and `encode` writes the object graph
+//! — catalog, page, resources, ExtGStates, XMP metadata, the embedded scene,
+//! link annotations, fallback forms, fonts, images and the nested-SVG chunks —
+//! with a hand-maintained object layout the `checked_object` arithmetic keeps
+//! honest. This file also owns the project sRGB ICC profile, the link-annotation
+//! geometry and the image-viewport projection the children share.
+//!
+//! `content` writes the page content stream and the fallback form streams,
+//! `fonts` the Type0 font objects and their deterministic glyph mappings,
+//! `nested_svg` the raster-closure analysis over sanitized `usvg` trees and
+//! the bounded svg2pdf adapter that renumbers and canonicalizes its chunks, and
+//! `raster_preflight` the session's admission of those closures.
+
+mod content;
+mod fonts;
+mod nested_svg;
 mod raster_preflight;
 
-use std::fmt::Write as _;
 use std::io::Write as _;
+use std::sync::Arc;
 
 use crate::normalization::NormalizedElementSource;
 use crate::{
     color::{self, CanonicalColor},
-    FiniteValue, LogicalBounds, NestedPath, NestedPathSegment, NestedSegmentKind, RenderRequest,
+    DiagnosticCode, LogicalBounds, MetadataComponent, NestedPath, RenderRequest,
 };
 
-use super::geometry::{Path, PathOperation, Point};
-use super::number_format::{format_pdf_number, push_rough_number};
-use super::resolve::{DarkModeImageFilter, ResolvedElement, ResolvedScene, StrokeStyle};
-use super::rough::{Drawing, Fill, FillKind};
-use super::FormatEncodeError;
+use super::font_demand::ResolvedFont;
+use super::geometry::{clip_convex_polygon, Path, PathOperation, Point};
+use super::metadata::ArtifactMetadata;
+use super::notices::MandatoryNotices;
+use super::number_format::format_pdf_number;
+use super::resolve::{
+    decoration_fill_color, DarkModeImageFilter, FallbackColors, FallbackSource, ResolvedClip,
+    ResolvedElement, ResolvedFrameName, ResolvedFrameOutline, ResolvedImageAsset,
+    ResolvedImageProjection, ResolvedImageSourceRect, ResolvedLabelMask, ResolvedScene,
+    ResolvedTransform, StrokeStyle,
+};
+use super::rough::{Drawing, Fill};
+use super::text::{ResolvedLabel, ResolvedText};
+use super::{freedraw, metadata_embedding_error, FormatEncodeError, SvgTreeCache};
+
+use nested_svg::{append_chunk, collect_raster_closures, renumber_svg_chunks, svg_chunks};
 
 pub(super) const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
 const ICC_PROFILE_OBJECT: usize = 5;
@@ -43,8 +71,8 @@ const SRGB_TRC: [u16; 256] = [
     60396, 60955, 61517, 62082, 62650, 63221, 63795, 64372, 64952, 65535,
 ];
 
-// Project-owned content is lowered directly; the bounded svg2pdf adapter below
-// is confined to sanitized nested-SVG Form chunks.
+// Project-owned content is lowered directly; the bounded svg2pdf adapter in
+// `nested_svg` is confined to sanitized nested-SVG Form chunks.
 #[derive(Debug)]
 pub(super) struct PdfPlan {
     logical_width: f64,
@@ -53,12 +81,12 @@ pub(super) struct PdfPlan {
     page_width: f64,
     page_height: f64,
     background: Option<CanonicalColor>,
-    fallback_colors: super::resolve::FallbackColors,
-    mandatory_notices: Option<super::notices::MandatoryNotices>,
-    metadata: Option<super::metadata::ArtifactMetadata>,
+    fallback_colors: FallbackColors,
+    mandatory_notices: Option<MandatoryNotices>,
+    metadata: Option<ArtifactMetadata>,
     fallback_font_sfnt: Option<Vec<u8>>,
-    official_fonts: Vec<super::font_demand::ResolvedFont>,
-    svg_trees: super::SvgTreeCache,
+    official_fonts: Vec<ResolvedFont>,
+    svg_trees: SvgTreeCache,
     elements: Vec<PdfElement>,
     raster_closures: Vec<PdfRasterClosure>,
 }
@@ -68,7 +96,7 @@ pub(super) struct PdfPlan {
 /// follows from the mode and the asset kind, so they agree).
 #[derive(Debug)]
 struct PdfImageResource {
-    asset: std::sync::Arc<super::resolve::ResolvedImageAsset>,
+    asset: Arc<ResolvedImageAsset>,
     dark_mode_filter: Option<DarkModeImageFilter>,
 }
 
@@ -87,17 +115,8 @@ pub(super) struct PdfRasterClosure {
 
 #[derive(Debug)]
 struct PdfSvgResource {
-    asset: std::sync::Arc<super::resolve::ResolvedImageAsset>,
+    asset: Arc<ResolvedImageAsset>,
     raster_scale: f64,
-}
-
-#[derive(Debug)]
-struct FilterOccurrence {
-    filter_id: String,
-    usage_id: String,
-    marker: String,
-    bounds: (f64, f64, f64, f64),
-    parent: Option<usize>,
 }
 
 #[derive(Debug)]
@@ -105,8 +124,8 @@ enum PdfElement {
     RoughOutline {
         source: NormalizedElementSource,
         drawing: Drawing,
-        frame_clips: Vec<super::resolve::ResolvedClip>,
-        transform: super::resolve::ResolvedTransform,
+        frame_clips: Vec<ResolvedClip>,
+        transform: ResolvedTransform,
         stroke_color: CanonicalColor,
         fill_color: Option<CanonicalColor>,
         stroke_width: f64,
@@ -114,20 +133,20 @@ enum PdfElement {
         source_stroke_width: f64,
         opacity: f64,
         background_color: CanonicalColor,
-        label_mask: Option<super::resolve::ResolvedLabelMask>,
+        label_mask: Option<ResolvedLabelMask>,
         link: Option<String>,
         width: f64,
         height: f64,
-        generated_label: Option<super::text::ResolvedText>,
+        generated_label: Option<ResolvedText>,
         generated_label_color: Option<CanonicalColor>,
         generated_label_offset_y: f64,
     },
     Freedraw {
         source: NormalizedElementSource,
-        path: super::freedraw::ProjectedPath,
+        path: freedraw::ProjectedPath,
         background_fill: Option<Fill>,
-        frame_clips: Vec<super::resolve::ResolvedClip>,
-        transform: super::resolve::ResolvedTransform,
+        frame_clips: Vec<ResolvedClip>,
+        transform: ResolvedTransform,
         color: CanonicalColor,
         background_color: Option<CanonicalColor>,
         source_stroke_width: f64,
@@ -138,10 +157,10 @@ enum PdfElement {
     },
     Frame {
         source: NormalizedElementSource,
-        name: Option<super::resolve::ResolvedFrameName>,
-        outline: Option<super::resolve::ResolvedFrameOutline>,
-        frame_clips: Vec<super::resolve::ResolvedClip>,
-        transform: super::resolve::ResolvedTransform,
+        name: Option<ResolvedFrameName>,
+        outline: Option<ResolvedFrameOutline>,
+        frame_clips: Vec<ResolvedClip>,
+        transform: ResolvedTransform,
         opacity: f64,
         link: Option<String>,
         width: f64,
@@ -149,9 +168,9 @@ enum PdfElement {
     },
     Text {
         source: NormalizedElementSource,
-        text: super::text::ResolvedText,
-        frame_clips: Vec<super::resolve::ResolvedClip>,
-        transform: super::resolve::ResolvedTransform,
+        text: ResolvedText,
+        frame_clips: Vec<ResolvedClip>,
+        transform: ResolvedTransform,
         color: CanonicalColor,
         opacity: f64,
         link: Option<String>,
@@ -160,15 +179,15 @@ enum PdfElement {
     },
     Image {
         source: NormalizedElementSource,
-        asset: std::sync::Arc<super::resolve::ResolvedImageAsset>,
+        asset: Arc<ResolvedImageAsset>,
         /// The dark-mode filter official SVG applies to this image, which PDF
         /// lowers into a raster asset's pixels.
         dark_mode_filter: Option<DarkModeImageFilter>,
-        frame_clips: Vec<super::resolve::ResolvedClip>,
+        frame_clips: Vec<ResolvedClip>,
         /// The rounded-corner clip of an image with a roundness record, in
         /// element space; without one the image clips to its rectangle.
         corner_clip: Option<Path>,
-        transform: super::resolve::ResolvedTransform,
+        transform: ResolvedTransform,
         opacity: f64,
         link: Option<String>,
         /// The element's unrounded size: the flip axis and the link rectangle.
@@ -176,36 +195,21 @@ enum PdfElement {
         height: f64,
         /// The crop in the asset's pixel grid, which bounds the effect regions
         /// a nested SVG rasterizes.
-        source_rect: super::resolve::ResolvedImageSourceRect,
+        source_rect: ResolvedImageSourceRect,
         /// The reference export's rounded viewport and content placement.
-        projection: super::resolve::ResolvedImageProjection,
+        projection: ResolvedImageProjection,
         scale: [i8; 2],
     },
     Fallback {
-        source: super::resolve::FallbackSource,
-        label: Option<super::text::ResolvedLabel>,
+        source: FallbackSource,
+        label: Option<ResolvedLabel>,
         link: Option<String>,
-        frame_clips: Vec<super::resolve::ResolvedClip>,
+        frame_clips: Vec<ResolvedClip>,
         width: f64,
         height: f64,
-        transform: super::resolve::ResolvedTransform,
+        transform: ResolvedTransform,
         opacity: f64,
     },
-}
-
-#[derive(Debug)]
-struct PdfGlyphMapping {
-    code: u16,
-    glyph_id: u16,
-    advance_1000: u16,
-    unicode: Vec<u16>,
-}
-
-struct PdfSvgChunk {
-    chunk: pdf_writer::Chunk,
-    root: pdf_writer::Ref,
-    bytes: Vec<u8>,
-    object_offsets: Vec<(usize, usize)>,
 }
 
 impl PdfPlan {
@@ -230,7 +234,7 @@ impl PdfPlan {
     pub(super) fn new(
         scene: ResolvedScene,
         request: &RenderRequest,
-        svg_trees: &super::SvgTreeCache,
+        svg_trees: &SvgTreeCache,
     ) -> Result<Self, FormatEncodeError> {
         let scale = scene.raster_or_pdf_scale(request.sizing());
         let (page_width, page_height) = page_dimensions(&scene, request)?;
@@ -284,7 +288,7 @@ impl PdfPlan {
                 ResolvedElement::Freedraw(freedraw) => {
                     elements.push(PdfElement::Freedraw {
                         source: freedraw.source,
-                        path: super::freedraw::project(freedraw.path)?,
+                        path: freedraw::project(freedraw.path)?,
                         background_fill: freedraw.background_fill,
                         frame_clips: freedraw.frame_clips,
                         transform: freedraw.transform,
@@ -384,11 +388,11 @@ impl PdfPlan {
         &self.raster_closures
     }
 
-    pub(super) fn take_mandatory_notices(&mut self) -> Option<super::notices::MandatoryNotices> {
+    pub(super) fn take_mandatory_notices(&mut self) -> Option<MandatoryNotices> {
         self.mandatory_notices.take()
     }
 
-    pub(super) fn set_metadata(&mut self, metadata: super::metadata::ArtifactMetadata) {
+    pub(super) fn set_metadata(&mut self, metadata: ArtifactMetadata) {
         self.metadata = Some(metadata);
         self.mandatory_notices = None;
     }
@@ -411,19 +415,19 @@ impl PdfPlan {
         let xmp = self
             .metadata
             .as_ref()
-            .and_then(super::metadata::ArtifactMetadata::manifest)
+            .and_then(ArtifactMetadata::manifest)
             .map(xmp_metadata)
             .transpose()
             .map_err(|_| {
-                super::metadata_embedding_error(
-                    crate::DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
-                    crate::MetadataComponent::Manifest,
+                metadata_embedding_error(
+                    DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
+                    MetadataComponent::Manifest,
                 )
             })?;
         let embedded_scene = self
             .metadata
             .as_ref()
-            .and_then(super::metadata::ArtifactMetadata::canonical_scene);
+            .and_then(ArtifactMetadata::canonical_scene);
         let attachment_object_count = usize::from(embedded_scene.is_some()) * 2;
         let mut link_count = 0_usize;
         for element in &self.elements {
@@ -1001,8 +1005,8 @@ impl PdfPlan {
         link: &str,
         width: f64,
         height: f64,
-        transform: &super::resolve::ResolvedTransform,
-        frame_clips: &[super::resolve::ResolvedClip],
+        transform: &ResolvedTransform,
+        frame_clips: &[ResolvedClip],
     ) -> Result<(), FormatEncodeError> {
         let point_scale = self.scale * POINTS_PER_LOGICAL_PIXEL;
         let points = clipped_link_polygon(
@@ -1076,192 +1080,6 @@ impl PdfPlan {
         Ok(())
     }
 
-    fn write_font_objects(
-        &self,
-        pdf: &mut Vec<u8>,
-        offsets: &mut [usize],
-        font_object: usize,
-        font: &[u8],
-        base_font: &str,
-        mappings: &[PdfGlyphMapping],
-    ) -> Result<(), FormatEncodeError> {
-        let cid_font_object = font_object.checked_add(1).ok_or_else(pdf_size_error)?;
-        let descriptor_object = font_object.checked_add(2).ok_or_else(pdf_size_error)?;
-        let font_file_object = font_object.checked_add(3).ok_or_else(pdf_size_error)?;
-        let to_unicode_object = font_object.checked_add(4).ok_or_else(pdf_size_error)?;
-        let cid_to_gid_object = font_object.checked_add(5).ok_or_else(pdf_size_error)?;
-        let face = rustybuzz::ttf_parser::Face::parse(font, 0).map_err(|_| {
-            FormatEncodeError::Encoding("PDF fallback font is not a valid sfnt".to_owned())
-        })?;
-        let units_per_em = i64::from(face.units_per_em());
-        let metric = |value: i16| i64::from(value) * 1_000 / units_per_em;
-        let bbox = face.global_bounding_box();
-
-        begin_object(pdf, offsets, font_object)?;
-        write!(
-            pdf,
-            concat!(
-                "<<\n/Type /Font\n/Subtype /Type0\n/BaseFont /{}\n",
-                "/Encoding /Identity-H\n/DescendantFonts [{} 0 R]\n",
-                "/ToUnicode {} 0 R\n>>\nendobj\n"
-            ),
-            base_font, cid_font_object, to_unicode_object,
-        )
-        .map_err(write_error)?;
-
-        begin_object(pdf, offsets, cid_font_object)?;
-        write!(
-            pdf,
-            concat!(
-                "<<\n/Type /Font\n/Subtype /CIDFontType2\n/BaseFont /{}\n",
-                "/CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >>\n",
-                "/FontDescriptor {} 0 R\n/CIDToGIDMap {} 0 R\n/DW 1000\n/W ["
-            ),
-            base_font, descriptor_object, cid_to_gid_object,
-        )
-        .map_err(write_error)?;
-        for mapping in mappings {
-            write!(pdf, " {} [{}]", mapping.code, mapping.advance_1000).map_err(write_error)?;
-        }
-        pdf.extend_from_slice(b" ]\n>>\nendobj\n");
-
-        begin_object(pdf, offsets, descriptor_object)?;
-        write!(
-            pdf,
-            concat!(
-                "<<\n/Type /FontDescriptor\n/FontName /{}\n/Flags 32\n",
-                "/FontBBox [{} {} {} {}]\n/ItalicAngle 0\n/Ascent {}\n/Descent {}\n",
-                "/CapHeight {}\n/StemV 80\n/FontFile2 {} 0 R\n>>\nendobj\n"
-            ),
-            base_font,
-            i64::from(bbox.x_min) * 1_000 / units_per_em,
-            i64::from(bbox.y_min) * 1_000 / units_per_em,
-            i64::from(bbox.x_max) * 1_000 / units_per_em,
-            i64::from(bbox.y_max) * 1_000 / units_per_em,
-            metric(face.ascender()),
-            metric(face.descender()),
-            metric(face.capital_height().unwrap_or(face.ascender())),
-            font_file_object,
-        )
-        .map_err(write_error)?;
-
-        begin_object(pdf, offsets, font_file_object)?;
-        write!(
-            pdf,
-            "<<\n/Length {}\n/Length1 {}\n>>\nstream\n",
-            font.len(),
-            font.len()
-        )
-        .map_err(write_error)?;
-        pdf.extend_from_slice(font);
-        pdf.extend_from_slice(b"\nendstream\nendobj\n");
-
-        let cmap = to_unicode_cmap(mappings, base_font)?;
-        begin_object(pdf, offsets, to_unicode_object)?;
-        write!(pdf, "<<\n/Length {}\n>>\nstream\n", cmap.len()).map_err(write_error)?;
-        pdf.extend_from_slice(cmap.as_bytes());
-        pdf.extend_from_slice(b"\nendstream\nendobj\n");
-
-        let map_length = mappings.last().map_or(2_usize, |mapping| {
-            usize::from(mapping.code)
-                .saturating_add(1)
-                .saturating_mul(2)
-        });
-        let mut cid_to_gid = Vec::new();
-        cid_to_gid.try_reserve_exact(map_length).map_err(|_| {
-            FormatEncodeError::MemoryUnavailable {
-                subject_kind: "format_workspace",
-                subject: "pdf_cid_to_gid_map",
-            }
-        })?;
-        cid_to_gid.resize(map_length, 0);
-        for mapping in mappings {
-            let offset = usize::from(mapping.code).saturating_mul(2);
-            let [high, low] = mapping.glyph_id.to_be_bytes();
-            cid_to_gid[offset] = high;
-            cid_to_gid[offset + 1] = low;
-        }
-        begin_object(pdf, offsets, cid_to_gid_object)?;
-        write!(pdf, "<<\n/Length {}\n>>\nstream\n", cid_to_gid.len()).map_err(write_error)?;
-        pdf.extend_from_slice(&cid_to_gid);
-        pdf.extend_from_slice(b"\nendstream\nendobj\n");
-        Ok(())
-    }
-
-    fn fallback_glyph_mappings(&self) -> Result<Vec<PdfGlyphMapping>, FormatEncodeError> {
-        glyph_mappings(
-            self.elements.iter().filter_map(|element| match element {
-                PdfElement::Fallback {
-                    label: Some(label), ..
-                } => Some(label),
-                PdfElement::Frame {
-                    name: Some(name), ..
-                } => Some(&name.label),
-                _ => None,
-            }),
-            "pdf_fallback_glyph_mappings",
-        )
-    }
-
-    fn official_glyph_mappings(&self) -> Result<Vec<Vec<PdfGlyphMapping>>, FormatEncodeError> {
-        let mut all_mappings = Vec::new();
-        all_mappings
-            .try_reserve_exact(self.official_fonts.len())
-            .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                subject_kind: "format_workspace",
-                subject: "pdf_text_font_mappings",
-            })?;
-        for font_index in 0..self.official_fonts.len() {
-            let mut mappings = Vec::new();
-            for element in &self.elements {
-                let text = match element {
-                    PdfElement::Text { text, .. }
-                    | PdfElement::RoughOutline {
-                        generated_label: Some(text),
-                        ..
-                    } => text,
-                    _ => continue,
-                };
-                for line in &text.lines {
-                    if line.runs.is_empty() {
-                        if text.font_index == font_index {
-                            for glyph in &line.glyphs {
-                                retain_glyph_mapping(
-                                    &mut mappings,
-                                    glyph,
-                                    "pdf_text_glyph_mappings",
-                                )?;
-                            }
-                        }
-                    } else {
-                        for run in &line.runs {
-                            if run.font_index != font_index {
-                                continue;
-                            }
-                            let glyphs = line
-                                .glyphs
-                                .get(run.glyph_start..run.glyph_end)
-                                .ok_or_else(|| {
-                                    FormatEncodeError::Encoding(
-                                        "PDF text run has invalid glyph bounds".to_owned(),
-                                    )
-                                })?;
-                            for glyph in glyphs {
-                                retain_glyph_mapping(
-                                    &mut mappings,
-                                    glyph,
-                                    "pdf_text_glyph_mappings",
-                                )?;
-                            }
-                        }
-                    }
-                }
-            }
-            all_mappings.push(mappings);
-        }
-        Ok(all_mappings)
-    }
-
     fn opacity_resources(&self) -> Result<Vec<f64>, FormatEncodeError> {
         let mut resources = Vec::new();
         resources
@@ -1299,11 +1117,8 @@ impl PdfPlan {
                     }
                     for decoration in &drawing.decorations {
                         if decoration.drawing.fill.is_some() {
-                            let color = super::resolve::decoration_fill_color(
-                                decoration,
-                                *stroke_color,
-                                *background_color,
-                            );
+                            let color =
+                                decoration_fill_color(decoration, *stroke_color, *background_color);
                             retain(*opacity * color.alpha());
                         }
                     }
@@ -1329,66 +1144,6 @@ impl PdfPlan {
             }
         }
         Ok(resources)
-    }
-
-    fn encode_fallback_forms(
-        &self,
-        fallback_mappings: &[PdfGlyphMapping],
-    ) -> Result<Vec<String>, FormatEncodeError> {
-        let form_count = self
-            .elements
-            .iter()
-            .filter(|element| {
-                matches!(element, PdfElement::Fallback { opacity, .. } if *opacity != 1.0)
-            })
-            .count();
-        let mut forms = Vec::new();
-        forms
-            .try_reserve_exact(form_count)
-            .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                subject_kind: "format_workspace",
-                subject: "pdf_fallback_forms",
-            })?;
-        for element in &self.elements {
-            let PdfElement::Fallback {
-                label,
-                width,
-                height,
-                opacity,
-                ..
-            } = element
-            else {
-                continue;
-            };
-            if *opacity == 1.0 {
-                continue;
-            }
-            let mut form = String::new();
-            let capacity = label.as_ref().map_or(1_024, |label| {
-                label
-                    .path
-                    .operations
-                    .len()
-                    .saturating_mul(160)
-                    .saturating_add(label.text.len().saturating_mul(4))
-                    .saturating_add(1_024)
-            });
-            form.try_reserve_exact(capacity)
-                .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                    subject_kind: "format_workspace",
-                    subject: "pdf_fallback_form_stream",
-                })?;
-            push_fallback_body(
-                &mut form,
-                *width,
-                *height,
-                label.as_ref(),
-                self.fallback_colors,
-                fallback_mappings,
-            )?;
-            forms.push(form);
-        }
-        Ok(forms)
     }
 
     fn image_resources(&self) -> Result<Vec<PdfImageResource>, FormatEncodeError> {
@@ -1418,7 +1173,7 @@ impl PdfPlan {
                 continue;
             }
             resources.push(PdfImageResource {
-                asset: std::sync::Arc::clone(asset),
+                asset: Arc::clone(asset),
                 dark_mode_filter: *dark_mode_filter,
             });
         }
@@ -1444,7 +1199,7 @@ impl PdfPlan {
             let has_effects = !asset.svg_effects.is_empty();
             if resources.iter().any(|candidate: &PdfSvgResource| {
                 if has_effects {
-                    std::sync::Arc::ptr_eq(&candidate.asset, asset)
+                    Arc::ptr_eq(&candidate.asset, asset)
                 } else {
                     candidate.asset.identity == asset.identity
                 }
@@ -1457,674 +1212,17 @@ impl PdfPlan {
                 1.0
             };
             resources.push(PdfSvgResource {
-                asset: std::sync::Arc::clone(asset),
+                asset: Arc::clone(asset),
                 raster_scale,
             });
         }
         resources.sort_by_key(|resource| resource.asset.identity);
         Ok(resources)
     }
-
-    fn encode_content(
-        &self,
-        opacity_resources: &[f64],
-        image_resources: &[PdfImageResource],
-        svg_resources: &[PdfSvgResource],
-        fallback_mappings: &[PdfGlyphMapping],
-        official_mappings: &[Vec<PdfGlyphMapping>],
-    ) -> Result<String, FormatEncodeError> {
-        let mut capacity = 1_024_usize;
-        for element in &self.elements {
-            let element_bytes = match element {
-                PdfElement::RoughOutline {
-                    drawing,
-                    generated_label,
-                    ..
-                } => drawing
-                    .operation_count()
-                    .checked_mul(200)
-                    .and_then(|path_bytes| {
-                        path_bytes.checked_add(generated_label.as_ref().map_or(512, |label| {
-                            label.lines.iter().fold(1_024_usize, |size, line| {
-                                size.saturating_add(line.glyphs.len().saturating_mul(96))
-                            })
-                        }))
-                    })
-                    .ok_or_else(pdf_size_error)?,
-                PdfElement::Freedraw {
-                    path,
-                    background_fill,
-                    ..
-                } => path
-                    .operation_count()
-                    .saturating_add(
-                        background_fill
-                            .as_ref()
-                            .map_or(0, |fill| fill.path.operations.len()),
-                    )
-                    .checked_mul(160)
-                    .and_then(|path_bytes| path_bytes.checked_add(256))
-                    .ok_or_else(pdf_size_error)?,
-                PdfElement::Frame { name, .. } => name
-                    .as_ref()
-                    .map_or(512, |name| name.label.text.len().saturating_add(1_024)),
-                PdfElement::Text { text, .. } => text.lines.iter().fold(512_usize, |size, line| {
-                    size.saturating_add(line.text.len().saturating_mul(4))
-                        .saturating_add(line.glyphs.len().saturating_mul(96))
-                }),
-                PdfElement::Image { corner_clip, .. } => corner_clip.as_ref().map_or(512, |path| {
-                    path.operations
-                        .len()
-                        .saturating_mul(160)
-                        .saturating_add(512)
-                }),
-                PdfElement::Fallback { label, .. } => label.as_ref().map_or(1_024, |label| {
-                    label
-                        .path
-                        .operations
-                        .len()
-                        .saturating_mul(160)
-                        .saturating_add(label.text.len().saturating_mul(4))
-                        .saturating_add(1_024)
-                }),
-            };
-            capacity = capacity
-                .checked_add(element_bytes)
-                .ok_or_else(pdf_size_error)?;
-        }
-        let mut content = String::new();
-        content
-            .try_reserve_exact(capacity)
-            .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                subject_kind: "format_workspace",
-                subject: "pdf_content_stream",
-            })?;
-        content.push_str("q\n");
-        push_matrix(
-            &mut content,
-            self.scale * POINTS_PER_LOGICAL_PIXEL,
-            0.0,
-            0.0,
-            -self.scale * POINTS_PER_LOGICAL_PIXEL,
-            0.0,
-            self.page_height,
-        )?;
-        if let Some(background) = self.background {
-            if background.alpha() != 1.0 {
-                content.push_str("q\n");
-                push_opacity_resource(&mut content, opacity_resources, background.alpha())?;
-            }
-            content.push_str("/CS1 cs\n");
-            push_color(&mut content, background.rgb_f64(), "scn")?;
-            push_pdf_number(&mut content, 0.0, "PDF background x")?;
-            content.push(' ');
-            push_pdf_number(&mut content, 0.0, "PDF background y")?;
-            content.push(' ');
-            push_pdf_number(&mut content, self.logical_width, "PDF background width")?;
-            content.push(' ');
-            push_pdf_number(&mut content, self.logical_height, "PDF background height")?;
-            content.push_str(" re\nf\n");
-            if background.alpha() != 1.0 {
-                content.push_str("Q\n");
-            }
-        }
-        let mut fallback_form_index = 0_usize;
-        for element in &self.elements {
-            match element {
-                PdfElement::RoughOutline {
-                    source,
-                    drawing,
-                    frame_clips,
-                    transform,
-                    stroke_color,
-                    fill_color,
-                    stroke_width,
-                    stroke_style,
-                    source_stroke_width,
-                    opacity,
-                    background_color,
-                    label_mask,
-                    generated_label,
-                    generated_label_color,
-                    generated_label_offset_y,
-                    ..
-                } => {
-                    if source.id().is_empty() || source.pointer().is_empty() {
-                        return Err(FormatEncodeError::Encoding(
-                            "PDF plan outline lost its source identity".to_owned(),
-                        ));
-                    }
-                    content.push_str("q\n");
-                    for frame_clip in frame_clips {
-                        push_transformed_clip(&mut content, frame_clip)?;
-                    }
-                    if let Some(mask) = label_mask {
-                        content.push_str("0 0 ");
-                        push_pdf_number(
-                            &mut content,
-                            self.logical_width,
-                            "PDF arrow mask outer width",
-                        )?;
-                        content.push(' ');
-                        push_pdf_number(
-                            &mut content,
-                            self.logical_height,
-                            "PDF arrow mask outer height",
-                        )?;
-                        content.push_str(" re\n");
-                        push_pdf_number(&mut content, mask.x, "PDF arrow label mask x")?;
-                        content.push(' ');
-                        push_pdf_number(&mut content, mask.y, "PDF arrow label mask y")?;
-                        content.push(' ');
-                        push_pdf_number(&mut content, mask.width, "PDF arrow label mask width")?;
-                        content.push(' ');
-                        push_pdf_number(&mut content, mask.height, "PDF arrow label mask height")?;
-                        content.push_str(" re\nW*\nn\n");
-                    }
-                    push_transform_matrix(&mut content, transform)?;
-                    if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
-                        content.push_str("q\n");
-                        let fill_opacity = *opacity * fill_color.alpha();
-                        if fill_opacity != 1.0 {
-                            push_opacity_resource(&mut content, opacity_resources, fill_opacity)?;
-                        }
-                        match fill.kind {
-                            FillKind::Solid => {
-                                content.push_str("/CS1 cs\n");
-                                push_color(&mut content, fill_color.rgb_f64(), "scn")?;
-                                push_rough_path(&mut content, &fill.path)?;
-                                content.push_str(if drawing.shape.canvas_uses_even_odd_fill() {
-                                    "f*\n"
-                                } else {
-                                    "f\n"
-                                });
-                            }
-                            FillKind::Sketch => {
-                                push_pdf_number(
-                                    &mut content,
-                                    *source_stroke_width / 2.0,
-                                    "PDF fill weight",
-                                )?;
-                                content.push_str(" w\n1 J\n/CS1 CS\n");
-                                push_color(&mut content, fill_color.rgb_f64(), "SCN")?;
-                                push_rough_path(&mut content, &fill.path)?;
-                                content.push_str("S\n");
-                            }
-                        }
-                        content.push_str("Q\n");
-                    }
-                    let stroke_opacity = *opacity * stroke_color.alpha();
-                    if stroke_opacity != 1.0 {
-                        push_opacity_resource(&mut content, opacity_resources, stroke_opacity)?;
-                    }
-                    push_pdf_number(&mut content, *stroke_width, "PDF stroke width")?;
-                    content.push_str(" w\n1 J\n");
-                    match stroke_style {
-                        StrokeStyle::Solid => {}
-                        StrokeStyle::Dashed => {
-                            content.push_str("[8 ");
-                            push_pdf_number(
-                                &mut content,
-                                8.0 + source_stroke_width,
-                                "PDF dash gap",
-                            )?;
-                            content.push_str("] 0 d\n");
-                        }
-                        StrokeStyle::Dotted => {
-                            content.push_str("[1.5 ");
-                            push_pdf_number(
-                                &mut content,
-                                6.0 + source_stroke_width,
-                                "PDF dot gap",
-                            )?;
-                            content.push_str("] 0 d\n");
-                        }
-                    }
-                    content.push_str("/CS1 CS\n");
-                    push_color(&mut content, stroke_color.rgb_f64(), "SCN")?;
-                    push_rough_path(&mut content, &drawing.outline)?;
-                    content.push_str("S\n");
-                    for decoration in &drawing.decorations {
-                        let fill = super::resolve::decoration_fill_color(
-                            decoration,
-                            *stroke_color,
-                            *background_color,
-                        );
-                        let (decoration_style, decoration_stroke_width) =
-                            super::resolve::decoration_stroke_style(
-                                decoration,
-                                *source_stroke_width,
-                            );
-                        push_pdf_drawing(
-                            &mut content,
-                            &decoration.drawing,
-                            *stroke_color,
-                            Some(fill),
-                            *stroke_width,
-                            decoration_style,
-                            decoration_stroke_width,
-                            *opacity,
-                            opacity_resources,
-                        )?;
-                    }
-                    if let (Some(label), Some(color)) = (generated_label, generated_label_color) {
-                        content.push_str("q\n1 0 0 1 0 ");
-                        push_pdf_number(
-                            &mut content,
-                            *generated_label_offset_y,
-                            "PDF embeddable label offset",
-                        )?;
-                        content.push_str(" cm\n");
-                        let effective_opacity = color.alpha();
-                        if effective_opacity != 1.0 {
-                            push_opacity_resource(
-                                &mut content,
-                                opacity_resources,
-                                effective_opacity,
-                            )?;
-                        }
-                        content.push_str("/CS1 cs\n");
-                        push_color(&mut content, color.rgb_f64(), "scn")?;
-                        for line in &label.lines {
-                            content.push_str("/Span << /ActualText <FEFF");
-                            push_utf16be_hex(&mut content, &line.text)?;
-                            content.push_str("> >> BDC\nBT\n");
-                            if line.runs.is_empty() {
-                                push_pdf_text_run(
-                                    &mut content,
-                                    label.font_index,
-                                    label.font_size,
-                                    &line.glyphs,
-                                    official_mappings,
-                                )?;
-                            } else {
-                                for run in &line.runs {
-                                    let glyphs = line
-                                        .glyphs
-                                        .get(run.glyph_start..run.glyph_end)
-                                        .ok_or_else(|| {
-                                            FormatEncodeError::Encoding(
-                                                "PDF embeddable run has invalid glyph bounds"
-                                                    .to_owned(),
-                                            )
-                                        })?;
-                                    push_pdf_text_run(
-                                        &mut content,
-                                        run.font_index,
-                                        label.font_size,
-                                        glyphs,
-                                        official_mappings,
-                                    )?;
-                                }
-                            }
-                            content.push_str("ET\nEMC\n");
-                        }
-                        content.push_str("Q\n");
-                    }
-                    content.push_str("Q\n");
-                }
-                PdfElement::Freedraw {
-                    source,
-                    path,
-                    background_fill,
-                    frame_clips,
-                    transform,
-                    color,
-                    background_color,
-                    source_stroke_width,
-                    opacity,
-                    ..
-                } => {
-                    if source.id().is_empty() || source.pointer().is_empty() {
-                        return Err(FormatEncodeError::Encoding(
-                            "PDF freedraw lost its source identity".to_owned(),
-                        ));
-                    }
-                    content.push_str("q\n");
-                    for frame_clip in frame_clips {
-                        push_transformed_clip(&mut content, frame_clip)?;
-                    }
-                    push_transform_matrix(&mut content, transform)?;
-                    if let (Some(fill), Some(background_color)) =
-                        (background_fill, background_color)
-                    {
-                        content.push_str("q\n");
-                        let fill_opacity = *opacity * background_color.alpha();
-                        if fill_opacity != 1.0 {
-                            push_opacity_resource(&mut content, opacity_resources, fill_opacity)?;
-                        }
-                        match fill.kind {
-                            FillKind::Solid => {
-                                content.push_str("/CS1 cs\n");
-                                push_color(&mut content, background_color.rgb_f64(), "scn")?;
-                                push_rough_path(&mut content, &fill.path)?;
-                                content.push_str("f*\n");
-                            }
-                            FillKind::Sketch => {
-                                push_pdf_number(
-                                    &mut content,
-                                    *source_stroke_width / 2.0,
-                                    "PDF freedraw fill weight",
-                                )?;
-                                content.push_str(" w\n1 J\n/CS1 CS\n");
-                                push_color(&mut content, background_color.rgb_f64(), "SCN")?;
-                                push_rough_path(&mut content, &fill.path)?;
-                                content.push_str("S\n");
-                            }
-                        }
-                        content.push_str("Q\n");
-                    }
-                    if path.is_empty() {
-                        content.push_str("Q\n");
-                        continue;
-                    }
-                    let effective_opacity = *opacity * color.alpha();
-                    if effective_opacity != 1.0 {
-                        push_opacity_resource(&mut content, opacity_resources, effective_opacity)?;
-                    }
-                    content.push_str("/CS1 cs\n");
-                    push_color(&mut content, color.rgb_f64(), "scn")?;
-                    push_freedraw_path(&mut content, path)?;
-                    content.push_str("f\nQ\n");
-                }
-                PdfElement::Frame {
-                    source,
-                    name,
-                    outline,
-                    frame_clips,
-                    transform,
-                    opacity,
-                    ..
-                } => {
-                    if source.id().is_empty() || source.pointer().is_empty() {
-                        return Err(FormatEncodeError::Encoding(
-                            "PDF frame lost its source identity".to_owned(),
-                        ));
-                    }
-                    // The name is its own text element: unrotated, unclipped
-                    // and fully opaque, painted before the frame.
-                    if let Some(name) = name {
-                        content.push_str("q\n");
-                        push_transform_matrix(&mut content, &name.transform)?;
-                        content.push_str("/Span << /ActualText <FEFF");
-                        push_utf16be_hex(&mut content, &name.label.text)?;
-                        content.push_str("> >> BDC\n");
-                        push_pdf_label_text(
-                            &mut content,
-                            &name.label,
-                            name.color,
-                            fallback_mappings,
-                        )?;
-                        content.push_str("EMC\nQ\n");
-                    }
-                    content.push_str("q\n");
-                    for frame_clip in frame_clips {
-                        push_transformed_clip(&mut content, frame_clip)?;
-                    }
-                    push_transform_matrix(&mut content, transform)?;
-                    if *opacity != 1.0 {
-                        push_opacity_resource(&mut content, opacity_resources, *opacity)?;
-                    }
-                    if let Some(outline) = outline {
-                        push_pdf_number(
-                            &mut content,
-                            super::geometry::FRAME_OUTLINE_STROKE_WIDTH,
-                            "PDF frame outline stroke width",
-                        )?;
-                        content.push_str(" w\n1 J\n1 j\n/CS1 CS\n");
-                        // PDF follows the reference SVG's outline color, which
-                        // does not recolor magic frames.
-                        push_color(&mut content, outline.stroke_color.rgb_f64(), "SCN")?;
-                        push_rough_path(&mut content, &outline.path)?;
-                        content.push_str("S\n");
-                    }
-                    content.push_str("Q\n");
-                }
-                PdfElement::Text {
-                    source,
-                    text,
-                    frame_clips,
-                    transform,
-                    color,
-                    opacity,
-                    ..
-                } => {
-                    if source.id().is_empty() || source.pointer().is_empty() {
-                        return Err(FormatEncodeError::Encoding(
-                            "PDF text lost its source identity".to_owned(),
-                        ));
-                    }
-                    content.push_str("q\n");
-                    for frame_clip in frame_clips {
-                        push_transformed_clip(&mut content, frame_clip)?;
-                    }
-                    push_transform_matrix(&mut content, transform)?;
-                    let effective_opacity = *opacity * color.alpha();
-                    if effective_opacity != 1.0 {
-                        push_opacity_resource(&mut content, opacity_resources, effective_opacity)?;
-                    }
-                    content.push_str("/CS1 cs\n");
-                    push_color(&mut content, color.rgb_f64(), "scn")?;
-                    for line in &text.lines {
-                        content.push_str("/Span << /ActualText <FEFF");
-                        push_utf16be_hex(&mut content, &line.text)?;
-                        content.push_str("> >> BDC\nBT\n");
-                        if line.runs.is_empty() {
-                            push_pdf_text_run(
-                                &mut content,
-                                text.font_index,
-                                text.font_size,
-                                &line.glyphs,
-                                official_mappings,
-                            )?;
-                        } else {
-                            for run in &line.runs {
-                                let glyphs = line
-                                    .glyphs
-                                    .get(run.glyph_start..run.glyph_end)
-                                    .ok_or_else(|| {
-                                        FormatEncodeError::Encoding(
-                                            "PDF text run has invalid glyph bounds".to_owned(),
-                                        )
-                                    })?;
-                                push_pdf_text_run(
-                                    &mut content,
-                                    run.font_index,
-                                    text.font_size,
-                                    glyphs,
-                                    official_mappings,
-                                )?;
-                            }
-                        }
-                        content.push_str("ET\nEMC\n");
-                    }
-                    content.push_str("Q\n");
-                }
-                PdfElement::Image {
-                    source,
-                    asset,
-                    frame_clips,
-                    corner_clip,
-                    transform,
-                    opacity,
-                    width,
-                    height,
-                    projection,
-                    scale,
-                    ..
-                } => {
-                    if source.id().is_empty() || source.pointer().is_empty() {
-                        return Err(FormatEncodeError::Encoding(
-                            "PDF image lost its source identity".to_owned(),
-                        ));
-                    }
-                    let (resource_prefix, resource) = if asset.sanitized_svg.is_some() {
-                        (
-                            "Svg",
-                            svg_resources.iter().position(|candidate| {
-                                if asset.svg_effects.is_empty() {
-                                    candidate.asset.identity == asset.identity
-                                } else {
-                                    std::sync::Arc::ptr_eq(&candidate.asset, asset)
-                                }
-                            }),
-                        )
-                    } else {
-                        (
-                            "Im",
-                            image_resources
-                                .iter()
-                                .position(|candidate| candidate.asset.identity == asset.identity),
-                        )
-                    };
-                    let resource = resource.ok_or_else(|| {
-                        FormatEncodeError::Encoding(
-                            "PDF image resource has no semantic owner".to_owned(),
-                        )
-                    })?;
-                    content.push_str("q\n");
-                    for frame_clip in frame_clips {
-                        push_transformed_clip(&mut content, frame_clip)?;
-                    }
-                    push_transform_matrix(&mut content, transform)?;
-                    if *opacity != 1.0 {
-                        push_opacity_resource(&mut content, opacity_resources, *opacity)?;
-                    }
-                    // The element-space clips precede the content matrix, so
-                    // a rounded corner stays at the element's corner however
-                    // the source is mapped into it. Image clips keep full
-                    // precision (spec 8.6): the rough two-decimal rounding does
-                    // not apply to them, and only the viewport carries the
-                    // reference's integer rounding.
-                    if let Some(path) = corner_clip {
-                        push_mapped_clip(&mut content, path, |x, y| (x, y), "PDF image clip")?;
-                    }
-                    let flip_x = scale[0] < 0;
-                    let flip_y = scale[1] < 0;
-                    let (content_x, content_y, content_width, content_height) =
-                        projection.content_rect();
-                    // A cropped image overflows the region the reference leaves
-                    // visible; an uncropped one fills its viewport, so the
-                    // clip only restates the image's own bounds and yields to
-                    // a corner clip.
-                    if projection.crop.is_some() || corner_clip.is_none() {
-                        let (x, y, visible_width, visible_height) =
-                            visible_rect(projection, *width, *height, *scale);
-                        push_rect_clip(
-                            &mut content,
-                            x,
-                            y,
-                            visible_width,
-                            visible_height,
-                            "PDF image viewport",
-                        )?;
-                    }
-                    // The asset fills the content rectangle, mirrored about the
-                    // element's unrounded center when flipped.
-                    let (image_scale_x, image_offset_x) = if flip_x {
-                        (-content_width, *width - content_x)
-                    } else {
-                        (content_width, content_x)
-                    };
-                    let (mut image_scale_y, mut image_offset_y) = if flip_y {
-                        (-content_height, *height - content_y)
-                    } else {
-                        (content_height, content_y)
-                    };
-                    // svg2pdf Forms already invert SVG's Y axis; compensate by
-                    // drawing the form Y-inverted in place, within the
-                    // rectangle the flip has put it in, not about the
-                    // element's center.
-                    if asset.sanitized_svg.is_some() {
-                        image_offset_y += image_scale_y;
-                        image_scale_y = -image_scale_y;
-                    }
-                    push_matrix(
-                        &mut content,
-                        image_scale_x,
-                        0.0,
-                        0.0,
-                        image_scale_y,
-                        image_offset_x,
-                        image_offset_y,
-                    )?;
-                    writeln!(content, "/{resource_prefix}{resource} Do").map_err(|_| {
-                        FormatEncodeError::Encoding(
-                            "failed to write PDF image invocation".to_owned(),
-                        )
-                    })?;
-                    content.push_str("Q\n");
-                }
-                PdfElement::Fallback {
-                    source,
-                    label,
-                    link: _,
-                    frame_clips,
-                    width,
-                    height,
-                    transform,
-                    opacity,
-                } => {
-                    if source.pointer.is_empty() {
-                        return Err(FormatEncodeError::Encoding(
-                            "PDF fallback lost its source location".to_owned(),
-                        ));
-                    }
-                    content.push_str("q\n");
-                    for frame_clip in frame_clips {
-                        push_transformed_clip(&mut content, frame_clip)?;
-                    }
-                    push_transform_matrix(&mut content, transform)?;
-                    if *opacity != 1.0 {
-                        let resource = opacity_resources
-                            .iter()
-                            .position(|candidate| candidate.to_bits() == opacity.to_bits())
-                            .ok_or_else(|| {
-                                FormatEncodeError::Encoding(
-                                    "PDF fallback opacity resource has no owner".to_owned(),
-                                )
-                            })?;
-                        writeln!(content, "/GS{} gs", resource + 1).map_err(|_| {
-                            FormatEncodeError::Encoding(
-                                "failed to write PDF fallback opacity resource".to_owned(),
-                            )
-                        })?;
-                        fallback_form_index = fallback_form_index.saturating_add(1);
-                        writeln!(content, "/FB{fallback_form_index} Do").map_err(|_| {
-                            FormatEncodeError::Encoding(
-                                "failed to write PDF fallback form invocation".to_owned(),
-                            )
-                        })?;
-                        content.push_str("Q\n");
-                        continue;
-                    }
-                    push_fallback_body(
-                        &mut content,
-                        *width,
-                        *height,
-                        label.as_ref(),
-                        self.fallback_colors,
-                        fallback_mappings,
-                    )?;
-                    content.push_str("Q\n");
-                }
-            }
-        }
-        content.push('Q');
-        Ok(content)
-    }
 }
 
 impl PdfElement {
-    fn link_geometry(
-        &self,
-    ) -> Option<(
-        &str,
-        f64,
-        f64,
-        &super::resolve::ResolvedTransform,
-        &[super::resolve::ResolvedClip],
-    )> {
+    fn link_geometry(&self) -> Option<(&str, f64, f64, &ResolvedTransform, &[ResolvedClip])> {
         match self {
             Self::RoughOutline {
                 link: Some(link),
@@ -2179,90 +1277,6 @@ impl PdfElement {
     }
 }
 
-fn glyph_mappings<'a>(
-    labels: impl IntoIterator<Item = &'a super::text::ResolvedLabel>,
-    subject: &'static str,
-) -> Result<Vec<PdfGlyphMapping>, FormatEncodeError> {
-    let mut mappings = Vec::new();
-    for label in labels {
-        for glyph in &label.glyphs {
-            retain_glyph_mapping(&mut mappings, glyph, subject)?;
-        }
-    }
-    Ok(mappings)
-}
-
-fn retain_glyph_mapping(
-    mappings: &mut Vec<PdfGlyphMapping>,
-    glyph: &super::text::ResolvedGlyph,
-    subject: &'static str,
-) -> Result<(), FormatEncodeError> {
-    if mappings
-        .iter()
-        .any(|mapping| mapping.glyph_id == glyph.id && mapping.unicode == glyph.unicode)
-    {
-        return Ok(());
-    }
-    let code = u16::try_from(mappings.len().saturating_add(1)).map_err(|_| {
-        FormatEncodeError::Encoding(
-            "PDF font requires more deterministic character codes than Identity-H supports"
-                .to_owned(),
-        )
-    })?;
-    let mut unicode = Vec::new();
-    unicode
-        .try_reserve_exact(glyph.unicode.len())
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject,
-        })?;
-    unicode.extend_from_slice(&glyph.unicode);
-    mappings
-        .try_reserve(1)
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject,
-        })?;
-    mappings.push(PdfGlyphMapping {
-        code,
-        glyph_id: glyph.id,
-        advance_1000: glyph.advance_1000,
-        unicode,
-    });
-    Ok(())
-}
-
-fn push_pdf_text_run(
-    content: &mut String,
-    font_index: usize,
-    font_size: f64,
-    glyphs: &[super::text::ResolvedGlyph],
-    official_mappings: &[Vec<PdfGlyphMapping>],
-) -> Result<(), FormatEncodeError> {
-    content.push_str("/F");
-    write!(content, "{} ", font_index + 2).map_err(|_| {
-        FormatEncodeError::Encoding("failed to write PDF text font resource".to_owned())
-    })?;
-    push_pdf_number(content, font_size, "PDF text font size")?;
-    content.push_str(" Tf\n");
-    let mappings = official_mappings.get(font_index).ok_or_else(|| {
-        FormatEncodeError::Encoding("PDF text references an unknown font resource".to_owned())
-    })?;
-    for glyph in glyphs {
-        content.push_str("1 0 0 -1 ");
-        push_pdf_number(content, glyph.x, "PDF text glyph x")?;
-        content.push(' ');
-        push_pdf_number(content, glyph.y, "PDF text glyph y")?;
-        content.push_str(" Tm\n<");
-        let code = glyph_mapping_code(mappings, glyph)?;
-        write!(content, "{code:04X}").map_err(|_| {
-            FormatEncodeError::Encoding("failed to write PDF text glyph ID".to_owned())
-        })?;
-        content.push_str("> Tj\n");
-    }
-    Ok(())
-}
-
 pub(super) fn page_dimensions(
     scene: &ResolvedScene,
     request: &RenderRequest,
@@ -2277,7 +1291,7 @@ pub(super) fn page_dimensions(
 fn transformed_pdf_points(
     width: f64,
     height: f64,
-    transform: &super::resolve::ResolvedTransform,
+    transform: &ResolvedTransform,
     point_scale: f64,
     page_height: f64,
 ) -> [(f64, f64); 4] {
@@ -2307,8 +1321,8 @@ fn transformed_pdf_points(
 fn link_annotation_visible(
     width: f64,
     height: f64,
-    transform: &super::resolve::ResolvedTransform,
-    frame_clips: &[super::resolve::ResolvedClip],
+    transform: &ResolvedTransform,
+    frame_clips: &[ResolvedClip],
     point_scale: f64,
     page_width: f64,
     page_height: f64,
@@ -2329,8 +1343,8 @@ fn link_annotation_visible(
 fn clipped_link_polygon(
     width: f64,
     height: f64,
-    transform: &super::resolve::ResolvedTransform,
-    frame_clips: &[super::resolve::ResolvedClip],
+    transform: &ResolvedTransform,
+    frame_clips: &[ResolvedClip],
     point_scale: f64,
     page_width: f64,
     page_height: f64,
@@ -2361,7 +1375,7 @@ fn clipped_link_polygon(
 }
 
 fn transformed_clip_path(
-    clip: &super::resolve::ResolvedClip,
+    clip: &ResolvedClip,
     point_scale: f64,
     page_height: f64,
 ) -> Result<Vec<(f64, f64)>, FormatEncodeError> {
@@ -2429,7 +1443,7 @@ fn transformed_clip_path(
 
 fn transformed_clip_point(
     point: Point,
-    transform: &super::resolve::ResolvedTransform,
+    transform: &ResolvedTransform,
     point_scale: f64,
     page_height: f64,
 ) -> (f64, f64) {
@@ -2440,85 +1454,6 @@ fn transformed_clip_point(
     let x = transform.translation_x + transform.center_x + delta_x * cos - delta_y * sin;
     let y = transform.translation_y + transform.center_y + delta_x * sin + delta_y * cos;
     (x * point_scale, page_height - y * point_scale)
-}
-
-fn clip_convex_polygon(
-    subject: &[(f64, f64)],
-    clip: &[(f64, f64)],
-) -> Result<Vec<(f64, f64)>, FormatEncodeError> {
-    let mut output = Vec::new();
-    output
-        .try_reserve_exact(subject.len())
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_link_clip_input",
-        })?;
-    output.extend_from_slice(subject);
-    let orientation = clip
-        .iter()
-        .zip(clip.iter().cycle().skip(1))
-        .take(clip.len())
-        .map(|(left, right)| left.0 * right.1 - right.0 * left.1)
-        .sum::<f64>()
-        .signum();
-    for (edge_start, edge_end) in clip
-        .iter()
-        .copied()
-        .zip(clip.iter().copied().cycle().skip(1))
-        .take(clip.len())
-    {
-        let input = output;
-        output = Vec::new();
-        output
-            .try_reserve(input.len().saturating_add(1))
-            .map_err(|_| FormatEncodeError::MemoryUnavailable {
-                subject_kind: "format_workspace",
-                subject: "pdf_clipped_link_polygon",
-            })?;
-        let Some(mut previous) = input.last().copied() else {
-            break;
-        };
-        let mut previous_inside =
-            polygon_half_plane(previous, edge_start, edge_end) * orientation >= 0.0;
-        for current in input {
-            let current_inside =
-                polygon_half_plane(current, edge_start, edge_end) * orientation >= 0.0;
-            if current_inside != previous_inside {
-                output.push(line_intersection(previous, current, edge_start, edge_end));
-            }
-            if current_inside {
-                output.push(current);
-            }
-            previous = current;
-            previous_inside = current_inside;
-        }
-    }
-    Ok(output)
-}
-
-fn polygon_half_plane(point: (f64, f64), edge_start: (f64, f64), edge_end: (f64, f64)) -> f64 {
-    (edge_end.0 - edge_start.0) * (point.1 - edge_start.1)
-        - (edge_end.1 - edge_start.1) * (point.0 - edge_start.0)
-}
-
-fn line_intersection(
-    start: (f64, f64),
-    end: (f64, f64),
-    edge_start: (f64, f64),
-    edge_end: (f64, f64),
-) -> (f64, f64) {
-    let start_distance = polygon_half_plane(start, edge_start, edge_end);
-    let end_distance = polygon_half_plane(end, edge_start, edge_end);
-    let denominator = start_distance - end_distance;
-    let ratio = if denominator == 0.0 {
-        0.0
-    } else {
-        start_distance / denominator
-    };
-    (
-        start.0 + (end.0 - start.0) * ratio,
-        start.1 + (end.1 - start.1) * ratio,
-    )
 }
 
 fn srgb_icc_profile() -> Result<Vec<u8>, FormatEncodeError> {
@@ -2587,377 +1522,6 @@ fn append_xyz(profile: &mut Vec<u8>, coordinates: [i32; 3]) {
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-fn push_pdf_drawing(
-    output: &mut String,
-    drawing: &Drawing,
-    stroke_color: CanonicalColor,
-    fill_color: Option<CanonicalColor>,
-    stroke_width: f64,
-    stroke_style: StrokeStyle,
-    source_stroke_width: f64,
-    opacity: f64,
-    opacity_resources: &[f64],
-) -> Result<(), FormatEncodeError> {
-    output.push_str("q\n");
-    if let (Some(fill), Some(fill_color)) = (&drawing.fill, fill_color) {
-        output.push_str("q\n");
-        let fill_opacity = opacity * fill_color.alpha();
-        if fill_opacity != 1.0 {
-            push_opacity_resource(output, opacity_resources, fill_opacity)?;
-        }
-        match fill.kind {
-            FillKind::Solid => {
-                output.push_str("/CS1 cs\n");
-                push_color(output, fill_color.rgb_f64(), "scn")?;
-                push_rough_path(output, &fill.path)?;
-                output.push_str(if drawing.shape.canvas_uses_even_odd_fill() {
-                    "f*\n"
-                } else {
-                    "f\n"
-                });
-            }
-            FillKind::Sketch => {
-                push_pdf_number(output, source_stroke_width / 2.0, "PDF fill weight")?;
-                output.push_str(" w\n1 J\n/CS1 CS\n");
-                push_color(output, fill_color.rgb_f64(), "SCN")?;
-                push_rough_path(output, &fill.path)?;
-                output.push_str("S\n");
-            }
-        }
-        output.push_str("Q\n");
-    }
-    let stroke_opacity = opacity * stroke_color.alpha();
-    if stroke_opacity != 1.0 {
-        push_opacity_resource(output, opacity_resources, stroke_opacity)?;
-    }
-    push_pdf_number(output, stroke_width, "PDF stroke width")?;
-    output.push_str(" w\n1 J\n/CS1 CS\n");
-    match stroke_style {
-        StrokeStyle::Solid => output.push_str("[] 0 d\n"),
-        StrokeStyle::Dashed => {
-            output.push_str("[8 ");
-            push_pdf_number(output, 8.0 + source_stroke_width, "PDF dash gap")?;
-            output.push_str("] 0 d\n");
-        }
-        StrokeStyle::Dotted => {
-            output.push_str("[1.5 ");
-            push_pdf_number(output, 6.0 + source_stroke_width, "PDF dot gap")?;
-            output.push_str("] 0 d\n");
-        }
-    }
-    push_color(output, stroke_color.rgb_f64(), "SCN")?;
-    push_rough_path(output, &drawing.outline)?;
-    output.push_str("S\nQ\n");
-    Ok(())
-}
-
-fn push_rough_path(output: &mut String, path: &Path) -> Result<(), FormatEncodeError> {
-    for operation in &path.operations {
-        match operation {
-            PathOperation::Move(point) => {
-                push_rough_number(output, point.x)?;
-                output.push(' ');
-                push_rough_number(output, point.y)?;
-                output.push_str(" m\n");
-            }
-            PathOperation::Line(point) => {
-                push_rough_number(output, point.x)?;
-                output.push(' ');
-                push_rough_number(output, point.y)?;
-                output.push_str(" l\n");
-            }
-            PathOperation::Cubic {
-                control_1,
-                control_2,
-                end,
-            } => {
-                for (index, value) in [
-                    control_1.x,
-                    control_1.y,
-                    control_2.x,
-                    control_2.y,
-                    end.x,
-                    end.y,
-                ]
-                .into_iter()
-                .enumerate()
-                {
-                    if index != 0 {
-                        output.push(' ');
-                    }
-                    push_rough_number(output, value)?;
-                }
-                output.push_str(" c\n");
-            }
-        }
-    }
-    Ok(())
-}
-
-fn push_freedraw_path(
-    output: &mut String,
-    path: &super::freedraw::ProjectedPath,
-) -> Result<(), FormatEncodeError> {
-    let mut current = None;
-    for operation in &path.operations {
-        match *operation {
-            super::freedraw::PathOperation::Move(point) => {
-                push_pdf_number(output, point.x, "PDF freedraw x")?;
-                output.push(' ');
-                push_pdf_number(output, point.y, "PDF freedraw y")?;
-                output.push_str(" m\n");
-                current = Some(point);
-            }
-            super::freedraw::PathOperation::Quadratic { control, end } => {
-                let start = current.ok_or_else(|| {
-                    FormatEncodeError::Encoding(
-                        "PDF freedraw quadratic has no current point".to_owned(),
-                    )
-                })?;
-                let control_1 = Point {
-                    x: start.x + (control.x - start.x) * (2.0 / 3.0),
-                    y: start.y + (control.y - start.y) * (2.0 / 3.0),
-                };
-                let control_2 = Point {
-                    x: end.x + (control.x - end.x) * (2.0 / 3.0),
-                    y: end.y + (control.y - end.y) * (2.0 / 3.0),
-                };
-                for (index, value) in [
-                    control_1.x,
-                    control_1.y,
-                    control_2.x,
-                    control_2.y,
-                    end.x,
-                    end.y,
-                ]
-                .into_iter()
-                .enumerate()
-                {
-                    if index != 0 {
-                        output.push(' ');
-                    }
-                    push_pdf_number(output, value, "PDF freedraw coordinate")?;
-                }
-                output.push_str(" c\n");
-                current = Some(end);
-            }
-            super::freedraw::PathOperation::Line(point) => {
-                push_pdf_number(output, point.x, "PDF freedraw x")?;
-                output.push(' ');
-                push_pdf_number(output, point.y, "PDF freedraw y")?;
-                output.push_str(" l\n");
-                current = Some(point);
-            }
-            super::freedraw::PathOperation::Close => output.push_str("h\n"),
-        }
-    }
-    Ok(())
-}
-
-/// The `cm` that places a resolved transform's local origin: rotation about
-/// the element center, then translation, as the SVG `translate() rotate()` pair
-/// composes.
-fn push_transform_matrix(
-    output: &mut String,
-    transform: &super::resolve::ResolvedTransform,
-) -> Result<(), FormatEncodeError> {
-    let (sin, cos) = if transform.angle_radians == 0.0 {
-        (0.0, 1.0)
-    } else {
-        (transform.angle_radians.sin(), transform.angle_radians.cos())
-    };
-    let offset_x = transform.translation_x + transform.center_x - cos * transform.center_x
-        + sin * transform.center_y;
-    let offset_y = transform.translation_y + transform.center_y
-        - sin * transform.center_x
-        - cos * transform.center_y;
-    push_matrix(output, cos, sin, -sin, cos, offset_x, offset_y)
-}
-
-fn push_matrix(
-    output: &mut String,
-    a: f64,
-    b: f64,
-    c: f64,
-    d: f64,
-    e: f64,
-    f: f64,
-) -> Result<(), FormatEncodeError> {
-    for (index, value) in [a, b, c, d, e, f].into_iter().enumerate() {
-        if index != 0 {
-            output.push(' ');
-        }
-        push_pdf_number(output, value, "PDF transformation component")?;
-    }
-    output.push_str(" cm\n");
-    Ok(())
-}
-
-fn push_pdf_rectangle(
-    output: &mut String,
-    width: f64,
-    height: f64,
-) -> Result<(), FormatEncodeError> {
-    output.push_str("0 0 ");
-    push_pdf_number(output, width, "PDF fallback rectangle width")?;
-    output.push(' ');
-    push_pdf_number(output, height, "PDF fallback rectangle height")?;
-    output.push_str(" re\n");
-    Ok(())
-}
-
-fn push_fallback_body(
-    output: &mut String,
-    width: f64,
-    height: f64,
-    label: Option<&super::text::ResolvedLabel>,
-    colors: super::resolve::FallbackColors,
-    mappings: &[PdfGlyphMapping],
-) -> Result<(), FormatEncodeError> {
-    push_pdf_rectangle(output, width, height)?;
-    output.push_str("W\nn\n/CS1 cs\n");
-    push_color(output, colors.fill.rgb_f64(), "scn")?;
-    push_pdf_rectangle(output, width, height)?;
-    output.push_str("f\n");
-    if width >= 2.0 && height >= 2.0 {
-        output.push_str("/CS1 CS\n");
-        push_color(output, colors.stroke.rgb_f64(), "SCN")?;
-        output.push_str("2 w\n0 J\n0 j\n[6 4] 0 d\n");
-        push_pdf_rectangle(output, width, height)?;
-        output.push_str("S\n[] 0 d\n0 0 m\n");
-        push_pdf_number(output, width, "PDF fallback cross width")?;
-        output.push(' ');
-        push_pdf_number(output, height, "PDF fallback cross height")?;
-        output.push_str(" l\n");
-        push_pdf_number(output, width, "PDF fallback reverse cross width")?;
-        output.push_str(" 0 m\n0 ");
-        push_pdf_number(output, height, "PDF fallback reverse cross height")?;
-        output.push_str(" l\nS\n");
-    }
-    if let Some(label) = label {
-        output.push_str("/Span << /ActualText <FEFF");
-        push_utf16be_hex(output, &label.text)?;
-        output.push_str("> >> BDC\n");
-        push_pdf_label_text(output, label, colors.label, mappings)?;
-        output.push_str("EMC\n");
-    }
-    Ok(())
-}
-
-fn push_pdf_label_text(
-    output: &mut String,
-    label: &super::text::ResolvedLabel,
-    color: CanonicalColor,
-    mappings: &[PdfGlyphMapping],
-) -> Result<(), FormatEncodeError> {
-    output.push_str("/CS1 cs\n");
-    push_color(output, color.rgb_f64(), "scn")?;
-    output.push_str("BT\n/F1 14 Tf\n");
-    for glyph in &label.glyphs {
-        output.push_str("1 0 0 -1 ");
-        push_pdf_number(output, glyph.x, "PDF fallback glyph x")?;
-        output.push(' ');
-        push_pdf_number(output, glyph.y, "PDF fallback glyph y")?;
-        output.push_str(" Tm\n<");
-        let code = glyph_mapping_code(mappings, glyph)?;
-        write!(output, "{code:04X}").map_err(|_| {
-            FormatEncodeError::Encoding("failed to write PDF fallback glyph ID".to_owned())
-        })?;
-        output.push_str("> Tj\n");
-    }
-    output.push_str("ET\n");
-    Ok(())
-}
-
-fn glyph_mapping_code(
-    mappings: &[PdfGlyphMapping],
-    glyph: &super::text::ResolvedGlyph,
-) -> Result<u16, FormatEncodeError> {
-    mappings
-        .iter()
-        .find(|mapping| mapping.glyph_id == glyph.id && mapping.unicode == glyph.unicode)
-        .map(|mapping| mapping.code)
-        .ok_or_else(|| {
-            FormatEncodeError::Encoding(
-                "PDF shaped glyph has no deterministic character-code mapping".to_owned(),
-            )
-        })
-}
-
-fn push_transformed_clip(
-    output: &mut String,
-    clip: &super::resolve::ResolvedClip,
-) -> Result<(), FormatEncodeError> {
-    let sin = clip.transform.angle_radians.sin();
-    let cos = clip.transform.angle_radians.cos();
-    let offset_x = clip.transform.translation_x + clip.transform.center_x
-        - cos * clip.transform.center_x
-        + sin * clip.transform.center_y;
-    let offset_y = clip.transform.translation_y + clip.transform.center_y
-        - sin * clip.transform.center_x
-        - cos * clip.transform.center_y;
-    let map = |x: f64, y: f64| (cos * x - sin * y + offset_x, sin * x + cos * y + offset_y);
-    push_mapped_clip(output, &clip.path, map, "PDF frame clip")
-}
-
-/// Emits `path` through `map` at full precision and installs it as the clip:
-/// a frame clip mapped into page space before the element's `cm`, or an
-/// image's corner clip left in element space after it.
-fn push_mapped_clip(
-    output: &mut String,
-    path: &Path,
-    map: impl Fn(f64, f64) -> (f64, f64),
-    subject: &str,
-) -> Result<(), FormatEncodeError> {
-    for operation in &path.operations {
-        match operation {
-            PathOperation::Move(point) => {
-                let (x, y) = map(point.x, point.y);
-                push_pdf_point(output, x, y, "m")?;
-            }
-            PathOperation::Line(point) => {
-                let (x, y) = map(point.x, point.y);
-                push_pdf_point(output, x, y, "l")?;
-            }
-            PathOperation::Cubic {
-                control_1,
-                control_2,
-                end,
-            } => {
-                for point in [control_1, control_2, end] {
-                    let (x, y) = map(point.x, point.y);
-                    push_pdf_number(output, x, subject)?;
-                    output.push(' ');
-                    push_pdf_number(output, y, subject)?;
-                    output.push(' ');
-                }
-                output.push_str("c\n");
-            }
-        }
-    }
-    output.push_str("W\nn\n");
-    Ok(())
-}
-
-/// Emits an axis-aligned rectangle in the current space at full precision and
-/// installs it as the clip.
-fn push_rect_clip(
-    output: &mut String,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    subject: &str,
-) -> Result<(), FormatEncodeError> {
-    for value in [x, y, width, height] {
-        push_pdf_number(output, value, subject)?;
-        output.push(' ');
-    }
-    output.push_str("re\nW\nn\n");
-    Ok(())
-}
-
 fn xmp_metadata(manifest: &str) -> Result<String, FormatEncodeError> {
     const PREFIX: &str = concat!(
         "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"",
@@ -2987,82 +1551,6 @@ fn xmp_metadata(manifest: &str) -> Result<String, FormatEncodeError> {
     }
     xmp.push_str(SUFFIX);
     Ok(xmp)
-}
-
-fn push_utf16be_hex(output: &mut String, text: &str) -> Result<(), FormatEncodeError> {
-    for unit in text.encode_utf16() {
-        write!(output, "{unit:04X}").map_err(|_| {
-            FormatEncodeError::Encoding("failed to write PDF fallback actual text".to_owned())
-        })?;
-    }
-    Ok(())
-}
-
-fn to_unicode_cmap(
-    mappings: &[PdfGlyphMapping],
-    base_font: &str,
-) -> Result<String, FormatEncodeError> {
-    let mut cmap = String::new();
-    let capacity = mappings
-        .len()
-        .checked_mul(64)
-        .and_then(|bytes| bytes.checked_add(512))
-        .ok_or_else(pdf_size_error)?;
-    cmap.try_reserve_exact(capacity)
-        .map_err(|_| FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_fallback_to_unicode_cmap",
-        })?;
-    cmap.push_str(concat!(
-        "/CIDInit /ProcSet findresource begin\n",
-        "12 dict begin\nbegincmap\n",
-        "/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def\n",
-        "/CMapName /"
-    ));
-    cmap.push_str(base_font);
-    cmap.push_str(
-        "-UCS def\n/CMapType 2 def\n1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n",
-    );
-    for chunk in mappings.chunks(100) {
-        writeln!(cmap, "{} beginbfchar", chunk.len()).map_err(|_| {
-            FormatEncodeError::Encoding("failed to write PDF ToUnicode count".to_owned())
-        })?;
-        for mapping in chunk {
-            write!(cmap, "<{:04X}> <", mapping.code).map_err(|_| {
-                FormatEncodeError::Encoding("failed to write PDF ToUnicode source".to_owned())
-            })?;
-            if mapping.unicode.is_empty() {
-                cmap.push_str("FFFD");
-            } else {
-                for unit in &mapping.unicode {
-                    write!(cmap, "{unit:04X}").map_err(|_| {
-                        FormatEncodeError::Encoding(
-                            "failed to write PDF ToUnicode destination".to_owned(),
-                        )
-                    })?;
-                }
-            }
-            cmap.push_str(">\n");
-        }
-        cmap.push_str("endbfchar\n");
-    }
-    cmap.push_str("endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend");
-    Ok(cmap)
-}
-
-fn push_pdf_point(
-    output: &mut String,
-    x: f64,
-    y: f64,
-    operator: &str,
-) -> Result<(), FormatEncodeError> {
-    push_pdf_number(output, x, "PDF fallback label x")?;
-    output.push(' ');
-    push_pdf_number(output, y, "PDF fallback label y")?;
-    output.push(' ');
-    output.push_str(operator);
-    output.push('\n');
-    Ok(())
 }
 
 fn push_pdf_vec_number(
@@ -3101,46 +1589,7 @@ fn push_pdf_link(output: &mut Vec<u8>, link: &str) {
     push_pdf_literal_string(output, link);
 }
 
-fn push_opacity_resource(
-    output: &mut String,
-    resources: &[f64],
-    opacity: f64,
-) -> Result<(), FormatEncodeError> {
-    let resource = resources
-        .iter()
-        .position(|candidate| candidate.to_bits() == opacity.to_bits())
-        .ok_or_else(|| {
-            FormatEncodeError::Encoding("PDF opacity resource has no owner".to_owned())
-        })?;
-    writeln!(output, "/GS{} gs", resource + 1)
-        .map_err(|_| FormatEncodeError::Encoding("failed to write PDF opacity resource".to_owned()))
-}
-
-fn push_color(
-    output: &mut String,
-    color: [f64; 3],
-    operator: &str,
-) -> Result<(), FormatEncodeError> {
-    for (index, value) in color.into_iter().enumerate() {
-        if index != 0 {
-            output.push(' ');
-        }
-        push_pdf_number(output, value, "PDF sRGB color component")?;
-    }
-    writeln!(output, " {operator}")
-        .map_err(|_| FormatEncodeError::Encoding("failed to write PDF color".to_owned()))
-}
-
-fn push_pdf_number(
-    output: &mut String,
-    value: f64,
-    subject: &str,
-) -> Result<(), FormatEncodeError> {
-    output.push_str(&format_pdf_number(value, subject)?);
-    Ok(())
-}
-
-fn begin_object(
+pub(super) fn begin_object(
     output: &mut Vec<u8>,
     offsets: &mut [usize],
     id: usize,
@@ -3149,7 +1598,7 @@ fn begin_object(
     writeln!(output, "{id} 0 obj").map_err(write_error)
 }
 
-fn pdf_size_error() -> FormatEncodeError {
+pub(super) fn pdf_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("PDF plan exceeds serializer capacity".to_owned())
 }
 
@@ -3175,248 +1624,12 @@ fn width_scale(element: &PdfElement) -> f64 {
     (*width / source_width).max(*height / source_height)
 }
 
-fn collect_raster_closures(
-    elements: &[PdfElement],
-    svg_trees: &super::SvgTreeCache,
-    final_scale: f64,
-    logical_width: f64,
-    logical_height: f64,
-) -> Result<Vec<PdfRasterClosure>, FormatEncodeError> {
-    let mut closures: Vec<PdfRasterClosure> = Vec::new();
-    for (element_index, element) in elements.iter().enumerate() {
-        let PdfElement::Image {
-            source,
-            asset,
-            transform,
-            frame_clips,
-            width,
-            height,
-            source_rect,
-            projection,
-            scale,
-            ..
-        } = element
-        else {
-            continue;
-        };
-        if asset.svg_effects.is_empty() {
-            continue;
-        }
-        let tree = svg_trees
-            .get(&asset.identity)
-            .map(std::sync::Arc::as_ref)
-            .ok_or_else(|| {
-                FormatEncodeError::Encoding("PDF effect source lost its sanitized tree".to_owned())
-            })?;
-        let mut occurrences = Vec::new();
-        collect_filter_occurrences(tree.root(), None, &mut occurrences);
-        let mut occurrence_closures: Vec<Option<usize>> = Vec::new();
-        occurrence_closures.resize(occurrences.len(), None);
-        let mut matched_occurrences = std::collections::BTreeMap::<String, usize>::new();
-        for (occurrence_index, occurrence) in occurrences.iter().enumerate() {
-            let exact_usage = asset.svg_effects.iter().find(|effect| {
-                !occurrence.usage_id.is_empty() && effect.usage_id == occurrence.usage_id
-            });
-            let candidates = asset
-                .svg_effects
-                .iter()
-                .filter(|effect| {
-                    effect.marker == occurrence.marker || effect.filter_id == occurrence.filter_id
-                })
-                .collect::<Vec<_>>();
-            let key = if occurrence.marker.is_empty() {
-                occurrence.filter_id.clone()
-            } else {
-                occurrence.marker.clone()
-            };
-            let matched = matched_occurrences.entry(key).or_default();
-            let effect = exact_usage.or_else(|| {
-                (!candidates.is_empty()).then(|| candidates[*matched % candidates.len()])
-            });
-            *matched = matched.saturating_add(1);
-            let Some(effect) = effect else {
-                continue;
-            };
-            if let Some(parent_closure) = occurrence
-                .parent
-                .and_then(|parent| occurrence_closures.get(parent).copied().flatten())
-            {
-                let closure = closures
-                    .get_mut(parent_closure)
-                    .ok_or_else(pdf_size_error)?;
-                closure
-                    .causes
-                    .extend(effect.causes.iter().map(effect_cause_path));
-                closure.unisolatable |= effect.unisolatable;
-                occurrence_closures[occurrence_index] = Some(parent_closure);
-                continue;
-            }
-            let (x, y, right, bottom) = occurrence.bounds;
-            let viewport_right = f64::from(asset.width);
-            let viewport_bottom = f64::from(asset.height);
-            let x = x.max(0.0).max(source_rect.x);
-            let y = y.max(0.0).max(source_rect.y);
-            let right = right
-                .min(viewport_right)
-                .min(source_rect.x + source_rect.width);
-            let bottom = bottom
-                .min(viewport_bottom)
-                .min(source_rect.y + source_rect.height);
-            if right <= x || bottom <= y {
-                continue;
-            }
-            let local = map_asset_bounds(
-                (x, y, right, bottom),
-                projection,
-                *width,
-                *height,
-                asset,
-                *scale,
-            );
-            let (x, y, right, bottom) = transform_bounds(local, *transform);
-            let mut x = x.max(0.0);
-            let mut y = y.max(0.0);
-            let mut right = right.min(logical_width);
-            let mut bottom = bottom.min(logical_height);
-            for clip in frame_clips {
-                let Some(clip_bounds) = clip.path.cubic_bounds() else {
-                    right = x;
-                    bottom = y;
-                    break;
-                };
-                let clip_bounds = transform_bounds(clip_bounds, clip.transform);
-                x = x.max(clip_bounds.0);
-                y = y.max(clip_bounds.1);
-                right = right.min(clip_bounds.2);
-                bottom = bottom.min(clip_bounds.3);
-            }
-            if right <= x || bottom <= y {
-                continue;
-            }
-            let pixel_x = (x * final_scale).floor();
-            let pixel_y = (y * final_scale).floor();
-            let pixel_right = (right * final_scale).ceil();
-            let pixel_bottom = (bottom * final_scale).ceil();
-            let pixel_width = (pixel_right - pixel_x).max(1.0) as u64;
-            let pixel_height = (pixel_bottom - pixel_y).max(1.0) as u64;
-            let logical_bounds = LogicalBounds {
-                x: FiniteValue::new(pixel_x / final_scale).ok_or_else(pdf_size_error)?,
-                y: FiniteValue::new(pixel_y / final_scale).ok_or_else(pdf_size_error)?,
-                width: FiniteValue::new(pixel_width as f64 / final_scale)
-                    .ok_or_else(pdf_size_error)?,
-                height: FiniteValue::new(pixel_height as f64 / final_scale)
-                    .ok_or_else(pdf_size_error)?,
-            };
-            let causes = effect
-                .causes
-                .iter()
-                .map(effect_cause_path)
-                .collect::<Vec<_>>();
-            closures.push(PdfRasterClosure {
-                element_id: source.id().to_owned(),
-                json_pointer: asset.svg_fallback_pointer.clone().unwrap_or_default(),
-                source_order: u64::try_from(element_index).unwrap_or(u64::MAX),
-                source_position: effect.node_ordinal,
-                logical_bounds,
-                pixel_width,
-                pixel_height,
-                causes,
-                unisolatable: effect.unisolatable,
-            });
-            occurrence_closures[occurrence_index] = Some(closures.len() - 1);
-        }
-    }
-    Ok(closures)
-}
-
-fn collect_filter_occurrences(
-    group: &usvg::Group,
-    parent: Option<usize>,
-    occurrences: &mut Vec<FilterOccurrence>,
-) {
-    let mut child_parent = parent;
-    if !group.filters().is_empty()
-        && group.has_children()
-        && group.bounding_box().width() > 0.0
-        && group.bounding_box().height() > 0.0
-    {
-        let rect = group.abs_layer_bounding_box();
-        let mut bounds = (
-            f64::from(rect.x()),
-            f64::from(rect.y()),
-            f64::from(rect.right()),
-            f64::from(rect.bottom()),
-        );
-        if let Some(clip) = group.clip_path() {
-            let Some(clip_bounds) = nested_clip_bounds(clip) else {
-                return;
-            };
-            bounds.0 = bounds.0.max(clip_bounds.0);
-            bounds.1 = bounds.1.max(clip_bounds.1);
-            bounds.2 = bounds.2.min(clip_bounds.2);
-            bounds.3 = bounds.3.min(clip_bounds.3);
-            if bounds.2 <= bounds.0 || bounds.3 <= bounds.1 {
-                return;
-            }
-        }
-        for filter in group.filters() {
-            occurrences.push(FilterOccurrence {
-                filter_id: filter.id().to_owned(),
-                usage_id: group.id().to_owned(),
-                marker: filter
-                    .primitives()
-                    .first()
-                    .map(|primitive| primitive.result().to_owned())
-                    .unwrap_or_default(),
-                bounds,
-                parent,
-            });
-            child_parent = Some(occurrences.len() - 1);
-        }
-    }
-    for child in group.children() {
-        if let usvg::Node::Group(child) = child {
-            collect_filter_occurrences(child, child_parent, occurrences);
-        }
-        child.subroots(|subroot| {
-            collect_filter_occurrences(subroot, child_parent, occurrences);
-        });
-    }
-}
-
-fn nested_clip_bounds(clip: &usvg::ClipPath) -> Option<(f64, f64, f64, f64)> {
-    if clip.root().bounding_box().width() == 0.0 || clip.root().bounding_box().height() == 0.0 {
-        return None;
-    }
-    let rect = clip
-        .root()
-        .abs_layer_bounding_box()
-        .transform(clip.transform())?;
-    let mut bounds = (
-        f64::from(rect.x()),
-        f64::from(rect.y()),
-        f64::from(rect.right()),
-        f64::from(rect.bottom()),
-    );
-    if let Some(parent) = clip.clip_path() {
-        let parent = nested_clip_bounds(parent)?;
-        bounds.0 = bounds.0.max(parent.0);
-        bounds.1 = bounds.1.max(parent.1);
-        bounds.2 = bounds.2.min(parent.2);
-        bounds.3 = bounds.3.min(parent.3);
-        if bounds.2 <= bounds.0 || bounds.3 <= bounds.1 {
-            return None;
-        }
-    }
-    Some(bounds)
-}
-
 /// The rectangle of the element's space the reference leaves visible, as
 /// `(x, y, width, height)` after the flip: the `<use>` viewport as the flip
 /// mirrors it about the element's unrounded center, intersected with the crop
 /// `<mask>`, which sits on the unflipped group, when the image is cropped.
-fn visible_rect(
-    projection: &super::resolve::ResolvedImageProjection,
+pub(super) fn visible_rect(
+    projection: &ResolvedImageProjection,
     width: f64,
     height: f64,
     scale: [i8; 2],
@@ -3443,334 +1656,6 @@ fn visible_rect(
     (left, top, right - left, bottom - top)
 }
 
-/// Maps asset-pixel bounds into the element's space the way the content
-/// matrix draws the asset: through the projection's content rectangle,
-/// mirrored about the element's unrounded center when flipped, and bounded by
-/// the visible rectangle.
-fn map_asset_bounds(
-    bounds: (f64, f64, f64, f64),
-    projection: &super::resolve::ResolvedImageProjection,
-    width: f64,
-    height: f64,
-    asset: &super::resolve::ResolvedImageAsset,
-    scale: [i8; 2],
-) -> (f64, f64, f64, f64) {
-    let (content_x, content_y, content_width, content_height) = projection.content_rect();
-    let map_x = |value: f64| {
-        let value = content_x + value / f64::from(asset.width) * content_width;
-        if scale[0] < 0 {
-            width - value
-        } else {
-            value
-        }
-    };
-    let map_y = |value: f64| {
-        let value = content_y + value / f64::from(asset.height) * content_height;
-        if scale[1] < 0 {
-            height - value
-        } else {
-            value
-        }
-    };
-    let (x1, x2) = (map_x(bounds.0), map_x(bounds.2));
-    let (y1, y2) = (map_y(bounds.1), map_y(bounds.3));
-    let (visible_x, visible_y, visible_width, visible_height) =
-        visible_rect(projection, width, height, scale);
-    (
-        x1.min(x2).max(visible_x),
-        y1.min(y2).max(visible_y),
-        x1.max(x2).min(visible_x + visible_width),
-        y1.max(y2).min(visible_y + visible_height),
-    )
-}
-
-fn transform_bounds(
-    bounds: (f64, f64, f64, f64),
-    transform: super::resolve::ResolvedTransform,
-) -> (f64, f64, f64, f64) {
-    let (sin, cos) = transform.angle_radians.sin_cos();
-    let offset_x = transform.translation_x + transform.center_x - cos * transform.center_x
-        + sin * transform.center_y;
-    let offset_y = transform.translation_y + transform.center_y
-        - sin * transform.center_x
-        - cos * transform.center_y;
-    let point = |x: f64, y: f64| (cos * x - sin * y + offset_x, sin * x + cos * y + offset_y);
-    let points = [
-        point(bounds.0, bounds.1),
-        point(bounds.2, bounds.1),
-        point(bounds.2, bounds.3),
-        point(bounds.0, bounds.3),
-    ];
-    points.iter().fold(
-        (
-            f64::INFINITY,
-            f64::INFINITY,
-            f64::NEG_INFINITY,
-            f64::NEG_INFINITY,
-        ),
-        |(min_x, min_y, max_x, max_y), (x, y)| {
-            (min_x.min(*x), min_y.min(*y), max_x.max(*x), max_y.max(*y))
-        },
-    )
-}
-
-fn effect_cause_path(cause: &super::asset::svg::EffectCause) -> NestedPath {
-    let mut segments = Vec::new();
-    for (node, attribute) in &cause.slots {
-        segments.push(NestedPathSegment {
-            kind: NestedSegmentKind::Node,
-            ordinal: *node,
-            name: None,
-        });
-        segments.push(NestedPathSegment {
-            kind: NestedSegmentKind::Attribute,
-            ordinal: *attribute,
-            name: Some("href".to_owned()),
-        });
-    }
-    segments.push(NestedPathSegment {
-        kind: NestedSegmentKind::Node,
-        ordinal: cause.node_ordinal,
-        name: None,
-    });
-    if let Some((ordinal, name)) = &cause.attribute {
-        segments.push(NestedPathSegment {
-            kind: if cause.effect_input {
-                NestedSegmentKind::EffectInput
-            } else {
-                NestedSegmentKind::Attribute
-            },
-            ordinal: *ordinal,
-            name: Some(name.clone()),
-        });
-    }
-    NestedPath { segments }
-}
-
-fn svg_chunks(
-    resources: &[PdfSvgResource],
-    svg_trees: &super::SvgTreeCache,
-) -> Result<Vec<PdfSvgChunk>, FormatEncodeError> {
-    let mut chunks = Vec::new();
-    chunks.try_reserve_exact(resources.len()).map_err(|_| {
-        FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_resource",
-            subject: "pdf_svg_chunks",
-        }
-    })?;
-    for resource in resources {
-        let tree = svg_trees
-            .get(&resource.asset.identity)
-            .map(std::sync::Arc::as_ref)
-            .ok_or_else(|| {
-                FormatEncodeError::Encoding("PDF SVG resource lost its sanitized tree".to_owned())
-            })?;
-        let (chunk, root) = svg2pdf::to_chunk(
-            tree,
-            svg2pdf::ConversionOptions {
-                compress: false,
-                raster_scale: resource.raster_scale as f32,
-                embed_text: false,
-                ..svg2pdf::ConversionOptions::default()
-            },
-        )
-        .map_err(|error| {
-            FormatEncodeError::Encoding(format!("failed to lower sanitized SVG to PDF: {error}"))
-        })?;
-        chunks.push(PdfSvgChunk {
-            chunk,
-            root,
-            bytes: Vec::new(),
-            object_offsets: Vec::new(),
-        });
-    }
-    Ok(chunks)
-}
-
-fn renumber_svg_chunks(
-    chunks: Vec<PdfSvgChunk>,
-    first_object: usize,
-) -> Result<Vec<PdfSvgChunk>, FormatEncodeError> {
-    let total_objects = chunks
-        .iter()
-        .try_fold(0_usize, |count, chunk| {
-            count.checked_add(chunk.chunk.refs().len())
-        })
-        .ok_or_else(pdf_size_error)?;
-    let last_object = first_object
-        .checked_add(total_objects)
-        .ok_or_else(pdf_size_error)?;
-    if last_object > i32::MAX as usize {
-        return Err(pdf_size_error());
-    }
-    let mut next = i32::try_from(first_object).map_err(|_| pdf_size_error())?;
-    let mut renumbered = Vec::new();
-    renumbered.try_reserve_exact(chunks.len()).map_err(|_| {
-        FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_resource",
-            subject: "pdf_svg_chunks",
-        }
-    })?;
-    for resource in chunks {
-        let mut mapping = std::collections::BTreeMap::new();
-        let chunk = resource.chunk.renumber(|old| {
-            *mapping.entry(old).or_insert_with(|| {
-                let allocated = pdf_writer::Ref::new(next);
-                next += 1;
-                allocated
-            })
-        });
-        let root = *mapping.get(&resource.root).ok_or_else(pdf_size_error)?;
-        let (bytes, object_offsets) = canonicalize_pdf_chunk(&chunk)?;
-        renumbered.push(PdfSvgChunk {
-            chunk,
-            root,
-            bytes,
-            object_offsets,
-        });
-    }
-    Ok(renumbered)
-}
-
-fn append_chunk(
-    pdf: &mut Vec<u8>,
-    offsets: &mut [usize],
-    resource: &PdfSvgChunk,
-) -> Result<(), FormatEncodeError> {
-    for &(object, position) in &resource.object_offsets {
-        let index = object.checked_sub(1).ok_or_else(pdf_size_error)?;
-        *offsets.get_mut(index).ok_or_else(pdf_size_error)? =
-            pdf.len().checked_add(position).ok_or_else(pdf_size_error)?;
-    }
-    pdf.extend_from_slice(&resource.bytes);
-    Ok(())
-}
-
-#[allow(clippy::type_complexity)]
-fn canonicalize_pdf_chunk(
-    chunk: &pdf_writer::Chunk,
-) -> Result<(Vec<u8>, Vec<(usize, usize)>), FormatEncodeError> {
-    let bytes = chunk.as_bytes();
-    let mut canonical = Vec::with_capacity(bytes.len());
-    let mut offsets = Vec::new();
-    offsets.try_reserve_exact(chunk.refs().len()).map_err(|_| {
-        FormatEncodeError::MemoryUnavailable {
-            subject_kind: "format_workspace",
-            subject: "pdf_svg_object_offsets",
-        }
-    })?;
-    let mut cursor = 0_usize;
-    for reference in chunk.refs() {
-        while bytes.get(cursor).is_some_and(u8::is_ascii_whitespace) {
-            canonical.push(bytes[cursor]);
-            cursor += 1;
-        }
-        let marker = format!("{} 0 obj\n", reference.get());
-        if !bytes[cursor..].starts_with(marker.as_bytes()) {
-            return Err(FormatEncodeError::Encoding(
-                "PDF SVG chunk object order did not match its reference table".to_owned(),
-            ));
-        }
-        offsets.push((
-            usize::try_from(reference.get()).map_err(|_| pdf_size_error())?,
-            canonical.len(),
-        ));
-        canonical.extend_from_slice(marker.as_bytes());
-        cursor += marker.len();
-
-        let relative_end = find_bytes(&bytes[cursor..], b"endobj\n").ok_or_else(|| {
-            FormatEncodeError::Encoding("PDF SVG chunk object was unterminated".to_owned())
-        })?;
-        let relative_stream = find_bytes(&bytes[cursor..cursor + relative_end], b"stream\n");
-        if let Some(relative_stream) = relative_stream {
-            let stream = cursor + relative_stream;
-            canonicalize_pdf_text(&bytes[cursor..stream], &mut canonical);
-            canonical.extend_from_slice(b"stream\n");
-            let body = stream + b"stream\n".len();
-            let length = pdf_stream_length(&bytes[cursor..stream])?;
-            let body_end = body.checked_add(length).ok_or_else(pdf_size_error)?;
-            let trailer = b"\nendstream\nendobj\n";
-            let object_end = body_end
-                .checked_add(trailer.len())
-                .ok_or_else(pdf_size_error)?;
-            if bytes.get(body_end..object_end) != Some(trailer.as_slice()) {
-                return Err(FormatEncodeError::Encoding(
-                    "PDF SVG stream length did not match its object boundary".to_owned(),
-                ));
-            }
-            canonical.extend_from_slice(bytes.get(body..body_end).ok_or_else(pdf_size_error)?);
-            canonical.extend_from_slice(trailer);
-            cursor = object_end;
-        } else {
-            let object_end = cursor
-                .checked_add(relative_end)
-                .and_then(|end| end.checked_add(b"endobj\n".len()))
-                .ok_or_else(pdf_size_error)?;
-            canonicalize_pdf_text(&bytes[cursor..object_end], &mut canonical);
-            cursor = object_end;
-        }
-    }
-    canonicalize_pdf_text(&bytes[cursor..], &mut canonical);
-    Ok((canonical, offsets))
-}
-
-fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    haystack
-        .windows(needle.len())
-        .position(|window| window == needle)
-}
-
-fn pdf_stream_length(dictionary: &[u8]) -> Result<usize, FormatEncodeError> {
-    let marker = b"/Length ";
-    let start = find_bytes(dictionary, marker)
-        .and_then(|index| index.checked_add(marker.len()))
-        .ok_or_else(|| {
-            FormatEncodeError::Encoding("PDF SVG stream had no direct length".to_owned())
-        })?;
-    let digits = dictionary[start..]
-        .iter()
-        .take_while(|byte| byte.is_ascii_digit())
-        .copied()
-        .collect::<Vec<_>>();
-    if digits.is_empty() {
-        return Err(FormatEncodeError::Encoding(
-            "PDF SVG stream length was not an integer".to_owned(),
-        ));
-    }
-    std::str::from_utf8(&digits)
-        .ok()
-        .and_then(|digits| digits.parse().ok())
-        .ok_or_else(pdf_size_error)
-}
-
-fn canonicalize_pdf_text(bytes: &[u8], output: &mut Vec<u8>) {
-    let mut lines = bytes.split_inclusive(|byte| *byte == b'\n').peekable();
-    while let Some(line) = lines.next() {
-        let indentation = line.iter().take_while(|byte| **byte == b' ').count();
-        if line.get(indentation) != Some(&b'/') || line.ends_with(b"<<\n") {
-            output.extend_from_slice(line);
-            continue;
-        }
-        let mut run = vec![line];
-        while let Some(next) = lines.peek().copied() {
-            let next_indentation = next.iter().take_while(|byte| **byte == b' ').count();
-            if next_indentation != indentation
-                || next.get(next_indentation) != Some(&b'/')
-                || next.ends_with(b"<<\n")
-            {
-                break;
-            }
-            if let Some(next) = lines.next() {
-                run.push(next);
-            }
-        }
-        run.sort_unstable();
-        for line in run {
-            output.extend_from_slice(line);
-        }
-    }
-}
-
 fn checked_object(first: usize, index: usize, stride: usize) -> Result<usize, FormatEncodeError> {
     index
         .checked_mul(stride)
@@ -3788,6 +1673,6 @@ fn point_dimension(logical: f64) -> Result<f64, FormatEncodeError> {
     Ok(points)
 }
 
-fn write_error(_: std::io::Error) -> FormatEncodeError {
+pub(super) fn write_error(_: std::io::Error) -> FormatEncodeError {
     FormatEncodeError::Encoding("failed to encode PDF bytes".to_owned())
 }

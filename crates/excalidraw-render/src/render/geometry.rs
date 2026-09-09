@@ -9,7 +9,7 @@ use crate::normalization::{NormalizedElement, NormalizedElementKind};
 use crate::ColorMode;
 
 use super::resolve::ResolveSceneError;
-use super::{freedraw, rough};
+use super::{freedraw, rough, FormatEncodeError};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct Point {
@@ -1138,6 +1138,87 @@ fn corner_radius(size: f64, roundness: crate::normalization::NormalizedRoundness
             radius.min(size * PROPORTIONAL_RADIUS)
         }
     }
+}
+
+/// Sutherland–Hodgman clipping of a convex `subject` polygon against a convex
+/// `clip` polygon of either winding; both are page-space `(x, y)` pairs.
+pub(super) fn clip_convex_polygon(
+    subject: &[(f64, f64)],
+    clip: &[(f64, f64)],
+) -> Result<Vec<(f64, f64)>, FormatEncodeError> {
+    let mut output = Vec::new();
+    output
+        .try_reserve_exact(subject.len())
+        .map_err(|_| FormatEncodeError::MemoryUnavailable {
+            subject_kind: "format_workspace",
+            subject: "pdf_link_clip_input",
+        })?;
+    output.extend_from_slice(subject);
+    let orientation = clip
+        .iter()
+        .zip(clip.iter().cycle().skip(1))
+        .take(clip.len())
+        .map(|(left, right)| left.0 * right.1 - right.0 * left.1)
+        .sum::<f64>()
+        .signum();
+    for (edge_start, edge_end) in clip
+        .iter()
+        .copied()
+        .zip(clip.iter().copied().cycle().skip(1))
+        .take(clip.len())
+    {
+        let input = output;
+        output = Vec::new();
+        output
+            .try_reserve(input.len().saturating_add(1))
+            .map_err(|_| FormatEncodeError::MemoryUnavailable {
+                subject_kind: "format_workspace",
+                subject: "pdf_clipped_link_polygon",
+            })?;
+        let Some(mut previous) = input.last().copied() else {
+            break;
+        };
+        let mut previous_inside =
+            polygon_half_plane(previous, edge_start, edge_end) * orientation >= 0.0;
+        for current in input {
+            let current_inside =
+                polygon_half_plane(current, edge_start, edge_end) * orientation >= 0.0;
+            if current_inside != previous_inside {
+                output.push(line_intersection(previous, current, edge_start, edge_end));
+            }
+            if current_inside {
+                output.push(current);
+            }
+            previous = current;
+            previous_inside = current_inside;
+        }
+    }
+    Ok(output)
+}
+
+fn polygon_half_plane(point: (f64, f64), edge_start: (f64, f64), edge_end: (f64, f64)) -> f64 {
+    (edge_end.0 - edge_start.0) * (point.1 - edge_start.1)
+        - (edge_end.1 - edge_start.1) * (point.0 - edge_start.0)
+}
+
+fn line_intersection(
+    start: (f64, f64),
+    end: (f64, f64),
+    edge_start: (f64, f64),
+    edge_end: (f64, f64),
+) -> (f64, f64) {
+    let start_distance = polygon_half_plane(start, edge_start, edge_end);
+    let end_distance = polygon_half_plane(end, edge_start, edge_end);
+    let denominator = start_distance - end_distance;
+    let ratio = if denominator == 0.0 {
+        0.0
+    } else {
+        start_distance / denominator
+    };
+    (
+        start.0 + (end.0 - start.0) * ratio,
+        start.1 + (end.1 - start.1) * ratio,
+    )
 }
 
 /// ECMAScript `Math.round`: the closest integral value, a tie going toward
