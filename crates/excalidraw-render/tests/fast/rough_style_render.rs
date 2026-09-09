@@ -136,7 +136,7 @@ fn dots_dashed_and_zigzag_line_fills_render_undiagnosed_in_every_format() {
                 assert!(pixels.clone().any(|pixel| pixel[2] > pixel[0]));
             }
             OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+                let pdf = pdf_text(outcome.artifact().bytes());
                 // The page background and the substituted solid fill are the
                 // only fills; the three sketched fills and four outlines
                 // stroke.
