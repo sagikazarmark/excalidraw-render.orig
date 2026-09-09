@@ -574,7 +574,6 @@ impl RenderSession {
         )
     }
 
-    #[allow(dead_code)]
     fn retain_diagnostic(
         &mut self,
         request: &RenderRequest,

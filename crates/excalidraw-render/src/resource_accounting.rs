@@ -110,13 +110,11 @@ impl<'a> ResourceContext<'a> {
         }
     }
 
-    #[allow(dead_code)]
     pub(crate) const fn with_element_id(mut self, element_id: Option<&'a str>) -> Self {
         self.element_id = element_id;
         self
     }
 
-    #[allow(dead_code)]
     pub(crate) const fn with_local_owner(mut self, local_owner: Option<&'a str>) -> Self {
         self.local_owner = local_owner;
         self
@@ -177,7 +175,6 @@ pub(crate) enum ResourceRecordKind {
     RasterMaskSurface,
     PdfImageRgbFormatResource,
     PdfImageAlphaFormatResource,
-    #[allow(dead_code)]
     Diagnostic,
     SvgSerializerWorkspace,
     SvgFontSubsetWorkspace,
@@ -1058,13 +1055,18 @@ enum TraceMeasurementForm {
     AtLeast,
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Copy, Serialize)]
 #[serde(rename_all = "snake_case")]
 enum TraceDecision {
     Committed,
     RejectedLocal,
     RejectedFatal,
+    /// One of the five decisions the spec admits in a canonical trace
+    /// (§13, "Decisions are only `committed`, `rejected_local`,
+    /// `rejected_fatal`, `shared_intrinsic`, and `released`"). Revision 1
+    /// records no transaction with it; the variant keeps the serialized
+    /// vocabulary complete.
+    #[allow(dead_code)]
     SharedIntrinsic,
     Released,
 }

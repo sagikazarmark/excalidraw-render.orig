@@ -140,7 +140,6 @@ impl SceneDocument {
         Arc::ptr_eq(&self._root, &other._root)
     }
 
-    #[allow(dead_code)]
     pub(crate) fn canonicalized_original_bytes(&self) -> Result<Vec<u8>, TryReserveError> {
         let mut bytes = Vec::new();
         write_canonical_json(&self._root, &mut bytes)?;
@@ -838,7 +837,6 @@ impl fmt::Display for SceneParseError {
 
 impl Error for SceneParseError {}
 
-#[allow(dead_code)]
 pub(crate) enum JsonValue {
     Null,
     Bool(bool),
@@ -875,7 +873,6 @@ impl JsonValue {
     }
 }
 
-#[allow(dead_code)]
 pub(crate) struct JsonMember {
     pub(crate) key: Arc<str>,
     pub(crate) value: JsonValue,

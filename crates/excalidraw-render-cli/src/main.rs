@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::env;
 use std::ffi::OsString;
 use std::fs::{self, File, OpenOptions};
@@ -9,12 +9,10 @@ use std::process::ExitCode;
 use clap::{Parser, ValueEnum};
 use excalidraw_render::{
     license_bundle, ColorMode, CompatibilityDiagnostic, CompatibilityRevision, ErrorDescriptor,
-    FrameBatchErrorKind, FrameOptions, FrameRenderRequest, MetadataOptions, OutputFormat,
-    PdfOptions, PdfRasterFallback, RenderRequest, Renderer, ResourceLimits, SceneDocument, Sizing,
-    SupplementalAssets, DEFAULT_COMPATIBILITY_REVISION,
+    FrameOptions, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, RenderRequest,
+    Renderer, ResourceLimits, SceneDocument, Sizing, SupplementalAssets,
+    DEFAULT_COMPATIBILITY_REVISION,
 };
-use regex::Regex;
-use unicode_normalization::UnicodeNormalization;
 
 mod frames;
 

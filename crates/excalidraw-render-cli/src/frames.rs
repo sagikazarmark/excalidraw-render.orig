@@ -1,4 +1,26 @@
-use crate::*;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
+use std::io;
+use std::path::{Path, PathBuf};
+
+use clap::Parser;
+use excalidraw_render::{
+    ColorMode, CompatibilityDiagnostic, CompatibilityRevision, FrameBatchErrorKind,
+    FrameRenderRequest, MetadataOptions, OutputFormat, PdfOptions, PdfRasterFallback, Renderer,
+    ResourceLimits, SceneDocument, Sizing, SupplementalAssets, DEFAULT_COMPATIBILITY_REVISION,
+};
+use regex::Regex;
+use unicode_normalization::UnicodeNormalization as _;
+
+use crate::{
+    deliver_report_bytes, emergency_report_failure, emit_failure, parse_asset_declarations,
+    path_conflict, path_entry_exists, push_artifact_descriptor, push_diagnostics, push_json_string,
+    push_optional_json_string, push_report_error, read_bounded_asset, read_scene_bounded,
+    report_output, same_path, sha256, stage_report_file, validate_paths, validate_report_options,
+    write_stream, ArtifactDescriptor, Cli, CliDetails, CliError, CliOperation, DeliveryRole,
+    DeliveryState, Failure, FormatArg, PdfFallbackArg, ReportError, ReportFormat, SelectedIdentity,
+    StagedFile, EXIT_OPERATIONAL, EXIT_USAGE, MAX_SCENE_BYTES,
+};
 
 #[derive(Parser)]
 #[command(
