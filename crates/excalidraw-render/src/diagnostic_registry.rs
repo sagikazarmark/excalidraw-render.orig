@@ -176,8 +176,8 @@ pub(crate) enum LocalLimit {
     /// The raster surface a PNG compatibility fallback would need. Reported
     /// under `resource.element-complexity-replaced` as the encoder has always
     /// done; spec section 11.3 lists `max_raster_surface_pixels` under
-    /// `resource.image-pixels-exceeded`, a discrepancy this refactor keeps
-    /// byte-for-byte and records for a decision.
+    /// `resource.image-pixels-exceeded`, a discrepancy kept byte-for-byte
+    /// until #157 decides which side moves.
     FallbackRasterSurfacePixels,
     ElementWorkUnits,
     AssetBytes,
@@ -424,8 +424,8 @@ pub(crate) enum DiagnosticKind<'a> {
     /// `asset.malformed-file-record` with a `compatibility`-shaped fallback.
     /// Spec section 11.3 gives that code `asset` details, and the classifier
     /// reports a malformed key itself that way; this member-shaped occurrence
-    /// keeps the `compatibility` details it has always had until the
-    /// pseudo-field binding is decided.
+    /// keeps the `compatibility` details it has always had until #156 decides
+    /// the pseudo-field binding.
     MalformedFileRecordMember { recovery: Recovery },
 }
 
