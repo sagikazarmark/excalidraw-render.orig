@@ -20,6 +20,7 @@ use crate::common::image_scene::{
 };
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request};
+use crate::common::svg::{image_symbol, image_use};
 
 const PNG_BASE64: &str =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
@@ -32,9 +33,13 @@ fn direct_svg_preserves_validated_static_png_octets_in_a_canonical_data_url() {
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(outcome.report().diagnostics().is_empty());
-    assert!(svg.contains(&format!(
-        "<image href=\"data:image/png;base64,{PNG_BASE64}\" preserveAspectRatio=\"none\" width=\"1\" height=\"1\"/>"
+    // The octets live once in the shared definition (spec 8.4); the element
+    // draws them through a `<use>` sized to its viewport.
+    assert!(svg.contains(&image_symbol(
+        0,
+        &format!("data:image/png;base64,{PNG_BASE64}")
     )));
+    assert!(svg.contains(&image_use(0, "1", "1", "")));
 }
 
 #[test]
@@ -451,6 +456,42 @@ fn duplicate_semantic_png_bytes_share_one_pdf_resource_but_render_twice() {
     assert!(outcome.report().diagnostics().is_empty());
 }
 
+/// Direct SVG shares an asset the way the reference's `reuseImages` export
+/// does (spec 8.4, #151): one `<symbol>` per semantic asset identity in
+/// `<defs>`, keyed by the source index of the first element drawing it, and
+/// one `<use>` per element. Two file records with the same bytes are one
+/// identity; two payloads are two, in first-use order.
+#[test]
+fn duplicate_semantic_png_bytes_share_one_svg_symbol_and_distinct_payloads_do_not() {
+    let shared = render(&two_image_scene(), OutputFormat::Svg);
+    let svg = std::str::from_utf8(shared.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(shared.report().diagnostics().is_empty());
+    assert_eq!(svg.matches("<symbol ").count(), 1);
+    assert_eq!(svg.matches("<image ").count(), 1);
+    assert!(svg.contains(&image_symbol(
+        0,
+        &format!("data:image/png;base64,{PNG_BASE64}")
+    )));
+    assert_eq!(svg.matches(&image_use(0, "1", "1", "")).count(), 2);
+
+    let red = png_rgba(1, 1, &[[255, 0, 0, 255]]);
+    let blue = png_rgba(1, 1, &[[0, 0, 255, 255]]);
+    let distinct = render(&two_payload_scene(&red, &blue), OutputFormat::Svg);
+    let svg = std::str::from_utf8(distinct.artifact().bytes()).expect("SVG is UTF-8");
+    let defs = &svg[svg.find("<defs>").expect("SVG has <defs>")..];
+    let defs = &defs[..defs.find("</defs>").expect("SVG closes <defs>")];
+    assert_eq!(
+        defs,
+        format!(
+            "<defs>{}{}",
+            image_symbol(0, &data_url("image/png", &red)),
+            image_symbol(1, &data_url("image/png", &blue))
+        )
+    );
+    assert_eq!(svg.matches(&image_use(0, "1", "1", "")).count(), 1);
+    assert_eq!(svg.matches(&image_use(1, "1", "1", "")).count(), 1);
+}
+
 #[test]
 fn semantic_pixel_work_shares_but_payload_occurrence_admission_does_not() {
     let scene = two_image_scene();
@@ -677,7 +718,7 @@ fn crop_and_negative_scale_map_the_same_static_png_source_in_every_format() {
     // The whole 3x2 source at its uncropped 30x20 under the 10 px crop offset,
     // through the reference's viewport from that offset to the far edges.
     assert!(svg.contains("<svg x=\"-10\" y=\"0\" width=\"30\" height=\"20\" overflow=\"hidden\">"));
-    assert!(svg.contains("preserveAspectRatio=\"none\" width=\"30\" height=\"20\""));
+    assert!(svg.contains(&image_use(0, "30", "20", "")));
 
     let decoded = decode_png(render(&scene, OutputFormat::Png).artifact().bytes());
     assert_eq!((decoded.width, decoded.height), (40, 40));

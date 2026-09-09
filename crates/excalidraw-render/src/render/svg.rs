@@ -69,6 +69,25 @@ pub(super) struct SvgPlan {
     mandatory_notices: Option<MandatoryNotices>,
     metadata: Option<ArtifactMetadata>,
     elements: Vec<SvgElement>,
+    /// Every distinct image asset the plan draws, in first-use paint order,
+    /// each defined once in `<defs>` and referenced by every element that
+    /// draws it.
+    image_symbols: Vec<SvgImageSymbol>,
+}
+
+/// One shared image definition, the reference export's `<symbol
+/// id="image-…"><image href="data:…" width="100%" height="100%"/></symbol>`
+/// under its `reuseImages` default: the asset's data URL is written once and
+/// each element draws it through a `<use>` sized to its own content
+/// rectangle. Identity is the semantic asset identity, so occurrences that
+/// decode to the same validated payload share one definition whatever their
+/// file ids say; the definition is keyed, like a clip, by the source index of
+/// the first element in paint order that draws it, since an element or file
+/// id is untrusted input and not a usable XML ID.
+#[derive(Debug)]
+struct SvgImageSymbol {
+    source_index: usize,
+    asset: Arc<ResolvedImageAsset>,
 }
 
 /// The `<defs>` filter standing in for the reference filters a dark-mode image
@@ -196,8 +215,11 @@ enum SvgElement {
     },
     Image {
         source: NormalizedElementSource,
-        asset: Arc<ResolvedImageAsset>,
-        /// The dark-mode filter the `<image>` references, defined in `<defs>`.
+        /// The source index keying the `<symbol>` in `<defs>` that holds this
+        /// element's asset: the first element in paint order that draws it.
+        symbol_source_index: usize,
+        /// The dark-mode filter the element's `<use>` references, defined in
+        /// `<defs>`.
         dark_mode_filter: Option<DarkModeImageFilter>,
         frame_clips: Vec<ResolvedClip>,
         /// The image's rounded-corner clip radius when it has a roundness
@@ -267,6 +289,7 @@ impl SvgPlan {
                 subject: "svg_elements",
             })?;
         let mut fallback_index = 0_usize;
+        let mut image_symbols = Vec::<SvgImageSymbol>::new();
         for element in scene.elements {
             match element {
                 ResolvedElement::Outline(outline) => {
@@ -353,9 +376,30 @@ impl SvgPlan {
                     });
                 }
                 ResolvedElement::Image(image) => {
+                    // Elements are visited in paint order, so the first
+                    // element drawing an asset keys its shared definition.
+                    let symbol_source_index = match image_symbols
+                        .iter()
+                        .find(|symbol| symbol.asset.identity == image.asset.identity)
+                    {
+                        Some(symbol) => symbol.source_index,
+                        None => {
+                            image_symbols.try_reserve(1).map_err(|_| {
+                                FormatEncodeError::MemoryUnavailable {
+                                    subject_kind: "format_plan",
+                                    subject: "svg_image_symbols",
+                                }
+                            })?;
+                            image_symbols.push(SvgImageSymbol {
+                                source_index: image.source.source_index(),
+                                asset: Arc::clone(&image.asset),
+                            });
+                            image.source.source_index()
+                        }
+                    };
                     elements.push(SvgElement::Image {
                         source: image.source,
-                        asset: image.asset,
+                        symbol_source_index,
                         dark_mode_filter: image.dark_mode_filter,
                         frame_clips: image.frame_clips,
                         corner_radius: image.corner_clip.map(|clip| clip.radius),
@@ -396,6 +440,7 @@ impl SvgPlan {
             mandatory_notices,
             metadata: None,
             elements,
+            image_symbols,
         })
     }
 

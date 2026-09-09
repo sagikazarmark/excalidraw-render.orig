@@ -29,3 +29,20 @@ pub const NOTO_EMOJI_FAMILIES: &str = "Noto Emoji, Segoe UI Emoji, sans-serif";
 pub fn font_family_attribute(families: &str) -> String {
     format!("font-family=\"{families}\"")
 }
+
+/// The shared image definition `<defs>` holds for the asset first drawn by the
+/// element at `source_index` (spec 8.4): its data URL once, as an image that
+/// fills whatever viewport a referencing `<use>` sizes.
+pub fn image_symbol(source_index: usize, data_url: &str) -> String {
+    format!(
+        "<symbol id=\"image-{source_index}\" overflow=\"visible\"><image href=\"{data_url}\" \
+         preserveAspectRatio=\"none\" width=\"100%\" height=\"100%\"/></symbol>"
+    )
+}
+
+/// The `<use>` an image element draws its shared definition through, sized to
+/// its content rectangle, with any further attributes (a dark-mode `filter`)
+/// spelled in `rest` after the height.
+pub fn image_use(source_index: usize, width: &str, height: &str, rest: &str) -> String {
+    format!("<use href=\"#image-{source_index}\" width=\"{width}\" height=\"{height}\"{rest}/>")
+}

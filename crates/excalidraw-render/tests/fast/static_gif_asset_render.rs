@@ -10,6 +10,7 @@ use crate::common::codec_fixtures::{gif, gif_frame, gif_with_screen, RED_BLUE_PA
 use crate::common::image_scene::{data_url, image_scene};
 use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request, render_without_background};
+use crate::common::svg::{image_symbol, image_use};
 
 #[test]
 fn direct_svg_preserves_validated_gif_octets_in_a_canonical_data_url() {
@@ -20,9 +21,8 @@ fn direct_svg_preserves_validated_gif_octets_in_a_canonical_data_url() {
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
     assert!(outcome.report().diagnostics().is_empty());
-    assert!(svg.contains(&format!(
-        "<image href=\"{data_url}\" preserveAspectRatio=\"none\" width=\"2\" height=\"1\"/>"
-    )));
+    assert!(svg.contains(&image_symbol(0, &data_url)));
+    assert!(svg.contains(&image_use(0, "2", "1", "")));
 }
 
 #[test]

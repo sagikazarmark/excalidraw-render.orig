@@ -1,12 +1,13 @@
 //! The SVG document writer: `SvgPlan::write` spells the `<svg>` root, the
 //! metadata comments and `<metadata>` carrier, `<defs>` with the frame and
-//! image clips, the dark-mode image filters and the embedded font style, then
-//! every `SvgElement` in paint order with its frame-clip group, link anchor,
-//! Rough paths spelled through `push_rough_number`, freedraw outlines through
-//! the ECMAScript reduction, laid-out text as per-run `<tspan>`s with source
-//! text beside the glyphs, images as `<use>` viewports with their crop masks,
-//! and compatibility placeholders. Every helper here takes any `SvgSink`, so
-//! one pass counts and the next writes.
+//! image clips, the shared image `<symbol>`s, the dark-mode image filters and
+//! the embedded font style, then every `SvgElement` in paint order with its
+//! frame-clip group, link anchor, Rough paths spelled through
+//! `push_rough_number`, freedraw outlines through the ECMAScript reduction,
+//! laid-out text as per-run `<tspan>`s with source text beside the glyphs,
+//! images as `<use>` references inside their crop viewports, and
+//! compatibility placeholders. Every helper here takes any `SvgSink`, so one
+//! pass counts and the next writes.
 
 use crate::color::CanonicalColor;
 use crate::normalization::NormalizedElementSource;
@@ -24,7 +25,7 @@ use super::super::svg_fonts::Bundle;
 use super::super::text::{ResolvedLabel, ResolvedTextAlign, ResolvedTextRun, FRAME_NAME_FONT_SIZE};
 use super::super::{freedraw, FormatEncodeError};
 use super::sink::SvgSink;
-use super::{SvgElement, SvgFrameName, SvgImageFilterDefinition, SvgPlan};
+use super::{SvgElement, SvgFrameName, SvgImageFilterDefinition, SvgImageSymbol, SvgPlan};
 
 /// Every frame clip the plan references, in first-use order, each defined once
 /// in `<defs>` and referenced by every child it clips.
@@ -278,6 +279,38 @@ fn push_image_clip_definition<W: SvgSink + ?Sized>(
     Ok(())
 }
 
+/// A shared image's id, keyed like a clip by the source index of the first
+/// element in paint order that draws the asset (see [`SvgImageSymbol`]).
+fn push_image_symbol_id<W: SvgSink + ?Sized>(
+    svg: &mut W,
+    source_index: usize,
+) -> Result<(), FormatEncodeError> {
+    write!(svg, "image-{source_index}")
+        .map_err(|_| FormatEncodeError::Encoding("failed to write SVG image symbol ID".to_owned()))
+}
+
+/// The reference's shared image definition: a `<symbol>` holding the asset's
+/// data URL once as an `<image>` that fills whatever viewport the referencing
+/// `<use>` sizes, with the reference's `preserveAspectRatio="none"`. The
+/// symbol declares `overflow="visible"`: the `<use>` viewport and the image it
+/// holds coincide, so the viewport clip a symbol implies would only re-apply
+/// the image's own edge coverage; the viewports that do clip, a cropped
+/// image's mask and `<use>` viewport, stay the nested `<svg overflow="hidden">`
+/// elements around the `<use>` (spec 8.2).
+fn push_image_symbol_definition<W: SvgSink + ?Sized>(
+    svg: &mut W,
+    symbol: &SvgImageSymbol,
+) -> Result<(), FormatEncodeError> {
+    svg.push_str("<symbol id=\"");
+    push_image_symbol_id(svg, symbol.source_index)?;
+    svg.push_str("\" overflow=\"visible\"><image href=\"data:");
+    svg.push_str(symbol.asset.media_type);
+    svg.push_str(";base64,");
+    push_base64(svg, &symbol.asset.source_bytes)?;
+    svg.push_str("\" preserveAspectRatio=\"none\" width=\"100%\" height=\"100%\"/></symbol>");
+    Ok(())
+}
+
 impl SvgPlan {
     pub(super) fn write<W: SvgSink + ?Sized>(
         &self,
@@ -326,6 +359,9 @@ impl SvgPlan {
             {
                 push_image_clip_definition(&mut svg, source, *width, *height, *radius)?;
             }
+        }
+        for symbol in &self.image_symbols {
+            push_image_symbol_definition(&mut svg, symbol)?;
         }
         for filter in self.image_filters() {
             svg.push_str(filter.definition());
@@ -808,7 +844,7 @@ impl SvgPlan {
                 }
                 SvgElement::Image {
                     source,
-                    asset,
+                    symbol_source_index,
                     dark_mode_filter,
                     corner_radius,
                     transform,
@@ -852,12 +888,16 @@ impl SvgPlan {
                     }
                     svg.push('>');
                     push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
-                    // The reference's image geometry (spec 8.6), inlined: its
-                    // `<use>` is the rounded viewport, flipped about the
-                    // element's unrounded center; an uncropped symbol image
-                    // fills the viewport, a cropped one is drawn at its
-                    // unrounded uncropped size under the crop offset, behind a
+                    // The reference's image geometry (spec 8.6): its `<use>`
+                    // is the rounded viewport, flipped about the element's
+                    // unrounded center; an uncropped symbol image fills the
+                    // viewport, a cropped one is drawn at its unrounded
+                    // uncropped size under the crop offset, behind a
                     // viewport-sized `<mask>` on the group outside the flip.
+                    // The mask and the `<use>` viewport are inlined as nested
+                    // `<svg overflow="hidden">` viewports; the payload is the
+                    // shared `<symbol>` in `<defs>`, drawn by a `<use>` sized
+                    // to the content rectangle.
                     let (_, _, content_width, content_height) = projection.content_rect();
                     if projection.crop.is_some() {
                         svg.push_str("<svg width=\"");
@@ -910,11 +950,12 @@ impl SvgPlan {
                         push_svg_number(&mut svg, viewport_height, "SVG image viewport height")?;
                         svg.push_str("\" overflow=\"hidden\">");
                     }
-                    svg.push_str("<image href=\"data:");
-                    svg.push_str(asset.media_type);
-                    svg.push_str(";base64,");
-                    push_base64(&mut svg, &asset.source_bytes)?;
-                    svg.push_str("\" preserveAspectRatio=\"none\" width=\"");
+                    // The dark-mode filter sits on the `<use>`, where the
+                    // reference puts `IMAGE_INVERT_FILTER`, so the shared
+                    // definition stays a plain asset.
+                    svg.push_str("<use href=\"#");
+                    push_image_symbol_id(&mut svg, *symbol_source_index)?;
+                    svg.push_str("\" width=\"");
                     push_svg_number(&mut svg, content_width, "SVG image width")?;
                     svg.push_str("\" height=\"");
                     push_svg_number(&mut svg, content_height, "SVG image height")?;

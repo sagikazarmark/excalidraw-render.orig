@@ -12,6 +12,7 @@ use excalidraw_render::{OutputFormat, SceneDocument};
 use crate::common::image_scene::image_scene_with_element_fields;
 use crate::common::raster::{decode_png, DecodedPng};
 use crate::common::render::render_artifact_without_background;
+use crate::common::svg::image_use;
 
 /// A one-image scene of a 2x2 solid red PNG; `element_fields` complete the
 /// image element.
@@ -44,7 +45,7 @@ fn an_uncropped_fractional_image_fills_the_rounded_viewport_in_svg_and_pdf_and_t
         "SVG rotation center is not the unrounded element center: {svg}"
     );
     assert!(
-        svg.contains("\" preserveAspectRatio=\"none\" width=\"41\" height=\"40\"/></g>"),
+        svg.contains(&format!("{}</g>", image_use(0, "41", "40", ""))),
         "SVG image is not the rounded reference viewport: {svg}"
     );
 
@@ -83,14 +84,11 @@ fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_unrounded_c
     let svg = render_artifact_without_background(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     assert!(
-        svg.contains(
-            "<g transform=\"translate(40.5 0) scale(-1 1)\"><image href=\"data:image/png;base64,"
-        ),
-        "SVG flip translation is not the unrounded width: {svg}"
-    );
-    assert!(
-        svg.contains("\" preserveAspectRatio=\"none\" width=\"41\" height=\"40\"/></g></g>"),
-        "SVG image is not the rounded viewport: {svg}"
+        svg.contains(&format!(
+            "<g transform=\"translate(40.5 0) scale(-1 1)\">{}</g></g>",
+            image_use(0, "41", "40", "")
+        )),
+        "SVG flip translation is not the unrounded width around the rounded viewport: {svg}"
     );
 
     // The PDF clip is the mirrored viewport and the content matrix mirrors the
@@ -152,20 +150,17 @@ fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewport_and_unro
     let svg = render_artifact_without_background(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
     assert!(
-        svg.contains(concat!(
-            "<g transform=\"translate(10 10) rotate(0 10.25 10.25)\">",
-            "<svg width=\"21\" height=\"21\" overflow=\"hidden\">",
-            "<g transform=\"translate(20.5 20.5) scale(-1 -1)\">",
-            "<svg x=\"-10.25\" y=\"0\" width=\"31.25\" height=\"21\" overflow=\"hidden\">",
-            "<image href=\"data:image/png;base64,",
+        svg.contains(&format!(
+            concat!(
+                "<g transform=\"translate(10 10) rotate(0 10.25 10.25)\">",
+                "<svg width=\"21\" height=\"21\" overflow=\"hidden\">",
+                "<g transform=\"translate(20.5 20.5) scale(-1 -1)\">",
+                "<svg x=\"-10.25\" y=\"0\" width=\"31.25\" height=\"21\" overflow=\"hidden\">",
+                "{}</svg></g></svg></g>",
+            ),
+            image_use(0, "30.75", "20.5", "")
         )),
-        "SVG lacks the reference mask, flip and viewport: {svg}"
-    );
-    assert!(
-        svg.contains(
-            "\" preserveAspectRatio=\"none\" width=\"30.75\" height=\"20.5\"/></svg></g></svg></g>"
-        ),
-        "SVG image is not the unrounded uncropped size: {svg}"
+        "SVG lacks the reference mask, flip and viewport around the unrounded uncropped image: {svg}"
     );
 
     // PDF clips once to what the reference leaves visible: the 21x21 mask

@@ -164,21 +164,38 @@ fn dark_mode_svg_filters_raster_and_nested_svg_images_like_the_reference_export(
     let dark = render(&scene, OutputFormat::Svg, ColorMode::Dark);
     let dark = std::str::from_utf8(&dark).expect("SVG is UTF-8");
     let defs = defs(dark);
+    // <defs> order (spec 8.4): the image clip, the shared image definitions
+    // in first-use order, then the filters, raster before nested-SVG.
+    let symbols_end = defs
+        .rfind("</symbol>")
+        .expect("defs define the shared images")
+        + "</symbol>".len();
     assert!(
-        defs.ends_with(&format!(
-            "</clipPath>{RASTER_IMAGE_FILTER}{NESTED_SVG_IMAGE_FILTER}"
-        )),
-        "the filters follow the image clip in <defs>: {defs}"
+        defs[..symbols_end].contains("</clipPath><symbol id=\"image-0\" ")
+            && defs[..symbols_end].contains("</symbol><symbol id=\"image-1\" "),
+        "the shared images follow the image clip in <defs>: {defs}"
     );
-    let raster_image = image_element(dark, "image/png");
-    assert!(
-        raster_image.ends_with("filter=\"url(#dark-mode-raster-image)\"/>"),
-        "raster image: {raster_image}"
+    assert_eq!(
+        &defs[symbols_end..],
+        format!("{RASTER_IMAGE_FILTER}{NESTED_SVG_IMAGE_FILTER}"),
+        "the filters follow the shared images in <defs>: {defs}"
     );
-    let nested_image = image_element(dark, "image/svg+xml");
+    // Each element's `<use>` carries the filter, where the reference puts
+    // `IMAGE_INVERT_FILTER`; the shared `<image>` inside the symbol carries
+    // none.
     assert!(
-        nested_image.ends_with("filter=\"url(#dark-mode-nested-svg-image)\"/>"),
-        "nested-SVG image: {nested_image}"
+        !defs.contains(" filter="),
+        "a shared image carries a filter"
+    );
+    let raster_use = use_element(dark, 0);
+    assert!(
+        raster_use.ends_with("filter=\"url(#dark-mode-raster-image)\"/>"),
+        "raster image: {raster_use}"
+    );
+    let nested_use = use_element(dark, 1);
+    assert!(
+        nested_use.ends_with("filter=\"url(#dark-mode-nested-svg-image)\"/>"),
+        "nested-SVG image: {nested_use}"
     );
 
     let light = render(&scene, OutputFormat::Svg, ColorMode::Light);
@@ -435,7 +452,17 @@ fn defs(svg: &str) -> &str {
     &svg[start..end]
 }
 
-/// The `<image>` element whose data URL carries `media_type`.
+/// The `<use>` element drawing the shared image keyed by `source_index`.
+fn use_element(svg: &str, source_index: usize) -> &str {
+    let href = format!("<use href=\"#image-{source_index}\" ");
+    let start = svg
+        .find(&href)
+        .unwrap_or_else(|| panic!("SVG draws image-{source_index}: {svg}"));
+    let end = svg[start..].find("/>").expect("use element closes") + start + 2;
+    &svg[start..end]
+}
+
+/// The shared `<image>` element whose data URL carries `media_type`.
 fn image_element<'a>(svg: &'a str, media_type: &str) -> &'a str {
     let href = format!("<image href=\"data:{media_type};base64,");
     let start = svg

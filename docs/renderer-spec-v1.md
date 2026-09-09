@@ -673,11 +673,14 @@ size, shifted by the unrounded `normalizedCrop` offset so the crop's corner
 sits at the element's origin, and is clipped twice as the reference clips it:
 by a viewport-sized `<mask>` on the unflipped group and by the `<use>`
 viewport, which spans from the crop offset to the rounded viewport's far edges
-and flips with the image. SVG inlines this geometry rather than sharing a
-`<symbol>`: the mask and the `<use>` viewport are nested `<svg
-overflow="hidden">` viewports, the flip a `translate(width height) scale()`
-group about the same center, and the `<image>` carries the reference's
-`preserveAspectRatio="none"` and its content size. PDF, whose clips all live in
+and flips with the image. SVG shares the payload the way the reference does
+and inlines the rest of the geometry: each distinct asset is one `<symbol>` in
+`<defs>` holding the `<image>` once, with the reference's
+`preserveAspectRatio="none"` and `width="100%" height="100%"` (Section 8.4),
+and each element draws it through a `<use>` sized to its content rectangle;
+the mask and the `<use>` viewport are nested `<svg overflow="hidden">`
+viewports around that `<use>`, and the flip a `translate(width height)
+scale()` group about the same center. PDF, whose clips all live in
 the element's space, installs the intersection of the two as one rectangle
 clip before the content matrix that maps the asset onto its content rectangle,
 and a nested SVG's form, whose Y axis svg2pdf inverts, is inverted back within
@@ -716,8 +719,9 @@ reference canvas export resets its filter to `none` for a raster image
 (`shouldResetImageFilter`) and keeps the theme filter for a nested-SVG image
 and for the image placeholder. Each format follows its authority: SVG defines
 the two filter chains once in `<defs>` as Filter Effects primitives in sRGB
-(Section 8.4) and references them from each `<image>`, leaving the payload
-octets exactly as validated; PNG leaves raster pixels alone, passes the pixels
+(Section 8.4) and references them from each image element's `<use>`, where the
+reference puts `IMAGE_INVERT_FILTER`, leaving the shared payload octets exactly
+as validated; PNG leaves raster pixels alone, passes the pixels
 it rasterizes from a nested-SVG image through the theme filter, and lowers the
 placeholder's `#E7E7E7` rectangle and `#888` glyph the same way; PDF, whose
 authority is official SVG (Section 8.6), lowers the image filter followed by
@@ -1019,15 +1023,36 @@ what the clip removes lies off the page; a rotated target with overflowing
 children would expose the divergence there too.
 
 The frame clips are followed in `<defs>` by each rounded image's corner clip
-(Section 8.2), in paint order, keyed `image-clip-<source index>`, and then, in
-a dark-mode export that has images, by the dark-mode image filters it
+(Section 8.2), in paint order, keyed `image-clip-<source index>`; then by the
+shared image definitions; and then, in a dark-mode export that has images, by
+the dark-mode image filters it
 references (Section 8.2), each defined once: `dark-mode-raster-image` (the
 image filter followed by the theme filter) before `dark-mode-nested-svg-image`
 (the theme filter alone). Each filter spells its CSS filter functions as the
 Filter Effects primitives they are defined as — `feComponentTransfer` tables
 for `invert`, `feColorMatrix` `hueRotate` and `saturate` — with
-`color-interpolation-filters="sRGB"`, and each `<image>` references its filter
-by `filter="url(#…)"`. A light-mode export defines and references no filter.
+`color-interpolation-filters="sRGB"`, and each image element's `<use>`
+references its filter by `filter="url(#…)"`. A light-mode export defines and
+references no filter.
+
+Every accepted image asset is defined once, as the reference's `reuseImages`
+export defines it (#151): `<symbol id="image-<source index>"
+overflow="visible"><image href="data:…" preserveAspectRatio="none"
+width="100%" height="100%"/></symbol>`, in first-use paint order, one per
+semantic asset identity, so two file records or nested payloads that decode to
+the same validated payload share one definition whatever their ids, and two
+elements that crop or size the same asset differently share it too. The key is
+the source index of the first element in paint order that draws the asset,
+never a file or element id. Each image element draws its definition through
+`<use href="#image-<source index>" width height>` sized to its content
+rectangle (Section 8.2), inside its own translated and rotated group, corner
+clip, crop viewports and flip. The symbol declares `overflow="visible"`
+because its viewport and the image it holds coincide, so the viewport clip a
+symbol otherwise implies could only re-apply the image's own edge coverage;
+the viewports that clip, a cropped image's mask and `<use>` viewport, are the
+nested `<svg overflow="hidden">` elements around the `<use>`. The reference
+keys its symbols by file id and gives a cropped image a second symbol per
+uncropped size; revision 1 does not reproduce either.
 
 Text markup targets browser rendering, where the embedded fonts resolve and the
 document renders as the reference SVG does; a consumer that ignores

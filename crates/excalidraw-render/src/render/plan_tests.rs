@@ -424,3 +424,59 @@ fn svg_plan_defines_each_shared_frame_clip_once_and_measures_exactly_what_it_enc
     assert!(svg.contains("<text data-frame-name=\"clip-frame\""));
     assert!(svg.contains("font-family:'ExcalidrawRender-9'"));
 }
+
+#[test]
+fn svg_plan_defines_each_shared_image_once_and_measures_exactly_what_it_encodes() {
+    // Three image elements over two file records that carry the same PNG
+    // bytes and one nested SVG: two semantic asset identities, the first drawn
+    // by elements 0 and 2, the second by element 1.
+    let png = "data:image/png;base64,\
+               iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+    let nested = data_url("image/svg+xml", BLURRED_RECT);
+    let scene = scene(
+        format!(
+            r#"{{
+            "type":"excalidraw","version":2,
+            "elements":[
+                {{"id":"first","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"one","status":"saved","scale":[1,1],"seed":1,"updated":1}},
+                {{"id":"nested","type":"image","x":30,"y":0,"width":20,"height":10,"fileId":"svg","status":"saved","scale":[1,1],"seed":2,"updated":1}},
+                {{"id":"second","type":"image","x":60,"y":0,"width":40,"height":10,"fileId":"two","status":"saved","scale":[-1,1],"seed":3,"updated":1}}
+            ],
+            "appState":{{}},
+            "files":{{
+                "one":{{"id":"one","mimeType":"image/png","dataURL":"{png}","created":1}},
+                "two":{{"id":"two","mimeType":"image/png","dataURL":"{png}","created":1}},
+                "svg":{{"id":"svg","mimeType":"image/svg+xml","dataURL":"{nested}","created":1}}
+            }}
+        }}"#
+        )
+        .as_bytes(),
+    );
+    let plan = svg_plan(&scene, &request(OutputFormat::Svg));
+    assert_eq!(plan.source_count(), 3);
+
+    // Spec §13.2: the measurement pass predicts the emission pass exactly, so
+    // the output-bytes charge is the shared document's size.
+    let measured = plan.measure().expect("the plan measures");
+    let encoded = plan.encode_exact(measured).expect("the plan encodes");
+    assert_eq!(encoded.len(), measured);
+    let svg = std::str::from_utf8(&encoded).expect("SVG is UTF-8");
+
+    // One definition per semantic asset identity, keyed by the first drawing
+    // element's source index, in first-use order; one `<use>` per element.
+    assert_eq!(svg.matches("<symbol ").count(), 2);
+    assert_eq!(svg.matches("<image ").count(), 2);
+    let first_symbol = svg
+        .find("<symbol id=\"image-0\" ")
+        .expect("the PNG is defined");
+    let second_symbol = svg
+        .find("<symbol id=\"image-1\" ")
+        .expect("the SVG is defined");
+    assert!(first_symbol < second_symbol);
+    assert_eq!(svg.matches("<use href=\"#image-0\" ").count(), 2);
+    assert_eq!(svg.matches("<use href=\"#image-1\" ").count(), 1);
+    assert!(svg.contains("<use href=\"#image-0\" width=\"20\" height=\"10\"/>"));
+    assert!(svg.contains("<use href=\"#image-0\" width=\"40\" height=\"10\"/>"));
+    assert!(svg.contains(&format!("<image href=\"{png}\" ")));
+    assert_eq!(svg.matches(&png).count(), 1);
+}
