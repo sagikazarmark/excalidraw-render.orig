@@ -1,11 +1,14 @@
+use crate::diagnostic_registry::{
+    DiagnosticKind, FallbackRecipe, ImageFailure, ImageRecovery, LocalLimit, LocalRecovery,
+    MetadataFailure,
+};
 use crate::normalization::{NormalizedElement, NormalizedElementKind, NormalizedImageStatus};
-use crate::outcome::DiagnosticOrder;
+use crate::outcome::PendingDiagnostic;
 use crate::{
-    CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, DiagnosticSeverity, ErrorDetails,
-    Measurement, OutputFormat, Recovery, ResourceLimits, ResourceValue, ValueKind,
+    CompatibilityDiagnostic, DiagnosticEffect, ErrorDetails, OutputFormat, ResourceLimits,
 };
 
-use super::{asset, pdf, try_owned, MetadataFailure};
+use super::{asset, pdf, try_owned};
 
 /// Orders retained diagnostics the way the final report lists them (spec
 /// §11.3): by the source owner that produced them, then the source member
@@ -14,42 +17,29 @@ use super::{asset, pdf, try_owned, MetadataFailure};
 /// keys keep the retention order and the sort is total.
 pub(crate) fn sort_diagnostics(diagnostics: &mut [CompatibilityDiagnostic]) {
     diagnostics.sort_unstable_by(|left, right| {
-        left.order
+        let (left_order, right_order) = (left.order(), right.order());
+        left_order
             .owner_index
-            .cmp(&right.order.owner_index)
-            .then_with(|| left.order.source_position.cmp(&right.order.source_position))
-            .then_with(|| left.json_pointer.cmp(&right.json_pointer))
-            .then_with(|| left.code.as_str().cmp(right.code.as_str()))
+            .cmp(&right_order.owner_index)
+            .then_with(|| left_order.source_position.cmp(&right_order.source_position))
+            .then_with(|| left.json_pointer().cmp(right.json_pointer()))
+            .then_with(|| left.code().as_str().cmp(right.code().as_str()))
             .then_with(|| {
-                left.order
+                left_order
                     .retention_ordinal
-                    .cmp(&right.order.retention_ordinal)
+                    .cmp(&right_order.retention_ordinal)
             })
     });
 }
 
-pub(super) fn diagnostic_replaces_element(diagnostic: &CompatibilityDiagnostic) -> bool {
-    if !diagnostic.effects().contains(&DiagnosticEffect::Visual) {
-        return false;
-    }
-    let recovery = match diagnostic.details() {
-        Some(ErrorDetails::Compatibility { recovery, .. })
-        | Some(ErrorDetails::Asset { recovery, .. })
-        | Some(ErrorDetails::MissingGlyph { recovery, .. })
-        | Some(ErrorDetails::Metadata { recovery, .. })
-        | Some(ErrorDetails::NestedSource { recovery, .. }) => Some(*recovery),
-        Some(ErrorDetails::ResourceLimit { recovery, .. }) => *recovery,
-        Some(ErrorDetails::PdfRasterFallback { recovery, .. }) => *recovery,
-        _ => None,
-    };
-    matches!(recovery, Some(Recovery::Placeholder | Recovery::Omitted))
-}
-
+/// Whether a retained diagnostic replaced `source` (or the asset it refers
+/// to) with something other than the generic known-element box: an official
+/// placeholder, or an omission.
 pub(super) fn diagnostic_uses_non_generic_recovery(
     source: &NormalizedElement,
     diagnostic: &CompatibilityDiagnostic,
 ) -> bool {
-    if !diagnostic_replaces_element(diagnostic) {
+    if !diagnostic.replaces_element() {
         return false;
     }
     let applies = diagnostic.element_id() == Some(source.source.id())
@@ -63,12 +53,11 @@ pub(super) fn diagnostic_uses_non_generic_recovery(
     if !applies {
         return false;
     }
-    let recipe = match diagnostic.details() {
-        Some(ErrorDetails::Compatibility { recipe_id, .. })
-        | Some(ErrorDetails::Asset { recipe_id, .. }) => recipe_id.as_deref(),
-        _ => None,
-    };
-    recipe != Some("renderer.known-element-unavailable.v1")
+    let recipe = diagnostic
+        .details()
+        .and_then(ErrorDetails::recipe_id)
+        .and_then(FallbackRecipe::from_id);
+    recipe != Some(FallbackRecipe::KnownElementUnavailable)
 }
 
 pub(super) fn known_element_replaced_diagnostic(
@@ -76,32 +65,131 @@ pub(super) fn known_element_replaced_diagnostic(
     element_id: &str,
     json_pointer: &str,
     has_bounds: bool,
-) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-    let mut effects = Vec::new();
-    effects.try_reserve_exact(2)?;
-    effects.extend_from_slice(&[DiagnosticEffect::Visual, DiagnosticEffect::Semantic]);
-    Ok(CompatibilityDiagnostic {
-        code: DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED,
-        severity: DiagnosticSeverity::Warning,
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::KnownElementReplaced(LocalRecovery::placeholder_if(has_bounds)),
         format,
-        effects,
-        element_id: Some(try_owned(element_id)?),
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned(
-            "known element unavailable to this renderer used the revision-1 fallback",
-        )?,
-        details: Some(Box::new(ErrorDetails::Compatibility {
-            recovery: if has_bounds {
-                Recovery::Placeholder
-            } else {
-                Recovery::Omitted
+        &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic],
+        Some(element_id),
+        json_pointer,
+        "known element unavailable to this renderer used the revision-1 fallback",
+    )
+}
+
+/// The registry failure and non-normative message for an asset resolution
+/// error the image resolver reports as a diagnostic. Missing payloads are
+/// diagnosed by normalization and memory exhaustion is fatal, so neither
+/// reaches here.
+fn image_failure(
+    failure: asset::ResolveError,
+    limits: &ResourceLimits,
+) -> (ImageFailure, &'static str) {
+    let limit_crossed =
+        |limit: LocalLimit, configured: u64, attempted: u64| ImageFailure::LimitCrossed {
+            limit,
+            configured,
+            attempted,
+        };
+    match failure {
+        asset::ResolveError::Malformed => (
+            ImageFailure::MalformedFileRecord,
+            "referenced authoritative file payload was malformed",
+        ),
+        asset::ResolveError::Unsupported => (
+            ImageFailure::UnsupportedFormat,
+            "referenced image payload was not a supported raster format",
+        ),
+        asset::ResolveError::DecodeFailed => (
+            ImageFailure::DecodeFailed {
+                media_type: "image/png",
             },
-            recipe_id: has_bounds
-                .then(|| try_owned("renderer.known-element-unavailable.v1"))
-                .transpose()?,
-        })),
-        order: DiagnosticOrder::default(),
-    })
+            "referenced static PNG payload could not be decoded",
+        ),
+        asset::ResolveError::JpegDecodeFailed => (
+            ImageFailure::DecodeFailed {
+                media_type: "image/jpeg",
+            },
+            "referenced JPEG/JFIF payload could not be decoded",
+        ),
+        asset::ResolveError::GifDecodeFailed => (
+            ImageFailure::DecodeFailed {
+                media_type: "image/gif",
+            },
+            "referenced GIF payload could not be decoded",
+        ),
+        asset::ResolveError::WebPDecodeFailed => (
+            ImageFailure::DecodeFailed {
+                media_type: "image/webp",
+            },
+            "referenced WebP payload could not be decoded",
+        ),
+        asset::ResolveError::BmpDecodeFailed => (
+            ImageFailure::DecodeFailed {
+                media_type: "image/bmp",
+            },
+            "referenced BMP payload could not be decoded",
+        ),
+        asset::ResolveError::IcoDecodeFailed => (
+            ImageFailure::DecodeFailed {
+                media_type: "image/x-icon",
+            },
+            "referenced ICO payload could not be decoded",
+        ),
+        asset::ResolveError::SvgDecodeFailed => (
+            ImageFailure::DecodeFailed {
+                media_type: "image/svg+xml",
+            },
+            "referenced nested SVG payload could not be parsed and sanitized",
+        ),
+        asset::ResolveError::Missing => {
+            unreachable!("missing assets are diagnosed by normalization")
+        }
+        asset::ResolveError::AssetBytes { attempted } => (
+            limit_crossed(LocalLimit::AssetBytes, limits.max_asset_bytes(), attempted),
+            "asset payload occurrence exceeded its byte ceiling",
+        ),
+        asset::ResolveError::Dimensions { attempted } => (
+            limit_crossed(
+                LocalLimit::RasterDimension,
+                u64::from(limits.max_raster_dimension()),
+                attempted,
+            ),
+            "raster dimensions exceeded the local image ceiling",
+        ),
+        asset::ResolveError::Pixels { attempted } => (
+            limit_crossed(
+                LocalLimit::DecodedPixelsPerAsset,
+                limits.max_decoded_pixels_per_asset(),
+                attempted,
+            ),
+            "raster pixels exceeded the local asset ceiling",
+        ),
+        asset::ResolveError::AssetWork { attempted } => (
+            limit_crossed(
+                LocalLimit::AssetWorkUnits,
+                limits.max_asset_work_units(),
+                attempted,
+            ),
+            "raster intrinsic work exceeded the local asset ceiling",
+        ),
+        asset::ResolveError::SvgComplexity { attempted } => (
+            limit_crossed(
+                LocalLimit::NestedSvgNodes,
+                u64::from(limits.max_nested_svg_nodes()),
+                attempted,
+            ),
+            "nested SVG exceeded the local node ceiling",
+        ),
+        asset::ResolveError::SvgDepth { attempted } => (
+            limit_crossed(
+                LocalLimit::NestedAssetDepth,
+                u64::from(limits.max_nested_asset_depth()),
+                attempted,
+            ),
+            "nested SVG resource exceeded the local asset-depth ceiling",
+        ),
+        asset::ResolveError::Memory => unreachable!("memory failure is fatal before diagnostics"),
+    }
 }
 
 pub(super) fn image_asset_failure_diagnostic(
@@ -112,172 +200,20 @@ pub(super) fn image_asset_failure_diagnostic(
     json_pointer: &str,
     status: NormalizedImageStatus,
     limits: &ResourceLimits,
-) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-    let (code, message, resource) = match failure {
-        asset::ResolveError::Malformed => (
-            DiagnosticCode::ASSET_MALFORMED_FILE_RECORD,
-            "referenced authoritative file payload was malformed",
-            None,
-        ),
-        asset::ResolveError::Unsupported => (
-            DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT,
-            "referenced image payload was not a supported raster format",
-            None,
-        ),
-        asset::ResolveError::DecodeFailed => (
-            DiagnosticCode::IMAGE_DECODE_FAILED,
-            "referenced static PNG payload could not be decoded",
-            None,
-        ),
-        asset::ResolveError::JpegDecodeFailed => (
-            DiagnosticCode::IMAGE_DECODE_FAILED,
-            "referenced JPEG/JFIF payload could not be decoded",
-            None,
-        ),
-        asset::ResolveError::GifDecodeFailed => (
-            DiagnosticCode::IMAGE_DECODE_FAILED,
-            "referenced GIF payload could not be decoded",
-            None,
-        ),
-        asset::ResolveError::WebPDecodeFailed => (
-            DiagnosticCode::IMAGE_DECODE_FAILED,
-            "referenced WebP payload could not be decoded",
-            None,
-        ),
-        asset::ResolveError::BmpDecodeFailed => (
-            DiagnosticCode::IMAGE_DECODE_FAILED,
-            "referenced BMP payload could not be decoded",
-            None,
-        ),
-        asset::ResolveError::IcoDecodeFailed => (
-            DiagnosticCode::IMAGE_DECODE_FAILED,
-            "referenced ICO payload could not be decoded",
-            None,
-        ),
-        asset::ResolveError::SvgDecodeFailed => (
-            DiagnosticCode::IMAGE_DECODE_FAILED,
-            "referenced nested SVG payload could not be parsed and sanitized",
-            None,
-        ),
-        asset::ResolveError::Missing => {
-            unreachable!("missing assets are diagnosed by normalization")
-        }
-        asset::ResolveError::AssetBytes { attempted } => (
-            DiagnosticCode::RESOURCE_ASSET_BYTES_EXCEEDED,
-            "asset payload occurrence exceeded its byte ceiling",
-            Some((
-                "max_asset_bytes",
-                limits.max_asset_bytes(),
-                attempted,
-                ValueKind::Bytes,
-            )),
-        ),
-        asset::ResolveError::Dimensions { attempted } => (
-            DiagnosticCode::RESOURCE_IMAGE_DIMENSIONS_EXCEEDED,
-            "raster dimensions exceeded the local image ceiling",
-            Some((
-                "max_raster_dimension",
-                u64::from(limits.max_raster_dimension()),
-                attempted,
-                ValueKind::Dimension,
-            )),
-        ),
-        asset::ResolveError::Pixels { attempted } => (
-            DiagnosticCode::RESOURCE_IMAGE_PIXELS_EXCEEDED,
-            "raster pixels exceeded the local asset ceiling",
-            Some((
-                "max_decoded_pixels_per_asset",
-                limits.max_decoded_pixels_per_asset(),
-                attempted,
-                ValueKind::Pixels,
-            )),
-        ),
-        asset::ResolveError::AssetWork { attempted } => (
-            DiagnosticCode::RESOURCE_ASSET_WORK_EXCEEDED,
-            "raster intrinsic work exceeded the local asset ceiling",
-            Some((
-                "max_asset_work_units",
-                limits.max_asset_work_units(),
-                attempted,
-                ValueKind::WorkUnits,
-            )),
-        ),
-        asset::ResolveError::SvgComplexity { attempted } => (
-            DiagnosticCode::RESOURCE_NESTED_SVG_COMPLEXITY_EXCEEDED,
-            "nested SVG exceeded the local node ceiling",
-            Some((
-                "max_nested_svg_nodes",
-                u64::from(limits.max_nested_svg_nodes()),
-                attempted,
-                ValueKind::Count,
-            )),
-        ),
-        asset::ResolveError::SvgDepth { attempted } => (
-            DiagnosticCode::RESOURCE_NESTED_ASSET_DEPTH_EXCEEDED,
-            "nested SVG resource exceeded the local asset-depth ceiling",
-            Some((
-                "max_nested_asset_depth",
-                u64::from(limits.max_nested_asset_depth()),
-                attempted,
-                ValueKind::Depth,
-            )),
-        ),
-        asset::ResolveError::Memory => unreachable!("memory failure is fatal before diagnostics"),
-    };
-    let (recovery, recipe_id) = match format {
-        OutputFormat::Png => (
-            Recovery::Placeholder,
-            Some(match status {
-                NormalizedImageStatus::Error => "official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9",
-                NormalizedImageStatus::Pending
-                | NormalizedImageStatus::Saved => "official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d",
-            }),
-        ),
-        OutputFormat::Svg | OutputFormat::Pdf => (Recovery::Omitted, None),
-    };
-    let mut effects = Vec::new();
-    effects.try_reserve_exact(1)?;
-    effects.push(DiagnosticEffect::Visual);
-    Ok(CompatibilityDiagnostic {
-        code,
-        severity: DiagnosticSeverity::Warning,
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    let (failure, message) = image_failure(failure, limits);
+    PendingDiagnostic::new(
+        DiagnosticKind::ImageUnavailable {
+            failure,
+            asset_id,
+            recovery: ImageRecovery::for_format(format, status == NormalizedImageStatus::Error),
+        },
         format,
-        effects,
-        element_id: Some(try_owned(element_id)?),
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned(message)?,
-        details: Some(Box::new(
-            if let Some((field, configured, attempted, value_kind)) = resource {
-                ErrorDetails::ResourceLimit {
-                    field,
-                    configured: ResourceValue::Integer(configured),
-                    value_kind,
-                    measurement: Measurement::Attempted {
-                        value: ResourceValue::Integer(attempted),
-                    },
-                    recovery: Some(recovery),
-                }
-            } else {
-                ErrorDetails::Asset {
-                    asset_id: try_owned(asset_id)?,
-                    claimed_media_type: None,
-                    validated_media_type: match failure {
-                        asset::ResolveError::DecodeFailed => Some(try_owned("image/png")?),
-                        asset::ResolveError::JpegDecodeFailed => Some(try_owned("image/jpeg")?),
-                        asset::ResolveError::GifDecodeFailed => Some(try_owned("image/gif")?),
-                        asset::ResolveError::WebPDecodeFailed => Some(try_owned("image/webp")?),
-                        asset::ResolveError::BmpDecodeFailed => Some(try_owned("image/bmp")?),
-                        asset::ResolveError::IcoDecodeFailed => Some(try_owned("image/x-icon")?),
-                        asset::ResolveError::SvgDecodeFailed => Some(try_owned("image/svg+xml")?),
-                        _ => None,
-                    },
-                    recovery,
-                    recipe_id: recipe_id.map(try_owned).transpose()?,
-                }
-            },
-        )),
-        order: DiagnosticOrder::default(),
-    })
+        &[DiagnosticEffect::Visual],
+        Some(element_id),
+        json_pointer,
+        message,
+    )
 }
 
 pub(super) fn image_animation_flattened_diagnostic(
@@ -286,52 +222,50 @@ pub(super) fn image_animation_flattened_diagnostic(
     element_id: &str,
     json_pointer: &str,
     media_type: &str,
-) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-    let mut effects = Vec::new();
-    effects.try_reserve_exact(1)?;
-    effects.push(DiagnosticEffect::Visual);
-    Ok(CompatibilityDiagnostic {
-        code: DiagnosticCode::IMAGE_ANIMATION_FLATTENED,
-        severity: DiagnosticSeverity::Info,
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::AnimationFlattened {
+            asset_id,
+            media_type,
+        },
         format,
-        effects,
-        element_id: Some(try_owned(element_id)?),
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned("animated image was flattened to its first animation frame")?,
-        details: Some(Box::new(ErrorDetails::Asset {
-            asset_id: try_owned(asset_id)?,
-            claimed_media_type: None,
-            validated_media_type: Some(try_owned(media_type)?),
-            recovery: Recovery::Flattened,
-            recipe_id: None,
-        })),
-        order: DiagnosticOrder::default(),
-    })
+        &[DiagnosticEffect::Visual],
+        Some(element_id),
+        json_pointer,
+        "animated image was flattened to its first animation frame",
+    )
 }
 
 pub(super) fn pdf_raster_fallback_diagnostic(
     closure: &pdf::PdfRasterClosure,
-) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-    let mut effects = Vec::new();
-    effects.try_reserve_exact(2)?;
-    effects.extend_from_slice(&[DiagnosticEffect::Visual, DiagnosticEffect::Semantic]);
-    Ok(CompatibilityDiagnostic {
-        code: DiagnosticCode::PDF_RASTER_FALLBACK,
-        severity: DiagnosticSeverity::Warning,
-        format: OutputFormat::Pdf,
-        effects,
-        element_id: Some(try_owned(&closure.element_id)?),
-        json_pointer: try_owned(&closure.json_pointer)?,
-        message: try_owned("unsupported nested-SVG effect closure was rasterized for PDF")?,
-        details: Some(Box::new(ErrorDetails::PdfRasterFallback {
-            recovery: Some(Recovery::Rasterized),
-            logical_bounds: Some(closure.logical_bounds),
-            pixel_width: Some(closure.pixel_width),
-            pixel_height: Some(closure.pixel_height),
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::PdfRasterFallback {
+            logical_bounds: closure.logical_bounds,
+            pixel_width: closure.pixel_width,
+            pixel_height: closure.pixel_height,
             causes: closure.causes.clone(),
-        })),
-        order: DiagnosticOrder::default(),
-    })
+        },
+        OutputFormat::Pdf,
+        &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic],
+        Some(&closure.element_id),
+        &closure.json_pointer,
+        "unsupported nested-SVG effect closure was rasterized for PDF",
+    )
+}
+
+/// The one-entry asset chain of a nested-source diagnostic: the scene asset
+/// `asset_id` at its first occurrence.
+fn nested_asset_chain(
+    asset_id: &str,
+) -> Result<Vec<crate::AssetChainEntry>, std::collections::TryReserveError> {
+    let mut asset_chain = Vec::new();
+    asset_chain.try_reserve_exact(1)?;
+    asset_chain.push(crate::AssetChainEntry {
+        asset_id: Some(try_owned(asset_id)?),
+        occurrence: 0,
+    });
+    Ok(asset_chain)
 }
 
 pub(super) fn unsafe_svg_removal_diagnostic(
@@ -339,19 +273,12 @@ pub(super) fn unsafe_svg_removal_diagnostic(
     asset_id: &str,
     json_pointer: &str,
     removal: &asset::svg::Removal,
-) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-    let mut effects = Vec::new();
-    effects.try_reserve_exact(if removal.changes_appearance { 2 } else { 1 })?;
-    effects.push(DiagnosticEffect::Semantic);
-    if removal.changes_appearance {
-        effects.push(DiagnosticEffect::Visual);
-    }
-    let mut asset_chain = Vec::new();
-    asset_chain.try_reserve_exact(1)?;
-    asset_chain.push(crate::AssetChainEntry {
-        asset_id: Some(try_owned(asset_id)?),
-        occurrence: 0,
-    });
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    let effects: &[DiagnosticEffect] = if removal.changes_appearance {
+        &[DiagnosticEffect::Semantic, DiagnosticEffect::Visual]
+    } else {
+        &[DiagnosticEffect::Semantic]
+    };
     let mut segments = Vec::new();
     segments.try_reserve_exact(if removal.attribute_ordinal.is_some() {
         2
@@ -373,21 +300,17 @@ pub(super) fn unsafe_svg_removal_diagnostic(
     let mut paths = Vec::new();
     paths.try_reserve_exact(1)?;
     paths.push(crate::NestedPath { segments });
-    Ok(CompatibilityDiagnostic {
-        code: DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED,
-        severity: DiagnosticSeverity::Warning,
+    PendingDiagnostic::new(
+        DiagnosticKind::UnsafeSvgContentRemoved {
+            asset_chain: nested_asset_chain(asset_id)?,
+            paths,
+        },
         format,
         effects,
-        element_id: None,
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned("unsafe nested SVG content was removed before rendering")?,
-        details: Some(Box::new(ErrorDetails::NestedSource {
-            asset_chain,
-            paths,
-            recovery: Recovery::Removed,
-        })),
-        order: DiagnosticOrder::default(),
-    })
+        None,
+        json_pointer,
+        "unsafe nested SVG content was removed before rendering",
+    )
 }
 
 pub(super) fn nested_image_failure_diagnostic(
@@ -396,22 +319,8 @@ pub(super) fn nested_image_failure_diagnostic(
     asset_id: &str,
     json_pointer: &str,
     limits: &ResourceLimits,
-) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-    let mut diagnostic = image_asset_failure_diagnostic(
-        failure.error,
-        format,
-        asset_id,
-        "",
-        json_pointer,
-        NormalizedImageStatus::Saved,
-        limits,
-    )?;
-    let mut asset_chain = Vec::new();
-    asset_chain.try_reserve_exact(1)?;
-    asset_chain.push(crate::AssetChainEntry {
-        asset_id: Some(try_owned(asset_id)?),
-        occurrence: 0,
-    });
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    let (failure_kind, _) = image_failure(failure.error, limits);
     let mut segments = Vec::new();
     segments.try_reserve_exact(failure.path.len().saturating_mul(2))?;
     for (node_ordinal, attribute_ordinal) in &failure.path {
@@ -429,80 +338,75 @@ pub(super) fn nested_image_failure_diagnostic(
     let mut paths = Vec::new();
     paths.try_reserve_exact(1)?;
     paths.push(crate::NestedPath { segments });
-    diagnostic.element_id = None;
-    diagnostic.message = try_owned("nested data image was removed after local recovery")?;
-    diagnostic.details = Some(Box::new(ErrorDetails::NestedSource {
-        asset_chain,
-        paths,
-        recovery: Recovery::Removed,
-    }));
-    Ok(diagnostic)
+    PendingDiagnostic::new(
+        DiagnosticKind::NestedImageRemoved {
+            failure: failure_kind,
+            asset_chain: nested_asset_chain(asset_id)?,
+            paths,
+        },
+        format,
+        &[DiagnosticEffect::Visual],
+        None,
+        json_pointer,
+        "nested data image was removed after local recovery",
+    )
 }
 
 pub(super) fn relationship_cycle_diagnostic(
     format: OutputFormat,
     element_id: &str,
     json_pointer: &str,
-) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-    let mut effects = Vec::new();
-    effects.try_reserve_exact(2)?;
-    effects.extend_from_slice(&[DiagnosticEffect::InputRepair, DiagnosticEffect::Semantic]);
-    Ok(CompatibilityDiagnostic {
-        code: DiagnosticCode::NORMALIZATION_RELATIONSHIP_CYCLE,
-        severity: DiagnosticSeverity::Warning,
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::RelationshipCycle,
         format,
-        effects,
-        element_id: Some(try_owned(element_id)?),
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned("relationship cycle-closing edge was removed deterministically")?,
-        details: Some(Box::new(ErrorDetails::Compatibility {
-            recovery: Recovery::Removed,
-            recipe_id: None,
-        })),
-        order: DiagnosticOrder::default(),
-    })
+        &[DiagnosticEffect::InputRepair, DiagnosticEffect::Semantic],
+        Some(element_id),
+        json_pointer,
+        "relationship cycle-closing edge was removed deterministically",
+    )
+}
+
+/// The font a generated fallback label or a text element was shaped with
+/// instead of its source family, or a scalar no face mapped.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum FontFallback {
+    LiberationSans,
+    NotoEmoji,
+    MissingGlyph(u32),
 }
 
 pub(super) fn fallback_font_diagnostic(
-    code: DiagnosticCode,
-    severity: DiagnosticSeverity,
+    fallback: FontFallback,
     format: OutputFormat,
     element_id: Option<&str>,
     json_pointer: &str,
-    missing_codepoint: Option<u32>,
-) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-    let mut effects = Vec::new();
-    effects.try_reserve_exact(1)?;
-    effects.push(DiagnosticEffect::Visual);
-    Ok(CompatibilityDiagnostic {
-        code,
-        severity,
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    // Non-normative wording (spec 11.1). The two Liberation Sans strings are
+    // bound by approved expected reports and must not move; the Noto Emoji
+    // one names the face that substitution actually used.
+    let (kind, message) = match fallback {
+        FontFallback::LiberationSans => (
+            DiagnosticKind::LiberationSansSubstituted,
+            "generated fallback label used bundled Liberation Sans",
+        ),
+        FontFallback::NotoEmoji => (
+            DiagnosticKind::NotoEmojiSubstituted,
+            "emoji text used bundled Noto Emoji",
+        ),
+        FontFallback::MissingGlyph(codepoint) => (
+            DiagnosticKind::MissingGlyph { codepoint },
+            "generated fallback label used the deterministic missing-glyph replacement",
+        ),
+    };
+    PendingDiagnostic::new(
+        kind,
         format,
-        effects,
-        element_id: element_id.map(try_owned).transpose()?,
-        json_pointer: try_owned(json_pointer)?,
-        // Non-normative wording (spec 11.1). The two Liberation Sans strings are
-        // bound by approved expected reports and must not move; the Noto Emoji
-        // one names the face that substitution actually used.
-        message: try_owned(if missing_codepoint.is_some() {
-            "generated fallback label used the deterministic missing-glyph replacement"
-        } else if code == DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED {
-            "emoji text used bundled Noto Emoji"
-        } else {
-            "generated fallback label used bundled Liberation Sans"
-        })?,
-        details: Some(Box::new(match missing_codepoint {
-            Some(codepoint) => ErrorDetails::MissingGlyph {
-                codepoint,
-                recovery: Recovery::Substituted,
-            },
-            None => ErrorDetails::Compatibility {
-                recovery: Recovery::Substituted,
-                recipe_id: None,
-            },
-        })),
-        order: DiagnosticOrder::default(),
-    })
+        &[DiagnosticEffect::Visual],
+        element_id,
+        json_pointer,
+        message,
+    )
 }
 
 pub(super) fn official_missing_glyph_diagnostic(
@@ -510,18 +414,15 @@ pub(super) fn official_missing_glyph_diagnostic(
     element_id: &str,
     json_pointer: &str,
     codepoint: u32,
-) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-    let mut diagnostic = fallback_font_diagnostic(
-        DiagnosticCode::FONT_MISSING_GLYPH,
-        DiagnosticSeverity::Warning,
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::MissingGlyph { codepoint },
         format,
+        &[DiagnosticEffect::Visual],
         Some(element_id),
         json_pointer,
-        Some(codepoint),
-    )?;
-    diagnostic.message =
-        try_owned("official text used the deterministic basic-Latin replacement glyph")?;
-    Ok(diagnostic)
+        "official text used the deterministic basic-Latin replacement glyph",
+    )
 }
 
 pub(super) fn known_element_fallback(
@@ -554,86 +455,67 @@ pub(super) fn known_element_fallback(
 pub(super) fn optional_metadata_omitted_diagnostic(
     format: OutputFormat,
     crossing: crate::resource_accounting::OptionalMetadataCrossing,
-) -> CompatibilityDiagnostic {
-    let measurement = match crossing.measurement {
-        Measurement::Attempted { value } => Measurement::Attempted {
-            value: ResourceValue::Integer(value),
-        },
-        Measurement::AtLeast { value } => Measurement::AtLeast {
-            value: ResourceValue::Integer(value),
-        },
-    };
-    CompatibilityDiagnostic {
-        code: DiagnosticCode::RESOURCE_OPTIONAL_METADATA_OMITTED,
-        severity: DiagnosticSeverity::Warning,
-        format,
-        effects: vec![DiagnosticEffect::Metadata],
-        element_id: None,
-        json_pointer: String::new(),
-        message: "optional artifact metadata was omitted because it exceeds a resource limit"
-            .to_owned(),
-        details: Some(Box::new(ErrorDetails::ResourceLimit {
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::OptionalMetadataOmitted {
             field: crossing.field,
-            configured: ResourceValue::Integer(crossing.configured),
+            configured: crossing.configured,
             value_kind: crossing.value_kind,
-            measurement,
-            recovery: Some(Recovery::MetadataOmitted),
-        })),
-        order: DiagnosticOrder::default(),
-    }
+            measurement: crossing.measurement,
+        },
+        format,
+        &[DiagnosticEffect::Metadata],
+        None,
+        "",
+        "optional artifact metadata was omitted because it exceeds a resource limit",
+    )
 }
 
 pub(super) fn metadata_failure_diagnostic(
     format: OutputFormat,
     failure: MetadataFailure,
-) -> CompatibilityDiagnostic {
-    CompatibilityDiagnostic {
-        code: failure.code,
-        severity: DiagnosticSeverity::Warning,
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::MetadataOmitted(failure),
         format,
-        effects: vec![DiagnosticEffect::Metadata],
-        element_id: None,
-        json_pointer: String::new(),
-        message: "optional artifact metadata component could not be retained".to_owned(),
-        details: Some(Box::new(ErrorDetails::Metadata {
-            component: failure.component,
-            operation: failure.operation,
-            recovery: Recovery::MetadataOmitted,
-        })),
-        order: DiagnosticOrder::default(),
-    }
+        &[DiagnosticEffect::Metadata],
+        None,
+        "",
+        "optional artifact metadata component could not be retained",
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::outcome::DiagnosticAttribution;
+    use crate::diagnostic_registry::LocalLimit;
+    use crate::outcome::{DiagnosticAttribution, DiagnosticOrder};
+    use crate::{DiagnosticCode, Recovery, ResourceValue};
 
-    /// A retained diagnostic whose distinguishing state is its code, pointer
+    /// A retained diagnostic whose distinguishing state is its kind, pointer
     /// and the order the session assigned it when it was retained.
     fn retained(
-        code: DiagnosticCode,
+        kind: DiagnosticKind<'_>,
         json_pointer: &str,
         owner_index: u64,
         source_position: u64,
         retention_ordinal: u64,
     ) -> CompatibilityDiagnostic {
-        CompatibilityDiagnostic {
-            code,
-            severity: DiagnosticSeverity::Warning,
-            format: OutputFormat::Svg,
-            effects: vec![DiagnosticEffect::InputRepair],
-            element_id: None,
-            json_pointer: json_pointer.to_owned(),
-            message: String::new(),
-            details: None,
-            order: DiagnosticOrder {
-                owner_index,
-                source_position,
-                retention_ordinal,
-                attribution: DiagnosticAttribution::SceneGlobal,
-            },
-        }
+        PendingDiagnostic::new(
+            kind,
+            OutputFormat::Svg,
+            &[DiagnosticEffect::InputRepair],
+            None,
+            json_pointer,
+            "",
+        )
+        .expect("the diagnostic allocates")
+        .retained(DiagnosticOrder {
+            owner_index,
+            source_position,
+            retention_ordinal,
+            attribution: DiagnosticAttribution::SceneGlobal,
+        })
     }
 
     /// `(pointer, retention ordinal)` per diagnostic: the pointer names the
@@ -643,11 +525,21 @@ mod tests {
             .iter()
             .map(|diagnostic| {
                 (
-                    diagnostic.json_pointer.as_str(),
-                    diagnostic.order.retention_ordinal,
+                    diagnostic.json_pointer(),
+                    diagnostic.order().retention_ordinal,
                 )
             })
             .collect()
+    }
+
+    /// The `resource.coordinate-range-exceeded` kind of an omitted outline.
+    fn coordinate_crossing() -> DiagnosticKind<'static> {
+        DiagnosticKind::LocalLimitCrossed {
+            limit: LocalLimit::CoordinateMagnitude,
+            configured: ResourceValue::Integer(1),
+            attempted: ResourceValue::Integer(2),
+            recovery: LocalRecovery::Omitted,
+        }
     }
 
     /// Spec §11.3: the final report is ordered by the source owner, not by
@@ -658,19 +550,13 @@ mod tests {
     fn the_source_owner_outranks_the_phase_that_retained_a_diagnostic() {
         let mut diagnostics = vec![
             retained(
-                DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                DiagnosticKind::MissingTimestamp,
                 "/elements/1/updated",
                 1,
                 7,
                 0,
             ),
-            retained(
-                DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,
-                "/elements/0/x",
-                0,
-                2,
-                1,
-            ),
+            retained(coordinate_crossing(), "/elements/0/x", 0, 2, 1),
         ];
         sort_diagnostics(&mut diagnostics);
         assert_eq!(
@@ -685,23 +571,21 @@ mod tests {
     /// they were retained.
     #[test]
     fn within_one_owner_position_then_pointer_then_code_then_retention_decide() {
+        let unsupported_value = || DiagnosticKind::UnsupportedPropertyValue {
+            recovery: Recovery::Substituted,
+            recipe: None,
+        };
         let mut diagnostics = vec![
+            retained(DiagnosticKind::ZeroRoughSeed, "/elements/0/seed", 0, 9, 0),
             retained(
-                DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
-                "/elements/0/seed",
-                0,
-                9,
-                0,
-            ),
-            retained(
-                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                DiagnosticKind::UnsupportedProperty,
                 "/elements/0/b",
                 0,
                 4,
                 1,
             ),
             retained(
-                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                DiagnosticKind::UnsupportedProperty,
                 "/elements/0/a",
                 0,
                 4,
@@ -709,15 +593,9 @@ mod tests {
             ),
             // Same pointer and position: "compatibility.unsupported-property"
             // sorts before "compatibility.unsupported-property-value".
+            retained(unsupported_value(), "/elements/0/a", 0, 4, 3),
             retained(
-                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
-                "/elements/0/a",
-                0,
-                4,
-                3,
-            ),
-            retained(
-                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                DiagnosticKind::UnsupportedProperty,
                 "/elements/0/a",
                 0,
                 4,
@@ -743,18 +621,26 @@ mod tests {
     #[test]
     fn diagnostics_without_a_source_owner_sort_after_every_owned_one() {
         let unowned = |pointer: &str, ordinal| {
-            retained(
-                DiagnosticCode::FONT_MISSING_GLYPH,
+            PendingDiagnostic::new(
+                DiagnosticKind::MissingGlyph { codepoint: 0xfffd },
+                OutputFormat::Svg,
+                &[DiagnosticEffect::Visual],
+                None,
                 pointer,
-                u64::MAX,
-                u64::MAX,
-                ordinal,
+                "",
             )
+            .expect("the diagnostic allocates")
+            .retained(DiagnosticOrder::retained(
+                None,
+                None,
+                ordinal,
+                DiagnosticAttribution::SceneGlobal,
+            ))
         };
         let mut diagnostics = vec![
             unowned("", 0),
             retained(
-                DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                DiagnosticKind::MissingTimestamp,
                 "/elements/3/updated",
                 3,
                 1,
@@ -802,11 +688,11 @@ mod tests {
                 )
                 .expect("the diagnostic allocates");
 
-                assert_eq!(diagnostic.code, DiagnosticCode::IMAGE_DECODE_FAILED);
-                assert_eq!(diagnostic.effects, [DiagnosticEffect::Visual]);
-                assert_eq!(diagnostic.element_id.as_deref(), Some("image"));
-                assert_eq!(diagnostic.json_pointer, "/elements/0/fileId");
-                let Some(details) = diagnostic.details.as_deref() else {
+                assert_eq!(diagnostic.code(), DiagnosticCode::IMAGE_DECODE_FAILED);
+                assert_eq!(diagnostic.effects(), [DiagnosticEffect::Visual]);
+                assert_eq!(diagnostic.element_id(), Some("image"));
+                assert_eq!(diagnostic.json_pointer(), "/elements/0/fileId");
+                let Some(details) = diagnostic.details() else {
                     panic!("{failure:?} carries asset details");
                 };
                 let ErrorDetails::Asset {
@@ -836,5 +722,36 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// A nested data image removed after local recovery keeps the code of the
+    /// failure that removed it, with `nested_source` details in place of the
+    /// asset or resource details a scene-level occurrence would carry.
+    #[test]
+    fn a_nested_image_failure_keeps_its_code_under_nested_source_details() {
+        let failure = asset::svg::Failure {
+            path: vec![(3, 1)],
+            error: asset::ResolveError::SvgComplexity { attempted: 9 },
+        };
+        let diagnostic = nested_image_failure_diagnostic(
+            &failure,
+            OutputFormat::Pdf,
+            "asset",
+            "/files/asset/dataURL",
+            &ResourceLimits::default(),
+        )
+        .expect("the diagnostic allocates");
+        assert_eq!(
+            diagnostic.code(),
+            DiagnosticCode::RESOURCE_NESTED_SVG_COMPLEXITY_EXCEEDED
+        );
+        assert_eq!(diagnostic.element_id(), None);
+        assert!(matches!(
+            diagnostic.details(),
+            Some(ErrorDetails::NestedSource {
+                recovery: Recovery::Removed,
+                ..
+            })
+        ));
     }
 }

@@ -27,6 +27,7 @@ macro_rules! println {
 mod catalog;
 mod color;
 mod compatibility;
+mod diagnostic_registry;
 mod font_metadata;
 mod frame;
 mod normalization;

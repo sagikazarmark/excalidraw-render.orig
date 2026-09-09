@@ -5,13 +5,11 @@
 //! compatibility-omission charges and the fallback-origin queries it relies on.
 //! Charge order is the canonical trace order (ADR-0002).
 
+use crate::diagnostic_registry::LocalLimit;
 use crate::resource_accounting::{ResourceContext, ResourceDelta, ResourcePhase};
-use crate::{
-    DiagnosticCode, DiagnosticSeverity, ErrorDetails, Recovery, RenderError, RenderRequest,
-    ResourceValue, ValueKind,
-};
+use crate::{DiagnosticCode, ErrorDetails, Recovery, RenderError, RenderRequest, ResourceValue};
 
-use super::super::diagnostics::fallback_font_diagnostic;
+use super::super::diagnostics::{fallback_font_diagnostic, FontFallback};
 use super::super::resolve::{
     format_error_code, ElementLocalCrossing, ResolvedElement, ResolvedFallback, ResolvedScene,
     SemanticWorkingRecord,
@@ -195,14 +193,12 @@ impl RenderSession {
                         .max_geometry_segments_per_element(),
                 ) {
                 Some(ElementLocalCrossing {
-                    code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
-                    field: "max_geometry_segments_per_element",
+                    limit: LocalLimit::GeometrySegmentsPerElement,
                     configured: ResourceValue::Integer(u64::from(
                         request
                             .resource_limits()
                             .max_geometry_segments_per_element(),
                     )),
-                    value_kind: ValueKind::Count,
                     attempted: ResourceValue::Integer(geometry_segments),
                     pointer_field: None,
                     message:
@@ -210,12 +206,10 @@ impl RenderSession {
                 })
             } else if total_work_units > request.resource_limits().max_element_work_units() {
                 Some(ElementLocalCrossing {
-                    code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
-                    field: "max_element_work_units",
+                    limit: LocalLimit::ElementWorkUnits,
                     configured: ResourceValue::Integer(
                         request.resource_limits().max_element_work_units(),
                     ),
-                    value_kind: ValueKind::WorkUnits,
                     attempted: ResourceValue::Integer(total_work_units),
                     pointer_field: None,
                     message:
@@ -396,12 +390,10 @@ impl RenderSession {
             return Ok(());
         };
         let substitution = fallback_font_diagnostic(
-            DiagnosticCode::FONT_LIBERATION_SANS_SUBSTITUTED,
-            DiagnosticSeverity::Info,
+            FontFallback::LiberationSans,
             request.format(),
             fallback.source.id.as_deref(),
             &fallback.source.pointer,
-            None,
         )
         .map_err(|_| {
             self.memory_failure(
@@ -423,12 +415,10 @@ impl RenderSession {
         )?;
         for codepoint in &label.missing_codepoints {
             let diagnostic = fallback_font_diagnostic(
-                DiagnosticCode::FONT_MISSING_GLYPH,
-                DiagnosticSeverity::Warning,
+                FontFallback::MissingGlyph(*codepoint),
                 request.format(),
                 fallback.source.id.as_deref(),
                 &fallback.source.pointer,
-                Some(*codepoint),
             )
             .map_err(|_| {
                 self.memory_failure(request, "compatibility_report", "fallback_missing_glyph")
@@ -469,10 +459,7 @@ impl RenderSession {
         let Some(original) = original else {
             return false;
         };
-        let Some(details) = original.details.as_mut() else {
-            return false;
-        };
-        let ErrorDetails::ResourceLimit { recovery, .. } = details.as_mut() else {
+        let Some(ErrorDetails::ResourceLimit { recovery, .. }) = original.details_mut() else {
             return false;
         };
         *recovery = Some(Recovery::Omitted);

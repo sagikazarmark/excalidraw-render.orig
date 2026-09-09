@@ -4,18 +4,17 @@
 //! label-text preflight of compatibility fallbacks. Each charge's event name
 //! and order is part of the canonical trace (ADR-0002).
 
+use crate::diagnostic_registry::{LocalLimit, LocalRecovery};
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
 use crate::resource_accounting::{
     ResourceContext, ResourceDelta, ResourcePhase, ResourceRecordKind,
 };
 use crate::scene_surface::SurfaceFallback;
-use crate::{
-    DiagnosticCode, DiagnosticSeverity, Recovery, RenderError, RenderRequest, ResourceValue,
-    ValueKind,
-};
+use crate::{RenderError, RenderRequest, ResourceValue};
 
 use super::super::diagnostics::{
     fallback_font_diagnostic, known_element_fallback, official_missing_glyph_diagnostic,
+    FontFallback,
 };
 use super::super::resolve::{
     fallback_fits_local_limits, logical_aligned_bytes, ElementLocalCrossing, ResolvedOutline,
@@ -72,24 +71,20 @@ impl RenderSession {
             > u64::from(request.resource_limits().max_text_scalars_per_element())
         {
             Some(ElementLocalCrossing {
-                code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
-                field: "max_text_scalars_per_element",
+                limit: LocalLimit::TextScalarsPerElement,
                 configured: ResourceValue::Integer(u64::from(
                     request.resource_limits().max_text_scalars_per_element(),
                 )),
-                value_kind: ValueKind::Count,
                 attempted: ResourceValue::Integer(text_scalars),
                 pointer_field: None,
                 message: "text was omitted because it exceeds its scalar limit",
             })
         } else if prepaid_work > request.resource_limits().max_element_work_units() {
             Some(ElementLocalCrossing {
-                code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
-                field: "max_element_work_units",
+                limit: LocalLimit::ElementWorkUnits,
                 configured: ResourceValue::Integer(
                     request.resource_limits().max_element_work_units(),
                 ),
-                value_kind: ValueKind::WorkUnits,
                 attempted: ResourceValue::Integer(prepaid_work),
                 pointer_field: None,
                 message: "text was omitted before shaping because scalar work exceeds its limit",
@@ -120,11 +115,7 @@ impl RenderSession {
                     request.format(),
                     Some(source.source.id()),
                     source.source.pointer(),
-                    if can_replace {
-                        Recovery::Placeholder
-                    } else {
-                        Recovery::Omitted
-                    },
+                    LocalRecovery::placeholder_if(can_replace),
                 )
                 .map_err(|_| {
                     self.memory_failure(request, "compatibility_report", "text_preflight_recovery")
@@ -211,12 +202,10 @@ impl RenderSession {
         }
         if text.font_family == 2 && !text.text.is_empty() {
             let diagnostic = fallback_font_diagnostic(
-                DiagnosticCode::FONT_LIBERATION_SANS_SUBSTITUTED,
-                DiagnosticSeverity::Info,
+                FontFallback::LiberationSans,
                 request.format(),
                 Some(source.source.id()),
                 source.source.pointer(),
-                None,
             )
             .map_err(|_| {
                 self.memory_failure(request, "compatibility_report", "text_font_substitution")
@@ -289,14 +278,12 @@ impl RenderSession {
                     .max_geometry_segments_per_element(),
             ) {
             Some(ElementLocalCrossing {
-                code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
-                field: "max_geometry_segments_per_element",
+                limit: LocalLimit::GeometrySegmentsPerElement,
                 configured: ResourceValue::Integer(u64::from(
                     request
                         .resource_limits()
                         .max_geometry_segments_per_element(),
                 )),
-                value_kind: ValueKind::Count,
                 attempted: ResourceValue::Integer(geometry_segments),
                 pointer_field: None,
                 message: "embeddable label was omitted because its glyph outlines exceed the geometry limit",
@@ -307,12 +294,10 @@ impl RenderSession {
             > request.resource_limits().max_element_work_units()
         {
             Some(ElementLocalCrossing {
-                code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
-                field: "max_element_work_units",
+                limit: LocalLimit::ElementWorkUnits,
                 configured: ResourceValue::Integer(
                     request.resource_limits().max_element_work_units(),
                 ),
-                value_kind: ValueKind::WorkUnits,
                 attempted: ResourceValue::Integer(
                     outline
                         .base_element_work_units
@@ -369,12 +354,10 @@ impl RenderSession {
         }
         if label.noto_emoji_substituted {
             let diagnostic = fallback_font_diagnostic(
-                DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED,
-                DiagnosticSeverity::Info,
+                FontFallback::NotoEmoji,
                 request.format(),
                 Some(outline.source.id()),
                 outline.source.pointer(),
-                None,
             )
             .map_err(|_| {
                 self.memory_failure(
@@ -499,26 +482,22 @@ impl RenderSession {
                     .max_geometry_segments_per_element(),
             ) {
             Some(ElementLocalCrossing {
-                code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
-                field: "max_geometry_segments_per_element",
+                limit: LocalLimit::GeometrySegmentsPerElement,
                 configured: ResourceValue::Integer(u64::from(
                     request
                         .resource_limits()
                         .max_geometry_segments_per_element(),
                 )),
-                value_kind: ValueKind::Count,
                 attempted: ResourceValue::Integer(geometry_segments),
                 pointer_field: None,
                 message: "text was omitted because its glyph outlines exceed the geometry limit",
             })
         } else if total_work_units > request.resource_limits().max_element_work_units() {
             Some(ElementLocalCrossing {
-                code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
-                field: "max_element_work_units",
+                limit: LocalLimit::ElementWorkUnits,
                 configured: ResourceValue::Integer(
                     request.resource_limits().max_element_work_units(),
                 ),
-                value_kind: ValueKind::WorkUnits,
                 attempted: ResourceValue::Integer(total_work_units),
                 pointer_field: None,
                 message: "text was omitted because shaping exceeds its work limit",
@@ -566,12 +545,10 @@ impl RenderSession {
         }
         if text.text.noto_emoji_substituted {
             let diagnostic = fallback_font_diagnostic(
-                DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED,
-                DiagnosticSeverity::Info,
+                FontFallback::NotoEmoji,
                 request.format(),
                 Some(text.source.id()),
                 text.source.pointer(),
-                None,
             )
             .map_err(|_| {
                 self.memory_failure(
@@ -763,12 +740,10 @@ impl RenderSession {
                     },
                 )?;
                 let diagnostic = ElementLocalCrossing {
-                    code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
-                    field: "max_text_scalars_per_element",
+                    limit: LocalLimit::TextScalarsPerElement,
                     configured: ResourceValue::Integer(u64::from(
                         request.resource_limits().max_text_scalars_per_element(),
                     )),
-                    value_kind: ValueKind::Count,
                     attempted: ResourceValue::Integer(text_scalars),
                     pointer_field: None,
                     message:

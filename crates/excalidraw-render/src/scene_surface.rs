@@ -1,13 +1,11 @@
 use std::collections::TryReserveError;
 
-use crate::outcome::DiagnosticOrder;
+use crate::diagnostic_registry::{DiagnosticKind, ImageFailure, ImageRecovery, LocalRecovery};
+use crate::outcome::PendingDiagnostic;
 use crate::scene::{
     finite_json_number, member_value, pointer_child, pointer_index, JsonMember, JsonValue,
 };
-use crate::{
-    CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, DiagnosticSeverity, ErrorDetails,
-    OutputFormat, Recovery, SceneDocument,
-};
+use crate::{DiagnosticCode, DiagnosticEffect, OutputFormat, Recovery, SceneDocument};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum SceneFieldDisposition {
@@ -131,7 +129,7 @@ pub(crate) struct SurfaceDiagnostic {
     pub(crate) source_order: u64,
     pub(crate) source_position: u64,
     pub(crate) local_owner: Option<String>,
-    pub(crate) diagnostic: CompatibilityDiagnostic,
+    pub(crate) diagnostic: PendingDiagnostic,
 }
 
 pub(crate) struct SurfaceClassification {
@@ -218,14 +216,12 @@ pub(crate) fn classify(
                 source_order,
                 source_position: 0,
                 local_owner: None,
-                diagnostic: element_boundary_diagnostic(
-                    DiagnosticCode::COMPATIBILITY_MALFORMED_ELEMENT,
+                diagnostic: PendingDiagnostic::new(
+                    DiagnosticKind::MalformedElement(LocalRecovery::Omitted),
                     format,
                     &[DiagnosticEffect::Visual],
                     None,
                     &pointer,
-                    Recovery::Omitted,
-                    None,
                     "malformed element was omitted by the revision-1 scene-surface policy",
                 )?,
             });
@@ -257,20 +253,14 @@ pub(crate) fn classify(
                     source_order,
                     source_position: 0,
                     local_owner: element_id.map(try_owned).transpose()?,
-                    diagnostic: element_boundary_diagnostic(
-                        DiagnosticCode::COMPATIBILITY_KNOWN_ELEMENT_REPLACED,
+                    diagnostic: PendingDiagnostic::new(
+                        DiagnosticKind::KnownElementReplaced(LocalRecovery::placeholder_if(
+                            bounds.is_some(),
+                        )),
                         format,
                         &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic],
                         element_id,
                         &pointer,
-                        if bounds.is_some() {
-                            Recovery::Placeholder
-                        } else {
-                            Recovery::Omitted
-                        },
-                        bounds
-                            .is_some()
-                            .then_some("renderer.known-element-unavailable.v1"),
                         "known element unavailable to this renderer used the revision-1 fallback",
                     )?,
                 });
@@ -330,19 +320,18 @@ pub(crate) fn classify(
         }
 
         let bounds = recoverable_bounds(members);
-        let (code, effects, recipe, message, label) = if let Some(kind) = kind {
+        let recovery = LocalRecovery::placeholder_if(bounds.is_some());
+        let (diagnostic_kind, effects, message, label) = if let Some(kind) = kind {
             (
-                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_ELEMENT_TYPE,
+                DiagnosticKind::UnsupportedElementType(recovery),
                 &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic][..],
-                "renderer.unknown-element.v1",
                 "unsupported element type used the revision-1 element fallback",
                 fallback_label("Unsupported: ", kind)?,
             )
         } else {
             (
-                DiagnosticCode::COMPATIBILITY_MALFORMED_ELEMENT,
+                DiagnosticKind::MalformedElement(recovery),
                 &[DiagnosticEffect::Visual][..],
-                "renderer.malformed-element.v1",
                 "malformed element used the revision-1 element fallback",
                 try_owned("Malformed element")?,
             )
@@ -352,18 +341,12 @@ pub(crate) fn classify(
             source_order,
             source_position: 0,
             local_owner: element_id.map(try_owned).transpose()?,
-            diagnostic: element_boundary_diagnostic(
-                code,
+            diagnostic: PendingDiagnostic::new(
+                diagnostic_kind,
                 format,
                 effects,
                 element_id,
                 &pointer,
-                if bounds.is_some() {
-                    Recovery::Placeholder
-                } else {
-                    Recovery::Omitted
-                },
-                bounds.is_some().then_some(recipe),
                 message,
             )?,
         });
@@ -383,14 +366,10 @@ pub(crate) fn classify(
                 .unwrap_or(u64::MAX)
                 .saturating_mul(u64::from(u32::MAX) + 1),
                 local_owner: element_id.map(try_owned).transpose()?,
-                diagnostic: value_rule_diagnostic(
-                    DiagnosticCode::LINK_UNSAFE_OMITTED,
+                diagnostic: unsafe_link_diagnostic(
                     format,
-                    &[DiagnosticEffect::Semantic],
                     element_id,
                     &pointer_child(&pointer, "link")?,
-                    Recovery::Omitted,
-                    "unsafe link was omitted by the revision-1 sanitizer",
                 )?,
             });
         }
@@ -453,32 +432,17 @@ fn classify_record(
             }
             continue;
         }
-        let json_pointer = pointer_child(pointer, &member.key)?;
         diagnostics.try_reserve(1)?;
         diagnostics.push(SurfaceDiagnostic {
             source_order: scene.source_owner_order(owner.unwrap_or(&member.key), 0),
             source_position: member_source_position(position),
             local_owner: None,
-            diagnostic: CompatibilityDiagnostic {
-                code: DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
-                severity: DiagnosticSeverity::Warning,
+            diagnostic: unsupported_property_diagnostic(
                 format,
-                effects: owned_effects(&[
-                    DiagnosticEffect::Visual,
-                    DiagnosticEffect::Semantic,
-                    DiagnosticEffect::Metadata,
-                ])?,
-                element_id: None,
-                json_pointer,
-                message: try_owned(
-                    "unmatched property was ignored by the revision-1 scene-surface policy",
-                )?,
-                details: Some(Box::new(ErrorDetails::Compatibility {
-                    recovery: Recovery::Ignored,
-                    recipe_id: None,
-                })),
-                order: DiagnosticOrder::default(),
-            },
+                None,
+                &pointer_child(pointer, &member.key)?,
+                "unmatched property was ignored by the revision-1 scene-surface policy",
+            )?,
         });
     }
     Ok(())
@@ -663,70 +627,44 @@ pub(crate) fn css_color_is_admitted(color: &str) -> bool {
     crate::color::parse_css(color).is_some()
 }
 
+/// The diagnostic a supported field's manifested `invalid` fallback declares
+/// for `format`, or `None` when the fallback names no code, no recovery for
+/// the format, or a binding the diagnostic registry does not have (the
+/// registry tests check the sealed table against the registry).
 fn manifested_field_diagnostic(
     fallback: &SceneFieldFallback,
     format: OutputFormat,
     json_pointer: &str,
     element_id: Option<&str>,
-) -> Result<Option<CompatibilityDiagnostic>, TryReserveError> {
+) -> Result<Option<PendingDiagnostic>, TryReserveError> {
     let Some(code) = fallback.code else {
         return Ok(None);
     };
     let recovery = fallback
         .recovery
         .or(fallback.format_recoveries[format_slot(format)]);
-    let Some(recovery) = recovery else {
+    let Some(recovery) = recovery.and_then(Recovery::from_manifest) else {
         return Ok(None);
     };
-    let Some(recovery) = recovery_from_manifest(recovery) else {
+    let Some(kind) = DiagnosticKind::manifested(code, recovery, fallback.recipe) else {
         return Ok(None);
     };
     let mut effects = Vec::new();
     effects.try_reserve_exact(fallback.effects.len())?;
     for effect in fallback.effects {
-        if let Some(effect) = effect_from_manifest(effect) {
+        if let Some(effect) = DiagnosticEffect::from_manifest(effect) {
             effects.push(effect);
         }
     }
-    Ok(Some(CompatibilityDiagnostic {
-        code: DiagnosticCode::manifested(code),
-        severity: DiagnosticSeverity::Warning,
+    PendingDiagnostic::new(
+        kind,
         format,
-        effects,
-        element_id: element_id.map(try_owned).transpose()?,
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned("manifested field value used its revision-1 recovery")?,
-        details: Some(Box::new(ErrorDetails::Compatibility {
-            recovery,
-            recipe_id: fallback.recipe.map(try_owned).transpose()?,
-        })),
-        order: DiagnosticOrder::default(),
-    }))
-}
-
-fn effect_from_manifest(effect: &str) -> Option<DiagnosticEffect> {
-    match effect {
-        "input_repair" => Some(DiagnosticEffect::InputRepair),
-        "visual" => Some(DiagnosticEffect::Visual),
-        "semantic" => Some(DiagnosticEffect::Semantic),
-        "metadata" => Some(DiagnosticEffect::Metadata),
-        _ => None,
-    }
-}
-
-fn recovery_from_manifest(recovery: &str) -> Option<Recovery> {
-    match recovery {
-        "repaired" => Some(Recovery::Repaired),
-        "ignored" => Some(Recovery::Ignored),
-        "placeholder" => Some(Recovery::Placeholder),
-        "omitted" => Some(Recovery::Omitted),
-        "removed" => Some(Recovery::Removed),
-        "substituted" => Some(Recovery::Substituted),
-        "flattened" => Some(Recovery::Flattened),
-        "rasterized" => Some(Recovery::Rasterized),
-        "metadata_omitted" => Some(Recovery::MetadataOmitted),
-        _ => None,
-    }
+        &effects,
+        element_id,
+        json_pointer,
+        "manifested field value used its revision-1 recovery",
+    )
+    .map(Some)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -781,14 +719,10 @@ fn classify_element_record(
                         .unwrap_or(u64::MAX)
                         .saturating_mul(u64::from(u32::MAX) + 1),
                     local_owner: element_id.map(try_owned).transpose()?,
-                    diagnostic: value_rule_diagnostic(
-                        DiagnosticCode::LINK_UNSAFE_OMITTED,
+                    diagnostic: unsafe_link_diagnostic(
                         format,
-                        &[DiagnosticEffect::Semantic],
                         element_id,
                         &pointer_child(pointer, &member.key)?,
-                        Recovery::Omitted,
-                        "unsafe link was omitted by the revision-1 sanitizer",
                     )?,
                 });
                 continue;
@@ -804,13 +738,12 @@ fn classify_element_record(
                         .unwrap_or(u64::MAX)
                         .saturating_mul(u64::from(u32::MAX) + 1),
                     local_owner: element_id.map(try_owned).transpose()?,
-                    diagnostic: value_rule_diagnostic(
-                        DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
+                    diagnostic: PendingDiagnostic::new(
+                        DiagnosticKind::ZeroRoughSeed,
                         format,
                         &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
                         element_id,
                         &pointer_child(pointer, &member.key)?,
-                        Recovery::Repaired,
                         "zero Rough seed was repaired deterministically",
                     )?,
                 });
@@ -848,26 +781,12 @@ fn classify_element_record(
                 .unwrap_or(u64::MAX)
                 .saturating_mul(u64::from(u32::MAX) + 1),
             local_owner: element_id.map(try_owned).transpose()?,
-            diagnostic: CompatibilityDiagnostic {
-                code: DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
-                severity: DiagnosticSeverity::Warning,
+            diagnostic: unsupported_property_diagnostic(
                 format,
-                effects: owned_effects(&[
-                    DiagnosticEffect::Visual,
-                    DiagnosticEffect::Semantic,
-                    DiagnosticEffect::Metadata,
-                ])?,
-                element_id: element_id.map(try_owned).transpose()?,
-                json_pointer: pointer_child(pointer, &member.key)?,
-                message: try_owned(
-                    "unmatched element property was ignored by the revision-1 scene-surface policy",
-                )?,
-                details: Some(Box::new(ErrorDetails::Compatibility {
-                    recovery: Recovery::Ignored,
-                    recipe_id: None,
-                })),
-                order: DiagnosticOrder::default(),
-            },
+                element_id,
+                &pointer_child(pointer, &member.key)?,
+                "unmatched element property was ignored by the revision-1 scene-surface policy",
+            )?,
         });
     }
     Ok(())
@@ -1007,30 +926,19 @@ fn contains_ascii_case_insensitive(value: &str, needle: &[u8]) -> bool {
         .any(|candidate| candidate.eq_ignore_ascii_case(needle))
 }
 
-#[allow(clippy::too_many_arguments)]
-fn value_rule_diagnostic(
-    code: DiagnosticCode,
+fn unsafe_link_diagnostic(
     format: OutputFormat,
-    effects: &[DiagnosticEffect],
     element_id: Option<&str>,
     json_pointer: &str,
-    recovery: Recovery,
-    message: &str,
-) -> Result<CompatibilityDiagnostic, TryReserveError> {
-    Ok(CompatibilityDiagnostic {
-        code,
-        severity: DiagnosticSeverity::Warning,
+) -> Result<PendingDiagnostic, TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::UnsafeLinkOmitted,
         format,
-        effects: owned_effects(effects)?,
-        element_id: element_id.map(try_owned).transpose()?,
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned(message)?,
-        details: Some(Box::new(ErrorDetails::Compatibility {
-            recovery,
-            recipe_id: None,
-        })),
-        order: DiagnosticOrder::default(),
-    })
+        &[DiagnosticEffect::Semantic],
+        element_id,
+        json_pointer,
+        "unsafe link was omitted by the revision-1 sanitizer",
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1125,25 +1033,19 @@ fn unsupported_property_diagnostic(
     element_id: Option<&str>,
     json_pointer: &str,
     message: &str,
-) -> Result<CompatibilityDiagnostic, TryReserveError> {
-    Ok(CompatibilityDiagnostic {
-        code: DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
-        severity: DiagnosticSeverity::Warning,
+) -> Result<PendingDiagnostic, TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::UnsupportedProperty,
         format,
-        effects: owned_effects(&[
+        &[
             DiagnosticEffect::Visual,
             DiagnosticEffect::Semantic,
             DiagnosticEffect::Metadata,
-        ])?,
-        element_id: element_id.map(try_owned).transpose()?,
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned(message)?,
-        details: Some(Box::new(ErrorDetails::Compatibility {
-            recovery: Recovery::Ignored,
-            recipe_id: None,
-        })),
-        order: DiagnosticOrder::default(),
-    })
+        ],
+        element_id,
+        json_pointer,
+        message,
+    )
 }
 
 pub(crate) fn classify_referenced_files(
@@ -1166,56 +1068,40 @@ pub(crate) fn classify_referenced_files(
         }
         let pointer = pointer_child("/files", file.key())?;
         let source_order = scene.source_owner_order("files", index);
+        let recovery = || malformed_file_recovery(scene, file.key(), format);
         if file.key().is_empty() {
-            let (recovery, recipe_id) = malformed_file_recovery(scene, file.key(), format);
             diagnostics.try_reserve(1)?;
             diagnostics.push(SurfaceDiagnostic {
                 source_order,
                 source_position: 0,
                 local_owner: Some(String::new()),
-                diagnostic: asset_diagnostic(
-                    DiagnosticCode::ASSET_MALFORMED_FILE_RECORD,
+                diagnostic: malformed_file_record_diagnostic(
                     format,
                     file.key(),
                     &pointer,
-                    recovery,
-                    recipe_id,
+                    recovery(),
                     "referenced authoritative file key was malformed",
                 )?,
             });
             continue;
         }
         let Some(members) = file.members() else {
-            let (recovery, recipe_id) = malformed_file_recovery(scene, file.key(), format);
             diagnostics.try_reserve(1)?;
             diagnostics.push(SurfaceDiagnostic {
                 source_order,
                 source_position: 0,
                 local_owner: Some(try_owned(file.key())?),
-                diagnostic: asset_diagnostic(
-                    DiagnosticCode::ASSET_MALFORMED_FILE_RECORD,
+                diagnostic: malformed_file_record_diagnostic(
                     format,
                     file.key(),
                     &pointer,
-                    recovery,
-                    recipe_id,
+                    recovery(),
                     "referenced authoritative file record was malformed",
                 )?,
             });
             continue;
         };
         if member_value(members, "dataURL").is_none() {
-            let (recovery, recipe_id) = match format {
-                OutputFormat::Png => {
-                    let recipe = if referenced_image_has_error_status(scene, file.key()) {
-                        "official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9"
-                    } else {
-                        "official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d"
-                    };
-                    (Recovery::Placeholder, Some(recipe))
-                }
-                OutputFormat::Svg | OutputFormat::Pdf => (Recovery::Omitted, None),
-            };
             diagnostics.try_reserve(1)?;
             diagnostics.push(SurfaceDiagnostic {
                 source_order,
@@ -1224,13 +1110,11 @@ pub(crate) fn classify_referenced_files(
                         u64::try_from(field.ordinal).unwrap_or(u64::MAX - 1)
                     }),
                 local_owner: Some(try_owned(file.key())?),
-                diagnostic: asset_diagnostic(
-                    DiagnosticCode::ASSET_MALFORMED_FILE_RECORD,
+                diagnostic: malformed_file_record_diagnostic(
                     format,
                     file.key(),
                     &pointer_child(&pointer, "dataURL")?,
-                    recovery,
-                    recipe_id,
+                    recovery(),
                     "referenced authoritative file record had no payload",
                 )?,
             });
@@ -1289,48 +1173,27 @@ pub(crate) fn classify_referenced_files(
                 source_order,
                 source_position: u64::try_from(position).unwrap_or(u64::MAX),
                 local_owner: Some(try_owned(file.key())?),
-                diagnostic: CompatibilityDiagnostic {
-                    code: DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
-                    severity: DiagnosticSeverity::Warning,
+                diagnostic: unsupported_property_diagnostic(
                     format,
-                    effects: owned_effects(&[
-                        DiagnosticEffect::Visual,
-                        DiagnosticEffect::Semantic,
-                        DiagnosticEffect::Metadata,
-                    ])?,
-                    element_id: None,
-                    json_pointer: pointer_child(&pointer, &member.key)?,
-                    message: try_owned(
-                        "unmatched file property was ignored by the revision-1 scene-surface policy",
-                    )?,
-                    details: Some(Box::new(ErrorDetails::Compatibility {
-                        recovery: Recovery::Ignored,
-                        recipe_id: None,
-                    })),
-                    order: DiagnosticOrder::default(),
-                },
+                    None,
+                    &pointer_child(&pointer, &member.key)?,
+                    "unmatched file property was ignored by the revision-1 scene-surface policy",
+                )?,
             });
         }
     }
     Ok(diagnostics)
 }
 
+/// The format recovery of the image elements that refer to the malformed
+/// file record `file_id`: PNG paints the official placeholder (the error one
+/// when a referring image's status is `error`), SVG and PDF omit the image.
 fn malformed_file_recovery(
     scene: &SceneDocument,
     file_id: &str,
     format: OutputFormat,
-) -> (Recovery, Option<&'static str>) {
-    match format {
-        OutputFormat::Png => {
-            let recipe = if referenced_image_has_error_status(scene, file_id) {
-                "official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9"
-            } else {
-                "official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d"
-            };
-            (Recovery::Placeholder, Some(recipe))
-        }
-        OutputFormat::Svg | OutputFormat::Pdf => (Recovery::Omitted, None),
-    }
+) -> ImageRecovery {
+    ImageRecovery::for_format(format, referenced_image_has_error_status(scene, file_id))
 }
 
 pub(crate) fn supplement_conflict(
@@ -1350,23 +1213,14 @@ pub(crate) fn supplement_conflict(
             source_order: scene.source_owner_order("files", index),
             source_position: 0,
             local_owner: Some(try_owned(file_id)?),
-            diagnostic: CompatibilityDiagnostic {
-                code: DiagnosticCode::ASSET_SUPPLEMENT_CONFLICT,
-                severity: DiagnosticSeverity::Warning,
+            diagnostic: PendingDiagnostic::new(
+                DiagnosticKind::SupplementConflict { asset_id: file_id },
                 format,
-                effects: owned_effects(&[DiagnosticEffect::InputRepair])?,
-                element_id: None,
-                json_pointer: pointer,
-                message: try_owned("scene file remained authoritative over supplemental asset")?,
-                details: Some(Box::new(ErrorDetails::Asset {
-                    asset_id: try_owned(file_id)?,
-                    claimed_media_type: None,
-                    validated_media_type: None,
-                    recovery: Recovery::Ignored,
-                    recipe_id: None,
-                })),
-                order: DiagnosticOrder::default(),
-            },
+                &[DiagnosticEffect::InputRepair],
+                None,
+                &pointer,
+                "scene file remained authoritative over supplemental asset",
+            )?,
         }));
     }
     Ok(None)
@@ -1403,61 +1257,39 @@ fn forbidden_resource_diagnostic(
     asset_id: &str,
     json_pointer: &str,
     has_safe_bounds: bool,
-) -> Result<CompatibilityDiagnostic, TryReserveError> {
-    let recovery = if has_safe_bounds {
-        Recovery::Placeholder
-    } else {
-        Recovery::Omitted
-    };
-    Ok(CompatibilityDiagnostic {
-        code: DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE,
-        severity: DiagnosticSeverity::Warning,
+) -> Result<PendingDiagnostic, TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::ForbiddenResource {
+            asset_id,
+            recovery: LocalRecovery::placeholder_if(has_safe_bounds),
+        },
         format,
-        effects: owned_effects(&[DiagnosticEffect::Visual, DiagnosticEffect::Semantic])?,
-        element_id: None,
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned("non-local image resource was rejected")?,
-        details: Some(Box::new(ErrorDetails::Asset {
-            asset_id: try_owned(asset_id)?,
-            claimed_media_type: None,
-            validated_media_type: None,
-            recovery,
-            recipe_id: has_safe_bounds
-                .then(|| {
-                    try_owned("official.forbidden-resource@sha256:4452f99158233e3703e46dbbb83f6900a894fbceacd3e98b141332d552e22827")
-                })
-                .transpose()?,
-        })),
-        order: DiagnosticOrder::default(),
-    })
+        &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic],
+        None,
+        json_pointer,
+        "non-local image resource was rejected",
+    )
 }
 
-fn asset_diagnostic(
-    code: DiagnosticCode,
+fn malformed_file_record_diagnostic(
     format: OutputFormat,
     asset_id: &str,
     json_pointer: &str,
-    recovery: Recovery,
-    recipe_id: Option<&str>,
+    recovery: ImageRecovery,
     message: &str,
-) -> Result<CompatibilityDiagnostic, TryReserveError> {
-    Ok(CompatibilityDiagnostic {
-        code,
-        severity: DiagnosticSeverity::Warning,
-        format,
-        effects: owned_effects(&[DiagnosticEffect::Visual])?,
-        element_id: None,
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned(message)?,
-        details: Some(Box::new(ErrorDetails::Asset {
-            asset_id: try_owned(asset_id)?,
-            claimed_media_type: None,
-            validated_media_type: None,
+) -> Result<PendingDiagnostic, TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::ImageUnavailable {
+            failure: ImageFailure::MalformedFileRecord,
+            asset_id,
             recovery,
-            recipe_id: recipe_id.map(try_owned).transpose()?,
-        })),
-        order: DiagnosticOrder::default(),
-    })
+        },
+        format,
+        &[DiagnosticEffect::Visual],
+        None,
+        json_pointer,
+        message,
+    )
 }
 
 pub(crate) fn asset_media_type_diagnostic(
@@ -1466,28 +1298,23 @@ pub(crate) fn asset_media_type_diagnostic(
     json_pointer: &str,
     claimed_media_type: Option<&str>,
     validated_media_type: Option<&str>,
-) -> Result<CompatibilityDiagnostic, TryReserveError> {
-    Ok(CompatibilityDiagnostic {
-        code: DiagnosticCode::ASSET_MEDIA_TYPE_MISMATCH,
-        severity: DiagnosticSeverity::Warning,
+) -> Result<PendingDiagnostic, TryReserveError> {
+    PendingDiagnostic::new(
+        DiagnosticKind::MediaTypeMismatch {
+            asset_id,
+            claimed_media_type,
+            validated_media_type,
+        },
         format,
-        effects: owned_effects(&[DiagnosticEffect::InputRepair])?,
-        element_id: None,
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned(if validated_media_type.is_some() {
+        &[DiagnosticEffect::InputRepair],
+        None,
+        json_pointer,
+        if validated_media_type.is_some() {
             "asset media type did not match the validated payload type"
         } else {
             "asset media type was outside the revision-1 admitted domain"
-        })?,
-        details: Some(Box::new(ErrorDetails::Asset {
-            asset_id: try_owned(asset_id)?,
-            claimed_media_type: claimed_media_type.map(try_owned).transpose()?,
-            validated_media_type: validated_media_type.map(try_owned).transpose()?,
-            recovery: Recovery::Repaired,
-            recipe_id: None,
-        })),
-        order: DiagnosticOrder::default(),
-    })
+        },
+    )
 }
 
 #[derive(Clone, Copy)]
@@ -1594,40 +1421,6 @@ fn canonical_zero(value: f64) -> f64 {
     } else {
         value
     }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn element_boundary_diagnostic(
-    code: DiagnosticCode,
-    format: OutputFormat,
-    effects: &[DiagnosticEffect],
-    element_id: Option<&str>,
-    json_pointer: &str,
-    recovery: Recovery,
-    recipe_id: Option<&str>,
-    message: &str,
-) -> Result<CompatibilityDiagnostic, TryReserveError> {
-    Ok(CompatibilityDiagnostic {
-        code,
-        severity: DiagnosticSeverity::Warning,
-        format,
-        effects: owned_effects(effects)?,
-        element_id: element_id.map(try_owned).transpose()?,
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned(message)?,
-        details: Some(Box::new(ErrorDetails::Compatibility {
-            recovery,
-            recipe_id: recipe_id.map(try_owned).transpose()?,
-        })),
-        order: DiagnosticOrder::default(),
-    })
-}
-
-fn owned_effects(effects: &[DiagnosticEffect]) -> Result<Vec<DiagnosticEffect>, TryReserveError> {
-    let mut owned = Vec::new();
-    owned.try_reserve_exact(effects.len())?;
-    owned.extend_from_slice(effects);
-    Ok(owned)
 }
 
 fn try_owned(value: &str) -> Result<String, TryReserveError> {

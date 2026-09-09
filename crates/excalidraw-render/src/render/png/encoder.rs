@@ -9,10 +9,10 @@
 use miniz_oxide::deflate::core::{compress_to_output, CompressorOxide, TDEFLFlush, TDEFLStatus};
 use miniz_oxide::DataFormat;
 
-use crate::{DiagnosticCode, MetadataComponent};
+use crate::diagnostic_registry::MetadataFailure;
 
 use super::super::metadata::ArtifactMetadata;
-use super::super::{metadata_embedding_error, FormatEncodeError};
+use super::super::FormatEncodeError;
 
 /// Bytes per RGBA sample; the filter distance to the left neighbour.
 const PIXEL_BYTES: usize = 4;
@@ -136,12 +136,8 @@ impl PngIdatStream {
                 })?;
                 text.extend_from_slice(b"application/vnd.excalidraw+json\0");
                 text.extend_from_slice(wrapper);
-                append_chunk(&mut png, *b"tEXt", &text).map_err(|_| {
-                    metadata_embedding_error(
-                        DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
-                        MetadataComponent::EmbeddedScene,
-                    )
-                })?;
+                append_chunk(&mut png, *b"tEXt", &text)
+                    .map_err(|_| FormatEncodeError::Metadata(MetadataFailure::SceneEmbedding))?;
             }
             if let Some(manifest) = metadata.manifest() {
                 let mut text = Vec::new();
@@ -157,12 +153,8 @@ impl PngIdatStream {
                 })?;
                 text.extend_from_slice(b"excalidraw-render:artifact-manifest\0\0\0\0\0");
                 text.extend_from_slice(manifest.as_bytes());
-                append_chunk(&mut png, *b"iTXt", &text).map_err(|_| {
-                    metadata_embedding_error(
-                        DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
-                        MetadataComponent::Manifest,
-                    )
-                })?;
+                append_chunk(&mut png, *b"iTXt", &text)
+                    .map_err(|_| FormatEncodeError::Metadata(MetadataFailure::ManifestEmbedding))?;
             }
         }
         append_chunk(&mut png, *b"IEND", &[])?;

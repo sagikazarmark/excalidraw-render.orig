@@ -7,10 +7,23 @@ use super::{
     codes_and_pointers, normalize_scene, pointers, reported_diagnostics, NormalizationOutcome,
     NormalizedElementKind, NormalizedRoundness,
 };
+use crate::outcome::{DiagnosticAttribution, DiagnosticOrder, PendingDiagnostic};
 use crate::{
     CompatibilityDiagnostic, CompatibilityRevision, DiagnosticCode, DiagnosticEffect, OutputFormat,
     SceneDocument, SupplementalAssets,
 };
+
+/// A diagnostic `normalize_scene` emitted as its `ordinal`th, retained in
+/// emission order without a source owner, so a test can read it as the report
+/// would carry it.
+fn emitted(diagnostic: PendingDiagnostic, ordinal: usize) -> CompatibilityDiagnostic {
+    diagnostic.retained(DiagnosticOrder::retained(
+        None,
+        None,
+        u64::try_from(ordinal).expect("emission ordinal fits"),
+        DiagnosticAttribution::SceneGlobal,
+    ))
+}
 
 /// The diagnostics a default SVG render of `source` reports from
 /// normalization, in report order, with the normalized outcome.
@@ -389,7 +402,7 @@ fn short_linear_point_arrays_use_the_silent_pinned_migration() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -563,7 +576,7 @@ fn malformed_assigned_fields_emit_source_located_substitution_diagnostics() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -574,7 +587,7 @@ fn malformed_assigned_fields_emit_source_located_substitution_diagnostics() {
     assert_eq!(
         diagnostics
             .iter()
-            .map(|diagnostic| (diagnostic.code(), diagnostic.json_pointer.as_str()))
+            .map(|diagnostic| (diagnostic.code(), diagnostic.json_pointer()))
             .collect::<Vec<_>>(),
         [
             (
@@ -606,7 +619,7 @@ fn malformed_assigned_fields_emit_source_located_substitution_diagnostics() {
     );
     assert!(diagnostics
         .iter()
-        .filter(|diagnostic| diagnostic.code != DiagnosticCode::IMAGE_MISSING_FILE)
+        .filter(|diagnostic| diagnostic.code() != DiagnosticCode::IMAGE_MISSING_FILE)
         .all(|diagnostic| {
             serde_json::to_value(diagnostic).expect("diagnostic serializes")["details"]["recovery"]
                 == "substituted"
@@ -615,7 +628,7 @@ fn malformed_assigned_fields_emit_source_located_substitution_diagnostics() {
         serde_json::to_value(
             diagnostics
                 .iter()
-                .find(|diagnostic| diagnostic.code == DiagnosticCode::IMAGE_MISSING_FILE)
+                .find(|diagnostic| diagnostic.code() == DiagnosticCode::IMAGE_MISSING_FILE)
                 .expect("missing image diagnostic is retained"),
         )
         .expect("diagnostic serializes")["details"]["recovery"],
@@ -637,7 +650,7 @@ fn only_referenced_file_records_receive_deterministic_record_repairs() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -653,7 +666,7 @@ fn only_referenced_file_records_receive_deterministic_record_repairs() {
     assert_eq!(
         diagnostics
             .iter()
-            .map(|diagnostic| (diagnostic.code(), diagnostic.json_pointer.as_str()))
+            .map(|diagnostic| (diagnostic.code(), diagnostic.json_pointer()))
             .collect::<Vec<_>>(),
         [
             (
@@ -668,7 +681,7 @@ fn only_referenced_file_records_receive_deterministic_record_repairs() {
     );
     assert!(diagnostics
         .iter()
-        .all(|diagnostic| diagnostic.element_id.is_none()));
+        .all(|diagnostic| diagnostic.element_id().is_none()));
 }
 
 #[test]
@@ -685,7 +698,7 @@ fn invalid_file_created_values_remain_ignored() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -711,7 +724,7 @@ fn malformed_elbow_binding_members_use_their_narrowest_recovery() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -733,7 +746,7 @@ fn malformed_elbow_binding_members_use_their_narrowest_recovery() {
     assert_eq!(
         diagnostics
             .iter()
-            .map(|diagnostic| diagnostic.json_pointer.as_str())
+            .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
         [
             "/elements/0/startBinding/fixedPoint",
@@ -775,7 +788,7 @@ fn a_missing_nested_binding_member_keeps_its_parent_members_source_order() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -786,7 +799,7 @@ fn a_missing_nested_binding_member_keeps_its_parent_members_source_order() {
     assert_eq!(
         diagnostics
             .iter()
-            .map(|diagnostic| diagnostic.json_pointer.as_str())
+            .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
         [
             "/elements/0/startBinding/gap",
@@ -809,7 +822,7 @@ fn malformed_nested_linear_point_marks_only_that_geometry_unavailable() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -824,7 +837,7 @@ fn malformed_nested_linear_point_marks_only_that_geometry_unavailable() {
     let [diagnostic] = diagnostics.as_slice() else {
         panic!("one malformed point coordinate is diagnosed");
     };
-    assert_eq!(diagnostic.json_pointer, "/elements/0/points/1/1");
+    assert_eq!(diagnostic.json_pointer(), "/elements/0/points/1/1");
     assert_eq!(
         serde_json::to_value(diagnostic).expect("diagnostic serializes")["details"],
         serde_json::json!({
@@ -849,7 +862,7 @@ fn invalid_crop_members_disable_crop_and_report_each_member() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -864,7 +877,7 @@ fn invalid_crop_members_disable_crop_and_report_each_member() {
     assert_eq!(
         diagnostics
             .iter()
-            .map(|diagnostic| diagnostic.json_pointer.as_str())
+            .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
         [
             "/elements/0/crop/x",
@@ -876,7 +889,7 @@ fn invalid_crop_members_disable_crop_and_report_each_member() {
         ]
     );
     assert!(diagnostics.iter().all(|diagnostic| {
-        diagnostic.effects == [DiagnosticEffect::Visual]
+        diagnostic.effects() == [DiagnosticEffect::Visual]
             && serde_json::to_value(diagnostic).expect("diagnostic serializes")["details"]
                 ["recovery"]
                 == "omitted"
@@ -897,7 +910,7 @@ fn invalid_arrow_defaults_are_substituted_and_diagnosed() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -914,7 +927,7 @@ fn invalid_arrow_defaults_are_substituted_and_diagnosed() {
     assert_eq!(
         diagnostics
             .iter()
-            .map(|diagnostic| diagnostic.json_pointer.as_str())
+            .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
         [
             "/elements/0/elbowed",
@@ -938,7 +951,7 @@ fn invalid_line_arrowhead_metadata_is_substituted_and_diagnosed() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -954,7 +967,7 @@ fn invalid_line_arrowhead_metadata_is_substituted_and_diagnosed() {
     assert_eq!(
         diagnostics
             .iter()
-            .map(|diagnostic| diagnostic.json_pointer.as_str())
+            .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
         ["/elements/0/startArrowhead", "/elements/0/endArrowhead",]
     );
@@ -974,7 +987,7 @@ fn invalid_freedraw_state_uses_the_declared_local_recoveries() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -992,7 +1005,7 @@ fn invalid_freedraw_state_uses_the_declared_local_recoveries() {
     assert_eq!(
         diagnostics
             .iter()
-            .map(|diagnostic| diagnostic.json_pointer.as_str())
+            .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
         [
             "/elements/0/points",
@@ -1016,7 +1029,7 @@ fn malformed_freedraw_points_do_not_invalidate_valid_pressures() {
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push(diagnostic);
+                diagnostics.push(emitted(diagnostic, diagnostics.len()));
             }
             Ok::<_, ()>(())
         },
@@ -1032,7 +1045,7 @@ fn malformed_freedraw_points_do_not_invalidate_valid_pressures() {
     assert_eq!(
         diagnostics
             .iter()
-            .map(|diagnostic| diagnostic.json_pointer.as_str())
+            .map(|diagnostic| diagnostic.json_pointer())
             .collect::<Vec<_>>(),
         ["/elements/0/points/1/1"]
     );
@@ -1072,7 +1085,7 @@ fn normalization_resource_events_have_stable_record_names_and_owners() {
                     local_owner,
                     ..
                 } => diagnostic_owners
-                    .push((diagnostic.json_pointer, local_owner.map(str::to_owned))),
+                    .push((diagnostic.into_location().1, local_owner.map(str::to_owned))),
                 super::NormalizationEvent::PreflightRecord { .. } => {}
             }
             Ok::<_, ()>(())
@@ -1134,7 +1147,7 @@ fn normalized_single_element(
         OutputFormat::Svg,
         |event| {
             if let super::NormalizationEvent::Diagnostic { diagnostic, .. } = event {
-                diagnostics.push((diagnostic.code(), diagnostic.json_pointer.clone()));
+                diagnostics.push((diagnostic.code(), diagnostic.json_pointer().to_owned()));
             }
             Ok::<_, ()>(())
         },

@@ -3,10 +3,11 @@ use super::resolve::{
     ResolvedImageCornerClip, ResolvedImageCropPlacement, ResolvedImageProjection,
 };
 use super::*;
+use crate::diagnostic_registry::{DiagnosticKind, MetadataFailure};
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
 use crate::{
-    font_metadata::FamilyMetrics, CompatibilityDiagnostic, CompatibilityRevision, DiagnosticCode,
-    DiagnosticEffect, DiagnosticSeverity, Renderer, ResourceLimits,
+    font_metadata::FamilyMetrics, CompatibilityRevision, DiagnosticCode, DiagnosticEffect,
+    Renderer, ResourceLimits,
 };
 use base64::Engine as _;
 use serde_json::json;
@@ -325,9 +326,12 @@ fn diagnostic_transaction_uses_fatal_precedence_and_never_appends_a_rejection() 
             .expect_err("the second diagnostic crosses an aggregate limit");
 
         assert_eq!(error.code(), expected_code);
-        let mut retained = diagnostic;
-        retained.order.owner_index = scene.source_owner_order("elements", 0);
-        retained.order.retention_ordinal = 0;
+        let retained = diagnostic.retained(DiagnosticOrder::retained(
+            Some(scene.source_owner_order("elements", 0)),
+            None,
+            0,
+            DiagnosticAttribution::SceneGlobal,
+        ));
         assert_eq!(error.report().diagnostics(), &[retained]);
     }
 }
@@ -366,9 +370,12 @@ fn later_output_exhaustion_preserves_the_accumulated_report() {
         .expect_err("output exhaustion is fatal");
 
     assert_eq!(error.code(), ErrorCode::RESOURCE_OUTPUT_BYTES_EXCEEDED);
-    let mut retained = diagnostic;
-    retained.order.owner_index = scene.source_owner_order("elements", 0);
-    retained.order.retention_ordinal = 0;
+    let retained = diagnostic.retained(DiagnosticOrder::retained(
+        Some(scene.source_owner_order("elements", 0)),
+        None,
+        0,
+        DiagnosticAttribution::SceneGlobal,
+    ));
     assert_eq!(error.report().diagnostics(), &[retained]);
 }
 
@@ -1917,11 +1924,7 @@ fn scene_carrier_failure_omits_only_the_scene_component() {
             0,
             |metadata| {
                 if metadata.canonical_scene().is_some() {
-                    Err(FormatEncodeError::Metadata(MetadataFailure {
-                        code: DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
-                        component: MetadataComponent::EmbeddedScene,
-                        operation: MetadataOperation::Embedding,
-                    }))
+                    Err(FormatEncodeError::Metadata(MetadataFailure::SceneEmbedding))
                 } else {
                     Ok(metadata.manifest().unwrap_or_default().as_bytes().to_vec())
                 }
@@ -1966,11 +1969,9 @@ fn manifest_carrier_failure_without_notices_drops_all_optional_metadata() {
             0,
             |metadata| {
                 if metadata.manifest().is_some() {
-                    Err(FormatEncodeError::Metadata(MetadataFailure {
-                        code: DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
-                        component: MetadataComponent::Manifest,
-                        operation: MetadataOperation::Embedding,
-                    }))
+                    Err(FormatEncodeError::Metadata(
+                        MetadataFailure::ManifestEmbedding,
+                    ))
                 } else {
                     Ok(b"required artifact".to_vec())
                 }
@@ -2059,18 +2060,18 @@ fn diagnosed_unbounded_omission_has_its_own_semantic_transaction() {
     assert_eq!(omission["deltas"]["total_work_units"], 8);
 }
 
-fn test_diagnostic() -> CompatibilityDiagnostic {
-    CompatibilityDiagnostic {
-        code: DiagnosticCode::COLOR_INVALID,
-        severity: DiagnosticSeverity::Warning,
-        format: OutputFormat::Svg,
-        effects: vec![DiagnosticEffect::Visual],
-        element_id: Some("element-1".to_owned()),
-        json_pointer: "/elements/0/color".to_owned(),
-        message: "invalid color substituted".to_owned(),
-        details: None,
-        order: DiagnosticOrder::default(),
-    }
+/// An invalid-color diagnostic on the first element, as a stage would emit
+/// it before the session retains it.
+fn test_diagnostic() -> PendingDiagnostic {
+    PendingDiagnostic::new(
+        DiagnosticKind::InvalidColor,
+        OutputFormat::Svg,
+        &[DiagnosticEffect::Visual],
+        Some("element-1"),
+        "/elements/0/color",
+        "invalid color substituted",
+    )
+    .expect("the test diagnostic allocates")
 }
 
 #[test]

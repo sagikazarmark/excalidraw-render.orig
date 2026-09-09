@@ -67,17 +67,17 @@ mod text;
 use std::sync::{Arc, Mutex};
 
 use crate::catalog::RevisionCatalog;
-use crate::outcome::{DiagnosticAttribution, DiagnosticOrder};
+use crate::diagnostic_registry::MetadataFailure;
+use crate::outcome::{DiagnosticAttribution, DiagnosticOrder, PendingDiagnostic};
 use crate::resource_accounting::{
     ResourceAccount, ResourceContext, ResourceCrossing, ResourceDelta, ResourceMeter,
     ResourcePhase, ResourceRecordKind,
 };
 use crate::scene::OriginalJsonVisitError;
 use crate::{
-    Artifact, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode, ErrorCode,
-    ErrorDetails, FiniteValue, Measurement, MetadataComponent, MetadataOperation, OutputFormat,
-    ReferenceProfileIdentity, RenderError, RenderErrorCategory, RenderOutcome, RenderRequest,
-    ResourceValue, SceneDocument, Sizing, ValueKind,
+    Artifact, CompatibilityDiagnostic, CompatibilityReport, ErrorCode, ErrorDetails, FiniteValue,
+    Measurement, OutputFormat, ReferenceProfileIdentity, RenderError, RenderErrorCategory,
+    RenderOutcome, RenderRequest, ResourceValue, SceneDocument, Sizing, ValueKind,
 };
 
 use self::frame_target::FrameTarget;
@@ -96,24 +96,6 @@ pub(super) enum FormatEncodeError {
         subject_kind: &'static str,
         subject: &'static str,
     },
-}
-
-#[derive(Debug)]
-pub(super) struct MetadataFailure {
-    code: DiagnosticCode,
-    component: MetadataComponent,
-    operation: MetadataOperation,
-}
-
-pub(super) const fn metadata_embedding_error(
-    code: DiagnosticCode,
-    component: MetadataComponent,
-) -> FormatEncodeError {
-    FormatEncodeError::Metadata(MetadataFailure {
-        code,
-        component,
-        operation: MetadataOperation::Embedding,
-    })
 }
 
 pub(crate) fn render(
@@ -186,13 +168,13 @@ pub(crate) fn render_frame_scoped(
     let global_diagnostics = report
         .diagnostics()
         .iter()
-        .filter(|diagnostic| diagnostic.order.attribution == DiagnosticAttribution::SceneGlobal)
+        .filter(|diagnostic| diagnostic.order().attribution == DiagnosticAttribution::SceneGlobal)
         .cloned()
         .collect();
     let target_diagnostics = report
         .diagnostics()
         .iter()
-        .filter(|diagnostic| diagnostic.order.attribution == DiagnosticAttribution::Target)
+        .filter(|diagnostic| diagnostic.order().attribution == DiagnosticAttribution::Target)
         .cloned()
         .collect();
     (result, global_diagnostics, target_diagnostics)
@@ -268,14 +250,14 @@ impl ResourceAccount for RenderResourceAccount<'_> {
 }
 
 struct PendingAnimationDiagnostic {
-    diagnostic: CompatibilityDiagnostic,
+    diagnostic: PendingDiagnostic,
     local_owner: String,
     source_order: u64,
     working_bytes: u64,
 }
 
 struct PendingNormalizationDiagnostic {
-    diagnostic: CompatibilityDiagnostic,
+    diagnostic: PendingDiagnostic,
     local_owner: Option<String>,
     source_order: u64,
     source_position: u64,
@@ -583,7 +565,7 @@ impl RenderSession {
         request: &RenderRequest,
         phase: ResourcePhase,
         event: &'static str,
-        diagnostic: CompatibilityDiagnostic,
+        diagnostic: PendingDiagnostic,
     ) -> Result<(), RenderError> {
         self.retain_diagnostic_with_owner(
             request,
@@ -646,9 +628,9 @@ impl RenderSession {
             ResourceContext::new(
                 ResourcePhase::SharedSemanticResolution,
                 "pending_image_animation_flattened",
-                &pending.diagnostic.json_pointer,
+                pending.diagnostic.json_pointer(),
             )
-            .with_element_id(pending.diagnostic.element_id.as_deref())
+            .with_element_id(pending.diagnostic.element_id())
             .with_local_owner(Some(&pending.local_owner)),
             pending.working_bytes,
         )
@@ -659,11 +641,11 @@ impl RenderSession {
         request: &RenderRequest,
         phase: ResourcePhase,
         event: &'static str,
-        mut diagnostic: CompatibilityDiagnostic,
+        diagnostic: PendingDiagnostic,
         ownership: DiagnosticOwnership<'_>,
     ) -> Result<(), RenderError> {
-        let pointer_bytes = u64::try_from(diagnostic.json_pointer.len()).unwrap_or(u64::MAX);
-        let element_id_bytes = diagnostic.element_id.as_deref().map_or(0, |element_id| {
+        let pointer_bytes = u64::try_from(diagnostic.json_pointer().len()).unwrap_or(u64::MAX);
+        let element_id_bytes = diagnostic.element_id().map_or(0, |element_id| {
             u64::try_from(element_id.len()).unwrap_or(u64::MAX)
         });
         let record_bytes = 512_u64
@@ -671,9 +653,9 @@ impl RenderSession {
             .saturating_add(logical_aligned_bytes(element_id_bytes));
         self.transact(
             request,
-            ResourceContext::new(phase, event, &diagnostic.json_pointer)
-                .with_element_id(diagnostic.element_id.as_deref())
-                .with_local_owner(ownership.local_owner.or(diagnostic.element_id.as_deref()))
+            ResourceContext::new(phase, event, diagnostic.json_pointer())
+                .with_element_id(diagnostic.element_id())
+                .with_local_owner(ownership.local_owner.or(diagnostic.element_id()))
                 .with_record(ResourceRecordKind::Diagnostic),
             ResourceDelta {
                 diagnostics: 1,
@@ -683,30 +665,31 @@ impl RenderSession {
             },
         )?;
         if self.report.diagnostics.try_reserve(1).is_err() {
+            let (element_id, json_pointer) = diagnostic.into_location();
             return Err(self.memory_failure_at(
                 request,
                 "compatibility_report",
                 "diagnostic_occurrence",
-                diagnostic.element_id,
-                diagnostic.json_pointer,
+                element_id,
+                json_pointer,
             ));
         }
-        diagnostic.order = DiagnosticOrder::retained(
+        let order = DiagnosticOrder::retained(
             ownership.source_order.or_else(|| {
-                element_owner_index(&diagnostic.json_pointer)
+                element_owner_index(diagnostic.json_pointer())
                     .map(|index| self.element_source_order_base.saturating_add(index))
             }),
             ownership.source_position,
             u64::try_from(self.report.diagnostics.len()).unwrap_or(u64::MAX),
             self.diagnostic_attribution,
         );
-        self.report.diagnostics.push(diagnostic);
+        self.report.diagnostics.push(diagnostic.retained(order));
         Ok(())
     }
 
     fn scope_frame_diagnostics(&mut self, participating: &[usize]) {
         self.report.diagnostics.retain_mut(|diagnostic| {
-            let Some(source_index) = element_owner_index(&diagnostic.json_pointer) else {
+            let Some(source_index) = element_owner_index(diagnostic.json_pointer()) else {
                 return true;
             };
             let Ok(source_index) = usize::try_from(source_index) else {
@@ -715,7 +698,7 @@ impl RenderSession {
             if participating.binary_search(&source_index).is_err() {
                 return false;
             }
-            diagnostic.order.attribution = DiagnosticAttribution::Target;
+            diagnostic.attribute_to_target();
             true
         });
     }
@@ -728,23 +711,24 @@ impl RenderSession {
     ) -> Result<(), RenderError> {
         let pending = std::mem::take(&mut self.pending_frame_normalization_diagnostics);
         for pending in pending {
-            let element_source = element_owner_index(&pending.diagnostic.json_pointer)
+            let element_source = element_owner_index(pending.diagnostic.json_pointer())
                 .and_then(|source_index| usize::try_from(source_index).ok());
             if element_source
                 .is_some_and(|source_index| participating.binary_search(&source_index).is_err())
             {
                 continue;
             }
-            if pending.diagnostic.json_pointer.starts_with("/files/")
+            if pending.diagnostic.json_pointer().starts_with("/files/")
                 && !selected_file_ids.iter().any(|file_id| {
-                    crate::scene::pointer_child("/files", file_id)
-                        .is_ok_and(|pointer| pending.diagnostic.json_pointer.starts_with(&pointer))
+                    crate::scene::pointer_child("/files", file_id).is_ok_and(|pointer| {
+                        pending.diagnostic.json_pointer().starts_with(&pointer)
+                    })
                 })
             {
                 continue;
             }
             self.diagnostic_attribution = if element_source.is_some()
-                || pending.diagnostic.json_pointer.starts_with("/files/")
+                || pending.diagnostic.json_pointer().starts_with("/files/")
             {
                 DiagnosticAttribution::Target
             } else {

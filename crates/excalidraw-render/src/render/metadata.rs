@@ -4,12 +4,12 @@ use std::fmt::Write as _;
 
 use sha2::{Digest, Sha256};
 
+use crate::diagnostic_registry::MetadataFailure;
 use crate::{
-    CompatibilityReport, DiagnosticCode, DiagnosticSeverity, MetadataComponent, MetadataOperation,
-    ReferenceProfileIdentity, RenderRequest, SceneDocument,
+    CompatibilityReport, DiagnosticSeverity, ReferenceProfileIdentity, RenderRequest, SceneDocument,
 };
 
-use super::{FormatEncodeError, MetadataFailure};
+use super::FormatEncodeError;
 
 #[derive(Clone, Copy)]
 pub(super) enum ManifestTarget<'a> {
@@ -88,22 +88,10 @@ impl ArtifactMetadata {
         let scene_digest = canonical.as_deref().map(sha256_string).transpose()?;
         let scene = canonical
             .map(|canonical| {
-                let compressed = stored_zlib(&canonical).map_err(|error| {
-                    metadata_failure(
-                        error,
-                        DiagnosticCode::METADATA_SCENE_COMPRESSION_FAILED,
-                        MetadataComponent::EmbeddedScene,
-                        MetadataOperation::Compression,
-                    )
-                })?;
-                let wrapper = scene_wrapper(&compressed).map_err(|error| {
-                    metadata_failure(
-                        error,
-                        DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
-                        MetadataComponent::EmbeddedScene,
-                        MetadataOperation::Embedding,
-                    )
-                })?;
+                let compressed = stored_zlib(&canonical)
+                    .map_err(|error| metadata_failure(error, MetadataFailure::SceneCompression))?;
+                let wrapper = scene_wrapper(&compressed)
+                    .map_err(|error| metadata_failure(error, MetadataFailure::SceneEmbedding))?;
                 Ok(EmbeddedScene {
                     canonical,
                     wrapper,
@@ -128,14 +116,7 @@ impl ArtifactMetadata {
                 )
             })
             .transpose()
-            .map_err(|error| {
-                metadata_failure(
-                    error,
-                    DiagnosticCode::METADATA_MANIFEST_SERIALIZATION_FAILED,
-                    MetadataComponent::Manifest,
-                    MetadataOperation::Serialization,
-                )
-            })?;
+            .map_err(|error| metadata_failure(error, MetadataFailure::ManifestSerialization))?;
         let metadata = Self { manifest, scene };
         #[cfg(debug_assertions)]
         debug_assert_eq!(
@@ -693,22 +674,13 @@ fn metadata_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("artifact metadata size exceeds the supported range".to_owned())
 }
 
-fn metadata_failure(
-    error: FormatEncodeError,
-    code: DiagnosticCode,
-    component: MetadataComponent,
-    operation: MetadataOperation,
-) -> FormatEncodeError {
+fn metadata_failure(error: FormatEncodeError, failure: MetadataFailure) -> FormatEncodeError {
     match error {
         FormatEncodeError::MemoryUnavailable { .. } | FormatEncodeError::SvgFontSubset { .. } => {
             error
         }
         FormatEncodeError::Encoding(_) | FormatEncodeError::Metadata(_) => {
-            FormatEncodeError::Metadata(MetadataFailure {
-                code,
-                component,
-                operation,
-            })
+            FormatEncodeError::Metadata(failure)
         }
     }
 }

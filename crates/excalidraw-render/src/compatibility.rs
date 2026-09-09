@@ -524,6 +524,50 @@ pub enum ErrorDetails {
     },
 }
 
+impl ErrorDetails {
+    /// The recovery the details carry: the fixed one of a compatibility,
+    /// asset, missing-glyph, metadata or nested-source detail, the optional
+    /// one of a resource limit or PDF raster fallback (null when fatal), and
+    /// none for the detail kinds that describe no recovery.
+    pub(crate) fn recovery(&self) -> Option<Recovery> {
+        match self {
+            Self::Compatibility { recovery, .. }
+            | Self::Asset { recovery, .. }
+            | Self::MissingGlyph { recovery, .. }
+            | Self::Metadata { recovery, .. }
+            | Self::NestedSource { recovery, .. } => Some(*recovery),
+            Self::ResourceLimit { recovery, .. } | Self::PdfRasterFallback { recovery, .. } => {
+                *recovery
+            }
+            Self::ParseLimit { .. }
+            | Self::Revision { .. }
+            | Self::RequestValue { .. }
+            | Self::MemoryUnavailable { .. }
+            | Self::SvgFontSubsetFailure { .. } => None,
+        }
+    }
+
+    /// The fallback recipe identity the details name, when the compatibility
+    /// or asset recovery painted a placeholder.
+    pub(crate) fn recipe_id(&self) -> Option<&str> {
+        match self {
+            Self::Compatibility { recipe_id, .. } | Self::Asset { recipe_id, .. } => {
+                recipe_id.as_deref()
+            }
+            Self::ParseLimit { .. }
+            | Self::Revision { .. }
+            | Self::RequestValue { .. }
+            | Self::ResourceLimit { .. }
+            | Self::MemoryUnavailable { .. }
+            | Self::MissingGlyph { .. }
+            | Self::SvgFontSubsetFailure { .. }
+            | Self::Metadata { .. }
+            | Self::NestedSource { .. }
+            | Self::PdfRasterFallback { .. } => None,
+        }
+    }
+}
+
 /// Stable stage vocabulary for a direct-SVG font subset failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[non_exhaustive]
@@ -564,6 +608,24 @@ pub enum Recovery {
     Rasterized,
     /// Optional metadata was omitted.
     MetadataOmitted,
+}
+
+impl Recovery {
+    /// The recovery the scene-surface manifest spells `recovery`, if any.
+    pub(crate) fn from_manifest(recovery: &str) -> Option<Self> {
+        match recovery {
+            "repaired" => Some(Self::Repaired),
+            "ignored" => Some(Self::Ignored),
+            "placeholder" => Some(Self::Placeholder),
+            "omitted" => Some(Self::Omitted),
+            "removed" => Some(Self::Removed),
+            "substituted" => Some(Self::Substituted),
+            "flattened" => Some(Self::Flattened),
+            "rasterized" => Some(Self::Rasterized),
+            "metadata_omitted" => Some(Self::MetadataOmitted),
+            _ => None,
+        }
+    }
 }
 
 /// Unit used by a stable limit measurement.

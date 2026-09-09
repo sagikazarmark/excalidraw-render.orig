@@ -5,7 +5,11 @@
 //! diagnosed as omitted rather than failing the render, while the mandatory
 //! font notice must fit or the render fails. Charge order is canonical.
 
-use crate::resource_accounting::{ResourceContext, ResourceDelta, ResourcePhase};
+use crate::diagnostic_registry::MetadataFailure;
+use crate::outcome::PendingDiagnostic;
+use crate::resource_accounting::{
+    OptionalMetadataCrossing, ResourceContext, ResourceDelta, ResourcePhase,
+};
 use crate::scene::SourceField;
 use crate::{ErrorCode, MetadataComponent, RenderError, RenderRequest, SceneDocument};
 
@@ -241,11 +245,12 @@ impl RenderSession {
                 ResourceContext::new(ResourcePhase::Metadata, component.event(), ""),
                 generation_delta,
             ) {
+                let diagnostic = self.optional_metadata_omitted(request, crossing)?;
                 self.retain_diagnostic(
                     request,
                     ResourcePhase::Metadata,
                     component.event(),
-                    optional_metadata_omitted_diagnostic(request.format(), crossing),
+                    diagnostic,
                 )?;
                 continue;
             }
@@ -269,7 +274,7 @@ impl RenderSession {
                 }
                 Err(FormatEncodeError::Metadata(failure)) => {
                     self.release_working(request, generation_context, scratch_bytes)?;
-                    if failure.component == MetadataComponent::Manifest {
+                    if failure.component() == MetadataComponent::Manifest {
                         if mandatory_notices.is_some() {
                             return Err(self.format_failure(
                                 request,
@@ -279,22 +284,24 @@ impl RenderSession {
                                 ),
                             ));
                         }
+                        let diagnostic = self.metadata_omitted(request, failure)?;
                         self.retain_diagnostic(
                             request,
                             ResourcePhase::Metadata,
                             "artifact_manifest_metadata_omitted",
-                            metadata_failure_diagnostic(request.format(), failure),
+                            diagnostic,
                         )?;
                         let empty = ArtifactMetadata::empty();
                         let artifact = measure(&empty)
                             .map_err(|error| self.format_failure(request, error_code, error))?;
                         return Ok((empty, artifact));
                     }
+                    let diagnostic = self.metadata_omitted(request, failure)?;
                     self.retain_diagnostic(
                         request,
                         ResourcePhase::Metadata,
                         component.event(),
-                        metadata_failure_diagnostic(request.format(), failure),
+                        diagnostic,
                     )?;
                     continue;
                 }
@@ -312,11 +319,12 @@ impl RenderSession {
                 measurement_delta,
             ) {
                 self.release_working(request, generation_context, scratch_bytes)?;
+                let diagnostic = self.optional_metadata_omitted(request, crossing)?;
                 self.retain_diagnostic(
                     request,
                     ResourcePhase::Metadata,
                     component.event(),
-                    optional_metadata_omitted_diagnostic(request.format(), crossing),
+                    diagnostic,
                 )?;
                 continue;
             }
@@ -336,7 +344,7 @@ impl RenderSession {
                 }
                 Err(FormatEncodeError::Metadata(failure)) => {
                     self.release_working(request, generation_context, scratch_bytes)?;
-                    if failure.component == MetadataComponent::Manifest {
+                    if failure.component() == MetadataComponent::Manifest {
                         if mandatory_notices.is_some() {
                             return Err(self.format_failure(
                                 request,
@@ -346,22 +354,24 @@ impl RenderSession {
                                 ),
                             ));
                         }
+                        let diagnostic = self.metadata_omitted(request, failure)?;
                         self.retain_diagnostic(
                             request,
                             ResourcePhase::Metadata,
                             "artifact_manifest_metadata_omitted",
-                            metadata_failure_diagnostic(request.format(), failure),
+                            diagnostic,
                         )?;
                         let empty = ArtifactMetadata::empty();
                         let artifact = measure(&empty)
                             .map_err(|error| self.format_failure(request, error_code, error))?;
                         return Ok((empty, artifact));
                     }
+                    let diagnostic = self.metadata_omitted(request, failure)?;
                     self.retain_diagnostic(
                         request,
                         ResourcePhase::Metadata,
                         component.event(),
-                        metadata_failure_diagnostic(request.format(), failure),
+                        diagnostic,
                     )?;
                     continue;
                 }
@@ -389,11 +399,12 @@ impl RenderSession {
                 artifact_retention_delta(output_bytes, codec_emission_work),
             ) {
                 self.release_working(request, generation_context, scratch_bytes)?;
+                let diagnostic = self.optional_metadata_omitted(request, crossing)?;
                 self.retain_diagnostic(
                     request,
                     ResourcePhase::Metadata,
                     component.event(),
-                    optional_metadata_omitted_diagnostic(request.format(), crossing),
+                    diagnostic,
                 )?;
             } else {
                 self.release_working(request, generation_context, scratch_bytes)?;
@@ -405,5 +416,28 @@ impl RenderSession {
         }
 
         Ok((accepted_metadata, accepted_artifact))
+    }
+
+    /// The `resource.optional-metadata-omitted` diagnostic for `crossing`,
+    /// or the memory failure when it cannot be built.
+    fn optional_metadata_omitted(
+        &mut self,
+        request: &RenderRequest,
+        crossing: OptionalMetadataCrossing,
+    ) -> Result<PendingDiagnostic, RenderError> {
+        optional_metadata_omitted_diagnostic(request.format(), crossing).map_err(|_| {
+            self.memory_failure(request, "compatibility_report", "optional_metadata_omitted")
+        })
+    }
+
+    /// The `metadata.*` diagnostic for the omitted component `failure`, or
+    /// the memory failure when it cannot be built.
+    fn metadata_omitted(
+        &mut self,
+        request: &RenderRequest,
+        failure: MetadataFailure,
+    ) -> Result<PendingDiagnostic, RenderError> {
+        metadata_failure_diagnostic(request.format(), failure)
+            .map_err(|_| self.memory_failure(request, "compatibility_report", "metadata_omitted"))
     }
 }

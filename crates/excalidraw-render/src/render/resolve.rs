@@ -28,15 +28,15 @@ use outline::resolve_geometry;
 use text::{cjk_subset_trigger, resolve_fonts, resolve_text};
 
 use crate::color::{self, CanonicalColor};
+use crate::diagnostic_registry::{DiagnosticKind, LocalLimit, LocalRecovery};
 use crate::normalization::{NormalizedElement, NormalizedElementKind, NormalizedElementSource};
-use crate::outcome::DiagnosticOrder;
+use crate::outcome::PendingDiagnostic;
 use crate::relationships::ResolvedRelationshipGraph;
 use crate::resource_accounting::ResourceDelta;
 use crate::scene_surface::SurfaceFallback;
 use crate::{
-    CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, DiagnosticSeverity, ErrorCode,
-    ErrorDetails, FiniteValue, Measurement, OutputFormat, Recovery, RenderRequest, ResourceValue,
-    SceneDocument, Sizing, ValueKind,
+    DiagnosticEffect, ErrorCode, FiniteValue, OutputFormat, RenderRequest, ResourceValue,
+    SceneDocument, Sizing,
 };
 
 use super::bound_text::{
@@ -1176,24 +1176,27 @@ pub(super) struct ResolvedTransform {
     pub(super) center_y: f64,
 }
 
+/// A local semantic resource ceiling one element crossed, and how the
+/// diagnostic names it: the limit fixes the code, field and value kind; the
+/// crossing adds the configured and attempted values, the element member the
+/// pointer narrows to (or the element itself), and the message.
 pub(super) struct ElementLocalCrossing {
-    pub(super) code: DiagnosticCode,
-    pub(super) field: &'static str,
+    pub(super) limit: LocalLimit,
     pub(super) configured: ResourceValue,
-    pub(super) value_kind: ValueKind,
     pub(super) attempted: ResourceValue,
     pub(super) pointer_field: Option<&'static str>,
     pub(super) message: &'static str,
 }
 
 impl ElementLocalCrossing {
+    /// The diagnostic of an occurrence omitted after this crossing.
     pub(super) fn diagnostic(
         self,
         format: OutputFormat,
         element_id: Option<&str>,
         element_pointer: &str,
-    ) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-        self.diagnostic_with_recovery(format, element_id, element_pointer, Recovery::Omitted)
+    ) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+        self.diagnostic_with_recovery(format, element_id, element_pointer, LocalRecovery::Omitted)
     }
 
     pub(super) fn diagnostic_with_recovery(
@@ -1201,33 +1204,25 @@ impl ElementLocalCrossing {
         format: OutputFormat,
         element_id: Option<&str>,
         element_pointer: &str,
-        recovery: Recovery,
-    ) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
-        let mut effects = Vec::new();
-        effects.try_reserve_exact(1)?;
-        effects.push(DiagnosticEffect::Visual);
-        Ok(CompatibilityDiagnostic {
-            code: self.code,
-            severity: DiagnosticSeverity::Warning,
-            format,
-            effects,
-            element_id: element_id.map(try_owned).transpose()?,
-            json_pointer: self.pointer_field.map_or_else(
-                || try_owned(element_pointer),
-                |field| crate::scene::pointer_child(element_pointer, field),
-            )?,
-            message: try_owned(self.message)?,
-            details: Some(Box::new(ErrorDetails::ResourceLimit {
-                field: self.field,
+        recovery: LocalRecovery,
+    ) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+        let json_pointer = self.pointer_field.map_or_else(
+            || try_owned(element_pointer),
+            |field| crate::scene::pointer_child(element_pointer, field),
+        )?;
+        PendingDiagnostic::new(
+            DiagnosticKind::LocalLimitCrossed {
+                limit: self.limit,
                 configured: self.configured,
-                value_kind: self.value_kind,
-                measurement: Measurement::Attempted {
-                    value: self.attempted,
-                },
-                recovery: Some(recovery),
-            })),
-            order: DiagnosticOrder::default(),
-        })
+                attempted: self.attempted,
+                recovery,
+            },
+            format,
+            &[DiagnosticEffect::Visual],
+            element_id,
+            &json_pointer,
+            self.message,
+        )
     }
 }
 
@@ -1247,10 +1242,8 @@ pub(super) fn outline_local_crossing(
         let magnitude = value.abs();
         if magnitude > coordinate_limit {
             return Some(ElementLocalCrossing {
-                code: DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,
-                field: "max_coordinate_magnitude",
+                limit: LocalLimit::CoordinateMagnitude,
                 configured: ResourceValue::Finite(FiniteValue::new(coordinate_limit)?),
-                value_kind: ValueKind::Coordinate,
                 attempted: ResourceValue::Finite(FiniteValue::new(magnitude)?),
                 pointer_field: Some(pointer_field),
                 message: "outline omitted because a coordinate exceeds its limit",
@@ -1268,10 +1261,8 @@ pub(super) fn outline_local_crossing(
                 let magnitude = value.abs();
                 if magnitude > coordinate_limit {
                     return Some(ElementLocalCrossing {
-                        code: DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,
-                        field: "max_coordinate_magnitude",
+                        limit: LocalLimit::CoordinateMagnitude,
                         configured: ResourceValue::Finite(FiniteValue::new(coordinate_limit)?),
-                        value_kind: ValueKind::Coordinate,
                         attempted: ResourceValue::Finite(FiniteValue::new(magnitude)?),
                         pointer_field: Some("points"),
                         message: "outline omitted because a coordinate exceeds its limit",
@@ -1288,10 +1279,8 @@ pub(super) fn outline_local_crossing(
     );
     if geometry_segments > geometry_limit {
         return Some(ElementLocalCrossing {
-            code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
-            field: "max_geometry_segments_per_element",
+            limit: LocalLimit::GeometrySegmentsPerElement,
             configured: ResourceValue::Integer(geometry_limit),
-            value_kind: ValueKind::Count,
             attempted: ResourceValue::Integer(geometry_segments),
             pointer_field: None,
             message: "outline omitted because its geometry exceeds its limit",
@@ -1300,10 +1289,8 @@ pub(super) fn outline_local_crossing(
 
     let work_limit = request.resource_limits().max_element_work_units();
     (element_work_units > work_limit).then_some(ElementLocalCrossing {
-        code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
-        field: "max_element_work_units",
+        limit: LocalLimit::ElementWorkUnits,
         configured: ResourceValue::Integer(work_limit),
-        value_kind: ValueKind::WorkUnits,
         attempted: ResourceValue::Integer(element_work_units),
         pointer_field: None,
         message: "outline omitted because its semantic work exceeds its limit",
@@ -1317,23 +1304,19 @@ pub(super) fn generation_local_crossing(
 ) -> ElementLocalCrossing {
     match kind {
         rough::GenerationLimit::GeometrySegments => ElementLocalCrossing {
-            code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
-            field: "max_geometry_segments_per_element",
+            limit: LocalLimit::GeometrySegmentsPerElement,
             configured: ResourceValue::Integer(u64::from(
                 request
                     .resource_limits()
                     .max_geometry_segments_per_element(),
             )),
-            value_kind: ValueKind::Count,
             attempted: ResourceValue::Integer(attempted),
             pointer_field: None,
             message: "outline omitted because its geometry exceeds its limit",
         },
         rough::GenerationLimit::WorkUnits => ElementLocalCrossing {
-            code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
-            field: "max_element_work_units",
+            limit: LocalLimit::ElementWorkUnits,
             configured: ResourceValue::Integer(request.resource_limits().max_element_work_units()),
-            value_kind: ValueKind::WorkUnits,
             attempted: ResourceValue::Integer(attempted),
             pointer_field: None,
             message: "outline omitted because its semantic work exceeds its limit",

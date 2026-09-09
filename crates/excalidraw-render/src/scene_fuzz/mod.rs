@@ -1200,11 +1200,11 @@ fn assert_render_determinism(
             diagnostic.code()
         );
         let key = (
-            diagnostic.order.owner_index,
-            diagnostic.order.source_position,
+            diagnostic.order().owner_index,
+            diagnostic.order().source_position,
             diagnostic.json_pointer(),
             diagnostic.code().as_str(),
-            diagnostic.order.retention_ordinal,
+            diagnostic.order().retention_ordinal,
         );
         if let Some(previous) = previous {
             assert!(

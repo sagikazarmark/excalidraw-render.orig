@@ -1,8 +1,10 @@
+use std::collections::TryReserveError;
 use std::error::Error;
 use std::fmt;
 
 use serde::Serialize;
 
+use crate::diagnostic_registry::DiagnosticKind;
 use crate::{
     CompatibilityRevision, ErrorCode, ErrorDescriptor, ErrorDetails, OutputFormat,
     ReferenceProfileIdentity,
@@ -14,10 +16,6 @@ use crate::{
 pub struct DiagnosticCode(&'static str);
 
 impl DiagnosticCode {
-    pub(crate) const fn manifested(code: &'static str) -> Self {
-        Self(code)
-    }
-
     /// A missing source element ID was repaired.
     pub const NORMALIZATION_MISSING_ELEMENT_ID: Self = Self("normalization.missing-element-id");
     /// A later duplicate source element ID was repaired.
@@ -113,6 +111,62 @@ impl DiagnosticCode {
     /// A permitted isolated PDF closure was rasterized.
     pub const PDF_RASTER_FALLBACK: Self = Self("pdf.raster-fallback");
 
+    /// The complete revision-1 registry (spec section 11.3), in the
+    /// manifest's order. The registry tests check it against the manifest's
+    /// registry mappings.
+    pub(crate) const ALL: [Self; 42] = [
+        Self::NORMALIZATION_MISSING_ELEMENT_ID,
+        Self::NORMALIZATION_DUPLICATE_ELEMENT_ID,
+        Self::NORMALIZATION_MISSING_TIMESTAMP,
+        Self::NORMALIZATION_ZERO_ROUGH_SEED,
+        Self::NORMALIZATION_RELATIONSHIP_CYCLE,
+        Self::COMPATIBILITY_UNSUPPORTED_ELEMENT_TYPE,
+        Self::COMPATIBILITY_MALFORMED_ELEMENT,
+        Self::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+        Self::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+        Self::COMPATIBILITY_KNOWN_ELEMENT_REPLACED,
+        Self::ASSET_SUPPLEMENT_CONFLICT,
+        Self::ASSET_MEDIA_TYPE_MISMATCH,
+        Self::ASSET_MALFORMED_FILE_RECORD,
+        Self::IMAGE_MISSING_FILE,
+        Self::IMAGE_FORBIDDEN_RESOURCE,
+        Self::IMAGE_ANIMATION_FLATTENED,
+        Self::IMAGE_UNSUPPORTED_FORMAT,
+        Self::IMAGE_DECODE_FAILED,
+        Self::IMAGE_UNSAFE_SVG_CONTENT_REMOVED,
+        Self::LINK_UNSAFE_OMITTED,
+        Self::COLOR_INVALID,
+        Self::FONT_LIBERATION_SANS_SUBSTITUTED,
+        Self::FONT_NOTO_EMOJI_SUBSTITUTED,
+        Self::FONT_MISSING_GLYPH,
+        Self::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
+        Self::RESOURCE_ELEMENT_WORK_EXCEEDED,
+        Self::RESOURCE_ASSET_BYTES_EXCEEDED,
+        Self::RESOURCE_ASSET_WORK_EXCEEDED,
+        Self::RESOURCE_IMAGE_DIMENSIONS_EXCEEDED,
+        Self::RESOURCE_IMAGE_PIXELS_EXCEEDED,
+        Self::RESOURCE_NESTED_SVG_COMPLEXITY_EXCEEDED,
+        Self::RESOURCE_NESTED_ASSET_DEPTH_EXCEEDED,
+        Self::RESOURCE_COORDINATE_RANGE_EXCEEDED,
+        Self::RESOURCE_OPTIONAL_METADATA_OMITTED,
+        Self::METADATA_PROVENANCE_SERIALIZATION_FAILED,
+        Self::METADATA_DIAGNOSTIC_SUMMARY_SERIALIZATION_FAILED,
+        Self::METADATA_SCENE_SERIALIZATION_FAILED,
+        Self::METADATA_SCENE_COMPRESSION_FAILED,
+        Self::METADATA_SCENE_EMBEDDING_FAILED,
+        Self::METADATA_MANIFEST_SERIALIZATION_FAILED,
+        Self::METADATA_MANIFEST_EMBEDDING_FAILED,
+        Self::PDF_RASTER_FALLBACK,
+    ];
+
+    /// The registered code with the stable spelling `code`, or `None` when
+    /// the registry has no such code. The sealed scene-surface policy names
+    /// its codes as strings; this is how they become codes, so a spelling the
+    /// registry does not know cannot be reported.
+    pub(crate) fn from_stable_str(code: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|known| known.as_str() == code)
+    }
+
     /// Returns the stable serialized spelling.
     pub const fn as_str(self) -> &'static str {
         self.0
@@ -151,21 +205,135 @@ pub enum DiagnosticEffect {
     Metadata,
 }
 
+impl DiagnosticEffect {
+    /// The effect the scene-surface manifest spells `effect`, if any.
+    pub(crate) fn from_manifest(effect: &str) -> Option<Self> {
+        match effect {
+            "input_repair" => Some(Self::InputRepair),
+            "visual" => Some(Self::Visual),
+            "semantic" => Some(Self::Semantic),
+            "metadata" => Some(Self::Metadata),
+            _ => None,
+        }
+    }
+}
+
+/// One compatibility diagnostic as the stage that diagnosed it emits it:
+/// everything the report carries except the position the session assigns
+/// when it retains it. Built only from a [`DiagnosticKind`], so the code,
+/// severity and details agree by construction, and turned into a
+/// [`CompatibilityDiagnostic`] only by [`PendingDiagnostic::retained`], so a
+/// diagnostic in a report always has a real order.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct PendingDiagnostic {
+    code: DiagnosticCode,
+    severity: DiagnosticSeverity,
+    format: OutputFormat,
+    effects: Vec<DiagnosticEffect>,
+    element_id: Option<String>,
+    json_pointer: String,
+    message: String,
+    details: Option<Box<ErrorDetails>>,
+}
+
+impl PendingDiagnostic {
+    /// The diagnostic `kind` describes, produced for `format` with the
+    /// `effects` the report will list, attributed to `element_id` at the RFC
+    /// 6901 `json_pointer`, with the non-normative `message`.
+    pub(crate) fn new(
+        kind: DiagnosticKind<'_>,
+        format: OutputFormat,
+        effects: &[DiagnosticEffect],
+        element_id: Option<&str>,
+        json_pointer: &str,
+        message: &str,
+    ) -> Result<Self, TryReserveError> {
+        let mut owned_effects = Vec::new();
+        owned_effects.try_reserve_exact(effects.len())?;
+        owned_effects.extend_from_slice(effects);
+        Ok(Self {
+            code: kind.code(),
+            severity: kind.severity(),
+            format,
+            effects: owned_effects,
+            element_id: element_id.map(try_owned).transpose()?,
+            json_pointer: try_owned(json_pointer)?,
+            message: try_owned(message)?,
+            details: Some(Box::new(kind.into_details()?)),
+        })
+    }
+
+    pub(crate) const fn code(&self) -> DiagnosticCode {
+        self.code
+    }
+
+    pub(crate) fn element_id(&self) -> Option<&str> {
+        self.element_id.as_deref()
+    }
+
+    pub(crate) fn json_pointer(&self) -> &str {
+        &self.json_pointer
+    }
+
+    #[cfg(test)]
+    pub(crate) fn effects(&self) -> &[DiagnosticEffect] {
+        &self.effects
+    }
+
+    #[cfg(test)]
+    pub(crate) fn details(&self) -> Option<&ErrorDetails> {
+        self.details.as_deref()
+    }
+
+    /// The owned element ID and pointer, for a failure that names where the
+    /// diagnostic could not be retained.
+    pub(crate) fn into_location(self) -> (Option<String>, String) {
+        (self.element_id, self.json_pointer)
+    }
+
+    /// The diagnostic as the session retains it at `order` in its report.
+    pub(crate) fn retained(self, order: DiagnosticOrder) -> CompatibilityDiagnostic {
+        CompatibilityDiagnostic {
+            code: self.code,
+            severity: self.severity,
+            format: self.format,
+            effects: self.effects,
+            element_id: self.element_id,
+            json_pointer: self.json_pointer,
+            message: self.message,
+            details: self.details,
+            order,
+        }
+    }
+}
+
+fn try_owned(value: &str) -> Result<String, TryReserveError> {
+    let mut owned = String::new();
+    owned.try_reserve_exact(value.len())?;
+    owned.push_str(value);
+    Ok(owned)
+}
+
 /// Stable serializable view of one compatibility diagnostic occurrence.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct CompatibilityDiagnostic {
-    pub(crate) code: DiagnosticCode,
-    pub(crate) severity: DiagnosticSeverity,
-    pub(crate) format: OutputFormat,
-    pub(crate) effects: Vec<DiagnosticEffect>,
-    pub(crate) element_id: Option<String>,
-    pub(crate) json_pointer: String,
-    pub(crate) message: String,
-    pub(crate) details: Option<Box<ErrorDetails>>,
+    code: DiagnosticCode,
+    severity: DiagnosticSeverity,
+    format: OutputFormat,
+    effects: Vec<DiagnosticEffect>,
+    element_id: Option<String>,
+    json_pointer: String,
+    message: String,
+    details: Option<Box<ErrorDetails>>,
     #[serde(skip)]
-    pub(crate) order: DiagnosticOrder,
+    order: DiagnosticOrder,
 }
 
+/// Where the session placed a retained diagnostic in the total report order
+/// of spec section 11.3: the source owner and member position the emitting
+/// stage attributed it to, the order it was retained in, and whether a frame
+/// export attributes it to the scene or to the target. Only
+/// [`DiagnosticOrder::retained`] builds one.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(crate) struct DiagnosticOrder {
     pub(crate) owner_index: u64,
@@ -180,22 +348,12 @@ pub(crate) enum DiagnosticAttribution {
     Target,
 }
 
-impl Default for DiagnosticOrder {
-    fn default() -> Self {
-        Self {
-            owner_index: u64::MAX,
-            source_position: u64::MAX,
-            retention_ordinal: u64::MAX,
-            attribution: DiagnosticAttribution::SceneGlobal,
-        }
-    }
-}
-
 impl DiagnosticOrder {
     /// The order the session gives a diagnostic it retains as the
     /// `retention_ordinal`th of its report: the source owner and member
     /// position the emitting stage attributed it to, or last among the owners
-    /// or positions when the stage knew neither.
+    /// or positions when the stage knew neither, so root-owned and unowned
+    /// diagnostics follow every source-owned one.
     pub(crate) fn retained(
         owner_index: Option<u64>,
         source_position: Option<u64>,
@@ -250,6 +408,36 @@ impl CompatibilityDiagnostic {
     /// Returns typed details required by the diagnostic code.
     pub fn details(&self) -> Option<&ErrorDetails> {
         self.details.as_deref()
+    }
+
+    /// The details, for the one recovery the session revises after
+    /// retention: a resource placeholder it later cannot paint becomes an
+    /// omission.
+    pub(crate) fn details_mut(&mut self) -> Option<&mut ErrorDetails> {
+        self.details.as_deref_mut()
+    }
+
+    /// The position the session retained this diagnostic at.
+    pub(crate) const fn order(&self) -> DiagnosticOrder {
+        self.order
+    }
+
+    /// Attributes the diagnostic to the frame export target instead of the
+    /// scene, once frame scoping knows the owner participates.
+    pub(crate) fn attribute_to_target(&mut self) {
+        self.order.attribution = DiagnosticAttribution::Target;
+    }
+
+    /// Whether the diagnosed occurrence was replaced by a compatibility
+    /// placeholder or omitted, so the element it names is not drawn as its
+    /// source describes: a visual effect with a placeholder or omission
+    /// recovery.
+    pub(crate) fn replaces_element(&self) -> bool {
+        self.effects.contains(&DiagnosticEffect::Visual)
+            && matches!(
+                self.details().and_then(ErrorDetails::recovery),
+                Some(crate::Recovery::Placeholder | crate::Recovery::Omitted)
+            )
     }
 }
 
@@ -469,24 +657,32 @@ impl Error for RenderError {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Recovery, Renderer, ResourceMeasurement, ResourceValue, ValueKind};
+    use crate::diagnostic_registry::{ImageFailure, ImageRecovery, LocalRecovery};
+    use crate::{Renderer, ResourceMeasurement, ResourceValue, ValueKind};
+
+    /// A diagnostic retained first, unowned, in a scene export.
+    fn retained_first(pending: PendingDiagnostic) -> CompatibilityDiagnostic {
+        pending.retained(DiagnosticOrder::retained(
+            None,
+            None,
+            0,
+            DiagnosticAttribution::SceneGlobal,
+        ))
+    }
 
     #[test]
     fn owned_outcome_and_render_failure_expose_only_complete_contract_values() {
-        let diagnostic = CompatibilityDiagnostic {
-            code: DiagnosticCode::COMPATIBILITY_MALFORMED_ELEMENT,
-            severity: DiagnosticSeverity::Warning,
-            format: OutputFormat::Svg,
-            effects: vec![DiagnosticEffect::Visual],
-            element_id: Some("element-1".to_owned()),
-            json_pointer: "/elements/0".to_owned(),
-            message: "malformed element replaced".to_owned(),
-            details: Some(Box::new(ErrorDetails::Compatibility {
-                recovery: Recovery::Placeholder,
-                recipe_id: Some("renderer.malformed-element.v1".to_owned()),
-            })),
-            order: DiagnosticOrder::default(),
-        };
+        let diagnostic = retained_first(
+            PendingDiagnostic::new(
+                DiagnosticKind::MalformedElement(LocalRecovery::Placeholder),
+                OutputFormat::Svg,
+                &[DiagnosticEffect::Visual],
+                Some("element-1"),
+                "/elements/0",
+                "malformed element replaced",
+            )
+            .expect("the diagnostic allocates"),
+        );
         let report = CompatibilityReport {
             schema_version: 1,
             diagnostics: vec![diagnostic],
@@ -573,22 +769,33 @@ mod tests {
 
     #[test]
     fn report_preserves_every_diagnostic_in_supplied_canonical_order() {
-        let diagnostic = |code, pointer: &str| CompatibilityDiagnostic {
-            code,
-            severity: DiagnosticSeverity::Warning,
-            format: OutputFormat::Png,
-            effects: vec![DiagnosticEffect::Visual],
-            element_id: None,
-            json_pointer: pointer.to_owned(),
-            message: "diagnosed".to_owned(),
-            details: None,
-            order: DiagnosticOrder::default(),
+        let diagnostic = |kind, pointer: &str| {
+            retained_first(
+                PendingDiagnostic::new(
+                    kind,
+                    OutputFormat::Png,
+                    &[DiagnosticEffect::Visual],
+                    None,
+                    pointer,
+                    "diagnosed",
+                )
+                .expect("the diagnostic allocates"),
+            )
         };
         let report = CompatibilityReport {
             schema_version: 1,
             diagnostics: vec![
-                diagnostic(DiagnosticCode::COLOR_INVALID, "/elements/0/strokeColor"),
-                diagnostic(DiagnosticCode::IMAGE_DECODE_FAILED, "/files/image/dataURL"),
+                diagnostic(DiagnosticKind::InvalidColor, "/elements/0/strokeColor"),
+                diagnostic(
+                    DiagnosticKind::ImageUnavailable {
+                        failure: ImageFailure::DecodeFailed {
+                            media_type: "image/png",
+                        },
+                        asset_id: "image",
+                        recovery: ImageRecovery::for_format(OutputFormat::Png, false),
+                    },
+                    "/files/image/dataURL",
+                ),
             ],
         };
 

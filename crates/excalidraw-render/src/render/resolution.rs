@@ -4,6 +4,7 @@
 //! canonical charge order (ADR-0002); the journal-replay-vs-live and
 //! scene-vs-frame variants end inside [`RenderSession::acquire_resolution_inputs`].
 
+use crate::diagnostic_registry::LocalRecovery;
 use crate::normalization::{
     normalize_scene_with_assets, NormalizationError, NormalizationOutcome, NormalizedElement,
     NormalizedElementKind, NormalizedFileRecord, NormalizedFreedraw, NormalizedLinear,
@@ -13,10 +14,10 @@ use crate::relationships::{self, RelationshipError, RelationshipOutcome};
 use crate::resource_accounting::{ResourceContext, ResourceDelta, ResourcePhase};
 use crate::scene::{self, SourceField};
 use crate::scene_surface::SurfaceFallback;
-use crate::{OutputFormat, Recovery, RenderError, RenderRequest, SceneDocument};
+use crate::{OutputFormat, RenderError, RenderRequest, SceneDocument};
 
 use super::diagnostics::{
-    diagnostic_replaces_element, diagnostic_uses_non_generic_recovery, known_element_fallback,
+    diagnostic_uses_non_generic_recovery, known_element_fallback,
     known_element_replaced_diagnostic, relationship_cycle_diagnostic,
 };
 use super::frame_target::{
@@ -229,7 +230,7 @@ impl RenderSession {
                 if !self.report.diagnostics.iter().any(|diagnostic| {
                     diagnostic_uses_non_generic_recovery(&source, diagnostic)
                         || diagnostic.element_id() == Some(source.source.id())
-                            && diagnostic_replaces_element(diagnostic)
+                            && diagnostic.replaces_element()
                 }) {
                     let diagnostic = known_element_replaced_diagnostic(
                         request.format(),
@@ -448,11 +449,7 @@ impl RenderSession {
                         request.format(),
                         Some(source.source.id()),
                         source.source.pointer(),
-                        if can_replace {
-                            Recovery::Placeholder
-                        } else {
-                            Recovery::Omitted
-                        },
+                        LocalRecovery::placeholder_if(can_replace),
                     )
                     .map_err(|_| {
                         self.memory_failure(request, "compatibility_report", "local_recovery")

@@ -6,21 +6,22 @@
 
 use std::collections::TryReserveError;
 
+use crate::diagnostic_registry::{DiagnosticKind, FallbackRecipe};
 use crate::font_metadata::FamilyMetrics;
+use crate::outcome::PendingDiagnostic;
 use crate::scene::{
     pointer_child, pointer_index, BindingSource, ElementKind, ElementSource, ImageCropSource,
     NumberArraySource, PointArraySource, SourceField,
 };
 use crate::scene_surface::SceneSurfacePolicy;
-use crate::{DiagnosticCode, DiagnosticEffect, OutputFormat, Recovery};
+use crate::{DiagnosticEffect, OutputFormat, Recovery};
 
 use super::{
-    canonical_zero, compatibility_diagnostic, defaulted, manifested_value, nested_path_ordinal,
-    source_accepts, try_owned, CommonFields, DiagnosticRecovery, ElementDiagnostic,
-    ElementDiagnosticContext, NormalizationParticipation, NormalizedBinding, NormalizedElementKind,
-    NormalizedFrame, NormalizedFreedraw, NormalizedImage, NormalizedImageCrop,
-    NormalizedImageStatus, NormalizedLinear, NormalizedLinearKind, NormalizedRoundness,
-    NormalizedText, SourceDiagnosticPosition,
+    canonical_zero, defaulted, manifested_value, nested_path_ordinal, source_accepts, try_owned,
+    CommonFields, ElementDiagnostic, ElementDiagnosticContext, NormalizationParticipation,
+    NormalizedBinding, NormalizedElementKind, NormalizedFrame, NormalizedFreedraw, NormalizedImage,
+    NormalizedImageCrop, NormalizedImageStatus, NormalizedLinear, NormalizedLinearKind,
+    NormalizedRoundness, NormalizedText, SourceDiagnosticPosition,
 };
 
 pub(super) fn element_fields<'a>(
@@ -638,17 +639,16 @@ fn normalize_linear(
                                     source_points.invalid_component(index).unwrap_or(0),
                                 ),
                             ),
-                            compatibility_diagnostic(
-                                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                            PendingDiagnostic::new(
+                                DiagnosticKind::UnsupportedPropertyValue {
+                                    recovery: Recovery::Placeholder,
+                                    recipe: Some(FallbackRecipe::KnownElementUnavailable),
+                                },
                                 format,
                                 &[DiagnosticEffect::Visual],
                                 Some(element_id),
                                 &pointer,
                                 "malformed linear point used the known-element fallback",
-                                DiagnosticRecovery::new(
-                                    Recovery::Placeholder,
-                                    Some("renderer.known-element-unavailable.v1"),
-                                ),
                             )?,
                         ));
                     }
@@ -905,7 +905,7 @@ fn normalize_freedraw(
             "points",
             &[DiagnosticEffect::Visual],
             Recovery::Placeholder,
-            Some("renderer.known-element-unavailable.v1"),
+            Some(FallbackRecipe::KnownElementUnavailable),
         )?;
     }
     if matches!(source.simulate_pressure, SourceField::Invalid) {
@@ -949,17 +949,16 @@ fn normalize_freedraw(
                             source.member_position("points").unwrap_or(usize::MAX),
                             nested_path_ordinal(index, component.unwrap_or(0)),
                         ),
-                        compatibility_diagnostic(
-                            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                        PendingDiagnostic::new(
+                            DiagnosticKind::UnsupportedPropertyValue {
+                                recovery: Recovery::Placeholder,
+                                recipe: Some(FallbackRecipe::KnownElementUnavailable),
+                            },
                             format,
                             &[DiagnosticEffect::Visual],
                             Some(element_id),
                             &pointer,
                             "malformed freedraw point used the known-element fallback",
-                            DiagnosticRecovery::new(
-                                Recovery::Placeholder,
-                                Some("renderer.known-element-unavailable.v1"),
-                            ),
                         )?,
                     ));
                 }
@@ -1111,14 +1110,16 @@ fn diagnose_invalid_crop_members(
         );
         context.diagnostics.push((
             position,
-            compatibility_diagnostic(
-                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+            PendingDiagnostic::new(
+                DiagnosticKind::UnsupportedPropertyValue {
+                    recovery: Recovery::Omitted,
+                    recipe: None,
+                },
                 context.format,
                 &[DiagnosticEffect::Visual],
                 Some(context.element_id),
                 &pointer,
                 "invalid image crop member disabled crop rendering",
-                DiagnosticRecovery::new(Recovery::Omitted, None),
             )?,
         ));
     }

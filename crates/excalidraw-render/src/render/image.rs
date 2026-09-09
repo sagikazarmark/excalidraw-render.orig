@@ -17,9 +17,8 @@ use crate::resource_accounting::{ResourceContext, ResourceDelta, ResourcePhase};
 use crate::{ErrorDetails, OutputFormat, RenderError, RenderRequest, SceneDocument};
 
 use super::diagnostics::{
-    diagnostic_replaces_element, diagnostic_uses_non_generic_recovery,
-    image_animation_flattened_diagnostic, image_asset_failure_diagnostic,
-    nested_image_failure_diagnostic, unsafe_svg_removal_diagnostic,
+    diagnostic_uses_non_generic_recovery, image_animation_flattened_diagnostic,
+    image_asset_failure_diagnostic, nested_image_failure_diagnostic, unsafe_svg_removal_diagnostic,
 };
 use super::resolve::{
     asset_claim_location, asset_failure_location, logical_aligned_bytes, semantic_identity_hex,
@@ -573,7 +572,7 @@ impl ImageResolver {
                             diagnostic.details(),
                             Some(ErrorDetails::Asset { asset_id, .. })
                                 if asset_id == file_id
-                        ) && diagnostic_replaces_element(diagnostic)
+                        ) && diagnostic.replaces_element()
                     })
                 {
                     let (json_pointer, source_order, source_position, local_owner) =

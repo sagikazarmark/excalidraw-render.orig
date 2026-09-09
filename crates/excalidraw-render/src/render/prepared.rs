@@ -9,15 +9,14 @@
 use std::sync::{Arc, Mutex};
 
 use crate::normalization::{NormalizationError, NormalizationEvent, NormalizationOutcome};
+use crate::outcome::PendingDiagnostic;
 use crate::relationships::{
     self, RelationshipError, RelationshipEvent, RelationshipOutcome, RelationshipTraversal,
 };
 use crate::resource_accounting::{ResourceContext, ResourceDelta, ResourcePhase};
 use crate::scene::{OriginalJsonEntryKind, OriginalJsonVisitError};
 use crate::scene_surface::SceneSurfacePolicy;
-use crate::{
-    CompatibilityDiagnostic, ReferenceProfileIdentity, RenderError, RenderRequest, SceneDocument,
-};
+use crate::{ReferenceProfileIdentity, RenderError, RenderRequest, SceneDocument};
 
 use super::frame_target::{selected_file_ids, FrameSelection, FrameTarget};
 use super::{
@@ -70,7 +69,7 @@ pub(super) enum PreparedNormalizationEvent {
         work_units: u64,
     },
     Diagnostic {
-        diagnostic: CompatibilityDiagnostic,
+        diagnostic: PendingDiagnostic,
         local_owner: Option<String>,
         source_order: u64,
         source_position: u64,

@@ -22,11 +22,12 @@ use nested_svg::{append_chunk, collect_raster_closures, renumber_svg_chunks, svg
 use std::io::Write as _;
 use std::sync::Arc;
 
+use crate::diagnostic_registry::MetadataFailure;
 use crate::normalization::NormalizedElementSource;
 use crate::portable_math::{cube, sin_cos};
 use crate::{
     color::{self, CanonicalColor},
-    DiagnosticCode, LogicalBounds, MetadataComponent, NestedPath, RenderRequest,
+    LogicalBounds, NestedPath, RenderRequest,
 };
 
 use super::font_demand::ResolvedFont;
@@ -42,7 +43,7 @@ use super::resolve::{
 };
 use super::rough::{Drawing, Fill};
 use super::text::{ResolvedLabel, ResolvedText};
-use super::{freedraw, metadata_embedding_error, FormatEncodeError, SvgTreeCache};
+use super::{freedraw, FormatEncodeError, SvgTreeCache};
 
 pub(super) const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
 const ICC_PROFILE_OBJECT: usize = 5;
@@ -419,12 +420,7 @@ impl PdfPlan {
             .and_then(ArtifactMetadata::manifest)
             .map(xmp_metadata)
             .transpose()
-            .map_err(|_| {
-                metadata_embedding_error(
-                    DiagnosticCode::METADATA_MANIFEST_EMBEDDING_FAILED,
-                    MetadataComponent::Manifest,
-                )
-            })?;
+            .map_err(|_| FormatEncodeError::Metadata(MetadataFailure::ManifestEmbedding))?;
         let embedded_scene = self
             .metadata
             .as_ref()

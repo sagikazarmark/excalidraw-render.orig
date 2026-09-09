@@ -6,12 +6,11 @@
 //! that plan implies. They stay `RenderSession` methods because charging the
 //! resource meter is the session's job, not the plan's.
 
+use crate::diagnostic_registry::LocalLimit;
 use crate::resource_accounting::{
     ResourceContext, ResourceDelta, ResourcePhase, ResourceRecordKind,
 };
-use crate::{
-    DiagnosticCode, ErrorCode, RenderError, RenderRequest, ResourceValue, SceneDocument, ValueKind,
-};
+use crate::{ErrorCode, RenderError, RenderRequest, ResourceValue, SceneDocument};
 
 use super::font_demand::{
     build_svg_font_bundle, release_svg_font_encoding_records, svg_font_demand,
@@ -351,10 +350,8 @@ impl RenderSession {
                 if fallback_pixels > surface_limit {
                     self.preflight_local_rejection(request, raster_context, raster_delta)?;
                     let diagnostic = ElementLocalCrossing {
-                                code: DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED,
-                                field: "max_raster_surface_pixels",
+                                limit: LocalLimit::FallbackRasterSurfacePixels,
                                 configured: ResourceValue::Integer(surface_limit),
-                                value_kind: ValueKind::Pixels,
                                 attempted: ResourceValue::Integer(fallback_pixels),
                                 pointer_field: None,
                                 message: "compatibility fallback omitted because its raster surface exceeds its limit",
@@ -462,10 +459,8 @@ impl RenderSession {
             let element_work_limit = request.resource_limits().max_element_work_units();
             if element_work > element_work_limit {
                 let diagnostic = ElementLocalCrossing {
-                    code: DiagnosticCode::RESOURCE_ELEMENT_WORK_EXCEEDED,
-                    field: "max_element_work_units",
+                    limit: LocalLimit::ElementWorkUnits,
                     configured: ResourceValue::Integer(element_work_limit),
-                    value_kind: ValueKind::WorkUnits,
                     attempted: ResourceValue::Integer(element_work),
                     pointer_field: None,
                     message: "outline omitted because its semantic work exceeds its limit",

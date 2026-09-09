@@ -24,13 +24,16 @@ use std::collections::TryReserveError;
 
 use sha2::{Digest, Sha256};
 
-use crate::outcome::DiagnosticOrder;
+use crate::diagnostic_registry::{DiagnosticKind, FallbackRecipe, ImageFailure, ImageRecovery};
+use crate::outcome::PendingDiagnostic;
 use crate::scene::{
     pointer_child, pointer_index, ElementKind, ElementSource, FrameRenderingSource, SourceField,
 };
+#[cfg(test)]
+use crate::{CompatibilityDiagnostic, DiagnosticCode};
 use crate::{
-    CompatibilityDiagnostic, CompatibilityRevision, DiagnosticCode, DiagnosticEffect,
-    DiagnosticSeverity, ErrorDetails, OutputFormat, Recovery, SceneDocument, SupplementalAssets,
+    CompatibilityRevision, DiagnosticEffect, OutputFormat, Recovery, SceneDocument,
+    SupplementalAssets,
 };
 
 const MISSING_ID_DOMAIN: &[u8] = b"excalidraw-render:missing-element-id:v1\0";
@@ -245,7 +248,7 @@ pub(crate) enum NormalizationEvent<'a> {
         work_units: u64,
     },
     Diagnostic {
-        diagnostic: CompatibilityDiagnostic,
+        diagnostic: PendingDiagnostic,
         local_owner: Option<&'a str>,
         source_order: u64,
         source_position: u64,
@@ -269,7 +272,7 @@ enum PendingNormalizationEventKind {
         work_units: u64,
     },
     Diagnostic {
-        diagnostic: CompatibilityDiagnostic,
+        diagnostic: PendingDiagnostic,
         local_owner: Option<String>,
         source_position: u64,
     },
@@ -359,7 +362,7 @@ fn nested_path_ordinal(first: usize, second: usize) -> usize {
         .saturating_add(second.saturating_add(1))
 }
 
-type ElementDiagnostic = (SourceDiagnosticPosition, CompatibilityDiagnostic);
+type ElementDiagnostic = (SourceDiagnosticPosition, PendingDiagnostic);
 
 struct ElementDiagnosticContext<'a, 'scene> {
     diagnostics: &'a mut Vec<ElementDiagnostic>,
@@ -382,12 +385,16 @@ impl ElementDiagnosticContext<'_, '_> {
         self.diagnostics.len() < self.diagnostic_limit
     }
 
+    /// Diagnoses `field`'s unsupported value with the manifested field
+    /// policy's code, effects, recovery and recipe when the sealed policy has
+    /// one for the element kind, otherwise as an unsupported property value
+    /// recovered as the caller's normalization rule says.
     fn unsupported(
         &mut self,
         field: &str,
         effects: &[DiagnosticEffect],
         recovery: Recovery,
-        recipe_id: Option<&str>,
+        recipe: Option<FallbackRecipe>,
     ) -> Result<(), TryReserveError> {
         if !self.can_retain() {
             return Ok(());
@@ -402,25 +409,34 @@ impl ElementDiagnosticContext<'_, '_> {
         let manifested_effects = manifested
             .map(|field| manifested_effects(field.invalid.effects))
             .transpose()?;
-        let code = manifested
-            .and_then(|field| field.invalid.code)
-            .map(DiagnosticCode::manifested)
-            .unwrap_or(DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE);
         let recovery = manifested
             .and_then(|field| field.invalid.recovery)
-            .and_then(manifested_recovery)
+            .and_then(Recovery::from_manifest)
             .unwrap_or(recovery);
-        let recipe_id = manifested
-            .and_then(|field| field.invalid.recipe)
-            .or(recipe_id);
-        let diagnostic = compatibility_diagnostic(
-            code,
+        let manifested_recipe = manifested.and_then(|field| field.invalid.recipe);
+        let kind = match manifested.and_then(|field| field.invalid.code) {
+            Some(code) => {
+                let Some(kind) = DiagnosticKind::manifested(code, recovery, manifested_recipe)
+                else {
+                    return Ok(());
+                };
+                kind
+            }
+            None => DiagnosticKind::UnsupportedPropertyValue {
+                recovery,
+                recipe: match manifested_recipe {
+                    Some(recipe) => FallbackRecipe::from_id(recipe),
+                    None => recipe,
+                },
+            },
+        };
+        let diagnostic = PendingDiagnostic::new(
+            kind,
             self.format,
             manifested_effects.as_deref().unwrap_or(effects),
             Some(self.element_id),
             &pointer,
             "unsupported property value used its revision-1 recovery",
-            DiagnosticRecovery::new(recovery, recipe_id),
         )?;
         self.diagnostics.try_reserve(1)?;
         self.diagnostics.push((
@@ -447,14 +463,16 @@ impl ElementDiagnosticContext<'_, '_> {
         if let Some(component) = component {
             pointer = pointer_index(&pointer, component)?;
         }
-        let diagnostic = compatibility_diagnostic(
-            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+        let diagnostic = PendingDiagnostic::new(
+            DiagnosticKind::UnsupportedPropertyValue {
+                recovery,
+                recipe: None,
+            },
             self.format,
             effects,
             Some(self.element_id),
             &pointer,
             "unsupported nested property value used its revision-1 recovery",
-            DiagnosticRecovery::new(recovery, None),
         )?;
         self.diagnostics.try_reserve(1)?;
         self.diagnostics.push((
@@ -477,8 +495,8 @@ impl ElementDiagnosticContext<'_, '_> {
             return Ok(());
         }
         let pointer = pointer_child(&pointer_child(self.element_pointer, field)?, nested_field)?;
-        let diagnostic = compatibility_diagnostic(
-            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+        let diagnostic = PendingDiagnostic::new(
+            DiagnosticKind::UnsupportedProperty,
             self.format,
             &[
                 DiagnosticEffect::Visual,
@@ -488,7 +506,6 @@ impl ElementDiagnosticContext<'_, '_> {
             Some(self.element_id),
             &pointer,
             "unmatched nested property was ignored by the revision-1 scene-surface policy",
-            DiagnosticRecovery::new(Recovery::Ignored, None),
         )?;
         self.diagnostics.try_reserve(1)?;
         self.diagnostics.push((
@@ -510,8 +527,8 @@ impl ElementDiagnosticContext<'_, '_> {
         if !self.can_retain() {
             return Ok(());
         }
-        let diagnostic = compatibility_diagnostic(
-            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+        let diagnostic = PendingDiagnostic::new(
+            DiagnosticKind::UnsupportedProperty,
             self.format,
             &[
                 DiagnosticEffect::Visual,
@@ -521,7 +538,6 @@ impl ElementDiagnosticContext<'_, '_> {
             Some(self.element_id),
             pointer,
             "unmatched nested property was ignored by the revision-1 scene-surface policy",
-            DiagnosticRecovery::new(Recovery::Ignored, None),
         )?;
         self.diagnostics.try_reserve(1)?;
         self.diagnostics.push((
@@ -543,34 +559,21 @@ impl ElementDiagnosticContext<'_, '_> {
             return Ok(());
         }
         let pointer = pointer_child(self.element_pointer, "fileId")?;
-        let (recovery, recipe_id) = match self.format {
-            OutputFormat::Png => (
-                Recovery::Placeholder,
-                Some(match status {
-                    NormalizedImageStatus::Error => "official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9",
-                    NormalizedImageStatus::Pending | NormalizedImageStatus::Saved => "official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d",
-                }),
-            ),
-            OutputFormat::Svg | OutputFormat::Pdf => (Recovery::Omitted, None),
-        };
-        let asset_id = file_id.unwrap_or("");
-        let diagnostic = CompatibilityDiagnostic {
-            code: DiagnosticCode::IMAGE_MISSING_FILE,
-            severity: DiagnosticSeverity::Warning,
-            format: self.format,
-            effects: manifested_effects(&["visual"])?,
-            element_id: Some(try_owned(self.element_id)?),
-            json_pointer: pointer,
-            message: try_owned("image reference had no authoritative file payload")?,
-            details: Some(Box::new(ErrorDetails::Asset {
-                asset_id: try_owned(asset_id)?,
-                claimed_media_type: None,
-                validated_media_type: None,
-                recovery,
-                recipe_id: recipe_id.map(try_owned).transpose()?,
-            })),
-            order: DiagnosticOrder::default(),
-        };
+        let diagnostic = PendingDiagnostic::new(
+            DiagnosticKind::ImageUnavailable {
+                failure: ImageFailure::MissingFile,
+                asset_id: file_id.unwrap_or(""),
+                recovery: ImageRecovery::for_format(
+                    self.format,
+                    status == NormalizedImageStatus::Error,
+                ),
+            },
+            self.format,
+            &[DiagnosticEffect::Visual],
+            Some(self.element_id),
+            &pointer,
+            "image reference had no authoritative file payload",
+        )?;
         self.diagnostics.try_reserve(1)?;
         self.diagnostics.push((
             SourceDiagnosticPosition::top(
@@ -622,7 +625,7 @@ pub(crate) fn reported_diagnostics(
     frame_names: bool,
     supplemental_assets: &SupplementalAssets,
 ) -> (Vec<CompatibilityDiagnostic>, NormalizationOutcome) {
-    use crate::outcome::DiagnosticAttribution;
+    use crate::outcome::{DiagnosticAttribution, DiagnosticOrder};
 
     let policy = crate::catalog::for_revision(CompatibilityRevision::REVISION_1)
         .expect("revision 1 is cataloged")
@@ -638,19 +641,19 @@ pub(crate) fn reported_diagnostics(
         usize::MAX,
         |event| {
             if let NormalizationEvent::Diagnostic {
-                mut diagnostic,
+                diagnostic,
                 source_order,
                 source_position,
                 ..
             } = event
             {
-                diagnostic.order = DiagnosticOrder::retained(
+                let order = DiagnosticOrder::retained(
                     Some(source_order),
                     Some(source_position),
                     u64::try_from(diagnostics.len()).unwrap_or(u64::MAX),
                     DiagnosticAttribution::SceneGlobal,
                 );
-                diagnostics.push(diagnostic);
+                diagnostics.push(diagnostic.retained(order));
             }
             Ok::<_, ()>(())
         },
@@ -945,7 +948,7 @@ fn normalize_scene_impl<E>(
                     &used_ids,
                 ));
                 id_diagnostic = Some((
-                    DiagnosticCode::NORMALIZATION_DUPLICATE_ELEMENT_ID,
+                    DiagnosticKind::DuplicateElementId,
                     "duplicate element identity was rekeyed deterministically",
                 ));
                 id
@@ -964,7 +967,7 @@ fn normalize_scene_impl<E>(
                     &used_ids,
                 ));
                 id_diagnostic = Some((
-                    DiagnosticCode::NORMALIZATION_MISSING_ELEMENT_ID,
+                    DiagnosticKind::MissingElementId,
                     "missing element identity was repaired deterministically",
                 ));
                 id
@@ -983,7 +986,10 @@ fn normalize_scene_impl<E>(
                     &used_ids,
                 ));
                 id_diagnostic = Some((
-                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                    DiagnosticKind::UnsupportedPropertyValue {
+                        recovery: Recovery::Repaired,
+                        recipe: None,
+                    },
                     "invalid element identity was repaired deterministically",
                 ));
                 id
@@ -994,13 +1000,13 @@ fn normalize_scene_impl<E>(
         let mut element_diagnostics = Vec::new();
         memory_at_source!(element_diagnostics.try_reserve_exact(16));
         if element_diagnostics.len() < element_diagnostic_limit {
-            if let Some((code, message)) = id_diagnostic {
+            if let Some((kind, message)) = id_diagnostic {
                 let pointer = memory_at_source!(pointer_child(&element_pointer, "id"));
-                let diagnostic = memory_at_source!(repair_diagnostic(
-                    code,
+                let diagnostic = memory_at_source!(PendingDiagnostic::new(
+                    kind,
                     format,
                     &[DiagnosticEffect::InputRepair],
-                    &id,
+                    Some(&id),
                     &pointer,
                     message,
                 ));
@@ -1015,11 +1021,11 @@ fn normalize_scene_impl<E>(
             let seed = generated_rough_seed(revision, &id);
             if element_diagnostics.len() < element_diagnostic_limit {
                 let pointer = memory_at_source!(pointer_child(&element_pointer, "seed"));
-                let diagnostic = memory_at_source!(repair_diagnostic(
-                    DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
+                let diagnostic = memory_at_source!(PendingDiagnostic::new(
+                    DiagnosticKind::ZeroRoughSeed,
                     format,
                     &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
-                    &id,
+                    Some(&id),
                     &pointer,
                     "zero Rough seed was repaired deterministically",
                 ));
@@ -1037,11 +1043,11 @@ fn normalize_scene_impl<E>(
 
         if source.updated_is_missing && element_diagnostics.len() < element_diagnostic_limit {
             let pointer = memory_at_source!(pointer_child(&element_pointer, "updated"));
-            let diagnostic = memory_at_source!(repair_diagnostic(
-                DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+            let diagnostic = memory_at_source!(PendingDiagnostic::new(
+                DiagnosticKind::MissingTimestamp,
                 format,
                 &[DiagnosticEffect::InputRepair],
-                &id,
+                Some(&id),
                 &pointer,
                 "missing required timestamp was repaired to canonical zero",
             ));
@@ -1092,8 +1098,8 @@ fn normalize_scene_impl<E>(
         element_diagnostics.sort_by(|(left_position, left), (right_position, right)| {
             left_position
                 .cmp(right_position)
-                .then_with(|| left.json_pointer.cmp(&right.json_pointer))
-                .then_with(|| left.code.as_str().cmp(right.code.as_str()))
+                .then_with(|| left.json_pointer().cmp(right.json_pointer()))
+                .then_with(|| left.code().as_str().cmp(right.code().as_str()))
         });
         let repair_work_units = u64::try_from(element_diagnostics.len())
             .unwrap_or(u64::MAX)
@@ -1285,14 +1291,14 @@ fn replay_normalization_events<E>(
                     .cmp(right_position)
                     .then_with(|| {
                         left_diagnostic
-                            .json_pointer
-                            .cmp(&right_diagnostic.json_pointer)
+                            .json_pointer()
+                            .cmp(right_diagnostic.json_pointer())
                     })
                     .then_with(|| {
                         left_diagnostic
-                            .code
+                            .code()
                             .as_str()
-                            .cmp(right_diagnostic.code.as_str())
+                            .cmp(right_diagnostic.code().as_str())
                     })
                     .then_with(|| left.ordinal.cmp(&right.ordinal)),
                 (
@@ -1366,7 +1372,7 @@ fn source_accepts<T>(source: SourceField<T>, accepts: impl FnOnce(T) -> bool) ->
     }
 }
 
-type OwnedNormalizationDiagnostic = (String, u64, u64, CompatibilityDiagnostic);
+type OwnedNormalizationDiagnostic = (String, u64, u64, PendingDiagnostic);
 type NormalizedFileRecords = (Vec<NormalizedFileRecord>, Vec<OwnedNormalizationDiagnostic>);
 
 fn normalize_referenced_file_records(
@@ -1400,14 +1406,16 @@ fn normalize_referenced_file_records(
                         scene.source_owner_order("files", source_index),
                         u64::try_from(source.member_position("id").unwrap_or(0))
                             .unwrap_or(u64::MAX),
-                        compatibility_diagnostic(
-                            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                        PendingDiagnostic::new(
+                            DiagnosticKind::UnsupportedPropertyValue {
+                                recovery: Recovery::Repaired,
+                                recipe: None,
+                            },
                             format,
                             &[DiagnosticEffect::InputRepair],
                             None,
                             &pointer,
                             "missing or invalid file identity was repaired to its map key",
-                            DiagnosticRecovery::new(Recovery::Repaired, None),
                         )?,
                     ));
                 }
@@ -1426,14 +1434,13 @@ fn normalize_referenced_file_records(
                         scene.source_owner_order("files", source_index),
                         u64::try_from(source.member_position("created").unwrap_or(usize::MAX))
                             .unwrap_or(u64::MAX),
-                        compatibility_diagnostic(
-                            DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                        PendingDiagnostic::new(
+                            DiagnosticKind::MissingTimestamp,
                             format,
                             &[DiagnosticEffect::InputRepair],
                             None,
                             &pointer,
                             "missing required file timestamp was repaired to canonical zero",
-                            DiagnosticRecovery::new(Recovery::Repaired, None),
                         )?,
                     ));
                 }
@@ -1464,13 +1471,7 @@ fn normalize_frame_rendering(
     policy: &crate::scene_surface::SceneSurfacePolicy,
     format: OutputFormat,
     diagnostic_limit: usize,
-) -> Result<
-    (
-        NormalizedFrameRendering,
-        Vec<(u64, CompatibilityDiagnostic)>,
-    ),
-    TryReserveError,
-> {
+) -> Result<(NormalizedFrameRendering, Vec<(u64, PendingDiagnostic)>), TryReserveError> {
     let mut diagnostics = Vec::new();
     let SourceField::Value(source) = source else {
         return Ok((
@@ -1499,14 +1500,16 @@ fn normalize_frame_rendering(
                         source.member_position(key).unwrap_or(usize::MAX),
                     )
                     .as_u64(),
-                    compatibility_diagnostic(
-                        DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                    PendingDiagnostic::new(
+                        DiagnosticKind::UnsupportedPropertyValue {
+                            recovery: Recovery::Substituted,
+                            recipe: None,
+                        },
                         format,
                         &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
                         None,
                         &pointer,
                         "unsupported frame rendering control used the revision-1 default",
-                        DiagnosticRecovery::new(Recovery::Substituted, None),
                     )?,
                 ));
                 Ok(true)
@@ -1534,8 +1537,8 @@ fn normalize_frame_rendering(
                 position,
             )
             .as_u64(),
-            compatibility_diagnostic(
-                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+            PendingDiagnostic::new(
+                DiagnosticKind::UnsupportedProperty,
                 format,
                 &[
                     DiagnosticEffect::Visual,
@@ -1545,14 +1548,13 @@ fn normalize_frame_rendering(
                 None,
                 &pointer_child("/appState/frameRendering", &member.key)?,
                 "unmatched frame-rendering property was ignored by the revision-1 scene-surface policy",
-                DiagnosticRecovery::new(Recovery::Ignored, None),
             )?,
         ));
     }
     diagnostics.sort_by(|(left_position, left), (right_position, right)| {
         left_position
             .cmp(right_position)
-            .then_with(|| left.json_pointer.cmp(&right.json_pointer))
+            .then_with(|| left.json_pointer().cmp(right.json_pointer()))
     });
     Ok((normalized, diagnostics))
 }
@@ -1665,97 +1667,17 @@ fn canonical_zero(value: f64) -> f64 {
     }
 }
 
-#[derive(Clone, Copy)]
-struct DiagnosticRecovery<'a> {
-    recovery: Recovery,
-    recipe_id: Option<&'a str>,
-}
-
-impl<'a> DiagnosticRecovery<'a> {
-    const fn new(recovery: Recovery, recipe_id: Option<&'a str>) -> Self {
-        Self {
-            recovery,
-            recipe_id,
-        }
-    }
-}
-
-fn repair_diagnostic(
-    code: DiagnosticCode,
-    format: OutputFormat,
-    effects: &[DiagnosticEffect],
-    element_id: &str,
-    json_pointer: &str,
-    message: &str,
-) -> Result<CompatibilityDiagnostic, TryReserveError> {
-    compatibility_diagnostic(
-        code,
-        format,
-        effects,
-        Some(element_id),
-        json_pointer,
-        message,
-        DiagnosticRecovery::new(Recovery::Repaired, None),
-    )
-}
-
-fn compatibility_diagnostic(
-    code: DiagnosticCode,
-    format: OutputFormat,
-    effects: &[DiagnosticEffect],
-    element_id: Option<&str>,
-    json_pointer: &str,
-    message: &str,
-    recovery: DiagnosticRecovery<'_>,
-) -> Result<CompatibilityDiagnostic, TryReserveError> {
-    let mut owned_effects = Vec::new();
-    owned_effects.try_reserve_exact(effects.len())?;
-    owned_effects.extend_from_slice(effects);
-    Ok(CompatibilityDiagnostic {
-        code,
-        severity: DiagnosticSeverity::Warning,
-        format,
-        effects: owned_effects,
-        element_id: element_id.map(try_owned).transpose()?,
-        json_pointer: try_owned(json_pointer)?,
-        message: try_owned(message)?,
-        details: Some(Box::new(ErrorDetails::Compatibility {
-            recovery: recovery.recovery,
-            recipe_id: recovery.recipe_id.map(try_owned).transpose()?,
-        })),
-        order: DiagnosticOrder::default(),
-    })
-}
-
+/// The effects a manifested field fallback declares, skipping any spelling
+/// the registry does not know.
 fn manifested_effects(effects: &[&str]) -> Result<Vec<DiagnosticEffect>, TryReserveError> {
     let mut manifested = Vec::new();
     manifested.try_reserve_exact(effects.len())?;
     for effect in effects {
-        let effect = match *effect {
-            "input_repair" => DiagnosticEffect::InputRepair,
-            "visual" => DiagnosticEffect::Visual,
-            "semantic" => DiagnosticEffect::Semantic,
-            "metadata" => DiagnosticEffect::Metadata,
-            _ => continue,
-        };
-        manifested.push(effect);
+        if let Some(effect) = DiagnosticEffect::from_manifest(effect) {
+            manifested.push(effect);
+        }
     }
     Ok(manifested)
-}
-
-const fn manifested_recovery(recovery: &str) -> Option<Recovery> {
-    match recovery.as_bytes() {
-        b"repaired" => Some(Recovery::Repaired),
-        b"ignored" => Some(Recovery::Ignored),
-        b"placeholder" => Some(Recovery::Placeholder),
-        b"omitted" => Some(Recovery::Omitted),
-        b"removed" => Some(Recovery::Removed),
-        b"substituted" => Some(Recovery::Substituted),
-        b"flattened" => Some(Recovery::Flattened),
-        b"rasterized" => Some(Recovery::Rasterized),
-        b"metadata_omitted" => Some(Recovery::MetadataOmitted),
-        _ => None,
-    }
 }
 
 fn try_owned(value: &str) -> Result<String, TryReserveError> {
