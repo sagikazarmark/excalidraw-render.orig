@@ -120,6 +120,43 @@ fn nested_frames_clip_direct_geometry_in_every_format() {
     }
 }
 
+/// Format-specific parity for a frame's own opacity (#137): the reference
+/// SVG's frame `<rect>` carries no opacity attribute, while its canvas paints
+/// the outline under `globalAlpha` from the element's render opacity. The
+/// 50 % inner frame therefore serializes without `opacity` in SVG and paints
+/// half-strength in PNG; its opacity still multiplies its child's in both.
+#[test]
+fn frame_outline_opacity_is_dropped_in_svg_and_kept_in_png() {
+    let scene = SceneDocument::parse(NESTED_FRAME_SCENE).expect("nested frame scene is admitted");
+
+    let svg_outcome = render(&scene, OutputFormat::Svg, FrameOptions::default());
+    let svg = std::str::from_utf8(svg_outcome.artifact().bytes()).expect("SVG is UTF-8");
+    assert!(svg.contains(concat!(
+        "<g transform=\"translate(40 40.5) rotate(0 25 20)\">",
+        "<rect data-frame-outline=\"inner\" width=\"50\" height=\"40\" rx=\"8\" ry=\"8\" ",
+        "fill=\"none\" stroke=\"#bbbbbb\" stroke-width=\"2\"/></g>"
+    )));
+    assert!(
+        !svg.contains(" opacity=\""),
+        "no element group carries opacity"
+    );
+    assert!(svg.contains("fill-opacity=\"0.25\""));
+
+    let png = render(&scene, OutputFormat::Png, FrameOptions::default());
+    let decoded = decode_png(png.artifact().bytes());
+    // The left edges of both outlines run through y = 60, well inside their
+    // straight segments; the 2 px stroke centred on x = 10 (outer) and x = 40
+    // (inner) covers those pixel columns completely.
+    let outer = decoded.pixel(10, 60);
+    let inner = decoded.pixel(40, 60);
+    assert_eq!(outer, [0xbb, 0xbb, 0xbb, 255], "outer outline is #bbb");
+    assert_eq!(
+        inner,
+        [0xdd, 0xdd, 0xdd, 255],
+        "inner outline is #bbb at 50 % over white"
+    );
+}
+
 #[test]
 fn frame_clipping_uses_the_rounded_frame_boundary() {
     let scene = SceneDocument::parse(br##"{

@@ -660,7 +660,6 @@ impl SvgPlan {
                     outline_stroke_color,
                     frame_clips: _,
                     transform,
-                    opacity,
                     link,
                     width,
                     height,
@@ -675,13 +674,9 @@ impl SvgPlan {
                     push_svg_number(&mut svg, transform.center_x, "SVG frame center x")?;
                     svg.push(' ');
                     push_svg_number(&mut svg, transform.center_y, "SVG frame center y")?;
-                    svg.push_str(")\"");
-                    if *opacity != 1.0 {
-                        svg.push_str(" opacity=\"");
-                        push_svg_number(&mut svg, *opacity, "SVG frame opacity")?;
-                        svg.push('"');
-                    }
-                    svg.push('>');
+                    // No opacity: the reference SVG's frame `<rect>` carries
+                    // none, whatever the element's opacity (spec 8.1).
+                    svg.push_str(")\">");
                     push_svg_link_hit_rect(&mut svg, link.as_deref(), *width, *height)?;
                     if let Some(stroke_color) = outline_stroke_color {
                         // The reference outline: the frame rectangle with

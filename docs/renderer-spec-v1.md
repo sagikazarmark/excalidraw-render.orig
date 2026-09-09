@@ -580,7 +580,13 @@ as that text element would. The frame outline is the frame rectangle with
 the dark-mode filter like every other color, in every format. The reference SVG
 strokes every frame kind `#bbb`, which SVG and PDF follow; the reference canvas
 recolors a magic frame's outline `#7affd7` in the light theme and `#1d8264` in
-the dark theme before the same filter, which PNG follows.
+the dark theme before the same filter, which PNG follows. The frame's own render
+opacity (its `opacity` times its containing frame's, like every element's)
+reaches the outline only where the reference applies it (#137): the reference
+canvas paints the outline under `globalAlpha` set from that opacity, which PNG
+and PDF follow; the reference SVG's frame `<rect>` carries no opacity
+attribute, which SVG follows, so an SVG frame outline is always fully opaque.
+In every format the frame's opacity still multiplies its members' opacity.
 
 A frame export targets one live ordinary or magic frame and always uses the
 rotation-aware frame AABB as its zero-padding viewport. The target frame name and
@@ -983,7 +989,10 @@ repeated per child. Clip IDs are renderer-owned and keyed by the frame's index
 in the source `elements` array; an element id is untrusted input and is not
 used as an XML ID. The clip rectangle rotates by the frame's angle in degrees,
 as the outline does; revision 1 does not reproduce the reference's
-radians-valued `rotate()` on its clip definition.
+radians-valued `rotate()` on its clip definition. The frame outline itself is a
+`<rect>` in a translated and rotated group that carries no `opacity`, as the
+reference SVG's frame `<rect>` carries none (Section 8.1); the frame name
+precedes it as its own fully opaque text group.
 
 Nor does revision 1 reproduce the reference's attribute spelling. The reference
 SVG sets each clipped group's `clip-path` through `setAttributeNS` with the SVG

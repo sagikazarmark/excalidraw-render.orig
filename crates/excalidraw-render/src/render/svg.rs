@@ -166,6 +166,11 @@ enum SvgElement {
         width: f64,
         height: f64,
     },
+    /// A frame's outline and name. The frame carries no opacity here: the
+    /// reference SVG's frame `<rect>` has no opacity attribute, while its
+    /// canvas sets `globalAlpha` from the element's render opacity, which PNG
+    /// and PDF follow (format-specific parity, spec 8.1). The frame's opacity
+    /// still multiplies its children's, resolved before the plan.
     Frame {
         source: NormalizedElementSource,
         name: Option<SvgFrameName>,
@@ -174,7 +179,6 @@ enum SvgElement {
         outline_stroke_color: Option<CanonicalColor>,
         frame_clips: Vec<ResolvedClip>,
         transform: SvgTransform,
-        opacity: f64,
         link: Option<String>,
         width: f64,
         height: f64,
@@ -329,7 +333,6 @@ impl SvgPlan {
                         outline_stroke_color: frame.outline.map(|outline| outline.stroke_color),
                         frame_clips: frame.frame_clips,
                         transform: SvgTransform::new(&frame.transform),
-                        opacity: frame.opacity,
                         link: frame.link,
                         width: frame.width,
                         height: frame.height,
