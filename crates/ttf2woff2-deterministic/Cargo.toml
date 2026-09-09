@@ -13,6 +13,7 @@
 edition = "2024"
 name = "excalidraw-render-ttf2woff2"
 version = "0.1.0"
+rust-version.workspace = true
 authors = ["kaoru <k@warpnine.io>"]
 build = false
 autolib = false

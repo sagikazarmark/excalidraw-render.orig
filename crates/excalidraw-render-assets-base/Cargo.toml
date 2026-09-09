@@ -2,6 +2,7 @@
 name = "excalidraw-render-assets-base"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 description = "Implementation-detail catalog for excalidraw-render"
 license.workspace = true
 include = [

@@ -2,6 +2,7 @@
 name = "excalidraw-render-assets-data-001"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 description = "Implementation-detail asset shard for excalidraw-render"
 license-file = "LICENSE-BUNDLE.txt"
 include = ["/src/", "/data/revision-1-001.bin", "/LICENSE-BUNDLE.txt"]

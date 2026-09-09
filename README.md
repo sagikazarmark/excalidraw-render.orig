@@ -22,6 +22,18 @@ The workspace separates the supported `excalidraw-render` Rust library from the
 native `excalidraw-render-cli` package. They share one lockstep version, and the
 CLI is a thin adapter over the public library facade.
 
+Every dependency is pinned to an exact version (`=x.y.z`), because artifact
+bytes are the product and any transitive bump can change them. For a project
+that depends on the library this has consequences. Cargo resolves one version
+per semver-compatible range, so within each such range the pins decide which
+version of a shared crate (`serde`, `png`, `resvg`, ...) your whole build uses:
+a requirement of yours in the same range that the pinned version cannot satisfy
+fails to resolve, while one in a different range builds a second copy alongside
+it. A patch release of a pinned crate only reaches you through an
+`excalidraw-render` release that moves the pin and re-verifies the artifact
+bytes. The workspace and its published crates also declare `rust-version`, the
+toolchain the release gates build with; older compilers are not exercised.
+
 ## Run
 
 ```text

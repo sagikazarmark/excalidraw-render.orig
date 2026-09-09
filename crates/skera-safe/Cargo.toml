@@ -2,6 +2,7 @@
 name = "excalidraw-render-skera"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 description = "Panic-safe adapter for the renderer's pinned font subsetter"
 license.workspace = true
 

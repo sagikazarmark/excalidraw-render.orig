@@ -16,9 +16,11 @@ resolver = "2"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
+# The toolchain the CI gates build with (`tests/package-consumer/tool-manifest.json`,
+# `dagger.toml` pin its patch release); older compilers are not exercised.
+rust-version = "1.97"
 
 [workspace.dependencies]
-anyhow = "=1.0.98"
 base64 = { version = "=0.22.1", default-features = false, features = ["alloc"] }
 clap = { version = "=4.5.41", features = ["derive"] }
 excalidraw-render = { path = "crates/excalidraw-render", version = "=0.1.0" }
@@ -46,6 +48,8 @@ sha1 = "=0.10.6"
 sha2 = "=0.10.9"
 skera = { package = "excalidraw-render-skera", path = "crates/skera-safe", version = "=0.1.0" }
 rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
+# `experimental_traverse` is what the renderer depends on read-fonts for: it
+# gates `read_fonts::traversal`, which `write-fonts` does not enable.
 read-fonts = { version = "=0.42.1", features = ["experimental_traverse"] }
 unicode-bidi = "=0.3.18"
 unicode-normalization = "=0.1.24"
