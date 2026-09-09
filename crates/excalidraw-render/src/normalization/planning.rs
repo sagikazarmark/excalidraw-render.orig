@@ -9,9 +9,9 @@ use std::collections::TryReserveError;
 
 use crate::scene::{BindingSource, ElementKind, ElementSource, SourceField};
 
+use super::kinds::{embeddable_label, is_arrowhead, normalized_image_crop, pressures_are_valid};
 use super::{
-    defaulted, embeddable_label, is_arrowhead, normalized_image_crop, pressures_are_valid,
-    CommonFields, NormalizationParticipation, NormalizedBinding, NormalizedElementKind,
+    defaulted, CommonFields, NormalizationParticipation, NormalizedBinding, NormalizedElementKind,
     NormalizedLinearKind,
 };
 
