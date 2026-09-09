@@ -1438,11 +1438,21 @@ fn try_owned(value: &str) -> Result<String, TryReserveError> {
     Ok(owned)
 }
 
+/// The manifest's pseudo-field for a file record's map key (`file_record`
+/// `/$key`). It describes the key of the `files` map entry, which the
+/// classifier reports through its own asset-shaped constructors, and never a
+/// member of the record: a member literally named `$key` is an unknown member
+/// like any other (#156).
+const FILE_RECORD_KEY_PSEUDO_FIELD: &str = "/$key";
+
 fn field_policy<'a>(
     policy: &'a SceneSurfacePolicy,
     record_kind: &str,
     path: &str,
 ) -> Option<&'a SceneFieldPolicy> {
+    if path == FILE_RECORD_KEY_PSEUDO_FIELD {
+        return None;
+    }
     let record = policy
         .record_kinds
         .iter()
@@ -1849,6 +1859,49 @@ mod tests {
                 }"#
             )),
             [(DiagnosticCode::ASSET_MALFORMED_FILE_RECORD, "/files/",)]
+        );
+    }
+
+    #[test]
+    fn revision_1_file_record_key_pseudo_field_never_matches_a_member() {
+        // The manifest describes the `files` map key as the pseudo-field
+        // `/$key`; a member literally named `$key` is an unknown member of the
+        // record, ignored with `compatibility.unsupported-property`, not the
+        // malformed key the pseudo-field's fallback describes (#156).
+        let diagnostics = surface_diagnostics_for(
+            r#"{
+                "type":"excalidraw","version":2,
+                "elements":[{"id":"image","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","updated":1}],
+                "appState":{},
+                "files":{"asset":{"id":"asset","created":1,"mimeType":"image/png","$key":1,"dataURL":"data:image/png;base64,AA=="}}
+            }"#,
+            OutputFormat::Svg,
+        );
+        let [diagnostic] = diagnostics.as_slice() else {
+            panic!("the `$key` member is the one occurrence: {diagnostics:?}");
+        };
+        assert_eq!(
+            diagnostic.code(),
+            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY
+        );
+        assert_eq!(diagnostic.json_pointer(), "/files/asset/$key");
+        assert_eq!(
+            diagnostic.details(),
+            Some(&ErrorDetails::Compatibility {
+                recovery: Recovery::Ignored,
+                recipe_id: None,
+            })
+        );
+        assert!(
+            super::field_policy(&SCENE_SURFACE_POLICY, "file_record", "/$key").is_none(),
+            "the pseudo-field is not a member path"
+        );
+        assert!(
+            SCENE_SURFACE_POLICY
+                .fields
+                .iter()
+                .any(|field| field.record_kind == "file_record" && field.path == "/$key"),
+            "the generated table still carries the pseudo-field the manifest declares"
         );
     }
 

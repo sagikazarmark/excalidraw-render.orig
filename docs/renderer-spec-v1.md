@@ -264,7 +264,10 @@ extend or override it.
 Root and application-state records participate globally. A non-deleted known
 element participates when traversed. A file record participates only when
 authoritative and referenced. Deleted elements and ignored or unreferenced file
-records remain silent.
+records remain silent. The manifest describes a file record's map key as the
+pseudo-field `file_record` `/$key`; it binds the key of the `files` entry and
+never a member of the record, so a member literally named `$key` is an
+unmatched property like any other (#156).
 
 Diagnostic boundaries MUST prevent floods: one unknown property covers its
 descendants; unknown children of a recognized object remain separate; a wholly

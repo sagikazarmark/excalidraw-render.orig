@@ -419,14 +419,6 @@ pub(crate) enum DiagnosticKind<'a> {
         pixel_height: u64,
         causes: Vec<NestedPath>,
     },
-    /// A file-record member literally named `$key`, which the manifest's
-    /// `/$key` pseudo-field (the record's map key) binds to
-    /// `asset.malformed-file-record` with a `compatibility`-shaped fallback.
-    /// Spec section 11.3 gives that code `asset` details, and the classifier
-    /// reports a malformed key itself that way; this member-shaped occurrence
-    /// keeps the `compatibility` details it has always had until #156 decides
-    /// the pseudo-field binding.
-    MalformedFileRecordMember { recovery: Recovery },
 }
 
 impl DiagnosticKind<'_> {
@@ -455,9 +447,6 @@ impl DiagnosticKind<'_> {
             DiagnosticCode::COMPATIBILITY_UNSUPPORTED_ELEMENT_TYPE => Self::UnsupportedElementType(
                 LocalRecovery::manifested(recovery, recipe, FallbackRecipe::UnknownElement)?,
             ),
-            DiagnosticCode::ASSET_MALFORMED_FILE_RECORD if recipe.is_none() => {
-                Self::MalformedFileRecordMember { recovery }
-            }
             _ => return None,
         })
     }
@@ -499,7 +488,6 @@ impl DiagnosticKind<'_> {
             }
             Self::MetadataOmitted(failure) => failure.code(),
             Self::PdfRasterFallback { .. } => DiagnosticCode::PDF_RASTER_FALLBACK,
-            Self::MalformedFileRecordMember { .. } => DiagnosticCode::ASSET_MALFORMED_FILE_RECORD,
         }
     }
 
@@ -651,7 +639,6 @@ impl DiagnosticKind<'_> {
                 pixel_height: Some(pixel_height),
                 causes,
             },
-            Self::MalformedFileRecordMember { recovery } => compatibility(recovery, None)?,
         })
     }
 }
@@ -765,14 +752,15 @@ mod tests {
     /// `scene.invalid-envelope` parse error rather than a diagnostic. Every
     /// fallback whose code carries `compatibility` details maps to a registry
     /// kind for each recovery it declares, so the surface classifier never
-    /// drops a manifested recovery; the two fallbacks whose codes carry
+    /// drops a manifested recovery; the three fallbacks whose codes carry
     /// `asset` details are ones the classifier reports through its own
-    /// asset-shaped constructors (`/mimeType`) or never walks
-    /// (`nested.local_svg_resource`), and the `/$key` pseudo-field keeps its
-    /// member-shaped binding.
+    /// asset-shaped constructors (`/mimeType`, and the `/$key` pseudo-field,
+    /// which describes the file record's map key and is never a member path,
+    /// #156) or never walks (`nested.local_svg_resource`).
     #[test]
     fn generated_field_fallbacks_map_to_registry_kinds() {
-        const ASSET_SHAPED: [(&str, &str, &str); 2] = [
+        const ASSET_SHAPED: [(&str, &str, &str); 3] = [
+            ("file_record", "/$key", "asset.malformed-file-record"),
             ("file_record", "/mimeType", "asset.media-type-mismatch"),
             (
                 "nested.local_svg_resource",
@@ -781,7 +769,6 @@ mod tests {
             ),
         ];
         let mut unmapped = Vec::new();
-        let mut key_member = 0;
         for field in SCENE_SURFACE_POLICY.fields {
             let Some(code) = field.invalid.code else {
                 continue;
@@ -807,17 +794,12 @@ mod tests {
                     .unwrap_or_else(|| panic!("{} names recovery {recovery}", field.path));
                 let kind = DiagnosticKind::manifested(code, recovery, field.invalid.recipe);
                 match kind {
-                    Some(DiagnosticKind::MalformedFileRecordMember { .. }) => {
-                        assert_eq!((field.record_kind, field.path), ("file_record", "/$key"));
-                        key_member += 1;
-                    }
                     Some(kind) => assert_eq!(kind.code().as_str(), code, "{}", field.path),
                     None => unmapped.push((field.record_kind, field.path, code)),
                 }
             }
         }
         assert_eq!(unmapped, ASSET_SHAPED);
-        assert_eq!(key_member, 1);
     }
 
     /// The recipes the registry can name are exactly the manifest's: the
