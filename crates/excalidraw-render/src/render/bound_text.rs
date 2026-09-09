@@ -1,6 +1,6 @@
 use super::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(super) struct BoundTextPlacement {
     pub(super) source_index: usize,
     pub(super) x: f64,
@@ -8,7 +8,7 @@ pub(super) struct BoundTextPlacement {
     pub(super) angle: f64,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(super) struct BoundTextMaskSource {
     pub(super) container_source_index: usize,
     pub(super) x: f64,

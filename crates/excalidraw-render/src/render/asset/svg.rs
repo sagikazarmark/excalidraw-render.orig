@@ -6,7 +6,7 @@ use base64::Engine as _;
 use super::{IntrinsicTransaction, ResolutionFailure, ResolveError};
 use crate::{CompatibilityRevision, OutputFormat, RenderError, ResourceLimits};
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Removal {
     pub(crate) node_ordinal: u64,
     pub(crate) attribute_ordinal: Option<u64>,
@@ -14,13 +14,13 @@ pub(crate) struct Removal {
     pub(crate) changes_appearance: bool,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Failure {
     pub(crate) path: Vec<(u64, u64)>,
     pub(crate) error: ResolveError,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct EffectCause {
     pub(crate) slots: Vec<(u64, u64)>,
     pub(crate) node_ordinal: u64,
@@ -28,7 +28,7 @@ pub(crate) struct EffectCause {
     pub(crate) effect_input: bool,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Effect {
     pub(crate) node_ordinal: u64,
     pub(crate) filter_id: String,
@@ -38,6 +38,7 @@ pub(crate) struct Effect {
     pub(crate) unisolatable: bool,
 }
 
+#[derive(Debug)]
 pub(super) struct SanitizedSvg {
     pub(super) bytes: Vec<u8>,
     pub(super) width: u32,
@@ -51,7 +52,7 @@ pub(super) struct SanitizedSvg {
     pub(super) tree: Arc<usvg::Tree>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(super) enum NestedAdmission {
     Occurrence {
         asset_bytes: u64,
@@ -1372,4 +1373,393 @@ fn viewer_options() -> Result<usvg::Options<'static>, ResolveError> {
         resolve_string: Box::new(|_, _| None),
     };
     Ok(options)
+}
+
+#[cfg(test)]
+mod tests {
+    //! The nested-SVG sanitizer at its own seam: what it removes, what it
+    //! refuses, and where it stops recursing, read off `SanitizedSvg` rather
+    //! than off the diagnostics a session later maps them to.
+
+    use super::*;
+
+    const PNG_BASE64: &str =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+
+    /// Sanitizes `bytes` under `limits` for the SVG format with a transaction
+    /// sink that admits everything: nothing here tests the meter.
+    fn sanitize_with(
+        bytes: &[u8],
+        limits: &ResourceLimits,
+        format: OutputFormat,
+    ) -> Result<SanitizedSvg, ResolutionFailure> {
+        let shared_rasters = BTreeMap::new();
+        let mut pending_rasters = BTreeMap::new();
+        sanitize(
+            bytes,
+            limits,
+            CompatibilityRevision::REVISION_1,
+            format,
+            &shared_rasters,
+            &mut pending_rasters,
+            &mut |_| Ok(()),
+        )
+    }
+
+    fn sanitize_default(bytes: &[u8]) -> SanitizedSvg {
+        sanitize_with(bytes, &ResourceLimits::default(), OutputFormat::Svg)
+            .expect("the SVG sanitizes")
+    }
+
+    fn sanitized_text(sanitized: &SanitizedSvg) -> &str {
+        std::str::from_utf8(&sanitized.bytes).expect("sanitized SVG is UTF-8")
+    }
+
+    fn removal_names(sanitized: &SanitizedSvg) -> Vec<&str> {
+        sanitized
+            .removals
+            .iter()
+            .map(|removal| removal.name.as_str())
+            .collect()
+    }
+
+    fn svg_with_nested_data_image(child: &[u8]) -> String {
+        let child = base64::engine::general_purpose::STANDARD.encode(child);
+        format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/svg+xml;base64,{child}"/></svg>"#
+        )
+    }
+
+    fn asset_error(result: Result<SanitizedSvg, ResolutionFailure>) -> ResolveError {
+        match result {
+            Err(ResolutionFailure::Asset(error)) => error,
+            other => panic!("the sanitizer refuses the asset: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn a_safe_svg_is_reserialized_with_its_root_namespace_and_size() {
+        let sanitized = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10" viewBox="0 0 20 10"><rect width="10" height="10" fill="#ff0000"/><rect x="10" width="10" height="10" fill="#0000ff"/></svg>"##,
+        );
+        assert_eq!((sanitized.width, sanitized.height), (20, 10));
+        assert!(sanitized.removals.is_empty());
+        assert!(sanitized.failures.is_empty());
+        assert!(sanitized.effects.is_empty());
+        assert!(sanitized.nested_admissions.is_empty());
+        let text = sanitized_text(&sanitized);
+        assert!(text.starts_with(r#"<svg xmlns="http://www.w3.org/2000/svg""#));
+        assert_eq!(text.matches("<rect").count(), 2);
+        assert!(sanitized.work_units > 0 && sanitized.working_bytes > 512);
+    }
+
+    #[test]
+    fn scripts_handlers_animation_and_foreign_content_are_removed() {
+        let sanitized = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10" onload="alert(1)">
+            <rect width="20" height="10" fill="#00ff00" onclick="alert(2)"/>
+            <script>alert(3)</script>
+            <animate attributeName="opacity" values="0;1"/>
+            <foreignObject><div xmlns="http://www.w3.org/1999/xhtml">unsafe</div></foreignObject>
+            <image href="https://example.com/tracker.png" width="20" height="10"/>
+            <style>@import url(https://example.com/theme.css); rect { fill: red }</style>
+        </svg>"##,
+        );
+
+        let text = sanitized_text(&sanitized);
+        for forbidden in [
+            "onload",
+            "onclick",
+            "script",
+            "animate",
+            "foreignObject",
+            "example.com",
+            "@import",
+        ] {
+            assert!(!text.contains(forbidden), "removed {forbidden}: {text}");
+        }
+        assert!(text.contains("<rect"));
+        assert_eq!(
+            removal_names(&sanitized),
+            [
+                "onload",
+                "onclick",
+                "script",
+                "animate",
+                "foreignObject",
+                "href",
+                "style"
+            ]
+        );
+        // Every removal but the external image reference changes appearance;
+        // dropping an href leaves the element in place.
+        assert_eq!(
+            sanitized
+                .removals
+                .iter()
+                .filter(|removal| !removal.changes_appearance)
+                .map(|removal| removal.name.as_str())
+                .collect::<Vec<_>>(),
+            ["href"]
+        );
+        // Attribute removals name their slot; element removals do not.
+        assert!(sanitized.removals[0].attribute_ordinal.is_some());
+        assert!(sanitized.removals[2].attribute_ordinal.is_none());
+    }
+
+    #[test]
+    fn dtds_and_declared_entities_are_removed_without_expansion() {
+        let sanitized = sanitize_default(
+            br##"<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY secret "EXPANDED">]><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>&secret;</text><rect width="20" height="10" fill="#00ff00"/></svg>"##,
+        );
+        let text = sanitized_text(&sanitized);
+        assert!(!text.contains("DOCTYPE"));
+        assert!(!text.contains("ENTITY"));
+        assert!(!text.contains("EXPANDED"));
+        assert!(text.contains("<rect"));
+        // The DTD itself paints nothing; the reference to the declared entity
+        // did, and its removal changes what the text shows.
+        assert_eq!(
+            sanitized
+                .removals
+                .iter()
+                .map(|removal| (removal.name.as_str(), removal.changes_appearance))
+                .collect::<Vec<_>>(),
+            [("DOCTYPE", false), ("secret", true)]
+        );
+    }
+
+    #[test]
+    fn processing_instructions_other_than_the_xml_declaration_are_removed() {
+        let sanitized = sanitize_default(
+            br##"<?xml-stylesheet href="https://example.com/theme.css"?><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##,
+        );
+        let text = sanitized_text(&sanitized);
+        assert!(!text.contains("xml-stylesheet"));
+        assert!(!text.contains("example.com"));
+        assert_eq!(removal_names(&sanitized), ["xml-stylesheet"]);
+
+        let declared = sanitize_default(
+            br##"<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10"/></svg>"##,
+        );
+        assert!(
+            declared.removals.is_empty(),
+            "the XML declaration is not a removal"
+        );
+    }
+
+    #[test]
+    fn external_references_are_removed_and_same_document_fragments_kept() {
+        let sanitized = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="10">
+            <defs><linearGradient id="paint"><stop stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/></linearGradient><rect id="tile" width="10" height="10" fill="url(#paint)"/></defs>
+            <use href="#tile"/><use xlink:href="#tile" x="10"/>
+            <use href="https://example.com/shapes.svg#tile"/>
+            <image xlink:href="//example.com/tracker.png" width="1" height="1"/>
+            <a href="javascript:alert(1)"><rect width="1" height="1"/></a>
+        </svg>"##,
+        );
+        let text = sanitized_text(&sanitized);
+        assert!(!text.contains("example.com"));
+        assert!(!text.contains("javascript:"));
+        assert_eq!(text.matches(r##"href="#tile""##).count(), 2, "{text}");
+        assert!(text.contains(r##"fill="url(#paint)""##));
+        assert_eq!(removal_names(&sanitized), ["href", "href", "href"]);
+        // xlink:href is lowered to a plain href on the way out.
+        assert!(!text.contains("xlink:href"));
+    }
+
+    #[test]
+    fn data_urls_are_removed_from_link_actions() {
+        let sanitized = sanitize_default(
+            format!(
+                r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><a href="data:image/png;base64,{PNG_BASE64}"><rect width="20" height="10" fill="#00ff00"/></a></svg>"##
+            )
+            .as_bytes(),
+        );
+        assert!(!sanitized_text(&sanitized).contains("data:image/png"));
+        assert_eq!(removal_names(&sanitized), ["href"]);
+    }
+
+    #[test]
+    fn nested_raster_data_is_validated_and_kept_byte_for_byte() {
+        let sanitized = sanitize_default(
+            format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/png;base64,{PNG_BASE64}"/></svg>"#
+            )
+            .as_bytes(),
+        );
+        assert!(sanitized_text(&sanitized).contains(&format!("data:image/png;base64,{PNG_BASE64}")));
+        assert!(sanitized.removals.is_empty());
+        assert!(sanitized.failures.is_empty());
+        // The nested payload is one asset occurrence of its decoded size.
+        assert!(matches!(
+            sanitized.nested_admissions.as_slice(),
+            [NestedAdmission::Occurrence { asset_bytes }, ..] if *asset_bytes > 0
+        ));
+    }
+
+    #[test]
+    fn nested_data_svgs_are_recursively_sanitized() {
+        let child = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/><script>alert(1)</script></svg>"##;
+        let sanitized = sanitize_default(svg_with_nested_data_image(child).as_bytes());
+
+        let text = sanitized_text(&sanitized);
+        let (_, nested) = text
+            .split_once("data:image/svg+xml;base64,")
+            .expect("the nested SVG is re-embedded as a data URL");
+        let nested = base64::engine::general_purpose::STANDARD
+            .decode(nested.split('"').next().expect("terminated data URL"))
+            .expect("re-embedded nested SVG is base64");
+        let nested = std::str::from_utf8(&nested).expect("nested SVG is UTF-8");
+        assert!(nested.contains("<rect"));
+        assert!(!nested.contains("script"));
+        // The child's removal surfaces on the parent.
+        assert_eq!(removal_names(&sanitized), ["script"]);
+        assert!(sanitized
+            .nested_admissions
+            .iter()
+            .any(|admission| matches!(admission, NestedAdmission::Work { .. })));
+    }
+
+    #[test]
+    fn a_malformed_nested_image_fails_locally_without_discarding_its_siblings() {
+        let sanitized = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#ff0000"/><image width="20" height="10" href="data:image/png;base64,AA=="/></svg>"##,
+        );
+        assert!(sanitized_text(&sanitized).contains("<rect"));
+        let [failure] = sanitized.failures.as_slice() else {
+            panic!("one nested failure: {:#?}", sanitized.failures);
+        };
+        assert_eq!(failure.error, ResolveError::Unsupported);
+        // The failing slot: the image is the third node (root, rect, image),
+        // and href its third attribute.
+        assert_eq!(failure.path, [(2, 2)]);
+    }
+
+    #[test]
+    fn the_depth_ceiling_stops_recursive_resolution_as_a_local_failure() {
+        let leaf = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
+        let child = svg_with_nested_data_image(leaf);
+        let parent = svg_with_nested_data_image(child.as_bytes());
+        let limits = ResourceLimits::builder()
+            .max_nested_asset_depth(1)
+            .build()
+            .expect("depth limit is valid");
+
+        let sanitized = sanitize_with(parent.as_bytes(), &limits, OutputFormat::Svg)
+            .expect("the parent survives its child's refusal");
+        let [failure] = sanitized.failures.as_slice() else {
+            panic!("one depth failure: {:#?}", sanitized.failures);
+        };
+        assert_eq!(failure.error, ResolveError::SvgDepth { attempted: 2 });
+        assert_eq!(failure.path.len(), 2, "the failing slot is two levels down");
+
+        let permitted = sanitize_with(
+            parent.as_bytes(),
+            &ResourceLimits::default(),
+            OutputFormat::Svg,
+        )
+        .expect("the default depth admits two levels");
+        assert!(permitted.failures.is_empty());
+    }
+
+    #[test]
+    fn the_node_ceiling_refuses_the_document_before_viewer_parsing() {
+        let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
+        let limits = ResourceLimits::builder()
+            .max_nested_svg_nodes(1)
+            .build()
+            .expect("node limit is valid");
+        assert_eq!(
+            asset_error(sanitize_with(nested, &limits, OutputFormat::Svg)),
+            ResolveError::SvgComplexity { attempted: 2 }
+        );
+        let limits = ResourceLimits::builder()
+            .max_nested_svg_nodes(2)
+            .build()
+            .expect("node limit is valid");
+        sanitize_with(nested, &limits, OutputFormat::Svg).expect("two nodes fit the ceiling");
+    }
+
+    #[test]
+    fn the_asset_work_ceiling_refuses_the_document() {
+        let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
+        let work = sanitize_default(nested).work_units;
+        let limits = ResourceLimits::builder()
+            .max_asset_work_units(work - 1)
+            .build()
+            .expect("work limit is valid");
+        assert_eq!(
+            asset_error(sanitize_with(nested, &limits, OutputFormat::Svg)),
+            ResolveError::AssetWork { attempted: work }
+        );
+    }
+
+    #[test]
+    fn documents_that_are_not_svg_are_refused_as_decode_failures() {
+        for bytes in [
+            br#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect>"#.as_slice(),
+            br#"<svg width="20" height="10"><rect width="1" height="1"/></svg>"#.as_slice(),
+            br#"<html xmlns="http://www.w3.org/1999/xhtml"><body/></html>"#.as_slice(),
+            b"\xff\xfe not text".as_slice(),
+        ] {
+            assert_eq!(
+                asset_error(sanitize_with(
+                    bytes,
+                    &ResourceLimits::default(),
+                    OutputFormat::Svg
+                )),
+                ResolveError::SvgDecodeFailed,
+                "{}",
+                String::from_utf8_lossy(bytes)
+            );
+        }
+    }
+
+    #[test]
+    fn effects_are_discovered_with_their_backdrop_dependence() {
+        let isolated = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" filter="url(#blur)"/></svg>"##,
+        );
+        let [effect] = isolated.effects.as_slice() else {
+            panic!("one effect: {:#?}", isolated.effects);
+        };
+        assert_eq!(effect.filter_id, "blur");
+        assert!(!effect.unisolatable);
+        assert!(!effect.causes.is_empty());
+
+        let backdrop = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blend"><feBlend in="SourceGraphic" in2="BackgroundImage" mode="multiply"/></filter></defs><rect width="20" height="10" filter="url(#blend)"/></svg>"##,
+        );
+        assert!(backdrop.effects[0].unisolatable);
+
+        let noop = sanitize_default(
+            br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect"><feGaussianBlur stdDeviation="0"/></filter></defs><rect width="20" height="10" filter="url(#effect)"/></svg>"##,
+        );
+        assert!(
+            noop.effects.is_empty(),
+            "a no-op filter is culled: {:#?}",
+            noop.effects
+        );
+        assert!(
+            !sanitized_text(&noop).contains("filter="),
+            "and its reference dropped from the rect"
+        );
+    }
+
+    #[test]
+    fn the_pdf_format_labels_effect_nodes_for_closure_isolation() {
+        let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" filter="url(#blur)"/></svg>"##;
+        let pdf = sanitize_with(nested, &ResourceLimits::default(), OutputFormat::Pdf)
+            .expect("the SVG sanitizes for PDF");
+        let text = sanitized_text(&pdf);
+        assert!(text.contains(r#"id="__excalidraw_effect_"#), "{text}");
+        assert!(
+            text.contains(r#"result="__excalidraw_filter_result_"#),
+            "{text}"
+        );
+        let svg = sanitize_default(nested);
+        assert!(!sanitized_text(&svg).contains("__excalidraw_"));
+    }
 }

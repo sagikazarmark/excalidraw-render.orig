@@ -131,14 +131,14 @@ pub(super) fn is_persistent_event(event: &str) -> bool {
     )
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(super) enum Authority {
     Scene,
     Supplemental,
     Missing,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum ResolveError {
     Missing,
     Malformed,
@@ -159,6 +159,7 @@ pub(super) enum ResolveError {
     Memory,
 }
 
+#[derive(Debug)]
 pub(super) enum ResolutionFailure {
     Asset(ResolveError),
     Transaction(RenderError),
@@ -171,6 +172,7 @@ impl From<ResolveError> for ResolutionFailure {
     }
 }
 
+#[derive(Debug)]
 pub(super) enum IntrinsicTransaction {
     PreflightNested {
         asset_entries: u64,

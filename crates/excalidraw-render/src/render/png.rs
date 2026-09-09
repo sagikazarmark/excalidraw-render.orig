@@ -16,6 +16,7 @@ use super::{
     ResolvedScene, StrokeStyle,
 };
 
+#[derive(Debug)]
 pub(super) struct PngPlan {
     width: u32,
     height: u32,
@@ -36,6 +37,7 @@ pub(super) struct PngPlan {
 const IMAGE_FALLBACK_BACKGROUND: CanonicalColor = CanonicalColor::from_rgb8(0xe7, 0xe7, 0xe7);
 const IMAGE_FALLBACK_ICON_COLOR: CanonicalColor = CanonicalColor::from_rgb8(0x88, 0x88, 0x88);
 
+#[derive(Debug)]
 enum PngElement {
     RoughOutline {
         source: NormalizedElementSource,
@@ -130,6 +132,7 @@ enum PngElement {
     },
 }
 
+#[derive(Debug)]
 struct PngFrameClip {
     frame_source_index: usize,
     path: Path,
@@ -139,6 +142,7 @@ struct PngFrameClip {
 /// A frame's name at its own unrotated placement above the frame, painted at
 /// full opacity and outside the frame's clip like the text element the
 /// reference synthesizes for it.
+#[derive(Debug)]
 struct PngFrameName {
     label: super::text::ResolvedLabel,
     transform: PngTransform,
@@ -147,7 +151,7 @@ struct PngFrameName {
 
 /// One frame clip mask the PNG plan builds once and shares across every
 /// element that frame clips.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(super) struct PngFrameClipMask {
     /// Plan index of the clipping frame's own element, when it is emitted.
     pub(super) frame_element_index: Option<usize>,
@@ -156,7 +160,7 @@ pub(super) struct PngFrameClipMask {
     pub(super) pixels: u64,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct PngLabelMask {
     x: f64,
     y: f64,
@@ -399,7 +403,7 @@ struct PngImageClip<'a> {
     transform: PngTransform,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct PngTransform {
     a: f64,
     b: f64,

@@ -2,6 +2,7 @@ use super::*;
 use crate::font_metadata::FamilyMetrics;
 use crate::normalization::NormalizedText;
 
+#[derive(Debug)]
 pub(super) struct ResolvedScene {
     pub(super) logical_width: f64,
     pub(super) logical_height: f64,
@@ -180,6 +181,7 @@ pub(super) fn relationship_element_target(
     })
 }
 
+#[derive(Debug)]
 pub(super) enum ResolveSceneError {
     Memory,
     InvalidFallbackFont,
@@ -1170,6 +1172,7 @@ impl ResolvedScene {
     }
 }
 
+#[derive(Debug)]
 pub(super) enum ResolvedElement {
     Outline(ResolvedOutline),
     Freedraw(ResolvedFreedraw),
@@ -1204,6 +1207,7 @@ impl ResolvedElement {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedImageAsset {
     pub(super) identity: [u8; 32],
     pub(super) source_bytes: std::sync::Arc<Vec<u8>>,
@@ -1217,11 +1221,13 @@ pub(super) struct ResolvedImageAsset {
     pub(super) svg_fallback_pointer: Option<String>,
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedImageInputs {
     pub(super) assets: std::collections::BTreeMap<usize, std::sync::Arc<ResolvedImageAsset>>,
     pub(super) fallbacks: Vec<(usize, crate::normalization::NormalizedImageStatus)>,
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedImage {
     source_order: u64,
     pub(super) source: NormalizedElementSource,
@@ -1284,6 +1290,7 @@ impl DarkModeImageFilter {
 /// canvas paints through `roundRect`. Like a frame clip it carries both the
 /// radius for the SVG rectangle and the same outline as a path for the
 /// backends that rasterize or emit one.
+#[derive(Debug)]
 pub(super) struct ResolvedImageCornerClip {
     pub(super) radius: f64,
     pub(super) path: rough::Path,
@@ -1309,6 +1316,7 @@ impl ResolvedImageCornerClip {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedImageFallback {
     source_order: u64,
     pub(super) source: NormalizedElementSource,
@@ -1416,7 +1424,7 @@ impl ResolvedImageProjection {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct ResolvedImageSourceRect {
     pub(super) x: f64,
     pub(super) y: f64,
@@ -1424,6 +1432,7 @@ pub(super) struct ResolvedImageSourceRect {
     pub(super) height: f64,
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedTextElement {
     pub(super) source_order: u64,
     pub(super) source: NormalizedElementSource,
@@ -1442,6 +1451,7 @@ pub(super) struct ResolvedTextElement {
     pub(super) height: f64,
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedOutline {
     pub(super) source_order: u64,
     pub(super) source: NormalizedElementSource,
@@ -1467,7 +1477,7 @@ pub(super) struct ResolvedOutline {
     final_pass: bool,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct ResolvedLabelMask {
     pub(super) x: f64,
     pub(super) y: f64,
@@ -1475,6 +1485,7 @@ pub(super) struct ResolvedLabelMask {
     pub(super) height: f64,
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedFreedraw {
     source_order: u64,
     pub(super) source: NormalizedElementSource,
@@ -1492,6 +1503,7 @@ pub(super) struct ResolvedFreedraw {
     pub(super) height: f64,
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedFrame {
     pub(super) source_order: u64,
     pub(super) source: NormalizedElementSource,
@@ -1509,6 +1521,7 @@ pub(super) struct ResolvedFrame {
 /// `FRAME_STYLE.radius` corners, stroked `FRAME_STYLE.strokeWidth` wide in the
 /// reference's outline colors, lowered into the color mode like every other
 /// color the reference paints under its dark-mode filter.
+#[derive(Debug)]
 pub(super) struct ResolvedFrameOutline {
     pub(super) path: rough::Path,
     /// `FRAME_STYLE.strokeColor` for the mode: the stroke the reference's SVG
@@ -1544,6 +1557,7 @@ impl ResolvedFrameOutline {
 /// text element (`addFrameLabelsAsTextElements`) rather than a decoration of
 /// the frame. It has its own unrotated placement above the frame's top-left
 /// corner, full opacity, no link, and no frame clip, whatever the frame has.
+#[derive(Debug)]
 pub(super) struct ResolvedFrameName {
     pub(super) label: text::ResolvedLabel,
     /// Canvas placement of the label box's top-left corner; the angle is 0.
@@ -1552,7 +1566,7 @@ pub(super) struct ResolvedFrameName {
     pub(super) color: CanonicalColor,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum StrokeStyle {
     Solid,
     Dashed,
@@ -1581,7 +1595,7 @@ pub(super) fn decoration_stroke_style(
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct FallbackColors {
     pub(super) fill: CanonicalColor,
     pub(super) stroke: CanonicalColor,
@@ -1627,6 +1641,7 @@ impl FallbackColors {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedFallback {
     pub(super) source_order: u64,
     pub(super) source: FallbackSource,
@@ -1650,6 +1665,7 @@ struct FallbackFrameClipSource {
     angle: f64,
 }
 
+#[derive(Debug)]
 pub(super) struct SemanticFrameSource {
     pub(super) source_index: usize,
     pub(super) x: f64,
@@ -1660,6 +1676,7 @@ pub(super) struct SemanticFrameSource {
     pub(super) opacity: f64,
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedClip {
     /// Source index of the frame whose outline this clip reproduces. Every
     /// element clipped by the same frame shares one clip identity, which lets
@@ -1718,11 +1735,13 @@ impl ResolvedFallback {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct FallbackSource {
     pub(super) id: Option<String>,
     pub(super) pointer: String,
 }
 
+#[derive(Debug)]
 pub(super) struct SemanticWorkingRecord {
     pub(super) source_order: u64,
     pub(super) event: &'static str,
@@ -1732,7 +1751,7 @@ pub(super) struct SemanticWorkingRecord {
     pub(super) bytes: u64,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct ResolvedTransform {
     pub(super) translation_x: f64,
     pub(super) translation_y: f64,

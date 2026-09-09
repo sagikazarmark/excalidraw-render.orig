@@ -9,6 +9,7 @@ pub(super) enum GenerationLimit {
     WorkUnits,
 }
 
+#[derive(Debug)]
 pub(super) enum GenerationError {
     Limit {
         kind: GenerationLimit,
@@ -117,12 +118,13 @@ impl GenerationBudget {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct Point {
     pub(super) x: f64,
     pub(super) y: f64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) enum PathOperation {
     Move(Point),
     Line(Point),
@@ -133,6 +135,7 @@ pub(super) enum PathOperation {
     },
 }
 
+#[derive(Debug, PartialEq)]
 pub(super) struct Path {
     pub(super) operations: Vec<PathOperation>,
 }
@@ -263,16 +266,19 @@ fn retain_cubic_extremum(
     1
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum FillKind {
     Solid,
     Sketch,
 }
 
+#[derive(Debug, PartialEq)]
 pub(super) struct Fill {
     pub(super) path: Path,
     pub(super) kind: FillKind,
 }
 
+#[derive(Debug, PartialEq)]
 pub(super) struct Drawing {
     pub(super) outline: Path,
     pub(super) fill: Option<Fill>,
@@ -280,19 +286,20 @@ pub(super) struct Drawing {
     pub(super) decorations: Vec<Decoration>,
 }
 
+#[derive(Debug, PartialEq)]
 pub(super) struct Decoration {
     pub(super) drawing: Drawing,
     pub(super) fill_paint: DecorationFillPaint,
     pub(super) dotted: bool,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DecorationFillPaint {
     Stroke,
     Background,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DrawableShape {
     Curve,
     Ellipse,
@@ -326,7 +333,7 @@ impl Drawing {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum FillStyle {
     Solid,
     Hachure,

@@ -155,15 +155,19 @@ fn bounded_fallback_and_unbounded_omission_succeed_in_every_format() {
 }
 
 #[test]
-fn compatibility_labels_use_full_ellipsis_or_omitted_fit_behavior() {
+fn compatibility_placeholder_labels_carry_their_derived_font_notice_and_artifact_manifest_into_every_format(
+) {
+    // Label fit (full, ellipsis, omitted) and which placeholder components fit
+    // the source bounds are decided at resolution and tested in
+    // `render::resolve_tests`; this keeps a labelled and an ellipsis-only
+    // placeholder reaching each format with the font notice the label owes.
     let scene = SceneDocument::parse(
         br#"{
         "type":"excalidraw",
         "version":2,
         "elements":[
             {"id":"wide","type":"future","x":0,"y":0,"width":200,"height":60,"updated":1},
-            {"id":"narrow","type":"","x":220,"y":0,"width":20,"height":30,"updated":1},
-            {"id":"tiny","type":"future","x":260,"y":0,"width":8,"height":8,"updated":1}
+            {"id":"narrow","type":"","x":220,"y":0,"width":20,"height":30,"updated":1}
         ],
         "appState":{},
         "files":{}
@@ -477,36 +481,6 @@ fn long_embeddable_links_wrap_within_the_offline_label_width() {
     let outcome = render(&scene, OutputFormat::Svg);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.matches("<tspan ").count() > 1);
-}
-
-#[test]
-fn compatibility_placeholder_omits_components_that_do_not_fit_source_bounds() {
-    let scene = SceneDocument::parse(
-        br#"{
-        "type":"excalidraw","version":2,
-        "elements":[{"id":"tiny","type":"future","x":0,"y":0,"width":1,"height":1,"updated":1}],
-        "appState":{},"files":{}
-    }"#,
-    )
-    .expect("tiny positive bounds are recoverable");
-
-    let svg = render(&scene, OutputFormat::Svg);
-    let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
-    assert!(svg.contains("width=\"1\" height=\"1\" fill=\"#f1f3f5\""));
-    assert!(!svg.contains("stroke=\"#868e96\""));
-    assert!(!svg.contains("<path "));
-    assert!(!svg.contains("<text "));
-
-    let png = render(&scene, OutputFormat::Png);
-    let rgba = decode_png(png.artifact().bytes()).rgba;
-    assert!(!rgba
-        .chunks_exact(4)
-        .any(|pixel| pixel[..3] == [0x86, 0x8e, 0x96]));
-
-    let pdf = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
-    assert!(!pdf.contains("[6 4] 0 d"));
-    assert!(!pdf.contains("/ActualText"));
 }
 
 #[test]

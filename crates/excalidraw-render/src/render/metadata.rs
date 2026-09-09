@@ -23,11 +23,13 @@ const SCENE_MEDIA_TYPE: &str = "application/vnd.excalidraw+json";
 const WRAPPER_PREFIX: &[u8] =
     b"{\"version\":\"1\",\"encoding\":\"bstring\",\"compressed\":true,\"encoded\":\"";
 
+#[derive(Debug)]
 pub(super) struct ArtifactMetadata {
     manifest: Option<String>,
     scene: Option<EmbeddedScene>,
 }
 
+#[derive(Debug)]
 struct EmbeddedScene {
     canonical: Vec<u8>,
     wrapper: Vec<u8>,

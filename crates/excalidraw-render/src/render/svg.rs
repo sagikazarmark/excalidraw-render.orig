@@ -69,7 +69,7 @@ impl SvgSink for CountingWriter {
 /// translation and centre. `ResolvedTransform` carries radians, so the
 /// conversion happens once here rather than at each element variant — the same
 /// coordinate-space boundary `PngTransform` marks for device pixels.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct SvgTransform {
     translation_x: f64,
     translation_y: f64,
@@ -90,6 +90,7 @@ impl SvgTransform {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct SvgPlan {
     logical_width: f64,
     logical_height: f64,
@@ -162,6 +163,7 @@ impl SvgImageFilterDefinition for DarkModeImageFilter {
     }
 }
 
+#[derive(Debug)]
 enum SvgElement {
     RoughOutline {
         source: NormalizedElementSource,
@@ -268,6 +270,7 @@ impl SvgElement {
 
 /// A frame's name as its own unrotated, unclipped, fully opaque text element
 /// above the frame, the way the reference export synthesizes it.
+#[derive(Debug)]
 struct SvgFrameName {
     label: super::text::ResolvedLabel,
     transform: SvgTransform,

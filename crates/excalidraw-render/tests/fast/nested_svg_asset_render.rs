@@ -1,7 +1,14 @@
+//! Nested-SVG images end to end. The sanitizer's removals, refusals and
+//! recursion ceilings are unit tested at `render::asset::svg`, and which PDF
+//! raster closures a nested SVG's effects need on the PDF plan in
+//! `render::plan_tests`; what stays here is the session's mapping of those
+//! outcomes to diagnostics and errors, the accounting they participate in, and
+//! the native-versus-raster projection of each format.
+
 use base64::Engine as _;
 use excalidraw_render::{
     DiagnosticCode, ErrorCode, ErrorDetails, OutputFormat, PdfOptions, PdfRasterFallback, Recovery,
-    RenderRequest, Renderer, ResourceLimits, SceneDocument, Sizing,
+    RenderRequest, Renderer, ResourceLimits, SceneDocument,
 };
 
 use crate::common::image_scene::image_scene;
@@ -85,37 +92,6 @@ fn unsafe_nested_svg_boundaries_are_removed_before_embedding() {
 }
 
 #[test]
-fn dtds_and_declared_entities_are_removed_without_expansion() {
-    let nested = br##"<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY secret "EXPANDED">]><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><text>&secret;</text><rect width="20" height="10" fill="#00ff00"/></svg>"##;
-    let scene = nested_svg_scene(nested, 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("SVG request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("DTD and entity boundaries are removed locally");
-    let artifact = std::str::from_utf8(outcome.artifact().bytes()).expect("artifact is UTF-8");
-    let sanitized = embedded_svg(artifact);
-
-    assert!(!sanitized.contains("DOCTYPE"));
-    assert!(!sanitized.contains("ENTITY"));
-    assert!(!sanitized.contains("EXPANDED"));
-    assert_eq!(
-        outcome
-            .report()
-            .diagnostics()
-            .iter()
-            .map(|diagnostic| diagnostic.code())
-            .collect::<Vec<_>>(),
-        [
-            DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED,
-            DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED,
-        ]
-    );
-}
-
-#[test]
 fn nested_svg_node_ceiling_recovers_before_viewer_parsing() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
     let scene = nested_svg_scene(nested, 20, 10);
@@ -139,34 +115,6 @@ fn nested_svg_node_ceiling_recovers_before_viewer_parsing() {
     );
     let artifact = std::str::from_utf8(outcome.artifact().bytes()).expect("artifact is UTF-8");
     assert!(!artifact.contains("data:image/svg+xml;base64,"));
-}
-
-#[test]
-fn nested_data_svg_is_recursively_sanitized_before_embedding() {
-    let child = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/><script>alert(1)</script></svg>"##;
-    let child = base64::engine::general_purpose::STANDARD.encode(child);
-    let parent = format!(
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/svg+xml;base64,{child}"/></svg>"#
-    );
-    let scene = nested_svg_scene(parent.as_bytes(), 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("SVG request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("nested data SVG renders after recursive sanitization");
-    let artifact = std::str::from_utf8(outcome.artifact().bytes()).expect("artifact is UTF-8");
-    let parent = embedded_svg(artifact);
-    let child = embedded_svg(&parent);
-
-    assert!(child.contains("<rect"));
-    assert!(!child.contains("script"));
-    assert_eq!(outcome.report().diagnostics().len(), 1);
-    assert_eq!(
-        outcome.report().diagnostics()[0].code(),
-        DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED
-    );
 }
 
 #[test]
@@ -305,29 +253,6 @@ fn malformed_nested_svg_reports_its_validated_media_family() {
             ..
         }) if media_type == "image/svg+xml"
     ));
-}
-
-#[test]
-fn external_stylesheet_processing_instruction_is_diagnosed_and_removed() {
-    let nested = br##"<?xml-stylesheet href="https://example.com/theme.css"?><svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10" fill="#00ff00"/></svg>"##;
-    let scene = nested_svg_scene(nested, 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("external stylesheet instruction is removed locally");
-    let artifact = std::str::from_utf8(outcome.artifact().bytes()).expect("artifact is UTF-8");
-    let sanitized = embedded_svg(artifact);
-
-    assert!(!sanitized.contains("xml-stylesheet"));
-    assert!(!sanitized.contains("example.com"));
-    assert_eq!(outcome.report().diagnostics().len(), 1);
-    assert_eq!(
-        outcome.report().diagnostics()[0].code(),
-        DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED
-    );
 }
 
 #[test]
@@ -519,26 +444,6 @@ fn repeated_references_discover_an_authoritative_nested_chain_once() {
 }
 
 #[test]
-fn nested_raster_data_is_validated_and_canonicalized() {
-    let parent = format!(
-        r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><image width="20" height="10" href="data:image/png;base64,{PNG_BASE64}"/></svg>"#
-    );
-    let scene = nested_svg_scene(parent.as_bytes(), 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Svg)
-        .build()
-        .expect("request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("validated nested raster renders");
-    let artifact = std::str::from_utf8(outcome.artifact().bytes()).expect("artifact is UTF-8");
-    let sanitized = embedded_svg(artifact);
-
-    assert!(sanitized.contains(&format!("data:image/png;base64,{PNG_BASE64}")));
-    assert!(outcome.report().diagnostics().is_empty());
-}
-
-#[test]
 fn data_images_are_not_admitted_as_link_actions() {
     let nested = format!(
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><a href="data:image/png;base64,{PNG_BASE64}"><rect width="20" height="10" fill="#00ff00"/></a></svg>"##
@@ -598,6 +503,10 @@ fn identical_unsafe_svg_bytes_diagnose_each_authoritative_file_owner_once() {
 
 #[test]
 fn pdf_rasterizes_an_isolated_effect_closure_with_exact_diagnostics() {
+    // Which closures a nested SVG's effects need, their bounds, device pixels
+    // and causes are the PDF plan's decisions and are tested on the plan in
+    // `render::plan_tests`; this keeps one closure reaching the PDF bytes with
+    // the diagnostic the session owes for it.
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" fill="#00ff00" filter="url(#blur)"/></svg>"##;
     let scene = nested_svg_scene(nested, 20, 10);
     let request = RenderRequest::builder(OutputFormat::Pdf)
@@ -610,6 +519,8 @@ fn pdf_rasterizes_an_isolated_effect_closure_with_exact_diagnostics() {
     let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
 
     assert!(pdf.contains("/Subtype /Image"));
+    assert!(pdf.contains("/Width 20"));
+    assert!(pdf.contains("/Height 10"));
     assert_eq!(outcome.report().diagnostics().len(), 1);
     let diagnostic = &outcome.report().diagnostics()[0];
     assert_eq!(diagnostic.code(), DiagnosticCode::PDF_RASTER_FALLBACK);
@@ -660,170 +571,6 @@ fn pdf_forbid_rejects_the_first_effect_closure_without_a_fallback_warning() {
 }
 
 #[test]
-fn pdf_fallback_policy_applies_to_inline_style_filters() {
-    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" style="fill:#00ff00;filter:url(#blur)"/></svg>"##;
-    let scene = nested_svg_scene(nested, 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
-        .build()
-        .expect("request is valid");
-
-    let error = Renderer::new()
-        .render(&scene, &request)
-        .expect_err("inline filter cannot bypass fallback policy");
-
-    assert_eq!(error.code(), ErrorCode::PDF_RASTER_FALLBACK_FORBIDDEN);
-}
-
-#[test]
-fn root_local_effect_does_not_require_external_backdrop_capture() {
-    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10" filter="url(#blur)"><defs><filter id="blur"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10"/></svg>"##;
-    let scene = nested_svg_scene(nested, 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("root-local closure remains inside the nested SVG");
-
-    assert_eq!(outcome.report().diagnostics().len(), 1);
-    assert_eq!(
-        outcome.report().diagnostics()[0].code(),
-        DiagnosticCode::PDF_RASTER_FALLBACK
-    );
-}
-
-#[test]
-fn pdf_forbid_ignores_empty_noop_and_fully_clipped_effects() {
-    for (case, nested) in [
-        br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect"></filter></defs><rect width="20" height="10" filter="url(#effect)"/></svg>"##.as_slice(),
-        br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect"><feGaussianBlur stdDeviation="0"/></filter></defs><rect width="20" height="10" filter="url(#effect)"/></svg>"##.as_slice(),
-        br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect"><feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1 0"/></filter></defs><rect width="20" height="10" filter="url(#effect)"/></svg>"##.as_slice(),
-        br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect"><feComponentTransfer><feFuncR type="identity"/><feFuncA type="identity"/></feComponentTransfer></filter></defs><rect width="20" height="10" filter="url(#effect)"/></svg>"##.as_slice(),
-        br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect"><feGaussianBlur stdDeviation="1"/></filter><clipPath id="empty"><path d=""/></clipPath></defs><rect width="20" height="10" clip-path="url(#empty)" filter="url(#effect)"/></svg>"##.as_slice(),
-        br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect"><feGaussianBlur stdDeviation="1"/></filter><clipPath id="away"><circle cx="15" cy="5" r="2"/></clipPath></defs><rect width="2" height="2" clip-path="url(#away)" filter="url(#effect)"/></svg>"##.as_slice(),
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        let scene = nested_svg_scene(nested, 20, 10);
-        let request = RenderRequest::builder(OutputFormat::Pdf)
-            .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
-            .build()
-            .expect("request is valid");
-        let outcome = Renderer::new()
-            .render(&scene, &request)
-            .expect("culled effects do not require fallback");
-        let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
-
-        assert!(!pdf.contains("/Subtype /Image"), "case {case}");
-        assert!(outcome.report().diagnostics().is_empty());
-    }
-}
-
-#[test]
-fn pdf_merges_dependent_effects_to_the_outermost_required_closure() {
-    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="outer" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter><filter id="inner" x="0" y="0" width="100%" height="100%"><feColorMatrix type="saturate" values="0.5"/></filter></defs><g filter="url(#outer)"><rect width="20" height="10" fill="#00ff00" filter="url(#inner)"/></g></svg>"##;
-    let scene = nested_svg_scene(nested, 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("dependent effects merge into one emitted closure");
-
-    assert_eq!(outcome.report().diagnostics().len(), 1);
-    let Some(ErrorDetails::PdfRasterFallback { causes, .. }) =
-        outcome.report().diagnostics()[0].details()
-    else {
-        panic!("fallback details are present");
-    };
-    assert!(causes.len() >= 4, "merged closure retains every cause");
-}
-
-#[test]
-fn pdf_reports_sibling_effect_closures_in_expanded_tree_order() {
-    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="a" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter><filter id="b" x="0" y="0" width="100%" height="100%"><feColorMatrix type="saturate" values="0.5"/></filter></defs><rect width="10" height="10" filter="url(#a)"/><rect x="10" width="10" height="10" filter="url(#b)"/></svg>"##;
-    let scene = nested_svg_scene(nested, 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("independent effects remain separate closures");
-    let bounds = outcome
-        .report()
-        .diagnostics()
-        .iter()
-        .map(|diagnostic| match diagnostic.details() {
-            Some(ErrorDetails::PdfRasterFallback {
-                logical_bounds: Some(bounds),
-                ..
-            }) => (bounds.x(), bounds.width()),
-            _ => panic!("fallback details are present"),
-        })
-        .collect::<Vec<_>>();
-
-    assert_eq!(bounds, [(10.0, 10.0), (20.0, 10.0)]);
-}
-
-#[test]
-fn pdf_shared_filter_occurrences_keep_their_own_causative_nodes() {
-    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="10" height="10" filter="url(#blur)"/><rect x="10" width="10" height="10" filter="url(#blur)"/></svg>"##;
-    let scene = nested_svg_scene(nested, 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("shared filter occurrences render independently");
-    let cause_nodes = outcome
-        .report()
-        .diagnostics()
-        .iter()
-        .map(|diagnostic| match diagnostic.details() {
-            Some(ErrorDetails::PdfRasterFallback { causes, .. }) => {
-                causes[0].segments()[0].ordinal()
-            }
-            _ => panic!("fallback details are present"),
-        })
-        .collect::<Vec<_>>();
-
-    assert_eq!(cause_nodes, [4, 5]);
-}
-
-#[test]
-fn pdf_reports_each_expanded_effect_reuse_occurrence() {
-    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter><g id="shape" filter="url(#blur)"><rect width="10" height="10"/></g></defs><use href="#shape"/><use href="#shape" x="10"/></svg>"##;
-    let scene = nested_svg_scene(nested, 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("expanded effect occurrences render independently");
-    let bounds = outcome
-        .report()
-        .diagnostics()
-        .iter()
-        .map(|diagnostic| match diagnostic.details() {
-            Some(ErrorDetails::PdfRasterFallback {
-                logical_bounds: Some(bounds),
-                ..
-            }) => bounds.x(),
-            _ => panic!("fallback details are present"),
-        })
-        .collect::<Vec<_>>();
-
-    assert_eq!(bounds, [10.0, 20.0]);
-}
-
-#[test]
 fn pdf_rejects_effects_that_require_external_backdrop_capture() {
     let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blend" x="0" y="0" width="100%" height="100%"><feBlend in="SourceGraphic" in2="BackgroundImage" mode="multiply"/></filter></defs><rect width="20" height="10" filter="url(#blend)"/></svg>"##;
     let scene = nested_svg_scene(nested, 20, 10);
@@ -837,99 +584,6 @@ fn pdf_rejects_effects_that_require_external_backdrop_capture() {
 
     assert_eq!(error.code(), ErrorCode::PDF_RASTER_FALLBACK_UNISOLATABLE);
     assert!(error.report().diagnostics().is_empty());
-}
-
-#[test]
-fn pdf_effect_closure_resolution_uses_the_final_device_grid() {
-    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" filter="url(#blur)"/></svg>"##;
-    let scene = nested_svg_scene(nested, 20, 10);
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .sizing(Sizing::Scale(2.0))
-        .build()
-        .expect("request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("effect renders at final scale");
-    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
-    let Some(ErrorDetails::PdfRasterFallback {
-        pixel_width: Some(width),
-        pixel_height: Some(height),
-        ..
-    }) = outcome.report().diagnostics()[0].details()
-    else {
-        panic!("fallback dimensions are reported");
-    };
-
-    assert_eq!((*width, *height), (40, 20));
-    assert!(pdf.contains("/Width 40"));
-    assert!(pdf.contains("/Height 20"));
-}
-
-#[test]
-fn pdf_effect_closure_bounds_intersect_the_image_crop() {
-    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" filter="url(#blur)"/></svg>"##;
-    let encoded = base64::engine::general_purpose::STANDARD.encode(nested);
-    let json = format!(
-        r#"{{"type":"excalidraw","version":2,"elements":[{{
-            "id":"image","type":"image","x":0,"y":0,"width":10,"height":10,
-            "fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1,
-            "crop":{{"x":10,"y":0,"width":10,"height":10,"naturalWidth":20,"naturalHeight":10}}
-        }}],"appState":{{}},"files":{{
-            "asset":{{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,{encoded}","created":1}}
-        }}}}"#
-    );
-    let scene = SceneDocument::parse(json.as_bytes()).expect("cropped image scene is admitted");
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("cropped effect closure renders");
-    let Some(ErrorDetails::PdfRasterFallback {
-        logical_bounds: Some(bounds),
-        pixel_width: Some(pixel_width),
-        ..
-    }) = outcome.report().diagnostics()[0].details()
-    else {
-        panic!("fallback bounds are present");
-    };
-
-    assert_eq!((bounds.x(), bounds.width(), *pixel_width), (10.0, 10.0, 10));
-}
-
-#[test]
-fn repeated_effect_occurrences_share_no_diagnostics() {
-    let nested = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" filter="url(#blur)"/></svg>"##;
-    let encoded = base64::engine::general_purpose::STANDARD.encode(nested);
-    let json = format!(
-        r#"{{"type":"excalidraw","version":2,"elements":[
-            {{"id":"one","type":"image","x":0,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":1,"updated":1}},
-            {{"id":"two","type":"image","x":20,"y":0,"width":20,"height":10,"fileId":"asset","status":"saved","scale":[1,1],"seed":2,"updated":1}}
-        ],"appState":{{}},"files":{{
-            "asset":{{"id":"asset","mimeType":"image/svg+xml","dataURL":"data:image/svg+xml;base64,{encoded}","created":1}}
-        }}}}"#
-    );
-    let scene = SceneDocument::parse(json.as_bytes()).expect("scene is admitted");
-    let request = RenderRequest::builder(OutputFormat::Pdf)
-        .build()
-        .expect("request is valid");
-
-    let outcome = Renderer::new()
-        .render(&scene, &request)
-        .expect("each occurrence renders");
-
-    assert_eq!(outcome.report().diagnostics().len(), 2);
-    assert_eq!(
-        outcome
-            .report()
-            .diagnostics()
-            .iter()
-            .map(|diagnostic| diagnostic.element_id())
-            .collect::<Vec<_>>(),
-        [Some("one"), Some("two")]
-    );
 }
 
 #[test]

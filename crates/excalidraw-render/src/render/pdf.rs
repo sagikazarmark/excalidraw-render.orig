@@ -42,6 +42,7 @@ const SRGB_TRC: [u16; 256] = [
 
 // Project-owned content is lowered directly; the bounded svg2pdf adapter below
 // is confined to sanitized nested-SVG Form chunks.
+#[derive(Debug)]
 pub(super) struct PdfPlan {
     logical_width: f64,
     logical_height: f64,
@@ -62,11 +63,13 @@ pub(super) struct PdfPlan {
 /// One raster image XObject: an asset embedded once however many elements
 /// reference it, with the dark-mode filter those elements share (the filter
 /// follows from the mode and the asset kind, so they agree).
+#[derive(Debug)]
 struct PdfImageResource {
     asset: std::sync::Arc<super::ResolvedImageAsset>,
     dark_mode_filter: Option<DarkModeImageFilter>,
 }
 
+#[derive(Debug)]
 pub(super) struct PdfRasterClosure {
     pub(super) element_id: String,
     pub(super) json_pointer: String,
@@ -79,11 +82,13 @@ pub(super) struct PdfRasterClosure {
     pub(super) unisolatable: bool,
 }
 
+#[derive(Debug)]
 struct PdfSvgResource {
     asset: std::sync::Arc<super::ResolvedImageAsset>,
     raster_scale: f64,
 }
 
+#[derive(Debug)]
 struct FilterOccurrence {
     filter_id: String,
     usage_id: String,
@@ -92,6 +97,7 @@ struct FilterOccurrence {
     parent: Option<usize>,
 }
 
+#[derive(Debug)]
 enum PdfElement {
     RoughOutline {
         source: NormalizedElementSource,
@@ -184,6 +190,7 @@ enum PdfElement {
     },
 }
 
+#[derive(Debug)]
 struct PdfGlyphMapping {
     code: u16,
     glyph_id: u16,

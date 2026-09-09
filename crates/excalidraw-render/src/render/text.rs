@@ -28,6 +28,7 @@ pub(super) const FRAME_NAME_BOX_HEIGHT: f64 = FRAME_NAME_FONT_SIZE * FRAME_NAME_
 /// left-aligned in a `FRAME_NAME_BOX_HEIGHT` line box, on the baseline
 /// Helvetica's metadata metrics give that box, shaped with the Liberation Sans
 /// substitute.
+#[derive(Debug)]
 pub(super) struct FrameName {
     pub(super) label: ResolvedLabel,
     /// The synthesized text element's width: the measured advance of the name,
@@ -51,6 +52,7 @@ pub(super) struct OfficialFont {
     sfnt: Vec<u8>,
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedText {
     pub(super) font_index: usize,
     pub(super) font_family: &'static str,
@@ -67,7 +69,7 @@ pub(super) struct ResolvedText {
     pub(super) prepaid_line_break_steps: u64,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum ResolvedTextAlign {
     Left,
     Center,
@@ -139,6 +141,7 @@ impl CjkSubsetTrigger {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct ResolvedLabel {
     pub(super) text: String,
     pub(super) display_text: String,
@@ -150,6 +153,7 @@ pub(super) struct ResolvedLabel {
     pub(super) runs: Vec<ResolvedTextRun>,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub(super) struct ResolvedTextRun {
     pub(super) font_index: usize,
     pub(super) font_family: &'static str,
@@ -164,6 +168,7 @@ pub(super) struct ResolvedTextRun {
     pub(super) logical_glyphs: Vec<usize>,
 }
 
+#[derive(Debug, PartialEq)]
 pub(super) struct ResolvedGlyph {
     pub(super) id: u16,
     pub(super) x: f64,
@@ -175,10 +180,12 @@ pub(super) struct ResolvedGlyph {
     pub(super) cluster: usize,
 }
 
+#[derive(Debug, PartialEq)]
 pub(super) struct LabelPath {
     pub(super) operations: Vec<LabelPathOperation>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) enum LabelPathOperation {
     Move {
         x: f64,
@@ -205,6 +212,7 @@ pub(super) enum LabelPathOperation {
     Close,
 }
 
+#[derive(Debug)]
 pub(super) enum LabelError {
     Memory,
     InvalidFont,

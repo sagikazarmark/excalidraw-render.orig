@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub(super) struct MandatoryNotices(String);
 
 pub(super) enum NoticeError {

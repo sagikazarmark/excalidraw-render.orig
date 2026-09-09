@@ -9,14 +9,17 @@ use std::collections::TryReserveError;
 const RATE_OF_PRESSURE_CHANGE: f64 = 0.275;
 const FIXED_PI: f64 = std::f64::consts::PI + 0.0001;
 
+#[derive(Debug, PartialEq)]
 pub(super) struct Path {
     pub(super) operations: Vec<PathOperation>,
 }
 
+#[derive(Debug, PartialEq)]
 pub(super) struct ProjectedPath {
     pub(super) operations: Vec<PathOperation>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) enum PathOperation {
     Move(Point),
     Quadratic { control: Point, end: Point },

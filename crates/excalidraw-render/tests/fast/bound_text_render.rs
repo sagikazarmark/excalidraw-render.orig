@@ -1,59 +1,13 @@
+//! The bound-text family's one end-to-end smoke. Placement, paint order and
+//! the reciprocity rules are asserted once on the resolved scene in
+//! `render::resolve_tests`; this keeps the arrow label reaching every format.
+
 use excalidraw_render::{OutputFormat, SceneDocument};
 
 use crate::common::render::render_artifact;
 
 #[test]
-fn shape_bound_text_inherits_the_container_rotation() {
-    let scene = SceneDocument::parse(br##"{
-        "type":"excalidraw","version":2,
-        "elements":[
-            {"id":"box","type":"rectangle","x":0,"y":0,"width":100,"height":60,"angle":0.5,"boundElements":[{"type":"text","id":"label"}],"roughness":0,"updated":1},
-            {"id":"label","type":"text","x":20,"y":20,"width":60,"height":20,"angle":0,"containerId":"box","fontSize":16,"fontFamily":5,"text":"Bound","textAlign":"center","verticalAlign":"middle","lineHeight":1.25,"updated":1}
-        ],
-        "appState":{},"files":{}
-    }"##)
-    .expect("bound text scene is admitted");
-
-    let svg = render_svg(&scene);
-    let text_group = svg
-        .split("<text data-source-text=\"Bound\"")
-        .next()
-        .and_then(|prefix| prefix.rsplit("<g transform=\"").next())
-        .expect("bound text transform is emitted");
-    assert!(text_group.contains("rotate(28.64788975654116 30 10)"));
-}
-
-#[test]
-fn shape_bound_text_paints_at_its_stored_coordinates() {
-    let scene = SceneDocument::parse(br##"{
-        "type":"excalidraw","version":2,
-        "elements":[
-            {"id":"box","type":"rectangle","x":0,"y":0,"width":120,"height":80,"boundElements":[{"type":"text","id":"label"}],"roughness":0,"updated":1},
-            {"id":"label","type":"text","x":400,"y":400,"width":30,"height":20,"containerId":"box","fontSize":16,"fontFamily":5,"text":"Fit","textAlign":"right","verticalAlign":"bottom","lineHeight":1.25,"updated":1}
-        ],
-        "appState":{},"files":{}
-    }"##)
-    .expect("aligned bound text scene is admitted");
-
-    let svg = render_svg(&scene);
-    let text_group = svg
-        .split("<text data-source-text=\"Fit\"")
-        .next()
-        .and_then(|prefix| prefix.rsplit("<g transform=\"").next())
-        .expect("bound text transform is emitted");
-    // The label is stored at (400, 400), far outside its 120x80 container, and
-    // paints there rather than being re-derived from the container box and the
-    // align values. focused.bound-text-probe.v1 holds the official evidence: a
-    // label stored outside its container renders outside it and expands the
-    // scene bounds to include it. The transform carries the 10px export padding.
-    assert!(
-        text_group.starts_with("translate(410 410)"),
-        "bound label should paint at its stored coordinates, got {text_group:.40}"
-    );
-}
-
-#[test]
-fn arrow_bound_text_uses_the_resolved_arrow_midpoint() {
+fn arrow_bound_text_renders_at_the_arrow_midpoint_in_every_format() {
     let scene = SceneDocument::parse(br##"{
         "type":"excalidraw","version":2,
         "elements":[
@@ -64,7 +18,7 @@ fn arrow_bound_text_uses_the_resolved_arrow_midpoint() {
     }"##)
     .expect("arrow label scene is admitted");
 
-    let svg = render_svg(&scene);
+    let svg = String::from_utf8(render_artifact(&scene, OutputFormat::Svg)).expect("SVG is UTF-8");
     let view_box = svg
         .split("viewBox=\"0 0 ")
         .nth(1)
@@ -82,6 +36,7 @@ fn arrow_bound_text_uses_the_resolved_arrow_midpoint() {
     );
     assert!(svg.contains("<mask id=\"arrow-label-mask-"));
     assert!(svg.contains("mask=\"url(#arrow-label-mask-"));
+    assert!(svg.contains("<text data-source-text=\"Label\""));
 
     let png = render_artifact(&scene, OutputFormat::Png);
     assert!(png.starts_with(b"\x89PNG\r\n\x1a\n"));
@@ -89,72 +44,4 @@ fn arrow_bound_text_uses_the_resolved_arrow_midpoint() {
     let pdf = String::from_utf8_lossy(&render_artifact(&scene, OutputFormat::Pdf)).into_owned();
     assert!(pdf.contains("W*\nn\n"));
     assert!(!pdf.contains("/Subtype /Image"));
-}
-
-#[test]
-fn bound_text_paints_with_its_reciprocal_container() {
-    let scene = SceneDocument::parse(br##"{
-        "type":"excalidraw","version":2,
-        "elements":[
-            {"id":"label","type":"text","x":10,"y":10,"width":40,"height":20,"containerId":"box","fontSize":16,"fontFamily":5,"text":"Label","textAlign":"center","verticalAlign":"middle","lineHeight":1.25,"updated":1},
-            {"id":"box","type":"rectangle","x":0,"y":0,"width":60,"height":40,"boundElements":[{"type":"text","id":"label"}],"strokeColor":"#e03131","roughness":0,"updated":1},
-            {"id":"later","type":"rectangle","x":80,"y":0,"width":20,"height":20,"strokeColor":"#1971c2","roughness":0,"updated":1}
-        ],
-        "appState":{},"files":{}
-    }"##)
-    .expect("reordered bound text scene is admitted");
-
-    let svg = render_svg(&scene);
-    let container = svg.find("stroke=\"#e03131\"").expect("container paints");
-    let label = svg
-        .find("data-source-text=\"Label\"")
-        .expect("bound label paints");
-    let later = svg.find("stroke=\"#1971c2\"").expect("later shape paints");
-    assert!(container < label && label < later);
-}
-
-#[test]
-fn one_way_container_reference_does_not_create_an_arrow_mask_or_label() {
-    let scene = SceneDocument::parse(br##"{
-        "type":"excalidraw","version":2,
-        "elements":[
-            {"id":"arrow","type":"arrow","x":0,"y":20,"width":100,"height":0,"points":[[0,0],[100,0]],"roughness":0,"updated":1},
-            {"id":"label","type":"text","x":30,"y":10,"width":40,"height":20,"containerId":"arrow","fontSize":16,"fontFamily":5,"text":"Hidden","textAlign":"center","verticalAlign":"middle","lineHeight":1.25,"updated":1}
-        ],
-        "appState":{},"files":{}
-    }"##)
-    .expect("one-way bound text scene is admitted");
-
-    let svg = render_svg(&scene);
-    assert!(!svg.contains("arrow-label-mask"));
-    assert!(!svg.contains("data-source-text=\"Hidden\""));
-}
-
-#[test]
-fn arrow_binding_does_not_turn_standalone_text_into_a_bound_label() {
-    let scene = SceneDocument::parse(br##"{
-        "type":"excalidraw","version":2,
-        "elements":[
-            {"id":"label","type":"text","x":0,"y":0,"width":100,"height":20,"containerId":null,"boundElements":[{"id":"arrow","type":"arrow"}],"fontSize":16,"fontFamily":5,"text":"Standalone","lineHeight":1.25,"updated":1},
-            {"id":"arrow","type":"arrow","x":120,"y":10,"width":80,"height":0,"points":[[0,0],[80,0]],"startBinding":{"elementId":"label","focus":0,"gap":1},"roughness":0,"updated":1}
-        ],
-        "appState":{},"files":{}
-    }"##)
-    .expect("arrow-bound standalone text scene is admitted");
-
-    let svg = render_svg(&scene);
-    assert_eq!(
-        svg.matches("<text data-source-text=\"Standalone\"").count(),
-        1
-    );
-    let text_group = svg
-        .split("<text data-source-text=\"Standalone\"")
-        .next()
-        .and_then(|prefix| prefix.rsplit("<g transform=\"").next())
-        .expect("standalone text is emitted");
-    assert!(text_group.starts_with("translate(10 10)"));
-}
-
-fn render_svg(scene: &SceneDocument) -> String {
-    String::from_utf8(render_artifact(scene, OutputFormat::Svg)).expect("SVG is UTF-8")
 }

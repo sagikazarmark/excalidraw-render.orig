@@ -1,5 +1,6 @@
 use super::*;
 
+#[derive(Debug)]
 pub(super) struct ResolvedFont {
     pub(super) family: &'static str,
     pub(super) pdf_name: &'static str,

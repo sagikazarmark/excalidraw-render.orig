@@ -1,6 +1,6 @@
 use base64::Engine as _;
 use excalidraw_render::{
-    DiagnosticCode, ErrorDetails, OutputFormat, Recovery, RenderRequest, Renderer, ResourceLimits,
+    DiagnosticCode, ErrorDetails, OutputFormat, RenderRequest, Renderer, ResourceLimits,
     SceneDocument,
 };
 
@@ -214,108 +214,6 @@ fn excalifont_uses_ordered_cjk_and_emoji_fallbacks_in_every_format() {
                 assert!(pdf.contains("/BaseFont /Xiaolai"));
                 assert!(pdf.contains("/BaseFont /NotoEmoji"));
                 assert!(pdf.contains("/ActualText <FEFF00414E2DD83DDE00>"));
-            }
-            _ => unreachable!("this test covers revision 1 formats"),
-        }
-    }
-}
-
-#[test]
-fn xiaolai_only_joins_excalifont_fallback_when_the_cjk_subset_trigger_fires() {
-    // U+20A9 WON SIGN is outside every Excalifont declared range and outside
-    // the frozen CJK scalar table, yet inside a Xiaolai chunk's declared range.
-    // Without a CJK scalar in Excalifont demand, Xiaolai is not selected, so the
-    // sign is a missing codepoint in every format rather than a Xiaolai glyph
-    // in PNG/PDF and an undeclared `font-family="Xiaolai"` run in SVG.
-    let scene = text_scene(5, "A\u{20a9}");
-
-    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let request = RenderRequest::builder(format)
-            .build()
-            .expect("request is valid");
-        let first = Renderer::new()
-            .render(&scene, &request)
-            .expect("untriggered Excalifont text renders");
-
-        let [diagnostic] = first.report().diagnostics() else {
-            panic!("the won sign is one missing codepoint for {format:?}");
-        };
-        assert_eq!(diagnostic.code(), DiagnosticCode::FONT_MISSING_GLYPH);
-        assert_eq!(diagnostic.element_id(), Some("text"));
-        assert!(
-            matches!(
-                diagnostic.details(),
-                Some(ErrorDetails::MissingGlyph {
-                    codepoint: 0x20a9,
-                    recovery: Recovery::Substituted,
-                })
-            ),
-            "the won sign is the substituted codepoint for {format:?}"
-        );
-
-        match format {
-            OutputFormat::Svg => {
-                let svg = std::str::from_utf8(first.artifact().bytes()).expect("SVG is UTF-8");
-                assert!(!svg.contains("Xiaolai"));
-                assert!(svg.contains("font-family:'Excalifont'"));
-                assert!(svg.contains("font-family:'ExcalidrawRender-9'"));
-                assert!(svg.contains(">A</tspan>"));
-                assert!(svg.contains("font-family=\"ExcalidrawRender-9\""));
-                assert!(svg.contains(">?</tspan>"));
-            }
-            OutputFormat::Png => assert!(first.artifact().bytes().starts_with(b"\x89PNG")),
-            OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(first.artifact().bytes());
-                assert!(!pdf.contains("/BaseFont /Xiaolai"));
-                assert!(pdf.contains("/BaseFont /Excalifont"));
-                assert!(pdf.contains("/BaseFont /LiberationSans"));
-                assert!(pdf.contains("/ActualText <FEFF004120A9>"));
-            }
-            _ => unreachable!("this test covers revision 1 formats"),
-        }
-    }
-}
-
-#[test]
-fn the_cjk_subset_trigger_extends_xiaolai_to_every_excalifont_text_in_the_scene() {
-    // The trigger is evaluated over the scene's complete Excalifont demand, so
-    // a CJK scalar in a later element already lets Xiaolai serve the won sign in
-    // an earlier one; the SVG declares Xiaolai once for both.
-    let scene = SceneDocument::parse(
-        br#"{"type":"excalidraw","version":2,"elements":[
-            {"id":"won","type":"text","width":160,"height":40,"fontSize":20,"fontFamily":5,"text":"\u20a9","updated":1},
-            {"id":"han","type":"text","x":180,"width":160,"height":40,"fontSize":20,"fontFamily":5,"text":"\u4e2d","updated":2}
-        ],"appState":{},"files":{}}"#,
-    )
-    .expect("triggered scene is admitted");
-
-    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let request = RenderRequest::builder(format)
-            .build()
-            .expect("request is valid");
-        let outcome = Renderer::new()
-            .render(&scene, &request)
-            .expect("triggered Excalifont scene renders");
-        assert!(
-            outcome.report().is_empty(),
-            "Xiaolai serves both elements silently for {format:?}"
-        );
-        match format {
-            OutputFormat::Svg => {
-                let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-                assert!(svg.contains("font-family:'Xiaolai'"));
-                assert_eq!(svg.matches("<tspan font-family=\"Xiaolai\"").count(), 2);
-                assert!(svg.contains(">\u{20a9}</tspan>"));
-                assert!(svg.contains(">\u{4e2d}</tspan>"));
-                assert!(!svg.contains(">?</tspan>"));
-            }
-            OutputFormat::Png => assert!(outcome.artifact().bytes().starts_with(b"\x89PNG")),
-            OutputFormat::Pdf => {
-                let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
-                assert!(pdf.contains("/BaseFont /Xiaolai"));
-                assert!(!pdf.contains("/BaseFont /LiberationSans"));
-                assert!(pdf.contains("/ActualText <FEFF20A9>"));
-                assert!(pdf.contains("/ActualText <FEFF4E2D>"));
             }
             _ => unreachable!("this test covers revision 1 formats"),
         }

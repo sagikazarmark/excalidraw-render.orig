@@ -255,24 +255,6 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
 }
 
 #[test]
-fn excalifont_cjk_text_uses_bundled_xiaolai_without_host_fallback() {
-    let scene = text_scene("漢漢A", 60.0, 30.0);
-    let outcome = render_svg_with_limits(&scene, ResourceLimits::default());
-    assert!(outcome.report().is_empty());
-    let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-    assert!(svg.contains("data-source-text=\"漢漢A\""));
-    assert!(svg.contains(">漢漢</tspan>"));
-    assert!(svg.contains(">A</tspan>"));
-    assert!(svg.contains("@font-face{font-family:'Excalifont'"));
-    assert!(svg.contains("@font-face{font-family:'Xiaolai'"));
-
-    let pdf = render(&scene, OutputFormat::Pdf);
-    let pdf = String::from_utf8_lossy(pdf.artifact().bytes());
-    assert!(pdf.contains("/ActualText <FEFF6F226F220041>"));
-    assert!(pdf.contains("/BaseFont /Xiaolai"));
-}
-
-#[test]
 fn basic_latin_svg_leaves_line_shaping_and_alignment_to_the_viewer() {
     for (alignment, anchor_x, text_anchor) in [
         ("left", "0", "start"),

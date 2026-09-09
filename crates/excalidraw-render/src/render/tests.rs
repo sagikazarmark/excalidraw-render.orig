@@ -822,9 +822,7 @@ fn a_selected_noto_emoji_face_is_consulted_once_per_scalar_like_an_unselected_on
         1 + 1,
         "the second emoji pays the one consultation of the selected face"
     );
-    let mut fonts = vec![text::OfficialFont::load(5, "\u{1f600}")
-        .ok()
-        .expect("Excalifont loads")];
+    let mut fonts = vec![text::OfficialFont::load(5, "\u{1f600}").expect("Excalifont loads")];
     assert_eq!(fallback_probes_with(&mut fonts, 5, "\u{1f600}"), 1);
     assert_eq!(
         fallback_probes_with(&mut fonts, 5, "\u{20a9}"),
@@ -913,9 +911,7 @@ fn png_frame_clip_masks_are_charged_once_per_frame_and_owned_by_no_child() {
 
 #[test]
 fn frame_name_is_laid_out_as_the_reference_text_element() {
-    let font = text::FallbackFont::load()
-        .ok()
-        .expect("the bundled Liberation Sans loads");
+    let font = text::FallbackFont::load().expect("the bundled Liberation Sans loads");
     let baseline = FamilyMetrics::for_source_family(2)
         .expect("Helvetica has metadata metrics")
         .first_baseline(14.0, 17.5);
@@ -925,7 +921,6 @@ fn frame_name_is_laid_out_as_the_reference_text_element() {
     // the frame's x.
     let name = font
         .resolve_frame_name("Clip", 580.0)
-        .ok()
         .expect("the name shapes");
     assert_eq!(name.label.text, "Clip");
     assert_eq!(name.label.display_text, "Clip");
@@ -941,11 +936,9 @@ fn frame_name_is_laid_out_as_the_reference_text_element() {
     // the text element as wide as the frame.
     let full = font
         .resolve_frame_name("A rather long frame name", 1_000.0)
-        .ok()
         .expect("the full name shapes");
     let narrow = font
         .resolve_frame_name("A rather long frame name", full.width / 2.0)
-        .ok()
         .expect("the truncated name shapes");
     assert_eq!(narrow.width, full.width / 2.0);
     let kept = narrow
@@ -956,7 +949,6 @@ fn frame_name_is_laid_out_as_the_reference_text_element() {
     assert!("A rather long frame name".starts_with(kept) && !kept.is_empty());
     let fits = |text: &str| {
         font.resolve_frame_name(text, f64::INFINITY)
-            .ok()
             .expect("candidate shapes")
             .width
     };
@@ -977,7 +969,6 @@ fn frame_name_is_laid_out_as_the_reference_text_element() {
     // as truncateText leaves it, at the frame's width.
     let tiny = font
         .resolve_frame_name("Clip", 1.0)
-        .ok()
         .expect("the tiny frame's name shapes");
     assert_eq!(tiny.label.text, "Clip");
     assert_eq!(tiny.width, 1.0);
@@ -985,7 +976,6 @@ fn frame_name_is_laid_out_as_the_reference_text_element() {
     // A blank name measures as one space, as measureText does.
     let blank = font
         .resolve_frame_name("", 100.0)
-        .ok()
         .expect("the blank name shapes");
     assert!(blank.label.glyphs.is_empty());
     assert!(blank.width > 0.0);
@@ -1018,12 +1008,9 @@ fn a_carriage_return_ends_a_line_like_the_reference_and_stays_in_the_source_text
     // The reference renders `element.text.replace(/\r\n?/g, "\n").split("\n")`
     // and leaves `text` alone, so `\r\n` and `\r` each end a line while the
     // source bytes round-trip through the per-line source text (#110).
-    let font = text::OfficialFont::load(5, "a\r\nb")
-        .ok()
-        .expect("Excalifont loads");
+    let font = text::OfficialFont::load(5, "a\r\nb").expect("Excalifont loads");
     let laid_out = font
         .layout("a\r\nb", excalifont_layout())
-        .ok()
         .expect("CRLF text lays out");
     assert_eq!(line_texts(&laid_out), [("a\r\n", "a"), ("b", "b")]);
     assert!((laid_out.lines[1].baseline - laid_out.lines[0].baseline - 25.0).abs() < 1e-9);
@@ -1039,9 +1026,7 @@ fn every_line_ending_shape_splits_as_replace_then_split_does() {
     // Worked through `text.replace(/\r\n?/g, "\n").split("\n")`: `\r\n` is one
     // break, a bare `\r` is one, `\n\r` and `\r\r` are two each, a trailing
     // terminator leaves an empty last line, and empty text is one empty line.
-    let font = text::OfficialFont::load(5, "ab")
-        .ok()
-        .expect("Excalifont loads");
+    let font = text::OfficialFont::load(5, "ab").expect("Excalifont loads");
     let cases: [(&str, &[(&str, &str)]); 7] = [
         ("a\rb", &[("a\r", "a"), ("b", "b")]),
         ("a\n\rb", &[("a\n", "a"), ("\r", ""), ("b", "b")]),
@@ -1080,9 +1065,7 @@ fn every_line_ending_shape_splits_as_replace_then_split_does() {
 fn the_fallback_layout_splits_lines_by_the_same_rule() {
     // Missing glyphs and bidirectional text take `layout_with_fallbacks`; a
     // `\r` there must end the line too rather than reach the fallback probes.
-    let mut fonts = vec![text::OfficialFont::load(5, "ab")
-        .ok()
-        .expect("Excalifont loads")];
+    let mut fonts = vec![text::OfficialFont::load(5, "ab").expect("Excalifont loads")];
     for (source, expected) in [
         ("a\r\nb", vec![("a\r\n", "a"), ("b", "b")]),
         ("a\rb\r", vec![("a\r", "a"), ("b\r", "b"), ("", "")]),
@@ -1264,12 +1247,9 @@ fn crlf_and_cr_lines_lay_out_as_lf_lines_do() {
     // baselines are the same for every line ending, and only the per-line
     // source text, which SVG carries in `data-source-text`, keeps the
     // element's own bytes (#110).
-    let font = text::OfficialFont::load(5, "ab")
-        .ok()
-        .expect("Excalifont loads");
+    let font = text::OfficialFont::load(5, "ab").expect("Excalifont loads");
     let lf = font
         .layout("a\nb", excalifont_layout())
-        .ok()
         .expect("LF text lays out");
     let first = EXCALIFONT.first_baseline(20.0, 1.25);
     assert_baselines(&lf, &[first, first + 25.0]);
@@ -2469,9 +2449,7 @@ fn rough_svg_paths(source: &NormalizedElement) -> Vec<String> {
     .unwrap_or_else(|| panic!("{} generates", source.source.id()));
     let path_data = |path: &rough::Path| {
         let mut data = String::new();
-        svg::push_rough_path(&mut data, path)
-            .ok()
-            .expect("path data writes");
+        svg::push_rough_path(&mut data, path).expect("path data writes");
         data
     };
     drawing
@@ -2498,9 +2476,7 @@ fn freedraw_svg_path(source: &NormalizedElement) -> String {
     let path = freedraw::generate(freedraw, source.stroke_width, &mut default_budget(source))
         .ok()
         .unwrap_or_else(|| panic!("{} generates", source.source.id()));
-    svg::freedraw_path_data(&path)
-        .ok()
-        .expect("freedraw path data writes")
+    svg::freedraw_path_data(&path).expect("freedraw path data writes")
 }
 
 fn sha256_hex(data: &str) -> String {
@@ -2678,7 +2654,6 @@ fn line_fill_uses_the_exact_export_zoom_loop_threshold() {
             adjusted_roughness(element),
             &mut default_budget(element),
         )
-        .ok()
         .expect("line generates")
     };
     let closed = drawing(&elements[0]);

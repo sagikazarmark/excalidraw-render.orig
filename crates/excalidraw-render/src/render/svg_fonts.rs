@@ -85,6 +85,7 @@ impl Session {
     }
 }
 
+#[derive(Debug)]
 pub(super) struct Bundle {
     resources: Vec<Resource>,
     mandatory_notices: Option<super::notices::MandatoryNotices>,
@@ -95,6 +96,28 @@ struct Resource {
     mime: &'static str,
     bytes: Arc<[u8]>,
     metrics: Option<font_subset::DerivationMetrics>,
+}
+
+/// `DerivationMetrics` lives in the digest-pinned `font_subset.rs` and cannot
+/// grow a derive until its next re-qualification, so a resource prints the
+/// identity of the chunk it was derived from in the metrics' place and the
+/// length of its bytes rather than the bytes.
+impl std::fmt::Debug for Resource {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Resource")
+            .field("family", &self.family)
+            .field("mime", &self.mime)
+            .field("bytes", &self.bytes.len())
+            .field(
+                "derived_from",
+                &self
+                    .metrics
+                    .as_ref()
+                    .map(font_subset::DerivationMetrics::asset_identity),
+            )
+            .finish()
+    }
 }
 
 pub(super) struct BuildError {

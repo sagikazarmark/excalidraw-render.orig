@@ -31,7 +31,11 @@ mod image;
 mod metadata;
 mod notices;
 mod pdf;
+#[cfg(test)]
+mod plan_tests;
 mod png;
+#[cfg(test)]
+mod resolve_tests;
 #[cfg(test)]
 mod resource_trace_qualification;
 #[cfg(all(test, target_arch = "wasm32"))]
@@ -84,6 +88,7 @@ fn surface_diagnostic_preflight_limit(request: &RenderRequest) -> usize {
     usize::try_from(diagnostic_limit.min(working_limit).min(work_limit)).unwrap_or(usize::MAX)
 }
 
+#[derive(Debug)]
 pub(super) enum FormatEncodeError {
     Encoding(String),
     SvgFontSubset {
@@ -98,6 +103,7 @@ pub(super) enum FormatEncodeError {
     },
 }
 
+#[derive(Debug)]
 pub(super) struct MetadataFailure {
     code: DiagnosticCode,
     component: MetadataComponent,
@@ -624,6 +630,39 @@ fn render_with_trace(
     );
     let result = session.render(scene, request, None, svg_fonts::Payload::Subset);
     (result, session.meter.trace_bytes())
+}
+
+/// The format-neutral semantic graph (spec §9) one render of `scene` under
+/// `request` would encode: admission, resolution and fallback accounting run
+/// exactly as `RenderSession::render` runs them, and the session stops before
+/// planning and encoding. Tests assert pre-encode behavior here once instead
+/// of once per format.
+#[cfg(test)]
+fn resolve_for_test(
+    scene: &SceneDocument,
+    request: &RenderRequest,
+) -> Result<ResolvedScene, RenderError> {
+    resolve_with_svg_trees_for_test(scene, request).map(|(resolved, _)| resolved)
+}
+
+/// [`resolve_for_test`] together with the nested-SVG trees resolution parsed,
+/// which `PngPlan::new` and `PdfPlan::new` take beside the resolved scene.
+#[cfg(test)]
+fn resolve_with_svg_trees_for_test(
+    scene: &SceneDocument,
+    request: &RenderRequest,
+) -> Result<(ResolvedScene, SvgTreeCache), RenderError> {
+    let mut session = RenderSession::new(
+        crate::catalog::REVISION_1.profile(),
+        crate::catalog::REVISION_1.scene_surface(),
+        scene,
+        request,
+    );
+    session.admit_session(scene, request, None)?;
+    let mut semantic_working = Vec::new();
+    let mut resolved = session.resolve_scene(scene, request, None, &mut semantic_working)?;
+    session.account_fallback_semantics(&mut resolved, request, &mut semantic_working)?;
+    Ok((resolved, session.svg_trees))
 }
 
 #[cfg(test)]

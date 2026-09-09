@@ -1,13 +1,13 @@
 use super::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(super) struct FrameTarget {
     pub(super) source_index: usize,
     pub(super) ordinal: u32,
     pub(super) kind: crate::FrameKind,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(super) struct FrameViewport {
     pub(super) min_x: f64,
     pub(super) min_y: f64,
@@ -15,7 +15,7 @@ pub(super) struct FrameViewport {
     pub(super) max_y: f64,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(super) struct EffectiveFrameRendering {
     pub(super) enabled: bool,
     pub(super) clip: bool,
@@ -232,6 +232,7 @@ pub(super) fn resolve_frame_opacity(
 /// standalone path (which filters its own normalization in place) select the
 /// same records; only their allocation and failure strategies differ, so the
 /// decision lives here and the application stays with each caller.
+#[derive(Debug)]
 pub(super) struct FrameSelection {
     pub(super) viewport: FrameViewport,
     pub(super) participating: Vec<usize>,
