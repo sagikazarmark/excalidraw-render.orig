@@ -1,10 +1,9 @@
+use crate::normalization::NormalizedElementSource;
 use crate::{color::CanonicalColor, RenderRequest, Sizing};
 
-use super::{
-    rough::{Drawing, FillKind, Path, PathOperation},
-    DarkModeImageFilter, FormatEncodeError, NormalizedElementSource, ResolvedElement,
-    ResolvedScene, StrokeStyle,
-};
+use super::resolve::{DarkModeImageFilter, ResolvedElement, ResolvedScene, StrokeStyle};
+use super::rough::{Drawing, FillKind, Path, PathOperation};
+use super::FormatEncodeError;
 
 pub(super) trait SvgSink: std::fmt::Write {
     fn push_str(&mut self, value: &str);
@@ -79,7 +78,7 @@ struct SvgTransform {
 }
 
 impl SvgTransform {
-    fn new(transform: &super::ResolvedTransform) -> Self {
+    fn new(transform: &super::resolve::ResolvedTransform) -> Self {
         Self {
             translation_x: transform.translation_x,
             translation_y: transform.translation_y,
@@ -97,7 +96,7 @@ pub(super) struct SvgPlan {
     output_width: f64,
     output_height: f64,
     background: Option<CanonicalColor>,
-    fallback_colors: super::FallbackColors,
+    fallback_colors: super::resolve::FallbackColors,
     font_bundle: super::svg_fonts::Bundle,
     mandatory_notices: Option<super::notices::MandatoryNotices>,
     metadata: Option<super::metadata::ArtifactMetadata>,
@@ -168,7 +167,7 @@ enum SvgElement {
     RoughOutline {
         source: NormalizedElementSource,
         drawing: Drawing,
-        frame_clips: Vec<super::ResolvedClip>,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
         transform: SvgTransform,
         stroke_color: CanonicalColor,
         fill_color: Option<CanonicalColor>,
@@ -177,7 +176,7 @@ enum SvgElement {
         source_stroke_width: f64,
         opacity: f64,
         background_color: CanonicalColor,
-        label_mask: Option<super::ResolvedLabelMask>,
+        label_mask: Option<super::resolve::ResolvedLabelMask>,
         link: Option<String>,
         generated_label: Option<super::text::ResolvedText>,
         generated_label_color: Option<CanonicalColor>,
@@ -189,7 +188,7 @@ enum SvgElement {
         source: NormalizedElementSource,
         path_data: String,
         background_fill: Option<super::rough::Fill>,
-        frame_clips: Vec<super::ResolvedClip>,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
         transform: SvgTransform,
         color: CanonicalColor,
         background_color: Option<CanonicalColor>,
@@ -205,7 +204,7 @@ enum SvgElement {
         /// The outline's stroke when the frame paints one: `FRAME_STYLE.strokeColor`
         /// for the color mode, as the reference SVG strokes every frame kind.
         outline_stroke_color: Option<CanonicalColor>,
-        frame_clips: Vec<super::ResolvedClip>,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
         transform: SvgTransform,
         opacity: f64,
         link: Option<String>,
@@ -215,8 +214,8 @@ enum SvgElement {
     Text {
         source: NormalizedElementSource,
         text: super::text::ResolvedText,
-        frame_clips: Vec<super::ResolvedClip>,
-        transform: super::ResolvedTransform,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
+        transform: super::resolve::ResolvedTransform,
         color: CanonicalColor,
         opacity: f64,
         link: Option<String>,
@@ -225,17 +224,17 @@ enum SvgElement {
     },
     Image {
         source: NormalizedElementSource,
-        asset: std::sync::Arc<super::ResolvedImageAsset>,
+        asset: std::sync::Arc<super::resolve::ResolvedImageAsset>,
         /// The dark-mode filter the `<image>` references, defined in `<defs>`.
         dark_mode_filter: Option<DarkModeImageFilter>,
-        frame_clips: Vec<super::ResolvedClip>,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
         /// The image's rounded-corner clip radius when it has a roundness
         /// record; the SVG defines the clip as a `<rect rx ry>`.
         corner_radius: Option<f64>,
-        transform: super::ResolvedTransform,
+        transform: super::resolve::ResolvedTransform,
         opacity: f64,
         /// The reference export's rounded viewport and content placement.
-        projection: super::ResolvedImageProjection,
+        projection: super::resolve::ResolvedImageProjection,
         scale: [i8; 2],
         link: Option<String>,
         /// The element's unrounded size: the flip axis and the link rectangle.
@@ -243,11 +242,11 @@ enum SvgElement {
         height: f64,
     },
     Fallback {
-        source: super::FallbackSource,
+        source: super::resolve::FallbackSource,
         clip_index: usize,
         label: Option<String>,
         link: Option<String>,
-        frame_clips: Vec<super::ResolvedClip>,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
         width: f64,
         height: f64,
         transform: SvgTransform,
@@ -256,7 +255,7 @@ enum SvgElement {
 }
 
 impl SvgElement {
-    fn frame_clips(&self) -> &[super::ResolvedClip] {
+    fn frame_clips(&self) -> &[super::resolve::ResolvedClip] {
         match self {
             Self::RoughOutline { frame_clips, .. }
             | Self::Freedraw { frame_clips, .. }
@@ -281,8 +280,8 @@ struct SvgFrameName {
 /// in `<defs>` and referenced by every child it clips.
 fn frame_clip_definitions(
     elements: &[SvgElement],
-) -> Result<Vec<&super::ResolvedClip>, FormatEncodeError> {
-    let mut definitions = Vec::<&super::ResolvedClip>::new();
+) -> Result<Vec<&super::resolve::ResolvedClip>, FormatEncodeError> {
+    let mut definitions = Vec::<&super::resolve::ResolvedClip>::new();
     for clip in elements.iter().flat_map(SvgElement::frame_clips) {
         if !definitions
             .iter()
@@ -302,7 +301,7 @@ fn frame_clip_definitions(
 
 fn push_frame_clip_definition<W: SvgSink + ?Sized>(
     svg: &mut W,
-    clip: &super::ResolvedClip,
+    clip: &super::resolve::ResolvedClip,
 ) -> Result<(), FormatEncodeError> {
     svg.push_str("<clipPath id=\"");
     push_frame_clip_id(svg, clip)?;
@@ -357,7 +356,7 @@ fn push_svg_corner_radius<W: SvgSink + ?Sized>(
 
 fn push_frame_clip_prefix<W: SvgSink + ?Sized>(
     svg: &mut W,
-    clips: &[super::ResolvedClip],
+    clips: &[super::resolve::ResolvedClip],
 ) -> Result<(), FormatEncodeError> {
     for clip in clips {
         svg.push_str("<g clip-path=\"url(#");
@@ -496,7 +495,7 @@ fn push_svg_run_positions<W: SvgSink + ?Sized>(
 /// untrusted input and need not be a usable XML ID.
 fn push_frame_clip_id<W: SvgSink + ?Sized>(
     svg: &mut W,
-    clip: &super::ResolvedClip,
+    clip: &super::resolve::ResolvedClip,
 ) -> Result<(), FormatEncodeError> {
     write!(svg, "frame-clip-{}", clip.frame_source_index)
         .map_err(|_| FormatEncodeError::Encoding("failed to write SVG frame clip ID".to_owned()))
@@ -901,13 +900,16 @@ impl SvgPlan {
                         *opacity,
                     )?;
                     for decoration in &drawing.decorations {
-                        let decoration_fill = super::decoration_fill_color(
+                        let decoration_fill = super::resolve::decoration_fill_color(
                             decoration,
                             *stroke_color,
                             *background_color,
                         );
                         let (decoration_style, decoration_stroke_width) =
-                            super::decoration_stroke_style(decoration, *source_stroke_width);
+                            super::resolve::decoration_stroke_style(
+                                decoration,
+                                *source_stroke_width,
+                            );
                         push_svg_drawing(
                             &mut svg,
                             &decoration.drawing,
@@ -1149,7 +1151,7 @@ impl SvgPlan {
                         svg.push_str("\" height=\"");
                         push_svg_number(&mut svg, *height, "SVG frame outline height")?;
                         svg.push('"');
-                        push_svg_corner_radius(&mut svg, super::FRAME_RADIUS)?;
+                        push_svg_corner_radius(&mut svg, super::geometry::FRAME_RADIUS)?;
                         svg.push_str(" fill=\"none\" stroke=\"");
                         stroke_color.write_hex(&mut svg).map_err(|_| {
                             FormatEncodeError::Encoding(
@@ -1159,7 +1161,7 @@ impl SvgPlan {
                         svg.push_str("\" stroke-width=\"");
                         push_svg_number(
                             &mut svg,
-                            super::FRAME_OUTLINE_STROKE_WIDTH,
+                            super::geometry::FRAME_OUTLINE_STROKE_WIDTH,
                             "SVG frame outline stroke width",
                         )?;
                         svg.push_str("\"/>");

@@ -1,10 +1,20 @@
-use super::*;
+use crate::normalization::{NormalizedElement, NormalizedElementKind};
+use crate::relationships::{RelationshipKind, RelationshipTarget, ResolvedRelationshipGraph};
+use crate::scene_surface::SurfaceFallback;
+use crate::FrameKind;
+
+use super::geometry::{include_transformed_bounds, source_layout_bounds};
+use super::resolve::{
+    relationship_element_target, ResolveSceneError, ResolvedClip, ResolvedTransform,
+    SemanticFrameSource,
+};
+use super::try_owned;
 
 #[derive(Clone, Copy, Debug)]
 pub(super) struct FrameTarget {
     pub(super) source_index: usize,
     pub(super) ordinal: u32,
-    pub(super) kind: crate::FrameKind,
+    pub(super) kind: FrameKind,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -52,7 +62,7 @@ fn frame_target_viewport(
 
 pub(super) fn frame_participating_sources(
     elements: &[NormalizedElement],
-    relationships: &crate::relationships::ResolvedRelationshipGraph,
+    relationships: &ResolvedRelationshipGraph,
     target: FrameTarget,
     viewport: FrameViewport,
 ) -> Result<Vec<usize>, std::collections::TryReserveError> {
@@ -79,12 +89,10 @@ pub(super) fn frame_participating_sources(
             continue;
         };
         for edge in &relationships.edges {
-            if edge.source != source_node
-                || edge.kind != crate::relationships::RelationshipKind::Binding
-            {
+            if edge.source != source_node || edge.kind != RelationshipKind::Binding {
                 continue;
             }
-            let crate::relationships::RelationshipTarget::Element(target_node) = edge.target else {
+            let RelationshipTarget::Element(target_node) = edge.target else {
                 continue;
             };
             if let Some(node) = relationships.nodes.get(target_node) {
@@ -131,7 +139,7 @@ fn normalized_element_aabb(source: &NormalizedElement) -> (f64, f64, f64, f64) {
 }
 
 fn fallback_participates_in_frame(
-    fallback: &crate::scene_surface::SurfaceFallback,
+    fallback: &SurfaceFallback,
     target_id: &str,
     viewport: FrameViewport,
 ) -> bool {
@@ -162,19 +170,15 @@ fn fallback_participates_in_frame(
 
 pub(super) fn relationship_frame_target(
     source_index: usize,
-    relationships: &crate::relationships::ResolvedRelationshipGraph,
+    relationships: &ResolvedRelationshipGraph,
 ) -> Option<usize> {
-    relationship_element_target(
-        source_index,
-        crate::relationships::RelationshipKind::Frame,
-        relationships,
-    )
+    relationship_element_target(source_index, RelationshipKind::Frame, relationships)
 }
 
 pub(super) fn resolve_frame_clips(
     source_index: usize,
     frames: &[SemanticFrameSource],
-    relationships: &crate::relationships::ResolvedRelationshipGraph,
+    relationships: &ResolvedRelationshipGraph,
     rendering: EffectiveFrameRendering,
     min_x: f64,
     min_y: f64,
@@ -213,7 +217,7 @@ pub(super) fn resolve_frame_clips(
 pub(super) fn resolve_frame_opacity(
     source_index: usize,
     frames: &[SemanticFrameSource],
-    relationships: &crate::relationships::ResolvedRelationshipGraph,
+    relationships: &ResolvedRelationshipGraph,
     _rendering: EffectiveFrameRendering,
 ) -> f64 {
     relationship_frame_target(source_index, relationships)
@@ -246,7 +250,7 @@ impl FrameSelection {
     /// the batch path falls back to the unfiltered scene.
     pub(super) fn compute(
         elements: &[NormalizedElement],
-        relationships: &crate::relationships::ResolvedRelationshipGraph,
+        relationships: &ResolvedRelationshipGraph,
         target: FrameTarget,
     ) -> Result<Option<Self>, std::collections::TryReserveError> {
         let Some(viewport) = frame_target_viewport(elements, target) else {
@@ -256,9 +260,7 @@ impl FrameSelection {
         let target_id = elements
             .iter()
             .find(|element| element.source.source_index() == target.source_index)
-            .map_or(Ok(String::new()), |element| {
-                super::try_owned(element.source.id())
-            })?;
+            .map_or(Ok(String::new()), |element| try_owned(element.source.id()))?;
         Ok(Some(Self {
             viewport,
             participating,
@@ -272,10 +274,7 @@ impl FrameSelection {
             .is_ok()
     }
 
-    pub(super) fn retains_fallback(
-        &self,
-        fallback: &crate::scene_surface::SurfaceFallback,
-    ) -> bool {
+    pub(super) fn retains_fallback(&self, fallback: &SurfaceFallback) -> bool {
         self.participating
             .binary_search(&fallback.source_index)
             .is_ok()

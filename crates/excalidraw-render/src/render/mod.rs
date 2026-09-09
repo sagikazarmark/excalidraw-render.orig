@@ -2,7 +2,6 @@ mod accounting;
 mod asset;
 mod bound_text;
 mod diagnostics;
-#[cfg(test)]
 pub(crate) use diagnostics::sort_diagnostics;
 mod encode;
 mod font_demand;
@@ -61,28 +60,24 @@ use test_support::{
 mod tests;
 mod text;
 
-use crate::{
-    catalog::RevisionCatalog,
-    color::{self, CanonicalColor},
-    normalization::{NormalizedElement, NormalizedElementKind, NormalizedElementSource},
-    outcome::{DiagnosticAttribution, DiagnosticOrder},
-    resource_accounting::{
-        ResourceAccount, ResourceContext, ResourceCrossing, ResourceDelta, ResourceMeter,
-        ResourcePhase, ResourceRecordKind,
-    },
-    scene::OriginalJsonVisitError,
-    Artifact, ColorMode, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode,
-    DiagnosticEffect, DiagnosticSeverity, ErrorCode, ErrorDetails, FiniteValue, Measurement,
-    MetadataComponent, MetadataOperation, OutputFormat, Recovery, ReferenceProfileIdentity,
-    RenderError, RenderErrorCategory, RenderOutcome, RenderRequest, ResourceValue, SceneDocument,
-    Sizing, ValueKind,
-};
 use std::sync::{Arc, Mutex};
 
-use self::{
-    bound_text::*, diagnostics::*, font_demand::*, frame_target::*, geometry::*, pdf::PdfPlan,
-    png::PngPlan, resolve::*, svg::SvgPlan,
+use crate::catalog::RevisionCatalog;
+use crate::outcome::{DiagnosticAttribution, DiagnosticOrder};
+use crate::resource_accounting::{
+    ResourceAccount, ResourceContext, ResourceCrossing, ResourceDelta, ResourceMeter,
+    ResourcePhase, ResourceRecordKind,
 };
+use crate::scene::OriginalJsonVisitError;
+use crate::{
+    Artifact, CompatibilityDiagnostic, CompatibilityReport, DiagnosticCode, ErrorCode,
+    ErrorDetails, FiniteValue, Measurement, MetadataComponent, MetadataOperation, OutputFormat,
+    ReferenceProfileIdentity, RenderError, RenderErrorCategory, RenderOutcome, RenderRequest,
+    ResourceValue, SceneDocument, Sizing, ValueKind,
+};
+
+use self::frame_target::FrameTarget;
+use self::resolve::{logical_aligned_bytes, ResolvedScene, SemanticWorkingRecord};
 
 #[derive(Debug)]
 pub(super) enum FormatEncodeError {

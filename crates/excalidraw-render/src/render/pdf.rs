@@ -3,16 +3,15 @@ mod raster_preflight;
 use std::fmt::Write as _;
 use std::io::Write as _;
 
+use crate::normalization::NormalizedElementSource;
 use crate::{
     color::{self, CanonicalColor},
     FiniteValue, LogicalBounds, NestedPath, NestedPathSegment, NestedSegmentKind, RenderRequest,
 };
 
-use super::{
-    rough::{self, Drawing, FillKind, Path, PathOperation},
-    DarkModeImageFilter, FormatEncodeError, NormalizedElementSource, ResolvedElement,
-    ResolvedScene, StrokeStyle,
-};
+use super::resolve::{DarkModeImageFilter, ResolvedElement, ResolvedScene, StrokeStyle};
+use super::rough::{self, Drawing, FillKind, Path, PathOperation};
+use super::FormatEncodeError;
 
 pub(super) const POINTS_PER_LOGICAL_PIXEL: f64 = 0.75;
 const ICC_PROFILE_OBJECT: usize = 5;
@@ -52,11 +51,11 @@ pub(super) struct PdfPlan {
     page_width: f64,
     page_height: f64,
     background: Option<CanonicalColor>,
-    fallback_colors: super::FallbackColors,
+    fallback_colors: super::resolve::FallbackColors,
     mandatory_notices: Option<super::notices::MandatoryNotices>,
     metadata: Option<super::metadata::ArtifactMetadata>,
     fallback_font_sfnt: Option<Vec<u8>>,
-    official_fonts: Vec<super::ResolvedFont>,
+    official_fonts: Vec<super::font_demand::ResolvedFont>,
     svg_trees: super::SvgTreeCache,
     elements: Vec<PdfElement>,
     raster_closures: Vec<PdfRasterClosure>,
@@ -67,7 +66,7 @@ pub(super) struct PdfPlan {
 /// follows from the mode and the asset kind, so they agree).
 #[derive(Debug)]
 struct PdfImageResource {
-    asset: std::sync::Arc<super::ResolvedImageAsset>,
+    asset: std::sync::Arc<super::resolve::ResolvedImageAsset>,
     dark_mode_filter: Option<DarkModeImageFilter>,
 }
 
@@ -86,7 +85,7 @@ pub(super) struct PdfRasterClosure {
 
 #[derive(Debug)]
 struct PdfSvgResource {
-    asset: std::sync::Arc<super::ResolvedImageAsset>,
+    asset: std::sync::Arc<super::resolve::ResolvedImageAsset>,
     raster_scale: f64,
 }
 
@@ -104,8 +103,8 @@ enum PdfElement {
     RoughOutline {
         source: NormalizedElementSource,
         drawing: Drawing,
-        frame_clips: Vec<super::ResolvedClip>,
-        transform: super::ResolvedTransform,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
+        transform: super::resolve::ResolvedTransform,
         stroke_color: CanonicalColor,
         fill_color: Option<CanonicalColor>,
         stroke_width: f64,
@@ -113,7 +112,7 @@ enum PdfElement {
         source_stroke_width: f64,
         opacity: f64,
         background_color: CanonicalColor,
-        label_mask: Option<super::ResolvedLabelMask>,
+        label_mask: Option<super::resolve::ResolvedLabelMask>,
         link: Option<String>,
         width: f64,
         height: f64,
@@ -125,8 +124,8 @@ enum PdfElement {
         source: NormalizedElementSource,
         path: super::freedraw::ProjectedPath,
         background_fill: Option<super::rough::Fill>,
-        frame_clips: Vec<super::ResolvedClip>,
-        transform: super::ResolvedTransform,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
+        transform: super::resolve::ResolvedTransform,
         color: CanonicalColor,
         background_color: Option<CanonicalColor>,
         source_stroke_width: f64,
@@ -137,10 +136,10 @@ enum PdfElement {
     },
     Frame {
         source: NormalizedElementSource,
-        name: Option<super::ResolvedFrameName>,
-        outline: Option<super::ResolvedFrameOutline>,
-        frame_clips: Vec<super::ResolvedClip>,
-        transform: super::ResolvedTransform,
+        name: Option<super::resolve::ResolvedFrameName>,
+        outline: Option<super::resolve::ResolvedFrameOutline>,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
+        transform: super::resolve::ResolvedTransform,
         opacity: f64,
         link: Option<String>,
         width: f64,
@@ -149,8 +148,8 @@ enum PdfElement {
     Text {
         source: NormalizedElementSource,
         text: super::text::ResolvedText,
-        frame_clips: Vec<super::ResolvedClip>,
-        transform: super::ResolvedTransform,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
+        transform: super::resolve::ResolvedTransform,
         color: CanonicalColor,
         opacity: f64,
         link: Option<String>,
@@ -159,15 +158,15 @@ enum PdfElement {
     },
     Image {
         source: NormalizedElementSource,
-        asset: std::sync::Arc<super::ResolvedImageAsset>,
+        asset: std::sync::Arc<super::resolve::ResolvedImageAsset>,
         /// The dark-mode filter official SVG applies to this image, which PDF
         /// lowers into a raster asset's pixels.
         dark_mode_filter: Option<DarkModeImageFilter>,
-        frame_clips: Vec<super::ResolvedClip>,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
         /// The rounded-corner clip of an image with a roundness record, in
         /// element space; without one the image clips to its rectangle.
         corner_clip: Option<Path>,
-        transform: super::ResolvedTransform,
+        transform: super::resolve::ResolvedTransform,
         opacity: f64,
         link: Option<String>,
         /// The element's unrounded size: the flip axis and the link rectangle.
@@ -175,19 +174,19 @@ enum PdfElement {
         height: f64,
         /// The crop in the asset's pixel grid, which bounds the effect regions
         /// a nested SVG rasterizes.
-        source_rect: super::ResolvedImageSourceRect,
+        source_rect: super::resolve::ResolvedImageSourceRect,
         /// The reference export's rounded viewport and content placement.
-        projection: super::ResolvedImageProjection,
+        projection: super::resolve::ResolvedImageProjection,
         scale: [i8; 2],
     },
     Fallback {
-        source: super::FallbackSource,
+        source: super::resolve::FallbackSource,
         label: Option<super::text::ResolvedLabel>,
         link: Option<String>,
-        frame_clips: Vec<super::ResolvedClip>,
+        frame_clips: Vec<super::resolve::ResolvedClip>,
         width: f64,
         height: f64,
-        transform: super::ResolvedTransform,
+        transform: super::resolve::ResolvedTransform,
         opacity: f64,
     },
 }
@@ -1000,8 +999,8 @@ impl PdfPlan {
         link: &str,
         width: f64,
         height: f64,
-        transform: &super::ResolvedTransform,
-        frame_clips: &[super::ResolvedClip],
+        transform: &super::resolve::ResolvedTransform,
+        frame_clips: &[super::resolve::ResolvedClip],
     ) -> Result<(), FormatEncodeError> {
         let point_scale = self.scale * POINTS_PER_LOGICAL_PIXEL;
         let points = clipped_link_polygon(
@@ -1298,7 +1297,7 @@ impl PdfPlan {
                     }
                     for decoration in &drawing.decorations {
                         if decoration.drawing.fill.is_some() {
-                            let color = super::decoration_fill_color(
+                            let color = super::resolve::decoration_fill_color(
                                 decoration,
                                 *stroke_color,
                                 *background_color,
@@ -1684,13 +1683,16 @@ impl PdfPlan {
                     push_rough_path(&mut content, &drawing.outline)?;
                     content.push_str("S\n");
                     for decoration in &drawing.decorations {
-                        let fill = super::decoration_fill_color(
+                        let fill = super::resolve::decoration_fill_color(
                             decoration,
                             *stroke_color,
                             *background_color,
                         );
                         let (decoration_style, decoration_stroke_width) =
-                            super::decoration_stroke_style(decoration, *source_stroke_width);
+                            super::resolve::decoration_stroke_style(
+                                decoration,
+                                *source_stroke_width,
+                            );
                         push_pdf_drawing(
                             &mut content,
                             &decoration.drawing,
@@ -1864,7 +1866,7 @@ impl PdfPlan {
                     if let Some(outline) = outline {
                         push_pdf_number(
                             &mut content,
-                            super::FRAME_OUTLINE_STROKE_WIDTH,
+                            super::geometry::FRAME_OUTLINE_STROKE_WIDTH,
                             "PDF frame outline stroke width",
                         )?;
                         content.push_str(" w\n1 J\n1 j\n/CS1 CS\n");
@@ -2118,8 +2120,8 @@ impl PdfElement {
         &str,
         f64,
         f64,
-        &super::ResolvedTransform,
-        &[super::ResolvedClip],
+        &super::resolve::ResolvedTransform,
+        &[super::resolve::ResolvedClip],
     )> {
         match self {
             Self::RoughOutline {
@@ -2273,7 +2275,7 @@ pub(super) fn page_dimensions(
 fn transformed_pdf_points(
     width: f64,
     height: f64,
-    transform: &super::ResolvedTransform,
+    transform: &super::resolve::ResolvedTransform,
     point_scale: f64,
     page_height: f64,
 ) -> [(f64, f64); 4] {
@@ -2303,8 +2305,8 @@ fn transformed_pdf_points(
 fn link_annotation_visible(
     width: f64,
     height: f64,
-    transform: &super::ResolvedTransform,
-    frame_clips: &[super::ResolvedClip],
+    transform: &super::resolve::ResolvedTransform,
+    frame_clips: &[super::resolve::ResolvedClip],
     point_scale: f64,
     page_width: f64,
     page_height: f64,
@@ -2325,8 +2327,8 @@ fn link_annotation_visible(
 fn clipped_link_polygon(
     width: f64,
     height: f64,
-    transform: &super::ResolvedTransform,
-    frame_clips: &[super::ResolvedClip],
+    transform: &super::resolve::ResolvedTransform,
+    frame_clips: &[super::resolve::ResolvedClip],
     point_scale: f64,
     page_width: f64,
     page_height: f64,
@@ -2357,7 +2359,7 @@ fn clipped_link_polygon(
 }
 
 fn transformed_clip_path(
-    clip: &super::ResolvedClip,
+    clip: &super::resolve::ResolvedClip,
     point_scale: f64,
     page_height: f64,
 ) -> Result<Vec<(f64, f64)>, FormatEncodeError> {
@@ -2425,7 +2427,7 @@ fn transformed_clip_path(
 
 fn transformed_clip_point(
     point: rough::Point,
-    transform: &super::ResolvedTransform,
+    transform: &super::resolve::ResolvedTransform,
     point_scale: f64,
     page_height: f64,
 ) -> (f64, f64) {
@@ -2756,7 +2758,7 @@ fn push_freedraw_path(
 /// composes.
 fn push_transform_matrix(
     output: &mut String,
-    transform: &super::ResolvedTransform,
+    transform: &super::resolve::ResolvedTransform,
 ) -> Result<(), FormatEncodeError> {
     let (sin, cos) = if transform.angle_radians == 0.0 {
         (0.0, 1.0)
@@ -2808,7 +2810,7 @@ fn push_fallback_body(
     width: f64,
     height: f64,
     label: Option<&super::text::ResolvedLabel>,
-    colors: super::FallbackColors,
+    colors: super::resolve::FallbackColors,
     mappings: &[PdfGlyphMapping],
 ) -> Result<(), FormatEncodeError> {
     push_pdf_rectangle(output, width, height)?;
@@ -2883,7 +2885,7 @@ fn glyph_mapping_code(
 
 fn push_transformed_clip(
     output: &mut String,
-    clip: &super::ResolvedClip,
+    clip: &super::resolve::ResolvedClip,
 ) -> Result<(), FormatEncodeError> {
     let sin = clip.transform.angle_radians.sin();
     let cos = clip.transform.angle_radians.cos();
@@ -3493,7 +3495,7 @@ fn nested_clip_bounds(clip: &usvg::ClipPath) -> Option<(f64, f64, f64, f64)> {
 /// mirrors it about the element's unrounded center, intersected with the crop
 /// `<mask>`, which sits on the unflipped group, when the image is cropped.
 fn visible_rect(
-    projection: &super::ResolvedImageProjection,
+    projection: &super::resolve::ResolvedImageProjection,
     width: f64,
     height: f64,
     scale: [i8; 2],
@@ -3526,10 +3528,10 @@ fn visible_rect(
 /// the visible rectangle.
 fn map_asset_bounds(
     bounds: (f64, f64, f64, f64),
-    projection: &super::ResolvedImageProjection,
+    projection: &super::resolve::ResolvedImageProjection,
     width: f64,
     height: f64,
-    asset: &super::ResolvedImageAsset,
+    asset: &super::resolve::ResolvedImageAsset,
     scale: [i8; 2],
 ) -> (f64, f64, f64, f64) {
     let (content_x, content_y, content_width, content_height) = projection.content_rect();
@@ -3563,7 +3565,7 @@ fn map_asset_bounds(
 
 fn transform_bounds(
     bounds: (f64, f64, f64, f64),
-    transform: super::ResolvedTransform,
+    transform: super::resolve::ResolvedTransform,
 ) -> (f64, f64, f64, f64) {
     let (sin, cos) = transform.angle_radians.sin_cos();
     let offset_x = transform.translation_x + transform.center_x - cos * transform.center_x

@@ -1,6 +1,31 @@
-use super::*;
+use crate::color::{self, CanonicalColor};
 use crate::font_metadata::FamilyMetrics;
-use crate::normalization::NormalizedText;
+use crate::normalization::{
+    NormalizedElement, NormalizedElementKind, NormalizedElementSource, NormalizedText,
+};
+use crate::outcome::DiagnosticOrder;
+use crate::resource_accounting::ResourceDelta;
+use crate::{
+    CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, DiagnosticSeverity, ErrorCode,
+    ErrorDetails, FiniteValue, Measurement, OutputFormat, Recovery, RenderRequest, ResourceValue,
+    SceneDocument, Sizing, ValueKind,
+};
+
+use super::bound_text::{
+    has_reciprocal_bound_text, resolve_bound_text_masks, resolve_bound_text_placements,
+};
+use super::font_demand::{prune_unused_official_fonts, ResolvedFont};
+use super::frame_target::{
+    relationship_frame_target, resolve_frame_clips, resolve_frame_opacity, EffectiveFrameRendering,
+    FrameViewport,
+};
+use super::geometry::{
+    ecmascript_round, image_corner_radius, include_transformed_bounds,
+    magic_frame_canvas_outline_stroke_color, resolved_frame_outline, resolved_frame_rect,
+    rounded_rect_path, source_layout_bounds, GeneratedGeometry, FRAME_OUTLINE_STROKE_COLOR,
+    FRAME_RADIUS,
+};
+use super::{asset, freedraw, notices, rough, text, try_owned};
 
 #[derive(Debug)]
 pub(super) struct ResolvedScene {

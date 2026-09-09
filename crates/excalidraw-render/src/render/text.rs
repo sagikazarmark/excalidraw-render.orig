@@ -1677,7 +1677,7 @@ fn glyph_cluster_text<'a>(
 
 pub(super) fn mandatory_notices_json(
     liberation: bool,
-    official: &[super::ResolvedFont],
+    official: &[super::font_demand::ResolvedFont],
 ) -> Result<super::notices::MandatoryNotices, LabelError> {
     let full_ofl_notice =
         super::notices::liberation_sans_notice().ok_or(LabelError::InvalidFont)?;

@@ -1,4 +1,11 @@
-use super::*;
+use crate::normalization::{NormalizedElement, NormalizedElementKind, NormalizedImageStatus};
+use crate::outcome::DiagnosticOrder;
+use crate::{
+    CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, DiagnosticSeverity, ErrorDetails,
+    Measurement, OutputFormat, Recovery, ResourceLimits, ResourceValue, ValueKind,
+};
+
+use super::{asset, pdf, try_owned, MetadataFailure};
 
 /// Orders retained diagnostics the way the final report lists them (spec
 /// §11.3): by the source owner that produced them, then the source member
@@ -103,8 +110,8 @@ pub(super) fn image_asset_failure_diagnostic(
     asset_id: &str,
     element_id: &str,
     json_pointer: &str,
-    status: crate::normalization::NormalizedImageStatus,
-    limits: &crate::ResourceLimits,
+    status: NormalizedImageStatus,
+    limits: &ResourceLimits,
 ) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
     let (code, message, resource) = match failure {
         asset::ResolveError::Malformed => (
@@ -221,9 +228,9 @@ pub(super) fn image_asset_failure_diagnostic(
         OutputFormat::Png => (
             Recovery::Placeholder,
             Some(match status {
-                crate::normalization::NormalizedImageStatus::Error => "official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9",
-                crate::normalization::NormalizedImageStatus::Pending
-                | crate::normalization::NormalizedImageStatus::Saved => "official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d",
+                NormalizedImageStatus::Error => "official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9",
+                NormalizedImageStatus::Pending
+                | NormalizedImageStatus::Saved => "official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d",
             }),
         ),
         OutputFormat::Svg | OutputFormat::Pdf => (Recovery::Omitted, None),
@@ -388,7 +395,7 @@ pub(super) fn nested_image_failure_diagnostic(
     format: OutputFormat,
     asset_id: &str,
     json_pointer: &str,
-    limits: &crate::ResourceLimits,
+    limits: &ResourceLimits,
 ) -> Result<CompatibilityDiagnostic, std::collections::TryReserveError> {
     let mut diagnostic = image_asset_failure_diagnostic(
         failure.error,
@@ -396,7 +403,7 @@ pub(super) fn nested_image_failure_diagnostic(
         asset_id,
         "",
         json_pointer,
-        crate::normalization::NormalizedImageStatus::Saved,
+        NormalizedImageStatus::Saved,
         limits,
     )?;
     let mut asset_chain = Vec::new();
@@ -600,6 +607,7 @@ pub(super) fn metadata_failure_diagnostic(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::outcome::DiagnosticAttribution;
 
     /// A retained diagnostic whose distinguishing state is its code, pointer
     /// and the order the session assigned it when it was retained.
@@ -789,8 +797,8 @@ mod tests {
                     "asset",
                     "image",
                     "/elements/0/fileId",
-                    crate::normalization::NormalizedImageStatus::Saved,
-                    &crate::ResourceLimits::default(),
+                    NormalizedImageStatus::Saved,
+                    &ResourceLimits::default(),
                 )
                 .expect("the diagnostic allocates");
 

@@ -1,4 +1,9 @@
+use super::geometry::{adjusted_roughness, rough_drawing};
+use super::resolve::{
+    ResolvedImageCornerClip, ResolvedImageCropPlacement, ResolvedImageProjection,
+};
 use super::*;
+use crate::normalization::{NormalizedElement, NormalizedElementKind};
 use crate::{
     font_metadata::FamilyMetrics, CompatibilityDiagnostic, CompatibilityRevision, DiagnosticCode,
     DiagnosticEffect, DiagnosticSeverity, Renderer, ResourceLimits,

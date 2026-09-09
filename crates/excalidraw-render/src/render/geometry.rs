@@ -1,4 +1,9 @@
-use super::*;
+use crate::color::CanonicalColor;
+use crate::normalization::{NormalizedElement, NormalizedElementKind};
+use crate::ColorMode;
+
+use super::resolve::ResolveSceneError;
+use super::{freedraw, rough};
 
 pub(super) enum GeneratedGeometry {
     Rough(rough::Drawing),

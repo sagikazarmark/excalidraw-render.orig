@@ -7,7 +7,11 @@
 //! bytes those decisions become are the encoder unit tests' and the
 //! end-to-end smokes' business.
 
+use super::font_demand::{build_svg_font_bundle, svg_font_demand, svg_font_text_order};
+use super::pdf::PdfPlan;
+use super::png::PngPlan;
 use super::resolve_tests::{request, scene, NAMED_FRAME_SCENE, NESTED_FRAME_SCENE};
+use super::svg::SvgPlan;
 use super::*;
 use crate::FrameOptions;
 

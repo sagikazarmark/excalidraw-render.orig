@@ -22,7 +22,7 @@ use crate::{
     SupplementalAssets,
 };
 
-use super::ResolvedImageAsset;
+use super::resolve::ResolvedImageAsset;
 
 mod bmp;
 mod ico;

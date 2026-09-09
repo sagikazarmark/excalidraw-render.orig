@@ -1,3 +1,4 @@
+use crate::normalization::NormalizedElementSource;
 use crate::{
     color::{self, CanonicalColor},
     RenderRequest,
@@ -10,18 +11,16 @@ use tiny_skia::{
     StrokeDash, Transform,
 };
 
-use super::{
-    rough::{Drawing, FillKind, Path, PathOperation, Point},
-    DarkModeImageFilter, FormatEncodeError, NormalizedElementSource, ResolvedElement,
-    ResolvedScene, StrokeStyle,
-};
+use super::resolve::{DarkModeImageFilter, ResolvedElement, ResolvedScene, StrokeStyle};
+use super::rough::{Drawing, FillKind, Path, PathOperation, Point};
+use super::FormatEncodeError;
 
 #[derive(Debug)]
 pub(super) struct PngPlan {
     width: u32,
     height: u32,
     background: Option<[u8; 4]>,
-    fallback_colors: super::FallbackColors,
+    fallback_colors: super::resolve::FallbackColors,
     /// `drawImagePlaceholder`'s `#E7E7E7` rectangle, for the color mode.
     image_fallback_background: CanonicalColor,
     /// `drawImagePlaceholder`'s `#888` Font Awesome glyph, for the color mode.
@@ -74,7 +73,7 @@ enum PngElement {
     Frame {
         source: NormalizedElementSource,
         name: Option<PngFrameName>,
-        outline: Option<super::ResolvedFrameOutline>,
+        outline: Option<super::resolve::ResolvedFrameOutline>,
         frame_clips: Vec<PngFrameClip>,
         transform: PngTransform,
         opacity: f64,
@@ -92,7 +91,7 @@ enum PngElement {
     },
     Image {
         source: NormalizedElementSource,
-        asset: std::sync::Arc<super::ResolvedImageAsset>,
+        asset: std::sync::Arc<super::resolve::ResolvedImageAsset>,
         /// The dark-mode filter the canvas applies to this image. The canvas
         /// resets its filter for a raster image, so only a nested-SVG image's
         /// rasterized pixels are lowered here.
@@ -104,7 +103,7 @@ enum PngElement {
         transform: PngTransform,
         width: f64,
         height: f64,
-        source_rect: super::ResolvedImageSourceRect,
+        source_rect: super::resolve::ResolvedImageSourceRect,
         scale: [i8; 2],
         opacity: f64,
         render: bool,
@@ -120,7 +119,7 @@ enum PngElement {
         render: bool,
     },
     Fallback {
-        source: super::FallbackSource,
+        source: super::resolve::FallbackSource,
         label: Option<super::text::ResolvedLabel>,
         frame_clips: Vec<PngFrameClip>,
         width: f64,
@@ -169,7 +168,7 @@ struct PngLabelMask {
 }
 
 fn project_frame_clips(
-    clips: Vec<super::ResolvedClip>,
+    clips: Vec<super::resolve::ResolvedClip>,
     scale: f64,
 ) -> Result<Vec<PngFrameClip>, FormatEncodeError> {
     let mut projected = Vec::new();
@@ -415,7 +414,7 @@ struct PngTransform {
 }
 
 impl PngTransform {
-    fn new(transform: &super::ResolvedTransform, scale: f64) -> Self {
+    fn new(transform: &super::resolve::ResolvedTransform, scale: f64) -> Self {
         let sin = transform.angle_radians.sin();
         let cos = transform.angle_radians.cos();
         Self {
@@ -477,7 +476,7 @@ impl PngTransform {
     fn raster_image_transform(
         self,
         multiplier: u32,
-        source: super::ResolvedImageSourceRect,
+        source: super::resolve::ResolvedImageSourceRect,
         width: f64,
         height: f64,
         scale: [i8; 2],
@@ -489,7 +488,7 @@ impl PngTransform {
     fn raster_image_transform_with_origin(
         self,
         multiplier: u32,
-        source: super::ResolvedImageSourceRect,
+        source: super::resolve::ResolvedImageSourceRect,
         width: f64,
         height: f64,
         scale: [i8; 2],
@@ -817,13 +816,16 @@ impl PngPlan {
                             paint_mask,
                         )?;
                         for decoration in &drawing.decorations {
-                            let fill = super::decoration_fill_color(
+                            let fill = super::resolve::decoration_fill_color(
                                 decoration,
                                 *stroke_color,
                                 *background_color,
                             );
                             let (decoration_style, decoration_stroke_width) =
-                                super::decoration_stroke_style(decoration, *source_stroke_width);
+                                super::resolve::decoration_stroke_style(
+                                    decoration,
+                                    *source_stroke_width,
+                                );
                             paint_rough_drawing(
                                 &mut surface,
                                 &decoration.drawing,
@@ -943,7 +945,7 @@ impl PngPlan {
                             // SVG path does not. Both are resolved for the mode.
                             let paint = solid_paint(outline.canvas_stroke_color, *opacity)?;
                             let stroke = Stroke {
-                                width: super::FRAME_OUTLINE_STROKE_WIDTH as f32,
+                                width: super::geometry::FRAME_OUTLINE_STROKE_WIDTH as f32,
                                 miter_limit: 4.0,
                                 line_cap: LineCap::Round,
                                 line_join: LineJoin::Round,
@@ -2883,7 +2885,9 @@ fn conservative_freedraw_coverage_area(
     surface_height: u32,
 ) -> u64 {
     let fill_bounds = background_fill.and_then(|fill| fill.path.cubic_bounds());
-    let Some((min_x, min_y, max_x, max_y)) = super::union_bounds(path.bounds(), fill_bounds) else {
+    let Some((min_x, min_y, max_x, max_y)) =
+        super::geometry::union_bounds(path.bounds(), fill_bounds)
+    else {
         return 0;
     };
     let points = [

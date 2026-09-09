@@ -12,7 +12,20 @@
 //! `session.transact` fires in the same order with the same context strings,
 //! so artifact bytes and the canonical resource trace are unchanged.
 
-use super::*;
+use crate::normalization::{NormalizedElement, NormalizedElementKind};
+use crate::resource_accounting::{ResourceContext, ResourceDelta, ResourcePhase};
+use crate::{ErrorDetails, OutputFormat, RenderError, RenderRequest, SceneDocument};
+
+use super::diagnostics::{
+    diagnostic_replaces_element, diagnostic_uses_non_generic_recovery,
+    image_animation_flattened_diagnostic, image_asset_failure_diagnostic,
+    nested_image_failure_diagnostic, unsafe_svg_removal_diagnostic,
+};
+use super::resolve::{
+    asset_claim_location, asset_failure_location, logical_aligned_bytes, semantic_identity_hex,
+    ResolvedImageAsset, ResolvedImageInputs, SemanticWorkingRecord,
+};
+use super::{asset, try_owned, DiagnosticOwnership, PendingAnimationDiagnostic, RenderSession};
 
 /// What became of one image element.
 pub(super) enum ImageDisposition {

@@ -6,7 +6,22 @@
 //! that plan implies. They stay `RenderSession` methods because charging the
 //! resource meter is the session's job, not the plan's.
 
-use super::*;
+use crate::resource_accounting::{
+    ResourceContext, ResourceDelta, ResourcePhase, ResourceRecordKind,
+};
+use crate::{
+    DiagnosticCode, ErrorCode, RenderError, RenderRequest, ResourceValue, SceneDocument, ValueKind,
+};
+
+use super::font_demand::{
+    build_svg_font_bundle, release_svg_font_encoding_records, svg_font_demand,
+    svg_font_demand_estimates, svg_font_text_order,
+};
+use super::pdf::PdfPlan;
+use super::png::PngPlan;
+use super::resolve::{ElementLocalCrossing, ResolvedScene, SemanticWorkingRecord};
+use super::svg::SvgPlan;
+use super::{svg_fonts, RenderResourceAccount, RenderSession};
 
 impl RenderSession {
     /// Plans and stages one SVG artifact, including its font-subset demand.

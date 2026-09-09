@@ -5,7 +5,14 @@
 //! tested at its plan (`plan_tests`) or by the one three-format smoke each
 //! behavior family keeps end to end.
 
+use super::geometry::FRAME_RADIUS;
+use super::resolve::{
+    ResolvedClip, ResolvedElement, ResolvedFallback, ResolvedFrame, ResolvedImage,
+    ResolvedImageCropPlacement, ResolvedImageProjection, ResolvedImageSourceRect,
+    ResolvedLabelMask, ResolvedOutline, ResolvedTextElement, ResolvedTransform,
+};
 use super::*;
+use crate::color::CanonicalColor;
 use crate::{ColorMode, FrameOptions};
 
 pub(super) fn scene(json: &[u8]) -> SceneDocument {

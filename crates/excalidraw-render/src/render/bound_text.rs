@@ -1,4 +1,11 @@
-use super::*;
+use crate::normalization::{
+    NormalizedElement, NormalizedElementKind, NormalizedLinear, NormalizedLinearKind,
+};
+use crate::relationships::{RelationshipKind, RelationshipTarget, ResolvedRelationshipGraph};
+
+use super::geometry::{source_layout_bounds, GeneratedGeometry};
+use super::resolve::{relationship_element_target, ResolveSceneError};
+use super::rough;
 
 #[derive(Clone, Copy, Debug)]
 pub(super) struct BoundTextPlacement {
@@ -19,7 +26,7 @@ pub(super) struct BoundTextMaskSource {
 
 pub(super) fn resolve_bound_text_placements(
     outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
-    relationships: &crate::relationships::ResolvedRelationshipGraph,
+    relationships: &ResolvedRelationshipGraph,
 ) -> Result<Vec<BoundTextPlacement>, ResolveSceneError> {
     let mut placements = Vec::new();
     placements.try_reserve(outlines.len())?;
@@ -29,7 +36,7 @@ pub(super) fn resolve_bound_text_placements(
         }
         let Some(container_index) = relationship_element_target(
             text.source.source_index(),
-            crate::relationships::RelationshipKind::Mask,
+            RelationshipKind::Mask,
             relationships,
         ) else {
             continue;
@@ -52,9 +59,7 @@ pub(super) fn resolve_bound_text_placements(
                 // are still resolved to the arrow midpoint below.
                 (text.x, text.y, container.angle)
             }
-            NormalizedElementKind::Linear(linear)
-                if linear.kind == crate::normalization::NormalizedLinearKind::Arrow =>
-            {
+            NormalizedElementKind::Linear(linear) if linear.kind == NormalizedLinearKind::Arrow => {
                 let Some(midpoint) = linear_midpoint(container, linear, geometry.as_ref()) else {
                     continue;
                 };
@@ -90,7 +95,7 @@ pub(super) fn resolve_bound_text_placements(
 
 fn linear_midpoint(
     source: &NormalizedElement,
-    linear: &crate::normalization::NormalizedLinear,
+    linear: &NormalizedLinear,
     geometry: Option<&GeneratedGeometry>,
 ) -> Option<[f64; 2]> {
     let points = &linear.points;
@@ -191,7 +196,7 @@ fn cubic_point(
 pub(super) fn has_reciprocal_bound_text(
     container_source_index: usize,
     text_source_index: usize,
-    relationships: &crate::relationships::ResolvedRelationshipGraph,
+    relationships: &ResolvedRelationshipGraph,
 ) -> bool {
     let Some(container_node) = relationships
         .nodes
@@ -202,13 +207,13 @@ pub(super) fn has_reciprocal_bound_text(
     };
     relationships.edges.iter().any(|edge| {
         if edge.source != container_node
-            || edge.kind != crate::relationships::RelationshipKind::Binding
+            || edge.kind != RelationshipKind::Binding
             || !(edge.json_pointer.contains("/boundElements/")
                 || edge.json_pointer.contains("/boundElementIds/"))
         {
             return false;
         }
-        let crate::relationships::RelationshipTarget::Element(target) = edge.target else {
+        let RelationshipTarget::Element(target) = edge.target else {
             return false;
         };
         relationships
@@ -220,7 +225,7 @@ pub(super) fn has_reciprocal_bound_text(
 
 pub(super) fn resolve_bound_text_masks(
     outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
-    relationships: &crate::relationships::ResolvedRelationshipGraph,
+    relationships: &ResolvedRelationshipGraph,
 ) -> Result<Vec<BoundTextMaskSource>, ResolveSceneError> {
     let mut masks = Vec::new();
     masks.try_reserve(outlines.len())?;
@@ -230,7 +235,7 @@ pub(super) fn resolve_bound_text_masks(
         }
         let Some(container_source_index) = relationship_element_target(
             text.source.source_index(),
-            crate::relationships::RelationshipKind::Mask,
+            RelationshipKind::Mask,
             relationships,
         ) else {
             continue;
@@ -239,8 +244,8 @@ pub(super) fn resolve_bound_text_masks(
             candidate.source.source_index() == container_source_index
                 && matches!(
                     candidate.kind,
-                    NormalizedElementKind::Linear(crate::normalization::NormalizedLinear {
-                        kind: crate::normalization::NormalizedLinearKind::Arrow,
+                    NormalizedElementKind::Linear(NormalizedLinear {
+                        kind: NormalizedLinearKind::Arrow,
                         ..
                     })
                 )
