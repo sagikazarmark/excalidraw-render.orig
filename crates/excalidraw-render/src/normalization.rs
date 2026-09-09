@@ -13,7 +13,7 @@ mod planning;
 #[cfg(test)]
 mod tests;
 
-use kinds::{element_fields, normalize_element_kind, normalized_roundness};
+use kinds::{element_fields, normalize_element_kind, normalized_roundness, ElementBox};
 pub(crate) use planning::NORMALIZATION_WORK_UNITS;
 use planning::{
     kind_working_bytes, normalized_working_bytes, owned_field_bytes, planned_kind_working_bytes,
@@ -1048,7 +1048,7 @@ fn normalize_scene_impl<E>(
             element_diagnostics.push((SourceDiagnosticPosition::top(usize::MAX), diagnostic));
         }
 
-        let (kind, x, y, width, height) = memory_at_source!(normalize_element_kind(
+        let (kind, element_box) = memory_at_source!(normalize_element_kind(
             &source,
             &fields,
             policy,
@@ -1059,6 +1059,12 @@ fn normalize_scene_impl<E>(
             element_diagnostic_limit,
             &mut element_diagnostics,
         ));
+        let ElementBox {
+            x,
+            y,
+            width,
+            height,
+        } = element_box;
         planned_diagnostic_count =
             planned_diagnostic_count.saturating_add(element_diagnostics.len());
 

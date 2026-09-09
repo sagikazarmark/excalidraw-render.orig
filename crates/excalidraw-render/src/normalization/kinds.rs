@@ -106,6 +106,28 @@ pub(super) fn element_fields<'a>(
     })
 }
 
+/// The compatibility-normalized `x`, `y`, `width` and `height` of one element.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct ElementBox {
+    pub(super) x: f64,
+    pub(super) y: f64,
+    pub(super) width: f64,
+    pub(super) height: f64,
+}
+
+impl ElementBox {
+    /// The box the common fields settled: the source box with negative
+    /// extents folded back, which every kind but linear keeps.
+    const fn of(fields: &CommonFields<'_>) -> Self {
+        Self {
+            x: fields.x,
+            y: fields.y,
+            width: fields.width,
+            height: fields.height,
+        }
+    }
+}
+
 /// Normalizes one element's kind-specific state and settles its box. Every
 /// kind first diagnoses the inherited fields it shares with the others; linear
 /// elements then move the box to their first point and recompute its extent,
@@ -121,7 +143,7 @@ pub(super) fn normalize_element_kind(
     participation: NormalizationParticipation,
     diagnostic_limit: usize,
     diagnostics: &mut Vec<ElementDiagnostic>,
-) -> Result<(NormalizedElementKind, f64, f64, f64, f64), TryReserveError> {
+) -> Result<(NormalizedElementKind, ElementBox), TryReserveError> {
     let mut context = ElementDiagnosticContext {
         diagnostics,
         source,
@@ -136,12 +158,15 @@ pub(super) fn normalize_element_kind(
         ElementKind::Rectangle => NormalizedElementKind::Rectangle,
         ElementKind::Diamond => NormalizedElementKind::Diamond,
         ElementKind::Ellipse => NormalizedElementKind::Ellipse,
-        ElementKind::Text => normalize_text(fields, &mut context)?,
+        ElementKind::Text => NormalizedElementKind::Text(normalize_text(fields, &mut context)?),
         ElementKind::Line | ElementKind::LegacyDraw | ElementKind::Arrow => {
-            return normalize_linear(fields, &mut context);
+            let (linear, element_box) = normalize_linear(fields, &mut context)?;
+            return Ok((NormalizedElementKind::Linear(linear), element_box));
         }
-        ElementKind::Freedraw => normalize_freedraw(&mut context)?,
-        ElementKind::Image => normalize_image(participation, &mut context)?,
+        ElementKind::Freedraw => NormalizedElementKind::Freedraw(normalize_freedraw(&mut context)?),
+        ElementKind::Image => {
+            NormalizedElementKind::Image(normalize_image(participation, &mut context)?)
+        }
         ElementKind::Frame => {
             NormalizedElementKind::Frame(normalize_frame(participation, &mut context)?)
         }
@@ -150,7 +175,7 @@ pub(super) fn normalize_element_kind(
         }
         ElementKind::Iframe | ElementKind::Embeddable => normalize_embeddable(source)?,
     };
-    Ok((kind, fields.x, fields.y, fields.width, fields.height))
+    Ok((kind, ElementBox::of(fields)))
 }
 
 /// Diagnoses the malformed inherited fields every kind shares — the box,
@@ -275,7 +300,7 @@ fn diagnose_common_fields(
 fn normalize_text(
     fields: &CommonFields<'_>,
     context: &mut ElementDiagnosticContext<'_, '_>,
-) -> Result<NormalizedElementKind, TryReserveError> {
+) -> Result<NormalizedText, TryReserveError> {
     let source = context.source;
     let format = context.format;
     if !source_accepts(source.font_size, |value| value > 0.0) {
@@ -389,7 +414,7 @@ fn normalize_text(
             )
         }
     };
-    Ok(NormalizedElementKind::Text(NormalizedText {
+    Ok(NormalizedText {
         font_size,
         font_family,
         text: try_owned(text)?,
@@ -401,7 +426,7 @@ fn normalize_text(
             matches!(value, "top" | "middle" | "bottom")
         }))?,
         line_height,
-    }))
+    })
 }
 
 /// The restored line height: what the reference renderer's restore path gives a
@@ -557,7 +582,7 @@ fn is_ecmascript_white_space(character: char) -> bool {
 fn normalize_linear(
     fields: &CommonFields<'_>,
     context: &mut ElementDiagnosticContext<'_, '_>,
-) -> Result<(NormalizedElementKind, f64, f64, f64, f64), TryReserveError> {
+) -> Result<(NormalizedLinear, ElementBox), TryReserveError> {
     let source = context.source;
     let policy = context.policy;
     let format = context.format;
@@ -705,7 +730,7 @@ fn normalize_linear(
         matches!(kind, NormalizedLinearKind::Arrow).then_some("arrow"),
     )?;
     Ok((
-        NormalizedElementKind::Linear(NormalizedLinear {
+        NormalizedLinear {
             kind,
             points,
             start_binding,
@@ -715,11 +740,13 @@ fn normalize_linear(
             end_arrowhead,
             elbowed,
             geometry_available,
-        }),
-        x,
-        y,
-        width,
-        height,
+        },
+        ElementBox {
+            x,
+            y,
+            width,
+            height,
+        },
     ))
 }
 
@@ -868,7 +895,7 @@ pub(super) fn is_arrowhead(value: &str) -> bool {
 
 fn normalize_freedraw(
     context: &mut ElementDiagnosticContext<'_, '_>,
-) -> Result<NormalizedElementKind, TryReserveError> {
+) -> Result<NormalizedFreedraw, TryReserveError> {
     let source = context.source;
     let format = context.format;
     let element_pointer = context.element_pointer;
@@ -953,19 +980,19 @@ fn normalize_freedraw(
         )?;
     }
     let pressures = normalized_pressures(source.pressures, source_point_count, simulate_pressure)?;
-    Ok(NormalizedElementKind::Freedraw(NormalizedFreedraw {
+    Ok(NormalizedFreedraw {
         points,
         pressures,
         simulate_pressure,
         last_committed_point: None,
         geometry_available,
-    }))
+    })
 }
 
 fn normalize_image(
     participation: NormalizationParticipation,
     context: &mut ElementDiagnosticContext<'_, '_>,
-) -> Result<NormalizedElementKind, TryReserveError> {
+) -> Result<NormalizedImage, TryReserveError> {
     let source = context.source;
     let policy = context.policy;
     if matches!(source.file_id, SourceField::Invalid) {
@@ -1034,7 +1061,7 @@ fn normalize_image(
     {
         context.missing_image_file(file_id, status)?;
     }
-    Ok(NormalizedElementKind::Image(NormalizedImage {
+    Ok(NormalizedImage {
         file_id: file_id.map(try_owned).transpose()?,
         status,
         scale: normalized_image_scale(source.image_scale),
@@ -1042,7 +1069,7 @@ fn normalize_image(
             .authoritative_file
             .then(|| normalized_image_crop(source.image_crop))
             .flatten(),
-    }))
+    })
 }
 
 fn diagnose_invalid_crop_members(
