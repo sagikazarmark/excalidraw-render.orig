@@ -2,6 +2,7 @@
 
 #![doc(hidden)]
 
+use std::collections::TryReserveError;
 use std::error::Error;
 use std::fmt;
 
@@ -277,6 +278,60 @@ pub struct AssetRecord {
     pub segments: &'static [AssetSegment],
 }
 
+/// The license an official rendering font family is offered under.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FontLicense {
+    /// SIL Open Font License, Version 1.1.
+    Ofl11,
+    /// MIT License.
+    Mit,
+}
+
+/// One official rendering font family's notice, as the license bundle prints
+/// it under "Official rendering font notices" and as artifacts carry it. The
+/// generator emits the bundle and this table from one source, so an artifact
+/// never has to read the bundle.
+#[derive(Clone, Copy, Debug)]
+pub struct FontNotice {
+    /// The catalog `family` of the assets the notice covers.
+    pub family: &'static str,
+    pub license_identity: &'static str,
+    pub license: FontLicense,
+    /// The provenance line without its license sentence.
+    pub attribution: &'static str,
+    /// The license terms artifacts carry with the attribution: the OFL terms
+    /// the sealed Liberation Sans notice states, or the family's MIT text as
+    /// the bundle prints it.
+    pub terms: &'static str,
+}
+
+impl FontNotice {
+    /// The complete notice an artifact carries for the family: the MIT text
+    /// alone, since it states its own copyright, or the attribution above the
+    /// OFL terms.
+    pub fn artifact_text(&self) -> Result<String, TryReserveError> {
+        let mut text = String::new();
+        match self.license {
+            FontLicense::Mit => {
+                text.try_reserve_exact(self.terms.len())?;
+                text.push_str(self.terms);
+            }
+            FontLicense::Ofl11 => {
+                text.try_reserve_exact(
+                    self.attribution
+                        .len()
+                        .saturating_add(2)
+                        .saturating_add(self.terms.len()),
+                )?;
+                text.push_str(self.attribution);
+                text.push_str("\n\n");
+                text.push_str(self.terms);
+            }
+        }
+        Ok(text)
+    }
+}
+
 /// Immutable compatibility-revision catalog selected by the renderer.
 #[derive(Debug)]
 pub struct RevisionCatalog {
@@ -293,7 +348,22 @@ pub struct RevisionCatalog {
     pub provenance_identities: &'static [&'static str],
     pub transformation_identities: &'static [&'static str],
     pub license_identities: &'static [&'static str],
+    pub font_notices: &'static [FontNotice],
     pub assets: &'static [AssetRecord],
+}
+
+impl RevisionCatalog {
+    /// Looks up one built-in asset's record by its catalog identity.
+    pub fn asset(&self, identity: &str) -> Option<&'static AssetRecord> {
+        self.assets.iter().find(|asset| asset.identity == identity)
+    }
+
+    /// Looks up the notice covering one official rendering font family.
+    pub fn font_notice(&self, family: &str) -> Option<&'static FontNotice> {
+        self.font_notices
+            .iter()
+            .find(|notice| notice.family == family)
+    }
 }
 
 /// Bytes returned only after segment and complete-file digest verification.

@@ -2,6 +2,7 @@ use super::font_subset;
 use crate::resource_accounting::{
     ResourceAccount, ResourceContext, ResourceDelta, ResourcePhase, ResourceRecordKind,
 };
+use excalidraw_render_assets_base::FontNotice;
 use sha2::{Digest, Sha256};
 use std::collections::{hash_map::DefaultHasher, BTreeMap, HashSet, TryReserveError};
 use std::hash::BuildHasherDefault;
@@ -127,8 +128,8 @@ pub(super) struct BuildError {
 }
 
 pub(super) struct SubsetNotice {
-    pub(super) license_identity: String,
-    pub(super) license: &'static str,
+    pub(super) license_identity: &'static str,
+    pub(super) terms: &'static str,
     pub(super) resource_identity: String,
     pub(super) resource_text: String,
 }
@@ -606,7 +607,7 @@ pub(super) fn build(
     session: &mut Session,
 ) -> Result<Bundle, BuildError> {
     let mut resources = Vec::new();
-    let mut licenses = BTreeMap::<String, &'static str>::new();
+    let mut licenses = BTreeMap::<&'static str, &'static str>::new();
     let mut resource_notices = Vec::<(String, String)>::new();
     for family in demand.families {
         if family.scalars.is_empty() || family.family == "Noto Emoji" {
@@ -680,7 +681,7 @@ pub(super) fn build(
                     )?;
                     licenses
                         .entry(notice.license_identity)
-                        .or_insert(notice.license);
+                        .or_insert(notice.terms);
                     resource_notices.push((notice.resource_identity, notice.resource_text));
                     resources.push(Resource {
                         family: effective_alias,
@@ -694,12 +695,13 @@ pub(super) fn build(
                 }
                 #[cfg(test)]
                 Payload::CompleteChunks => {
-                    let (provenance, license) = notice_inputs(record, family.family)?;
-                    let notice = if provenance.license_identity.ends_with(".ofl-1.1") {
-                        format!("{}\n\n{}", provenance.text, license)
-                    } else {
-                        license.to_owned()
-                    };
+                    let notice = family_notice(record, family.family)?
+                        .artifact_text()
+                        .map_err(|_| BuildError {
+                            stage: crate::SvgFontSubsetStage::Encode,
+                            family: family.family,
+                            asset_identity: record.identity,
+                        })?;
                     resource_notices.push((record.identity.to_owned(), notice));
                     let mut bytes = Vec::new();
                     bytes
@@ -744,9 +746,7 @@ pub(super) fn build(
         });
         if unchanged.family == "Noto Emoji" {
             if let Some(notice) = super::notices::noto_emoji_notice() {
-                licenses
-                    .entry("font.noto-emoji.ofl-1.1".to_owned())
-                    .or_insert(notice);
+                licenses.entry("font.noto-emoji.ofl-1.1").or_insert(notice);
             }
         }
     }
@@ -755,7 +755,7 @@ pub(super) fn build(
         let mut json = String::from("[");
         let mut separator = "";
         for (identity, text) in licenses {
-            push_notice(&mut json, &mut separator, &identity, text);
+            push_notice(&mut json, &mut separator, identity, text);
         }
         for (identity, text) in resource_notices {
             push_notice(&mut json, &mut separator, &identity, &text);
@@ -776,19 +776,19 @@ pub(super) fn subset_notice(
     semantic_identity: &str,
     derived: &font_subset::Derived,
 ) -> Result<SubsetNotice, BuildError> {
-    let (provenance, license) = notice_inputs(record, family)?;
+    let provenance = family_notice(record, family)?;
     let output_digest = format!("{:x}", Sha256::digest(derived.woff2.as_ref()));
     let profile_digest =
         encode_hex_32(&excalidraw_render_assets_base::font_subset_profile_digest_v1());
     Ok(SubsetNotice {
-        license_identity: provenance.license_identity.clone(),
-        license,
+        license_identity: provenance.license_identity,
+        terms: provenance.terms,
         resource_identity: format!("svg-font-subset@sha256:{semantic_identity}"),
         resource_text: format!(
             "Derived font subset of {}. Source SHA-256: {}. {} Modified Version under {}. Transformation: Unicode and required layout/glyph closure subset; names rewritten for compatibility revision 1. Effective alias: {}. Subset profile SHA-256: {}. Semantic subset identity: {}. Output WOFF2: {} bytes, SHA-256 {}.",
             record.identity,
             record.complete_sha256,
-            provenance.text,
+            provenance.attribution,
             provenance.license_identity,
             effective_alias,
             profile_digest,
@@ -799,33 +799,20 @@ pub(super) fn subset_notice(
     })
 }
 
-fn notice_inputs(
+/// The notice the catalog states for `record`'s family; a record without one
+/// cannot be validated for subsetting.
+fn family_notice(
     record: &excalidraw_render_assets_base::AssetRecord,
     family: &'static str,
-) -> Result<(crate::catalog::ManifestedFontAttribution, &'static str), BuildError> {
-    let provenance =
-        crate::catalog::manifested_font_attribution(record.identity).map_err(|_| BuildError {
+) -> Result<&'static FontNotice, BuildError> {
+    crate::catalog::REVISION_1
+        .asset_catalog()
+        .font_notice(record.family)
+        .ok_or(BuildError {
             stage: crate::SvgFontSubsetStage::Validate,
             family,
             asset_identity: record.identity,
-        })?;
-    let license = if provenance.license_identity == "font.comic-shanns.mit" {
-        super::notices::comic_shanns_notice()
-    } else if provenance.license_identity.ends_with(".ofl-1.1") {
-        super::notices::liberation_sans_notice().and_then(|notice| {
-            notice
-                .find("This Font Software is licensed")
-                .and_then(|start| notice.get(start..))
         })
-    } else {
-        None
-    }
-    .ok_or(BuildError {
-        stage: crate::SvgFontSubsetStage::Validate,
-        family,
-        asset_identity: record.identity,
-    })?;
-    Ok((provenance, license))
 }
 
 fn push_notice(json: &mut String, separator: &mut &'static str, identity: &str, text: &str) {

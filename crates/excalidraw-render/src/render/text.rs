@@ -1681,10 +1681,6 @@ pub(super) fn mandatory_notices_json(
 ) -> Result<super::notices::MandatoryNotices, LabelError> {
     let full_ofl_notice =
         super::notices::liberation_sans_notice().ok_or(LabelError::InvalidFont)?;
-    let ofl_start = full_ofl_notice
-        .find("This Font Software is licensed")
-        .map(|index| &full_ofl_notice[index..])
-        .ok_or(LabelError::InvalidFont)?;
     let prefix = "[";
     let suffix = "]";
     let mut manifest = String::new();
@@ -1719,27 +1715,9 @@ pub(super) fn mandatory_notices_json(
             push_manifest_notice(&mut manifest, &mut separator, font.identity, notice);
             continue;
         }
-        let provenance = crate::catalog::manifested_font_attribution(font.identity)
-            .map_err(|_| LabelError::InvalidFont)?;
-        let mut official_notice = String::new();
-        if provenance.license_identity == "font.comic-shanns.mit" {
-            let notice = super::notices::comic_shanns_notice().ok_or(LabelError::InvalidFont)?;
-            official_notice.try_reserve_exact(notice.len())?;
-            official_notice.push_str(notice);
-        } else if provenance.license_identity.ends_with(".ofl-1.1") {
-            official_notice.try_reserve_exact(
-                provenance
-                    .text
-                    .len()
-                    .saturating_add(2)
-                    .saturating_add(ofl_start.len()),
-            )?;
-            official_notice.push_str(&provenance.text);
-            official_notice.push_str("\n\n");
-            official_notice.push_str(ofl_start);
-        } else {
-            return Err(LabelError::InvalidFont);
-        }
+        let official_notice = crate::catalog::font_notice(font.identity)
+            .ok_or(LabelError::InvalidFont)?
+            .artifact_text()?;
         push_manifest_notice(
             &mut manifest,
             &mut separator,

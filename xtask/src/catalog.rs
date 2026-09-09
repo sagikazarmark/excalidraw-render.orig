@@ -3,6 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::conformance::sha256;
+use excalidraw_render_assets_base::FontLicense;
 use serde_json::{json, Value};
 
 const REVISION: u64 = 1;
@@ -175,40 +176,151 @@ const EXACT_LICENSE_SOURCES: &[(&str, &str, &str)] = &[
     ),
 ];
 
-const FONT_NOTICES: &[(&str, &str)] = &[
-    (
-        "Cascadia Code",
-        "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code. Licensed under the SIL Open Font License, Version 1.1.",
-    ),
-    (
-        "Comic Shanns",
-        "Copyright (c) 2018 Shannon Miwa. Licensed under the MIT License included in this bundle.",
-    ),
-    (
-        "Excalifont and Virgil provenance",
-        "Copyright (c) 2024 by Excalidraw. Excalifont is derived from Virgil by Your Own Font Foundry, with modifications by Jan Filipek / DizajnDesign. Licensed under the SIL Open Font License, Version 1.1. Excalifont and Virgil provenance is retained together.",
-    ),
-    (
-        "Liberation Sans",
-        "Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine. Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation. Licensed under the SIL Open Font License, Version 1.1.",
-    ),
-    (
-        "Lilita",
-        "Copyright (c) 2011 Juan Montoreano (juan@remolacha.biz), with Reserved Font Name Lilita. Licensed under the SIL Open Font License, Version 1.1.",
-    ),
-    (
-        "Nunito",
-        "Copyright 2014 The Nunito Project Authors (https://github.com/googlefonts/nunito). Licensed under the SIL Open Font License, Version 1.1.",
-    ),
-    (
-        "Virgil",
-        "Virgil by Your Own Font Foundry, with Reserved Font Name Virgil. Licensed under the SIL Open Font License, Version 1.1.",
-    ),
-    (
-        "Xiaolai SC",
-        "Copyright (c) 2020 LXGW. Designed by Nozomi Seto. Licensed under the SIL Open Font License, Version 1.1. The shipped subsets remove non-CJK codepoints, reduce Hangul side-bearings to 40%, and center improperly centered CJK codepoints.",
-    ),
+/// The sentence the bundle prints between a notice's attribution and
+/// postscript for each license; artifacts carry the notice without it.
+const fn license_sentence(license: FontLicense) -> &'static str {
+    match license {
+        FontLicense::Ofl11 => "Licensed under the SIL Open Font License, Version 1.1.",
+        FontLicense::Mit => "Licensed under the MIT License included in this bundle.",
+    }
+}
+
+/// Where the license terms an artifact carries alongside a font's attribution
+/// come from.
+#[derive(Clone, Copy, Debug)]
+enum FontTerms {
+    /// The OFL terms the sealed `liberation-sans.ofl-full` notice states after
+    /// its copyright lines: what every OFL font's artifact notice carries.
+    LiberationSansOfl,
+    /// The named `license-parts` file, as the bundle prints it.
+    BundlePart(&'static str),
+}
+
+impl FontTerms {
+    /// The generated `const` that holds the terms text, shared by every
+    /// notice with the same source.
+    fn rust_const(self) -> String {
+        match self {
+            Self::LiberationSansOfl => "OFL_1_1_TERMS".to_owned(),
+            Self::BundlePart(file) => format!(
+                "{}_TERMS",
+                file.trim_end_matches(".txt")
+                    .replace(['-', '.'], "_")
+                    .to_uppercase()
+            ),
+        }
+    }
+}
+
+/// One official rendering font family's notice. The license bundle prints
+/// `attribution`, the license sentence and `postscript` as one line under
+/// `heading`; the generated `FontNotice` table carries the same line without
+/// the sentence, plus the family's license terms, so artifacts and the bundle
+/// derive from one source.
+#[derive(Clone, Copy, Debug)]
+struct FontNotice {
+    /// The catalog `family` of the assets the notice covers.
+    family: &'static str,
+    heading: &'static str,
+    attribution: &'static str,
+    license: FontLicense,
+    /// Provenance the line continues with after the license sentence.
+    postscript: &'static str,
+    terms: FontTerms,
+}
+
+impl FontNotice {
+    /// The line the bundle prints under the heading.
+    fn bundle_line(&self) -> String {
+        let mut line = format!("{} {}", self.attribution, license_sentence(self.license));
+        if !self.postscript.is_empty() {
+            line.push(' ');
+            line.push_str(self.postscript);
+        }
+        line
+    }
+
+    /// The provenance artifacts carry: the bundle line without its license
+    /// sentence.
+    fn artifact_attribution(&self) -> String {
+        if self.postscript.is_empty() {
+            self.attribution.to_owned()
+        } else {
+            format!("{} {}", self.attribution, self.postscript)
+        }
+    }
+}
+
+const FONT_NOTICES: &[FontNotice] = &[
+    FontNotice {
+        family: "Cascadia",
+        heading: "Cascadia Code",
+        attribution: "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code.",
+        license: FontLicense::Ofl11,
+        postscript: "",
+        terms: FontTerms::LiberationSansOfl,
+    },
+    FontNotice {
+        family: "ComicShanns",
+        heading: "Comic Shanns",
+        attribution: "Copyright (c) 2018 Shannon Miwa.",
+        license: FontLicense::Mit,
+        postscript: "",
+        terms: FontTerms::BundlePart("comic-shanns-MIT.txt"),
+    },
+    FontNotice {
+        family: "Excalifont",
+        heading: "Excalifont and Virgil provenance",
+        attribution: "Copyright (c) 2024 by Excalidraw. Excalifont is derived from Virgil by Your Own Font Foundry, with modifications by Jan Filipek / DizajnDesign.",
+        license: FontLicense::Ofl11,
+        postscript: "Excalifont and Virgil provenance is retained together.",
+        terms: FontTerms::LiberationSansOfl,
+    },
+    FontNotice {
+        family: "Liberation",
+        heading: "Liberation Sans",
+        attribution: "Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine. Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.",
+        license: FontLicense::Ofl11,
+        postscript: "",
+        terms: FontTerms::LiberationSansOfl,
+    },
+    FontNotice {
+        family: "Lilita",
+        heading: "Lilita",
+        attribution: "Copyright (c) 2011 Juan Montoreano (juan@remolacha.biz), with Reserved Font Name Lilita.",
+        license: FontLicense::Ofl11,
+        postscript: "",
+        terms: FontTerms::LiberationSansOfl,
+    },
+    FontNotice {
+        family: "Nunito",
+        heading: "Nunito",
+        attribution: "Copyright 2014 The Nunito Project Authors (https://github.com/googlefonts/nunito).",
+        license: FontLicense::Ofl11,
+        postscript: "",
+        terms: FontTerms::LiberationSansOfl,
+    },
+    FontNotice {
+        family: "Virgil",
+        heading: "Virgil",
+        attribution: "Virgil by Your Own Font Foundry, with Reserved Font Name Virgil.",
+        license: FontLicense::Ofl11,
+        postscript: "",
+        terms: FontTerms::LiberationSansOfl,
+    },
+    FontNotice {
+        family: "Xiaolai",
+        heading: "Xiaolai SC",
+        attribution: "Copyright (c) 2020 LXGW. Designed by Nozomi Seto.",
+        license: FontLicense::Ofl11,
+        postscript: "The shipped subsets remove non-CJK codepoints, reduce Hangul side-bearings to 40%, and center improperly centered CJK codepoints.",
+        terms: FontTerms::LiberationSansOfl,
+    },
 ];
+
+/// The marker after which the sealed `liberation-sans.ofl-full` notice states
+/// the OFL terms every OFL font's artifact notice carries.
+const OFL_TERMS_START: &str = "This Font Software is licensed";
 
 const FALLBACK_RECIPE_COUNT: usize = 5;
 const NOTICE_COUNT: usize = 4;
@@ -447,7 +559,7 @@ pub fn import(source_root: &str) -> Result<(), String> {
     write_if_changed(&catalog_path, &catalog_bytes)?;
     write_digest_sidecar(&base.join("catalog/revision-1.sha256"), &catalog_bytes)?;
 
-    let generated = generate_rust(&catalog, &scene_surface, &catalog_bytes)?;
+    let generated = generate_rust(&base, &catalog, &scene_surface, &catalog_bytes)?;
     let generated_path = base.join("src/generated/revision_1.rs");
     if let Some(parent) = generated_path.parent() {
         fs::create_dir_all(parent)
@@ -495,7 +607,7 @@ pub fn materialize() -> Result<(), String> {
     write_if_changed(&base.join("catalog/revision-1.json"), &catalog_bytes)?;
     write_digest_sidecar(&base.join("catalog/revision-1.sha256"), &catalog_bytes)?;
 
-    let generated = generate_rust(&catalog, &scene_surface, &catalog_bytes)?;
+    let generated = generate_rust(&base, &catalog, &scene_surface, &catalog_bytes)?;
     write_if_changed(
         &base.join("src/generated/revision_1.rs"),
         generated.as_bytes(),
@@ -737,7 +849,7 @@ pub fn verify(require_approval: bool) -> Result<(), String> {
     let generated_path = base.join("src/generated/revision_1.rs");
     let generated = fs::read_to_string(&generated_path)
         .map_err(|error| format!("failed to read {}: {error}", generated_path.display()))?;
-    let expected_generated = generate_rust(&catalog, &scene_surface, &catalog_bytes)?;
+    let expected_generated = generate_rust(&base, &catalog, &scene_surface, &catalog_bytes)?;
     if generated != expected_generated {
         return Err("generated Rust catalog is stale".to_owned());
     }
@@ -1429,6 +1541,7 @@ fn partition(assets: &mut [ImportedAsset]) -> Result<Vec<Vec<u8>>, String> {
 }
 
 fn generate_rust(
+    base: &Path,
     catalog: &Value,
     scene_surface: &Value,
     catalog_bytes: &[u8],
@@ -1440,7 +1553,9 @@ fn generate_rust(
     let assets = catalog["assets"]
         .as_array()
         .ok_or_else(|| "revision catalog assets must be an array".to_owned())?;
+    let mut families = BTreeSet::new();
     for asset in assets {
+        families.insert(string(asset, "family", "catalog asset")?);
         output.push_str("    AssetRecord {\n");
         for (rust_name, json_name) in [
             ("identity", "identity"),
@@ -1567,6 +1682,7 @@ fn generate_rust(
             .map(str::to_owned)
             .collect::<Vec<_>>(),
     );
+    generate_font_notices(&mut output, base, scene_surface, &families)?;
     output.push_str("\npub static REVISION_1: RevisionCatalog = RevisionCatalog {\n");
     output.push_str("    compatibility_revision: 1,\n");
     rust_field(&mut output, "excalidraw_release", EXCALIDRAW_RELEASE);
@@ -1596,9 +1712,69 @@ fn generate_rust(
     output.push_str("    provenance_identities: PROVENANCE_IDENTITIES,\n");
     output.push_str("    transformation_identities: TRANSFORMATION_IDENTITIES,\n");
     output.push_str("    license_identities: LICENSE_IDENTITIES,\n");
+    output.push_str("    font_notices: &FONT_NOTICES,\n");
     output.push_str("    assets: &ASSETS,\n");
     output.push_str("};\n");
     Ok(output)
+}
+
+/// Emits the official rendering font notices as the `FontNotice` table the
+/// renderer reads attribution and license terms from, with one `const` per
+/// distinct terms text. Every asset family must have exactly one notice.
+fn generate_font_notices(
+    output: &mut String,
+    base: &Path,
+    scene_surface: &Value,
+    families: &BTreeSet<&str>,
+) -> Result<(), String> {
+    let mut noticed = BTreeSet::new();
+    for notice in FONT_NOTICES {
+        if !noticed.insert(notice.family) {
+            return Err(format!(
+                "font family {} has more than one notice",
+                notice.family
+            ));
+        }
+    }
+    if noticed != *families {
+        return Err(format!(
+            "font notices cover {noticed:?} but the catalog assets belong to {families:?}"
+        ));
+    }
+
+    let mut terms = BTreeMap::new();
+    for notice in FONT_NOTICES {
+        if let std::collections::btree_map::Entry::Vacant(entry) =
+            terms.entry(notice.terms.rust_const())
+        {
+            entry.insert(font_terms(base, scene_surface, notice.terms)?);
+        }
+    }
+    for (name, text) in &terms {
+        output.push_str(&format!(
+            "#[rustfmt::skip]\nconst {name}: &str = {text:?};\n\n"
+        ));
+    }
+
+    output.push_str(&format!(
+        "#[rustfmt::skip]\nstatic FONT_NOTICES: [FontNotice; {}] = [\n",
+        FONT_NOTICES.len()
+    ));
+    for notice in FONT_NOTICES {
+        let (license_identity, _, _) = family_metadata(notice.family)?;
+        output.push_str("    FontNotice {\n");
+        rust_field(output, "family", notice.family);
+        rust_field(output, "license_identity", license_identity);
+        output.push_str(&format!(
+            "        license: FontLicense::{:?},\n",
+            notice.license
+        ));
+        rust_field(output, "attribution", &notice.artifact_attribution());
+        output.push_str(&format!("        terms: {},\n", notice.terms.rust_const()));
+        output.push_str("    },\n");
+    }
+    output.push_str("];\n");
+    Ok(())
 }
 
 /// One Xiaolai face as the pinned upstream index declares it: the WOFF2 file
@@ -1743,7 +1919,7 @@ fn parse_unicode_ranges(declared: &str) -> Result<Vec<(u32, u32)>, String> {
 
 fn generated_scene_surface(scene_surface: &Value) -> Result<String, String> {
     let mut output = String::from(
-        "// Generated by `cargo run --locked -p xtask -- catalog import`; do not edit.\n\n",
+        "// Generated by `cargo run --locked -p xtask -- catalog import` or `catalog materialize`; do not edit.\n\n",
     );
     generate_scene_surface_rust(&mut output, scene_surface)?;
     Ok(output)
@@ -1843,11 +2019,77 @@ fn generate_scene_surface_rust(output: &mut String, scene_surface: &Value) -> Re
     output.push_str("];\n\n");
 
     output.push_str(
+        "#[rustfmt::skip]\nstatic SCENE_FALLBACK_RECIPE_POLICIES: &[SceneFallbackRecipePolicy] = &[\n",
+    );
+    for recipe in scene_surface["fallbackRecipes"]
+        .as_array()
+        .ok_or_else(|| "scene-surface fallbackRecipes must be an array".to_owned())?
+    {
+        output.push_str("    SceneFallbackRecipePolicy {\n");
+        rust_field(
+            output,
+            "content_kind",
+            string(&recipe["content"], "kind", "scene fallback recipe content")?,
+        );
+        rust_string_values(
+            output,
+            "notices",
+            &recipe["noticeIds"],
+            "scene fallback recipe noticeIds",
+        )?;
+        output.push_str("        paints: [");
+        for format in ["svg", "png", "pdf"] {
+            let disposition = string(
+                &recipe["content"]["format"],
+                format,
+                "scene fallback recipe content format",
+            )?;
+            match disposition {
+                "paint" => output.push_str("true,"),
+                "omit" => output.push_str("false,"),
+                other => {
+                    return Err(format!(
+                        "unknown scene fallback recipe format disposition {other}"
+                    ))
+                }
+            }
+        }
+        output.push_str("],\n");
+        output.push_str("    },\n");
+    }
+    output.push_str("];\n\n");
+
+    output.push_str("#[rustfmt::skip]\nstatic SCENE_NOTICE_POLICIES: &[SceneNoticePolicy] = &[\n");
+    for notice in scene_surface["noticeCatalog"]
+        .as_array()
+        .ok_or_else(|| "scene-surface noticeCatalog must be an array".to_owned())?
+    {
+        output.push_str("    SceneNoticePolicy {\n");
+        rust_field(output, "identity", string(notice, "id", "scene notice")?);
+        rust_field(
+            output,
+            "asset_identity",
+            string(notice, "assetIdentity", "scene notice")?,
+        );
+        rust_string_values(
+            output,
+            "required_formats",
+            &notice["requiredFormats"],
+            "scene notice requiredFormats",
+        )?;
+        rust_field(output, "text", string(notice, "text", "scene notice")?);
+        output.push_str("    },\n");
+    }
+    output.push_str("];\n\n");
+
+    output.push_str(
         "pub(crate) static SCENE_SURFACE_POLICY: SceneSurfacePolicy = SceneSurfacePolicy {\n",
     );
     output.push_str("    record_kinds: SCENE_RECORD_POLICIES,\n");
     output.push_str("    fields: SCENE_FIELD_POLICIES,\n");
     output.push_str("    element_kinds: SCENE_ELEMENT_POLICIES,\n");
+    output.push_str("    fallback_recipes: SCENE_FALLBACK_RECIPE_POLICIES,\n");
+    output.push_str("    notices: SCENE_NOTICE_POLICIES,\n");
     output.push_str("};\n\n");
     Ok(())
 }
@@ -2835,13 +3077,6 @@ fn verify_frame_file_records(
 fn build_license_bundle(base: &Path, scene_surface: &Value) -> Result<String, String> {
     let mut bundle = String::from("Excalidraw Render License Bundle\nCompatibility revision 1\n\n");
     for (title, file) in LICENSE_PARTS {
-        let path = if file.starts_with("../") {
-            base.join(file)
-        } else {
-            base.join("license-parts").join(file)
-        };
-        let part = fs::read_to_string(&path)
-            .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
         bundle.push_str(
             "==============================================================================\n",
         );
@@ -2849,14 +3084,14 @@ fn build_license_bundle(base: &Path, scene_surface: &Value) -> Result<String, St
         bundle.push_str(
             "\n==============================================================================\n\n",
         );
-        bundle.push_str(part.trim_end_matches(['\r', '\n']));
+        bundle.push_str(&read_license_part(base, file)?);
         bundle.push_str("\n\n");
     }
     bundle.push_str("==============================================================================\nOfficial rendering font notices\n==============================================================================\n\n");
-    for (family, notice) in FONT_NOTICES {
-        bundle.push_str(family);
+    for notice in FONT_NOTICES {
+        bundle.push_str(notice.heading);
         bundle.push('\n');
-        bundle.push_str(notice);
+        bundle.push_str(&notice.bundle_line());
         bundle.push_str("\n\n");
     }
     bundle.push_str("==============================================================================\nRevision 1 output-traveling notices\n==============================================================================\n\n");
@@ -2872,6 +3107,40 @@ fn build_license_bundle(base: &Path, scene_surface: &Value) -> Result<String, St
     bundle.truncate(bundle.trim_end_matches(['\r', '\n']).len());
     bundle.push('\n');
     Ok(bundle)
+}
+
+/// One license text as the bundle prints it: the file under `license-parts`
+/// (or, for `../`-prefixed files, under the assets-base crate) without its
+/// trailing line terminators.
+fn read_license_part(base: &Path, file: &str) -> Result<String, String> {
+    let path = if file.starts_with("../") {
+        base.join(file)
+    } else {
+        base.join("license-parts").join(file)
+    };
+    let part = fs::read_to_string(&path)
+        .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    Ok(part.trim_end_matches(['\r', '\n']).to_owned())
+}
+
+/// The license terms a font notice's artifacts carry, as text.
+fn font_terms(base: &Path, scene_surface: &Value, terms: FontTerms) -> Result<String, String> {
+    match terms {
+        FontTerms::LiberationSansOfl => {
+            let notice = scene_surface["noticeCatalog"]
+                .as_array()
+                .ok_or_else(|| "notice catalog must be an array".to_owned())?
+                .iter()
+                .find(|notice| notice["id"] == "liberation-sans.ofl-full")
+                .ok_or_else(|| "notice catalog lacks liberation-sans.ofl-full".to_owned())?;
+            let text = string(notice, "text", "notice")?;
+            let start = text.find(OFL_TERMS_START).ok_or_else(|| {
+                "the liberation-sans.ofl-full notice does not state the OFL terms".to_owned()
+            })?;
+            Ok(text[start..].to_owned())
+        }
+        FontTerms::BundlePart(file) => read_license_part(base, file),
+    }
 }
 
 fn family_metadata(
@@ -3153,11 +3422,73 @@ mod tests {
     use serde_json::{json, Value};
 
     use super::{
-        carry_approval, parse_unicode_ranges, parse_xiaolai_index, review_decode,
-        reviewed_decodes_record, reviewed_decodes_subject, verify_reviewed_decodes_approval,
-        verify_scene_surface, XiaolaiIndexFace, EXCALIFONT_BASIC_LATIN_PATH,
-        EXCALIFONT_BASIC_LATIN_SHA256,
+        carry_approval, generate_scene_surface_rust, parse_unicode_ranges, parse_xiaolai_index,
+        review_decode, reviewed_decodes_record, reviewed_decodes_subject,
+        verify_reviewed_decodes_approval, verify_scene_surface, XiaolaiIndexFace,
+        EXCALIFONT_BASIC_LATIN_PATH, EXCALIFONT_BASIC_LATIN_SHA256, FONT_NOTICES,
     };
+
+    /// The bundle prints each family's attribution, license sentence and
+    /// postscript as one line; artifacts carry the same line without the
+    /// license sentence, wherever in the line it sits.
+    #[test]
+    fn font_notices_project_one_line_for_the_bundle_and_one_attribution_for_artifacts() {
+        let bundle = include_str!("../../crates/excalidraw-render-assets-base/LICENSE-BUNDLE.txt");
+        for notice in FONT_NOTICES {
+            let expected_line = bundle
+                .split_once(&format!("\n{}\n", notice.heading))
+                .and_then(|(_, rest)| rest.lines().next())
+                .unwrap_or_else(|| panic!("{} has a bundle line", notice.heading));
+            assert_eq!(notice.bundle_line(), expected_line, "{}", notice.heading);
+        }
+
+        let by_family = |family: &str| {
+            FONT_NOTICES
+                .iter()
+                .find(|notice| notice.family == family)
+                .expect("family has a notice")
+        };
+        assert_eq!(
+            by_family("Cascadia").artifact_attribution(),
+            "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code."
+        );
+        assert_eq!(
+            by_family("ComicShanns").artifact_attribution(),
+            "Copyright (c) 2018 Shannon Miwa."
+        );
+        assert_eq!(
+            by_family("Excalifont").artifact_attribution(),
+            "Copyright (c) 2024 by Excalidraw. Excalifont is derived from Virgil by Your Own Font Foundry, with modifications by Jan Filipek / DizajnDesign. Excalifont and Virgil provenance is retained together."
+        );
+        assert_eq!(
+            by_family("Xiaolai").artifact_attribution(),
+            "Copyright (c) 2020 LXGW. Designed by Nozomi Seto. The shipped subsets remove non-CJK codepoints, reduce Hangul side-bearings to 40%, and center improperly centered CJK codepoints."
+        );
+    }
+
+    /// The scene-surface emitter carries the notice catalog and each fallback
+    /// recipe's notice obligations, so render-time notice selection reads
+    /// tables instead of the JSON manifest.
+    #[test]
+    fn scene_surface_emitter_carries_notices_and_recipe_notice_obligations() {
+        let mut output = String::new();
+        generate_scene_surface_rust(&mut output, &manifest()).expect("manifest generates");
+
+        assert!(output.contains("static SCENE_NOTICE_POLICIES: &[SceneNoticePolicy] = &[\n"));
+        assert!(output.contains("        identity: \"font-awesome.ban.cc-by-4.0\",\n"));
+        assert!(output.contains("        required_formats: &[\"svg\",\"pdf\",],\n"));
+        assert!(output.contains(
+            "static SCENE_FALLBACK_RECIPE_POLICIES: &[SceneFallbackRecipePolicy] = &[\n"
+        ));
+        assert!(output.contains(
+            "        content_kind: \"image-error\",\n        notices: &[\"font-awesome.ban.cc-by-4.0\",\"font-awesome.image.cc-by-4.0\",],\n        paints: [false,true,false,],\n"
+        ));
+        assert!(output.contains(
+            "        content_kind: \"iframe-embeddable\",\n        notices: &[\"liberation-sans.ofl-full\",\"noto-emoji.ofl-full\",],\n        paints: [true,true,true,],\n"
+        ));
+        assert!(output.contains("    fallback_recipes: SCENE_FALLBACK_RECIPE_POLICIES,\n"));
+        assert!(output.contains("    notices: SCENE_NOTICE_POLICIES,\n"));
+    }
 
     /// A pinned-index excerpt covering both descriptor layouts the upstream
     /// formatter emits: the wrapped `unicodeRange:` on its own line and the

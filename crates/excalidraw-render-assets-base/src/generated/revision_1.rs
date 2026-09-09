@@ -6491,6 +6491,71 @@ static LICENSE_IDENTITIES: &[&str] = &[
     "roughjs.mit",
 ];
 
+#[rustfmt::skip]
+const COMIC_SHANNS_MIT_TERMS: &str = "MIT License\n\nCopyright (c) 2018 Shannon Miwa\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.";
+
+#[rustfmt::skip]
+const OFL_1_1_TERMS: &str = "This Font Software is licensed under the SIL Open Font License, Version 1.1.\nThis license is copied below, and is also available with a FAQ at:\nhttp://scripts.sil.org/OFL\n\nSIL OPEN FONT LICENSE Version 1.1 - 26 February 2007\n\nPREAMBLE\nThe goals of the Open Font License (OFL) are to stimulate worldwide\ndevelopment of collaborative font projects, to support the font creation\nefforts of academic and linguistic communities, and to provide a free and\nopen framework in which fonts may be shared and improved in partnership\nwith others.\n\nThe OFL allows the licensed fonts to be used, studied, modified and\nredistributed freely as long as they are not sold by themselves. The fonts,\nincluding any derivative works, can be bundled, embedded, redistributed\nand/or sold with any software provided that any reserved names are not used\nby derivative works. The fonts and derivatives, however, cannot be released\nunder any other type of license. The requirement for fonts to remain under\nthis license does not apply to any document created using the fonts or their\nderivatives.\n\nDEFINITIONS\n\"Font Software\" refers to the set of files released by the Copyright\nHolder(s) under this license and clearly marked as such. This may include\nsource files, build scripts and documentation.\n\n\"Reserved Font Name\" refers to any names specified as such after the\ncopyright statement(s).\n\n\"Original Version\" refers to the collection of Font Software components as\ndistributed by the Copyright Holder(s).\n\n\"Modified Version\" refers to any derivative made by adding to, deleting,\nor substituting -- in part or in whole -- any of the components of the\nOriginal Version, by changing formats or by porting the Font Software to a\nnew environment.\n\n\"Author\" refers to any designer, engineer, programmer, technical writer or\nother person who contributed to the Font Software.\n\nPERMISSION & CONDITIONS\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof the Font Software, to use, study, copy, merge, embed, modify, redistribute,\nand sell modified and unmodified copies of the Font Software, subject to the\nfollowing conditions:\n\n1) Neither the Font Software nor any of its individual components, in Original\nor Modified Versions, may be sold by itself.\n\n2) Original or Modified Versions of the Font Software may be bundled,\nredistributed and/or sold with any software, provided that each copy contains\nthe above copyright notice and this license. These can be included either as\nstand-alone text files, human-readable headers or in the appropriate\nmachine-readable metadata fields within text or binary files as long as those\nfields can be easily viewed by the user.\n\n3) No Modified Version of the Font Software may use the Reserved Font Name(s)\nunless explicit written permission is granted by the corresponding Copyright\nHolder. This restriction only applies to the primary font name as presented\nto the users.\n\n4) The name(s) of the Copyright Holder(s) or the Author(s) of the Font Software\nshall not be used to promote, endorse or advertise any Modified Version,\nexcept to acknowledge the contribution(s) of the Copyright Holder(s) and the\nAuthor(s) or with their explicit written permission.\n\n5) The Font Software, modified or unmodified, in part or in whole, must be\ndistributed entirely under this license, and must not be distributed under\nany other license. The requirement for fonts to remain under this license does\nnot apply to any document created using the Font Software.\n\nTERMINATION\nThis license becomes null and void if any of the above conditions are not met.\n\nDISCLAIMER\nTHE FONT SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS\nOR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF COPYRIGHT, PATENT,\nTRADEMARK, OR OTHER RIGHT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR\nANY CLAIM, DAMAGES OR OTHER LIABILITY, INCLUDING ANY GENERAL, SPECIAL,\nINDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, WHETHER IN AN ACTION OF\nCONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF THE USE OR INABILITY TO USE\nTHE FONT SOFTWARE OR FROM OTHER DEALINGS IN THE FONT SOFTWARE.";
+
+#[rustfmt::skip]
+static FONT_NOTICES: [FontNotice; 8] = [
+    FontNotice {
+        family: "Cascadia",
+        license_identity: "font.cascadia-code.ofl-1.1",
+        license: FontLicense::Ofl11,
+        attribution: "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code.",
+        terms: OFL_1_1_TERMS,
+    },
+    FontNotice {
+        family: "ComicShanns",
+        license_identity: "font.comic-shanns.mit",
+        license: FontLicense::Mit,
+        attribution: "Copyright (c) 2018 Shannon Miwa.",
+        terms: COMIC_SHANNS_MIT_TERMS,
+    },
+    FontNotice {
+        family: "Excalifont",
+        license_identity: "font.excalifont.ofl-1.1",
+        license: FontLicense::Ofl11,
+        attribution: "Copyright (c) 2024 by Excalidraw. Excalifont is derived from Virgil by Your Own Font Foundry, with modifications by Jan Filipek / DizajnDesign. Excalifont and Virgil provenance is retained together.",
+        terms: OFL_1_1_TERMS,
+    },
+    FontNotice {
+        family: "Liberation",
+        license_identity: "font.liberation-sans.ofl-1.1",
+        license: FontLicense::Ofl11,
+        attribution: "Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine. Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.",
+        terms: OFL_1_1_TERMS,
+    },
+    FontNotice {
+        family: "Lilita",
+        license_identity: "font.lilita.ofl-1.1",
+        license: FontLicense::Ofl11,
+        attribution: "Copyright (c) 2011 Juan Montoreano (juan@remolacha.biz), with Reserved Font Name Lilita.",
+        terms: OFL_1_1_TERMS,
+    },
+    FontNotice {
+        family: "Nunito",
+        license_identity: "font.nunito.ofl-1.1",
+        license: FontLicense::Ofl11,
+        attribution: "Copyright 2014 The Nunito Project Authors (https://github.com/googlefonts/nunito).",
+        terms: OFL_1_1_TERMS,
+    },
+    FontNotice {
+        family: "Virgil",
+        license_identity: "font.virgil.ofl-1.1",
+        license: FontLicense::Ofl11,
+        attribution: "Virgil by Your Own Font Foundry, with Reserved Font Name Virgil.",
+        terms: OFL_1_1_TERMS,
+    },
+    FontNotice {
+        family: "Xiaolai",
+        license_identity: "font.xiaolai.ofl-1.1",
+        license: FontLicense::Ofl11,
+        attribution: "Copyright (c) 2020 LXGW. Designed by Nozomi Seto. The shipped subsets remove non-CJK codepoints, reduce Hangul side-bearings to 40%, and center improperly centered CJK codepoints.",
+        terms: OFL_1_1_TERMS,
+    },
+];
 
 pub static REVISION_1: RevisionCatalog = RevisionCatalog {
     compatibility_revision: 1,
@@ -6547,5 +6612,6 @@ pub static REVISION_1: RevisionCatalog = RevisionCatalog {
     provenance_identities: PROVENANCE_IDENTITIES,
     transformation_identities: TRANSFORMATION_IDENTITIES,
     license_identities: LICENSE_IDENTITIES,
+    font_notices: &FONT_NOTICES,
     assets: &ASSETS,
 };

@@ -1,15 +1,10 @@
+use std::collections::TryReserveError;
+
+use excalidraw_render_assets_base::FontNotice;
+
 use crate::compatibility::{CompatibilityRevision, ReferenceProfileIdentity};
+use crate::scene_surface::SceneNoticePolicy;
 use crate::OutputFormat;
-
-pub(crate) struct ManifestedNotice {
-    pub(crate) asset_identity: String,
-    pub(crate) text: String,
-}
-
-pub(crate) struct ManifestedFontAttribution {
-    pub(crate) license_identity: String,
-    pub(crate) text: String,
-}
 
 #[derive(Debug)]
 pub(crate) struct RevisionCatalog {
@@ -66,109 +61,99 @@ pub(crate) fn for_revision(revision: CompatibilityRevision) -> Option<&'static R
     }
 }
 
-pub(crate) fn manifested_fallback_notices(
+/// The manifested notices every artifact of `format` that paints a fallback
+/// recipe of one of `fallback_kinds` must carry, ordered by asset identity.
+pub(crate) fn fallback_notices(
     fallback_kinds: &[&str],
     format: OutputFormat,
-) -> Result<Vec<ManifestedNotice>, ()> {
-    let manifested = scene_surface_manifest()?;
-    let recipes = manifested["fallbackRecipes"].as_array().ok_or(())?;
-    let mut notice_ids = Vec::new();
-    for recipe in recipes {
-        let kind = recipe["content"]["kind"].as_str().ok_or(())?;
-        if !fallback_kinds.contains(&kind)
-            || recipe["content"]["format"][format.as_str()] != "paint"
-        {
-            continue;
-        }
-        for notice_id in recipe["noticeIds"].as_array().ok_or(())? {
-            let notice_id = notice_id.as_str().ok_or(())?;
-            if !notice_ids.contains(&notice_id) {
-                notice_ids.push(notice_id);
-            }
-        }
-    }
-    manifested_notices_from(&manifested, &notice_ids, format)
-}
-
-pub(crate) fn manifested_font_attribution(
-    asset_identity: &str,
-) -> Result<ManifestedFontAttribution, ()> {
-    let catalog: serde_json::Value =
-        serde_json::from_slice(REVISION_1.asset_catalog().catalog_json).map_err(|_| ())?;
-    let asset = catalog["assets"]
-        .as_array()
-        .ok_or(())?
-        .iter()
-        .find(|asset| asset["identity"] == asset_identity)
-        .ok_or(())?;
-    let heading = match asset["family"].as_str().ok_or(())? {
-        "Cascadia" => "Cascadia Code",
-        "ComicShanns" => "Comic Shanns",
-        "Excalifont" => "Excalifont and Virgil provenance",
-        "Liberation" => "Liberation Sans",
-        "Lilita" => "Lilita",
-        "Nunito" => "Nunito",
-        "Virgil" => "Virgil",
-        "Xiaolai" => "Xiaolai SC",
-        _ => return Err(()),
-    };
-    let line = excalidraw_render_assets_base::license_bundle()
-        .split_once("Official rendering font notices\n")
-        .and_then(|(_, notices)| notices.split_once("Revision 1 output-traveling notices"))
-        .and_then(|(notices, _)| notices.split_once(&format!("\n{heading}\n")))
-        .and_then(|(_, notice)| notice.lines().next())
-        .ok_or(())?;
-    Ok(ManifestedFontAttribution {
-        license_identity: asset["licenseIdentity"].as_str().ok_or(())?.to_owned(),
-        text: line
-            .replace(
-                " Licensed under the SIL Open Font License, Version 1.1.",
-                "",
-            )
-            .replace(
-                " Licensed under the MIT License included in this bundle.",
-                "",
-            ),
-    })
-}
-
-fn scene_surface_manifest() -> Result<serde_json::Value, ()> {
-    let scene_surface = REVISION_1
-        .asset_catalog()
-        .incorporated_artifacts
-        .iter()
-        .find(|artifact| artifact.repository_path == "tests/oracle/scene-surfaces/revision-1.json")
-        .ok_or(())?;
-    serde_json::from_slice(scene_surface.bytes).map_err(|_| ())
-}
-
-fn manifested_notices_from(
-    manifested: &serde_json::Value,
-    notice_ids: &[&str],
-    format: OutputFormat,
-) -> Result<Vec<ManifestedNotice>, ()> {
-    let catalog = manifested["noticeCatalog"].as_array().ok_or(())?;
+) -> Result<Vec<&'static SceneNoticePolicy>, TryReserveError> {
+    let policy = REVISION_1.scene_surface();
     let mut notices = Vec::new();
-    notices
-        .try_reserve_exact(notice_ids.len())
-        .map_err(|_| ())?;
-    for notice in catalog {
-        let id = notice["id"].as_str().ok_or(())?;
-        if !notice_ids.contains(&id) {
-            continue;
-        }
-        let required_formats = notice["requiredFormats"].as_array().ok_or(())?;
-        if !required_formats
-            .iter()
-            .any(|required| required == format.as_str())
-        {
-            continue;
-        }
-        notices.push(ManifestedNotice {
-            asset_identity: notice["assetIdentity"].as_str().ok_or(())?.to_owned(),
-            text: notice["text"].as_str().ok_or(())?.to_owned(),
+    notices.try_reserve_exact(policy.notices.len())?;
+    for notice in policy.notices {
+        let owed = policy.fallback_recipes.iter().any(|recipe| {
+            fallback_kinds.contains(&recipe.content_kind)
+                && recipe.paints(format)
+                && recipe.notices.contains(&notice.identity)
         });
+        if owed && notice.requires(format) {
+            notices.push(notice);
+        }
     }
-    notices.sort_unstable_by(|left, right| left.asset_identity.cmp(&right.asset_identity));
+    notices.sort_unstable_by_key(|notice| notice.asset_identity);
     Ok(notices)
+}
+
+/// The notice covering the official rendering font `asset_identity` names.
+pub(crate) fn font_notice(asset_identity: &str) -> Option<&'static FontNotice> {
+    let assets = REVISION_1.asset_catalog();
+    let record = assets.asset(asset_identity)?;
+    assets.font_notice(record.family)
+}
+
+#[cfg(test)]
+mod tests {
+    use excalidraw_render_assets_base::FontLicense;
+
+    use super::{fallback_notices, font_notice};
+    use crate::OutputFormat;
+
+    const IMAGE_NOTICE_ASSET: &str = "font-awesome-free-5.15.4/solid/image@sha256:f3a4dff85d862e91501af10000d758898ca2bc3055ea451423ddedac7f41c1d9";
+    const BAN_NOTICE_ASSET: &str = "font-awesome-free-5.15.4/solid/ban@sha256:8b43245cb319c865fdc4ec865967bcd8b4e833c5b9e108adad750d3db3b64ca9";
+
+    /// A PNG that paints the pending-image placeholder owes the "Image" icon
+    /// notice; one that also paints the error placeholder owes the "Ban" icon
+    /// notice too, ordered by asset identity. SVG and PDF omit both official
+    /// image recipes, so they owe nothing for them.
+    #[test]
+    fn painted_fallback_recipes_select_their_notices_per_format() {
+        let pending = fallback_notices(&["image"], OutputFormat::Png).unwrap();
+        assert_eq!(
+            pending
+                .iter()
+                .map(|notice| notice.asset_identity)
+                .collect::<Vec<_>>(),
+            [IMAGE_NOTICE_ASSET]
+        );
+        assert!(pending[0].text.contains("\"Image\" icon source"));
+
+        let error = fallback_notices(&["image", "image-error"], OutputFormat::Png).unwrap();
+        assert_eq!(
+            error
+                .iter()
+                .map(|notice| notice.asset_identity)
+                .collect::<Vec<_>>(),
+            [BAN_NOTICE_ASSET, IMAGE_NOTICE_ASSET]
+        );
+
+        for format in [OutputFormat::Svg, OutputFormat::Pdf] {
+            assert!(fallback_notices(&["image", "image-error"], format)
+                .unwrap()
+                .is_empty());
+        }
+        assert!(fallback_notices(&["unknown-kind"], OutputFormat::Png)
+            .unwrap()
+            .is_empty());
+    }
+
+    /// Every asset identity resolves to the attribution its family's bundle
+    /// line states, without the license sentence, and to the terms the
+    /// artifact carries with it.
+    #[test]
+    fn font_notices_resolve_by_asset_identity() {
+        let cascadia = font_notice(
+            "fonts/Cascadia/CascadiaCode-Regular.woff2@sha256:5bce041e0fcce617e35efbc335b1372d27a84acb65fb464c65ff80ab3424a885",
+        )
+        .expect("Cascadia is catalogued");
+        assert_eq!(cascadia.license_identity, "font.cascadia-code.ofl-1.1");
+        assert_eq!(cascadia.license, FontLicense::Ofl11);
+        assert_eq!(
+            cascadia.attribution,
+            "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code."
+        );
+        assert!(cascadia.terms.starts_with(
+            "This Font Software is licensed under the SIL Open Font License, Version 1.1."
+        ));
+        assert!(font_notice("fonts/Cascadia/CascadiaCode-Regular.woff2").is_none());
+    }
 }

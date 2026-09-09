@@ -58,6 +58,42 @@ pub(crate) struct SceneElementPolicy {
     pub(crate) ignored_inherited_paths: &'static [&'static str],
 }
 
+/// The notice obligations of one manifested fallback recipe. The recipe's
+/// identity, glyph, paint, placement and inheritance content is not emitted:
+/// `xtask catalog verify` pins the identities, the renderer hardcodes the
+/// official placeholders, and the frozen JSON manifest keeps the data.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct SceneFallbackRecipePolicy {
+    pub(crate) content_kind: &'static str,
+    /// The notices every artifact that paints the recipe must carry.
+    pub(crate) notices: &'static [&'static str],
+    /// Whether the recipe paints in `svg`, `png` and `pdf`, in that order.
+    pub(crate) paints: [bool; 3],
+}
+
+impl SceneFallbackRecipePolicy {
+    pub(crate) fn paints(&self, format: OutputFormat) -> bool {
+        self.paints[format_slot(format)]
+    }
+}
+
+/// One output-traveling notice of the manifest's notice catalog. Its source
+/// identities and text digest are not emitted: `xtask catalog verify` checks
+/// the digest against the text.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct SceneNoticePolicy {
+    pub(crate) identity: &'static str,
+    pub(crate) asset_identity: &'static str,
+    pub(crate) required_formats: &'static [&'static str],
+    pub(crate) text: &'static str,
+}
+
+impl SceneNoticePolicy {
+    pub(crate) fn requires(&self, format: OutputFormat) -> bool {
+        self.required_formats.contains(&format.as_str())
+    }
+}
+
 /// The sealed revision-1 scene-surface policy. The manifest's registry
 /// mappings are not emitted: `xtask catalog verify` pins their count and
 /// uniqueness, and diagnostics mint their codes from the field policies.
@@ -66,6 +102,27 @@ pub(crate) struct SceneSurfacePolicy {
     pub(crate) record_kinds: &'static [SceneRecordPolicy],
     pub(crate) fields: &'static [SceneFieldPolicy],
     pub(crate) element_kinds: &'static [SceneElementPolicy],
+    pub(crate) fallback_recipes: &'static [SceneFallbackRecipePolicy],
+    pub(crate) notices: &'static [SceneNoticePolicy],
+}
+
+impl SceneSurfacePolicy {
+    /// Looks up one manifested notice by its catalog identity.
+    pub(crate) fn notice(&self, identity: &str) -> Option<&'static SceneNoticePolicy> {
+        self.notices
+            .iter()
+            .find(|notice| notice.identity == identity)
+    }
+}
+
+/// The index of `format` in the per-format arrays the generated policy carries
+/// in `svg`, `png`, `pdf` order.
+const fn format_slot(format: OutputFormat) -> usize {
+    match format {
+        OutputFormat::Svg => 0,
+        OutputFormat::Png => 1,
+        OutputFormat::Pdf => 2,
+    }
 }
 
 include!("generated/scene_surface_revision_1.rs");
@@ -615,11 +672,9 @@ fn manifested_field_diagnostic(
     let Some(code) = fallback.code else {
         return Ok(None);
     };
-    let recovery = fallback.recovery.or(match format {
-        OutputFormat::Svg => fallback.format_recoveries[0],
-        OutputFormat::Png => fallback.format_recoveries[1],
-        OutputFormat::Pdf => fallback.format_recoveries[2],
-    });
+    let recovery = fallback
+        .recovery
+        .or(fallback.format_recoveries[format_slot(format)]);
     let Some(recovery) = recovery else {
         return Ok(None);
     };
@@ -1706,6 +1761,57 @@ mod tests {
                 .count(),
             39
         );
+    }
+
+    /// The notice tables agree with each other and with the identities the
+    /// asset catalog seals: every recipe owes only catalogued notices, every
+    /// notice is required by at least one format, and the two tables list
+    /// exactly the manifested recipes and notices.
+    #[test]
+    fn generated_notice_tables_close_over_the_manifest() {
+        let policy = &SCENE_SURFACE_POLICY;
+        let assets = excalidraw_render_assets_base::revision_1();
+        assert_eq!(
+            policy.fallback_recipes.len(),
+            assets.fallback_recipe_identities.len()
+        );
+        assert_eq!(
+            policy
+                .notices
+                .iter()
+                .map(|notice| notice.identity)
+                .collect::<Vec<_>>(),
+            assets.notice_identities
+        );
+        for recipe in policy.fallback_recipes {
+            assert!(!recipe.notices.is_empty(), "{}", recipe.content_kind);
+            for identity in recipe.notices {
+                assert!(policy.notice(identity).is_some(), "{identity}");
+            }
+            assert!(
+                [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf]
+                    .into_iter()
+                    .any(|format| recipe.paints(format)),
+                "{}",
+                recipe.content_kind
+            );
+        }
+        for notice in policy.notices {
+            assert!(
+                [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf]
+                    .into_iter()
+                    .any(|format| notice.requires(format)),
+                "{}",
+                notice.identity
+            );
+            assert!(
+                !notice.text.ends_with(char::is_whitespace),
+                "{}",
+                notice.identity
+            );
+        }
+        assert!(policy.notice("liberation-sans.ofl-full").is_some());
+        assert!(policy.notice("liberation-sans").is_none());
     }
 
     // The revision-1 scene-surface policy, observed through normalization:

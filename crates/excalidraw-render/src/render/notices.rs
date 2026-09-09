@@ -19,8 +19,8 @@ impl MandatoryNotices {
         fallback_kinds: &[&str],
         format: crate::OutputFormat,
     ) -> Result<Self, NoticeError> {
-        let notices = crate::catalog::manifested_fallback_notices(fallback_kinds, format)
-            .map_err(|_| NoticeError::InvalidProvenance)?;
+        let notices = crate::catalog::fallback_notices(fallback_kinds, format)
+            .map_err(|_| NoticeError::Memory)?;
         if notices.is_empty() {
             return Err(NoticeError::InvalidProvenance);
         }
@@ -30,12 +30,12 @@ impl MandatoryNotices {
             .map_err(|_| NoticeError::Memory)?;
         manifest.push('[');
         let mut separator = "";
-        for notice in &notices {
+        for notice in notices {
             manifest.push_str(separator);
             manifest.push_str("{\"asset_identity\":\"");
-            manifest.push_str(&notice.asset_identity);
+            manifest.push_str(notice.asset_identity);
             manifest.push_str("\",\"text\":\"");
-            push_json_string_content(&mut manifest, &notice.text);
+            push_json_string_content(&mut manifest, notice.text);
             manifest.push_str("\"}");
             separator = ",";
         }
@@ -44,30 +44,23 @@ impl MandatoryNotices {
     }
 }
 
-pub(super) fn comic_shanns_notice() -> Option<&'static str> {
-    const START: &str = "Comic Shanns MIT license\n==============================================================================\n\n";
-    const END: &str = "\n\n==============================================================================\nSIL Open Font License 1.1";
-    let bundle = excalidraw_render_assets_base::license_bundle();
-    let start = bundle.find(START)?.checked_add(START.len())?;
-    let tail = bundle.get(start..)?;
-    tail.get(..tail.find(END)?)
-}
-
+/// The sealed `liberation-sans.ofl-full` notice: the Liberation Sans
+/// copyright lines followed by the OFL terms.
 pub(super) fn liberation_sans_notice() -> Option<&'static str> {
-    const START: &str = "liberation-sans.ofl-full\n";
-    const END: &str = "\n\nnoto-emoji.ofl-full\n";
-    let bundle = excalidraw_render_assets_base::license_bundle();
-    let start = bundle.find(START)?.checked_add(START.len())?;
-    let tail = bundle.get(start..)?;
-    let end = tail.find(END)?;
-    tail.get(..end)
+    manifested_notice("liberation-sans.ofl-full")
 }
 
+/// The sealed `noto-emoji.ofl-full` notice: the Noto Emoji copyright line
+/// followed by the OFL terms.
 pub(super) fn noto_emoji_notice() -> Option<&'static str> {
-    const START: &str = "noto-emoji.ofl-full\n";
-    let bundle = excalidraw_render_assets_base::license_bundle();
-    let start = bundle.find(START)?.checked_add(START.len())?;
-    bundle.get(start..)
+    manifested_notice("noto-emoji.ofl-full")
+}
+
+fn manifested_notice(identity: &str) -> Option<&'static str> {
+    crate::catalog::REVISION_1
+        .scene_surface()
+        .notice(identity)
+        .map(|notice| notice.text)
 }
 
 pub(super) fn push_json_string_content(output: &mut String, value: &str) {

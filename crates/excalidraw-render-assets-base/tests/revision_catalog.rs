@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use excalidraw_render_assets_base::{
     excalifont_basic_latin_sfnt_transformation, find_asset, load_asset,
-    load_excalifont_basic_latin_sfnt, revision_1, verify_reviewed_decode, FontSubsetTableAction,
-    CJK_SCALAR_COUNT_V1, CJK_SCALAR_RANGES_V1, CJK_SCALAR_TABLE_BYTES_V1,
+    load_excalifont_basic_latin_sfnt, revision_1, verify_reviewed_decode, FontLicense,
+    FontSubsetTableAction, CJK_SCALAR_COUNT_V1, CJK_SCALAR_RANGES_V1, CJK_SCALAR_TABLE_BYTES_V1,
     CJK_SCALAR_TABLE_SHA256_V1, FONT_SUBSET_PROFILE_SETTINGS_V1, FONT_SUBSET_TABLE_RULES_V1,
     RAW_SHARD_LIMIT,
 };
@@ -412,4 +412,57 @@ fn svg_font_compatibility_artifacts_are_incorporated_into_revision_1() {
             }
         );
     }
+}
+
+/// Artifacts attribute each official font through its catalog record's
+/// family: the notice names the record's license and carries the bundle's
+/// provenance line without its license sentence, plus the license terms.
+#[test]
+fn every_official_font_resolves_one_notice_by_asset_identity_that_agrees_with_its_record() {
+    let catalog = revision_1();
+    assert_eq!(catalog.font_notices.len(), 8);
+
+    for asset in catalog.assets {
+        let record = catalog
+            .asset(asset.identity)
+            .expect("every asset identity resolves to its record");
+        assert!(std::ptr::eq(record, asset));
+        let notice = catalog
+            .font_notice(asset.family)
+            .expect("every asset family has a notice");
+        assert_eq!(notice.license_identity, asset.license_identity);
+        assert!(!notice.attribution.contains("Licensed under"));
+        match notice.license {
+            FontLicense::Ofl11 => {
+                assert!(notice.license_identity.ends_with(".ofl-1.1"));
+                assert!(notice.terms.starts_with(
+                    "This Font Software is licensed under the SIL Open Font License, Version 1.1."
+                ));
+                assert_eq!(
+                    notice.artifact_text().unwrap(),
+                    format!("{}\n\n{}", notice.attribution, notice.terms)
+                );
+            }
+            FontLicense::Mit => {
+                assert_eq!(notice.license_identity, "font.comic-shanns.mit");
+                assert!(notice
+                    .terms
+                    .starts_with("MIT License\n\nCopyright (c) 2018 Shannon Miwa"));
+                assert!(!notice.terms.ends_with('\n'));
+                assert_eq!(notice.artifact_text().unwrap(), notice.terms);
+            }
+        }
+    }
+
+    let cascadia = catalog
+        .font_notice("Cascadia")
+        .expect("Cascadia has a notice");
+    assert_eq!(
+        cascadia.attribution,
+        "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code."
+    );
+    assert!(catalog
+        .asset("fonts/Assistant/Assistant-Regular.woff2")
+        .is_none());
+    assert!(catalog.font_notice("Assistant").is_none());
 }
