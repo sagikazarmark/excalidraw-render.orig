@@ -16,10 +16,7 @@ use super::super::resolve::artifact_retention_delta;
 use super::super::{notices, FormatEncodeError, RenderSession, RenderTarget};
 use super::{ArtifactMetadata, ManifestTarget, MetadataEstimate, MetadataSelection};
 
-pub(super) fn manifest_target<'a>(
-    target: RenderTarget,
-    scene: &'a SceneDocument,
-) -> ManifestTarget<'a> {
+fn manifest_target<'a>(target: RenderTarget, scene: &'a SceneDocument) -> ManifestTarget<'a> {
     match target {
         RenderTarget::Scene => ManifestTarget::Scene,
         RenderTarget::Frame(target) => {

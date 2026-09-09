@@ -2,8 +2,9 @@
 //! traversal, normalization, and relationship events one scene produces so a
 //! batch of frame exports can replay them into each frame's session instead of
 //! recomputing them, and the session's observers that ingest those events —
-//! live or replayed — charge the meter identically either way. Only `frame.rs`
-//! and `render_frame_scoped` construct a journal.
+//! live or replayed — charge the meter identically either way. The frame batch
+//! in `frame.rs` constructs a journal and hands it to `render_frame_scoped`,
+//! which replays it into each frame's session.
 
 use std::sync::{Arc, Mutex};
 

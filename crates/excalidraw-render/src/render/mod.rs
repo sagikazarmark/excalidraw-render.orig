@@ -2,6 +2,9 @@ mod accounting;
 mod asset;
 mod bound_text;
 mod diagnostics;
+#[cfg(not(test))]
+use diagnostics::sort_diagnostics;
+#[cfg(test)]
 pub(crate) use diagnostics::sort_diagnostics;
 mod encode;
 mod font_demand;

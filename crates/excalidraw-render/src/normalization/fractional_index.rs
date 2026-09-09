@@ -11,6 +11,8 @@
 
 use std::collections::TryReserveError;
 
+use super::try_owned;
+
 const DIGITS: &[u8; 62] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 pub(super) fn are_strictly_ascending(indices: &[Option<&str>]) -> bool {
@@ -146,7 +148,7 @@ pub(super) fn repair(source: &[Option<&str>]) -> Result<Vec<String>, TryReserveE
     Ok(repaired)
 }
 
-pub(super) fn generate_n_keys(
+fn generate_n_keys(
     lower: Option<&str>,
     upper: Option<&str>,
     count: usize,
@@ -387,13 +389,6 @@ fn midpoint(lower: &str, upper: Option<&str>) -> Result<String, TryReserveError>
         lower = lower.get(1..).unwrap_or_default();
         upper = None;
     }
-}
-
-fn try_owned(value: &str) -> Result<String, TryReserveError> {
-    let mut owned = String::new();
-    owned.try_reserve_exact(value.len())?;
-    owned.push_str(value);
-    Ok(owned)
 }
 
 fn try_push_str(output: &mut String, value: &str) -> Result<(), TryReserveError> {
