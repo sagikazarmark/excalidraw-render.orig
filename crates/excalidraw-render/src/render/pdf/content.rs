@@ -14,6 +14,7 @@ use crate::portable_math::sin_cos;
 
 use super::super::geometry::{Path, PathOperation, Point, FRAME_OUTLINE_STROKE_WIDTH};
 use super::super::number_format::{format_pdf_number, push_rough_number};
+use super::super::plan::PlannedElement;
 use super::super::resolve::{
     decoration_fill_color, decoration_stroke_style, FallbackColors, ResolvedClip,
     ResolvedTransform, StrokeStyle,
@@ -23,7 +24,7 @@ use super::super::text::{ResolvedGlyph, ResolvedLabel};
 use super::super::{freedraw, FormatEncodeError};
 use super::fonts::{glyph_mapping_code, PdfGlyphMapping};
 use super::{
-    pdf_size_error, visible_rect, PdfElement, PdfImageResource, PdfPlan, PdfSvgResource,
+    pdf_size_error, visible_rect, PdfElementKind, PdfImageResource, PdfPlan, PdfSvgResource,
     POINTS_PER_LOGICAL_PIXEL,
 };
 
@@ -36,7 +37,7 @@ impl PdfPlan {
             .elements
             .iter()
             .filter(|element| {
-                matches!(element, PdfElement::Fallback { opacity, .. } if *opacity != 1.0)
+                matches!(element.kind, PdfElementKind::Fallback { .. }) && element.opacity != 1.0
             })
             .count();
         let mut forms = Vec::new();
@@ -47,11 +48,11 @@ impl PdfPlan {
                 subject: "pdf_fallback_forms",
             })?;
         for element in &self.elements {
-            let PdfElement::Fallback {
-                label,
+            let PlannedElement {
                 width,
                 height,
                 opacity,
+                kind: PdfElementKind::Fallback { label, .. },
                 ..
             } = element
             else {
@@ -98,8 +99,8 @@ impl PdfPlan {
     ) -> Result<String, FormatEncodeError> {
         let mut capacity = 1_024_usize;
         for element in &self.elements {
-            let element_bytes = match element {
-                PdfElement::RoughOutline {
+            let element_bytes = match &element.kind {
+                PdfElementKind::RoughOutline {
                     drawing,
                     generated_label,
                     ..
@@ -114,7 +115,7 @@ impl PdfPlan {
                         }))
                     })
                     .ok_or_else(pdf_size_error)?,
-                PdfElement::Freedraw {
+                PdfElementKind::Freedraw {
                     path,
                     background_fill,
                     ..
@@ -128,20 +129,24 @@ impl PdfPlan {
                     .checked_mul(160)
                     .and_then(|path_bytes| path_bytes.checked_add(256))
                     .ok_or_else(pdf_size_error)?,
-                PdfElement::Frame { name, .. } => name
+                PdfElementKind::Frame { name, .. } => name
                     .as_ref()
                     .map_or(512, |name| name.label.text.len().saturating_add(1_024)),
-                PdfElement::Text { text, .. } => text.lines.iter().fold(512_usize, |size, line| {
-                    size.saturating_add(line.text.len().saturating_mul(4))
-                        .saturating_add(line.glyphs.len().saturating_mul(96))
-                }),
-                PdfElement::Image { corner_clip, .. } => corner_clip.as_ref().map_or(512, |path| {
-                    path.operations
-                        .len()
-                        .saturating_mul(160)
-                        .saturating_add(512)
-                }),
-                PdfElement::Fallback { label, .. } => label.as_ref().map_or(1_024, |label| {
+                PdfElementKind::Text { text, .. } => {
+                    text.lines.iter().fold(512_usize, |size, line| {
+                        size.saturating_add(line.text.len().saturating_mul(4))
+                            .saturating_add(line.glyphs.len().saturating_mul(96))
+                    })
+                }
+                PdfElementKind::Image { corner_clip, .. } => {
+                    corner_clip.as_ref().map_or(512, |path| {
+                        path.operations
+                            .len()
+                            .saturating_mul(160)
+                            .saturating_add(512)
+                    })
+                }
+                PdfElementKind::Fallback { label, .. } => label.as_ref().map_or(1_024, |label| {
                     label
                         .path
                         .operations
@@ -193,24 +198,29 @@ impl PdfPlan {
         }
         let mut fallback_form_index = 0_usize;
         for element in &self.elements {
-            match element {
-                PdfElement::RoughOutline {
+            let PlannedElement {
+                frame_clips,
+                transform,
+                opacity,
+                link: _,
+                width,
+                height,
+                kind,
+            } = element;
+            match kind {
+                PdfElementKind::RoughOutline {
                     source,
                     drawing,
-                    frame_clips,
-                    transform,
                     stroke_color,
                     fill_color,
                     stroke_width,
                     stroke_style,
                     source_stroke_width,
-                    opacity,
                     background_color,
                     label_mask,
                     generated_label,
                     generated_label_color,
                     generated_label_offset_y,
-                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -380,17 +390,13 @@ impl PdfPlan {
                     }
                     content.push_str("Q\n");
                 }
-                PdfElement::Freedraw {
+                PdfElementKind::Freedraw {
                     source,
                     path,
                     background_fill,
-                    frame_clips,
-                    transform,
                     color,
                     background_color,
                     source_stroke_width,
-                    opacity,
-                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -444,14 +450,10 @@ impl PdfPlan {
                     push_freedraw_path(&mut content, path)?;
                     content.push_str("f\nQ\n");
                 }
-                PdfElement::Frame {
+                PdfElementKind::Frame {
                     source,
                     name,
                     outline,
-                    frame_clips,
-                    transform,
-                    opacity,
-                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -497,14 +499,10 @@ impl PdfPlan {
                     }
                     content.push_str("Q\n");
                 }
-                PdfElement::Text {
+                PdfElementKind::Text {
                     source,
                     text,
-                    frame_clips,
-                    transform,
                     color,
-                    opacity,
-                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -557,18 +555,14 @@ impl PdfPlan {
                     }
                     content.push_str("Q\n");
                 }
-                PdfElement::Image {
+                PdfElementKind::Image {
                     source,
                     asset,
-                    frame_clips,
+                    dark_mode_filter: _,
                     corner_clip,
-                    transform,
-                    opacity,
-                    width,
-                    height,
+                    source_rect: _,
                     projection,
                     scale,
-                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -672,16 +666,7 @@ impl PdfPlan {
                     })?;
                     content.push_str("Q\n");
                 }
-                PdfElement::Fallback {
-                    source,
-                    label,
-                    link: _,
-                    frame_clips,
-                    width,
-                    height,
-                    transform,
-                    opacity,
-                } => {
+                PdfElementKind::Fallback { source, label } => {
                     if source.pointer.is_empty() {
                         return Err(FormatEncodeError::Encoding(
                             "PDF fallback lost its source location".to_owned(),

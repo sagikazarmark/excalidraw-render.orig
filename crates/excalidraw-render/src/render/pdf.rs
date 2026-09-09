@@ -35,6 +35,7 @@ use super::geometry::{clip_convex_polygon, Path, PathOperation, Point};
 use super::metadata::ArtifactMetadata;
 use super::notices::MandatoryNotices;
 use super::number_format::format_pdf_number;
+use super::plan::PlannedElement;
 use super::resolve::{
     decoration_fill_color, DarkModeImageFilter, FallbackColors, FallbackSource, ResolvedClip,
     ResolvedElement, ResolvedFrameName, ResolvedFrameOutline, ResolvedImageAsset,
@@ -121,24 +122,24 @@ struct PdfSvgResource {
     raster_scale: f64,
 }
 
+/// One PDF plan element: the shared header in logical units, projected to
+/// points at write time, and the kind.
+type PdfElement = PlannedElement<ResolvedTransform, ResolvedClip, PdfElementKind>;
+
+/// What differs per element kind in the PDF plan; everything else an element
+/// carries is the [`PlannedElement`] header.
 #[derive(Debug)]
-enum PdfElement {
+enum PdfElementKind {
     RoughOutline {
         source: NormalizedElementSource,
         drawing: Drawing,
-        frame_clips: Vec<ResolvedClip>,
-        transform: ResolvedTransform,
         stroke_color: CanonicalColor,
         fill_color: Option<CanonicalColor>,
         stroke_width: f64,
         stroke_style: StrokeStyle,
         source_stroke_width: f64,
-        opacity: f64,
         background_color: CanonicalColor,
         label_mask: Option<ResolvedLabelMask>,
-        link: Option<String>,
-        width: f64,
-        height: f64,
         generated_label: Option<ResolvedText>,
         generated_label_color: Option<CanonicalColor>,
         generated_label_offset_y: f64,
@@ -147,37 +148,19 @@ enum PdfElement {
         source: NormalizedElementSource,
         path: freedraw::ProjectedPath,
         background_fill: Option<Fill>,
-        frame_clips: Vec<ResolvedClip>,
-        transform: ResolvedTransform,
         color: CanonicalColor,
         background_color: Option<CanonicalColor>,
         source_stroke_width: f64,
-        opacity: f64,
-        link: Option<String>,
-        width: f64,
-        height: f64,
     },
     Frame {
         source: NormalizedElementSource,
         name: Option<ResolvedFrameName>,
         outline: Option<ResolvedFrameOutline>,
-        frame_clips: Vec<ResolvedClip>,
-        transform: ResolvedTransform,
-        opacity: f64,
-        link: Option<String>,
-        width: f64,
-        height: f64,
     },
     Text {
         source: NormalizedElementSource,
         text: ResolvedText,
-        frame_clips: Vec<ResolvedClip>,
-        transform: ResolvedTransform,
         color: CanonicalColor,
-        opacity: f64,
-        link: Option<String>,
-        width: f64,
-        height: f64,
     },
     Image {
         source: NormalizedElementSource,
@@ -185,16 +168,9 @@ enum PdfElement {
         /// The dark-mode filter official SVG applies to this image, which PDF
         /// lowers into a raster asset's pixels.
         dark_mode_filter: Option<DarkModeImageFilter>,
-        frame_clips: Vec<ResolvedClip>,
         /// The rounded-corner clip of an image with a roundness record, in
         /// element space; without one the image clips to its rectangle.
         corner_clip: Option<Path>,
-        transform: ResolvedTransform,
-        opacity: f64,
-        link: Option<String>,
-        /// The element's unrounded size: the flip axis and the link rectangle.
-        width: f64,
-        height: f64,
         /// The crop in the asset's pixel grid, which bounds the effect regions
         /// a nested SVG rasterizes.
         source_rect: ResolvedImageSourceRect,
@@ -205,12 +181,6 @@ enum PdfElement {
     Fallback {
         source: FallbackSource,
         label: Option<ResolvedLabel>,
-        link: Option<String>,
-        frame_clips: Vec<ResolvedClip>,
-        width: f64,
-        height: f64,
-        transform: ResolvedTransform,
-        opacity: f64,
     },
 }
 
@@ -262,101 +232,113 @@ impl PdfPlan {
                     } else {
                         outline.frame_clips
                     };
-                    elements.push(PdfElement::RoughOutline {
-                        source: outline.source,
-                        drawing: outline.drawing,
+                    elements.push(PdfElement {
                         frame_clips,
                         transform: outline.transform,
-                        stroke_color: outline.stroke_color,
-                        fill_color: outline.fill_color,
-                        stroke_width: outline.stroke_width,
-                        stroke_style: outline.stroke_style,
-                        source_stroke_width: outline.source_stroke_width,
                         opacity: if outline.generated_label.is_some() {
                             outline.element_opacity
                         } else {
                             outline.opacity
                         },
-                        background_color: outline.background_color,
-                        label_mask: outline.label_mask,
                         link: outline.link,
                         width: outline.width,
                         height: outline.height,
-                        generated_label: outline.generated_label,
-                        generated_label_color: outline.generated_label_color,
-                        generated_label_offset_y: outline.generated_label_offset_y,
+                        kind: PdfElementKind::RoughOutline {
+                            source: outline.source,
+                            drawing: outline.drawing,
+                            stroke_color: outline.stroke_color,
+                            fill_color: outline.fill_color,
+                            stroke_width: outline.stroke_width,
+                            stroke_style: outline.stroke_style,
+                            source_stroke_width: outline.source_stroke_width,
+                            background_color: outline.background_color,
+                            label_mask: outline.label_mask,
+                            generated_label: outline.generated_label,
+                            generated_label_color: outline.generated_label_color,
+                            generated_label_offset_y: outline.generated_label_offset_y,
+                        },
                     });
                 }
                 ResolvedElement::Freedraw(freedraw) => {
-                    elements.push(PdfElement::Freedraw {
-                        source: freedraw.source,
-                        path: freedraw::project(freedraw.path)?,
-                        background_fill: freedraw.background_fill,
+                    elements.push(PdfElement {
                         frame_clips: freedraw.frame_clips,
                         transform: freedraw.transform,
-                        color: freedraw.color,
-                        background_color: freedraw.background_color,
-                        source_stroke_width: freedraw.source_stroke_width,
                         opacity: freedraw.opacity,
                         link: freedraw.link,
                         width: freedraw.width,
                         height: freedraw.height,
+                        kind: PdfElementKind::Freedraw {
+                            source: freedraw.source,
+                            path: freedraw::project(freedraw.path)?,
+                            background_fill: freedraw.background_fill,
+                            color: freedraw.color,
+                            background_color: freedraw.background_color,
+                            source_stroke_width: freedraw.source_stroke_width,
+                        },
                     });
                 }
                 ResolvedElement::Frame(frame) => {
-                    elements.push(PdfElement::Frame {
-                        source: frame.source,
-                        name: frame.name,
-                        outline: frame.outline,
+                    elements.push(PdfElement {
                         frame_clips: frame.frame_clips,
                         transform: frame.transform,
                         opacity: frame.opacity,
                         link: frame.link,
                         width: frame.width,
                         height: frame.height,
+                        kind: PdfElementKind::Frame {
+                            source: frame.source,
+                            name: frame.name,
+                            outline: frame.outline,
+                        },
                     });
                 }
                 ResolvedElement::Text(text) => {
-                    elements.push(PdfElement::Text {
-                        source: text.source,
-                        text: text.text,
+                    elements.push(PdfElement {
                         frame_clips: text.frame_clips,
                         transform: text.transform,
-                        color: text.color,
                         opacity: text.opacity,
                         link: text.link,
                         width: text.width,
                         height: text.height,
+                        kind: PdfElementKind::Text {
+                            source: text.source,
+                            text: text.text,
+                            color: text.color,
+                        },
                     });
                 }
                 ResolvedElement::Image(image) => {
-                    elements.push(PdfElement::Image {
-                        source: image.source,
-                        asset: image.asset,
-                        dark_mode_filter: image.dark_mode_filter,
+                    elements.push(PdfElement {
                         frame_clips: image.frame_clips,
-                        corner_clip: image.corner_clip.map(|clip| clip.path),
                         transform: image.transform,
                         opacity: image.opacity,
                         link: image.link,
                         width: image.width,
                         height: image.height,
-                        source_rect: image.source_rect,
-                        projection: image.projection,
-                        scale: image.scale,
+                        kind: PdfElementKind::Image {
+                            source: image.source,
+                            asset: image.asset,
+                            dark_mode_filter: image.dark_mode_filter,
+                            corner_clip: image.corner_clip.map(|clip| clip.path),
+                            source_rect: image.source_rect,
+                            projection: image.projection,
+                            scale: image.scale,
+                        },
                     });
                 }
                 ResolvedElement::ImageFallback(_) => {}
                 ResolvedElement::Fallback(fallback) => {
-                    elements.push(PdfElement::Fallback {
-                        source: fallback.source,
-                        label: fallback.label,
-                        link: fallback.link,
+                    elements.push(PdfElement {
                         frame_clips: fallback.frame_clips,
-                        width: fallback.width,
-                        height: fallback.height,
                         transform: fallback.transform,
                         opacity: fallback.opacity,
+                        link: fallback.link,
+                        width: fallback.width,
+                        height: fallback.height,
+                        kind: PdfElementKind::Fallback {
+                            source: fallback.source,
+                            label: fallback.label,
+                        },
                     });
                 }
             }
@@ -427,19 +409,21 @@ impl PdfPlan {
             .and_then(ArtifactMetadata::canonical_scene);
         let attachment_object_count = usize::from(embedded_scene.is_some()) * 2;
         let mut link_count = 0_usize;
-        for element in &self.elements {
-            if let Some((_, width, height, transform, frame_clips)) = element.link_geometry() {
-                if link_annotation_visible(
-                    width,
-                    height,
-                    transform,
-                    frame_clips,
-                    self.scale * POINTS_PER_LOGICAL_PIXEL,
-                    self.page_width,
-                    self.page_height,
-                )? {
-                    link_count = link_count.checked_add(1).ok_or_else(pdf_size_error)?;
-                }
+        for element in self
+            .elements
+            .iter()
+            .filter(|element| element.link.is_some())
+        {
+            if link_annotation_visible(
+                element.width,
+                element.height,
+                &element.transform,
+                &element.frame_clips,
+                self.scale * POINTS_PER_LOGICAL_PIXEL,
+                self.page_width,
+                self.page_height,
+            )? {
+                link_count = link_count.checked_add(1).ok_or_else(pdf_size_error)?;
             }
         }
         let srgb_icc_profile = srgb_icc_profile()?;
@@ -807,15 +791,14 @@ impl PdfPlan {
         }
         let mut link_index = 0_usize;
         for element in self.elements.iter().rev() {
-            let Some((link, width, height, transform, frame_clips)) = element.link_geometry()
-            else {
+            let Some(link) = element.link.as_deref() else {
                 continue;
             };
             if !link_annotation_visible(
-                width,
-                height,
-                transform,
-                frame_clips,
+                element.width,
+                element.height,
+                &element.transform,
+                &element.frame_clips,
                 self.scale * POINTS_PER_LOGICAL_PIXEL,
                 self.page_width,
                 self.page_height,
@@ -826,7 +809,7 @@ impl PdfPlan {
                 .checked_add(link_index)
                 .ok_or_else(pdf_size_error)?;
             begin_object(&mut pdf, &mut offsets, object)?;
-            self.write_link_annotation(&mut pdf, link, width, height, transform, frame_clips)?;
+            self.write_link_annotation(&mut pdf, link, element)?;
             link_index = link_index.saturating_add(1);
         }
         for (index, form) in fallback_forms.iter().enumerate() {
@@ -836,14 +819,10 @@ impl PdfPlan {
             let fallback = self
                 .elements
                 .iter()
-                .filter_map(|element| match element {
-                    PdfElement::Fallback {
-                        width,
-                        height,
-                        opacity,
-                        ..
-                    } if *opacity != 1.0 => Some((*width, *height)),
-                    _ => None,
+                .filter_map(|element| {
+                    (matches!(element.kind, PdfElementKind::Fallback { .. })
+                        && element.opacity != 1.0)
+                        .then_some((element.width, element.height))
                 })
                 .nth(index)
                 .ok_or_else(pdf_size_error)?;
@@ -986,31 +965,32 @@ impl PdfPlan {
     }
 
     pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
-        self.elements.get(index).map(|element| match element {
-            PdfElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
-            PdfElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
-            PdfElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
-            PdfElement::Text { source, .. } => (Some(source.id()), source.pointer()),
-            PdfElement::Image { source, .. } => (Some(source.id()), source.pointer()),
-            PdfElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
+        self.elements.get(index).map(|element| match &element.kind {
+            PdfElementKind::RoughOutline { source, .. }
+            | PdfElementKind::Freedraw { source, .. }
+            | PdfElementKind::Frame { source, .. }
+            | PdfElementKind::Text { source, .. }
+            | PdfElementKind::Image { source, .. } => (Some(source.id()), source.pointer()),
+            PdfElementKind::Fallback { source, .. } => {
+                (source.id.as_deref(), source.pointer.as_str())
+            }
         })
     }
 
+    /// The `/Link` annotation of `element`'s `link`, over the element's clipped
+    /// hit rectangle in page space.
     fn write_link_annotation(
         &self,
         pdf: &mut Vec<u8>,
         link: &str,
-        width: f64,
-        height: f64,
-        transform: &ResolvedTransform,
-        frame_clips: &[ResolvedClip],
+        element: &PdfElement,
     ) -> Result<(), FormatEncodeError> {
         let point_scale = self.scale * POINTS_PER_LOGICAL_PIXEL;
         let points = clipped_link_polygon(
-            width,
-            height,
-            transform,
-            frame_clips,
+            element.width,
+            element.height,
+            &element.transform,
+            &element.frame_clips,
             point_scale,
             self.page_width,
             self.page_height,
@@ -1098,9 +1078,9 @@ impl PdfPlan {
                     resources.push(opacity);
                 }
             };
-            match element {
-                PdfElement::RoughOutline {
-                    opacity,
+            let opacity = element.opacity;
+            match &element.kind {
+                PdfElementKind::RoughOutline {
                     stroke_color,
                     fill_color,
                     drawing,
@@ -1108,36 +1088,35 @@ impl PdfPlan {
                     generated_label_color,
                     ..
                 } => {
-                    retain(*opacity * stroke_color.alpha());
+                    retain(opacity * stroke_color.alpha());
                     if let Some(fill_color) = fill_color {
-                        retain(*opacity * fill_color.alpha());
+                        retain(opacity * fill_color.alpha());
                     }
                     for decoration in &drawing.decorations {
                         if decoration.drawing.fill.is_some() {
                             let color =
                                 decoration_fill_color(decoration, *stroke_color, *background_color);
-                            retain(*opacity * color.alpha());
+                            retain(opacity * color.alpha());
                         }
                     }
                     if let Some(color) = generated_label_color {
                         retain(color.alpha());
                     }
                 }
-                PdfElement::Freedraw {
+                PdfElementKind::Freedraw {
                     color,
                     background_color,
-                    opacity,
                     ..
                 } => {
-                    retain(*opacity * color.alpha());
+                    retain(opacity * color.alpha());
                     if let Some(background_color) = background_color {
-                        retain(*opacity * background_color.alpha());
+                        retain(opacity * background_color.alpha());
                     }
                 }
-                PdfElement::Frame { opacity, .. } => retain(*opacity),
-                PdfElement::Text { color, opacity, .. } => retain(*opacity * color.alpha()),
-                PdfElement::Image { opacity, .. } => retain(*opacity),
-                PdfElement::Fallback { opacity, .. } => retain(*opacity),
+                PdfElementKind::Text { color, .. } => retain(opacity * color.alpha()),
+                PdfElementKind::Frame { .. }
+                | PdfElementKind::Image { .. }
+                | PdfElementKind::Fallback { .. } => retain(opacity),
             }
         }
         Ok(resources)
@@ -1152,11 +1131,11 @@ impl PdfPlan {
                 subject: "pdf_image_resources",
             })?;
         for element in &self.elements {
-            let PdfElement::Image {
+            let PdfElementKind::Image {
                 asset,
                 dark_mode_filter,
                 ..
-            } = element
+            } = &element.kind
             else {
                 continue;
             };
@@ -1187,7 +1166,7 @@ impl PdfPlan {
                 subject: "pdf_svg_resources",
             })?;
         for element in &self.elements {
-            let PdfElement::Image { asset, .. } = element else {
+            let PdfElementKind::Image { asset, .. } = &element.kind else {
                 continue;
             };
             if asset.sanitized_svg.is_none() {
@@ -1215,62 +1194,6 @@ impl PdfPlan {
         }
         resources.sort_by_key(|resource| resource.asset.identity);
         Ok(resources)
-    }
-}
-
-impl PdfElement {
-    fn link_geometry(&self) -> Option<(&str, f64, f64, &ResolvedTransform, &[ResolvedClip])> {
-        match self {
-            Self::RoughOutline {
-                link: Some(link),
-                width,
-                height,
-                transform,
-                frame_clips,
-                ..
-            }
-            | Self::Freedraw {
-                link: Some(link),
-                width,
-                height,
-                transform,
-                frame_clips,
-                ..
-            }
-            | Self::Frame {
-                link: Some(link),
-                width,
-                height,
-                transform,
-                frame_clips,
-                ..
-            }
-            | Self::Text {
-                link: Some(link),
-                width,
-                height,
-                transform,
-                frame_clips,
-                ..
-            }
-            | Self::Image {
-                link: Some(link),
-                width,
-                height,
-                transform,
-                frame_clips,
-                ..
-            }
-            | Self::Fallback {
-                link: Some(link),
-                width,
-                height,
-                transform,
-                frame_clips,
-                ..
-            } => Some((link, *width, *height, transform, frame_clips)),
-            _ => None,
-        }
     }
 }
 
@@ -1598,13 +1521,9 @@ fn pdf_size_error() -> FormatEncodeError {
 }
 
 fn width_scale(element: &PdfElement) -> f64 {
-    let PdfElement::Image {
-        asset,
-        width,
-        height,
-        source_rect,
-        ..
-    } = element
+    let PdfElementKind::Image {
+        asset, source_rect, ..
+    } = &element.kind
     else {
         return 1.0;
     };
@@ -1616,7 +1535,7 @@ fn width_scale(element: &PdfElement) -> f64 {
         .height
         .min(f64::from(asset.height))
         .max(f64::EPSILON);
-    (*width / source_width).max(*height / source_height)
+    (element.width / source_width).max(element.height / source_height)
 }
 
 /// The rectangle of the element's space the reference leaves visible, as

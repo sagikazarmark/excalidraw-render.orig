@@ -25,7 +25,9 @@ use super::super::svg_fonts::Bundle;
 use super::super::text::{ResolvedLabel, ResolvedTextAlign, ResolvedTextRun, FRAME_NAME_FONT_SIZE};
 use super::super::{freedraw, FormatEncodeError};
 use super::sink::SvgSink;
-use super::{SvgElement, SvgFrameName, SvgImageFilterDefinition, SvgImageSymbol, SvgPlan};
+use super::{
+    SvgElement, SvgElementKind, SvgFrameName, SvgImageFilterDefinition, SvgImageSymbol, SvgPlan,
+};
 
 /// Every frame clip the plan references, in first-use order, each defined once
 /// in `<defs>` and referenced by every child it clips.
@@ -33,7 +35,7 @@ fn frame_clip_definitions(
     elements: &[SvgElement],
 ) -> Result<Vec<&ResolvedClip>, FormatEncodeError> {
     let mut definitions = Vec::<&ResolvedClip>::new();
-    for clip in elements.iter().flat_map(SvgElement::frame_clips) {
+    for clip in elements.iter().flat_map(|element| &element.frame_clips) {
         if !definitions
             .iter()
             .any(|known| known.frame_source_index == clip.frame_source_index)
@@ -349,15 +351,19 @@ impl SvgPlan {
             push_frame_clip_definition(&mut svg, clip)?;
         }
         for element in &self.elements {
-            if let SvgElement::Image {
+            if let SvgElementKind::Image {
                 source,
                 corner_radius: Some(radius),
-                width,
-                height,
                 ..
-            } = element
+            } = &element.kind
             {
-                push_image_clip_definition(&mut svg, source, *width, *height, *radius)?;
+                push_image_clip_definition(
+                    &mut svg,
+                    source,
+                    element.width,
+                    element.height,
+                    *radius,
+                )?;
             }
         }
         for symbol in &self.image_symbols {
@@ -384,44 +390,46 @@ impl SvgPlan {
             svg.push_str("\"/>");
         }
         for (element_index, element) in self.elements.iter().enumerate() {
-            let frame_clip_count = element.frame_clips().len();
+            let SvgElement {
+                frame_clips,
+                transform,
+                opacity,
+                link,
+                width,
+                height,
+                kind,
+            } = element;
+            let frame_clip_count = frame_clips.len();
             // The name precedes the frame as its own element, outside the
             // frame's clip and link, where the reference export puts it.
-            if let SvgElement::Frame {
+            if let SvgElementKind::Frame {
                 source,
                 name: Some(name),
                 ..
-            } = element
+            } = kind
             {
                 push_frame_name(&mut svg, source, name)?;
             }
-            push_frame_clip_prefix(&mut svg, element.frame_clips())?;
-            if let Some(link) = element.link() {
+            push_frame_clip_prefix(&mut svg, frame_clips)?;
+            if let Some(link) = link {
                 svg.push_str("<a href=\"");
                 push_escaped_attribute(&mut svg, link);
                 svg.push_str("\">");
             }
-            match element {
-                SvgElement::RoughOutline {
+            match kind {
+                SvgElementKind::RoughOutline {
                     source,
                     drawing,
-                    frame_clips: _,
-                    transform,
                     stroke_color,
                     fill_color,
                     stroke_width,
                     stroke_style,
                     source_stroke_width,
-                    opacity,
                     background_color,
                     label_mask,
                     generated_label,
                     generated_label_color,
                     generated_label_offset_y,
-                    link,
-                    width,
-                    height,
-                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -581,20 +589,13 @@ impl SvgPlan {
                         svg.push_str("</g>");
                     }
                 }
-                SvgElement::Freedraw {
+                SvgElementKind::Freedraw {
                     source,
                     path_data,
                     background_fill,
-                    frame_clips: _,
-                    transform,
                     color,
                     background_color,
                     source_stroke_width,
-                    opacity,
-                    link,
-                    width,
-                    height,
-                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -695,15 +696,10 @@ impl SvgPlan {
                     }
                     svg.push_str("\"/></g>");
                 }
-                SvgElement::Frame {
+                SvgElementKind::Frame {
                     source,
                     name: _,
                     outline_stroke_color,
-                    frame_clips: _,
-                    transform,
-                    link,
-                    width,
-                    height,
                 } => {
                     svg.push_str("<g transform=\"translate(");
                     push_svg_number(&mut svg, transform.translation_x, "SVG frame translation x")?;
@@ -746,17 +742,10 @@ impl SvgPlan {
                     }
                     svg.push_str("</g>");
                 }
-                SvgElement::Text {
+                SvgElementKind::Text {
                     source,
                     text,
-                    frame_clips: _,
-                    transform,
                     color,
-                    opacity,
-                    link,
-                    width,
-                    height,
-                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -768,11 +757,7 @@ impl SvgPlan {
                     svg.push(' ');
                     push_svg_number(&mut svg, transform.translation_y, "SVG text translation y")?;
                     svg.push_str(") rotate(");
-                    push_svg_number(
-                        &mut svg,
-                        180.0 * transform.angle_radians / std::f64::consts::PI,
-                        "SVG text rotation",
-                    )?;
+                    push_svg_number(&mut svg, transform.rotation_degrees, "SVG text rotation")?;
                     svg.push(' ');
                     push_svg_number(&mut svg, transform.center_x, "SVG text center x")?;
                     svg.push(' ');
@@ -842,19 +827,13 @@ impl SvgPlan {
                     }
                     svg.push_str("</text></g>");
                 }
-                SvgElement::Image {
+                SvgElementKind::Image {
                     source,
                     symbol_source_index,
                     dark_mode_filter,
                     corner_radius,
-                    transform,
-                    opacity,
-                    link,
-                    width,
-                    height,
                     projection,
                     scale,
-                    ..
                 } => {
                     if source.id().is_empty() || source.pointer().is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -866,11 +845,7 @@ impl SvgPlan {
                     svg.push(' ');
                     push_svg_number(&mut svg, transform.translation_y, "SVG image translation y")?;
                     svg.push_str(") rotate(");
-                    push_svg_number(
-                        &mut svg,
-                        180.0 * transform.angle_radians / std::f64::consts::PI,
-                        "SVG image rotation",
-                    )?;
+                    push_svg_number(&mut svg, transform.rotation_degrees, "SVG image rotation")?;
                     svg.push(' ');
                     push_svg_number(&mut svg, transform.center_x, "SVG image center x")?;
                     svg.push(' ');
@@ -976,16 +951,10 @@ impl SvgPlan {
                     }
                     svg.push_str("</g>");
                 }
-                SvgElement::Fallback {
+                SvgElementKind::Fallback {
                     source,
                     clip_index,
                     label,
-                    link: _,
-                    frame_clips: _,
-                    width,
-                    height,
-                    transform,
-                    opacity,
                 } => {
                     if source.pointer.is_empty() {
                         return Err(FormatEncodeError::Encoding(
@@ -1118,7 +1087,7 @@ impl SvgPlan {
                     svg.push_str("</g></g>");
                 }
             }
-            if element.link().is_some() {
+            if link.is_some() {
                 svg.push_str("</a>");
             }
             for _ in 0..frame_clip_count {

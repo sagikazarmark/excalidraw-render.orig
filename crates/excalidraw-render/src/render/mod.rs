@@ -35,6 +35,7 @@ mod metadata;
 mod notices;
 mod number_format;
 mod pdf;
+mod plan;
 #[cfg(test)]
 mod plan_tests;
 mod png;

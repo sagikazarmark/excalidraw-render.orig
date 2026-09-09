@@ -9,7 +9,7 @@ use std::io::Write as _;
 
 use super::super::text::{ResolvedGlyph, ResolvedLabel};
 use super::super::FormatEncodeError;
-use super::{begin_object, pdf_size_error, write_error, PdfElement, PdfPlan};
+use super::{begin_object, pdf_size_error, write_error, PdfElementKind, PdfPlan};
 
 #[derive(Debug)]
 pub(super) struct PdfGlyphMapping {
@@ -136,15 +136,17 @@ impl PdfPlan {
         &self,
     ) -> Result<Vec<PdfGlyphMapping>, FormatEncodeError> {
         glyph_mappings(
-            self.elements.iter().filter_map(|element| match element {
-                PdfElement::Fallback {
-                    label: Some(label), ..
-                } => Some(label),
-                PdfElement::Frame {
-                    name: Some(name), ..
-                } => Some(&name.label),
-                _ => None,
-            }),
+            self.elements
+                .iter()
+                .filter_map(|element| match &element.kind {
+                    PdfElementKind::Fallback {
+                        label: Some(label), ..
+                    } => Some(label),
+                    PdfElementKind::Frame {
+                        name: Some(name), ..
+                    } => Some(&name.label),
+                    _ => None,
+                }),
             "pdf_fallback_glyph_mappings",
         )
     }
@@ -162,9 +164,9 @@ impl PdfPlan {
         for font_index in 0..self.official_fonts.len() {
             let mut mappings = Vec::new();
             for element in &self.elements {
-                let text = match element {
-                    PdfElement::Text { text, .. }
-                    | PdfElement::RoughOutline {
+                let text = match &element.kind {
+                    PdfElementKind::Text { text, .. }
+                    | PdfElementKind::RoughOutline {
                         generated_label: Some(text),
                         ..
                     } => text,

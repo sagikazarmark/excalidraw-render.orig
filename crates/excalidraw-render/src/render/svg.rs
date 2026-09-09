@@ -20,6 +20,7 @@ use crate::{color::CanonicalColor, RenderRequest, Sizing};
 
 use super::metadata::ArtifactMetadata;
 use super::notices::MandatoryNotices;
+use super::plan::PlannedElement;
 use super::resolve::{
     DarkModeImageFilter, FallbackColors, FallbackSource, ResolvedClip, ResolvedElement,
     ResolvedImageAsset, ResolvedImageProjection, ResolvedLabelMask, ResolvedScene,
@@ -149,43 +150,36 @@ impl SvgImageFilterDefinition for DarkModeImageFilter {
     }
 }
 
+/// One SVG plan element: the shared header in SVG units and the kind.
+type SvgElement = PlannedElement<SvgTransform, ResolvedClip, SvgElementKind>;
+
+/// What differs per element kind in the SVG plan; everything else an element
+/// carries is the [`PlannedElement`] header.
 #[derive(Debug)]
-enum SvgElement {
+enum SvgElementKind {
     RoughOutline {
         source: NormalizedElementSource,
         drawing: Drawing,
-        frame_clips: Vec<ResolvedClip>,
-        transform: SvgTransform,
         stroke_color: CanonicalColor,
         fill_color: Option<CanonicalColor>,
         stroke_width: f64,
         stroke_style: StrokeStyle,
         source_stroke_width: f64,
-        opacity: f64,
         background_color: CanonicalColor,
         label_mask: Option<ResolvedLabelMask>,
-        link: Option<String>,
         generated_label: Option<ResolvedText>,
         generated_label_color: Option<CanonicalColor>,
         generated_label_offset_y: f64,
-        width: f64,
-        height: f64,
     },
     Freedraw {
         source: NormalizedElementSource,
         path_data: String,
         background_fill: Option<Fill>,
-        frame_clips: Vec<ResolvedClip>,
-        transform: SvgTransform,
         color: CanonicalColor,
         background_color: Option<CanonicalColor>,
         source_stroke_width: f64,
-        opacity: f64,
-        link: Option<String>,
-        width: f64,
-        height: f64,
     },
-    /// A frame's outline and name. The frame carries no opacity here: the
+    /// A frame's outline and name. The writer emits no opacity for it: the
     /// reference SVG's frame `<rect>` has no opacity attribute, while its
     /// canvas sets `globalAlpha` from the element's render opacity, which PNG
     /// and PDF follow (format-specific parity, spec 8.1). The frame's opacity
@@ -196,22 +190,11 @@ enum SvgElement {
         /// The outline's stroke when the frame paints one: `FRAME_STYLE.strokeColor`
         /// for the color mode, as the reference SVG strokes every frame kind.
         outline_stroke_color: Option<CanonicalColor>,
-        frame_clips: Vec<ResolvedClip>,
-        transform: SvgTransform,
-        link: Option<String>,
-        width: f64,
-        height: f64,
     },
     Text {
         source: NormalizedElementSource,
         text: ResolvedText,
-        frame_clips: Vec<ResolvedClip>,
-        transform: ResolvedTransform,
         color: CanonicalColor,
-        opacity: f64,
-        link: Option<String>,
-        width: f64,
-        height: f64,
     },
     Image {
         source: NormalizedElementSource,
@@ -221,44 +204,18 @@ enum SvgElement {
         /// The dark-mode filter the element's `<use>` references, defined in
         /// `<defs>`.
         dark_mode_filter: Option<DarkModeImageFilter>,
-        frame_clips: Vec<ResolvedClip>,
         /// The image's rounded-corner clip radius when it has a roundness
         /// record; the SVG defines the clip as a `<rect rx ry>`.
         corner_radius: Option<f64>,
-        transform: ResolvedTransform,
-        opacity: f64,
         /// The reference export's rounded viewport and content placement.
         projection: ResolvedImageProjection,
         scale: [i8; 2],
-        link: Option<String>,
-        /// The element's unrounded size: the flip axis and the link rectangle.
-        width: f64,
-        height: f64,
     },
     Fallback {
         source: FallbackSource,
         clip_index: usize,
         label: Option<String>,
-        link: Option<String>,
-        frame_clips: Vec<ResolvedClip>,
-        width: f64,
-        height: f64,
-        transform: SvgTransform,
-        opacity: f64,
     },
-}
-
-impl SvgElement {
-    fn frame_clips(&self) -> &[ResolvedClip] {
-        match self {
-            Self::RoughOutline { frame_clips, .. }
-            | Self::Freedraw { frame_clips, .. }
-            | Self::Frame { frame_clips, .. }
-            | Self::Text { frame_clips, .. }
-            | Self::Image { frame_clips, .. }
-            | Self::Fallback { frame_clips, .. } => frame_clips,
-        }
-    }
 }
 
 /// A frame's name as its own unrotated, unclipped, fully opaque text element
@@ -304,75 +261,84 @@ impl SvgPlan {
                     } else {
                         outline.frame_clips
                     };
-                    elements.push(SvgElement::RoughOutline {
-                        source: outline.source,
-                        drawing: outline.drawing,
+                    elements.push(SvgElement {
                         frame_clips,
                         transform: SvgTransform::new(&outline.transform),
-                        stroke_color: outline.stroke_color,
-                        fill_color: outline.fill_color,
-                        stroke_width: outline.stroke_width,
-                        stroke_style: outline.stroke_style,
-                        source_stroke_width: outline.source_stroke_width,
                         opacity: if outline.generated_label.is_some() {
                             outline.element_opacity
                         } else {
                             outline.opacity
                         },
-                        background_color: outline.background_color,
-                        label_mask: outline.label_mask,
                         link: outline.link,
-                        generated_label: outline.generated_label,
-                        generated_label_color: outline.generated_label_color,
-                        generated_label_offset_y: outline.generated_label_offset_y,
                         width: outline.width,
                         height: outline.height,
+                        kind: SvgElementKind::RoughOutline {
+                            source: outline.source,
+                            drawing: outline.drawing,
+                            stroke_color: outline.stroke_color,
+                            fill_color: outline.fill_color,
+                            stroke_width: outline.stroke_width,
+                            stroke_style: outline.stroke_style,
+                            source_stroke_width: outline.source_stroke_width,
+                            background_color: outline.background_color,
+                            label_mask: outline.label_mask,
+                            generated_label: outline.generated_label,
+                            generated_label_color: outline.generated_label_color,
+                            generated_label_offset_y: outline.generated_label_offset_y,
+                        },
                     });
                 }
                 ResolvedElement::Freedraw(freedraw) => {
-                    elements.push(SvgElement::Freedraw {
-                        source: freedraw.source,
-                        path_data: freedraw_path_data(&freedraw.path)?,
-                        background_fill: freedraw.background_fill,
+                    elements.push(SvgElement {
                         frame_clips: freedraw.frame_clips,
                         transform: SvgTransform::new(&freedraw.transform),
-                        color: freedraw.color,
-                        background_color: freedraw.background_color,
-                        source_stroke_width: freedraw.source_stroke_width,
                         opacity: freedraw.opacity,
                         link: freedraw.link,
                         width: freedraw.width,
                         height: freedraw.height,
+                        kind: SvgElementKind::Freedraw {
+                            source: freedraw.source,
+                            path_data: freedraw_path_data(&freedraw.path)?,
+                            background_fill: freedraw.background_fill,
+                            color: freedraw.color,
+                            background_color: freedraw.background_color,
+                            source_stroke_width: freedraw.source_stroke_width,
+                        },
                     });
                 }
                 ResolvedElement::Frame(frame) => {
-                    elements.push(SvgElement::Frame {
-                        source: frame.source,
-                        name: frame.name.map(|name| SvgFrameName {
-                            transform: SvgTransform::new(&name.transform),
-                            color: name.color,
-                            label: name.label,
-                        }),
-                        outline_stroke_color: frame.outline.map(|outline| outline.stroke_color),
+                    elements.push(SvgElement {
                         frame_clips: frame.frame_clips,
                         transform: SvgTransform::new(&frame.transform),
+                        opacity: frame.opacity,
                         link: frame.link,
                         width: frame.width,
                         height: frame.height,
+                        kind: SvgElementKind::Frame {
+                            source: frame.source,
+                            name: frame.name.map(|name| SvgFrameName {
+                                transform: SvgTransform::new(&name.transform),
+                                color: name.color,
+                                label: name.label,
+                            }),
+                            outline_stroke_color: frame.outline.map(|outline| outline.stroke_color),
+                        },
                     });
                     fallback_index = fallback_index.saturating_add(1);
                 }
                 ResolvedElement::Text(text) => {
-                    elements.push(SvgElement::Text {
-                        source: text.source,
-                        text: text.text,
+                    elements.push(SvgElement {
                         frame_clips: text.frame_clips,
-                        transform: text.transform,
-                        color: text.color,
+                        transform: SvgTransform::new(&text.transform),
                         opacity: text.opacity,
                         link: text.link,
                         width: text.width,
                         height: text.height,
+                        kind: SvgElementKind::Text {
+                            source: text.source,
+                            text: text.text,
+                            color: text.color,
+                        },
                     });
                 }
                 ResolvedElement::Image(image) => {
@@ -397,33 +363,37 @@ impl SvgPlan {
                             image.source.source_index()
                         }
                     };
-                    elements.push(SvgElement::Image {
-                        source: image.source,
-                        symbol_source_index,
-                        dark_mode_filter: image.dark_mode_filter,
+                    elements.push(SvgElement {
                         frame_clips: image.frame_clips,
-                        corner_radius: image.corner_clip.map(|clip| clip.radius),
-                        transform: image.transform,
+                        transform: SvgTransform::new(&image.transform),
                         opacity: image.opacity,
-                        projection: image.projection,
-                        scale: image.scale,
                         link: image.link,
                         width: image.width,
                         height: image.height,
+                        kind: SvgElementKind::Image {
+                            source: image.source,
+                            symbol_source_index,
+                            dark_mode_filter: image.dark_mode_filter,
+                            corner_radius: image.corner_clip.map(|clip| clip.radius),
+                            projection: image.projection,
+                            scale: image.scale,
+                        },
                     });
                 }
                 ResolvedElement::ImageFallback(_) => {}
                 ResolvedElement::Fallback(fallback) => {
-                    elements.push(SvgElement::Fallback {
-                        source: fallback.source,
-                        clip_index: fallback_index,
-                        label: fallback.label.map(|label| label.display_text),
-                        link: fallback.link,
+                    elements.push(SvgElement {
                         frame_clips: fallback.frame_clips,
-                        width: fallback.width,
-                        height: fallback.height,
                         transform: SvgTransform::new(&fallback.transform),
                         opacity: fallback.opacity,
+                        link: fallback.link,
+                        width: fallback.width,
+                        height: fallback.height,
+                        kind: SvgElementKind::Fallback {
+                            source: fallback.source,
+                            clip_index: fallback_index,
+                            label: fallback.label.map(|label| label.display_text),
+                        },
                     });
                     fallback_index = fallback_index.saturating_add(1);
                 }
@@ -455,8 +425,8 @@ impl SvgPlan {
         .filter(move |filter| {
             self.elements.iter().any(|element| {
                 matches!(
-                    element,
-                    SvgElement::Image { dark_mode_filter: Some(referenced), .. } if referenced == filter
+                    &element.kind,
+                    SvgElementKind::Image { dark_mode_filter: Some(referenced), .. } if referenced == filter
                 )
             })
         })
@@ -502,27 +472,16 @@ impl SvgPlan {
     }
 
     pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
-        self.elements.get(index).map(|element| match element {
-            SvgElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
-            SvgElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
-            SvgElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
-            SvgElement::Text { source, .. } => (Some(source.id()), source.pointer()),
-            SvgElement::Image { source, .. } => (Some(source.id()), source.pointer()),
-            SvgElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
+        self.elements.get(index).map(|element| match &element.kind {
+            SvgElementKind::RoughOutline { source, .. }
+            | SvgElementKind::Freedraw { source, .. }
+            | SvgElementKind::Frame { source, .. }
+            | SvgElementKind::Text { source, .. }
+            | SvgElementKind::Image { source, .. } => (Some(source.id()), source.pointer()),
+            SvgElementKind::Fallback { source, .. } => {
+                (source.id.as_deref(), source.pointer.as_str())
+            }
         })
-    }
-}
-
-impl SvgElement {
-    fn link(&self) -> Option<&str> {
-        match self {
-            Self::RoughOutline { link, .. }
-            | Self::Freedraw { link, .. }
-            | Self::Frame { link, .. }
-            | Self::Text { link, .. }
-            | Self::Image { link, .. }
-            | Self::Fallback { link, .. } => link.as_deref(),
-        }
     }
 }
 

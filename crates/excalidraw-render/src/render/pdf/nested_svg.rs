@@ -15,7 +15,9 @@ use crate::{FiniteValue, LogicalBounds, NestedPath, NestedPathSegment, NestedSeg
 use super::super::asset::svg::EffectCause;
 use super::super::resolve::{ResolvedImageAsset, ResolvedImageProjection, ResolvedTransform};
 use super::super::{FormatEncodeError, SvgTreeCache};
-use super::{pdf_size_error, visible_rect, PdfElement, PdfRasterClosure, PdfSvgResource};
+use super::{
+    pdf_size_error, visible_rect, PdfElement, PdfElementKind, PdfRasterClosure, PdfSvgResource,
+};
 
 #[derive(Debug)]
 struct FilterOccurrence {
@@ -42,16 +44,20 @@ pub(super) fn collect_raster_closures(
 ) -> Result<Vec<PdfRasterClosure>, FormatEncodeError> {
     let mut closures: Vec<PdfRasterClosure> = Vec::new();
     for (element_index, element) in elements.iter().enumerate() {
-        let PdfElement::Image {
-            source,
-            asset,
-            transform,
+        let PdfElement {
             frame_clips,
+            transform,
             width,
             height,
-            source_rect,
-            projection,
-            scale,
+            kind:
+                PdfElementKind::Image {
+                    source,
+                    asset,
+                    source_rect,
+                    projection,
+                    scale,
+                    ..
+                },
             ..
         } = element
         else {

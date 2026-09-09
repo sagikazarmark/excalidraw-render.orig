@@ -44,6 +44,7 @@ use tiny_skia::{
 
 use super::geometry::{Path, Point, FRAME_OUTLINE_STROKE_WIDTH};
 use super::notices::{MandatoryNotices, NoticeError};
+use super::plan::PlannedElement;
 use super::resolve::{
     decoration_fill_color, decoration_stroke_style, DarkModeImageFilter, FallbackColors,
     FallbackSource, ResolvedClip, ResolvedElement, ResolvedFrameOutline, ResolvedImageAsset,
@@ -74,58 +75,56 @@ pub(super) struct PngPlan {
 const IMAGE_FALLBACK_BACKGROUND: CanonicalColor = CanonicalColor::from_rgb8(0xe7, 0xe7, 0xe7);
 const IMAGE_FALLBACK_ICON_COLOR: CanonicalColor = CanonicalColor::from_rgb8(0x88, 0x88, 0x88);
 
+/// One PNG plan element: the shared header in device space, the kind, and
+/// whether the session still paints it.
 #[derive(Debug)]
-enum PngElement {
+struct PngElement {
+    planned: PlannedElement<PngTransform, PngFrameClip, PngElementKind>,
+    /// Cleared by `omit_element` for an element the session cannot afford
+    /// after planning. An omitted element keeps its plan, so the shared
+    /// frame-clip masks and the per-index area queries still see it.
+    render: bool,
+}
+
+/// What differs per element kind in the PNG plan; everything else an element
+/// carries is the [`PlannedElement`] header. The PNG plan never writes the
+/// header's link.
+#[derive(Debug)]
+enum PngElementKind {
     RoughOutline {
         source: NormalizedElementSource,
         drawing: Drawing,
-        frame_clips: Vec<PngFrameClip>,
-        transform: PngTransform,
         stroke_color: CanonicalColor,
         fill_color: Option<CanonicalColor>,
         stroke_width: f64,
         stroke_style: StrokeStyle,
         source_stroke_width: f64,
-        opacity: f64,
         background_color: CanonicalColor,
         label_mask: Option<PngLabelMask>,
         generated_label: Option<ResolvedText>,
         generated_label_color: Option<CanonicalColor>,
         generated_label_offset_y: f64,
         base_element_work_units: u64,
-        render: bool,
     },
     Freedraw {
         source: NormalizedElementSource,
         path: freedraw::ProjectedPath,
         background_fill: Option<Fill>,
-        frame_clips: Vec<PngFrameClip>,
-        transform: PngTransform,
         color: CanonicalColor,
         background_color: Option<CanonicalColor>,
         source_stroke_width: f64,
-        opacity: f64,
         base_element_work_units: u64,
-        render: bool,
     },
     Frame {
         source: NormalizedElementSource,
         name: Option<PngFrameName>,
         outline: Option<ResolvedFrameOutline>,
-        frame_clips: Vec<PngFrameClip>,
-        transform: PngTransform,
-        opacity: f64,
-        render: bool,
     },
     Text {
         source: NormalizedElementSource,
         text: ResolvedText,
-        frame_clips: Vec<PngFrameClip>,
-        transform: PngTransform,
         color: CanonicalColor,
-        opacity: f64,
         base_element_work_units: u64,
-        render: bool,
     },
     Image {
         source: NormalizedElementSource,
@@ -134,38 +133,20 @@ enum PngElement {
         /// resets its filter for a raster image, so only a nested-SVG image's
         /// rasterized pixels are lowered here.
         dark_mode_filter: Option<DarkModeImageFilter>,
-        frame_clips: Vec<PngFrameClip>,
         /// The rounded-corner clip of an image with a roundness record, in
         /// element space; without one the image clips to its rectangle.
         corner_clip: Option<Path>,
-        transform: PngTransform,
-        width: f64,
-        height: f64,
         source_rect: ResolvedImageSourceRect,
         scale: [i8; 2],
-        opacity: f64,
-        render: bool,
     },
     ImageFallback {
         source: NormalizedElementSource,
         status: NormalizedImageStatus,
-        frame_clips: Vec<PngFrameClip>,
-        transform: PngTransform,
-        width: f64,
-        height: f64,
-        opacity: f64,
-        render: bool,
     },
     Fallback {
         source: FallbackSource,
         label: Option<ResolvedLabel>,
-        frame_clips: Vec<PngFrameClip>,
-        width: f64,
-        height: f64,
-        transform: PngTransform,
-        opacity: f64,
         base_element_work_units: u64,
-        render: bool,
     },
 }
 
@@ -238,68 +219,59 @@ fn same_frame_clip_set(left: &[PngFrameClip], right: &[PngFrameClip]) -> bool {
 }
 
 impl PngElement {
+    /// A freshly planned element, painted unless the session omits it.
+    const fn planned(planned: PlannedElement<PngTransform, PngFrameClip, PngElementKind>) -> Self {
+        Self {
+            planned,
+            render: true,
+        }
+    }
+
     fn painted_font_awesome_status(
         &self,
         surface_width: u32,
         surface_height: u32,
     ) -> Option<NormalizedImageStatus> {
-        match self {
-            Self::ImageFallback {
-                status,
-                frame_clips,
-                transform,
-                width,
-                height,
-                opacity,
-                render: true,
-                ..
-            } if *width > 0.0 && *height > 0.0 && *opacity > 0.0 => {
-                let (left, top, right, bottom) = fallback_coverage_bounds(
-                    *width,
-                    *height,
-                    *transform,
-                    surface_width,
-                    surface_height,
-                );
-                let (clip_left, clip_top, clip_right, clip_bottom) =
-                    frame_clip_coverage_bounds(frame_clips, surface_width, surface_height)?;
-                let left = left.max(clip_left);
-                let top = top.max(clip_top);
-                let right = right.min(clip_right);
-                let bottom = bottom.min(clip_bottom);
-                (left < right && top < bottom).then_some(*status)
-            }
-            _ => None,
+        let PlannedElement {
+            frame_clips,
+            transform,
+            opacity,
+            width,
+            height,
+            kind: PngElementKind::ImageFallback { status, .. },
+            ..
+        } = &self.planned
+        else {
+            return None;
+        };
+        if !(self.render && *width > 0.0 && *height > 0.0 && *opacity > 0.0) {
+            return None;
         }
+        let (left, top, right, bottom) =
+            fallback_coverage_bounds(*width, *height, *transform, surface_width, surface_height);
+        let (clip_left, clip_top, clip_right, clip_bottom) =
+            frame_clip_coverage_bounds(frame_clips, surface_width, surface_height)?;
+        let left = left.max(clip_left);
+        let top = top.max(clip_top);
+        let right = right.min(clip_right);
+        let bottom = bottom.min(clip_bottom);
+        (left < right && top < bottom).then_some(*status)
     }
 
+    /// The frame clips the element paints through the shared frame-clip mask.
+    /// A compatibility fallback paints in its own layer and intersects its
+    /// frame clips into that layer's clip instead, so it shares no mask.
     fn frame_clips(&self) -> &[PngFrameClip] {
-        match self {
-            Self::RoughOutline { frame_clips, .. }
-            | Self::Freedraw { frame_clips, .. }
-            | Self::Frame { frame_clips, .. }
-            | Self::Text { frame_clips, .. }
-            | Self::Image { frame_clips, .. }
-            | Self::ImageFallback { frame_clips, .. } => frame_clips,
-            Self::Fallback { .. } => &[],
-        }
-    }
-
-    fn renders(&self) -> bool {
-        match self {
-            Self::RoughOutline { render, .. }
-            | Self::Freedraw { render, .. }
-            | Self::Frame { render, .. }
-            | Self::Text { render, .. }
-            | Self::Image { render, .. }
-            | Self::ImageFallback { render, .. }
-            | Self::Fallback { render, .. } => *render,
+        if matches!(self.planned.kind, PngElementKind::Fallback { .. }) {
+            &[]
+        } else {
+            &self.planned.frame_clips
         }
     }
 
     fn label_mask(&self) -> Option<PngLabelMask> {
-        match self {
-            Self::RoughOutline { label_mask, .. } => *label_mask,
+        match &self.planned.kind {
+            PngElementKind::RoughOutline { label_mask, .. } => *label_mask,
             _ => None,
         }
     }
@@ -310,32 +282,17 @@ impl PngElement {
     /// reference's `drawElementOnCanvas` image case calls `roundRect` and
     /// `clip` only before `drawImage`, not around `drawImagePlaceholder`.
     fn image_clip(&self) -> Option<PngImageClip<'_>> {
-        match self {
-            Self::Image {
-                width,
-                height,
-                corner_clip,
-                transform,
-                ..
-            } => Some(PngImageClip {
-                width: *width,
-                height: *height,
-                corner_clip: corner_clip.as_ref(),
-                transform: *transform,
-            }),
-            Self::ImageFallback {
-                width,
-                height,
-                transform,
-                ..
-            } => Some(PngImageClip {
-                width: *width,
-                height: *height,
-                corner_clip: None,
-                transform: *transform,
-            }),
-            _ => None,
-        }
+        let corner_clip = match &self.planned.kind {
+            PngElementKind::Image { corner_clip, .. } => corner_clip.as_ref(),
+            PngElementKind::ImageFallback { .. } => None,
+            _ => return None,
+        };
+        Some(PngImageClip {
+            width: self.planned.width,
+            height: self.planned.height,
+            corner_clip,
+            transform: self.planned.transform,
+        })
     }
 }
 
@@ -505,100 +462,123 @@ impl PngPlan {
                             outline.source.pointer()
                         )));
                     }
-                    elements.push(PngElement::RoughOutline {
-                        source: outline.source,
-                        drawing: outline.drawing,
+                    elements.push(PngElement::planned(PlannedElement {
                         frame_clips: project_frame_clips(outline.frame_clips, scale)?,
                         transform: PngTransform::new(&outline.transform, scale),
-                        stroke_color: outline.stroke_color,
-                        fill_color: outline.fill_color,
-                        stroke_width: outline.stroke_width,
-                        stroke_style: outline.stroke_style,
-                        source_stroke_width: outline.source_stroke_width,
                         opacity: outline.opacity,
-                        background_color: outline.background_color,
-                        label_mask: outline.label_mask.map(|mask| PngLabelMask {
-                            x: mask.x * scale,
-                            y: mask.y * scale,
-                            width: mask.width * scale,
-                            height: mask.height * scale,
-                        }),
-                        generated_label: outline.generated_label,
-                        generated_label_color: outline.generated_label_color,
-                        generated_label_offset_y: outline.generated_label_offset_y,
-                        base_element_work_units: outline.base_element_work_units,
-                        render: true,
-                    });
+                        link: outline.link,
+                        width: outline.width,
+                        height: outline.height,
+                        kind: PngElementKind::RoughOutline {
+                            source: outline.source,
+                            drawing: outline.drawing,
+                            stroke_color: outline.stroke_color,
+                            fill_color: outline.fill_color,
+                            stroke_width: outline.stroke_width,
+                            stroke_style: outline.stroke_style,
+                            source_stroke_width: outline.source_stroke_width,
+                            background_color: outline.background_color,
+                            label_mask: outline.label_mask.map(|mask| PngLabelMask {
+                                x: mask.x * scale,
+                                y: mask.y * scale,
+                                width: mask.width * scale,
+                                height: mask.height * scale,
+                            }),
+                            generated_label: outline.generated_label,
+                            generated_label_color: outline.generated_label_color,
+                            generated_label_offset_y: outline.generated_label_offset_y,
+                            base_element_work_units: outline.base_element_work_units,
+                        },
+                    }));
                 }
                 ResolvedElement::Freedraw(freedraw) => {
-                    elements.push(PngElement::Freedraw {
-                        source: freedraw.source,
-                        path: freedraw::project(freedraw.path)?,
-                        background_fill: freedraw.background_fill,
+                    elements.push(PngElement::planned(PlannedElement {
                         frame_clips: project_frame_clips(freedraw.frame_clips, scale)?,
                         transform: PngTransform::new(&freedraw.transform, scale),
-                        color: freedraw.color,
-                        background_color: freedraw.background_color,
-                        source_stroke_width: freedraw.source_stroke_width,
                         opacity: freedraw.opacity,
-                        base_element_work_units: freedraw.base_element_work_units,
-                        render: true,
-                    });
+                        link: freedraw.link,
+                        width: freedraw.width,
+                        height: freedraw.height,
+                        kind: PngElementKind::Freedraw {
+                            source: freedraw.source,
+                            path: freedraw::project(freedraw.path)?,
+                            background_fill: freedraw.background_fill,
+                            color: freedraw.color,
+                            background_color: freedraw.background_color,
+                            source_stroke_width: freedraw.source_stroke_width,
+                            base_element_work_units: freedraw.base_element_work_units,
+                        },
+                    }));
                 }
                 ResolvedElement::Frame(frame) => {
-                    elements.push(PngElement::Frame {
-                        source: frame.source,
-                        name: frame.name.map(|name| PngFrameName {
-                            transform: PngTransform::new(&name.transform, scale),
-                            color: name.color,
-                            label: name.label,
-                        }),
-                        outline: frame.outline,
+                    elements.push(PngElement::planned(PlannedElement {
                         frame_clips: project_frame_clips(frame.frame_clips, scale)?,
                         transform: PngTransform::new(&frame.transform, scale),
                         opacity: frame.opacity,
-                        render: true,
-                    });
+                        link: frame.link,
+                        width: frame.width,
+                        height: frame.height,
+                        kind: PngElementKind::Frame {
+                            source: frame.source,
+                            name: frame.name.map(|name| PngFrameName {
+                                transform: PngTransform::new(&name.transform, scale),
+                                color: name.color,
+                                label: name.label,
+                            }),
+                            outline: frame.outline,
+                        },
+                    }));
                 }
                 ResolvedElement::Text(text) => {
-                    elements.push(PngElement::Text {
-                        source: text.source,
-                        text: text.text,
+                    elements.push(PngElement::planned(PlannedElement {
                         frame_clips: project_frame_clips(text.frame_clips, scale)?,
                         transform: PngTransform::new(&text.transform, scale),
-                        color: text.color,
                         opacity: text.opacity,
-                        base_element_work_units: text.base_element_work_units,
-                        render: true,
-                    });
+                        link: text.link,
+                        width: text.width,
+                        height: text.height,
+                        kind: PngElementKind::Text {
+                            source: text.source,
+                            text: text.text,
+                            color: text.color,
+                            base_element_work_units: text.base_element_work_units,
+                        },
+                    }));
                 }
                 ResolvedElement::Image(image) => {
-                    elements.push(PngElement::Image {
-                        source: image.source,
-                        asset: image.asset,
-                        dark_mode_filter: image.dark_mode_filter,
+                    elements.push(PngElement::planned(PlannedElement {
                         frame_clips: project_frame_clips(image.frame_clips, scale)?,
-                        corner_clip: image.corner_clip.map(|clip| clip.path),
                         transform: PngTransform::new(&image.transform, scale),
+                        opacity: image.opacity,
+                        link: image.link,
                         width: image.width,
                         height: image.height,
-                        source_rect: image.source_rect,
-                        scale: image.scale,
-                        opacity: image.opacity,
-                        render: true,
-                    });
+                        kind: PngElementKind::Image {
+                            source: image.source,
+                            asset: image.asset,
+                            dark_mode_filter: image.dark_mode_filter,
+                            corner_clip: image.corner_clip.map(|clip| clip.path),
+                            source_rect: image.source_rect,
+                            scale: image.scale,
+                        },
+                    }));
                 }
                 ResolvedElement::ImageFallback(image) => {
-                    elements.push(PngElement::ImageFallback {
-                        source: image.source,
-                        status: image.status,
+                    // The resolved placeholder carries no link: PNG writes
+                    // none, and the reference canvas draws its image
+                    // placeholder without one.
+                    elements.push(PngElement::planned(PlannedElement {
                         frame_clips: project_frame_clips(image.frame_clips, scale)?,
                         transform: PngTransform::new(&image.transform, scale),
+                        opacity: image.opacity,
+                        link: None,
                         width: image.width,
                         height: image.height,
-                        opacity: image.opacity,
-                        render: true,
-                    });
+                        kind: PngElementKind::ImageFallback {
+                            source: image.source,
+                            status: image.status,
+                        },
+                    }));
                 }
                 ResolvedElement::Fallback(fallback) => {
                     let visual_commands: u64 = if fallback.width >= 2.0 && fallback.height >= 2.0 {
@@ -616,17 +596,19 @@ impl PngPlan {
                                     .saturating_mul(32),
                             )
                     });
-                    elements.push(PngElement::Fallback {
-                        source: fallback.source,
-                        label: fallback.label,
+                    elements.push(PngElement::planned(PlannedElement {
                         frame_clips: project_frame_clips(fallback.frame_clips, scale)?,
-                        width: fallback.width,
-                        height: fallback.height,
                         transform: PngTransform::new(&fallback.transform, scale),
                         opacity: fallback.opacity,
-                        base_element_work_units: visual_commands * 32 + 8 + label_work,
-                        render: true,
-                    });
+                        link: fallback.link,
+                        width: fallback.width,
+                        height: fallback.height,
+                        kind: PngElementKind::Fallback {
+                            source: fallback.source,
+                            label: fallback.label,
+                            base_element_work_units: visual_commands * 32 + 8 + label_work,
+                        },
+                    }));
                 }
             }
         }
@@ -712,28 +694,34 @@ impl PngPlan {
             }
             let mut masks = PaintMasks::new(raster_width, raster_height, SUBPIXEL_SCALE);
             for element in &self.elements {
-                if !element.renders() {
+                if !element.render {
                     continue;
                 }
                 let paint_mask = masks.paint_mask(element)?;
-                match element {
-                    PngElement::RoughOutline {
+                let PlannedElement {
+                    frame_clips,
+                    transform,
+                    opacity,
+                    link: _,
+                    width,
+                    height,
+                    kind,
+                } = &element.planned;
+                match kind {
+                    PngElementKind::RoughOutline {
                         source,
                         drawing,
-                        frame_clips: _,
-                        transform,
                         stroke_color,
                         fill_color,
                         stroke_width,
                         stroke_style,
                         source_stroke_width,
-                        opacity,
                         background_color,
                         label_mask: _,
                         generated_label,
                         generated_label_color,
                         generated_label_offset_y,
-                        ..
+                        base_element_work_units: _,
                     } => {
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
@@ -792,17 +780,14 @@ impl PngPlan {
                             }
                         }
                     }
-                    PngElement::Freedraw {
+                    PngElementKind::Freedraw {
                         source,
                         path,
                         background_fill,
-                        frame_clips: _,
-                        transform,
                         color,
                         background_color,
                         source_stroke_width,
-                        opacity,
-                        ..
+                        base_element_work_units: _,
                     } => {
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
@@ -857,14 +842,10 @@ impl PngPlan {
                             paint_mask,
                         );
                     }
-                    PngElement::Frame {
+                    PngElementKind::Frame {
                         source,
                         name,
                         outline,
-                        frame_clips: _,
-                        transform,
-                        opacity,
-                        render: _,
                     } => {
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
@@ -905,15 +886,11 @@ impl PngPlan {
                             }
                         }
                     }
-                    PngElement::Text {
+                    PngElementKind::Text {
                         source,
                         text,
-                        frame_clips: _,
-                        transform,
                         color,
-                        opacity,
                         base_element_work_units: _,
-                        render: _,
                     } => {
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
@@ -935,17 +912,13 @@ impl PngPlan {
                             );
                         }
                     }
-                    PngElement::Image {
+                    PngElementKind::Image {
                         source,
                         asset,
                         dark_mode_filter,
-                        transform,
-                        width,
-                        height,
+                        corner_clip: _,
                         source_rect,
                         scale,
-                        opacity,
-                        ..
                     } => {
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
@@ -1069,15 +1042,7 @@ impl PngPlan {
                             paint_mask,
                         );
                     }
-                    PngElement::ImageFallback {
-                        source,
-                        status,
-                        transform,
-                        width,
-                        height,
-                        opacity,
-                        ..
-                    } => {
+                    PngElementKind::ImageFallback { source, status } => {
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG image fallback lost its source identity".to_owned(),
@@ -1149,15 +1114,10 @@ impl PngPlan {
                             }
                         }
                     }
-                    PngElement::Fallback {
+                    PngElementKind::Fallback {
                         source,
                         label,
-                        frame_clips,
-                        width,
-                        height,
-                        transform,
-                        opacity,
-                        ..
+                        base_element_work_units: _,
                     } => {
                         if source.pointer.is_empty() {
                             return Err(FormatEncodeError::Encoding(
@@ -1311,184 +1271,142 @@ impl PngPlan {
         downsample_rgba(&rgba, raster_width, self.width, self.height, SUBPIXEL_SCALE)
     }
 
+    /// The conservative device-space area of the element's own rectangle
+    /// (`width` by `height` under its transform), clipped to the canvas.
+    fn element_rect_coverage_area(&self, element: &PngElement) -> u64 {
+        conservative_fallback_coverage_area(
+            element.planned.width,
+            element.planned.height,
+            element.planned.transform,
+            self.width,
+            self.height,
+        )
+    }
+
     pub(super) fn vector_coverage_area(&self, index: usize) -> Option<u64> {
-        self.elements.get(index).map(|element| match element {
-            PngElement::RoughOutline {
-                drawing,
-                transform,
-                stroke_width,
-                ..
-            } => conservative_coverage_area(
-                drawing,
-                *transform,
-                *stroke_width,
-                self.width,
-                self.height,
-            ),
-            PngElement::Freedraw {
-                path,
-                background_fill,
-                transform,
-                source_stroke_width,
-                ..
-            } => conservative_freedraw_coverage_area(
-                path,
-                background_fill.as_ref(),
-                *transform,
-                *source_stroke_width,
-                self.width,
-                self.height,
-            ),
-            PngElement::Frame { .. } => 0,
-            PngElement::Text {
-                text,
-                frame_clips,
-                transform,
-                ..
-            } => conservative_text_coverage_area(
-                text,
-                frame_clips,
-                *transform,
-                self.width,
-                self.height,
-            ),
-            PngElement::Image { .. } => 0,
-            PngElement::ImageFallback {
-                width,
-                height,
-                transform,
-                ..
-            } => conservative_fallback_coverage_area(
-                *width,
-                *height,
-                *transform,
-                self.width,
-                self.height,
-            ),
-            PngElement::Fallback {
-                width,
-                height,
-                transform,
-                ..
-            } => conservative_fallback_coverage_area(
-                *width,
-                *height,
-                *transform,
-                self.width,
-                self.height,
-            ),
+        self.elements.get(index).map(|element| {
+            let planned = &element.planned;
+            match &planned.kind {
+                PngElementKind::RoughOutline {
+                    drawing,
+                    stroke_width,
+                    ..
+                } => conservative_coverage_area(
+                    drawing,
+                    planned.transform,
+                    *stroke_width,
+                    self.width,
+                    self.height,
+                ),
+                PngElementKind::Freedraw {
+                    path,
+                    background_fill,
+                    source_stroke_width,
+                    ..
+                } => conservative_freedraw_coverage_area(
+                    path,
+                    background_fill.as_ref(),
+                    planned.transform,
+                    *source_stroke_width,
+                    self.width,
+                    self.height,
+                ),
+                PngElementKind::Frame { .. } => 0,
+                PngElementKind::Text { text, .. } => conservative_text_coverage_area(
+                    text,
+                    &planned.frame_clips,
+                    planned.transform,
+                    self.width,
+                    self.height,
+                ),
+                PngElementKind::Image { .. } => 0,
+                PngElementKind::ImageFallback { .. } | PngElementKind::Fallback { .. } => {
+                    self.element_rect_coverage_area(element)
+                }
+            }
         })
     }
 
     pub(super) fn image_projection_area(&self, index: usize) -> Option<Option<u64>> {
-        self.elements.get(index).map(|element| match element {
-            PngElement::Image {
-                width,
-                height,
-                transform,
-                ..
-            } => Some(conservative_fallback_coverage_area(
-                *width,
-                *height,
-                *transform,
-                self.width,
-                self.height,
-            )),
-            _ => None,
-        })
+        self.elements
+            .get(index)
+            .map(|element| match &element.planned.kind {
+                PngElementKind::Image { .. } => Some(self.element_rect_coverage_area(element)),
+                _ => None,
+            })
     }
 
     pub(super) fn base_element_work_units(&self, index: usize) -> Option<u64> {
-        self.elements.get(index).map(|element| match element {
-            PngElement::RoughOutline {
-                base_element_work_units,
-                ..
-            } => *base_element_work_units,
-            PngElement::Freedraw {
-                base_element_work_units,
-                ..
-            } => *base_element_work_units,
-            PngElement::Frame { .. } => 8,
-            PngElement::Text {
-                base_element_work_units,
-                ..
-            } => base_element_work_units.saturating_add(8),
-            PngElement::Image { .. } => 8,
-            PngElement::ImageFallback { .. } => 8,
-            PngElement::Fallback {
-                base_element_work_units,
-                ..
-            } => *base_element_work_units,
-        })
+        self.elements
+            .get(index)
+            .map(|element| match &element.planned.kind {
+                PngElementKind::RoughOutline {
+                    base_element_work_units,
+                    ..
+                }
+                | PngElementKind::Freedraw {
+                    base_element_work_units,
+                    ..
+                }
+                | PngElementKind::Fallback {
+                    base_element_work_units,
+                    ..
+                } => *base_element_work_units,
+                PngElementKind::Frame { .. }
+                | PngElementKind::Image { .. }
+                | PngElementKind::ImageFallback { .. } => 8,
+                PngElementKind::Text {
+                    base_element_work_units,
+                    ..
+                } => base_element_work_units.saturating_add(8),
+            })
     }
 
     pub(super) fn fallback_surface_area(&self, index: usize) -> Option<Option<u64>> {
-        self.elements.get(index).map(|element| match element {
-            PngElement::RoughOutline { .. } => None,
-            PngElement::Freedraw { .. } => None,
-            PngElement::Frame { .. } => None,
-            PngElement::Text { .. } => None,
-            PngElement::Image { .. } => None,
-            PngElement::ImageFallback { .. } => None,
-            PngElement::Fallback {
-                width,
-                height,
-                transform,
-                ..
-            } => Some(conservative_fallback_coverage_area(
-                *width,
-                *height,
-                *transform,
-                self.width,
-                self.height,
-            )),
-        })
+        self.elements
+            .get(index)
+            .map(|element| match &element.planned.kind {
+                PngElementKind::Fallback { .. } => Some(self.element_rect_coverage_area(element)),
+                PngElementKind::RoughOutline { .. }
+                | PngElementKind::Freedraw { .. }
+                | PngElementKind::Frame { .. }
+                | PngElementKind::Text { .. }
+                | PngElementKind::Image { .. }
+                | PngElementKind::ImageFallback { .. } => None,
+            })
     }
 
     /// The alpha mask an element needs beyond its shared frame clip mask, in
     /// canvas pixels: a bound-label exclusion or an image's own clip rectangle.
     /// `None` when the element paints through at most the shared frame mask.
     pub(super) fn paint_mask_surface_area(&self, index: usize) -> Option<Option<u64>> {
-        self.elements.get(index).map(|element| match element {
-            PngElement::RoughOutline {
-                label_mask: Some(label_mask),
-                ..
-            } => Some(label_mask_coverage_area(
-                *label_mask,
-                self.width,
-                self.height,
-            )),
-            PngElement::Image {
-                width,
-                height,
-                transform,
-                ..
-            }
-            | PngElement::ImageFallback {
-                width,
-                height,
-                transform,
-                ..
-            } => Some(conservative_fallback_coverage_area(
-                *width,
-                *height,
-                *transform,
-                self.width,
-                self.height,
-            )),
-            _ => None,
-        })
+        self.elements
+            .get(index)
+            .map(|element| match &element.planned.kind {
+                PngElementKind::RoughOutline {
+                    label_mask: Some(label_mask),
+                    ..
+                } => Some(label_mask_coverage_area(
+                    *label_mask,
+                    self.width,
+                    self.height,
+                )),
+                PngElementKind::Image { .. } | PngElementKind::ImageFallback { .. } => {
+                    Some(self.element_rect_coverage_area(element))
+                }
+                _ => None,
+            })
     }
 
     pub(super) fn has_paint_masks(&self) -> bool {
         self.elements.iter().any(|element| {
             matches!(
-                element,
-                PngElement::RoughOutline {
+                element.planned.kind,
+                PngElementKind::RoughOutline {
                     label_mask: Some(_),
                     ..
-                } | PngElement::Image { .. }
-                    | PngElement::ImageFallback { .. }
+                } | PngElementKind::Image { .. }
+                    | PngElementKind::ImageFallback { .. }
             )
         })
     }
@@ -1534,7 +1452,7 @@ impl PngPlan {
             let frame_source_index = clips.first().map(|clip| clip.frame_source_index);
             masks.push(PngFrameClipMask {
                 frame_element_index: self.elements.iter().position(|element| {
-                    matches!(element, PngElement::Frame { source, .. } if Some(source.source_index()) == frame_source_index)
+                    matches!(&element.planned.kind, PngElementKind::Frame { source, .. } if Some(source.source_index()) == frame_source_index)
                 }),
                 pixels: frame_clip_coverage_area(clips, self.width, self.height),
             });
@@ -1547,45 +1465,29 @@ impl PngPlan {
     }
 
     pub(super) fn source(&self, index: usize) -> Option<(Option<&str>, &str)> {
-        self.elements.get(index).map(|element| match element {
-            PngElement::RoughOutline { source, .. } => (Some(source.id()), source.pointer()),
-            PngElement::Freedraw { source, .. } => (Some(source.id()), source.pointer()),
-            PngElement::Frame { source, .. } => (Some(source.id()), source.pointer()),
-            PngElement::Text { source, .. } => (Some(source.id()), source.pointer()),
-            PngElement::Image { source, .. } => (Some(source.id()), source.pointer()),
-            PngElement::ImageFallback { source, .. } => (Some(source.id()), source.pointer()),
-            PngElement::Fallback { source, .. } => (source.id.as_deref(), source.pointer.as_str()),
-        })
+        self.elements
+            .get(index)
+            .map(|element| match &element.planned.kind {
+                PngElementKind::RoughOutline { source, .. }
+                | PngElementKind::Freedraw { source, .. }
+                | PngElementKind::Frame { source, .. }
+                | PngElementKind::Text { source, .. }
+                | PngElementKind::Image { source, .. }
+                | PngElementKind::ImageFallback { source, .. } => {
+                    (Some(source.id()), source.pointer())
+                }
+                PngElementKind::Fallback { source, .. } => {
+                    (source.id.as_deref(), source.pointer.as_str())
+                }
+            })
     }
 
+    /// Stops painting the element at `index`, keeping its plan. `false` when
+    /// there is no such element.
     pub(super) fn omit_element(&mut self, index: usize) -> bool {
         match self.elements.get_mut(index) {
-            Some(PngElement::RoughOutline { render, .. }) => {
-                *render = false;
-                true
-            }
-            Some(PngElement::Freedraw { render, .. }) => {
-                *render = false;
-                true
-            }
-            Some(PngElement::Frame { render, .. }) => {
-                *render = false;
-                true
-            }
-            Some(PngElement::Text { render, .. }) => {
-                *render = false;
-                true
-            }
-            Some(PngElement::Image { render, .. }) => {
-                *render = false;
-                true
-            }
-            Some(PngElement::ImageFallback { render, .. }) => {
-                *render = false;
-                true
-            }
-            Some(PngElement::Fallback { render, .. }) => {
-                *render = false;
+            Some(element) => {
+                element.render = false;
                 true
             }
             None => false,
