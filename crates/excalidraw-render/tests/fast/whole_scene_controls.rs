@@ -6,6 +6,7 @@ use excalidraw_render::{
 use crate::common::pdf_inspect::stream_data;
 use crate::common::raster::decode_png;
 use crate::common::render::{render_source, render_with_request};
+use crate::common::svg::{font_family_attribute, LIBERATION_FAMILIES};
 
 const COLORED_RECTANGLE: &[u8] = br##"{
     "type":"excalidraw",
@@ -209,7 +210,10 @@ fn renderer_owned_fallback_colors_follow_dark_mode() {
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains("fill=\"#1a1c1e\""));
     assert!(svg.contains("stroke=\"#6e747b\""));
-    assert!(svg.contains("fill=\"#a4aab0\" font-family=\"ExcalidrawRender-9\""));
+    assert!(svg.contains(&format!(
+        "fill=\"#a4aab0\" {}",
+        font_family_attribute(LIBERATION_FAMILIES)
+    )));
 
     let png = render_dark(source, OutputFormat::Png);
     let rgba = decode_png(png.artifact().bytes()).rgba;

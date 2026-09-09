@@ -166,7 +166,7 @@ fn push_frame_name<W: SvgSink + ?Sized>(
         }
     }
     svg.push_str("\" font-family=\"");
-    push_escaped_attribute(svg, Bundle::effective_family("Liberation Sans"));
+    push_escaped_attribute(svg, Bundle::font_family_list("Liberation Sans"));
     svg.push_str("\" font-size=\"");
     push_svg_number(svg, FRAME_NAME_FONT_SIZE, "SVG frame name font size")?;
     svg.push_str("\" fill=\"");
@@ -474,7 +474,12 @@ impl SvgPlan {
                                 "failed to write SVG embeddable label color".to_owned(),
                             )
                         })?;
-                        svg.push_str("\" font-family=\"ExcalidrawRender-9\" font-size=\"");
+                        svg.push_str("\" font-family=\"");
+                        push_escaped_attribute(
+                            &mut svg,
+                            Bundle::font_family_list("Liberation Sans"),
+                        );
+                        svg.push_str("\" font-size=\"");
                         push_svg_number(&mut svg, label.font_size, "SVG embeddable font size")?;
                         svg.push_str("\">");
                         for line in &label.lines {
@@ -483,7 +488,7 @@ impl SvgPlan {
                                     svg.push_str("<tspan font-family=\"");
                                     push_escaped_attribute(
                                         &mut svg,
-                                        Bundle::effective_family(run.font_family),
+                                        Bundle::font_family_list(run.font_family),
                                     );
                                     svg.push_str(if run.rtl {
                                         "\" direction=\"rtl\""
@@ -754,7 +759,7 @@ impl SvgPlan {
                         FormatEncodeError::Encoding("failed to write SVG text color".to_owned())
                     })?;
                     svg.push_str("\" font-family=\"");
-                    push_escaped_attribute(&mut svg, Bundle::effective_family(text.font_family));
+                    push_escaped_attribute(&mut svg, Bundle::font_family_list(text.font_family));
                     svg.push_str("\" font-size=\"");
                     push_svg_number(&mut svg, text.font_size, "SVG text font size")?;
                     let (line_x, text_anchor) = match text.text_align {
@@ -779,7 +784,7 @@ impl SvgPlan {
                                 svg.push_str("<tspan font-family=\"");
                                 push_escaped_attribute(
                                     &mut svg,
-                                    Bundle::effective_family(run.font_family),
+                                    Bundle::font_family_list(run.font_family),
                                 );
                                 svg.push_str(if run.rtl {
                                     "\" direction=\"rtl\" text-anchor=\"start\""
@@ -1057,8 +1062,13 @@ impl SvgPlan {
                                     "failed to write SVG fallback label color".to_owned(),
                                 )
                             })?;
+                        svg.push_str("\" font-family=\"");
+                        push_escaped_attribute(
+                            &mut svg,
+                            Bundle::font_family_list("Liberation Sans"),
+                        );
                         svg.push_str(concat!(
-                            "\" font-family=\"ExcalidrawRender-9\" font-size=\"14\" ",
+                            "\" font-size=\"14\" ",
                             "text-anchor=\"middle\" dominant-baseline=\"central\">"
                         ));
                         push_escaped_text(&mut svg, label);

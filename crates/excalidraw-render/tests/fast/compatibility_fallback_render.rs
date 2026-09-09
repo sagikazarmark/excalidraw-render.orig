@@ -5,6 +5,7 @@ use excalidraw_render::{
 
 use crate::common::raster::decode_png;
 use crate::common::render::render;
+use crate::common::svg::{font_family_attribute, LIBERATION_FAMILIES, NOTO_EMOJI_FAMILIES};
 
 #[test]
 fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
@@ -79,10 +80,10 @@ fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
         "<path d=\"M0 0 L240 100 M240 0 L0 100\" fill=\"none\" stroke=\"#868e96\" ",
         "stroke-width=\"2\"/>"
     )));
-    assert!(svg.contains(concat!(
-        "<text x=\"120\" y=\"50\" fill=\"#495057\" font-family=\"ExcalidrawRender-9\" ",
-        "font-size=\"14\" text-anchor=\"middle\" dominant-baseline=\"central\">",
-        "Unsupported: future&lt;&amp;</text>"
+    assert!(svg.contains(&format!(
+        "<text x=\"120\" y=\"50\" fill=\"#495057\" {} font-size=\"14\" \
+         text-anchor=\"middle\" dominant-baseline=\"central\">Unsupported: future&lt;&amp;</text>",
+        font_family_attribute(LIBERATION_FAMILIES)
     )));
 }
 
@@ -751,7 +752,7 @@ fn embeddable_labels_use_noto_for_emoji_occurrences() {
             .any(|diagnostic| { diagnostic.code() == DiagnosticCode::FONT_MISSING_GLYPH }));
         if format == OutputFormat::Svg {
             let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
-            assert!(svg.contains("font-family=\"Noto Emoji\""));
+            assert!(svg.contains(&font_family_attribute(NOTO_EMOJI_FAMILIES)));
         }
     }
 }

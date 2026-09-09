@@ -8,6 +8,7 @@
 
 use excalidraw_render::SceneDocument;
 
+use crate::common::svg::{font_family_attribute, LIBERATION_FAMILIES};
 use crate::common::svg_baselines::{assert_baselines, render_svg, tspan_baselines};
 
 /// `1.15 / 2 + (1577 - 471) / 2048 / 2`: the first-baseline factor for
@@ -46,5 +47,5 @@ fn helvetica_and_liberation_sans_text_keep_their_own_metrics_when_they_share_a_f
             label_block_top + label_font_size * HELVETICA_FACTOR,
         ],
     );
-    assert!(svg.contains("font-family=\"ExcalidrawRender-9\""));
+    assert!(svg.contains(&font_family_attribute(LIBERATION_FAMILIES)));
 }

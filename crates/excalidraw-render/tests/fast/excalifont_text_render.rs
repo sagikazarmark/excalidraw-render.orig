@@ -5,6 +5,7 @@ use crate::common::raster::decode_png;
 use crate::common::render::{render, render_with_request};
 use crate::common::reports::assert_report_matches;
 use crate::common::repository_root;
+use crate::common::svg::{font_family_attribute, EXCALIFONT_FAMILIES};
 use excalidraw_render::{
     DiagnosticCode, OutputFormat, RenderOutcome, RenderRequest, Renderer, ResourceLimits,
     SceneDocument,
@@ -36,9 +37,10 @@ fn excalifont_text_renders_semantically_in_every_format() {
                     svg.contains("font.excalifont.ofl-1.1")
                         || svg.contains("Excalifont and Virgil provenance is retained together")
                 );
-                assert!(svg.contains(
-                    "font-family=\"Excalifont\" font-size=\"20\" text-anchor=\"middle\""
-                ));
+                assert!(svg.contains(&format!(
+                    "{} font-size=\"20\" text-anchor=\"middle\"",
+                    font_family_attribute(EXCALIFONT_FAMILIES)
+                )));
                 assert_eq!(svg.matches("<text data-source-text=").count(), 1);
                 assert_eq!(svg.matches("<tspan ").count(), 2);
                 let first_text = svg
@@ -64,9 +66,12 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert!(svg.contains(">Four</tspan></text>"));
                 assert_eq!(svg_source_text(svg), FOCUSED_TEXT);
                 assert!(!svg.contains("Unavailable: text"));
+                // Moved with #150/#151: `font-family` carries the consumer
+                // fallback list after the embedded family; nothing else
+                // in the document changed.
                 assert_eq!(
                     artifact_sha256(&first),
-                    "a76464883d44a8535b601e0e47913e96e05d0bcfe3beac28492abe45c3053260"
+                    "122cf1d0764d6cb1d15d1a15ae6c74a5fc5201928cfd9e645237577bc061c91b"
                 );
             }
             OutputFormat::Png => {

@@ -29,8 +29,11 @@ const NOISY_RASTER_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements
 const FRAME_SCENE: &[u8] = br##"{"type":"excalidraw","version":2,"elements":[{"id":"first-frame","type":"frame","name":"Public One","x":10,"y":20,"width":80,"height":60,"updated":1},{"id":"first-child","type":"rectangle","x":20,"y":30,"width":20,"height":20,"frameId":"first-frame","strokeColor":"#e03131","backgroundColor":"#e03131","fillStyle":"solid","roughness":0,"updated":1},{"id":"second-frame","type":"magicframe","name":"Public Two","x":110,"y":20,"width":50,"height":40,"updated":1},{"id":"second-child","type":"ellipse","x":120,"y":30,"width":20,"height":15,"frameId":"second-frame","strokeColor":"#1971c2","backgroundColor":"#1971c2","fillStyle":"solid","roughness":0,"updated":1}],"appState":{},"files":{}}"##;
 const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
     (
+        // The SVG artifact moved with #150/#151: the placeholder label's
+        // `font-family` carries the consumer fallback list after
+        // `ExcalidrawRender-9`; the report is unchanged.
         OutputFormat::Svg,
-        "6a0a5c573758649ffb13c525a57071ac394515055ccae1e1d3fb2445d83cd10a",
+        "8baeb47886bd74bd797918b8261d822b9565a276b52a6b363691f267f7afad6c",
         "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
     ),
     (
@@ -175,10 +178,12 @@ fn packaged_svg_font_subsets_are_cross_target_stable() {
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     // Moved with 5173fae, which stopped separating a multi-line text's tspans
     // with a raw newline (a rendered character under xml:space="preserve");
-    // the in-crate Excalifont digests were repinned then, this one was not (#116).
+    // the in-crate Excalifont digests were repinned then, this one was not
+    // (#116). Moved again with #150/#151, when `font-family` became the list
+    // `Excalifont, Xiaolai, Segoe UI Emoji, sans-serif`.
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "4516303b6a16f9976d140f2a2fcd0a55fc4729c01e1f53f315acdc84adde02bb"
+        "afe61d4afcfc4c768eb53b0ea5e085c33d71de1ad5947e250592288d3663b01b"
     );
     assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
     assert!(svg.contains("svg-font-subset@sha256:"));

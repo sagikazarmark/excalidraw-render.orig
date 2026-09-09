@@ -799,10 +799,11 @@ those runs out left to right in visual order, and each visual run is split
 further by the face that shapes its scalars under 8.3.1, so one visual run of
 one face is one glyph run; the face runs of a right-to-left visual run follow
 in visual order too, the logically first rightmost (#126). SVG emits each
-glyph run as one `<tspan>` carrying that face's effective family,
-`direction="rtl"` or `"ltr"`, and one `x` and `y` per character of its
-content, in logical order, each the position of the glyph that shows that
-character; PNG and PDF place the same glyph positions. Within a run, glyph
+glyph run as one `<tspan>` carrying that face's `font-family` list (Section
+8.4, the effective family first), `direction="rtl"` or `"ltr"`, and one `x`
+and `y` per character of its content, in logical order, each the position of
+the glyph that shows that character; PNG and PDF place the same glyph
+positions. Within a run, glyph
 order and placement are the deterministic shaper's for the run's display text
 shaped in the run's direction (#126): a right-to-left run's glyphs are placed
 in visual order, leftmost first, so an asymmetric neutral inside it sits at
@@ -913,7 +914,8 @@ The licensing and compatibility rationale is recorded in
 [ADR 0001](adr/0001-treat-font-subsets-as-modified-versions.md).
 
 Non-Reserved-Font-Name families retain their canonical family names. The same
-effective alias MUST be used by SVG text, CSS, and primary OpenType names.
+effective alias MUST be used by SVG text, CSS, and primary OpenType names; SVG
+text names it first in the `font-family` list Section 8.4 fixes per family.
 
 Subset semantic identity is SHA-256 over this exact preimage, where digests are
 their 32 raw bytes and asset identity is UTF-8:
@@ -1026,6 +1028,56 @@ Filter Effects primitives they are defined as — `feComponentTransfer` tables
 for `invert`, `feColorMatrix` `hueRotate` and `saturate` — with
 `color-interpolation-filters="sRGB"`, and each `<image>` references its filter
 by `filter="url(#…)"`. A light-mode export defines and references no filter.
+
+Text markup targets browser rendering, where the embedded fonts resolve and the
+document renders as the reference SVG does; a consumer that ignores
+`@font-face`, embedded fonts, or per-character positioning is served on a
+best-effort basis and is not a parity authority (#151). Ordinary scene text is
+one `<text>` per element carrying `data-source-text` (Section 8.3),
+`xml:space="preserve"`, `fill`, `font-family`, `font-size`, and `text-anchor`,
+with one `<tspan x y>` per source line whose content is the line's display text
+and, for a line with right-to-left content or more than one shaping face, one
+`<tspan>` per glyph run instead (Section 8.3). Nothing separates one line's
+`<tspan>`s from the next: under `xml:space="preserve"` a separator would be a
+rendered character joining the preceding text chunk, and a trailing space would
+shift every middle- or end-anchored line off the position the reference gives
+it, so the DOM `textContent` of a multi-line element concatenates its lines
+while the line breaks live in `data-source-text`. A right-to-left or mixed-face
+line lists one `x` and `y` per character of each run (Section 8.3), which fixes
+the glyph positions the deterministic shaper chose and disables a consumer's
+own kerning and bidi reordering for that run. Generated export text (frame
+names, embeddable labels, compatibility-placeholder labels) is written the same
+way.
+
+Every `font-family` attribute the renderer writes, on `<text>` and `<tspan>`
+alike, is a list (#150, #151): the effective family of the face that shapes the
+text first, so a viewer that honors the embedded fonts, and the parity harness,
+resolve exactly that face; then, where the effective family is a Reserved Font
+Name alias, the canonical family name; for Liberation Sans also `Helvetica`,
+the local family it substitutes (Section 8.3); then the reference export's own
+fallback chain for the family, as `getFontFamilyFallbacks` orders it (`Xiaolai`
+for Excalifont, then `Segoe UI Emoji` for every family); and last a generic
+family of the same class, `monospace` for Cascadia Code and Comic Shanns and
+`sans-serif` otherwise. Names are spelled bare and comma-separated, as the
+reference spells `Segoe UI Emoji`. The lists are fixed per resolved family:
+
+| Face | `font-family` |
+| --- | --- |
+| Excalifont | `Excalifont, Xiaolai, Segoe UI Emoji, sans-serif` |
+| Virgil | `ExcalidrawRender-1, Virgil, Segoe UI Emoji, sans-serif` |
+| Cascadia Code | `ExcalidrawRender-3, Cascadia Code, Segoe UI Emoji, monospace` |
+| Lilita One | `ExcalidrawRender-7, Lilita One, Segoe UI Emoji, sans-serif` |
+| Liberation Sans | `ExcalidrawRender-9, Liberation Sans, Helvetica, Segoe UI Emoji, sans-serif` |
+| Nunito | `Nunito, Segoe UI Emoji, sans-serif` |
+| Comic Shanns | `Comic Shanns, Segoe UI Emoji, monospace` |
+| Xiaolai | `Xiaolai, Segoe UI Emoji, sans-serif` |
+| Noto Emoji | `Noto Emoji, Segoe UI Emoji, sans-serif` |
+
+A list names families the document does not embed (Xiaolai when the CJK subset
+trigger did not select it, Segoe UI Emoji always); they are reached only by a
+viewer that cannot use the embedded face, since every scalar a run contains is
+mapped by the face its list names first. The `@font-face` declarations keep
+naming one effective family each.
 
 Request-scoped and frame-batch physical caches MAY retain qualified source
 decodes and identical derived bytes. Each SVG target nevertheless derives the

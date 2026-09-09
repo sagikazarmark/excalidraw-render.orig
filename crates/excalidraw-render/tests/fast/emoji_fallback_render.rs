@@ -11,6 +11,7 @@ use std::fs;
 
 use crate::common::render::render;
 use crate::common::repository_root;
+use crate::common::svg::{font_family_attribute, EXCALIFONT_FAMILIES, LIBERATION_FAMILIES};
 use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
@@ -126,8 +127,10 @@ fn svg_sets_the_emoji_from_the_complete_noto_emoji_face_and_keeps_the_stored_tex
         svg.matches("@font-face{font-family:'Noto Emoji'").count(),
         1
     );
+    // Xiaolai is named only as a consumer fallback family in the Excalifont
+    // element's `font-family` list; nothing embeds or shapes with it.
     assert!(
-        !svg.contains("Xiaolai"),
+        !svg.contains("font-family:'Xiaolai'") && !svg.contains("<tspan font-family=\"Xiaolai"),
         "no scalar is in the CJK table, so Xiaolai stays out"
     );
     // The fallback is not a WOFF2 subset like the families' payloads: it is
@@ -140,7 +143,10 @@ fn svg_sets_the_emoji_from_the_complete_noto_emoji_face_and_keeps_the_stored_tex
     // The Excalifont element shapes the Latin itself and the two emoji as one
     // Noto Emoji run between; the Liberation Sans element likewise with one.
     let excalifont_line = svg
-        .split("font-family=\"Excalifont\" font-size=\"20\"")
+        .split(&format!(
+            "{} font-size=\"20\"",
+            font_family_attribute(EXCALIFONT_FAMILIES)
+        ))
         .nth(1)
         .and_then(|rest| rest.split("</text>").next())
         .expect("the Excalifont element is emitted");
@@ -153,7 +159,10 @@ fn svg_sets_the_emoji_from_the_complete_noto_emoji_face_and_keeps_the_stored_tex
         ]
     );
     let liberation_line = svg
-        .split("font-family=\"ExcalidrawRender-9\" font-size=\"20\"")
+        .split(&format!(
+            "{} font-size=\"20\"",
+            font_family_attribute(LIBERATION_FAMILIES)
+        ))
         .nth(1)
         .and_then(|rest| rest.split("</text>").next())
         .expect("the Liberation Sans element is emitted");
@@ -276,12 +285,15 @@ fn pdf_embeds_the_complete_noto_emoji_face_for_the_emoji_runs_and_carries_the_st
     assert!(!liberation_line.contains(&format!("{excalifont} 20 Tf")));
 }
 
-/// The `(font-family, text)` of every `<tspan>` in one `<text>` element body.
+/// The `(font-family, text)` of every `<tspan>` in one `<text>` element body,
+/// the family being the first of the run's list: the face that shapes it. The
+/// rest of the list is the consumer fallback chain spec 8.4 fixes per family.
 fn tspans(line: &str) -> Vec<(&str, &str)> {
     line.split("<tspan font-family=\"")
         .skip(1)
         .map(|rest| {
-            let (family, rest) = rest.split_once('"').expect("tspan family closes");
+            let (families, rest) = rest.split_once('"').expect("tspan family closes");
+            let family = families.split(',').next().expect("a run names a face");
             let text = rest
                 .split_once('>')
                 .and_then(|(_, body)| body.split("</tspan>").next())

@@ -9,6 +9,7 @@ use std::fs;
 
 use crate::common::render::render;
 use crate::common::repository_root;
+use crate::common::svg::{font_family_attribute, EXCALIFONT_FAMILIES, LIBERATION_FAMILIES};
 use excalidraw_render::{OutputFormat, SceneDocument};
 use serde_json::Value;
 
@@ -108,13 +109,19 @@ fn svg_sets_the_replacement_from_liberation_sans_and_keeps_the_stored_scalars() 
         "no scalar is in the CJK table, so Xiaolai stays out"
     );
     let excalifont_line = svg
-        .split("font-family=\"Excalifont\" font-size=\"20\"")
+        .split(&format!(
+            "{} font-size=\"20\"",
+            font_family_attribute(EXCALIFONT_FAMILIES)
+        ))
         .nth(1)
         .and_then(|rest| rest.split("</text>").next())
         .expect("the Excalifont element is emitted");
     assert_eq!(
         excalifont_line
-            .matches("<tspan font-family=\"ExcalidrawRender-9\"")
+            .matches(&format!(
+                "<tspan {}",
+                font_family_attribute(LIBERATION_FAMILIES)
+            ))
             .count(),
         2
     );
@@ -124,7 +131,10 @@ fn svg_sets_the_replacement_from_liberation_sans_and_keeps_the_stored_scalars() 
     assert!(excalifont_line.contains("> text</tspan>"));
     // The Liberation Sans element is one run of its own face.
     let liberation_line = svg
-        .split("font-family=\"ExcalidrawRender-9\" font-size=\"20\"")
+        .split(&format!(
+            "{} font-size=\"20\"",
+            font_family_attribute(LIBERATION_FAMILIES)
+        ))
         .nth(1)
         .and_then(|rest| rest.split("</text>").next())
         .expect("the Liberation Sans element is emitted");

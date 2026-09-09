@@ -195,6 +195,107 @@ impl Bundle {
             _ => family,
         }
     }
+
+    /// The `font-family` list SVG text carries for a resolved family (#150,
+    /// #151). The effective family comes first, so a browser and the parity
+    /// harness resolve the face the document embeds exactly as before; the
+    /// rest is for a consumer that ignores `@font-face` and would otherwise
+    /// fall to its default font for an alias it has never heard of: the
+    /// canonical family name where the alias differs, Helvetica for the
+    /// Liberation Sans that substitutes it (Section 8.3), the reference
+    /// export's own fallback chain for the family (`getFontFamilyFallbacks`:
+    /// Xiaolai for Excalifont, then Segoe UI Emoji for every family), and a
+    /// generic family of the same class. Names are spelled bare, as the
+    /// reference spells `Segoe UI Emoji`.
+    pub(super) fn font_family_list(family: &'static str) -> &'static str {
+        match family {
+            "Virgil" => "ExcalidrawRender-1, Virgil, Segoe UI Emoji, sans-serif",
+            "Cascadia Code" => "ExcalidrawRender-3, Cascadia Code, Segoe UI Emoji, monospace",
+            "Lilita One" => "ExcalidrawRender-7, Lilita One, Segoe UI Emoji, sans-serif",
+            "Liberation Sans" => {
+                "ExcalidrawRender-9, Liberation Sans, Helvetica, Segoe UI Emoji, sans-serif"
+            }
+            "Excalifont" => "Excalifont, Xiaolai, Segoe UI Emoji, sans-serif",
+            "Xiaolai" => "Xiaolai, Segoe UI Emoji, sans-serif",
+            "Nunito" => "Nunito, Segoe UI Emoji, sans-serif",
+            "Comic Shanns" => "Comic Shanns, Segoe UI Emoji, monospace",
+            "Noto Emoji" => "Noto Emoji, Segoe UI Emoji, sans-serif",
+            _ => family,
+        }
+    }
+}
+
+#[cfg(test)]
+mod family_list_tests {
+    use super::Bundle;
+
+    /// Every bundled family the writer can name, resolved families and the
+    /// two fallback faces alike.
+    const FAMILIES: [&str; 9] = [
+        "Virgil",
+        "Liberation Sans",
+        "Cascadia Code",
+        "Excalifont",
+        "Nunito",
+        "Lilita One",
+        "Comic Shanns",
+        "Xiaolai",
+        "Noto Emoji",
+    ];
+
+    /// The list starts with the effective family the `@font-face` declares,
+    /// so a viewer that honors embedded fonts resolves the same face as the
+    /// single-family attribute did, and ends with the reference's Segoe UI
+    /// Emoji fallback followed by a generic family.
+    #[test]
+    fn every_family_list_leads_with_its_effective_family_and_ends_generic() {
+        for family in FAMILIES {
+            let list = Bundle::font_family_list(family);
+            let mut entries = list.split(", ");
+            assert_eq!(entries.next(), Some(Bundle::effective_family(family)));
+            assert!(
+                list.split(", ").any(|entry| entry == family),
+                "{list} names the canonical family"
+            );
+            let tail: Vec<&str> = entries.collect();
+            let [.., emoji, generic] = tail.as_slice() else {
+                panic!("{list} has a fallback chain");
+            };
+            assert_eq!(*emoji, "Segoe UI Emoji");
+            assert!(matches!(*generic, "sans-serif" | "monospace"), "{list}");
+            assert!(
+                !list.contains('\'') && !list.contains('"'),
+                "{list} is spelled bare"
+            );
+        }
+    }
+
+    /// The reference's `getFontFamilyFallbacks` puts Xiaolai before Segoe UI
+    /// Emoji for Excalifont alone; the monospace faces degrade to `monospace`.
+    #[test]
+    fn family_lists_mirror_the_reference_fallback_order() {
+        assert_eq!(
+            Bundle::font_family_list("Excalifont"),
+            "Excalifont, Xiaolai, Segoe UI Emoji, sans-serif"
+        );
+        assert_eq!(
+            Bundle::font_family_list("Liberation Sans"),
+            "ExcalidrawRender-9, Liberation Sans, Helvetica, Segoe UI Emoji, sans-serif"
+        );
+        for family in FAMILIES {
+            let list = Bundle::font_family_list(family);
+            assert_eq!(
+                list.contains("Xiaolai") && family != "Xiaolai",
+                family == "Excalifont",
+                "{list}"
+            );
+            assert_eq!(
+                list.ends_with("monospace"),
+                matches!(family, "Cascadia Code" | "Comic Shanns"),
+                "{list}"
+            );
+        }
+    }
 }
 
 #[derive(Clone, Copy)]

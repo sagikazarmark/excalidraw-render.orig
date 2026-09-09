@@ -5,18 +5,25 @@ use excalidraw_render::{
 };
 
 use crate::common::pdf_inspect::embedded_pdf_fonts;
+use crate::common::svg::{
+    font_family_attribute, CASCADIA_FAMILIES, COMIC_SHANNS_FAMILIES, EXCALIFONT_FAMILIES,
+    LIBERATION_FAMILIES, LILITA_FAMILIES, NOTO_EMOJI_FAMILIES, NUNITO_FAMILIES, VIRGIL_FAMILIES,
+    XIAOLAI_FAMILIES,
+};
 
 #[test]
 fn admitted_latin_font_families_render_with_their_bundled_faces() {
+    // Each element names the effective family it embeds first and the
+    // consumer fallback chain spec 8.4 fixes for the family after it.
     for (font_family, expected_family) in [
-        (1, "ExcalidrawRender-1"),
-        (2, "ExcalidrawRender-9"),
-        (3, "ExcalidrawRender-3"),
-        (5, "Excalifont"),
-        (6, "Nunito"),
-        (7, "ExcalidrawRender-7"),
-        (8, "Comic Shanns"),
-        (9, "ExcalidrawRender-9"),
+        (1, VIRGIL_FAMILIES),
+        (2, LIBERATION_FAMILIES),
+        (3, CASCADIA_FAMILIES),
+        (5, EXCALIFONT_FAMILIES),
+        (6, NUNITO_FAMILIES),
+        (7, LILITA_FAMILIES),
+        (8, COMIC_SHANNS_FAMILIES),
+        (9, LIBERATION_FAMILIES),
     ] {
         let scene = text_scene(font_family, "Catalog");
         let request = RenderRequest::builder(OutputFormat::Svg)
@@ -28,7 +35,7 @@ fn admitted_latin_font_families_render_with_their_bundled_faces() {
         let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
         assert!(
-            svg.contains(&format!("font-family=\"{expected_family}\"")),
+            svg.contains(&font_family_attribute(expected_family)),
             "font family {font_family} must render as {expected_family}"
         );
         assert!(svg.contains("data:font/woff2;base64,"));
@@ -129,8 +136,8 @@ fn mixed_official_families_keep_independent_font_resources() {
                 let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
                 assert!(svg.contains("font-family:'ExcalidrawRender-1'"));
                 assert!(svg.contains("font-family:'ExcalidrawRender-3'"));
-                assert!(svg.contains("font-family=\"ExcalidrawRender-1\""));
-                assert!(svg.contains("font-family=\"ExcalidrawRender-3\""));
+                assert!(svg.contains(&font_family_attribute(VIRGIL_FAMILIES)));
+                assert!(svg.contains(&font_family_attribute(CASCADIA_FAMILIES)));
                 assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
                 assert!(svg.contains("svg-font-subset@sha256:"));
             }
@@ -204,8 +211,8 @@ fn excalifont_uses_ordered_cjk_and_emoji_fallbacks_in_every_format() {
                 assert!(svg.contains("font-family:'Excalifont'"));
                 assert!(svg.contains("font-family:'Xiaolai'"));
                 assert!(svg.contains("font-family:'Noto Emoji'"));
-                assert!(svg.contains("font-family=\"Xiaolai\""));
-                assert!(svg.contains("font-family=\"Noto Emoji\""));
+                assert!(svg.contains(&font_family_attribute(XIAOLAI_FAMILIES)));
+                assert!(svg.contains(&font_family_attribute(NOTO_EMOJI_FAMILIES)));
             }
             OutputFormat::Png => assert!(first.artifact().bytes().starts_with(b"\x89PNG")),
             OutputFormat::Pdf => {
@@ -266,7 +273,14 @@ fn xiaolai_stays_declared_when_local_recovery_omits_the_text_that_fired_the_trig
             OutputFormat::Svg => {
                 let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
                 assert!(svg.contains("font-family:'Xiaolai'"));
-                assert_eq!(svg.matches("<tspan font-family=\"Xiaolai\"").count(), 1);
+                assert_eq!(
+                    svg.matches(&format!(
+                        "<tspan {}",
+                        font_family_attribute(XIAOLAI_FAMILIES)
+                    ))
+                    .count(),
+                    1
+                );
                 assert!(svg.contains(">\u{20a9}</tspan>"));
                 assert!(!svg.contains('\u{4e2d}'));
             }
@@ -615,7 +629,9 @@ fn a_paragraph_separator_inside_a_source_line_keeps_the_text_after_it() {
     assert!(pdf.contains("/ActualText <FEFF00610062202900630064>"));
 }
 
-/// One `<tspan>` of a run-structured SVG text element.
+/// One `<tspan>` of a run-structured SVG text element. `font_family` is the
+/// first family of the run's list, the face that shapes it; the rest of the
+/// list is the consumer fallback chain spec 8.4 fixes per family.
 struct SvgTextRun {
     font_family: String,
     direction: String,
@@ -642,7 +658,11 @@ fn svg_text_runs(svg: &str) -> Vec<SvgTextRun> {
             let (open, rest) = tspan.split_once('>').expect("tspan opens");
             let (content, _) = rest.split_once("</tspan>").expect("tspan closes");
             SvgTextRun {
-                font_family: attribute(open, "font-family"),
+                font_family: attribute(open, "font-family")
+                    .split(',')
+                    .next()
+                    .expect("a run names a face")
+                    .to_owned(),
                 direction: attribute(open, "direction"),
                 x: attribute(open, "x")
                     .split(' ')
@@ -677,7 +697,7 @@ fn one_family_can_select_multiple_unicode_range_chunks() {
     assert_eq!(svg.matches("font-family:'Excalifont'").count(), 2);
     assert!(!svg.contains("font-style:"));
     assert!(!svg.contains("font-weight:"));
-    assert!(svg.contains("font-family=\"Excalifont\""));
+    assert!(svg.contains(&font_family_attribute(EXCALIFONT_FAMILIES)));
     assert!(svg.contains(">A</tspan>"));
     assert!(!svg.contains(">AЖ</tspan>"));
 }
@@ -700,7 +720,7 @@ fn codepoints_missing_from_the_complete_fallback_chain_use_replacement_glyphs() 
     assert!(svg.contains("data-source-text=\"A\u{10ffff}\""));
     assert!(svg.contains(">A</tspan>"));
     assert!(svg.contains(">?</tspan>"));
-    assert!(svg.contains("font-family=\"ExcalidrawRender-9\""));
+    assert!(svg.contains(&font_family_attribute(LIBERATION_FAMILIES)));
 }
 
 #[test]
