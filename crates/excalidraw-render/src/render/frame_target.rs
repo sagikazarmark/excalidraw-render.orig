@@ -1,4 +1,5 @@
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
+use crate::portable_math::sin_cos;
 use crate::relationships::{RelationshipKind, RelationshipTarget, ResolvedRelationshipGraph};
 use crate::scene_surface::SurfaceFallback;
 use crate::FrameKind;
@@ -114,8 +115,7 @@ fn normalized_element_aabb(source: &NormalizedElement) -> (f64, f64, f64, f64) {
     let (local_min_x, local_min_y, local_max_x, local_max_y) = source_layout_bounds(source);
     let center_x = source.x + (local_min_x + local_max_x) / 2.0;
     let center_y = source.y + (local_min_y + local_max_y) / 2.0;
-    let sin = source.angle.sin();
-    let cos = source.angle.cos();
+    let (sin, cos) = sin_cos(source.angle);
     let mut min_x = f64::INFINITY;
     let mut min_y = f64::INFINITY;
     let mut max_x = f64::NEG_INFINITY;

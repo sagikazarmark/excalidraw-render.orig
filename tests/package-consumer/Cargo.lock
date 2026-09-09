@@ -328,6 +328,7 @@ dependencies = [
  "excalidraw-render-ttf2woff2",
  "gif 0.14.2",
  "image-webp",
+ "libm",
  "miniz_oxide",
  "moxcms 0.9.0",
  "pdf-writer",

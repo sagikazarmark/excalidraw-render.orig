@@ -3,6 +3,7 @@
 //! subtracts and the logical size of the artifact.
 
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
+use crate::portable_math::sin_cos;
 use crate::relationships::ResolvedRelationshipGraph;
 use crate::scene_surface::SurfaceFallback;
 
@@ -101,8 +102,7 @@ pub(super) fn scene_bounds(
                 source.y + (local_min_y + local_max_y) / 2.0,
             )
         };
-        let sin = source.angle.sin();
-        let cos = source.angle.cos();
+        let (sin, cos) = sin_cos(source.angle);
         if let NormalizedElementKind::Freedraw(freedraw) = &source.kind {
             if !freedraw.points.is_empty() {
                 for point in &freedraw.points {

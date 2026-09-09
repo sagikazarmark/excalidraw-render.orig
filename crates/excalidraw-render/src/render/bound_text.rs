@@ -1,6 +1,7 @@
 use crate::normalization::{
     NormalizedElement, NormalizedElementKind, NormalizedLinear, NormalizedLinearKind,
 };
+use crate::portable_math::{cube, hypot, sin_cos, square};
 use crate::relationships::{RelationshipKind, RelationshipTarget, ResolvedRelationshipGraph};
 
 use super::geometry::{source_layout_bounds, GeneratedGeometry, Path, PathOperation, Point};
@@ -70,8 +71,7 @@ pub(super) fn resolve_bound_text_placements(
                 let center_y = (min_y + max_y) / 2.0;
                 let delta_x = midpoint[0] - center_x;
                 let delta_y = midpoint[1] - center_y;
-                let sin = container.angle.sin();
-                let cos = container.angle.cos();
+                let (sin, cos) = sin_cos(container.angle);
                 let global_x = container.x + center_x + delta_x * cos - delta_y * sin;
                 let global_y = container.y + center_y + delta_x * sin + delta_y * cos;
                 (
@@ -135,7 +135,7 @@ fn rough_segment_midpoint(path: &Path, target: [f64; 2]) -> Option<[f64; 2]> {
                 end,
             } => {
                 let start = current?;
-                let distance = (end.x - target[0]).hypot(end.y - target[1]);
+                let distance = hypot(end.x - target[0], end.y - target[1]);
                 if distance < closest_distance {
                     closest_distance = distance;
                     closest = Some((start, control_1, control_2, end));
@@ -153,8 +153,10 @@ fn rough_segment_midpoint(path: &Path, target: [f64; 2]) -> Option<[f64; 2]> {
     let mut lengths = [0.0; 21];
     for index in 1..samples.len() {
         lengths[index] = lengths[index - 1]
-            + (samples[index][0] - samples[index - 1][0])
-                .hypot(samples[index][1] - samples[index - 1][1]);
+            + hypot(
+                samples[index][0] - samples[index - 1][0],
+                samples[index][1] - samples[index - 1][1],
+            );
     }
     let target_length = lengths[20] / 2.0;
     let upper = lengths
@@ -175,10 +177,10 @@ fn rough_segment_midpoint(path: &Path, target: [f64; 2]) -> Option<[f64; 2]> {
 fn cubic_point(start: Point, control_1: Point, control_2: Point, end: Point, t: f64) -> [f64; 2] {
     let inverse = 1.0 - t;
     let coordinate = |start: f64, control_1: f64, control_2: f64, end: f64| {
-        inverse.powi(3) * end
-            + 3.0 * t * inverse.powi(2) * control_2
-            + 3.0 * t.powi(2) * inverse * control_1
-            + t.powi(3) * start
+        cube(inverse) * end
+            + 3.0 * t * square(inverse) * control_2
+            + 3.0 * square(t) * inverse * control_1
+            + cube(t) * start
     };
     [
         coordinate(start.x, control_1.x, control_2.x, end.x),

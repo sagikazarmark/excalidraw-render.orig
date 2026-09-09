@@ -31,6 +31,7 @@ mod font_metadata;
 mod frame;
 mod normalization;
 mod outcome;
+mod portable_math;
 mod relationships;
 mod render;
 mod request;

@@ -7,6 +7,7 @@
 
 use crate::color::CanonicalColor;
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
+use crate::portable_math::{atan2, cos, cube, hypot, sin, sin_cos, square};
 use crate::ColorMode;
 
 use super::resolve::ResolveSceneError;
@@ -153,10 +154,10 @@ fn retain_cubic_extremum(
         return 0;
     }
     let inverse = 1.0 - t;
-    output[0] = inverse.powi(3) * start
-        + 3.0 * inverse.powi(2) * t * control_1
-        + 3.0 * inverse * t.powi(2) * control_2
-        + t.powi(3) * end;
+    output[0] = cube(inverse) * start
+        + 3.0 * square(inverse) * t * control_1
+        + 3.0 * inverse * square(t) * control_2
+        + cube(t) * end;
     1
 }
 
@@ -315,8 +316,7 @@ pub(super) fn include_transformed_bounds(
 ) {
     let center_x = x + width / 2.0;
     let center_y = y + height / 2.0;
-    let sin = angle.sin();
-    let cos = angle.cos();
+    let (sin, cos) = sin_cos(angle);
     for (corner_x, corner_y) in [
         (x, y),
         (x + width, y),
@@ -568,7 +568,7 @@ pub(super) fn rough_drawing(
                     .first()
                     .zip(points.last())
                     .is_some_and(|(first, last)| {
-                        (first.x - last.x).hypot(first.y - last.y) <= LINE_CONFIRM_THRESHOLD
+                        hypot(first.x - last.x, first.y - last.y) <= LINE_CONFIRM_THRESHOLD
                     });
             let mut drawing = if linear.elbowed {
                 elbow_drawing(
@@ -650,8 +650,8 @@ fn elbow_drawing(
         let corner = points[index];
         let next = points[index + 1];
         let radius = 16.0_f64
-            .min((corner.x - previous.x).hypot(corner.y - previous.y) / 2.0)
-            .min((next.x - corner.x).hypot(next.y - corner.y) / 2.0);
+            .min(hypot(corner.x - previous.x, corner.y - previous.y) / 2.0)
+            .min(hypot(next.x - corner.x, next.y - corner.y) / 2.0);
         let previous_is_horizontal = (previous.x - corner.x).abs() >= (previous.y - corner.y).abs();
         let next_is_horizontal = (next.x - corner.x).abs() >= (next.y - corner.y).abs();
         let approach = if previous_is_horizontal {
@@ -946,17 +946,17 @@ fn arrowhead_points(
     let p3 = *end;
     let equation = |coordinate: fn(Point) -> f64| {
         let t = 0.3_f64;
-        (1.0 - t).powi(3) * coordinate(p3)
-            + 3.0 * t * (1.0 - t).powi(2) * coordinate(*control_2)
-            + 3.0 * t.powi(2) * (1.0 - t) * coordinate(*control_1)
-            + t.powi(3) * coordinate(p0)
+        cube(1.0 - t) * coordinate(p3)
+            + 3.0 * t * square(1.0 - t) * coordinate(*control_2)
+            + 3.0 * square(t) * (1.0 - t) * coordinate(*control_1)
+            + cube(t) * coordinate(p0)
     };
     let near = Point {
         x: equation(|p| p.x),
         y: equation(|p| p.y),
     };
     let tip = if start { p0 } else { p3 };
-    let distance = (tip.x - near.x).hypot(tip.y - near.y);
+    let distance = hypot(tip.x - near.x, tip.y - near.y);
     if distance == 0.0 {
         return None;
     }
@@ -972,8 +972,10 @@ fn arrowhead_points(
     };
     let endpoint_index = if start { 0 } else { linear.points.len() - 1 };
     let adjacent_index = if start { 1 } else { linear.points.len() - 2 };
-    let segment_length = (linear.points[endpoint_index][0] - linear.points[adjacent_index][0])
-        .hypot(linear.points[endpoint_index][1] - linear.points[adjacent_index][1]);
+    let segment_length = hypot(
+        linear.points[endpoint_index][0] - linear.points[adjacent_index][0],
+        linear.points[endpoint_index][1] - linear.points[adjacent_index][1],
+    );
     let minimum = size.min(
         segment_length
             * if arrowhead.starts_with("diamond") {
@@ -1010,8 +1012,8 @@ fn arrowhead_points(
         let dx = point.x - center.x;
         let dy = point.y - center.y;
         Point {
-            x: center.x + dx * radians.cos() - dy * radians.sin(),
-            y: center.y + dx * radians.sin() + dy * radians.cos(),
+            x: center.x + dx * cos(radians) - dy * sin(radians),
+            y: center.y + dx * sin(radians) + dy * cos(radians),
         }
     };
     if matches!(arrowhead, "crowfoot_many" | "crowfoot_one_or_many") {
@@ -1026,13 +1028,13 @@ fn arrowhead_points(
     if matches!(arrowhead, "diamond" | "diamond_outline") {
         let adjacent = linear.points[adjacent_index];
         let direction = if start {
-            (adjacent[1] - tip.y).atan2(adjacent[0] - tip.x)
+            atan2(adjacent[1] - tip.y, adjacent[0] - tip.x)
         } else {
-            (tip.y - adjacent[1]).atan2(tip.x - adjacent[0])
+            atan2(tip.y - adjacent[1], tip.x - adjacent[0])
         };
         let opposite = Point {
-            x: tip.x + if start { minimum * 2.0 } else { -minimum * 2.0 } * direction.cos(),
-            y: tip.y + if start { minimum * 2.0 } else { -minimum * 2.0 } * direction.sin(),
+            x: tip.x + if start { minimum * 2.0 } else { -minimum * 2.0 } * cos(direction),
+            y: tip.y + if start { minimum * 2.0 } else { -minimum * 2.0 } * sin(direction),
         };
         return Some([
             tip.x, tip.y, first.x, first.y, opposite.x, opposite.y, second.x, second.y,

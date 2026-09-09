@@ -6,6 +6,7 @@ use super::number_format::ecmascript_number;
 use super::rough::{GenerationBudget, GenerationError};
 use super::FormatEncodeError;
 use crate::normalization::NormalizedFreedraw;
+use crate::portable_math::{hypot, sin, sin_cos, square};
 use std::collections::TryReserveError;
 
 const RATE_OF_PRESSURE_CHANGE: f64 = 0.275;
@@ -125,7 +126,7 @@ pub(super) fn background_fill(
     let Some((first, last)) = points.first().zip(points.last()) else {
         return Ok(None);
     };
-    if points.len() < 3 || (first[0] - last[0]).hypot(first[1] - last[1]) > LOOP_THRESHOLD {
+    if points.len() < 3 || hypot(first[0] - last[0], first[1] - last[1]) > LOOP_THRESHOLD {
         return Ok(None);
     }
     let simplified = simplify(points, 0.75, budget)?;
@@ -300,7 +301,7 @@ fn stroke_outline(
         return Ok(Vec::new());
     }
     let total_length = points.last().map_or(0.0, |point| point.running_length);
-    let minimum_distance = (size * 0.5).powi(2);
+    let minimum_distance = square(size * 0.5);
     let mut left = Vec::new();
     let mut right = Vec::new();
     let side_capacity = points
@@ -605,7 +606,7 @@ fn include_quadratic_bounds(
 }
 
 fn stroke_radius(size: f64, pressure: f64) -> f64 {
-    size * ((0.5 - 0.6 * (0.5 - pressure)) * std::f64::consts::PI / 2.0).sin()
+    size * sin((0.5 - 0.6 * (0.5 - pressure)) * std::f64::consts::PI / 2.0)
 }
 
 const fn point(x: f64, y: f64) -> Point {
@@ -641,16 +642,16 @@ fn equal(a: Point, b: Point) -> bool {
 }
 
 fn unit(value: Point) -> Point {
-    let length = value.x.hypot(value.y);
+    let length = hypot(value.x, value.y);
     point(value.x / length, value.y / length)
 }
 
 fn distance(a: Point, b: Point) -> f64 {
-    (a.x - b.x).hypot(a.y - b.y)
+    hypot(a.x - b.x, a.y - b.y)
 }
 
 fn distance_squared(a: Point, b: Point) -> f64 {
-    (a.x - b.x).powi(2) + (a.y - b.y).powi(2)
+    square(a.x - b.x) + square(a.y - b.y)
 }
 
 fn lerp(a: Point, b: Point, scalar: f64) -> Point {
@@ -658,8 +659,7 @@ fn lerp(a: Point, b: Point, scalar: f64) -> Point {
 }
 
 fn rotate(value: Point, center: Point, radians: f64) -> Point {
-    let sine = radians.sin();
-    let cosine = radians.cos();
+    let (sine, cosine) = sin_cos(radians);
     let x = value.x - center.x;
     let y = value.y - center.y;
     point(

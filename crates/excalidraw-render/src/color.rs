@@ -3,6 +3,7 @@ use std::fmt;
 use cssparser::{color::PredefinedColorSpace, Parser, ParserInput};
 use cssparser_color::Color as ParsedColor;
 
+use crate::portable_math::{atan2, cbrt, cos, hypot, powf, sin, square};
 use crate::ColorMode;
 
 const MAX_COLOR_NESTING_DEPTH: u32 = 128;
@@ -206,8 +207,8 @@ fn parse_css_at_depth(value: &str, depth: u32) -> Option<CanonicalColor> {
         let chroma = f64::from(color.chroma.unwrap_or(0.0));
         return Some(canonical_lab_color(
             f64::from(color.lightness.unwrap_or(0.0)),
-            chroma * hue.cos(),
-            chroma * hue.sin(),
+            chroma * cos(hue),
+            chroma * sin(hue),
             f64::from(color.alpha.unwrap_or(0.0)),
         ));
     }
@@ -266,9 +267,9 @@ fn color_function(
                 [0.027_034_3, 0.070_687_2, 0.991_108_5],
             ],
             [
-                first.signum() * first.abs().powf(563.0 / 256.0),
-                second.signum() * second.abs().powf(563.0 / 256.0),
-                third.signum() * third.abs().powf(563.0 / 256.0),
+                first.signum() * powf(first.abs(), 563.0 / 256.0),
+                second.signum() * powf(second.abs(), 563.0 / 256.0),
+                third.signum() * powf(third.abs(), 563.0 / 256.0),
             ],
         ),
         PredefinedColorSpace::ProphotoRgb => {
@@ -276,7 +277,7 @@ fn color_function(
                 if component.abs() <= 16.0 / 512.0 {
                     component / 16.0
                 } else {
-                    component.signum() * component.abs().powf(1.8)
+                    component.signum() * powf(component.abs(), 1.8)
                 }
             };
             let d50 = multiply(
@@ -296,7 +297,7 @@ fn color_function(
                 if component.abs() < BETA * 4.5 {
                     component / 4.5
                 } else {
-                    component.signum() * ((component.abs() + ALPHA - 1.0) / ALPHA).powf(1.0 / 0.45)
+                    component.signum() * powf((component.abs() + ALPHA - 1.0) / ALPHA, 1.0 / 0.45)
                 }
             };
             multiply(
@@ -555,7 +556,7 @@ fn color_mix_components(space: ColorMixSpace, color: CanonicalColor) -> [f64; 3]
             ],
             srgb_to_xyz_d65(color),
         )
-        .map(|component| component.signum() * component.abs().powf(256.0 / 563.0)),
+        .map(|component| component.signum() * powf(component.abs(), 256.0 / 563.0)),
         ColorMixSpace::ProphotoRgb => multiply(
             [
                 [1.345_798_97, -0.255_580_10, -0.051_106_29],
@@ -568,7 +569,7 @@ fn color_mix_components(space: ColorMixSpace, color: CanonicalColor) -> [f64; 3]
             if component.abs() <= 1.0 / 512.0 {
                 component * 16.0
             } else {
-                component.signum() * component.abs().powf(1.0 / 1.8)
+                component.signum() * powf(component.abs(), 1.0 / 1.8)
             }
         }),
         ColorMixSpace::Rec2020 => multiply(
@@ -609,7 +610,7 @@ fn color_mix_components(space: ColorMixSpace, color: CanonicalColor) -> [f64; 3]
         }
         ColorMixSpace::Lch => {
             let [lightness, a, b] = srgb_to_lab(color);
-            [lightness, a.hypot(b), b.atan2(a).to_degrees()]
+            [lightness, hypot(a, b), atan2(b, a).to_degrees()]
         }
         ColorMixSpace::Oklch => {
             let value = css.to_oklcha();
@@ -710,8 +711,8 @@ fn color_from_mix_components(
             let hue = components[2].to_radians();
             Some(canonical_lab_color(
                 components[0],
-                components[1] * hue.cos(),
-                components[1] * hue.sin(),
+                components[1] * cos(hue),
+                components[1] * sin(hue),
                 alpha,
             ))
         }
@@ -760,7 +761,7 @@ fn encode_rec2020(component: f64) -> f64 {
     if component.abs() < BETA {
         component * 4.5
     } else {
-        component.signum() * (ALPHA * component.abs().powf(0.45) - (ALPHA - 1.0))
+        component.signum() * (ALPHA * powf(component.abs(), 0.45) - (ALPHA - 1.0))
     }
 }
 
@@ -770,7 +771,7 @@ fn srgb_to_lab(color: CanonicalColor) -> [f64; 3] {
         const EPSILON: f64 = 216.0 / 24_389.0;
         const KAPPA: f64 = 24_389.0 / 27.0;
         if value > EPSILON {
-            value.cbrt()
+            cbrt(value)
         } else {
             (KAPPA * value + 16.0) / 116.0
         }
@@ -861,9 +862,9 @@ fn map_srgb_gamut(color: csscolorparser::Color) -> csscolorparser::Color {
         );
         let clipped_oklab = clipped.to_oklaba();
         let current_oklab = current.to_oklaba();
-        let delta = ((clipped_oklab[0] - current_oklab[0]).powi(2)
-            + (clipped_oklab[1] - current_oklab[1]).powi(2)
-            + (clipped_oklab[2] - current_oklab[2]).powi(2))
+        let delta = (square(clipped_oklab[0] - current_oklab[0])
+            + square(clipped_oklab[1] - current_oklab[1])
+            + square(clipped_oklab[2] - current_oklab[2]))
         .sqrt();
         if delta < JND {
             return clipped;
@@ -891,13 +892,13 @@ fn decode_srgb(component: f64) -> f64 {
     if component.abs() <= 0.040_45 {
         component / 12.92
     } else {
-        component.signum() * ((component.abs() + 0.055) / 1.055).powf(2.4)
+        component.signum() * powf((component.abs() + 0.055) / 1.055, 2.4)
     }
 }
 
 fn encode_srgb(component: f64) -> f64 {
     if component.abs() > 0.003_130_8 {
-        component.signum() * (1.055 * component.abs().powf(1.0 / 2.4) - 0.055)
+        component.signum() * (1.055 * powf(component.abs(), 1.0 / 2.4) - 0.055)
     } else {
         12.92 * component
     }

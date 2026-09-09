@@ -10,6 +10,7 @@ use std::fmt::Write as _;
 use std::sync::Arc;
 
 use crate::color::CanonicalColor;
+use crate::portable_math::sin_cos;
 
 use super::super::geometry::{Path, PathOperation, Point, FRAME_OUTLINE_STROKE_WIDTH};
 use super::super::number_format::{format_pdf_number, push_rough_number};
@@ -940,7 +941,7 @@ fn push_transform_matrix(
     let (sin, cos) = if transform.angle_radians == 0.0 {
         (0.0, 1.0)
     } else {
-        (transform.angle_radians.sin(), transform.angle_radians.cos())
+        sin_cos(transform.angle_radians)
     };
     let offset_x = transform.translation_x + transform.center_x - cos * transform.center_x
         + sin * transform.center_y;
@@ -1049,8 +1050,7 @@ fn push_transformed_clip(
     output: &mut String,
     clip: &ResolvedClip,
 ) -> Result<(), FormatEncodeError> {
-    let sin = clip.transform.angle_radians.sin();
-    let cos = clip.transform.angle_radians.cos();
+    let (sin, cos) = sin_cos(clip.transform.angle_radians);
     let offset_x = clip.transform.translation_x + clip.transform.center_x
         - cos * clip.transform.center_x
         + sin * clip.transform.center_y;

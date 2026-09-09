@@ -7,6 +7,7 @@
 use std::collections::TryReserveError;
 
 use super::geometry::{ecmascript_round, Path, PathOperation, Point};
+use crate::portable_math::{cos, hypot, sin, sin_cos, square};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum GenerationLimit {
@@ -908,9 +909,9 @@ fn simplify_points(
 }
 
 fn distance_to_segment_squared(point: Point, start: Point, end: Point) -> f64 {
-    let length_squared = (start.x - end.x).powi(2) + (start.y - end.y).powi(2);
+    let length_squared = square(start.x - end.x) + square(start.y - end.y);
     if length_squared == 0.0 {
-        return (point.x - start.x).powi(2) + (point.y - start.y).powi(2);
+        return square(point.x - start.x) + square(point.y - start.y);
     }
     let interpolation = (((point.x - start.x) * (end.x - start.x)
         + (point.y - start.y) * (end.y - start.y))
@@ -920,11 +921,11 @@ fn distance_to_segment_squared(point: Point, start: Point, end: Point) -> f64 {
         x: start.x + (end.x - start.x) * interpolation,
         y: start.y + (end.y - start.y) * interpolation,
     };
-    (point.x - projected.x).powi(2) + (point.y - projected.y).powi(2)
+    square(point.x - projected.x) + square(point.y - projected.y)
 }
 
 fn point_distance(first: Point, second: Point) -> f64 {
-    ((first.x - second.x).powi(2) + (first.y - second.y).powi(2)).sqrt()
+    (square(first.x - second.x) + square(first.y - second.y)).sqrt()
 }
 
 fn midpoint(first: Point, second: Point) -> Point {
@@ -1073,10 +1074,9 @@ fn ellipse_drawing_with_curve_fitting(
     curve_fitting: f64,
     budget: &mut GenerationBudget,
 ) -> Result<Drawing, GenerationError> {
-    let perimeter = (std::f64::consts::PI
-        * 2.0
-        * (((width / 2.0).powi(2) + (height / 2.0).powi(2)) / 2.0).sqrt())
-    .sqrt();
+    let perimeter =
+        (std::f64::consts::PI * 2.0 * ((square(width / 2.0) + square(height / 2.0)) / 2.0).sqrt())
+            .sqrt();
     let step_count = 9.0_f64.max((9.0 / 200.0_f64.sqrt()) * perimeter).ceil();
     let increment = std::f64::consts::TAU / step_count;
     let center = Point {
@@ -1254,8 +1254,8 @@ fn core_ellipse_points(
         budget.work(1)?;
         points.try_reserve(1)?;
         points.push(Point {
-            x: center.x + radius_x * angle.cos(),
-            y: center.y + radius_y * angle.sin(),
+            x: center.x + radius_x * cos(angle),
+            y: center.y + radius_y * sin(angle),
         });
         let next = angle + increment;
         if next <= angle {
@@ -1279,8 +1279,8 @@ fn core_ellipse_stroke(
     budget: &mut GenerationBudget,
 ) -> Result<(), GenerationError> {
     let point = |angle: f64| Point {
-        x: center.x + radius_x * angle.cos(),
-        y: center.y + radius_y * angle.sin(),
+        x: center.x + radius_x * cos(angle),
+        y: center.y + radius_y * sin(angle),
     };
     let mut points = Vec::new();
     budget.work(1)?;
@@ -1325,12 +1325,8 @@ fn ellipse_stroke(
     let angle_offset = random_offset(0.5, roughness, 1.0, random) - std::f64::consts::FRAC_PI_2;
     let mut points = Vec::new();
     let point = |angle: f64, scale: f64, random: &mut Random| Point {
-        x: random_offset(offset, roughness, 1.0, random)
-            + center.x
-            + scale * radius_x * angle.cos(),
-        y: random_offset(offset, roughness, 1.0, random)
-            + center.y
-            + scale * radius_y * angle.sin(),
+        x: random_offset(offset, roughness, 1.0, random) + center.x + scale * radius_x * cos(angle),
+        y: random_offset(offset, roughness, 1.0, random) + center.y + scale * radius_y * sin(angle),
     };
     budget.work(1)?;
     points.try_reserve(1)?;
@@ -1527,11 +1523,11 @@ fn fill_polygon(
         });
     } else if matches!(style, FillStyle::Zigzag) {
         let angle = -41.0_f64.to_radians();
-        let delta_x = gap * 0.5 * angle.cos();
-        let delta_y = gap * 0.5 * angle.sin();
+        let delta_x = gap * 0.5 * cos(angle);
+        let delta_y = gap * 0.5 * sin(angle);
         let mut zigzags = Vec::new();
         for (start, end) in lines {
-            if (end.x - start.x).hypot(end.y - start.y) != 0.0 {
+            if hypot(end.x - start.x, end.y - start.y) != 0.0 {
                 budget.work(2)?;
                 zigzags.try_reserve(2)?;
                 zigzags.push((
@@ -1609,8 +1605,7 @@ fn hachure_lines(
     budget: &mut GenerationBudget,
 ) -> Result<Vec<(Point, Point)>, GenerationError> {
     let radians = angle.to_radians();
-    let cos = radians.cos();
-    let sin = radians.sin();
+    let (sin, cos) = sin_cos(radians);
     for point in &mut *points {
         *point = Point {
             x: point.x * cos - point.y * sin,
@@ -1723,8 +1718,8 @@ fn rotate_points(points: &mut [Point], degrees: f64) {
     let radians = degrees.to_radians();
     for point in points {
         *point = Point {
-            x: point.x * radians.cos() - point.y * radians.sin(),
-            y: point.x * radians.sin() + point.y * radians.cos(),
+            x: point.x * cos(radians) - point.y * sin(radians),
+            y: point.x * sin(radians) + point.y * cos(radians),
         };
     }
 }
@@ -1732,8 +1727,8 @@ fn rotate_points(points: &mut [Point], degrees: f64) {
 fn rotate_point(point: Point, degrees: f64) -> Point {
     let radians = degrees.to_radians();
     Point {
-        x: point.x * radians.cos() - point.y * radians.sin(),
-        y: point.x * radians.sin() + point.y * radians.cos(),
+        x: point.x * cos(radians) - point.y * sin(radians),
+        y: point.x * sin(radians) + point.y * cos(radians),
     }
 }
 

@@ -23,6 +23,7 @@ use std::io::Write as _;
 use std::sync::Arc;
 
 use crate::normalization::NormalizedElementSource;
+use crate::portable_math::{cube, sin_cos};
 use crate::{
     color::{self, CanonicalColor},
     DiagnosticCode, LogicalBounds, MetadataComponent, NestedPath, RenderRequest,
@@ -1295,8 +1296,7 @@ fn transformed_pdf_points(
     point_scale: f64,
     page_height: f64,
 ) -> [(f64, f64); 4] {
-    let sin = transform.angle_radians.sin();
-    let cos = transform.angle_radians.cos();
+    let (sin, cos) = sin_cos(transform.angle_radians);
     let offset_x = transform.translation_x + transform.center_x - cos * transform.center_x
         + sin * transform.center_y;
     let offset_y = transform.translation_y + transform.center_y
@@ -1418,14 +1418,14 @@ fn transformed_clip_path(
                     let t = step as f64 / CURVE_STEPS as f64;
                     let inverse = 1.0 - t;
                     let point = Point {
-                        x: inverse.powi(3) * start.x
+                        x: cube(inverse) * start.x
                             + 3.0 * inverse * inverse * t * control_1.x
                             + 3.0 * inverse * t * t * control_2.x
-                            + t.powi(3) * end.x,
-                        y: inverse.powi(3) * start.y
+                            + cube(t) * end.x,
+                        y: cube(inverse) * start.y
                             + 3.0 * inverse * inverse * t * control_1.y
                             + 3.0 * inverse * t * t * control_2.y
-                            + t.powi(3) * end.y,
+                            + cube(t) * end.y,
                     };
                     points.push(transformed_clip_point(
                         point,
@@ -1447,8 +1447,7 @@ fn transformed_clip_point(
     point_scale: f64,
     page_height: f64,
 ) -> (f64, f64) {
-    let sin = transform.angle_radians.sin();
-    let cos = transform.angle_radians.cos();
+    let (sin, cos) = sin_cos(transform.angle_radians);
     let delta_x = point.x - transform.center_x;
     let delta_y = point.y - transform.center_y;
     let x = transform.translation_x + transform.center_x + delta_x * cos - delta_y * sin;

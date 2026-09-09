@@ -35,6 +35,7 @@ use paint::{
 use std::sync::Arc;
 
 use crate::normalization::{NormalizedElementSource, NormalizedImageStatus};
+use crate::portable_math::sin_cos;
 use crate::{color::CanonicalColor, OutputFormat, RenderRequest};
 use tiny_skia::{
     Color, FillRule, FilterQuality, IntSize, LineCap, LineJoin, Mask, PathBuilder, Pixmap,
@@ -361,8 +362,7 @@ struct PngTransform {
 
 impl PngTransform {
     fn new(transform: &ResolvedTransform, scale: f64) -> Self {
-        let sin = transform.angle_radians.sin();
-        let cos = transform.angle_radians.cos();
+        let (sin, cos) = sin_cos(transform.angle_radians);
         Self {
             a: scale * cos,
             b: scale * sin,

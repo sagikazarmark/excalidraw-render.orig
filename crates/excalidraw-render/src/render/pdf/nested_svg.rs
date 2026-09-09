@@ -9,6 +9,7 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
+use crate::portable_math::sin_cos;
 use crate::{FiniteValue, LogicalBounds, NestedPath, NestedPathSegment, NestedSegmentKind};
 
 use super::super::asset::svg::EffectCause;
@@ -313,7 +314,7 @@ fn transform_bounds(
     bounds: (f64, f64, f64, f64),
     transform: ResolvedTransform,
 ) -> (f64, f64, f64, f64) {
-    let (sin, cos) = transform.angle_radians.sin_cos();
+    let (sin, cos) = sin_cos(transform.angle_radians);
     let offset_x = transform.translation_x + transform.center_x - cos * transform.center_x
         + sin * transform.center_y;
     let offset_y = transform.translation_y + transform.center_y

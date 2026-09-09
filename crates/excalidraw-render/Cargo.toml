@@ -26,6 +26,7 @@ cssparser-color.workspace = true
 crc32fast.workspace = true
 gif.workspace = true
 image-webp.workspace = true
+libm.workspace = true
 miniz_oxide.workspace = true
 moxcms.workspace = true
 serde.workspace = true
