@@ -653,7 +653,7 @@ fn sanitize_nested_data_image(
     let Some((claimed_media_type, encoded)) = data.split_once(";base64,") else {
         return Err(ResolveError::SvgDecodeFailed.into());
     };
-    let (decoded_prefix, valid_base64) = super::decoded_prefix(encoded);
+    let (decoded_prefix, valid_base64) = super::payload::decoded_prefix(encoded);
     admit_nested_occurrence(decoded_prefix, transact, nested_accounting)?;
     if !valid_base64 {
         return Err(ResolveError::SvgDecodeFailed.into());

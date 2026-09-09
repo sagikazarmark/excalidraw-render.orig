@@ -8,6 +8,8 @@
 
 use std::sync::Arc;
 
+use base64::Engine as _;
+
 use super::*;
 
 // The codec fixture builders live with the integration plumbing so the six
@@ -565,7 +567,7 @@ mod jpeg_codec {
 // --- GIF -------------------------------------------------------------------
 
 mod gif_codec {
-    use gif::{DisposalMethod, Frame, Repeat};
+    use ::gif::{DisposalMethod, Frame, Repeat};
 
     use super::*;
 
