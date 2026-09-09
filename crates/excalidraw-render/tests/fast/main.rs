@@ -1,8 +1,8 @@
 //! The fast tier: every integration test of the renderer that needs neither
-//! external tooling, nor a registry of official evidence, nor a ceiling-sized
-//! input, one module per former test binary. The tests that do are their own
-//! binaries under `tests/`, named by tier: `parity_*`, `limits_*` and
-//! `harness_*`. One binary here instead of forty links the renderer and its
+//! external tooling, nor official evidence to compare against, nor a
+//! ceiling-sized input, one module per former test binary. The tests that do
+//! are their own binaries under `tests/`, named by tier: `parity_*`, `limits_*`
+//! and `harness_*`. One binary here instead of forty links the renderer and its
 //! dependencies once, and `cargo nextest` still runs every test in its own
 //! process.
 //!
@@ -30,7 +30,6 @@ mod freedraw_render;
 mod helvetica_text_render;
 mod image_corner_clip;
 mod image_viewport_rounding;
-mod legacy_line_height_render;
 mod license_bundle;
 mod missing_glyph_render;
 mod nested_svg_asset_render;
@@ -42,6 +41,7 @@ mod pdf_renderer_expectations;
 mod rectangle_pdf_render;
 mod rectangle_png_render;
 mod rectangle_svg_render;
+mod registered_case_determinism;
 mod relationships;
 mod render_request;
 mod resource_accounting;

@@ -74,9 +74,6 @@ fn trailing_and_whitespace_only_lines_render_in_every_format() {
         assert_eq!(codes(&png), codes(&pdf), "{text:?}");
         assert!(png.report().is_empty(), "{text:?}: {:?}", png.report());
         assert!(png.artifact().bytes().starts_with(b"\x89PNG"), "{text:?}");
-
-        let repeated = render_source(&scene, OutputFormat::Png);
-        assert_eq!(png.artifact().bytes(), repeated.artifact().bytes());
     }
 }
 

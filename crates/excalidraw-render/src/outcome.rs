@@ -191,6 +191,26 @@ impl Default for DiagnosticOrder {
     }
 }
 
+impl DiagnosticOrder {
+    /// The order the session gives a diagnostic it retains as the
+    /// `retention_ordinal`th of its report: the source owner and member
+    /// position the emitting stage attributed it to, or last among the owners
+    /// or positions when the stage knew neither.
+    pub(crate) fn retained(
+        owner_index: Option<u64>,
+        source_position: Option<u64>,
+        retention_ordinal: u64,
+        attribution: DiagnosticAttribution,
+    ) -> Self {
+        Self {
+            owner_index: owner_index.unwrap_or(u64::MAX),
+            source_position: source_position.unwrap_or(u64::MAX),
+            retention_ordinal,
+            attribution,
+        }
+    }
+}
+
 impl CompatibilityDiagnostic {
     /// Returns the stable machine-readable diagnostic code.
     pub const fn code(&self) -> DiagnosticCode {

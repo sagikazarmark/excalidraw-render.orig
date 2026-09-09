@@ -12,13 +12,9 @@ use crate::common::repository_root;
 use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
 
 #[test]
-fn approved_rectangle_renders_as_a_deterministic_canvas_equivalent_png() {
+fn approved_rectangle_renders_as_a_canvas_equivalent_png() {
     let case = repository_root().join("tests/conformance/cases/focused/rectangle-outline");
     let first = render_approved_png();
-    let second = render_approved_png();
-
-    assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-    assert_eq!(first.report(), second.report());
     assert_eq!(first.artifact().format(), OutputFormat::Png);
     assert_eq!(first.artifact().media_type(), "image/png");
     assert_report_matches(

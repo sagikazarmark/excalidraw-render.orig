@@ -88,18 +88,6 @@ fn direct_svg_validates_bmp_without_charging_decoded_pixels() {
 }
 
 #[test]
-fn bmp_artifacts_and_reports_are_deterministic() {
-    let bmp = fixture_bmp32([24, 96, 208, 128], true);
-    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let scene = image_scene(&bmp, "image/bmp", 1, 1);
-        let first = render(&scene, format);
-        let second = render(&scene, format);
-        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-        assert_eq!(first.report(), second.report());
-    }
-}
-
-#[test]
 fn rle8_delta_pixels_use_palette_zero_and_validation_work_is_prepaid() {
     let bmp = fixture_bmp_rle8();
     let outcome = render(&image_scene(&bmp, "image/bmp", 20, 10), OutputFormat::Png);

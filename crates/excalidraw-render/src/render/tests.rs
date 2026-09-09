@@ -1116,6 +1116,190 @@ fn the_fallback_layout_splits_lines_by_the_same_rule() {
     }
 }
 
+/// The vertical family metadata metrics Excalidraw's `FONT_METADATA` declares
+/// and `getVerticalOffset` reads to place a first baseline: the independent
+/// source the baseline assertions below are worked from.
+struct Metrics {
+    units_per_em: f64,
+    ascender: f64,
+    descender: f64,
+}
+
+impl Metrics {
+    /// `font_size * (line_height / 2 + (ascender + descender) / units_per_em / 2)`.
+    fn first_baseline(&self, font_size: f64, line_height: f64) -> f64 {
+        font_size * (line_height / 2.0 + (self.ascender + self.descender) / self.units_per_em / 2.0)
+    }
+}
+
+const HELVETICA: Metrics = Metrics {
+    units_per_em: 2048.0,
+    ascender: 1577.0,
+    descender: -471.0,
+};
+const LIBERATION_SANS: Metrics = Metrics {
+    units_per_em: 2048.0,
+    ascender: 1854.0,
+    descender: -434.0,
+};
+const CASCADIA: Metrics = Metrics {
+    units_per_em: 2048.0,
+    ascender: 1900.0,
+    descender: -480.0,
+};
+const NUNITO: Metrics = Metrics {
+    units_per_em: 1000.0,
+    ascender: 1011.0,
+    descender: -353.0,
+};
+const EXCALIFONT: Metrics = Metrics {
+    units_per_em: 1000.0,
+    ascender: 886.0,
+    descender: -374.0,
+};
+
+/// Asserts the laid-out lines sit at `expected` baselines, in order.
+fn assert_baselines(laid_out: &text::ResolvedText, expected: &[f64]) {
+    let actual = laid_out
+        .lines
+        .iter()
+        .map(|line| line.baseline)
+        .collect::<Vec<_>>();
+    assert_eq!(actual.len(), expected.len(), "line count: {actual:?}");
+    for (actual, expected) in actual.iter().zip(expected) {
+        assert!(
+            (actual - expected).abs() < 1e-9,
+            "baseline {actual} should be {expected}"
+        );
+    }
+}
+
+/// Lays `text` out in the font `OfficialFont::load` selects for `loaded_family`,
+/// positioned by `layout_family`'s metadata metrics.
+fn layout_in_family(
+    loaded_family: i32,
+    layout_family: i32,
+    text: &str,
+    font_size: f64,
+    line_height: f64,
+) -> text::ResolvedText {
+    text::OfficialFont::load(loaded_family, text)
+        .ok()
+        .unwrap_or_else(|| panic!("family {loaded_family} loads"))
+        .layout(
+            text,
+            text::TextLayout {
+                width: 200.0,
+                font_size,
+                line_height,
+                text_align: "center",
+                font_family: layout_family,
+            },
+        )
+        .ok()
+        .unwrap_or_else(|| panic!("family {layout_family} lays out"))
+}
+
+#[test]
+fn helvetica_text_is_positioned_by_excalidraw_metadata_metrics_not_the_shaping_font() {
+    // Helvetica (family 2) is shaped with the bundled Liberation Sans, but
+    // `getVerticalOffset` reads Helvetica's own `FONT_METADATA` metrics, so
+    // its baselines differ from Liberation Sans text (family 9) at the same
+    // size although one font shapes both (#105). Whichever family loaded the
+    // shared font, the layout's own family decides the baseline.
+    // `1.15 / 2 + (1577 - 471) / 2048 / 2` and `1.15 / 2 + (1854 - 434) / 2048 / 2`:
+    // the first-baseline factors at line height 1.15 for each family.
+    let helvetica_first = HELVETICA.first_baseline(28.0, 1.15);
+    assert_eq!(helvetica_first, 28.0 * 0.84501953125);
+    let liberation_first = LIBERATION_SANS.first_baseline(28.0, 1.15);
+    assert_eq!(liberation_first, 28.0 * 0.9216796875);
+    let line_step = 28.0 * 1.15;
+    for loaded_family in [2, 9] {
+        let helvetica = layout_in_family(loaded_family, 2, "Two lines\nof Helvetica", 28.0, 1.15);
+        assert_baselines(&helvetica, &[helvetica_first, helvetica_first + line_step]);
+        assert_eq!(helvetica.font_family, "Liberation Sans");
+
+        let liberation = layout_in_family(loaded_family, 9, "Two lines\nof Helvetica", 28.0, 1.15);
+        assert_baselines(
+            &liberation,
+            &[liberation_first, liberation_first + line_step],
+        );
+        assert_eq!(liberation.font_family, "Liberation Sans");
+    }
+}
+
+#[test]
+fn the_first_baseline_follows_the_family_metadata_metrics_at_any_line_height() {
+    // The layout positions the first baseline from the source family's
+    // metadata metrics and the line height it is given, whether that is the
+    // element's own or the one normalization restored for it (#108; the
+    // restore itself is tested in `normalization::tests`, and that a restored
+    // line height reaches the render in `legacy_font_strings_render_as_the_
+    // official_font_size_and_family_migration_in_every_format`). The values
+    // here are what the restore detects, `height / lines / fontSize`, for the
+    // first three and the family metadata line height for the rest.
+    for (family, text, font_size, line_height, metrics) in [
+        (2, "First", 20.0, 1.5, &HELVETICA),
+        (3, "Code", 20.0, 1.5, &CASCADIA),
+        (2, "Two\nlines", 12.0, 2.0, &HELVETICA),
+        (6, "Nunito", 20.0, 1.35, &NUNITO),
+        (5, "Control", 20.0, 1.25, &EXCALIFONT),
+        (2, "Helvetica", 20.0, 1.15, &HELVETICA),
+        (9, "Liberation", 20.0, 1.15, &LIBERATION_SANS),
+    ] {
+        let laid_out = layout_in_family(family, family, text, font_size, line_height);
+        let first = metrics.first_baseline(font_size, line_height);
+        let expected = (0..laid_out.lines.len())
+            .map(|index| first + index as f64 * font_size * line_height)
+            .collect::<Vec<_>>();
+        assert_eq!(expected.len(), text.split('\n').count(), "{text:?}");
+        assert_baselines(&laid_out, &expected);
+    }
+}
+
+#[test]
+fn crlf_and_cr_lines_lay_out_as_lf_lines_do() {
+    // The reference renders `text.replace(/\r\n?/g, "\n").split("\n")` and
+    // leaves `text` alone: the laid-out lines, their glyphs and their
+    // baselines are the same for every line ending, and only the per-line
+    // source text, which SVG carries in `data-source-text`, keeps the
+    // element's own bytes (#110).
+    let font = text::OfficialFont::load(5, "ab")
+        .ok()
+        .expect("Excalifont loads");
+    let lf = font
+        .layout("a\nb", excalifont_layout())
+        .ok()
+        .expect("LF text lays out");
+    let first = EXCALIFONT.first_baseline(20.0, 1.25);
+    assert_baselines(&lf, &[first, first + 25.0]);
+    let display_glyphs = |laid_out: &text::ResolvedText| {
+        laid_out
+            .lines
+            .iter()
+            .map(|line| {
+                (
+                    line.display_text.clone(),
+                    line.glyphs
+                        .iter()
+                        .map(|glyph| (glyph.id, glyph.x))
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    for (source, sources) in [("a\r\nb", ["a\r\n", "b"]), ("a\rb", ["a\r", "b"])] {
+        let other = font
+            .layout(source, excalifont_layout())
+            .ok()
+            .unwrap_or_else(|| panic!("{source:?} lays out"));
+        assert_baselines(&other, &[first, first + 25.0]);
+        assert_eq!(display_glyphs(&other), display_glyphs(&lf), "{source:?}");
+        assert_eq!(line_texts(&other), [(sources[0], "a"), (sources[1], "b")]);
+        assert!(other.missing_codepoints.is_empty(), "{source:?}");
+    }
+}
+
 /// Lays `source` out with fallbacks for `font_family`, against a fresh font
 /// list whose only face is the whole-text face `OfficialFont::load` selects.
 fn fallback_layout(font_family: i32, source: &str) -> text::ResolvedText {
@@ -2236,4 +2420,366 @@ fn a_rounded_image_charges_its_corner_clip_geometry_once_per_target_and_replays(
             .contains("image_corner_clip_geometry"),
         "an unrounded image has no corner clip to charge"
     );
+}
+
+// Pinned Rough.js and perfect-freehand path vectors, recomputed from the
+// geometry stage alone: normalization, then `rough_drawing` or
+// `freedraw::generate`, then the SVG path writers. The digests are the ones
+// the SVG renders of these scenes carried when they were pinned, so a change
+// here is a change in the generated geometry, not in the document around it.
+
+/// The normalized elements of `source` for a default SVG render.
+fn normalized_elements(source: &[u8]) -> Vec<NormalizedElement> {
+    let scene = SceneDocument::parse(source).expect("geometry scene is admitted");
+    crate::normalization::normalize_scene(
+        &scene,
+        CompatibilityRevision::REVISION_1,
+        OutputFormat::Svg,
+        |_| Ok::<_, ()>(()),
+    )
+    .expect("normalization succeeds")
+    .expect("the scene is in the implemented normalization slice")
+    .elements
+}
+
+/// The default request's generation budget for `source`: the ceilings a
+/// default render applies, which none of these scenes approach.
+fn default_budget(source: &NormalizedElement) -> rough::GenerationBudget {
+    let limits = ResourceLimits::default();
+    rough::GenerationBudget::new(
+        u64::from(limits.max_geometry_segments_per_element()),
+        limits.max_element_work_units(),
+        source
+            .normalization_work_units
+            .saturating_add(8)
+            .saturating_add(source.repair_work_units),
+    )
+}
+
+/// The SVG path data a default render writes for one Rough element, in
+/// document order: the fill's path when the element has a background, then the
+/// outline. Arrow decorations are not part of these pins.
+fn rough_svg_paths(source: &NormalizedElement) -> Vec<String> {
+    let drawing = rough_drawing(
+        source,
+        adjusted_roughness(source),
+        &mut default_budget(source),
+    )
+    .ok()
+    .unwrap_or_else(|| panic!("{} generates", source.source.id()));
+    let path_data = |path: &rough::Path| {
+        let mut data = String::new();
+        svg::push_rough_path(&mut data, path)
+            .ok()
+            .expect("path data writes");
+        data
+    };
+    drawing
+        .fill
+        .iter()
+        .map(|fill| path_data(&fill.path))
+        .chain(std::iter::once(path_data(&drawing.outline)))
+        .collect()
+}
+
+/// Every SVG path of every element of `source`, in document order.
+fn rough_svg_paths_of(source: &[u8]) -> Vec<String> {
+    normalized_elements(source)
+        .iter()
+        .flat_map(rough_svg_paths)
+        .collect()
+}
+
+/// The SVG path data a default render writes for one freedraw stroke.
+fn freedraw_svg_path(source: &NormalizedElement) -> String {
+    let NormalizedElementKind::Freedraw(freedraw) = &source.kind else {
+        panic!("{} is a freedraw element", source.source.id());
+    };
+    let path = freedraw::generate(freedraw, source.stroke_width, &mut default_budget(source))
+        .ok()
+        .unwrap_or_else(|| panic!("{} generates", source.source.id()));
+    svg::freedraw_path_data(&path)
+        .ok()
+        .expect("freedraw path data writes")
+}
+
+fn sha256_hex(data: &str) -> String {
+    crate::resource_accounting::sha256_hex(data.as_bytes())
+}
+
+/// The seven outline families the outline-shape render pins in every format:
+/// a rectangle, a rounded rectangle, an ellipse, a diamond, a rounded diamond,
+/// a line and a rounded line, none with a background.
+const OUTLINE_FAMILIES: &[u8] = br##"{
+  "type":"excalidraw","version":2,
+  "elements":[
+    {"id":"rectangle","type":"rectangle","x":10,"y":10,"width":80,"height":50,"seed":1,"updated":1},
+    {"id":"rounded-rectangle","type":"rectangle","x":110,"y":10,"width":80,"height":50,"roundness":{"type":3},"seed":2,"updated":1},
+    {"id":"ellipse","type":"ellipse","x":210,"y":10,"width":80,"height":50,"seed":3,"updated":1},
+    {"id":"diamond","type":"diamond","x":310,"y":10,"width":80,"height":50,"seed":4,"updated":1},
+    {"id":"rounded-diamond","type":"diamond","x":410,"y":10,"width":80,"height":50,"roundness":{"type":2},"seed":5,"updated":1},
+    {"id":"line","type":"line","x":10,"y":90,"width":160,"height":40,"points":[[0,0],[80,40],[160,10]],"seed":6,"updated":1},
+    {"id":"rounded-line","type":"line","x":210,"y":90,"width":160,"height":40,"points":[[0,0],[80,40],[160,10]],"roundness":{"type":2},"seed":7,"updated":1}
+  ],
+  "appState":{"viewBackgroundColor":"#ffffff"},"files":{}
+}"##;
+
+#[test]
+fn outline_operations_match_the_pinned_roughjs_vectors() {
+    let paths = rough_svg_paths_of(OUTLINE_FAMILIES);
+    assert_eq!(paths.len(), 7);
+    assert_eq!(
+        paths
+            .iter()
+            .map(|path| path.matches(['M', 'C']).count())
+            .collect::<Vec<_>>(),
+        [16, 32, 24, 16, 32, 8, 6]
+    );
+    assert_eq!(
+        sha256_hex(&paths.join("\n")),
+        "6d0e81bef0d09500efd1e8f97e78d2a998331d4a4e7683d0adbf596a695fbe80",
+        // The original vectors came from an independent pinned Rough.js 4.6.4 run,
+        // but that run was fed midpoint diamond vertices, which is not what the
+        // official export uses. The two diamond entries were re-derived after the
+        // vertex fix; their geometry is corroborated by official evidence at two
+        // sizes of differing parity, 170x110 and 130x95, where every path matches
+        // byte for byte. The five non-diamond entries are unchanged from the
+        // independent run.
+        "diamond vectors re-derived against official evidence; the rest are the \
+         independent pinned Rough.js 4.6.4 run"
+    );
+}
+
+#[test]
+fn architect_ellipse_uses_the_single_core_roughjs_stroke() {
+    // Roughness 0 is Excalidraw's "architect" style: Rough.js draws the
+    // ellipse's core stroke once instead of the sketchy double pass.
+    let source = std::str::from_utf8(OUTLINE_FAMILIES).unwrap().replacen(
+        "\"seed\":3,\"updated\"",
+        "\"roughness\":0,\"seed\":3,\"updated\"",
+        1,
+    );
+    let paths = rough_svg_paths_of(source.as_bytes());
+    let ellipse = &paths[2];
+    assert_eq!(ellipse.matches(['M', 'C']).count(), 42);
+    assert_eq!(
+        sha256_hex(ellipse),
+        "d74c0380e58abcacfb14e495406d5f38af852f32f37a0ea528ecb0f0454bec05"
+    );
+}
+
+#[test]
+fn cartoonist_outline_consumes_vertex_offsets_in_roughjs_order() {
+    // Roughness 2 is the "cartoonist" style: `preserveVertices` is off, so
+    // Rough.js draws the corner offsets from its seeded generator in the
+    // order the reference consumes them.
+    let paths = rough_svg_paths_of(
+        br##"{
+        "type":"excalidraw","version":2,
+        "elements":[{"id":"cartoonist","type":"rectangle","width":8,"height":5,
+            "roughness":2,"seed":8,"updated":1}],
+        "appState":{},"files":{}
+    }"##,
+    );
+    assert_eq!(paths.len(), 1);
+    assert_eq!(
+        sha256_hex(&paths[0]),
+        "fe33b396a5e457111305917fe234efdc6f856b635e7a55ab7fc5e5ed3083c19b"
+    );
+}
+
+#[test]
+fn cartoonist_rounded_outline_preserves_continuous_path_vertices() {
+    // A rounded shape keeps `preserveVertices` on whatever its roughness, so
+    // the path stays continuous through its arcs.
+    let source = std::str::from_utf8(OUTLINE_FAMILIES).unwrap().replacen(
+        "\"seed\":2,\"updated\"",
+        "\"roughness\":2,\"seed\":2,\"updated\"",
+        1,
+    );
+    let paths = rough_svg_paths_of(source.as_bytes());
+    assert_eq!(
+        sha256_hex(&paths[1]),
+        "e9be3be60300e30a0f37ea1c58c8a7b18ddf966d468a0afb6629b3fc5f81aa7f"
+    );
+}
+
+#[test]
+fn rough_fill_vectors_match_the_pinned_geometry_families() {
+    // One fill family per shape family: solid on a rounded rectangle,
+    // hachure on an ellipse, cross-hatch on a diamond and zigzag on a closed
+    // line loop. Each element writes its fill path and then its outline.
+    let paths = rough_svg_paths_of(
+        br##"{
+      "type":"excalidraw","version":2,
+      "elements":[
+        {"id":"rounded","type":"rectangle","x":10,"y":10,"width":80,"height":50,"roundness":{"type":3},"backgroundColor":"#e03131","fillStyle":"solid","seed":21,"updated":1},
+        {"id":"ellipse","type":"ellipse","x":110,"y":10,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"hachure","seed":22,"updated":1},
+        {"id":"diamond","type":"diamond","x":210,"y":10,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"cross-hatch","seed":23,"updated":1},
+        {"id":"loop","type":"line","x":310,"y":10,"width":80,"height":50,"points":[[0,0],[80,0],[80,50],[0,50],[0,0]],"backgroundColor":"#e03131","fillStyle":"zigzag","seed":24,"updated":1}
+      ],
+      "appState":{},"files":{}
+    }"##,
+    );
+    assert_eq!(paths.len(), 8);
+    assert_eq!(
+        sha256_hex(&paths.join("\n")),
+        // Moved with the diamond vertex fix: the scene carries two diamonds.
+        "d4e7528ff1a10f3ebbfbb8f3b404728ce7bef805930d56384652c2be6dc53f6d"
+    );
+}
+
+#[test]
+fn patterned_curved_boundaries_match_pinned_js_sampling() {
+    // Hachure over a curved boundary samples the curve the way the pinned
+    // Rough.js run does: the rounded rectangle's arcs and the rounded line's
+    // spline are both fill boundaries here.
+    let paths = rough_svg_paths_of(
+        br##"{
+      "type":"excalidraw","version":2,
+      "elements":[
+        {"id":"rounded-path","type":"rectangle","x":10,"y":10,"width":80,"height":50,"roundness":{"type":3},"backgroundColor":"#e03131","fillStyle":"hachure","seed":31,"updated":1},
+        {"id":"rounded-curve","type":"line","x":110,"y":10,"width":80,"height":50,"points":[[0,0],[80,0],[80,50],[0,50],[4,3]],"roundness":{"type":2},"backgroundColor":"#e03131","fillStyle":"hachure","seed":32,"updated":1}
+      ],
+      "appState":{},"files":{}
+    }"##,
+    );
+    assert_eq!(paths.len(), 4);
+    assert_eq!(
+        sha256_hex(&paths[0]),
+        "c211c4346fa692dc825164e947714aaed5b66e99ae2fcecdfe43ef656683bfb0",
+        "rounded path fill was generated independently with pinned Rough.js 4.6.4",
+    );
+    assert_eq!(
+        sha256_hex(&paths[2]),
+        "9176fe003ade6804f0f3e9fe2b79aa67835300b4999ac2c72e43e639d0748f06",
+        "rounded curve fill was generated independently with pinned Rough.js 4.6.4",
+    );
+}
+
+#[test]
+fn line_fill_uses_the_exact_export_zoom_loop_threshold() {
+    // The export treats a line as closed, and fills it, when its last point
+    // sits within `LINE_CONFIRM_THRESHOLD / zoom` of its first; `[6.4, 4.8]`
+    // is exactly 8 away from the origin and `[6.408, 4.806]` just beyond.
+    let elements = normalized_elements(
+        br##"{
+      "type":"excalidraw","version":2,
+      "elements":[
+        {"id":"at-threshold","type":"line","x":10,"y":10,"width":40,"height":30,"points":[[0,0],[40,0],[40,30],[6.4,4.8]],"backgroundColor":"#e03131","fillStyle":"solid","seed":51,"updated":1},
+        {"id":"outside-threshold","type":"line","x":60,"y":10,"width":40,"height":30,"points":[[0,0],[40,0],[40,30],[6.408,4.806]],"backgroundColor":"#e03131","fillStyle":"solid","seed":52,"updated":1}
+      ],
+      "appState":{},"files":{}
+    }"##,
+    );
+    let drawing = |element: &NormalizedElement| {
+        rough_drawing(
+            element,
+            adjusted_roughness(element),
+            &mut default_budget(element),
+        )
+        .ok()
+        .expect("line generates")
+    };
+    let closed = drawing(&elements[0]);
+    assert!(closed.fill.is_some(), "the loop within the threshold fills");
+    assert!(closed.shape.svg_uses_even_odd_fill());
+    assert_eq!(rough_svg_paths(&elements[0]).len(), 2);
+    let open = drawing(&elements[1]);
+    assert!(open.fill.is_none(), "the loop beyond the threshold is open");
+    assert_eq!(rough_svg_paths(&elements[1]).len(), 1);
+}
+
+#[test]
+fn repeated_loop_endpoint_keeps_the_polygon_generators_extra_close() {
+    // Rough.js closes a polygon by drawing back to its first point; a line
+    // whose last point already repeats the first still gets that closing
+    // segment, degenerate as it is, in both passes.
+    let paths = rough_svg_paths_of(
+        br##"{
+      "type":"excalidraw","version":2,
+      "elements":[
+        {"id":"repeated","type":"line","x":10,"y":10,"width":40,"height":30,"points":[[0,0],[40,0],[40,30],[0,0]],"backgroundColor":"#e03131","fillStyle":"solid","seed":61,"updated":1}
+      ],
+      "appState":{},"files":{}
+    }"##,
+    );
+    let [_fill, outline] = paths.as_slice() else {
+        panic!("a filled polygon writes its fill and outline: {paths:?}");
+    };
+    assert!(
+        outline.ends_with("M0 0 C0 0, 0 0, 0 0 M0 0 C0 0, 0 0, 0 0"),
+        "unexpected repeated-close outline: {outline}",
+    );
+}
+
+#[test]
+fn freedraw_strokes_match_the_pinned_perfect_freehand_vectors() {
+    // perfect-freehand 1.2.0 as Excalidraw v0.18.1 drives it: simulated
+    // pressure, explicit pressure samples, a pressureless dot, and omitted
+    // samples taking the library's defaults.
+    for (source, expected_digest) in [
+        (
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"simulated","type":"freedraw","x":10,"y":20,"width":80,"height":30,"points":[[0,0],[20,10],[40,5],[60,30],[80,20]],"pressures":[],"simulatePressure":true,"strokeColor":"#e03131","strokeWidth":2,"opacity":80,"updated":1}],"appState":{},"files":{}}"##.as_slice(),
+            "9adff0c560710203718626bc817520baba2819a06898054e0b55d52a7cccd41e",
+        ),
+        (
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"pressure","type":"freedraw","width":50,"height":30,"points":[[0,0],[15,20],[35,10],[50,30]],"pressures":[0.1,0.4,0.9,0.3],"simulatePressure":false,"strokeWidth":3,"updated":1}],"appState":{},"files":{}}"##.as_slice(),
+            "0bb4552d75b1f4b8a39f1d5721b052c288db07d3d51e7b5303ab3c6ffffd0f1e",
+        ),
+        (
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"dot","type":"freedraw","points":[],"pressures":[],"simulatePressure":false,"strokeWidth":3,"updated":1}],"appState":{},"files":{}}"##.as_slice(),
+            "4a84f3104dec0d94b7a702c18b64304d0affeb8c00d21e8e08a4f0731236078a",
+        ),
+        (
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"defaults","type":"freedraw","width":40,"height":10,"points":[[0,0],[20,10],[40,5]],"simulatePressure":false,"strokeWidth":2,"updated":1}],"appState":{},"files":{}}"##.as_slice(),
+            "98f047202f13fe696e5e6c715b343696f61f6460497f110bd2efae09e009289c",
+        ),
+    ] {
+        let elements = normalized_elements(source);
+        let path = freedraw_svg_path(&elements[0]);
+        assert_eq!(
+            sha256_hex(&path),
+            expected_digest,
+            "{}",
+            elements[0].source.id()
+        );
+    }
+}
+
+#[test]
+fn ellipse_ignores_inapplicable_roundness_without_consuming_randomness() {
+    // The revision-1 manifest does not read `/roundness` on an ellipse, so a
+    // rounded ellipse normalizes as a plain one and draws the same vectors:
+    // the seeded generator is consumed identically.
+    let rounded_source = std::str::from_utf8(OUTLINE_FAMILIES).unwrap().replacen(
+        "\"seed\":3,\"updated\"",
+        "\"roundness\":{\"type\":2},\"seed\":3,\"updated\"",
+        1,
+    );
+    let plain = normalized_elements(OUTLINE_FAMILIES);
+    let rounded = normalized_elements(rounded_source.as_bytes());
+    assert_eq!(rounded[2].roundness, None);
+    assert_eq!(rough_svg_paths(&plain[2]), rough_svg_paths(&rounded[2]));
+}
+
+#[test]
+fn a_legacy_draw_element_normalizes_as_the_equivalent_line() {
+    // Scenes saved before freedraw existed carry `type: "draw"`; the official
+    // restore turns it into a line with the same points, so the two normalize
+    // to the same linear kind and generate the same geometry.
+    let source = |kind: &str| {
+        format!(
+            r#"{{"type":"excalidraw","version":2,"elements":[{{"id":"legacy","type":"{kind}","x":10,"y":20,"width":60,"height":20,"points":[[5,3],[30,20],[65,10]],"strokeWidth":2,"seed":17,"updated":1}}],"appState":{{}},"files":{{}}}}"#
+        )
+    };
+    let legacy = normalized_elements(source("draw").as_bytes());
+    let line = normalized_elements(source("line").as_bytes());
+    assert_eq!(legacy[0].kind, line[0].kind);
+    assert!(matches!(legacy[0].kind, NormalizedElementKind::Linear(_)));
+    assert_eq!(
+        (legacy[0].x, legacy[0].y, legacy[0].width, legacy[0].height),
+        (line[0].x, line[0].y, line[0].width, line[0].height)
+    );
+    assert_eq!(rough_svg_paths(&legacy[0]), rough_svg_paths(&line[0]));
 }

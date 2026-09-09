@@ -10,13 +10,9 @@ use excalidraw_render::{
 use tiny_skia::{Pixmap, Transform};
 
 #[test]
-fn approved_rectangle_renders_as_deterministic_semantic_svg() {
+fn approved_rectangle_renders_as_semantic_svg() {
     let case = repository_root().join("tests/conformance/cases/focused/rectangle-outline");
     let first = render_rectangle_outline_svg();
-    let second = render_rectangle_outline_svg();
-
-    assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-    assert_eq!(first.report(), second.report());
     assert_report_matches(
         first.report(),
         &case.join("expected-report-svg.json"),

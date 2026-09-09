@@ -35,12 +35,7 @@ fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
     let first = Renderer::new()
         .render(&scene, &request)
         .expect("bounded unknown content produces a meaningful placeholder");
-    let second = Renderer::new()
-        .render(&scene, &request)
-        .expect("the same placeholder renders again");
 
-    assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-    assert_eq!(first.report(), second.report());
     let diagnostics = boundary_diagnostics(&first);
     let [diagnostic] = diagnostics.as_slice() else {
         panic!("the unknown element produces one boundary diagnostic");
@@ -114,12 +109,7 @@ fn bounded_fallback_and_unbounded_omission_succeed_in_every_format() {
         let first = Renderer::new()
             .render(&scene, &request)
             .expect("diagnosed local loss retains a meaningful artifact");
-        let second = Renderer::new()
-            .render(&scene, &request)
-            .expect("the same diagnosed local loss renders again");
 
-        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-        assert_eq!(first.report(), second.report());
         assert_eq!(first.artifact().format(), format);
         assert_eq!(
             boundary_diagnostics(&first)

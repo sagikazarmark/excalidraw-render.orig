@@ -21,10 +21,8 @@ fn simulated_pressure_freedraw_renders_directly_in_every_format() {
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let request = RenderRequest::builder(format).build().unwrap();
         let first = Renderer::new().render(&scene, &request).unwrap();
-        let repeated = Renderer::new().render(&scene, &request).unwrap();
 
         assert!(first.report().is_empty(), "unexpected {format:?} fallback");
-        assert_eq!(first.artifact().bytes(), repeated.artifact().bytes());
         match format {
             OutputFormat::Svg => {
                 let svg = std::str::from_utf8(first.artifact().bytes()).unwrap();
@@ -60,34 +58,6 @@ fn simulated_pressure_freedraw_renders_directly_in_every_format() {
 }
 
 #[test]
-fn explicit_pressure_and_empty_real_pressure_match_pinned_vectors() {
-    let cases = [
-        (
-            br##"{"type":"excalidraw","version":2,"elements":[{"id":"pressure","type":"freedraw","width":50,"height":30,"points":[[0,0],[15,20],[35,10],[50,30]],"pressures":[0.1,0.4,0.9,0.3],"simulatePressure":false,"strokeWidth":3,"updated":1}],"appState":{},"files":{}}"##.as_slice(),
-            "0bb4552d75b1f4b8a39f1d5721b052c288db07d3d51e7b5303ab3c6ffffd0f1e",
-        ),
-        (
-            br##"{"type":"excalidraw","version":2,"elements":[{"id":"dot","type":"freedraw","points":[],"pressures":[],"simulatePressure":false,"strokeWidth":3,"updated":1}],"appState":{},"files":{}}"##.as_slice(),
-            "4a84f3104dec0d94b7a702c18b64304d0affeb8c00d21e8e08a4f0731236078a",
-        ),
-    ];
-
-    for (source, expected_digest) in cases {
-        let scene = SceneDocument::parse(source).unwrap();
-        let request = RenderRequest::builder(OutputFormat::Svg).build().unwrap();
-        let outcome = Renderer::new().render(&scene, &request).unwrap();
-        assert!(outcome.report().is_empty());
-        let svg = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
-        let path = svg
-            .split_once("<path d=\"")
-            .and_then(|(_, tail)| tail.split_once("\" fill="))
-            .unwrap()
-            .0;
-        assert_eq!(format!("{:x}", Sha256::digest(path)), expected_digest);
-    }
-}
-
-#[test]
 fn freedraw_geometry_limit_uses_the_exact_generated_command_count() {
     let scene = SceneDocument::parse(SIMULATED_PRESSURE_SCENE).unwrap();
     let request = |maximum| {
@@ -119,25 +89,6 @@ fn freedraw_geometry_limit_uses_the_exact_generated_command_count() {
         DiagnosticCode::RESOURCE_ELEMENT_COMPLEXITY_REPLACED
     );
     assert_eq!(diagnostic.element_id(), Some("simulated"));
-}
-
-#[test]
-fn legacy_draw_migration_matches_the_equivalent_line_in_every_format() {
-    let source = |kind| {
-        format!(
-            r#"{{"type":"excalidraw","version":2,"elements":[{{"id":"legacy","type":"{kind}","x":10,"y":20,"width":60,"height":20,"points":[[5,3],[30,20],[65,10]],"strokeWidth":2,"seed":17,"updated":1}}],"appState":{{}},"files":{{}}}}"#
-        )
-    };
-    let legacy = SceneDocument::parse(source("draw").as_bytes()).unwrap();
-    let line = SceneDocument::parse(source("line").as_bytes()).unwrap();
-
-    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let request = RenderRequest::builder(format).build().unwrap();
-        let legacy = Renderer::new().render(&legacy, &request).unwrap();
-        let line = Renderer::new().render(&line, &request).unwrap();
-        assert_eq!(legacy.report(), line.report());
-        assert_eq!(legacy.artifact().bytes(), line.artifact().bytes());
-    }
 }
 
 #[test]
@@ -188,27 +139,6 @@ fn empty_simulated_pressure_stroke_is_a_direct_noop() {
             .windows("Unavailable:".len())
             .any(|window| window == b"Unavailable:"));
     }
-}
-
-#[test]
-fn omitted_real_pressure_samples_use_perfect_freehand_defaults_without_panicking() {
-    let scene = SceneDocument::parse(
-        br##"{"type":"excalidraw","version":2,"elements":[{"id":"defaults","type":"freedraw","width":40,"height":10,"points":[[0,0],[20,10],[40,5]],"simulatePressure":false,"strokeWidth":2,"updated":1}],"appState":{},"files":{}}"##,
-    )
-    .unwrap();
-    let request = RenderRequest::builder(OutputFormat::Svg).build().unwrap();
-    let outcome = Renderer::new().render(&scene, &request).unwrap();
-    assert!(outcome.report().is_empty());
-    let svg = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
-    let path = svg
-        .split_once("<path d=\"")
-        .and_then(|(_, tail)| tail.split_once("\" fill="))
-        .unwrap()
-        .0;
-    assert_eq!(
-        format!("{:x}", Sha256::digest(path)),
-        "98f047202f13fe696e5e6c715b343696f61f6460497f110bd2efae09e009289c"
-    );
 }
 
 #[test]

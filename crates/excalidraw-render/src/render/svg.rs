@@ -1667,7 +1667,9 @@ fn push_svg_drawing<W: SvgSink + ?Sized>(
     Ok(())
 }
 
-fn push_rough_path<W: SvgSink + ?Sized>(
+/// Writes a Rough.js path as SVG path data: the operations space-separated,
+/// each coordinate in the two-decimal form Rough.js emits.
+pub(super) fn push_rough_path<W: SvgSink + ?Sized>(
     output: &mut W,
     path: &Path,
 ) -> Result<(), FormatEncodeError> {
@@ -1711,7 +1713,12 @@ fn push_rough_path<W: SvgSink + ?Sized>(
     Ok(())
 }
 
-fn freedraw_path_data(path: &super::freedraw::Path) -> Result<String, FormatEncodeError> {
+/// The SVG path data for a freedraw outline, in the form Excalidraw's
+/// `getSvgPathFromStroke` emits: `M x,y Q` then control/end pairs, `L` for a
+/// straight segment and `Z` to close, every coordinate cut to two decimals.
+pub(super) fn freedraw_path_data(
+    path: &super::freedraw::Path,
+) -> Result<String, FormatEncodeError> {
     let mut output = String::new();
     output
         .try_reserve(path.operations.len().saturating_mul(64))
@@ -1847,4 +1854,36 @@ fn push_base64<W: SvgSink + ?Sized>(output: &mut W, bytes: &[u8]) -> Result<(), 
 
 fn svg_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("SVG plan exceeds serializer capacity".to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{push_escaped_attribute, push_escaped_text};
+
+    /// `data-source-text` carries a text element's own bytes: the markup
+    /// characters and every line-ending or tab byte are escaped as character
+    /// references so a `\r` survives attribute-value normalization (#110).
+    #[test]
+    fn attribute_escaping_keeps_line_endings_as_character_references() {
+        let escaped = |value: &str| {
+            let mut output = String::new();
+            push_escaped_attribute(&mut output, value);
+            output
+        };
+        assert_eq!(escaped("a\nb"), "a&#10;b");
+        assert_eq!(escaped("a\r\nb"), "a&#13;&#10;b");
+        assert_eq!(escaped("a\rb"), "a&#13;b");
+        assert_eq!(escaped("\t<\"&\">"), "&#9;&lt;&quot;&amp;&quot;&gt;");
+        assert_eq!(escaped("plain ünïcödé"), "plain ünïcödé");
+    }
+
+    /// Text content escapes only the markup characters; a quote is literal
+    /// there, and whitespace is preserved as written under
+    /// `xml:space="preserve"`.
+    #[test]
+    fn text_escaping_leaves_quotes_and_whitespace_literal() {
+        let mut output = String::new();
+        push_escaped_text(&mut output, "a \"b\" <c> & d\t");
+        assert_eq!(output, "a \"b\" &lt;c&gt; &amp; d\t");
+    }
 }

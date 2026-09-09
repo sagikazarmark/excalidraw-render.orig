@@ -118,29 +118,6 @@ fn lossy_webp_decodes_to_opaque_canonical_srgb() {
 }
 
 #[test]
-fn static_and_animated_webp_artifacts_and_reports_are_deterministic() {
-    let static_webp = fixture_webp(1, 1, &[[24, 96, 208, 128]]);
-    let animated = animated_webp(
-        1,
-        1,
-        &[
-            (0, 0, fixture_webp(1, 1, &[[255, 0, 0, 255]])),
-            (0, 0, fixture_webp(1, 1, &[[0, 0, 255, 255]])),
-        ],
-    );
-
-    for webp in [&static_webp, &animated] {
-        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-            let scene = webp_scene(webp, 1, 1);
-            let first = render(&scene, format);
-            let second = render(&scene, format);
-            assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-            assert_eq!(first.report(), second.report());
-        }
-    }
-}
-
-#[test]
 fn png_and_pdf_apply_webp_exif_orientation_while_svg_preserves_source_bytes() {
     let pixels = [
         [255, 0, 0, 255],

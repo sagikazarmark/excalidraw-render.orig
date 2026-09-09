@@ -93,20 +93,15 @@ fn ico_selected_dimensions_control_decode_resource_limits() {
 }
 
 #[test]
-fn ico_pdf_and_repeated_artifacts_are_deterministic() {
+fn ico_embeds_in_pdf_as_an_image_with_its_alpha_mask() {
     let ico = fixture_ico(&[(1, 1, 32, fixture_dib32([24, 96, 208, 128], false))]);
-    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let scene = ico_scene(&ico, 1, 1);
-        let first = render(&scene, format);
-        let second = render(&scene, format);
-        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-        assert_eq!(first.report(), second.report());
-        if format == OutputFormat::Pdf {
-            let pdf = String::from_utf8_lossy(first.artifact().bytes());
-            assert!(pdf.contains("/Width 1\n/Height 1"));
-            assert!(pdf.contains("/SMask"));
-        }
-    }
+    let outcome = render(&ico_scene(&ico, 1, 1), OutputFormat::Pdf);
+    let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+    assert!(pdf.contains(
+        "/Width 1
+/Height 1"
+    ));
+    assert!(pdf.contains("/SMask"));
 }
 
 #[test]

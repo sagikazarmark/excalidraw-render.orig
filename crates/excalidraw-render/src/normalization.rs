@@ -590,6 +590,81 @@ pub(crate) fn normalize_scene<E>(
     )
 }
 
+/// The diagnostics revision-1 normalization emits for `scene`, in the order
+/// the session's final report lists them, with the normalized outcome. The
+/// session retains each normalization diagnostic under the source owner and
+/// member position of the event that carried it (`DiagnosticOrder::retained`)
+/// and sorts the report (`render::sort_diagnostics`); this does the same, so a
+/// test at this seam asserts the order a render would report for diagnostics
+/// normalization alone produces. `frame_names` is the request's frame-name
+/// control as the session derives it; `supplemental_assets` decides which file
+/// records have a supplemental payload.
+#[cfg(test)]
+pub(crate) fn reported_diagnostics(
+    scene: &SceneDocument,
+    format: OutputFormat,
+    frame_names: bool,
+    supplemental_assets: &SupplementalAssets,
+) -> (Vec<CompatibilityDiagnostic>, NormalizationOutcome) {
+    use crate::outcome::DiagnosticAttribution;
+
+    let policy = crate::catalog::for_revision(CompatibilityRevision::REVISION_1)
+        .expect("revision 1 is cataloged")
+        .scene_surface();
+    let mut diagnostics: Vec<CompatibilityDiagnostic> = Vec::new();
+    let normalized = normalize_scene_with_assets(
+        scene,
+        CompatibilityRevision::REVISION_1,
+        policy,
+        format,
+        supplemental_assets,
+        frame_names,
+        usize::MAX,
+        |event| {
+            if let NormalizationEvent::Diagnostic {
+                mut diagnostic,
+                source_order,
+                source_position,
+                ..
+            } = event
+            {
+                diagnostic.order = DiagnosticOrder::retained(
+                    Some(source_order),
+                    Some(source_position),
+                    u64::try_from(diagnostics.len()).unwrap_or(u64::MAX),
+                    DiagnosticAttribution::SceneGlobal,
+                );
+                diagnostics.push(diagnostic);
+            }
+            Ok::<_, ()>(())
+        },
+    )
+    .expect("normalization succeeds")
+    .expect("the scene is in the implemented normalization slice");
+    crate::render::sort_diagnostics(&mut diagnostics);
+    (diagnostics, normalized)
+}
+
+/// `(code, pointer)` per diagnostic: what most assertions on a report compare.
+#[cfg(test)]
+pub(crate) fn codes_and_pointers(
+    diagnostics: &[CompatibilityDiagnostic],
+) -> Vec<(DiagnosticCode, &str)> {
+    diagnostics
+        .iter()
+        .map(|diagnostic| (diagnostic.code(), diagnostic.json_pointer()))
+        .collect()
+}
+
+/// The pointer of each diagnostic, in report order.
+#[cfg(test)]
+pub(crate) fn pointers(diagnostics: &[CompatibilityDiagnostic]) -> Vec<&str> {
+    diagnostics
+        .iter()
+        .map(CompatibilityDiagnostic::json_pointer)
+        .collect()
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn normalize_scene_with_assets<E>(
     scene: &SceneDocument,
@@ -3646,10 +3721,326 @@ fn push_lower_hex(output: &mut String, bytes: &[u8]) {
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_scene, NormalizedElementKind, NormalizedRoundness};
-    use crate::{
-        CompatibilityRevision, DiagnosticCode, DiagnosticEffect, OutputFormat, SceneDocument,
+    use super::{
+        codes_and_pointers, normalize_scene, pointers, reported_diagnostics, NormalizationOutcome,
+        NormalizedElementKind, NormalizedRoundness,
     };
+    use crate::{
+        CompatibilityDiagnostic, CompatibilityRevision, DiagnosticCode, DiagnosticEffect,
+        OutputFormat, SceneDocument, SupplementalAssets,
+    };
+
+    /// The diagnostics a default SVG render of `source` reports from
+    /// normalization, in report order, with the normalized outcome.
+    fn reported(source: &[u8]) -> (Vec<CompatibilityDiagnostic>, NormalizationOutcome) {
+        reported_for(source, OutputFormat::Svg, true)
+    }
+
+    /// [`reported`] for `format`, with the request's frame-name control set
+    /// to `frame_names`.
+    fn reported_for(
+        source: &[u8],
+        format: OutputFormat,
+        frame_names: bool,
+    ) -> (Vec<CompatibilityDiagnostic>, NormalizationOutcome) {
+        let scene = SceneDocument::parse(source).expect("normalization vector is admitted");
+        reported_diagnostics(&scene, format, frame_names, &SupplementalAssets::default())
+    }
+
+    #[test]
+    fn revision_1_identity_timestamp_and_seed_repairs_are_source_located() {
+        let (diagnostics, normalized) = reported(
+            br##"{"type":"excalidraw","version":2,"elements":[{"type":"rectangle","width":180,"height":100,"seed":0}],"appState":{},"files":{}}"##,
+        );
+        assert_eq!(
+            codes_and_pointers(&diagnostics),
+            [
+                (
+                    DiagnosticCode::NORMALIZATION_MISSING_ELEMENT_ID,
+                    "/elements/0/id"
+                ),
+                (
+                    DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
+                    "/elements/0/seed"
+                ),
+                (
+                    DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                    "/elements/0/updated"
+                ),
+            ]
+        );
+        assert_eq!(diagnostics[0].effects(), &[DiagnosticEffect::InputRepair]);
+        assert_eq!(
+            diagnostics[1].effects(),
+            &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual]
+        );
+        assert_eq!(diagnostics[2].effects(), &[DiagnosticEffect::InputRepair]);
+        // The missing identity repair exposes the normalized identity, and
+        // every repair on the element is attributed to it.
+        let generated_id =
+            "generated-32182208bba6af9fdf6995f59ee6a4097851c4655cf10d9e0681746fc495b792";
+        assert!(diagnostics
+            .iter()
+            .all(|diagnostic| diagnostic.element_id() == Some(generated_id)));
+        for diagnostic in &diagnostics {
+            let value = serde_json::to_value(diagnostic).expect("diagnostic serializes");
+            assert_eq!(
+                value["details"],
+                serde_json::json!({
+                    "kind": "compatibility",
+                    "recovery": "repaired",
+                    "recipe_id": null,
+                })
+            );
+        }
+        // The repaired values are the ones an already-normalized scene would
+        // carry: the generated identity and the pinned seed for it. A scene
+        // that spells them out normalizes to the same element and repairs
+        // nothing.
+        assert_eq!(normalized.elements[0].source.id(), generated_id);
+        assert_eq!(normalized.elements[0].seed, 642_336_616);
+        let (diagnostics, already_normalized) = reported(
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"generated-32182208bba6af9fdf6995f59ee6a4097851c4655cf10d9e0681746fc495b792","type":"rectangle","width":180,"height":100,"seed":642336616,"updated":0}],"appState":{},"files":{}}"##,
+        );
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        assert_eq!(already_normalized.elements[0].source.id(), generated_id);
+        assert_eq!(
+            already_normalized.elements[0].seed,
+            normalized.elements[0].seed
+        );
+        assert_eq!(
+            already_normalized.elements[0].kind,
+            normalized.elements[0].kind
+        );
+    }
+
+    #[test]
+    fn repair_diagnostics_carry_the_format_they_were_produced_for() {
+        let source = br##"{"type":"excalidraw","version":2,"elements":[{"type":"rectangle","width":30,"height":20,"seed":0}],"appState":{},"files":{}}"##;
+        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+            let (diagnostics, _) = reported_for(source, format, true);
+            assert_eq!(diagnostics.len(), 3, "{format:?}");
+            assert!(
+                diagnostics
+                    .iter()
+                    .all(|diagnostic| diagnostic.format() == format),
+                "{format:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn revision_1_rekeys_each_later_duplicate_identity_in_source_order() {
+        let (diagnostics, normalized) = reported(
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"duplicate","type":"rectangle","x":0,"y":0,"width":80,"height":60,"seed":1,"updated":1},{"id":"duplicate","type":"rectangle","x":100,"y":0,"width":80,"height":60,"seed":1,"updated":1}],"appState":{},"files":{}}"##,
+        );
+        let [diagnostic] = diagnostics.as_slice() else {
+            panic!("the later duplicate produces exactly one repair diagnostic: {diagnostics:?}");
+        };
+        assert_eq!(
+            diagnostic.code(),
+            DiagnosticCode::NORMALIZATION_DUPLICATE_ELEMENT_ID
+        );
+        assert_eq!(diagnostic.json_pointer(), "/elements/1/id");
+        assert_eq!(
+            diagnostic.element_id(),
+            Some("generated-3180035c77cb940ec4c79c4729441c64bad5072d494bd981721e7e1b9c85c3a3")
+        );
+        assert_eq!(diagnostic.effects(), &[DiagnosticEffect::InputRepair]);
+        // Both elements survive: the first keeps its identity.
+        assert_eq!(
+            normalized
+                .elements
+                .iter()
+                .map(|element| element.source.id())
+                .collect::<Vec<_>>(),
+            [
+                "duplicate",
+                "generated-3180035c77cb940ec4c79c4729441c64bad5072d494bd981721e7e1b9c85c3a3",
+            ]
+        );
+    }
+
+    #[test]
+    fn generated_identity_collision_is_rekeyed_without_displacing_the_first_owner() {
+        // The first element already carries the identity the second would
+        // generate, so the second is rekeyed once more and the first is left
+        // alone: one diagnostic, on the element that had no identity.
+        let (diagnostics, normalized) = reported(
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"generated-d02dc903e43157ace063528d673d5657c6e6433aa467e643d1b7a2cb9296386a","type":"rectangle","x":0,"width":40,"height":40,"seed":1,"updated":1},{"type":"rectangle","x":100,"width":40,"height":40,"seed":1,"updated":1}],"appState":{},"files":{}}"##,
+        );
+        let [diagnostic] = diagnostics.as_slice() else {
+            panic!("the missing identity produces one repair diagnostic: {diagnostics:?}");
+        };
+        assert_eq!(
+            diagnostic.code(),
+            DiagnosticCode::NORMALIZATION_MISSING_ELEMENT_ID
+        );
+        assert_eq!(diagnostic.json_pointer(), "/elements/1/id");
+        assert_eq!(
+            diagnostic.element_id(),
+            Some("generated-604f36b7127cb8ae0e242c4cf18cbb0f437f585790ef41c6f0edaa07a7676e63")
+        );
+        assert_eq!(
+            normalized.elements[0].source.id(),
+            "generated-d02dc903e43157ace063528d673d5657c6e6433aa467e643d1b7a2cb9296386a"
+        );
+    }
+
+    #[test]
+    fn invalid_frame_rendering_controls_are_repaired_for_empty_scenes() {
+        let (diagnostics, normalized) = reported(
+            br##"{"type":"excalidraw","version":2,"elements":[],"appState":{"frameRendering":{"enabled":false,"clip":"yes"}},"files":{}}"##,
+        );
+        let [diagnostic] = diagnostics.as_slice() else {
+            panic!("the invalid frame control produces one diagnostic: {diagnostics:?}");
+        };
+        assert_eq!(
+            diagnostic.code(),
+            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE
+        );
+        assert_eq!(diagnostic.json_pointer(), "/appState/frameRendering/clip");
+        assert_eq!(
+            diagnostic.effects(),
+            &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual]
+        );
+        assert!(!normalized.frame_rendering.enabled);
+        assert!(
+            normalized.frame_rendering.clip,
+            "the invalid clip is defaulted"
+        );
+    }
+
+    #[test]
+    fn assigned_element_repairs_are_reported_before_later_rendering_slices() {
+        let (diagnostics, _) = reported(
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"line","type":"line","width":10,"height":10,"points":"invalid","seed":1,"updated":1},{"id":"image","type":"image","width":10,"height":10,"status":"future","seed":1,"updated":1}],"appState":{},"files":{}}"##,
+        );
+        assert_eq!(
+            pointers(&diagnostics),
+            [
+                "/elements/0/points",
+                "/elements/1/status",
+                "/elements/1/fileId",
+            ]
+        );
+    }
+
+    #[test]
+    fn frame_name_diagnostics_follow_the_requested_frame_name_control() {
+        // With frame names disabled by the request, a malformed `name` is
+        // never read and so never diagnosed, whatever the scene's own
+        // `frameRendering.name` says.
+        let name_only = br##"{"type":"excalidraw","version":2,"elements":[{"id":"frame","type":"frame","width":10,"height":10,"name":3,"seed":1,"updated":1}],"appState":{},"files":{}}"##;
+        let (diagnostics, _) = reported_for(name_only, OutputFormat::Svg, false);
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+
+        // The request's frame-name control overrides a scene that turned
+        // frame names off: the name is read and its value diagnosed.
+        let scene_disabled = br##"{"type":"excalidraw","version":2,"elements":[{"id":"frame","type":"frame","width":10,"height":10,"name":3,"seed":1,"updated":1}],"appState":{"frameRendering":{"name":false}},"files":{}}"##;
+        let (diagnostics, _) = reported_for(scene_disabled, OutputFormat::Svg, true);
+        assert_eq!(
+            codes_and_pointers(&diagnostics),
+            [(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                "/elements/0/name"
+            )]
+        );
+    }
+
+    #[test]
+    fn normalization_reports_follow_preserved_root_owner_order() {
+        // `files` precedes `elements` in this document, so the file record's
+        // repairs come first although the element references the file.
+        let (diagnostics, _) = reported(
+            br##"{"type":"excalidraw","version":2,"files":{"asset":{}},"elements":[{"id":"image","type":"image","width":10,"height":10,"fileId":"asset","status":"future","seed":1,"updated":1}],"appState":{}}"##,
+        );
+        assert_eq!(
+            pointers(&diagnostics),
+            [
+                "/files/asset/id",
+                "/files/asset/dataURL",
+                "/files/asset/created",
+                "/elements/0/status",
+            ]
+        );
+    }
+
+    #[test]
+    fn normalization_diagnostics_follow_total_source_and_field_order() {
+        let (diagnostics, _) = reported(
+            br##"{"type":"excalidraw","version":2,"elements":[{"type":"rectangle","x":0,"width":40,"height":40,"seed":0},{"id":"same","type":"rectangle","x":50,"width":40,"height":40,"seed":0},{"id":"same","type":"rectangle","x":100,"width":40,"height":40,"seed":0}],"appState":{},"files":{}}"##,
+        );
+        assert_eq!(
+            codes_and_pointers(&diagnostics),
+            [
+                (
+                    DiagnosticCode::NORMALIZATION_MISSING_ELEMENT_ID,
+                    "/elements/0/id",
+                ),
+                (
+                    DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
+                    "/elements/0/seed",
+                ),
+                (
+                    DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                    "/elements/0/updated",
+                ),
+                (
+                    DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
+                    "/elements/1/seed",
+                ),
+                (
+                    DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                    "/elements/1/updated",
+                ),
+                (
+                    DiagnosticCode::NORMALIZATION_DUPLICATE_ELEMENT_ID,
+                    "/elements/2/id",
+                ),
+                (
+                    DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
+                    "/elements/2/seed",
+                ),
+                (
+                    DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                    "/elements/2/updated",
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn normalization_order_respects_source_member_position() {
+        // `seed` is spelled before `id` in the second element, so its repair
+        // is reported first although identity is repaired first.
+        let (diagnostics, _) = reported(
+            br##"{"type":"excalidraw","version":2,"elements":[{"id":"same","type":"rectangle","x":0,"width":40,"height":40,"seed":1,"updated":1},{"seed":0,"id":"same","type":"rectangle","x":50,"width":40,"height":40,"updated":1}],"appState":{},"files":{}}"##,
+        );
+        assert_eq!(
+            pointers(&diagnostics),
+            ["/elements/1/seed", "/elements/1/id"]
+        );
+    }
+
+    #[test]
+    fn app_state_diagnostics_follow_source_member_order_across_surface_and_normalization() {
+        // The unmatched members come from the scene-surface classification and
+        // the frame-rendering control from compatibility normalization; spec
+        // §11.3 orders them by the `appState` member they belong to regardless
+        // of which layer reported them. Found by the scene fuzz.
+        let (diagnostics, _) = reported(
+            br##"{"type":"excalidraw","version":2,"elements":[],"appState":{"frameRendering":{"clip":"yes"},"alpha":1,"beta":2},"files":{}}"##,
+        );
+        assert_eq!(
+            pointers(&diagnostics),
+            [
+                "/appState/frameRendering/clip",
+                "/appState/alpha",
+                "/appState/beta",
+            ]
+        );
+    }
 
     #[test]
     fn linear_points_move_the_first_point_to_the_local_origin() {

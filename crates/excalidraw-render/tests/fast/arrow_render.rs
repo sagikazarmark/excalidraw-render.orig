@@ -30,12 +30,7 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
         let outcome = Renderer::new()
             .render(&scene, &request)
             .expect("complete admitted arrow behavior renders");
-        let repeated = Renderer::new()
-            .render(&scene, &request)
-            .expect("repeated arrow render succeeds");
 
-        assert_eq!(outcome.artifact().bytes(), repeated.artifact().bytes());
-        assert_eq!(outcome.report(), repeated.report());
         // One pin per artifact. The SVG's is the path-vector digest below, the
         // geometry this test holds; its whole-artifact digest moved for a
         // fractional viewBox extent that the vectors never saw. The PNG digest

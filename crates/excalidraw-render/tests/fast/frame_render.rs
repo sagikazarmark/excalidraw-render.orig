@@ -136,36 +136,6 @@ fn frame_name_is_painted_grey_above_the_frame_in_png() {
 }
 
 #[test]
-fn frame_name_is_truncated_to_the_frame_width_with_three_dots() {
-    let scene = SceneDocument::parse(br##"{
-        "type":"excalidraw","version":2,
-        "elements":[
-            {"id":"narrow","type":"frame","name":"A rather long frame name","x":0,"y":0,"width":60,"height":40,"updated":1}
-        ],
-        "appState":{},"files":{}
-    }"##)
-    .expect("narrow frame is admitted");
-    let svg = render(&scene, OutputFormat::Svg, FrameOptions::default());
-    let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
-
-    let (_, text) = frame_name(svg, "narrow");
-    let content = text
-        .split_once('>')
-        .and_then(|(_, rest)| rest.split_once("</text>"))
-        .map(|(content, _)| content)
-        .expect("name has content");
-    let kept = content
-        .strip_suffix("...")
-        .expect("truncated with ASCII dots, not an ellipsis glyph");
-    assert!(
-        !kept.is_empty() && "A rather long frame name".starts_with(kept) && kept.len() < 12,
-        "a prefix of the name that fits 60 px with the dots: {content:?}"
-    );
-    // A truncated name is as wide as its frame, so it adds nothing sideways.
-    assert!(svg.contains("viewBox=\"0 0 80 80.5\""), "{}", root_tag(svg));
-}
-
-#[test]
 fn frame_name_is_neither_rotated_nor_clipped_with_its_frame() {
     let scene = SceneDocument::parse(br##"{
         "type":"excalidraw","version":2,

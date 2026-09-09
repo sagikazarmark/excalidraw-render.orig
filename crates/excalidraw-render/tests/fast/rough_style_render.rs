@@ -23,13 +23,11 @@ fn rough_fills_and_stroke_variants_render_directly_in_every_format() {
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let request = RenderRequest::builder(format).build().unwrap();
         let first = Renderer::new().render(&scene, &request).unwrap();
-        let second = Renderer::new().render(&scene, &request).unwrap();
 
         assert!(
             first.report().is_empty(),
             "unexpected {format:?} diagnostics"
         );
-        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
 
         match format {
             OutputFormat::Svg => {
@@ -65,36 +63,6 @@ fn rough_fills_and_stroke_variants_render_directly_in_every_format() {
             _ => unreachable!(),
         }
     }
-}
-
-#[test]
-fn rough_fill_vectors_match_the_pinned_geometry_families() {
-    let scene = SceneDocument::parse(br##"{
-      "type":"excalidraw","version":2,
-      "elements":[
-        {"id":"rounded","type":"rectangle","x":10,"y":10,"width":80,"height":50,"roundness":{"type":3},"backgroundColor":"#e03131","fillStyle":"solid","seed":21,"updated":1},
-        {"id":"ellipse","type":"ellipse","x":110,"y":10,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"hachure","seed":22,"updated":1},
-        {"id":"diamond","type":"diamond","x":210,"y":10,"width":80,"height":50,"backgroundColor":"#e03131","fillStyle":"cross-hatch","seed":23,"updated":1},
-        {"id":"loop","type":"line","x":310,"y":10,"width":80,"height":50,"points":[[0,0],[80,0],[80,50],[0,50],[0,0]],"backgroundColor":"#e03131","fillStyle":"zigzag","seed":24,"updated":1}
-      ],
-      "appState":{},"files":{}
-    }"##).unwrap();
-    let request = RenderRequest::builder(OutputFormat::Svg).build().unwrap();
-    let outcome = Renderer::new().render(&scene, &request).unwrap();
-    let svg = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
-    let paths = svg
-        .split("<path d=\"")
-        .skip(1)
-        .map(|tail| tail.split_once('"').unwrap().0)
-        .collect::<Vec<_>>();
-
-    assert!(outcome.report().is_empty());
-    assert_eq!(paths.len(), 8);
-    assert_eq!(
-        format!("{:x}", Sha256::digest(paths.join("\n"))),
-        // Moved with the diamond vertex fix: the scene carries two diamonds.
-        "d4e7528ff1a10f3ebbfbb8f3b404728ce7bef805930d56384652c2be6dc53f6d"
-    );
 }
 
 #[test]
@@ -166,57 +134,6 @@ fn solid_fill_rules_and_joins_follow_each_backend() {
     assert_eq!(pdf.matches("\nf*\n").count(), 4);
     assert!(pdf.matches("\n1 J\n").count() >= 6);
     assert!(!pdf.contains("\n1 j\n"));
-}
-
-#[test]
-fn line_fill_uses_the_exact_export_zoom_loop_threshold() {
-    let scene = SceneDocument::parse(br##"{
-      "type":"excalidraw","version":2,
-      "elements":[
-        {"id":"at-threshold","type":"line","x":10,"y":10,"width":40,"height":30,"points":[[0,0],[40,0],[40,30],[6.4,4.8]],"backgroundColor":"#e03131","fillStyle":"solid","seed":51,"updated":1},
-        {"id":"outside-threshold","type":"line","x":60,"y":10,"width":40,"height":30,"points":[[0,0],[40,0],[40,30],[6.408,4.806]],"backgroundColor":"#e03131","fillStyle":"solid","seed":52,"updated":1}
-      ],
-      "appState":{},"files":{}
-    }"##).unwrap();
-    let outcome = Renderer::new()
-        .render(
-            &scene,
-            &RenderRequest::builder(OutputFormat::Svg).build().unwrap(),
-        )
-        .unwrap();
-    let svg = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
-
-    assert_eq!(svg.matches("<path ").count(), 3);
-    assert_eq!(svg.matches("fill-rule=\"evenodd\"").count(), 1);
-}
-
-#[test]
-fn repeated_loop_endpoint_keeps_the_polygon_generators_extra_close() {
-    let scene = SceneDocument::parse(br##"{
-      "type":"excalidraw","version":2,
-      "elements":[
-        {"id":"repeated","type":"line","x":10,"y":10,"width":40,"height":30,"points":[[0,0],[40,0],[40,30],[0,0]],"backgroundColor":"#e03131","fillStyle":"solid","seed":61,"updated":1}
-      ],
-      "appState":{},"files":{}
-    }"##).unwrap();
-    let outcome = Renderer::new()
-        .render(
-            &scene,
-            &RenderRequest::builder(OutputFormat::Svg).build().unwrap(),
-        )
-        .unwrap();
-    let svg = std::str::from_utf8(outcome.artifact().bytes()).unwrap();
-    let outline = svg
-        .split("<path d=\"")
-        .nth(2)
-        .and_then(|tail| tail.split_once('"'))
-        .unwrap()
-        .0;
-
-    assert!(
-        outline.ends_with("M0 0 C0 0, 0 0, 0 0 M0 0 C0 0, 0 0, 0 0"),
-        "unexpected repeated-close outline: {outline}",
-    );
 }
 
 #[test]

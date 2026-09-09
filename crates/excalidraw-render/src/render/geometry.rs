@@ -180,6 +180,24 @@ pub(super) fn include_transformed_bounds(
     }
 }
 
+/// The roughness Rough.js is given for `source`: Excalidraw's
+/// `generateRoughOptions` tones small shapes down, halving the roughness for
+/// a shape under 50 by 20 (a third under 10) and capping it at 2.5, and
+/// exempts shapes rounded enough or, for linear elements, long enough for the
+/// sketchiness to read.
+pub(super) fn adjusted_roughness(source: &NormalizedElement) -> f64 {
+    let max_size = source.width.max(source.height);
+    let min_size = source.width.min(source.height);
+    if min_size >= 20.0 && max_size >= 50.0
+        || min_size >= 15.0 && source.roundness.is_some()
+        || matches!(source.kind, NormalizedElementKind::Linear(_)) && max_size >= 50.0
+    {
+        source.roughness
+    } else {
+        (source.roughness / if max_size < 10.0 { 3.0 } else { 2.0 }).min(2.5)
+    }
+}
+
 pub(super) fn rough_drawing(
     source: &NormalizedElement,
     roughness: f64,

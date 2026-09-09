@@ -1,5 +1,26 @@
 use super::*;
 
+/// Orders retained diagnostics the way the final report lists them (spec
+/// §11.3): by the source owner that produced them, then the source member
+/// position within that owner, then the pointer, then the code's stable
+/// spelling, and finally by the order in which they were retained, so equal
+/// keys keep the retention order and the sort is total.
+pub(crate) fn sort_diagnostics(diagnostics: &mut [CompatibilityDiagnostic]) {
+    diagnostics.sort_unstable_by(|left, right| {
+        left.order
+            .owner_index
+            .cmp(&right.order.owner_index)
+            .then_with(|| left.order.source_position.cmp(&right.order.source_position))
+            .then_with(|| left.json_pointer.cmp(&right.json_pointer))
+            .then_with(|| left.code.as_str().cmp(right.code.as_str()))
+            .then_with(|| {
+                left.order
+                    .retention_ordinal
+                    .cmp(&right.order.retention_ordinal)
+            })
+    });
+}
+
 pub(super) fn diagnostic_replaces_element(diagnostic: &CompatibilityDiagnostic) -> bool {
     if !diagnostic.effects().contains(&DiagnosticEffect::Visual) {
         return false;
@@ -573,5 +594,176 @@ pub(super) fn metadata_failure_diagnostic(
             recovery: Recovery::MetadataOmitted,
         })),
         order: DiagnosticOrder::default(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A retained diagnostic whose distinguishing state is its code, pointer
+    /// and the order the session assigned it when it was retained.
+    fn retained(
+        code: DiagnosticCode,
+        json_pointer: &str,
+        owner_index: u64,
+        source_position: u64,
+        retention_ordinal: u64,
+    ) -> CompatibilityDiagnostic {
+        CompatibilityDiagnostic {
+            code,
+            severity: DiagnosticSeverity::Warning,
+            format: OutputFormat::Svg,
+            effects: vec![DiagnosticEffect::InputRepair],
+            element_id: None,
+            json_pointer: json_pointer.to_owned(),
+            message: String::new(),
+            details: None,
+            order: DiagnosticOrder {
+                owner_index,
+                source_position,
+                retention_ordinal,
+                attribution: DiagnosticAttribution::SceneGlobal,
+            },
+        }
+    }
+
+    /// `(pointer, retention ordinal)` per diagnostic: the pointer names the
+    /// diagnostic and the ordinal tells which of two equal-keyed ones it was.
+    fn order_of(diagnostics: &[CompatibilityDiagnostic]) -> Vec<(&str, u64)> {
+        diagnostics
+            .iter()
+            .map(|diagnostic| {
+                (
+                    diagnostic.json_pointer.as_str(),
+                    diagnostic.order.retention_ordinal,
+                )
+            })
+            .collect()
+    }
+
+    /// Spec §11.3: the final report is ordered by the source owner, not by
+    /// the phase that reported. A render-phase coordinate crossing on the
+    /// first element is retained after a normalization repair on the second
+    /// and still sorts first.
+    #[test]
+    fn the_source_owner_outranks_the_phase_that_retained_a_diagnostic() {
+        let mut diagnostics = vec![
+            retained(
+                DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                "/elements/1/updated",
+                1,
+                7,
+                0,
+            ),
+            retained(
+                DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,
+                "/elements/0/x",
+                0,
+                2,
+                1,
+            ),
+        ];
+        sort_diagnostics(&mut diagnostics);
+        assert_eq!(
+            order_of(&diagnostics),
+            [("/elements/0/x", 1), ("/elements/1/updated", 0)]
+        );
+    }
+
+    /// Within one owner the source member position decides, then the pointer,
+    /// then the code's stable spelling, and finally the retention ordinal, so
+    /// two diagnostics that agree on everything else keep the order in which
+    /// they were retained.
+    #[test]
+    fn within_one_owner_position_then_pointer_then_code_then_retention_decide() {
+        let mut diagnostics = vec![
+            retained(
+                DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
+                "/elements/0/seed",
+                0,
+                9,
+                0,
+            ),
+            retained(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                "/elements/0/b",
+                0,
+                4,
+                1,
+            ),
+            retained(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                "/elements/0/a",
+                0,
+                4,
+                2,
+            ),
+            // Same pointer and position: "compatibility.unsupported-property"
+            // sorts before "compatibility.unsupported-property-value".
+            retained(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                "/elements/0/a",
+                0,
+                4,
+                3,
+            ),
+            retained(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                "/elements/0/a",
+                0,
+                4,
+                4,
+            ),
+        ];
+        sort_diagnostics(&mut diagnostics);
+        assert_eq!(
+            order_of(&diagnostics),
+            [
+                ("/elements/0/a", 2),
+                ("/elements/0/a", 4),
+                ("/elements/0/a", 3),
+                ("/elements/0/b", 1),
+                ("/elements/0/seed", 0),
+            ]
+        );
+    }
+
+    /// A diagnostic with no source owner takes the unowned order, which sorts
+    /// after every owned diagnostic; among themselves such scene-global
+    /// diagnostics fall back to the pointer and then retention.
+    #[test]
+    fn diagnostics_without_a_source_owner_sort_after_every_owned_one() {
+        let unowned = |pointer: &str, ordinal| {
+            retained(
+                DiagnosticCode::FONT_MISSING_GLYPH,
+                pointer,
+                u64::MAX,
+                u64::MAX,
+                ordinal,
+            )
+        };
+        let mut diagnostics = vec![
+            unowned("", 0),
+            retained(
+                DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                "/elements/3/updated",
+                3,
+                1,
+                1,
+            ),
+            unowned("/appState/viewBackgroundColor", 2),
+            unowned("", 3),
+        ];
+        sort_diagnostics(&mut diagnostics);
+        assert_eq!(
+            order_of(&diagnostics),
+            [
+                ("/elements/3/updated", 1),
+                ("", 0),
+                ("", 3),
+                ("/appState/viewBackgroundColor", 2),
+            ]
+        );
     }
 }

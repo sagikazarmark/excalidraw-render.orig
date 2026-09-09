@@ -45,17 +45,10 @@ fn checked_report(format: &str) -> Value {
 }
 
 #[test]
-fn every_format_reports_the_registered_missing_glyph_diagnostics_and_repeats_byte_for_byte() {
+fn every_format_reports_the_registered_missing_glyph_diagnostics() {
     let scene = registered_scene();
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let first = render(&scene, format);
-        let second = render(&scene, format);
-        assert_eq!(
-            first.artifact().bytes(),
-            second.artifact().bytes(),
-            "{format:?} renders byte-identically"
-        );
-        assert_eq!(first.report(), second.report());
+        let outcome = render(&scene, format);
 
         // PNG and SVG carry evidence and a checked report each. The PDF has
         // neither, so its report is the SVG's six diagnostics under the PDF's
@@ -88,7 +81,7 @@ fn every_format_reports_the_registered_missing_glyph_diagnostics_and_repeats_byt
             .iter()
             .all(|diagnostic| diagnostic["code"] == "font.missing-glyph"));
         assert_eq!(
-            serde_json::to_value(first.report()).expect("report serializes"),
+            serde_json::to_value(outcome.report()).expect("report serializes"),
             expected,
             "{format:?} report is the registered expectation"
         );

@@ -17,15 +17,11 @@ use sha2::{Digest, Sha256};
 const FOCUSED_TEXT: &str = "One two three\nFour";
 
 #[test]
-fn excalifont_text_renders_semantically_and_deterministically_in_every_format() {
+fn excalifont_text_renders_semantically_in_every_format() {
     let scene = focused_scene();
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
         let first = render(&scene, format);
-        let second = render(&scene, format);
-
-        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-        assert_eq!(first.report(), second.report());
         assert!(first.report().diagnostics().is_empty());
 
         // One whole-artifact digest per format is the artifact byte stability

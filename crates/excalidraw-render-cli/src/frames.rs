@@ -1196,3 +1196,180 @@ fn deliver_frame_report(
     }
     EXIT_OPERATIONAL
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        frame_output_basenames, is_reserved_device_name, portable_frame_slug, truncate_basename,
+    };
+    use excalidraw_render::{OutputFormat, SceneDocument};
+
+    /// A scene whose live frames carry `names` in order, a `null` name where
+    /// the entry is `None`, parsed so its frame references can be listed.
+    fn scene_with_frame_names(names: &[Option<&str>]) -> SceneDocument {
+        let elements = names
+            .iter()
+            .enumerate()
+            .map(|(index, name)| {
+                let name = match name {
+                    Some(name) => serde_json::to_string(name).expect("name serializes"),
+                    None => "null".to_owned(),
+                };
+                format!(
+                    r#"{{"id":"frame-{index}","type":"frame","name":{name},"x":{x},"y":0,"width":20,"height":20,"updated":1}}"#,
+                    x = index * 30
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        SceneDocument::parse(
+            format!(
+                r#"{{"type":"excalidraw","version":2,"elements":[{elements}],"appState":{{}},"files":{{}}}}"#
+            )
+            .as_bytes(),
+        )
+        .expect("frame scene is admitted")
+    }
+
+    /// The SVG basenames of every frame of a scene carrying `names`.
+    fn svg_basenames(names: &[Option<&str>]) -> Vec<String> {
+        let scene = scene_with_frame_names(names);
+        let frames = scene.frames().collect::<Vec<_>>();
+        frame_output_basenames(&frames, Some(OutputFormat::Svg))
+    }
+
+    #[test]
+    fn frame_basenames_fold_case_and_normalize_unicode_before_deduplicating() {
+        // "Straße" and "STRASSE" are one name under full case folding, so the
+        // later frame takes a collision suffix while keeping its own spelling;
+        // a decomposed "é" is the same name as the composed one and is written
+        // composed.
+        assert_eq!(
+            svg_basenames(&[Some("Straße"), Some("STRASSE"), Some("strasse")]),
+            ["Straße.svg", "STRASSE-2.svg", "strasse-3.svg"]
+        );
+        assert_eq!(
+            svg_basenames(&[Some("caf\u{e9}"), Some("cafe\u{301}")]),
+            ["caf\u{e9}.svg", "caf\u{e9}-2.svg"]
+        );
+    }
+
+    #[test]
+    fn long_frame_names_are_truncated_to_120_bytes_with_a_stable_hash_suffix() {
+        // Two frames with the same 140-character name: both are cut to the
+        // component budget, both carry the first eight hex digits of the
+        // name's SHA-256, and the second still gets its collision suffix
+        // inside the budget. `88e685e0` is `sha256("A" * 140)[..8]`.
+        let long_name = "A".repeat(140);
+        let basenames = svg_basenames(&[Some(&long_name), Some(&long_name)]);
+        assert_eq!(
+            basenames,
+            [
+                format!("{}-88e685e0.svg", "A".repeat(111)),
+                format!("{}-88e685e0-2.svg", "A".repeat(109)),
+            ]
+        );
+        for basename in &basenames {
+            let stem = basename
+                .strip_suffix(".svg")
+                .expect("the basename carries the SVG extension");
+            assert!(stem.len() <= 120, "{basename} exceeds the component budget");
+        }
+
+        // The hash is over the NFC name before slugging, so two long names
+        // that slug alike but differ in spelling stay distinct files.
+        let spaced = format!("{} B", "A".repeat(139));
+        let dashed = format!("{}-B", "A".repeat(139));
+        let distinct = svg_basenames(&[Some(&spaced), Some(&dashed)]);
+        assert_ne!(distinct[0], distinct[1]);
+        assert!(!distinct[1].ends_with("-2.svg"), "{}", distinct[1]);
+    }
+
+    #[test]
+    fn reserved_device_names_are_prefixed_and_unnamed_frames_use_their_ordinal() {
+        assert_eq!(
+            svg_basenames(&[
+                Some("CON"),
+                Some("com1"),
+                Some("Lpt9"),
+                Some("COM10"),
+                Some("Console")
+            ]),
+            [
+                "_CON.svg",
+                "_com1.svg",
+                "_Lpt9.svg",
+                "COM10.svg",
+                "Console.svg"
+            ]
+        );
+        // No name, a non-string name and a name with no alphanumerics all
+        // fall back to the one-based frame ordinal.
+        assert_eq!(
+            svg_basenames(&[None, Some("!!!"), Some("Named"), Some(" ")]),
+            ["frame-1.svg", "frame-2.svg", "Named.svg", "frame-4.svg"]
+        );
+    }
+
+    #[test]
+    fn list_mode_without_a_format_reports_bare_stems() {
+        let scene = scene_with_frame_names(&[Some("Overview"), Some("Detail")]);
+        let frames = scene.frames().collect::<Vec<_>>();
+        assert_eq!(
+            frame_output_basenames(&frames, None),
+            ["Overview", "Detail"]
+        );
+        assert_eq!(
+            frame_output_basenames(&frames, Some(OutputFormat::Png)),
+            ["Overview.png", "Detail.png"]
+        );
+    }
+
+    #[test]
+    fn a_portable_slug_keeps_alphanumerics_and_joins_runs_with_one_dash() {
+        assert_eq!(portable_frame_slug("Hello, World!"), "Hello-World");
+        assert_eq!(
+            portable_frame_slug("  leading and trailing  "),
+            "leading-and-trailing"
+        );
+        assert_eq!(
+            portable_frame_slug("a/b\\c:d*e?f\"g<h>i|j"),
+            "a-b-c-d-e-f-g-h-i-j"
+        );
+        assert_eq!(portable_frame_slug("日本語 タイトル"), "日本語-タイトル");
+        assert_eq!(portable_frame_slug("..."), "");
+        assert_eq!(portable_frame_slug(""), "");
+    }
+
+    #[test]
+    fn truncation_never_splits_a_character() {
+        assert_eq!(truncate_basename("abcdef", 3), "abc");
+        assert_eq!(truncate_basename("abc", 10), "abc");
+        // Each "é" is two bytes: a three-byte budget keeps one whole character.
+        assert_eq!(truncate_basename("ééé", 3), "é");
+        assert_eq!(truncate_basename("ééé", 4), "éé");
+        assert_eq!(truncate_basename("日本", 3), "日");
+        assert_eq!(truncate_basename("abc", 0), "");
+    }
+
+    #[test]
+    fn reserved_device_names_match_the_windows_set_case_insensitively() {
+        for name in [
+            "CON", "con", "PRN", "AUX", "NUL", "COM1", "com9", "LPT1", "lpt9",
+        ] {
+            assert!(is_reserved_device_name(name), "{name}");
+        }
+        for name in [
+            "",
+            "CON1",
+            "COM0",
+            "COM10",
+            "LPT",
+            "CONSOLE",
+            "NULL",
+            "AUXILIARY",
+        ] {
+            assert!(!is_reserved_device_name(name), "{name}");
+        }
+    }
+}

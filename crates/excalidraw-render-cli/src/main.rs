@@ -1987,3 +1987,376 @@ fn sha256_compress(state: &mut [u32; 8], block: &[u8]) {
         *word = word.wrapping_add(value);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::OsString;
+    use std::fs;
+    use std::path::{Path, PathBuf};
+
+    use excalidraw_render::{CompatibilityRevision, OutputFormat};
+
+    use super::{
+        lexical_absolute, parse_asset_declarations, preparse_json_mode, render_json_line,
+        same_path, select_format, split_asset_option, ArtifactDescriptor, CliDetails, CliError,
+        Failure, FormatArg, RenderReport, ReportError, EXIT_USAGE,
+    };
+
+    /// The CLI error code and exit status a usage failure carries.
+    fn cli_failure(failure: &Failure) -> (&str, u8) {
+        match failure.error.as_ref() {
+            ReportError::Cli(error) => (error.code, failure.exit),
+            ReportError::Library(_) => panic!("a CLI failure, not a library one"),
+        }
+    }
+
+    /// The `--argument`'s offending value the failure's details name.
+    fn argument_details(failure: &Failure) -> (String, Option<String>) {
+        match failure.error.as_ref() {
+            ReportError::Cli(CliError {
+                details: Some(CliDetails::CliArgument { argument, value }),
+                ..
+            }) => (argument.clone(), value.clone()),
+            _ => panic!("a CLI argument failure"),
+        }
+    }
+
+    #[test]
+    fn the_output_extension_selects_the_format_when_none_is_given() {
+        assert_eq!(select_format(None, "out.svg").ok(), Some(OutputFormat::Svg));
+        assert_eq!(select_format(None, "OUT.PNG").ok(), Some(OutputFormat::Png));
+        assert_eq!(
+            select_format(None, "nested/dir.d/out.Pdf").ok(),
+            Some(OutputFormat::Pdf)
+        );
+        assert_eq!(
+            select_format(Some(FormatArg::Png), "out.png").ok(),
+            Some(OutputFormat::Png)
+        );
+    }
+
+    #[test]
+    fn an_explicit_format_wins_where_the_output_has_no_recognized_extension() {
+        assert_eq!(
+            select_format(Some(FormatArg::Pdf), "-").ok(),
+            Some(OutputFormat::Pdf)
+        );
+        assert_eq!(
+            select_format(Some(FormatArg::Svg), "out.txt").ok(),
+            Some(OutputFormat::Svg)
+        );
+        assert_eq!(
+            select_format(Some(FormatArg::Png), "out").ok(),
+            Some(OutputFormat::Png)
+        );
+    }
+
+    #[test]
+    fn a_format_that_contradicts_the_extension_is_a_usage_error() {
+        let failure = select_format(Some(FormatArg::Png), "out.svg").expect_err("mismatch");
+        assert_eq!(cli_failure(&failure), ("cli.format-mismatch", EXIT_USAGE));
+        assert_eq!(
+            argument_details(&failure),
+            ("--format".to_owned(), Some("png".to_owned()))
+        );
+    }
+
+    #[test]
+    fn stdout_and_unrecognized_extensions_require_an_explicit_format() {
+        for output in ["-", "out.txt", "out", "out.svg.bak"] {
+            let failure = select_format(None, output).expect_err(output);
+            assert_eq!(
+                cli_failure(&failure),
+                ("cli.format-required", EXIT_USAGE),
+                "{output}"
+            );
+        }
+    }
+
+    #[test]
+    fn asset_declarations_pair_each_file_id_with_its_path_and_optional_media_type() {
+        let (paths, media_types) = parse_asset_declarations(
+            &[
+                "logo=assets/logo.png".to_owned(),
+                "photo=/abs/photo=with=equals.jpg".to_owned(),
+            ],
+            &["photo=image/jpeg".to_owned()],
+        )
+        .ok()
+        .expect("declarations parse");
+        assert_eq!(
+            paths.into_iter().collect::<Vec<_>>(),
+            [
+                ("logo".to_owned(), "assets/logo.png".to_owned()),
+                ("photo".to_owned(), "/abs/photo=with=equals.jpg".to_owned()),
+            ]
+        );
+        assert_eq!(
+            media_types.into_iter().collect::<Vec<_>>(),
+            [("photo".to_owned(), "image/jpeg".to_owned())]
+        );
+
+        let (paths, media_types) = parse_asset_declarations(&[], &[])
+            .ok()
+            .expect("no declarations parse");
+        assert!(paths.is_empty());
+        assert!(media_types.is_empty());
+    }
+
+    #[test]
+    fn malformed_asset_declarations_are_usage_errors_naming_the_offending_option() {
+        for (assets, mimes, argument, value) in [
+            (vec!["logo"], vec![], "--asset", "logo"),
+            (vec!["=logo.png"], vec![], "--asset", "=logo.png"),
+            (vec!["logo="], vec![], "--asset", "logo="),
+            (vec!["logo=-"], vec![], "--asset", "logo=-"),
+            (
+                vec!["logo=a.png", "logo=b.png"],
+                vec![],
+                "--asset",
+                "logo=b.png",
+            ),
+            (
+                vec!["logo=a.png"],
+                vec!["logo=image/png", "logo=image/webp"],
+                "--asset-mime",
+                "logo=image/webp",
+            ),
+            (vec!["logo=a.png"], vec!["logo"], "--asset-mime", "logo"),
+        ] {
+            let assets: Vec<String> = assets.into_iter().map(str::to_owned).collect();
+            let mimes: Vec<String> = mimes.into_iter().map(str::to_owned).collect();
+            let failure = parse_asset_declarations(&assets, &mimes)
+                .err()
+                .unwrap_or_else(|| panic!("{assets:?} {mimes:?} is refused"));
+            assert_eq!(
+                cli_failure(&failure),
+                ("cli.invalid-asset-option", EXIT_USAGE),
+                "{assets:?} {mimes:?}"
+            );
+            assert_eq!(
+                argument_details(&failure),
+                (argument.to_owned(), Some(value.to_owned())),
+                "{assets:?} {mimes:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_media_type_needs_the_asset_it_describes() {
+        let failure =
+            parse_asset_declarations(&["logo=a.png".to_owned()], &["photo=image/jpeg".to_owned()])
+                .expect_err("an orphan media type is refused");
+        assert_eq!(
+            cli_failure(&failure),
+            ("cli.asset-mime-without-asset", EXIT_USAGE)
+        );
+        assert_eq!(
+            argument_details(&failure),
+            ("--asset-mime".to_owned(), Some("photo".to_owned()))
+        );
+    }
+
+    #[test]
+    fn an_asset_option_splits_at_its_first_equals_sign() {
+        assert_eq!(
+            split_asset_option("id=a=b", "--asset").ok(),
+            Some(("id", "a=b"))
+        );
+        assert!(split_asset_option("id", "--asset").is_err());
+        assert!(split_asset_option("=value", "--asset").is_err());
+        assert!(split_asset_option("id=", "--asset").is_err());
+    }
+
+    #[test]
+    fn lexical_absolute_resolves_dot_segments_without_touching_the_filesystem() {
+        assert_eq!(
+            lexical_absolute(Path::new("/a/./b/../c/d")),
+            PathBuf::from("/a/c/d")
+        );
+        assert_eq!(
+            lexical_absolute(Path::new("/a/b/../../../c")),
+            PathBuf::from("/c")
+        );
+        let cwd = std::env::current_dir().expect("the current directory is readable");
+        assert_eq!(
+            lexical_absolute(Path::new("out/../scene.svg")),
+            cwd.join("scene.svg")
+        );
+        assert_eq!(lexical_absolute(Path::new("./x")), cwd.join("x"));
+    }
+
+    #[test]
+    fn same_path_compares_lexically_for_paths_that_do_not_exist_yet() {
+        assert!(same_path("out/render.svg", "out/render.svg"));
+        assert!(same_path("out/render.svg", "./out/../out/render.svg"));
+        assert!(same_path(
+            "/tmp/does-not-exist/a",
+            "/tmp/does-not-exist/b/../a"
+        ));
+        assert!(!same_path("out/render.svg", "out/render.png"));
+        assert!(!same_path("a", "b"));
+    }
+
+    #[test]
+    fn same_path_follows_the_filesystem_identity_of_existing_paths() {
+        let dir = std::env::temp_dir().join(format!(
+            "excalidraw-render-cli-same-path-{}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&dir).expect("the scratch directory is created");
+        let file = dir.join("scene.excalidraw");
+        fs::write(&file, b"{}").expect("the scene file is written");
+        let other = dir.join("other.excalidraw");
+        fs::write(&other, b"{}").expect("the other file is written");
+        let file = file.to_str().expect("the scratch path is UTF-8");
+        let other = other.to_str().expect("the scratch path is UTF-8");
+
+        assert!(same_path(file, file));
+        assert!(same_path(
+            file,
+            &format!(
+                "{}/./scene.excalidraw",
+                dir.to_str().expect("the scratch path is UTF-8")
+            )
+        ));
+        assert!(!same_path(file, other));
+        #[cfg(unix)]
+        {
+            let link = dir.join("link.excalidraw");
+            std::os::unix::fs::symlink(file, &link).expect("the symlink is created");
+            assert!(
+                same_path(file, link.to_str().expect("the scratch path is UTF-8")),
+                "a symlink aliases its target"
+            );
+        }
+        fs::remove_dir_all(&dir).expect("the scratch directory is removed");
+    }
+
+    /// The process arguments for `values`, with the program name in front as
+    /// `env::args_os` reports it.
+    fn args(values: &[&str]) -> Vec<OsString> {
+        std::iter::once("excalidraw-render")
+            .chain(values.iter().copied())
+            .map(OsString::from)
+            .collect()
+    }
+
+    #[test]
+    fn json_mode_is_preparsed_from_exactly_one_json_report_format_option() {
+        assert!(preparse_json_mode(&args(&["--report-format", "json"])));
+        assert!(preparse_json_mode(&args(&["--report-format=json"])));
+        assert!(preparse_json_mode(&args(&[
+            "scene.excalidraw",
+            "-o",
+            "out.svg",
+            "--report-format=json",
+            "--force"
+        ])));
+        assert!(preparse_json_mode(&args(&[
+            "frames",
+            "scene.excalidraw",
+            "--report-format",
+            "json"
+        ])));
+
+        assert!(!preparse_json_mode(&args(&[])));
+        assert!(!preparse_json_mode(&args(&["--report-format", "human"])));
+        assert!(!preparse_json_mode(&args(&["--report-format=none"])));
+        assert!(!preparse_json_mode(&args(&["--report-format"])));
+        // Two report-format options are a clap error, reported the human way.
+        assert!(!preparse_json_mode(&args(&[
+            "--report-format=json",
+            "--report-format",
+            "json"
+        ])));
+        assert!(!preparse_json_mode(&args(&[
+            "--report-format=json",
+            "--report-format=human"
+        ])));
+        // The program name is never an option.
+        assert!(!preparse_json_mode(&[OsString::from(
+            "--report-format=json"
+        )]));
+    }
+
+    #[test]
+    fn a_render_report_line_is_one_json_object_with_every_field_present() {
+        let report = RenderReport {
+            schema_version: 1,
+            status: "ok",
+            renderer_version: "0.1.0",
+            compatibility_revision: Some(CompatibilityRevision::REVISION_1),
+            excalidraw_release: Some("v0.18.1"),
+            reference_profile_digest: Some("sha256:abc"),
+            format: Some(OutputFormat::Svg),
+            artifact: Some(ArtifactDescriptor {
+                media_type: "image/svg+xml",
+                byte_length: 42,
+                sha256: "sha256:def".to_owned(),
+            }),
+            error: None,
+            diagnostics: &[],
+        };
+        assert_eq!(
+            String::from_utf8(render_json_line(&report)).expect("the report line is UTF-8"),
+            concat!(
+                r#"{"schema_version":1,"status":"ok","renderer_version":"0.1.0","#,
+                r#""compatibility_revision":1,"excalidraw_release":"v0.18.1","#,
+                r#""reference_profile_digest":"sha256:abc","format":"svg","#,
+                r#""artifact":{"media_type":"image/svg+xml","byte_length":42,"sha256":"sha256:def"},"#,
+                r#""error":null,"diagnostics":[]}"#,
+                "\n"
+            )
+        );
+    }
+
+    #[test]
+    fn a_failed_render_report_line_carries_the_cli_error_and_nulls_the_rest() {
+        let report = RenderReport {
+            schema_version: 1,
+            status: "error",
+            renderer_version: "0.1.0",
+            compatibility_revision: None,
+            excalidraw_release: None,
+            reference_profile_digest: None,
+            format: None,
+            artifact: None,
+            error: Some(Box::new(ReportError::Cli(CliError {
+                family: "cli",
+                category: None,
+                code: "cli.format-required",
+                message: "quote \" and backslash \\ survive".to_owned(),
+                format: None,
+                element_id: None,
+                json_pointer: None,
+                details: Some(CliDetails::CliArgument {
+                    argument: "--format".to_owned(),
+                    value: None,
+                }),
+            }))),
+            diagnostics: &[],
+        };
+        let line = render_json_line(&report);
+        assert_eq!(line.last(), Some(&b'\n'));
+        let value: serde_json::Value =
+            serde_json::from_slice(&line).expect("the report line is JSON");
+        assert_eq!(value["status"], "error");
+        assert_eq!(value["compatibility_revision"], serde_json::Value::Null);
+        assert_eq!(value["format"], serde_json::Value::Null);
+        assert_eq!(value["artifact"], serde_json::Value::Null);
+        assert_eq!(
+            value["error"],
+            serde_json::json!({
+                "family": "cli",
+                "category": null,
+                "code": "cli.format-required",
+                "message": "quote \" and backslash \\ survive",
+                "format": null,
+                "element_id": null,
+                "json_pointer": null,
+                "details": {"kind": "cli_argument", "argument": "--format", "value": null},
+            })
+        );
+    }
+}

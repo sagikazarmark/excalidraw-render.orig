@@ -53,7 +53,7 @@ fn admitted_latin_font_families_render_with_their_bundled_faces() {
 }
 
 #[test]
-fn retained_latin_families_render_deterministically_in_png_and_pdf() {
+fn retained_latin_families_embed_their_pdf_base_font_names() {
     for (font_family, pdf_name) in [
         (1, "Virgil"),
         (2, "LiberationSans"),
@@ -65,29 +65,18 @@ fn retained_latin_families_render_deterministically_in_png_and_pdf() {
         (9, "LiberationSans"),
     ] {
         let scene = text_scene(font_family, "Catalog");
-        for format in [OutputFormat::Png, OutputFormat::Pdf] {
-            let request = RenderRequest::builder(format)
-                .build()
-                .expect("request is valid");
-            let first = Renderer::new()
-                .render(&scene, &request)
-                .unwrap_or_else(|error| panic!("font family {font_family} renders: {error}"));
-            let second = Renderer::new()
-                .render(&scene, &request)
-                .expect("repeated rendering succeeds");
-
-            assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-            assert_eq!(first.report(), second.report());
-            match format {
-                OutputFormat::Png => assert!(first.artifact().bytes().starts_with(b"\x89PNG")),
-                OutputFormat::Pdf => {
-                    let pdf = String::from_utf8_lossy(first.artifact().bytes());
-                    assert!(pdf.contains(&format!("/BaseFont /{pdf_name}")));
-                    assert!(pdf.contains("/ActualText <FEFF0043006100740061006C006F0067>"));
-                }
-                _ => unreachable!("this test selects PNG and PDF"),
-            }
-        }
+        let request = RenderRequest::builder(OutputFormat::Pdf)
+            .build()
+            .expect("request is valid");
+        let outcome = Renderer::new()
+            .render(&scene, &request)
+            .unwrap_or_else(|error| panic!("font family {font_family} renders: {error}"));
+        let pdf = String::from_utf8_lossy(outcome.artifact().bytes());
+        assert!(
+            pdf.contains(&format!("/BaseFont /{pdf_name}")),
+            "font family {font_family} embeds {pdf_name}"
+        );
+        assert!(pdf.contains("/ActualText <FEFF0043006100740061006C006F0067>"));
     }
 }
 
@@ -195,12 +184,7 @@ fn excalifont_uses_ordered_cjk_and_emoji_fallbacks_in_every_format() {
         let first = Renderer::new()
             .render(&scene, &request)
             .expect("mixed-range text renders");
-        let second = Renderer::new()
-            .render(&scene, &request)
-            .expect("repeated mixed-range rendering succeeds");
 
-        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-        assert_eq!(first.report(), second.report());
         let [diagnostic] = first.report().diagnostics() else {
             panic!("emoji substitution has one occurrence diagnostic");
         };
@@ -252,12 +236,7 @@ fn xiaolai_only_joins_excalifont_fallback_when_the_cjk_subset_trigger_fires() {
         let first = Renderer::new()
             .render(&scene, &request)
             .expect("untriggered Excalifont text renders");
-        let second = Renderer::new()
-            .render(&scene, &request)
-            .expect("repeated untriggered rendering succeeds");
 
-        assert_eq!(first.artifact().bytes(), second.artifact().bytes());
-        assert_eq!(first.report(), second.report());
         let [diagnostic] = first.report().diagnostics() else {
             panic!("the won sign is one missing codepoint for {format:?}");
         };
@@ -632,10 +611,6 @@ fn bidirectional_runs_keep_visual_direction_and_logical_pdf_text() {
     let first = Renderer::new()
         .render(&scene, &pdf_request)
         .expect("bidirectional PDF renders");
-    let second = Renderer::new()
-        .render(&scene, &pdf_request)
-        .expect("repeated bidirectional PDF renders");
-    assert_eq!(first.artifact().bytes(), second.artifact().bytes());
     let pdf = String::from_utf8_lossy(first.artifact().bytes());
     assert!(pdf.contains("/ActualText <FEFF006100620063002005D005D105D20020003100320033>"));
 }

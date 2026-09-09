@@ -1647,6 +1647,13 @@ mod tests {
     use std::collections::BTreeSet;
 
     use super::{css_color_is_admitted, SceneFieldDisposition, SCENE_SURFACE_POLICY};
+    use crate::normalization::{
+        codes_and_pointers, pointers, reported_diagnostics, NormalizedElementKind,
+    };
+    use crate::{
+        CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, ErrorDetails, OutputFormat,
+        Recovery, SceneDocument, SupplementalAssets,
+    };
 
     #[test]
     fn css_color_domain_rejects_malformed_functions_and_accepts_case_insensitively() {
@@ -1708,5 +1715,578 @@ mod tests {
                 .count(),
             39
         );
+    }
+
+    // The revision-1 scene-surface policy, observed through normalization:
+    // which unknown or malformed members produce which diagnostics, with
+    // which recovery, in the order the report lists them. Nothing here
+    // renders; the diagnostics are the ones the normalization observer
+    // carries, ordered as the session orders them.
+
+    /// The diagnostics a default SVG render of `source` would report from
+    /// normalization, in report order.
+    fn surface_diagnostics(source: &str) -> Vec<CompatibilityDiagnostic> {
+        surface_diagnostics_for(source, OutputFormat::Svg)
+    }
+
+    /// [`surface_diagnostics`] for `format`.
+    fn surface_diagnostics_for(source: &str, format: OutputFormat) -> Vec<CompatibilityDiagnostic> {
+        let scene = SceneDocument::parse(source.as_bytes()).expect("policy vector is admitted");
+        reported_diagnostics(&scene, format, true, &SupplementalAssets::default()).0
+    }
+
+    /// The recovery the diagnostic's compatibility or asset details declare.
+    fn recovery_of(diagnostic: &CompatibilityDiagnostic) -> Recovery {
+        match diagnostic.details() {
+            Some(ErrorDetails::Compatibility { recovery, .. })
+            | Some(ErrorDetails::Asset { recovery, .. }) => *recovery,
+            details => panic!("unexpected details: {details:?}"),
+        }
+    }
+
+    #[test]
+    fn revision_1_global_policy_is_exact_and_suppresses_unknown_descendants() {
+        let diagnostics = surface_diagnostics_for(
+            r#"{
+                "type":"excalidraw",
+                "version":2,
+                "scrollToContent":{"future":{"deep":true}},
+                "libraryItems":{"future":{"deep":true}},
+                "unknownRoot":{"first":1,"nested":{"second":2}},
+                "elements":[],
+                "appState":{
+                    "activeTool":{"future":{"deep":true}},
+                    "gridModeEnabled":"preserved but irrelevant",
+                    "unknownAppState":{"first":1,"nested":{"second":2}}
+                },
+                "files":{}
+            }"#,
+            OutputFormat::Svg,
+        );
+        assert_eq!(
+            codes_and_pointers(&diagnostics),
+            [
+                (
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                    "/unknownRoot",
+                ),
+                (
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                    "/appState/unknownAppState",
+                ),
+            ]
+        );
+        assert!(diagnostics.iter().all(|diagnostic| {
+            diagnostic.effects()
+                == [
+                    DiagnosticEffect::Visual,
+                    DiagnosticEffect::Semantic,
+                    DiagnosticEffect::Metadata,
+                ]
+        }));
+    }
+
+    #[test]
+    fn revision_1_element_policy_uses_exact_kind_and_record_boundaries() {
+        // A deleted or selection element is silent whatever it carries; an
+        // unknown kind and an empty kind take a placeholder; a non-object
+        // element is omitted.
+        let diagnostics = surface_diagnostics_for(
+            r#"{
+                "type":"excalidraw",
+                "version":2,
+                "elements":[
+                    {"type":"future","isDeleted":true,"unknown":{"deep":true}},
+                    {"type":"selection","unknown":{"deep":true}},
+                    {"id":"unknown","type":"future","x":0,"y":0,"width":20,"height":10,"unknown":{"deep":true}},
+                    {"id":"malformed","type":"","x":30,"y":0,"width":20,"height":10,"unknown":{"deep":true}},
+                    null
+                ],
+                "appState":{},
+                "files":{}
+            }"#,
+            OutputFormat::Svg,
+        );
+        assert_eq!(
+            codes_and_pointers(&diagnostics),
+            [
+                (
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_ELEMENT_TYPE,
+                    "/elements/2",
+                ),
+                (
+                    DiagnosticCode::COMPATIBILITY_MALFORMED_ELEMENT,
+                    "/elements/3",
+                ),
+                (
+                    DiagnosticCode::COMPATIBILITY_MALFORMED_ELEMENT,
+                    "/elements/4",
+                ),
+            ]
+        );
+        assert_eq!(
+            diagnostics.iter().map(recovery_of).collect::<Vec<_>>(),
+            [
+                Recovery::Placeholder,
+                Recovery::Placeholder,
+                Recovery::Omitted
+            ]
+        );
+    }
+
+    #[test]
+    fn revision_1_file_participation_requires_a_manifested_image_reference() {
+        // A rectangle's `fileId` is an unmatched property, not an image
+        // reference, so the file record it names never participates and its
+        // malformed members stay silent.
+        assert_eq!(
+            codes_and_pointers(&surface_diagnostics(
+                r#"{
+                    "type":"excalidraw",
+                    "version":2,
+                    "elements":[{
+                        "id":"rectangle",
+                        "type":"rectangle",
+                        "width":20,
+                        "height":10,
+                        "fileId":"asset",
+                        "seed":1,
+                        "updated":1
+                    }],
+                    "appState":{},
+                    "files":{
+                        "asset":{"id":3,"created":"invalid","unknown":{"deep":true}},
+                        "unreferenced":false
+                    }
+                }"#
+            )),
+            [(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                "/elements/0/fileId",
+            )]
+        );
+    }
+
+    #[test]
+    fn revision_1_referenced_file_classifies_known_and_unknown_children() {
+        // The key is escaped per RFC 6901 in every pointer; an unreferenced
+        // record is silent however malformed.
+        assert_eq!(
+            codes_and_pointers(&surface_diagnostics(
+                r#"{
+                    "type":"excalidraw",
+                    "version":2,
+                    "elements":[{
+                        "id":"image",
+                        "type":"image",
+                        "width":20,
+                        "height":10,
+                        "fileId":"a/b~c",
+                        "updated":1
+                    }],
+                    "appState":{},
+                    "files":{
+                        "a/b~c":{"not":"used"},
+                        "unreferenced":false
+                    }
+                }"#
+            )),
+            [
+                (
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                    "/files/a~1b~0c/id",
+                ),
+                (
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                    "/files/a~1b~0c/not",
+                ),
+                (
+                    DiagnosticCode::ASSET_MALFORMED_FILE_RECORD,
+                    "/files/a~1b~0c/dataURL",
+                ),
+                (
+                    DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
+                    "/files/a~1b~0c/created",
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn revision_1_wholly_malformed_referenced_file_suppresses_descendants() {
+        let diagnostics = surface_diagnostics_for(
+            r#"{
+                "type":"excalidraw","version":2,
+                "elements":[{"id":"image","type":"image","width":20,"height":10,"fileId":"asset","updated":1}],
+                "appState":{},"files":{"asset":false,"unreferenced":{"unknown":{"deep":true}}}
+            }"#,
+            OutputFormat::Svg,
+        );
+        let [diagnostic] = diagnostics.as_slice() else {
+            panic!("the malformed authoritative record is one occurrence: {diagnostics:?}");
+        };
+        assert_eq!(
+            diagnostic.code(),
+            DiagnosticCode::ASSET_MALFORMED_FILE_RECORD
+        );
+        assert_eq!(diagnostic.json_pointer(), "/files/asset");
+        assert!(matches!(
+            diagnostic.details(),
+            Some(ErrorDetails::Asset {
+                asset_id,
+                recovery: Recovery::Omitted,
+                ..
+            }) if asset_id == "asset"
+        ));
+    }
+
+    #[test]
+    fn revision_1_empty_referenced_file_key_is_malformed() {
+        assert_eq!(
+            codes_and_pointers(&surface_diagnostics(
+                r#"{
+                    "type":"excalidraw","version":2,
+                    "elements":[{"id":"image","type":"image","width":20,"height":10,"fileId":"","updated":1}],
+                    "appState":{},"files":{"":{"dataURL":"data:image/png;base64,AA=="}}
+                }"#
+            )),
+            [(DiagnosticCode::ASSET_MALFORMED_FILE_RECORD, "/files/",)]
+        );
+    }
+
+    #[test]
+    fn revision_1_malformed_error_image_selects_the_error_recipe_in_png() {
+        // PNG paints the official placeholder for a payload-less record, and
+        // an image whose status is `error` selects the error recipe; SVG and
+        // PDF omit the image instead.
+        let source = r#"{
+            "type":"excalidraw","version":2,
+            "elements":[{"id":"image","type":"image","width":20,"height":10,"fileId":"asset","status":"error","updated":1}],
+            "appState":{},"files":{"asset":false}
+        }"#;
+        let diagnostics = surface_diagnostics_for(source, OutputFormat::Png);
+        let [diagnostic] = diagnostics.as_slice() else {
+            panic!("the malformed authoritative record is one occurrence: {diagnostics:?}");
+        };
+        assert!(matches!(
+            diagnostic.details(),
+            Some(ErrorDetails::Asset {
+                recovery: Recovery::Placeholder,
+                recipe_id: Some(recipe),
+                ..
+            }) if recipe.starts_with("official.image-error@")
+        ));
+
+        let diagnostics = surface_diagnostics_for(source, OutputFormat::Svg);
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(recovery_of(&diagnostics[0]), Recovery::Omitted);
+    }
+
+    #[test]
+    fn revision_1_file_values_use_asset_specific_manifest_recoveries() {
+        let diagnostics = surface_diagnostics_for(
+            r#"{
+                "type":"excalidraw","version":2,
+                "elements":[{"id":"image","type":"image","width":20,"height":10,"fileId":"asset","status":"saved","updated":1}],
+                "appState":{},
+                "files":{"asset":{"id":"asset","created":1,"mimeType":"image/future","dataURL":"https://example.com/image.png"}}
+            }"#,
+            OutputFormat::Svg,
+        );
+        assert_eq!(
+            codes_and_pointers(&diagnostics),
+            [
+                (
+                    DiagnosticCode::ASSET_MEDIA_TYPE_MISMATCH,
+                    "/files/asset/mimeType",
+                ),
+                (
+                    DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE,
+                    "/files/asset/dataURL",
+                ),
+            ]
+        );
+        assert!(diagnostics.iter().all(|diagnostic| {
+            matches!(
+                diagnostic.details(),
+                Some(ErrorDetails::Asset { asset_id, .. }) if asset_id == "asset"
+            )
+        }));
+    }
+
+    #[test]
+    fn revision_1_frame_rendering_keeps_unknown_children_separate() {
+        assert_eq!(
+            pointers(&surface_diagnostics(
+                r#"{
+                    "type":"excalidraw",
+                    "version":2,
+                    "elements":[],
+                    "appState":{"frameRendering":{
+                        "enabled":true,
+                        "firstUnknown":{"deep":true},
+                        "secondUnknown":{"deep":true}
+                    }},
+                    "files":{}
+                }"#
+            )),
+            [
+                "/appState/frameRendering/firstUnknown",
+                "/appState/frameRendering/secondUnknown",
+            ]
+        );
+    }
+
+    #[test]
+    fn revision_1_frame_children_precede_later_app_state_members() {
+        assert_eq!(
+            pointers(&surface_diagnostics(
+                r#"{
+                    "type":"excalidraw","version":2,"elements":[],
+                    "appState":{
+                        "frameRendering":{"unknown":{"deep":true}},
+                        "laterUnknown":{"deep":true}
+                    },
+                    "files":{}
+                }"#
+            )),
+            ["/appState/frameRendering/unknown", "/appState/laterUnknown"]
+        );
+    }
+
+    #[test]
+    fn revision_1_linear_nested_records_classify_the_narrowest_unknown_child() {
+        assert_eq!(
+            codes_and_pointers(&surface_diagnostics(
+                r#"{
+                    "type":"excalidraw",
+                    "version":2,
+                    "elements":[
+                        {
+                            "id":"line",
+                            "type":"line",
+                            "width":10,
+                            "height":10,
+                            "points":[[0,0,99],[10,10]],
+                            "startBinding":{"elementId":"target","focus":0,"gap":0,"unknown":{"deep":true}},
+                            "seed":1,
+                            "updated":1
+                        },
+                        {"id":"target","type":"rectangle","width":10,"height":10,"seed":1,"updated":1}
+                    ],
+                    "appState":{},
+                    "files":{}
+                }"#
+            )),
+            [
+                (
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                    "/elements/0/points/0/2",
+                ),
+                (
+                    DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                    "/elements/0/startBinding/unknown",
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn revision_1_participating_bound_record_classifies_unknown_children() {
+        assert_eq!(
+            codes_and_pointers(&surface_diagnostics(
+                r#"{
+                    "type":"excalidraw","version":2,
+                    "elements":[
+                        {"id":"owner","type":"rectangle","width":20,"height":10,"boundElements":[{"id":"target","type":"text","unknown":{"deep":true}}],"seed":1,"updated":1},
+                        {"id":"target","type":"text","updated":1}
+                    ],
+                    "appState":{},"files":{}
+                }"#
+            )),
+            [(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY,
+                "/elements/0/boundElements/0/unknown",
+            )]
+        );
+    }
+
+    #[test]
+    fn revision_1_supported_value_uses_its_manifested_recovery() {
+        // A `strokeWidth` outside its domain is substituted by the default
+        // the manifest declares, so the element normalizes as if it had said
+        // `2`, and the substitution is a visible input repair.
+        let scene = SceneDocument::parse(
+            br##"{
+                "type":"excalidraw","version":2,
+                "elements":[{"id":"rectangle","type":"rectangle","width":20,"height":10,"strokeWidth":0,"seed":1,"updated":1}],
+                "appState":{},"files":{}
+            }"##,
+        )
+        .expect("policy vector is admitted");
+        let (diagnostics, normalized) = reported_diagnostics(
+            &scene,
+            OutputFormat::Svg,
+            true,
+            &SupplementalAssets::default(),
+        );
+        assert_eq!(normalized.elements[0].stroke_width, 2.0);
+        let [diagnostic] = diagnostics.as_slice() else {
+            panic!("invalid supported value has one manifested recovery: {diagnostics:?}");
+        };
+        assert_eq!(
+            diagnostic.code(),
+            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE
+        );
+        assert_eq!(diagnostic.json_pointer(), "/elements/0/strokeWidth");
+        assert_eq!(
+            diagnostic.effects(),
+            &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual]
+        );
+    }
+
+    #[test]
+    fn revision_1_invalid_css_color_uses_the_manifested_color_recovery() {
+        let scene = SceneDocument::parse(
+            br##"{
+                "type":"excalidraw","version":2,
+                "elements":[{"id":"rectangle","type":"rectangle","width":20,"height":10,"strokeColor":"not-a-color","seed":1,"updated":1}],
+                "appState":{},"files":{}
+            }"##,
+        )
+        .expect("policy vector is admitted");
+        let (diagnostics, normalized) = reported_diagnostics(
+            &scene,
+            OutputFormat::Svg,
+            true,
+            &SupplementalAssets::default(),
+        );
+        assert_eq!(normalized.elements[0].stroke_color, "#1e1e1e");
+        assert_eq!(
+            codes_and_pointers(&diagnostics),
+            [(DiagnosticCode::COLOR_INVALID, "/elements/0/strokeColor")]
+        );
+    }
+
+    #[test]
+    fn malformed_colors_use_field_specific_substitutions_in_source_order() {
+        let scene = SceneDocument::parse(
+            br##"{
+                "type":"excalidraw",
+                "version":2,
+                "elements":[{
+                    "id":"invalid-colors",
+                    "type":"rectangle",
+                    "width":20,
+                    "height":10,
+                    "strokeColor":"rgb(1, 2 3)",
+                    "backgroundColor":"color(invalid 1 1 1)",
+                    "seed":1,
+                    "updated":1
+                }],
+                "appState":{"viewBackgroundColor":"rgb(future)"},
+                "files":{}
+            }"##,
+        )
+        .expect("policy vector is admitted");
+        let (diagnostics, normalized) = reported_diagnostics(
+            &scene,
+            OutputFormat::Svg,
+            true,
+            &SupplementalAssets::default(),
+        );
+        assert_eq!(normalized.elements[0].stroke_color, "#1e1e1e");
+        assert_eq!(normalized.elements[0].background_color, "transparent");
+        assert_eq!(normalized.view_background_color, "#ffffff");
+        assert_eq!(
+            codes_and_pointers(&diagnostics),
+            [
+                (DiagnosticCode::COLOR_INVALID, "/elements/0/strokeColor"),
+                (DiagnosticCode::COLOR_INVALID, "/elements/0/backgroundColor"),
+                (
+                    DiagnosticCode::COLOR_INVALID,
+                    "/appState/viewBackgroundColor"
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn revision_1_known_unavailable_kind_still_applies_exact_field_policy() {
+        // A text element with no text is unavailable to the renderer, but its
+        // malformed `fontSize` is still diagnosed by the field policy.
+        let scene = SceneDocument::parse(
+            br#"{
+                "type":"excalidraw","version":2,
+                "elements":[{"id":"text","type":"text","fontSize":0,"updated":1}],
+                "appState":{},"files":{}
+            }"#,
+        )
+        .expect("policy vector is admitted");
+        let (diagnostics, normalized) = reported_diagnostics(
+            &scene,
+            OutputFormat::Svg,
+            true,
+            &SupplementalAssets::default(),
+        );
+        let NormalizedElementKind::Text(text) = &normalized.elements[0].kind else {
+            panic!("the element retains its normalized text kind");
+        };
+        assert_eq!(text.font_size, 20.0);
+        assert_eq!(
+            codes_and_pointers(&diagnostics),
+            [(
+                DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
+                "/elements/0/fontSize",
+            )]
+        );
+    }
+
+    #[test]
+    fn revision_1_value_rules_are_format_and_kind_aware() {
+        // An unsafe link is omitted, and diagnosed, only where a link can
+        // reach the artifact: SVG carries links, PNG does not. Every
+        // diagnostic names the format it was produced for.
+        let source = r#"{
+            "type":"excalidraw","version":2,
+            "elements":[{"id":"diamond","type":"diamond","width":20,"height":10,"seed":0,"link":"javascript:alert(1)","updated":1}],
+            "appState":{},"files":{}
+        }"#;
+        for (format, expected_codes) in [
+            (
+                OutputFormat::Svg,
+                vec![
+                    DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
+                    DiagnosticCode::LINK_UNSAFE_OMITTED,
+                ],
+            ),
+            (
+                OutputFormat::Png,
+                vec![DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED],
+            ),
+            (
+                OutputFormat::Pdf,
+                vec![
+                    DiagnosticCode::NORMALIZATION_ZERO_ROUGH_SEED,
+                    DiagnosticCode::LINK_UNSAFE_OMITTED,
+                ],
+            ),
+        ] {
+            let diagnostics = surface_diagnostics_for(source, format);
+            assert_eq!(
+                diagnostics
+                    .iter()
+                    .map(|diagnostic| diagnostic.code())
+                    .collect::<Vec<_>>(),
+                expected_codes,
+                "{format:?}"
+            );
+            assert!(
+                diagnostics
+                    .iter()
+                    .all(|diagnostic| diagnostic.format() == format),
+                "{format:?}"
+            );
+        }
     }
 }

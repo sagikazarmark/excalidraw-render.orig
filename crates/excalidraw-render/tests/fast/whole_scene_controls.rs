@@ -454,65 +454,6 @@ fn non_finite_derived_bounds_use_the_stable_scene_error() {
     assert_eq!(error.json_pointer(), "");
 }
 
-#[test]
-fn nested_color_mix_is_bounded_before_rendering() {
-    let mut color = String::from("red");
-    for _ in 0..130 {
-        color = format!("color-mix(in srgb, {color}, blue)");
-    }
-    let source = format!(
-        concat!(
-            "{{\"type\":\"excalidraw\",\"version\":2,\"elements\":[],",
-            "\"appState\":{{\"viewBackgroundColor\":\"{}\"}},\"files\":{{}}}}"
-        ),
-        color
-    );
-    let outcome = render_source(source.as_bytes(), OutputFormat::Svg);
-    let [diagnostic] = outcome.report().diagnostics() else {
-        panic!("over-nested color has one field diagnostic");
-    };
-    assert_eq!(diagnostic.code(), DiagnosticCode::COLOR_INVALID);
-    assert_eq!(diagnostic.json_pointer(), "/appState/viewBackgroundColor");
-}
-
-#[test]
-fn pinned_chromium_color_level_4_forms_lower_to_canonical_srgb() {
-    for (color, expected) in [
-        ("RGB(30 30 30)", "#1e1e1e"),
-        ("hwb(120 0% 0% / .5)", "#00ff00"),
-        ("lab(50% 0 0)", "#777777"),
-        ("oklab(50% 0 0)", "#636363"),
-        ("color(display-p3 1 0 0)", "#ff0000"),
-        ("color(srgb 0.25 0 0.75)", "#4000bf"),
-        (
-            "color(srgb-linear 0.21586050011389926 0.21586050011389926 0.21586050011389926)",
-            "#808080",
-        ),
-        ("color-mix(IN SRGB, red 25%, blue)", "#4000bf"),
-        ("color-mix(in oklab, red, blue)", "#8c53a2"),
-        ("color-mix(in hsl, red, blue)", "#ff00ff"),
-        ("color-mix(in hsl longer hue, red, blue)", "#00ff00"),
-        ("color-mix(in hwb, red, blue)", "#ff00ff"),
-        ("color-mix(in display-p3, red, blue)", "#800a91"),
-        ("color-mix(in xyz, red, blue)", "#bc00bc"),
-        ("currentcolor", "#000000"),
-    ] {
-        let source = format!(
-            concat!(
-                "{{\"type\":\"excalidraw\",\"version\":2,\"elements\":[],",
-                "\"appState\":{{\"viewBackgroundColor\":\"{}\"}},\"files\":{{}}}}"
-            ),
-            color
-        );
-        let svg = render_source(source.as_bytes(), OutputFormat::Svg);
-        let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
-        assert!(
-            svg.contains(&format!("fill=\"{expected}\"")),
-            "{color} did not lower to {expected}: {svg}"
-        );
-    }
-}
-
 fn render_source_with_request(
     source: &[u8],
     request: RenderRequest,

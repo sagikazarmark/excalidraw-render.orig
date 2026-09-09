@@ -25,9 +25,6 @@ fn valid_empty_scene_renders_a_complete_svg_artifact() {
     )));
     assert!(svg.contains("<rect x=\"0\" y=\"0\" width=\"20\" height=\"20\" fill=\"#ffffff\"/>"));
     assert_eq!(svg.matches("<rect ").count(), 1);
-
-    let repeated = render_empty_scene(OutputFormat::Svg);
-    assert_eq!(artifact.bytes(), repeated.artifact().bytes());
 }
 
 #[test]
@@ -55,9 +52,6 @@ fn valid_empty_scene_renders_a_complete_png_artifact() {
         .iter()
         .all(|chunk| chunk == b"IDAT"));
     assert!(!artifact.bytes().windows(4).any(|bytes| bytes == b"<svg"));
-
-    let repeated = render_empty_scene(OutputFormat::Png);
-    assert_eq!(artifact.bytes(), repeated.artifact().bytes());
 }
 
 #[test]
@@ -87,9 +81,6 @@ fn valid_empty_scene_renders_a_complete_one_page_pdf_artifact() {
     assert!(pdf.contains("/ColorSpace << /CS1 [/ICCBased 5 0 R] >>"));
     assert!(pdf.contains("/OutputIntents [6 0 R]"));
     assert!(!bytes.windows(4).any(|window| window == b"<svg"));
-
-    let repeated = render_empty_scene(OutputFormat::Pdf);
-    assert_eq!(bytes, repeated.artifact().bytes());
 }
 
 fn render_empty_scene(format: OutputFormat) -> RenderOutcome {

@@ -54,6 +54,15 @@ impl RegisteredVariant {
 /// registered. Panics when the registry declares no scene case: a harness that
 /// judged nothing must not pass.
 pub fn registered_scene_variants(root: &Path) -> Vec<RegisteredVariant> {
+    registered_variants_of_kinds(root, &["scene"])
+}
+
+/// Every variant of every registered case whose `kind` is one of `kinds`, in
+/// registry order. The `scene` and `typography` kinds share the variant shape
+/// (a scene document, a manifest of export variants and their evidence); the
+/// `frame` kind is exported through the frame API and has no variants here.
+/// Panics when no case matches: a harness that judged nothing must not pass.
+pub fn registered_variants_of_kinds(root: &Path, kinds: &[&str]) -> Vec<RegisteredVariant> {
     let registry: Value = serde_json::from_slice(
         &fs::read(root.join("tests/conformance/cases/registry.json"))
             .expect("case registry is present"),
@@ -64,7 +73,11 @@ pub fn registered_scene_variants(root: &Path) -> Vec<RegisteredVariant> {
         .as_array()
         .expect("registry cases are an array")
         .iter()
-        .filter(|case| case["kind"] == "scene")
+        .filter(|case| {
+            case["kind"]
+                .as_str()
+                .is_some_and(|kind| kinds.contains(&kind))
+        })
     {
         let id = case["id"].as_str().expect("case id is a string");
         let dir = root.join(case["path"].as_str().expect("case path is a string"));
@@ -95,7 +108,10 @@ pub fn registered_scene_variants(root: &Path) -> Vec<RegisteredVariant> {
             });
         }
     }
-    assert!(!variants.is_empty(), "the registry declared no scene cases");
+    assert!(
+        !variants.is_empty(),
+        "the registry declared no case of kind {kinds:?}"
+    );
     variants
 }
 

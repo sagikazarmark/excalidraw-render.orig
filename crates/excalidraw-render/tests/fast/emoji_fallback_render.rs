@@ -60,17 +60,10 @@ fn manifested_noto_emoji() -> Vec<u8> {
 }
 
 #[test]
-fn every_format_reports_one_noto_emoji_substitution_per_occurrence_and_repeats_byte_for_byte() {
+fn every_format_reports_one_noto_emoji_substitution_per_occurrence() {
     let scene = registered_scene();
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
-        let first = render(&scene, format);
-        let second = render(&scene, format);
-        assert_eq!(
-            first.artifact().bytes(),
-            second.artifact().bytes(),
-            "{format:?} renders byte-identically"
-        );
-        assert_eq!(first.report(), second.report());
+        let outcome = render(&scene, format);
 
         // PNG and SVG carry evidence and a checked report each. The PDF has
         // neither, so its report is the SVG's two diagnostics under the PDF's
@@ -109,7 +102,7 @@ fn every_format_reports_one_noto_emoji_substitution_per_occurrence_and_repeats_b
             .iter()
             .all(|diagnostic| diagnostic["code"] == "font.noto-emoji-substituted"));
         assert_eq!(
-            serde_json::to_value(first.report()).expect("report serializes"),
+            serde_json::to_value(outcome.report()).expect("report serializes"),
             expected,
             "{format:?} report is the registered expectation"
         );

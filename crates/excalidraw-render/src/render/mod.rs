@@ -1,6 +1,8 @@
 mod asset;
 mod bound_text;
 mod diagnostics;
+#[cfg(test)]
+pub(crate) use diagnostics::sort_diagnostics;
 mod encode;
 mod font_demand;
 mod font_subset;
@@ -1516,16 +1518,7 @@ impl RenderSession {
                 outline_local_crossing(&source, request, 0, base_element_work_units);
             let mut rejected_geometry_segments = 0;
             let geometry = if has_outline && local_crossing.is_none() {
-                let max_size = source.width.max(source.height);
-                let min_size = source.width.min(source.height);
-                let adjusted_roughness = if min_size >= 20.0 && max_size >= 50.0
-                    || min_size >= 15.0 && source.roundness.is_some()
-                    || matches!(source.kind, NormalizedElementKind::Linear(_)) && max_size >= 50.0
-                {
-                    source.roughness
-                } else {
-                    (source.roughness / if max_size < 10.0 { 3.0 } else { 2.0 }).min(2.5)
-                };
+                let roughness = adjusted_roughness(&source);
                 let mut budget = rough::GenerationBudget::new(
                     u64::from(
                         request
@@ -1551,7 +1544,7 @@ impl RenderSession {
                                     freedraw::background_fill(
                                         &freedraw.points,
                                         source.seed,
-                                        adjusted_roughness,
+                                        roughness,
                                         fill_style,
                                         source.stroke_width,
                                         &mut budget,
@@ -1564,8 +1557,9 @@ impl RenderSession {
                             },
                         )
                     }
-                    _ => rough_drawing(&source, adjusted_roughness, &mut budget)
-                        .map(GeneratedGeometry::Rough),
+                    _ => {
+                        rough_drawing(&source, roughness, &mut budget).map(GeneratedGeometry::Rough)
+                    }
                 };
                 match generated {
                     Ok(geometry) => Some(geometry),
@@ -4294,18 +4288,15 @@ impl RenderSession {
                 diagnostic.json_pointer,
             ));
         }
-        diagnostic.order = DiagnosticOrder {
-            owner_index: ownership
-                .source_order
-                .or_else(|| {
-                    element_owner_index(&diagnostic.json_pointer)
-                        .map(|index| self.element_source_order_base.saturating_add(index))
-                })
-                .unwrap_or(u64::MAX),
-            source_position: ownership.source_position.unwrap_or(u64::MAX),
-            retention_ordinal: u64::try_from(self.report.diagnostics.len()).unwrap_or(u64::MAX),
-            attribution: self.diagnostic_attribution,
-        };
+        diagnostic.order = DiagnosticOrder::retained(
+            ownership.source_order.or_else(|| {
+                element_owner_index(&diagnostic.json_pointer)
+                    .map(|index| self.element_source_order_base.saturating_add(index))
+            }),
+            ownership.source_position,
+            u64::try_from(self.report.diagnostics.len()).unwrap_or(u64::MAX),
+            self.diagnostic_attribution,
+        );
         self.report.diagnostics.push(diagnostic);
         Ok(())
     }
@@ -4372,19 +4363,7 @@ impl RenderSession {
     }
 
     fn take_report(&mut self) -> CompatibilityReport {
-        self.report.diagnostics.sort_unstable_by(|left, right| {
-            left.order
-                .owner_index
-                .cmp(&right.order.owner_index)
-                .then_with(|| left.order.source_position.cmp(&right.order.source_position))
-                .then_with(|| left.json_pointer.cmp(&right.json_pointer))
-                .then_with(|| left.code.as_str().cmp(right.code.as_str()))
-                .then_with(|| {
-                    left.order
-                        .retention_ordinal
-                        .cmp(&right.order.retention_ordinal)
-                })
-        });
+        sort_diagnostics(&mut self.report.diagnostics);
         std::mem::take(&mut self.report)
     }
 

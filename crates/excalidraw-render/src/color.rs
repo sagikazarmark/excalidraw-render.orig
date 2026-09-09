@@ -1070,4 +1070,153 @@ mod tests {
         assert_eq!(dark_mode_raster_image_pixel(rgb(0x0000ff)), rgb(0x2d2d4c));
         assert_eq!(dark_mode_raster_image_pixel(rgb(0x1e1e1e)), rgb(0x2b2b2b));
     }
+
+    /// `parse_css(value)` written back as the SVG hex the renderer emits, or
+    /// `None` when the value is not a color.
+    fn hex_of(value: &str) -> Option<String> {
+        parse_css(value).map(|color| {
+            let mut hex = String::new();
+            color.write_hex(&mut hex).expect("writing to a String");
+            hex
+        })
+    }
+
+    /// The CSS Color Level 4 forms the pinned Chromium lowers to these sRGB
+    /// hex values: every predefined color space, `color-mix` in each
+    /// interpolation space with and without a hue method, and
+    /// `currentcolor`. Keywords are matched case-insensitively.
+    #[test]
+    fn pinned_chromium_color_level_4_forms_lower_to_canonical_srgb() {
+        for (color, expected) in [
+            ("RGB(30 30 30)", "#1e1e1e"),
+            ("hwb(120 0% 0% / .5)", "#00ff00"),
+            ("lab(50% 0 0)", "#777777"),
+            ("oklab(50% 0 0)", "#636363"),
+            ("color(display-p3 1 0 0)", "#ff0000"),
+            ("color(srgb 0.25 0 0.75)", "#4000bf"),
+            (
+                "color(srgb-linear 0.21586050011389926 0.21586050011389926 0.21586050011389926)",
+                "#808080",
+            ),
+            ("color-mix(IN SRGB, red 25%, blue)", "#4000bf"),
+            ("color-mix(in oklab, red, blue)", "#8c53a2"),
+            ("color-mix(in hsl, red, blue)", "#ff00ff"),
+            ("color-mix(in hsl longer hue, red, blue)", "#00ff00"),
+            ("color-mix(in hwb, red, blue)", "#ff00ff"),
+            ("color-mix(in display-p3, red, blue)", "#800a91"),
+            ("color-mix(in xyz, red, blue)", "#bc00bc"),
+            ("currentcolor", "#000000"),
+            ("rebeccapurple", "#663399"),
+            ("  red  ", "#ff0000"),
+        ] {
+            assert_eq!(hex_of(color).as_deref(), Some(expected), "{color}");
+        }
+    }
+
+    /// The malformed values the whole-scene tests substitute: a comma mixed
+    /// into a space-separated `rgb()`, an unknown `color()` space, a
+    /// non-numeric channel, and a bare word that is not a named color.
+    #[test]
+    fn values_that_are_not_colors_parse_to_none() {
+        for value in [
+            "rgb(1, 2 3)",
+            "color(invalid 1 1 1)",
+            "rgb(future)",
+            "not-a-color",
+            "",
+            "color-mix(in srgb, red)",
+            "color-mix(in nowhere, red, blue)",
+            "color-mix(in srgb, red 150%, blue)",
+            "color-mix(in srgb, red 0%, blue 0%)",
+            "color-mix(in hsl sideways hue, red, blue)",
+        ] {
+            assert_eq!(parse_css(value), None, "{value:?}");
+        }
+    }
+
+    /// `color-mix` nests to the depth the renderer bounds, 128 stops deep,
+    /// and one level deeper is refused rather than recursed into, so an
+    /// adversarial `viewBackgroundColor` cannot exhaust the stack.
+    #[test]
+    fn nested_color_mix_is_bounded() {
+        let nested = |depth: usize| {
+            let mut color = String::from("red");
+            for _ in 0..depth {
+                color = format!("color-mix(in srgb, {color}, blue)");
+            }
+            color
+        };
+        assert_eq!(hex_of(&nested(1)).as_deref(), Some("#800080"));
+        assert!(parse_css(&nested(128)).is_some(), "128 levels are admitted");
+        assert_eq!(parse_css(&nested(129)), None, "129 levels are refused");
+        assert_eq!(parse_css(&nested(130)), None);
+    }
+
+    /// Alpha survives parsing in the 8-bit precision the encoders read: the
+    /// `#rrggbbaa` byte and the `/ 50%` percentage both land on `128 / 255`,
+    /// which the PNG encoder writes as `128` and SVG and PDF as
+    /// `0.5019607843137255`.
+    #[test]
+    fn alpha_is_parsed_at_eight_bit_precision_for_every_projection() {
+        const ALPHA: f64 = 0.5019607843137255;
+        let stroke = parse_css("#ff000080").expect("eight-digit hex is a color");
+        assert_eq!(stroke.alpha(), ALPHA);
+        assert_eq!(stroke.rgba8(), [255, 0, 0, 128]);
+        assert_eq!(hex_of("#ff000080").as_deref(), Some("#ff0000"));
+
+        let background = parse_css("rgb(10 20 30 / 50%)").expect("percentage alpha is a color");
+        assert_eq!(background.alpha(), ALPHA);
+        assert_eq!(background.rgba8(), [10, 20, 30, 128]);
+        assert_eq!(background.rgb8(), [10, 20, 30]);
+
+        let opaque = parse_css("rebeccapurple").expect("named color");
+        assert_eq!(opaque.alpha(), 1.0);
+        assert_eq!(opaque.rgba8(), [102, 51, 153, 255]);
+        assert_eq!(opaque.rgb_f64(), [0.4, 0.2, 0.6]);
+    }
+
+    /// `write_hex` is the six-digit lowercase form with every channel padded,
+    /// whatever the alpha.
+    #[test]
+    fn write_hex_pads_every_channel_to_two_lowercase_digits() {
+        let mut hex = String::new();
+        CanonicalColor::from_rgba(0, 10, 255, 0.25)
+            .write_hex(&mut hex)
+            .expect("writing to a String");
+        assert_eq!(hex, "#000aff");
+    }
+
+    /// Dark mode lowers a parsed scene color through the theme filter: the
+    /// default text color `#1e1e1e` becomes `#d3d3d3` and a white canvas
+    /// `#111111`, the constants the reference's dark export shows.
+    #[test]
+    fn dark_mode_lowers_parsed_scene_colors_to_the_reference_constants() {
+        let dark = |value: &str| {
+            let mut hex = String::new();
+            parse_css(value)
+                .expect("the reference constant is a color")
+                .for_mode(ColorMode::Dark)
+                .write_hex(&mut hex)
+                .expect("writing to a String");
+            hex
+        };
+        assert_eq!(dark("#1e1e1e"), "#d3d3d3");
+        assert_eq!(dark("#ffffff"), "#111111");
+        assert_eq!(dark("white"), "#111111");
+    }
+
+    /// CSS system colors resolve to the pinned Chromium light-theme values,
+    /// case-insensitively; `Highlight` is the one translucent entry.
+    #[test]
+    fn system_colors_resolve_to_the_pinned_chromium_palette() {
+        assert_eq!(hex_of("Canvas").as_deref(), Some("#ffffff"));
+        assert_eq!(hex_of("canvastext").as_deref(), Some("#000000"));
+        assert_eq!(hex_of("LinkText").as_deref(), Some("#0000ee"));
+        assert_eq!(hex_of("VISITEDTEXT").as_deref(), Some("#551a8b"));
+        assert_eq!(hex_of("GrayText").as_deref(), Some("#808080"));
+        assert_eq!(hex_of("ButtonFace").as_deref(), Some("#efefef"));
+        let highlight = parse_css("Highlight").expect("Highlight is a system color");
+        assert_eq!(highlight.rgb8(), [0, 65, 198]);
+        assert_eq!(highlight.alpha(), 0.8);
+    }
 }
