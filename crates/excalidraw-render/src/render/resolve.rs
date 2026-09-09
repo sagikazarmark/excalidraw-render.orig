@@ -1,8 +1,34 @@
+//! Stage 4: the format-neutral semantic graph. `ResolvedScene::elements`
+//! orchestrates one scene's resolution — bound-text placement and masks, the
+//! fallback font and frame names, the scene bounds, the semantic frames, one
+//! resolved element per surviving source element in source order, the painted
+//! placeholders, the paint-order sort and the font and notice assembly — and
+//! this file owns every type in the graph, the `ResolveContext` the per-kind
+//! resolutions read, the asset location helpers and the element-local resource
+//! crossings.
+//!
+//! `bounds` is the layout pass; `frame`, `text`, `image`, `outline` and
+//! `fallback` each resolve one element family. This stage is not charged, but
+//! `account_fallback_semantics` charges the graph it produces in paint order
+//! (ADR-0002), so the element loop's order and every early return are the
+//! contract.
+
+mod bounds;
+mod fallback;
+mod frame;
+mod image;
+mod outline;
+mod text;
+
+use bounds::scene_bounds;
+use fallback::{fallback_frame_clip_sources, resolve_fallback};
+use frame::{resolve_frame, resolve_frame_names, semantic_frame_sources};
+use image::resolve_image;
+use outline::resolve_geometry;
+use text::{cjk_subset_trigger, resolve_fonts, resolve_text};
+
 use crate::color::{self, CanonicalColor};
-use crate::font_metadata::FamilyMetrics;
-use crate::normalization::{
-    NormalizedElement, NormalizedElementKind, NormalizedElementSource, NormalizedText,
-};
+use crate::normalization::{NormalizedElement, NormalizedElementKind, NormalizedElementSource};
 use crate::outcome::DiagnosticOrder;
 use crate::relationships::ResolvedRelationshipGraph;
 use crate::resource_accounting::ResourceDelta;
@@ -14,21 +40,22 @@ use crate::{
 };
 
 use super::bound_text::{
-    has_reciprocal_bound_text, resolve_bound_text_masks, resolve_bound_text_placements,
-    BoundTextMaskSource,
+    resolve_bound_text_masks, resolve_bound_text_placements, BoundTextMaskSource,
 };
 use super::font_demand::{prune_unused_official_fonts, ResolvedFont};
 use super::frame_target::{
-    relationship_frame_target, resolve_frame_clips, resolve_frame_opacity, EffectiveFrameRendering,
-    FrameViewport,
+    resolve_frame_clips, resolve_frame_opacity, EffectiveFrameRendering, FrameViewport,
 };
 use super::geometry::{
-    ecmascript_round, image_corner_radius, include_transformed_bounds,
-    magic_frame_canvas_outline_stroke_color, resolved_frame_outline, resolved_frame_rect,
-    rounded_rect_path, source_layout_bounds, GeneratedFreedraw, GeneratedGeometry, Path,
+    ecmascript_round, image_corner_radius, magic_frame_canvas_outline_stroke_color,
+    resolved_frame_outline, resolved_frame_rect, rounded_rect_path, GeneratedGeometry, Path,
     FRAME_OUTLINE_STROKE_COLOR, FRAME_RADIUS,
 };
-use super::{asset, freedraw, notices, rough, text, try_owned};
+use super::text::{
+    mandatory_notices_json, CjkSubsetTrigger, FallbackFont, LabelError, OfficialFont,
+    ResolvedLabel, ResolvedText,
+};
+use super::{asset, freedraw, notices, rough, try_owned};
 
 #[derive(Debug)]
 pub(super) struct ResolvedScene {
@@ -44,7 +71,7 @@ pub(super) struct ResolvedScene {
     pub(super) mandatory_notices: Option<notices::MandatoryNotices>,
     /// The CJK subset trigger's outcome, shared by glyph selection and the SVG
     /// font demand so they select Xiaolai together or not at all.
-    pub(super) cjk_subset_trigger: text::CjkSubsetTrigger,
+    pub(super) cjk_subset_trigger: CjkSubsetTrigger,
 }
 
 pub(super) fn semantic_identity_hex(
@@ -218,51 +245,6 @@ pub(super) enum ResolveSceneError {
     UnboundedGeometry,
 }
 
-/// Whether one text element is a live text occurrence, and if so its bound-text
-/// container. Empty text and bound text whose container does not bind it back
-/// are omitted and contribute nothing, neither glyphs nor font demand.
-fn live_text_occurrence(
-    text_source: &NormalizedText,
-    source_index: usize,
-    relationships: &crate::relationships::ResolvedRelationshipGraph,
-) -> Option<Option<usize>> {
-    if text_source.text.is_empty() {
-        return None;
-    }
-    let container_source_index = relationship_element_target(
-        source_index,
-        crate::relationships::RelationshipKind::Mask,
-        relationships,
-    );
-    if container_source_index
-        .is_some_and(|container| !has_reciprocal_bound_text(container, source_index, relationships))
-    {
-        return None;
-    }
-    Some(container_source_index)
-}
-
-/// Evaluates the CJK subset trigger once for the scene, over every live
-/// Excalifont occurrence's rendered `text`. That text is the format-neutral
-/// carrier of the Excalifont font family scalar set: `originalText` only
-/// survives normalization for SVG, and a wrapped `text` keeps every
-/// non-whitespace scalar of its `originalText`. The outcome is carried on the
-/// resolved scene so glyph selection and the SVG font demand share it, even
-/// when local recovery later omits the occurrence that fired it.
-fn cjk_subset_trigger(
-    outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
-    relationships: &crate::relationships::ResolvedRelationshipGraph,
-) -> text::CjkSubsetTrigger {
-    text::CjkSubsetTrigger::evaluate(outlines.iter().filter_map(|(source, _)| {
-        let NormalizedElementKind::Text(text_source) = &source.kind else {
-            return None;
-        };
-        live_text_occurrence(text_source, source.source.source_index(), relationships)?;
-        (text_source.font_family == text::EXCALIFONT_FONT_FAMILY)
-            .then_some(text_source.text.as_str())
-    }))
-}
-
 pub(super) fn format_error_code(format: OutputFormat) -> ErrorCode {
     match format {
         OutputFormat::Svg => ErrorCode::ENCODE_SVG_FAILED,
@@ -281,10 +263,10 @@ impl From<std::collections::TryReserveError> for ResolveSceneError {
 /// error becomes. `mandatory_notices_json` is the one caller that maps
 /// `InvalidFont` elsewhere, to `InvalidMandatoryNotice`, so this stays a named
 /// function rather than a `From` impl `?` would apply there too.
-fn label_error(error: text::LabelError) -> ResolveSceneError {
+fn label_error(error: LabelError) -> ResolveSceneError {
     match error {
-        text::LabelError::Memory => ResolveSceneError::Memory,
-        text::LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
+        LabelError::Memory => ResolveSceneError::Memory,
+        LabelError::InvalidFont => ResolveSceneError::InvalidFallbackFont,
     }
 }
 
@@ -302,7 +284,7 @@ struct ResolveContext<'a> {
     semantic_frames: &'a [SemanticFrameSource],
     bound_text_masks: &'a [BoundTextMaskSource],
     background_color: CanonicalColor,
-    cjk_subset_trigger: text::CjkSubsetTrigger,
+    cjk_subset_trigger: CjkSubsetTrigger,
     min_x: f64,
     min_y: f64,
 }
@@ -372,6 +354,15 @@ impl ResolveContext<'_> {
     }
 }
 
+/// What the frame an element belongs to imposes on it: the clips of the frame's
+/// outline and the frame's opacity, which multiplies the element's own. Resolved
+/// before the element's kind is, for every element alike, so the clip's
+/// allocation fails in the same place whatever the element turns out to be.
+struct FrameMembership {
+    clips: Vec<ResolvedClip>,
+    opacity: f64,
+}
+
 impl ResolvedScene {
     pub(super) fn empty(
         background_color: &str,
@@ -406,7 +397,7 @@ impl ResolvedScene {
             fallback_font_sfnt: None,
             official_fonts: Vec::new(),
             mandatory_notices: None,
-            cjk_subset_trigger: text::CjkSubsetTrigger::default(),
+            cjk_subset_trigger: CjkSubsetTrigger::default(),
         })
     }
 
@@ -453,7 +444,7 @@ impl ResolvedScene {
         let fallback_font = if (shows_frame_names && has_frames)
             || fallbacks.iter().any(|fallback| fallback.paint)
         {
-            Some(text::FallbackFont::load().map_err(label_error)?)
+            Some(FallbackFont::load().map_err(label_error)?)
         } else {
             None
         };
@@ -493,7 +484,7 @@ impl ResolvedScene {
             .for_mode(request.color_mode());
         let semantic_frames = semantic_frame_sources(&outlines)?;
         let fallback_frame_clips = fallback_frame_clip_sources(&fallbacks, frame_rendering)?;
-        let mut official_fonts = Vec::<text::OfficialFont>::new();
+        let mut official_fonts = Vec::<OfficialFont>::new();
         let cjk_subset_trigger = cjk_subset_trigger(&outlines, relationships);
         let mut has_label = false;
         let context = ResolveContext {
@@ -562,7 +553,7 @@ impl ResolvedScene {
         elements.sort_by_key(ResolvedElement::paint_order);
         let (fallback_font_woff2, fallback_font_sfnt) = if has_label {
             fallback_font
-                .map(text::FallbackFont::into_parts)
+                .map(FallbackFont::into_parts)
                 .map_or((None, None), |(woff2, sfnt)| (Some(woff2), Some(sfnt)))
         } else {
             (None, None)
@@ -575,14 +566,12 @@ impl ResolvedScene {
         });
         let resolved_fonts = resolve_fonts(official_fonts)?;
         let mandatory_notices = if has_label || has_official_text {
-            Some(
-                text::mandatory_notices_json(has_label, &resolved_fonts).map_err(|error| {
-                    match error {
-                        text::LabelError::Memory => ResolveSceneError::Memory,
-                        text::LabelError::InvalidFont => ResolveSceneError::InvalidMandatoryNotice,
-                    }
-                })?,
-            )
+            Some(mandatory_notices_json(has_label, &resolved_fonts).map_err(
+                |error| match error {
+                    LabelError::Memory => ResolveSceneError::Memory,
+                    LabelError::InvalidFont => ResolveSceneError::InvalidMandatoryNotice,
+                },
+            )?)
         } else {
             None
         };
@@ -636,809 +625,6 @@ impl ResolvedScene {
             Sizing::MaxDimension(_) => 1.0,
         }
     }
-}
-
-/// What the frame an element belongs to imposes on it: the clips of the frame's
-/// outline and the frame's opacity, which multiplies the element's own. Resolved
-/// before the element's kind is, for every element alike, so the clip's
-/// allocation fails in the same place whatever the element turns out to be.
-struct FrameMembership {
-    clips: Vec<ResolvedClip>,
-    opacity: f64,
-}
-
-/// The visible name of every frame, shaped before the scene is measured: the
-/// reference synthesizes each name as a text element
-/// (`addFrameLabelsAsTextElements`), so the names take part in the bounds.
-/// Keyed by the frame's source index; a frame with no name shows `Frame` or
-/// `AI Frame`.
-fn resolve_frame_names(
-    outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
-    fallback_font: Option<&text::FallbackFont>,
-) -> Result<Vec<(usize, text::FrameName)>, ResolveSceneError> {
-    let mut frame_names = Vec::new();
-    for (source, _) in outlines {
-        let (NormalizedElementKind::Frame(frame) | NormalizedElementKind::MagicFrame(frame)) =
-            &source.kind
-        else {
-            continue;
-        };
-        let title = frame.name.as_deref().unwrap_or({
-            if matches!(source.kind, NormalizedElementKind::MagicFrame(_)) {
-                "AI Frame"
-            } else {
-                "Frame"
-            }
-        });
-        let font = fallback_font.ok_or(ResolveSceneError::InvalidFallbackFont)?;
-        let name = font
-            .resolve_frame_name(title, source.width)
-            .map_err(label_error)?;
-        frame_names.try_reserve(1)?;
-        frame_names.push((source.source.source_index(), name));
-    }
-    Ok(frame_names)
-}
-
-/// The scene's layout bounds as `(min_x, min_y, max_x, max_y)`: the frame
-/// viewport of a frame export, or the rotated extents of every outline frame
-/// clipping leaves visible, every frame name, and every painted fallback that
-/// is not a clipped frame child. `None` when an element's normalized style is
-/// outside the focused case this stage implements; infinite bounds mean the
-/// scene has nothing to measure.
-fn scene_bounds(
-    outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
-    fallbacks: &[SurfaceFallback],
-    frame_names: &[(usize, text::FrameName)],
-    relationships: &ResolvedRelationshipGraph,
-    frame_rendering: EffectiveFrameRendering,
-    viewport: Option<FrameViewport>,
-) -> Option<(f64, f64, f64, f64)> {
-    let (mut min_x, mut min_y, mut max_x, mut max_y) = viewport.map_or(
-        (
-            f64::INFINITY,
-            f64::INFINITY,
-            f64::NEG_INFINITY,
-            f64::NEG_INFINITY,
-        ),
-        |viewport| {
-            (
-                viewport.min_x,
-                viewport.min_y,
-                viewport.max_x,
-                viewport.max_y,
-            )
-        },
-    );
-    for (source, geometry) in outlines {
-        if source.stroke_width < 0.0
-            || source.roughness < 0.0
-            || !(0.0..=100.0).contains(&source.opacity)
-            || source.seed == 0
-        {
-            return None;
-        }
-        let is_frame = matches!(
-            source.kind,
-            NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
-        );
-        if is_frame && !frame_rendering.enabled {
-            continue;
-        }
-        if let Some((_, name)) = frame_names
-            .iter()
-            .find(|(index, _)| *index == source.source.source_index())
-        {
-            // The name is an unrotated text element at the frame's x, its
-            // line box `nameOffsetY` above the frame's top edge. It belongs
-            // to no frame, so it extends the bounds even when the frame it
-            // names is itself a clipped child of another frame.
-            include_transformed_bounds(
-                source.x,
-                source.y - text::FRAME_NAME_OFFSET_Y - text::FRAME_NAME_BOX_HEIGHT,
-                name.width,
-                text::FRAME_NAME_BOX_HEIGHT,
-                0.0,
-                &mut min_x,
-                &mut min_y,
-                &mut max_x,
-                &mut max_y,
-            );
-        }
-        if frame_rendering.enabled
-            && frame_rendering.clip
-            && relationship_frame_target(source.source.source_index(), relationships).is_some()
-        {
-            continue;
-        }
-        if viewport.is_some() {
-            continue;
-        }
-        let (local_min_x, local_min_y, local_max_x, local_max_y) = geometry.as_ref().map_or_else(
-            || source_layout_bounds(source),
-            |geometry| geometry.bounds(source),
-        );
-        let (center_x, center_y) = if is_frame {
-            (
-                source.x + source.width / 2.0,
-                source.y + source.height / 2.0,
-            )
-        } else {
-            (
-                source.x + (local_min_x + local_max_x) / 2.0,
-                source.y + (local_min_y + local_max_y) / 2.0,
-            )
-        };
-        let sin = source.angle.sin();
-        let cos = source.angle.cos();
-        if let NormalizedElementKind::Freedraw(freedraw) = &source.kind {
-            if !freedraw.points.is_empty() {
-                for point in &freedraw.points {
-                    let point_x = source.x + point[0];
-                    let point_y = source.y + point[1];
-                    let delta_x = point_x - center_x;
-                    let delta_y = point_y - center_y;
-                    let rotated_x = center_x + delta_x * cos - delta_y * sin;
-                    let rotated_y = center_y + delta_x * sin + delta_y * cos;
-                    min_x = min_x.min(rotated_x);
-                    min_y = min_y.min(rotated_y);
-                    max_x = max_x.max(rotated_x);
-                    max_y = max_y.max(rotated_y);
-                }
-                continue;
-            }
-        }
-        for (corner_x, corner_y) in [
-            (source.x + local_min_x, source.y + local_min_y),
-            (source.x + local_max_x, source.y + local_min_y),
-            (source.x + local_max_x, source.y + local_max_y),
-            (source.x + local_min_x, source.y + local_max_y),
-        ] {
-            let delta_x = corner_x - center_x;
-            let delta_y = corner_y - center_y;
-            let rotated_x = center_x + delta_x * cos - delta_y * sin;
-            let rotated_y = center_y + delta_x * sin + delta_y * cos;
-            min_x = min_x.min(rotated_x);
-            min_y = min_y.min(rotated_y);
-            max_x = max_x.max(rotated_x);
-            max_y = max_y.max(rotated_y);
-        }
-    }
-    for fallback in fallbacks {
-        if viewport.is_some() {
-            continue;
-        }
-        let is_clipped_child = frame_rendering.enabled
-            && frame_rendering.clip
-            && fallback.element_id.as_deref().is_some_and(|id| {
-                relationships
-                    .nodes
-                    .iter()
-                    .find(|node| node.id == id)
-                    .and_then(|node| relationship_frame_target(node.source_index, relationships))
-                    .is_some()
-            });
-        if is_clipped_child {
-            continue;
-        }
-        include_transformed_bounds(
-            fallback.x,
-            fallback.y,
-            fallback.width,
-            fallback.height,
-            fallback.angle,
-            &mut min_x,
-            &mut min_y,
-            &mut max_x,
-            &mut max_y,
-        );
-    }
-    Some((min_x, min_y, max_x, max_y))
-}
-
-/// Every frame in the scene as the source its children's clips and opacity
-/// resolve from.
-fn semantic_frame_sources(
-    outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
-) -> Result<Vec<SemanticFrameSource>, ResolveSceneError> {
-    let mut semantic_frames = Vec::new();
-    semantic_frames.try_reserve(outlines.len())?;
-    for (source, _) in outlines {
-        if matches!(
-            source.kind,
-            NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
-        ) {
-            semantic_frames.push(SemanticFrameSource {
-                source_index: source.source.source_index(),
-                x: source.x,
-                y: source.y,
-                width: source.width,
-                height: source.height,
-                angle: source.angle,
-                opacity: source.opacity / 100.0,
-            });
-        }
-    }
-    Ok(semantic_frames)
-}
-
-/// The frames that survive only as compatibility placeholders, as the clips
-/// their placeholder children resolve against when frame clipping is on; empty
-/// otherwise.
-fn fallback_frame_clip_sources(
-    fallbacks: &[SurfaceFallback],
-    frame_rendering: EffectiveFrameRendering,
-) -> Result<Vec<FallbackFrameClipSource>, ResolveSceneError> {
-    let mut fallback_frame_clips = Vec::new();
-    if frame_rendering.enabled && frame_rendering.clip {
-        fallback_frame_clips.try_reserve(fallbacks.len())?;
-        for fallback in fallbacks {
-            let Some(id) = fallback.element_id.as_deref().filter(|_| fallback.is_frame) else {
-                continue;
-            };
-            fallback_frame_clips.push(FallbackFrameClipSource {
-                id: try_owned(id)?,
-                source_index: fallback.source_index,
-                x: fallback.x,
-                y: fallback.y,
-                width: fallback.width,
-                height: fallback.height,
-                angle: fallback.angle,
-            });
-        }
-    }
-    Ok(fallback_frame_clips)
-}
-
-/// `FRAME_STYLE.nameColorLightTheme` or `nameColorDarkTheme` for the mode, then
-/// lowered into the mode like every other color the reference paints under
-/// its dark-mode filter.
-fn frame_name_color(mode: crate::ColorMode) -> CanonicalColor {
-    match mode {
-        crate::ColorMode::Light => FRAME_NAME_COLOR_LIGHT,
-        crate::ColorMode::Dark => FRAME_NAME_COLOR_DARK,
-    }
-    .for_mode(mode)
-}
-
-/// One frame as a scene export emits it — with the synthesized name taken out
-/// of `frame_names` and the outline the effective frame rendering asks for —
-/// or `None` when frame elements are not emitted. Its clips and opacity are
-/// those of the frame it is itself a child of.
-fn resolve_frame(
-    source: NormalizedElement,
-    context: &ResolveContext<'_>,
-    membership: FrameMembership,
-    frame_names: &mut Vec<(usize, text::FrameName)>,
-) -> Result<Option<ResolvedFrame>, ResolveSceneError> {
-    if !(context.frame_rendering.enabled && context.frame_rendering.emit_frame_elements) {
-        return Ok(None);
-    }
-    let name = frame_names
-        .iter()
-        .position(|(index, _)| *index == source.source.source_index())
-        .map(|position| frame_names.swap_remove(position).1)
-        .map(|name| ResolvedFrameName {
-            transform: context.transform(
-                source.x,
-                source.y - text::FRAME_NAME_OFFSET_Y - text::FRAME_NAME_BOX_HEIGHT,
-                0.0,
-                name.width / 2.0,
-                text::FRAME_NAME_BOX_HEIGHT / 2.0,
-            ),
-            color: frame_name_color(context.request.color_mode()),
-            label: name.label,
-        });
-    let outline = context
-        .frame_rendering
-        .outline
-        .then(|| {
-            ResolvedFrameOutline::new(
-                source.width,
-                source.height,
-                matches!(source.kind, NormalizedElementKind::MagicFrame(_)),
-                context.request.color_mode(),
-            )
-        })
-        .transpose()?;
-    let transform = context.box_transform(&source);
-    Ok(Some(ResolvedFrame {
-        source_order: source.source_order,
-        source: source.source,
-        name,
-        outline,
-        frame_clips: membership.clips,
-        transform,
-        opacity: source.opacity / 100.0 * membership.opacity,
-        link: source.link,
-        width: source.width,
-        height: source.height,
-    }))
-}
-
-/// The index in `official_fonts` of the font that shapes `font_family`, loading
-/// it for `text` on first use.
-fn official_font_index(
-    official_fonts: &mut Vec<text::OfficialFont>,
-    font_family: i32,
-    text: &str,
-) -> Result<usize, ResolveSceneError> {
-    if let Some(index) = official_fonts
-        .iter()
-        .position(|font| font.matches_family(font_family))
-    {
-        return Ok(index);
-    }
-    official_fonts.try_reserve(1)?;
-    official_fonts.push(text::OfficialFont::load(font_family, text).map_err(label_error)?);
-    Ok(official_fonts.len() - 1)
-}
-
-/// `text` laid out in `official_fonts[font_index]`, then again through the
-/// per-scalar fallback chain when that whole-text face misses a scalar or the
-/// text is bidirectional.
-fn layout_official_text(
-    official_fonts: &mut Vec<text::OfficialFont>,
-    font_index: usize,
-    text: &str,
-    layout: text::TextLayout<'_>,
-    cjk_subset_trigger: text::CjkSubsetTrigger,
-) -> Result<text::ResolvedText, ResolveSceneError> {
-    let fallback_layout = text::TextLayout {
-        width: layout.width,
-        font_size: layout.font_size,
-        line_height: layout.line_height,
-        text_align: layout.text_align,
-        font_family: layout.font_family,
-    };
-    let mut laid_out = official_fonts[font_index]
-        .layout(text, layout)
-        .map_err(label_error)?;
-    laid_out.font_index = font_index;
-    if !laid_out.missing_codepoints.is_empty() || text::contains_bidirectional_text(text) {
-        laid_out = text::layout_with_fallbacks(
-            font_index,
-            official_fonts,
-            text,
-            fallback_layout,
-            cjk_subset_trigger,
-        )
-        .map_err(label_error)?
-        .0;
-    }
-    Ok(laid_out)
-}
-
-/// One text element as a live text occurrence, laid out in its official font,
-/// or `None` when the occurrence is omitted: empty text, or bound text whose
-/// container does not bind it back. A bound occurrence carries its container's
-/// source order so it paints right after the container.
-fn resolve_text(
-    source: NormalizedElement,
-    context: &ResolveContext<'_>,
-    official_fonts: &mut Vec<text::OfficialFont>,
-    membership: FrameMembership,
-) -> Result<Option<ResolvedTextElement>, ResolveSceneError> {
-    let NormalizedElementKind::Text(text_source) = &source.kind else {
-        unreachable!("only text elements reach text resolution");
-    };
-    let Some(container_source_index) = live_text_occurrence(
-        text_source,
-        source.source.source_index(),
-        context.relationships,
-    ) else {
-        return Ok(None);
-    };
-    let container_source_order = container_source_index.and_then(|container| {
-        context
-            .relationships
-            .nodes
-            .iter()
-            .find(|node| node.source_index == container)
-            .map(|node| node.source_order)
-    });
-    let font_index =
-        official_font_index(official_fonts, text_source.font_family, &text_source.text)?;
-    let laid_out = layout_official_text(
-        official_fonts,
-        font_index,
-        &text_source.text,
-        text::TextLayout {
-            width: source.width,
-            font_size: text_source.font_size,
-            line_height: text_source.line_height,
-            text_align: &text_source.text_align,
-            font_family: text_source.font_family,
-        },
-        context.cjk_subset_trigger,
-    )?;
-    let transform = context.box_transform(&source);
-    Ok(Some(ResolvedTextElement {
-        source_order: source.source_order,
-        source: source.source,
-        font_family: text_source.font_family,
-        original_text: try_owned(&text_source.original_text)?,
-        text: laid_out,
-        frame_clips: membership.clips,
-        transform,
-        color: color::parse_css(&source.stroke_color)
-            .ok_or(ResolveSceneError::InvalidColor)?
-            .for_mode(context.request.color_mode()),
-        opacity: source.opacity / 100.0 * membership.opacity,
-        render: true,
-        base_element_work_units: 0,
-        container_source_order,
-        link: source.link,
-        width: source.width,
-        height: source.height,
-    }))
-}
-
-/// One image element: the asset drawn through its projection, crop and corner
-/// clip when the census resolved one, the compatibility placeholder for its
-/// normalized status when the census recorded that instead, and nothing when
-/// it has neither.
-fn resolve_image(
-    source: NormalizedElement,
-    images: &ResolvedImageInputs,
-    context: &ResolveContext<'_>,
-    membership: FrameMembership,
-) -> Result<Option<ResolvedElement>, ResolveSceneError> {
-    let NormalizedElementKind::Image(image) = &source.kind else {
-        unreachable!("only image elements reach image resolution");
-    };
-    if let Some(asset) = images.assets.get(&source.source.source_index()) {
-        let source_rect = image.crop.map_or(
-            ResolvedImageSourceRect {
-                x: 0.0,
-                y: 0.0,
-                width: f64::from(asset.width),
-                height: f64::from(asset.height),
-            },
-            |crop| ResolvedImageSourceRect {
-                x: crop.x * f64::from(asset.width) / crop.natural_width,
-                y: crop.y * f64::from(asset.height) / crop.natural_height,
-                width: crop.width * f64::from(asset.width) / crop.natural_width,
-                height: crop.height * f64::from(asset.height) / crop.natural_height,
-            },
-        );
-        let transform = context.box_transform(&source);
-        return Ok(Some(ResolvedElement::Image(ResolvedImage {
-            source_order: source.source_order,
-            source: source.source,
-            dark_mode_filter: DarkModeImageFilter::for_image(context.request.color_mode(), asset),
-            asset: std::sync::Arc::clone(asset),
-            frame_clips: membership.clips,
-            corner_clip: ResolvedImageCornerClip::for_image(
-                source.width,
-                source.height,
-                source.roundness,
-            )?,
-            transform,
-            opacity: source.opacity / 100.0 * membership.opacity,
-            source_rect,
-            projection: ResolvedImageProjection::for_image(source.width, source.height, image.crop),
-            scale: image.scale,
-            link: source.link,
-            width: source.width,
-            height: source.height,
-        })));
-    }
-    let Some((_, status)) = images
-        .fallbacks
-        .iter()
-        .find(|(source_index, _)| *source_index == source.source.source_index())
-    else {
-        return Ok(None);
-    };
-    let transform = context.box_transform(&source);
-    Ok(Some(ResolvedElement::ImageFallback(
-        ResolvedImageFallback {
-            source_order: source.source_order,
-            source: source.source,
-            status: *status,
-            frame_clips: membership.clips,
-            transform,
-            opacity: source.opacity / 100.0 * membership.opacity,
-            width: source.width,
-            height: source.height,
-        },
-    )))
-}
-
-/// What the Rough and freedraw outlines share once their geometry is
-/// generated: the canvas placement rotated about the geometry's center, the
-/// stroke color for the mode, and the base work units the ledger charges for
-/// the element.
-struct OutlineCommon {
-    transform: ResolvedTransform,
-    stroke_color: CanonicalColor,
-    base_element_work_units: u64,
-}
-
-/// One outline with generated geometry: the shared placement, stroke color and
-/// base work units, then the Rough drawing or the freedraw path.
-fn resolve_geometry(
-    source: NormalizedElement,
-    geometry: GeneratedGeometry,
-    context: &ResolveContext<'_>,
-    official_fonts: &mut Vec<text::OfficialFont>,
-    membership: FrameMembership,
-) -> Result<ResolvedElement, ResolveSceneError> {
-    let geometry_work_units = u64::try_from(geometry.operation_count())
-        .unwrap_or(u64::MAX)
-        .saturating_mul(32);
-    let (local_min_x, local_min_y, local_max_x, local_max_y) = geometry.bounds(&source);
-    let transform = context.transform(
-        source.x,
-        source.y,
-        source.angle,
-        (local_min_x + local_max_x) / 2.0,
-        (local_min_y + local_max_y) / 2.0,
-    );
-    let stroke_color = color::parse_css(&source.stroke_color)
-        .ok_or(ResolveSceneError::InvalidColor)?
-        .for_mode(context.request.color_mode());
-    let common = OutlineCommon {
-        transform,
-        stroke_color,
-        base_element_work_units: source.normalization_work_units
-            + geometry_work_units
-            + 8
-            + source.repair_work_units,
-    };
-    match geometry {
-        GeneratedGeometry::Rough(drawing) => Ok(ResolvedElement::Outline(resolve_outline(
-            source,
-            drawing,
-            common,
-            context,
-            official_fonts,
-            membership,
-        )?)),
-        GeneratedGeometry::Freedraw(freedraw) => Ok(ResolvedElement::Freedraw(resolve_freedraw(
-            source, freedraw, common, context, membership,
-        ))),
-    }
-}
-
-/// The generated label of an embeddable placeholder — the sanitized link or
-/// `IFrame element` — wrapped and laid out in the label font, with its color
-/// (the stroke color, or black over a transparent stroke) and the vertical
-/// offset that centers its line box in the element.
-fn resolve_embeddable_label(
-    source: &NormalizedElement,
-    label: &str,
-    context: &ResolveContext<'_>,
-    official_fonts: &mut Vec<text::OfficialFont>,
-) -> Result<(text::ResolvedText, CanonicalColor, f64), ResolveSceneError> {
-    let font_size = embeddable_font_size(source.width, label);
-    let font_index = official_font_index(official_fonts, EMBEDDABLE_LABEL_FONT_FAMILY, label)?;
-    let wrapped_label = official_fonts[font_index]
-        .wrap_embeddable_label(label, font_size, source.width - 20.0)
-        .map_err(label_error)?;
-    let laid_out = layout_official_text(
-        official_fonts,
-        font_index,
-        &wrapped_label,
-        text::TextLayout {
-            width: source.width,
-            font_size,
-            line_height: EMBEDDABLE_LABEL_LINE_HEIGHT,
-            text_align: "center",
-            font_family: EMBEDDABLE_LABEL_FONT_FAMILY,
-        },
-        context.cjk_subset_trigger,
-    )?;
-    let line_count = laid_out.lines.len() as f64;
-    let offset_y = (source.height - line_count * font_size * EMBEDDABLE_LABEL_LINE_HEIGHT) / 2.0;
-    let label_color = color::parse_css(if source.stroke_color == "transparent" {
-        "#000000"
-    } else {
-        &source.stroke_color
-    })
-    .ok_or(ResolveSceneError::InvalidColor)?
-    .for_mode(context.request.color_mode());
-    Ok((laid_out, label_color, offset_y))
-}
-
-/// One Rough outline — a shape, a linear element or an embeddable placeholder
-/// — with its generated label laid out in the label font and its bound-text
-/// mask placed on the canvas. A PNG export of a zero-extent embeddable draws
-/// no label, as the canvas draws none.
-fn resolve_outline(
-    source: NormalizedElement,
-    drawing: rough::Drawing,
-    common: OutlineCommon,
-    context: &ResolveContext<'_>,
-    official_fonts: &mut Vec<text::OfficialFont>,
-    membership: FrameMembership,
-) -> Result<ResolvedOutline, ResolveSceneError> {
-    let source_index = source.source.source_index();
-    let (generated_label, generated_label_color, generated_label_offset_y) =
-        if context.request.format() == OutputFormat::Png
-            && (source.width == 0.0 || source.height == 0.0)
-        {
-            (None, None, 0.0)
-        } else if let NormalizedElementKind::Embeddable { label, .. } = &source.kind {
-            let (laid_out, label_color, offset_y) =
-                resolve_embeddable_label(&source, label, context, official_fonts)?;
-            (Some(laid_out), Some(label_color), offset_y)
-        } else {
-            (None, None, 0.0)
-        };
-    Ok(ResolvedOutline {
-        source_order: source.source_order,
-        source: source.source,
-        base_element_work_units: common.base_element_work_units,
-        drawing,
-        frame_clips: membership.clips,
-        transform: common.transform,
-        stroke_color: common.stroke_color,
-        fill_color: (source.background_color != "transparent")
-            .then(|| color::parse_css(&source.background_color))
-            .flatten()
-            .map(|color| color.for_mode(context.request.color_mode())),
-        stroke_width: if source.stroke_style == "solid" {
-            source.stroke_width
-        } else {
-            source.stroke_width + 0.5
-        },
-        stroke_style: match source.stroke_style.as_str() {
-            "dashed" => StrokeStyle::Dashed,
-            "dotted" => StrokeStyle::Dotted,
-            _ => StrokeStyle::Solid,
-        },
-        source_stroke_width: source.stroke_width,
-        opacity: source.opacity / 100.0 * membership.opacity,
-        element_opacity: source.opacity / 100.0,
-        background_color: context.background_color,
-        label_mask: context
-            .bound_text_masks
-            .iter()
-            .find(|mask| mask.container_source_index == source_index)
-            .map(|mask| ResolvedLabelMask {
-                x: mask.x - context.min_x + context.request.padding(),
-                y: mask.y - context.min_y + context.request.padding(),
-                width: mask.width,
-                height: mask.height,
-            }),
-        width: source.width,
-        height: source.height,
-        generated_label,
-        generated_label_color,
-        generated_label_offset_y,
-        final_pass: matches!(source.kind, NormalizedElementKind::Embeddable { .. }),
-        link: source.link,
-    })
-}
-
-/// One freedraw outline: the generated path and its optional background fill,
-/// which nothing about the element can fail to place.
-fn resolve_freedraw(
-    source: NormalizedElement,
-    freedraw: GeneratedFreedraw,
-    common: OutlineCommon,
-    context: &ResolveContext<'_>,
-    membership: FrameMembership,
-) -> ResolvedFreedraw {
-    ResolvedFreedraw {
-        source_order: source.source_order,
-        source: source.source,
-        base_element_work_units: common.base_element_work_units,
-        path: freedraw.path,
-        background_fill: freedraw.background_fill,
-        frame_clips: membership.clips,
-        transform: common.transform,
-        color: common.stroke_color,
-        background_color: (source.background_color != "transparent")
-            .then(|| color::parse_css(&source.background_color))
-            .flatten()
-            .map(|color| color.for_mode(context.request.color_mode())),
-        source_stroke_width: source.stroke_width,
-        opacity: source.opacity / 100.0 * membership.opacity,
-        link: source.link,
-        width: source.width,
-        height: source.height,
-    }
-}
-
-/// One compatibility placeholder the scene surface paints: its label shaped in
-/// the fallback font, clipped and faded by the frame that owns its source
-/// element, or clipped by the placeholder frame its `frameId` names when the
-/// element itself did not survive into the relationship graph.
-fn resolve_fallback(
-    fallback: SurfaceFallback,
-    context: &ResolveContext<'_>,
-    fallback_font: Option<&text::FallbackFont>,
-    fallback_frame_clips: &[FallbackFrameClipSource],
-) -> Result<ResolvedFallback, ResolveSceneError> {
-    let Some(font) = fallback_font else {
-        return Err(ResolveSceneError::InvalidFallbackFont);
-    };
-    let label = font
-        .resolve(&fallback.label, fallback.width, fallback.height)
-        .map_err(label_error)?;
-    let source_index = fallback.element_id.as_deref().and_then(|id| {
-        context
-            .relationships
-            .nodes
-            .iter()
-            .find(|node| node.id == id)
-            .map(|node| node.source_index)
-    });
-    let frame_clips = if let Some(source_index) = source_index {
-        context.frame_clips(source_index)?
-    } else {
-        let frame = fallback.frame_id.as_deref().and_then(|frame_id| {
-            fallback_frame_clips
-                .iter()
-                .find(|frame| frame.id == frame_id)
-        });
-        let mut clips = Vec::new();
-        if let Some(frame) = frame {
-            clips.try_reserve_exact(1)?;
-            clips.push(ResolvedClip::for_frame(
-                frame.source_index,
-                frame.width,
-                frame.height,
-                true,
-                context.transform(
-                    frame.x,
-                    frame.y,
-                    frame.angle,
-                    frame.width / 2.0,
-                    frame.height / 2.0,
-                ),
-            )?);
-        }
-        clips
-    };
-    let frame_opacity =
-        source_index.map_or(1.0, |source_index| context.frame_opacity(source_index));
-    let transform = context.transform(
-        fallback.x,
-        fallback.y,
-        fallback.angle,
-        fallback.width / 2.0,
-        fallback.height / 2.0,
-    );
-    Ok(ResolvedFallback {
-        source_order: fallback.source_order,
-        source: FallbackSource {
-            id: fallback.element_id,
-            pointer: fallback.json_pointer,
-        },
-        label,
-        link: fallback.link,
-        frame_clips,
-        width: fallback.width,
-        height: fallback.height,
-        transform,
-        opacity: fallback.opacity / 100.0 * frame_opacity,
-        render: true,
-    })
-}
-
-/// The official fonts the resolved elements still reference, as the fonts the
-/// encoders embed.
-fn resolve_fonts(
-    official_fonts: Vec<text::OfficialFont>,
-) -> Result<Vec<ResolvedFont>, ResolveSceneError> {
-    let mut resolved_fonts = Vec::new();
-    resolved_fonts.try_reserve_exact(official_fonts.len())?;
-    for font in official_fonts {
-        let (family, pdf_name, identity, svg_mime, woff2, sfnt) = font.into_parts();
-        resolved_fonts.push(ResolvedFont {
-            family,
-            pdf_name,
-            identity,
-            svg_mime,
-            woff2,
-            sfnt,
-        });
-    }
-    Ok(resolved_fonts)
 }
 
 #[derive(Debug)]
@@ -1707,7 +893,7 @@ pub(super) struct ResolvedTextElement {
     pub(super) source: NormalizedElementSource,
     pub(super) font_family: i32,
     pub(super) original_text: String,
-    pub(super) text: text::ResolvedText,
+    pub(super) text: ResolvedText,
     pub(super) frame_clips: Vec<ResolvedClip>,
     pub(super) transform: ResolvedTransform,
     pub(super) color: CanonicalColor,
@@ -1740,7 +926,7 @@ pub(super) struct ResolvedOutline {
     pub(super) link: Option<String>,
     pub(super) width: f64,
     pub(super) height: f64,
-    pub(super) generated_label: Option<text::ResolvedText>,
+    pub(super) generated_label: Option<ResolvedText>,
     pub(super) generated_label_color: Option<CanonicalColor>,
     pub(super) generated_label_offset_y: f64,
     final_pass: bool,
@@ -1828,7 +1014,7 @@ impl ResolvedFrameOutline {
 /// corner, full opacity, no link, and no frame clip, whatever the frame has.
 #[derive(Debug)]
 pub(super) struct ResolvedFrameName {
-    pub(super) label: text::ResolvedLabel,
+    pub(super) label: ResolvedLabel,
     /// Canvas placement of the label box's top-left corner; the angle is 0.
     pub(super) transform: ResolvedTransform,
     /// `FRAME_STYLE.nameColorLightTheme` or `nameColorDarkTheme` for the mode.
@@ -1871,35 +1057,6 @@ pub(super) struct FallbackColors {
     pub(super) label: CanonicalColor,
 }
 
-/// Excalidraw creates the offline placeholder label as Helvetica text, so the
-/// label is shaped with the Liberation Sans substitute and positioned by
-/// Helvetica's metadata metrics.
-const EMBEDDABLE_LABEL_FONT_FAMILY: i32 = 2;
-
-/// `FRAME_STYLE.nameColorLightTheme` and `nameColorDarkTheme`: the frame name
-/// is a text element whose stroke color the export picks by theme, and the
-/// dark one then passes through the dark-mode filter like every other color.
-const FRAME_NAME_COLOR_LIGHT: CanonicalColor = CanonicalColor::from_rgb8(0x99, 0x99, 0x99);
-const FRAME_NAME_COLOR_DARK: CanonicalColor = CanonicalColor::from_rgb8(0x7a, 0x7a, 0x7a);
-
-/// The label is a new text element with no stored height, so its line height
-/// is its family's metadata line height (`getLineHeight`), 1.15 for Helvetica.
-const EMBEDDABLE_LABEL_LINE_HEIGHT: f64 =
-    match FamilyMetrics::for_source_family(EMBEDDABLE_LABEL_FONT_FAMILY) {
-        Some(metrics) => metrics.line_height,
-        None => panic!("the embeddable label family has metadata metrics"),
-    };
-
-fn embeddable_font_size(width: f64, label: &str) -> f64 {
-    let utf16_length = label.encode_utf16().count().max(1) as f64;
-    let raw = (width / 2.0).min(width / utf16_length).max(width / 30.0);
-    if raw == 0.0 {
-        20.0
-    } else {
-        raw
-    }
-}
-
 impl FallbackColors {
     pub(super) fn for_mode(mode: crate::ColorMode) -> Self {
         Self {
@@ -1914,7 +1071,7 @@ impl FallbackColors {
 pub(super) struct ResolvedFallback {
     pub(super) source_order: u64,
     pub(super) source: FallbackSource,
-    pub(super) label: Option<text::ResolvedLabel>,
+    pub(super) label: Option<ResolvedLabel>,
     pub(super) link: Option<String>,
     pub(super) frame_clips: Vec<ResolvedClip>,
     pub(super) width: f64,
@@ -1922,16 +1079,6 @@ pub(super) struct ResolvedFallback {
     pub(super) transform: ResolvedTransform,
     pub(super) opacity: f64,
     pub(super) render: bool,
-}
-
-struct FallbackFrameClipSource {
-    id: String,
-    source_index: usize,
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    angle: f64,
 }
 
 #[derive(Debug)]
