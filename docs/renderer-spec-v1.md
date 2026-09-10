@@ -1200,6 +1200,33 @@ anchors, logical transforms and bounds, clipping, masks, frame appearance,
 paint order, accepted images, required fonts, deterministic IDs, notices,
 metadata, and deterministic serialization.
 
+Every element's group carries the reference's
+`translate(x y) rotate(degrees cx cy)`, the rotation about the centre of the
+box `getElementAbsoluteCoords` returns for the element. For a line or arrow
+(an elbow arrow included; a freedraw is not a linear element to that
+function) the box depends on the state of the reference's `ShapeCache` when
+it is read, and the two official export paths read it in opposite states
+(#177): `renderElementToSvg` reads the coordinates before it generates the
+shape, on a freshly restored element whose cache is cold, so the official SVG
+rotates a linear element about the centre of its **points'** box, while the
+canvas `renderElement` generates the shape first and reads the coordinates
+after, so the official PNG rotates it about the centre of the drawn
+**curve's** box, the cubic extent of its Rough.js outline (Sections 8.5 and
+8.6). The two centres differ by the offset the roughness jitter gives the
+curve's box against the points' box — up to a couple of pixels at roughness 1
+to 2, zero at roughness 0 — and rotation about the one rather than the other
+moves the drawn shape by `(R − I)(c₁ − c₂)`, so a rotated rough line or arrow
+sits at a slightly different place in the official SVG than in the official
+PNG. That is a format-specific difference the reference itself carries, and
+revision 1 preserves it: the SVG target writes `rotate(degrees cx cy)` about
+the points' box centre, in the reference's own arithmetic
+(`(x2 - x1) / 2 - (element.x - x1)` over the page coordinates of the points'
+box, so the attribute matches the official export to the last digit), and
+PNG and PDF rotate about the curve's box centre. It is not a reference
+authority divergence: neither export is defective, each rotates about the box
+it read. A rotated rough linear element's SVG and PNG are therefore judged
+against the official artifact of their own format, never against each other.
+
 `<defs>` contains exactly one font style element, `<style class="style-fonts">`,
 when direct-export fonts are used. It contains one `@font-face` declaration for
 each selected subset — the resolved families' chunks in canonical
@@ -1370,6 +1397,13 @@ images, masks, clips, compositing, dark mode, dimensions, color type, filters,
 compression, chunk order, metadata order, and exclusion of host/time/random
 data.
 
+A line or arrow, an elbow arrow included, rotates about the centre of its drawn
+Rough.js outline's cubic extent — the box `getElementAbsoluteCoords` returns to
+the canvas `renderElement`, which generates the element's shape before it reads
+the coordinates — where the SVG rotates it about its points' box (Section 8.4,
+#177). Every other kind rotates about its element box, a freedraw about its
+points' box, in every format alike.
+
 Edge coverage follows the reference canvas: paths, glyphs, clips and rotated
 images are antialiased by area coverage, and an axis-aligned image's
 destination rectangle is painted by pixel-centre coverage with no edge
@@ -1415,6 +1449,16 @@ PDF is a direct semantic projection, not a serialized-SVG pivot. Official SVG
 reference evidence is the transitive visual authority for geometry, paint order,
 frames, clipping, text, links, and images. Official PNG is not authoritative
 where formats differ, and no official PDF reference evidence is implied.
+
+One placement follows the canvas rather than the official SVG: a line or arrow,
+an elbow arrow included, rotates about the centre of its drawn Rough.js
+outline's cubic extent, as PNG does (Section 8.5), where the official SVG
+rotates it about its points' box (Section 8.4, #177). The two coincide at
+roughness 0; for a rotated rough linear element the PDF's shape sits where the
+official PNG's does, up to a couple of pixels from where the official SVG's
+does, so a PDF gate whose authority is the official SVG raster sees that
+displacement there exactly as the direct-PNG harness would see the opposite one
+if PNG followed the SVG.
 
 When an approved compatibility exception intentionally changes SVG appearance,
 PDF authority is official SVG reference evidence plus that exception's exact

@@ -8,7 +8,7 @@ use crate::font_metadata::FamilyMetrics;
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
 use crate::OutputFormat;
 
-use super::super::geometry::{GeneratedFreedraw, GeneratedGeometry};
+use super::super::geometry::{linear_points_bounds, GeneratedFreedraw, GeneratedGeometry};
 use super::super::rough::Drawing;
 use super::super::text::{OfficialFont, ResolvedText, TextLayout};
 use super::text::{layout_official_text, official_font_index};
@@ -62,14 +62,8 @@ pub(super) fn resolve_geometry(
     let geometry_work_units = u64::try_from(geometry.operation_count())
         .unwrap_or(u64::MAX)
         .saturating_mul(32);
-    let (local_min_x, local_min_y, local_max_x, local_max_y) = geometry.bounds(&source);
-    let transform = context.transform(
-        source.x,
-        source.y,
-        source.angle,
-        (local_min_x + local_max_x) / 2.0,
-        (local_min_y + local_max_y) / 2.0,
-    );
+    let (center_x, center_y) = rotation_center(&source, &geometry, context.request.format());
+    let transform = context.transform(source.x, source.y, source.angle, center_x, center_y);
     let stroke_color = color::parse_css(&source.stroke_color)
         .ok_or(ResolveSceneError::InvalidColor)?
         .for_mode(context.request.color_mode());
@@ -94,6 +88,46 @@ pub(super) fn resolve_geometry(
             source, freedraw, common, context, membership,
         ))),
     }
+}
+
+/// The point, in the element's own coordinates, that its render transform
+/// rotates about: the centre of the box `getElementAbsoluteCoords` returns,
+/// which for a line or arrow depends on the state of the `ShapeCache` when the
+/// export reads it, and the two official export paths read it in opposite
+/// states (#177). `renderElementToSvg` reads it before it generates the shape,
+/// on a freshly restored element whose cache is cold, so the official SVG
+/// rotates a linear element about the centre of its **points'** box, spelled
+/// as the reference spells it — `(x2 - x1) / 2 - (element.x - x1)` over the
+/// page coordinates of the points' box — so the `rotate(angle cx cy)` the SVG
+/// writes matches the official one to the last digit. The canvas
+/// `renderElement` generates the shape first and reads the coordinates after,
+/// so the official PNG rotates about the centre of the drawn **curve's** box,
+/// which PNG and PDF keep. The two coincide at roughness 0, where the curve
+/// has no jitter; freedraw is not a linear element to
+/// `getElementAbsoluteCoords` and every other kind rotates about its box.
+fn rotation_center(
+    source: &NormalizedElement,
+    geometry: &GeneratedGeometry,
+    format: OutputFormat,
+) -> (f64, f64) {
+    if let (NormalizedElementKind::Linear(linear), OutputFormat::Svg) = (&source.kind, format) {
+        let (min_x, min_y, max_x, max_y) = linear_points_bounds(linear);
+        let (x1, y1, x2, y2) = (
+            min_x + source.x,
+            min_y + source.y,
+            max_x + source.x,
+            max_y + source.y,
+        );
+        return (
+            (x2 - x1) / 2.0 - (source.x - x1),
+            (y2 - y1) / 2.0 - (source.y - y1),
+        );
+    }
+    let (local_min_x, local_min_y, local_max_x, local_max_y) = geometry.canvas_bounds(source);
+    (
+        (local_min_x + local_max_x) / 2.0,
+        (local_min_y + local_max_y) / 2.0,
+    )
 }
 
 /// The generated label of an embeddable placeholder — the sanitized link or

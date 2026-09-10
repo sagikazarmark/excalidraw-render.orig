@@ -65,7 +65,7 @@ pub(super) fn resolve_bound_text_placements(
                 };
                 let (min_x, min_y, max_x, max_y) = geometry.as_ref().map_or_else(
                     || source_layout_bounds(container),
-                    |geometry| geometry.bounds(container),
+                    |geometry| geometry.canvas_bounds(container),
                 );
                 let center_x = (min_x + max_x) / 2.0;
                 let center_y = (min_y + max_y) / 2.0;

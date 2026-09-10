@@ -214,7 +214,11 @@ impl GeneratedGeometry {
         }
     }
 
-    pub(super) fn bounds(&self, source: &NormalizedElement) -> (f64, f64, f64, f64) {
+    /// The local box the canvas rotates the element about: the drawn Rough
+    /// outline's cubic extent for a linear element (the box
+    /// `getElementAbsoluteCoords` reads once `renderElement` has warmed the
+    /// `ShapeCache`), the points' box of a freedraw, the element box otherwise.
+    pub(super) fn canvas_bounds(&self, source: &NormalizedElement) -> (f64, f64, f64, f64) {
         match self {
             Self::Rough(rough) => local_outline_bounds(source, Some(&rough.drawing)),
             Self::Freedraw(_) => source_layout_bounds(source),
@@ -1423,6 +1427,13 @@ fn translate_drawing(drawing: &mut rough::Drawing, x: f64, y: f64) {
     }
 }
 
+/// The local box the reference canvas rotates an element about: for a linear
+/// element the cubic extent of its drawn Rough.js outline — what
+/// `getElementAbsoluteCoords` reads from the `ShapeCache` that `renderElement`
+/// has just warmed, for an elbow arrow's drawn path as for any other linear
+/// kind — and the points' box when the outline draws no cubic; the element box
+/// for every other kind (#177). The scene extent is measured elsewhere, by
+/// `include_element_bounds`, and the SVG rotates about the points' box.
 fn local_outline_bounds(
     source: &NormalizedElement,
     drawing: Option<&rough::Drawing>,
@@ -1430,15 +1441,8 @@ fn local_outline_bounds(
     let NormalizedElementKind::Linear(linear) = &source.kind else {
         return (0.0, 0.0, source.width, source.height);
     };
-    // An elbow arrow's extent comes from its declared orthogonal route, not from
-    // the jittered path drawn along it. Taking the drawn curve's bounds made the
-    // scene a fraction of a pixel taller than the official export, which is
-    // enough to change a rasterized dimension when the extent sits near an
-    // integer boundary. Other linear elements do use the drawn bounds.
-    if !linear.elbowed {
-        if let Some(bounds) = drawing.and_then(|drawing| drawing.outline.cubic_bounds()) {
-            return bounds;
-        }
+    if let Some(bounds) = drawing.and_then(|drawing| drawing.outline.cubic_bounds()) {
+        return bounds;
     }
     linear_points_bounds(linear)
 }
