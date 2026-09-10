@@ -21,10 +21,11 @@
 //     < scene.excalidraw
 //
 // The scene is a scene document whose elements are rectangles, diamonds,
-// ellipses or closed lines without arrowheads, the shapes the test scenes
-// carry; each element's paths are printed in document order, the fill first,
-// then the outline, with their SHA-256 digests and the digest of every path
-// joined by `\n`, which is what the Rust tests pin.
+// ellipses or lines without arrowheads (closed with a background, open, or
+// rounded), the shapes the test scenes carry; each element's paths are printed
+// in document order, the fill first, then the outline, with their SHA-256
+// digests and the digest of every path joined by `\n`, which is what the Rust
+// tests pin.
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -118,17 +119,44 @@ function shape(element) {
       return generator.rectangle(0, 0, w, h, generateRoughOptions(element, false));
     }
     case "diamond": {
-      const topX = Math.floor(w / 2) + 1;
-      const rightY = Math.floor(h / 2) + 1;
+      // `getDiamondPoints`: the vertices sit at `floor(extent / 2) + 1`, and
+      // a rounded diamond's radii come from those vertex offsets (#160).
+      const [topX, topY, rightX, rightY, bottomX, bottomY, leftX, leftY] =
+        [Math.floor(w / 2) + 1, 0, w, Math.floor(h / 2) + 1, Math.floor(w / 2) + 1, h, 0, Math.floor(h / 2) + 1];
+      if (element.roundness) {
+        const verticalRadius = getCornerRadius(Math.abs(topX - leftX), element);
+        const horizontalRadius = getCornerRadius(Math.abs(rightY - topY), element);
+        return generator.path(
+          `M ${topX + verticalRadius} ${topY + horizontalRadius} L ${rightX - verticalRadius} ${rightY - horizontalRadius}
+            C ${rightX} ${rightY}, ${rightX} ${rightY}, ${rightX - verticalRadius} ${rightY + horizontalRadius}
+            L ${bottomX + verticalRadius} ${bottomY - horizontalRadius}
+            C ${bottomX} ${bottomY}, ${bottomX} ${bottomY}, ${bottomX - verticalRadius} ${bottomY - horizontalRadius}
+            L ${leftX + verticalRadius} ${leftY + horizontalRadius}
+            C ${leftX} ${leftY}, ${leftX} ${leftY}, ${leftX + verticalRadius} ${leftY - horizontalRadius}
+            L ${topX - verticalRadius} ${topY + horizontalRadius}
+            C ${topX} ${topY}, ${topX} ${topY}, ${topX + verticalRadius} ${topY + horizontalRadius}`,
+          generateRoughOptions(element, true),
+        );
+      }
       return generator.polygon(
-        [[topX, 0], [w, rightY], [topX, h], [0, rightY]],
+        [[topX, topY], [rightX, rightY], [bottomX, bottomY], [leftX, leftY]],
         generateRoughOptions(element),
       );
     }
     case "ellipse":
       return generator.ellipse(w / 2, h / 2, w, h, generateRoughOptions(element));
-    case "line":
-      return generator.polygon(element.points, generateRoughOptions(element));
+    case "line": {
+      // A line with a background is a polygon, an open one a linear path, and
+      // a rounded one a curve, as the reference's `line` case dispatches them.
+      const options = generateRoughOptions(element);
+      if (element.roundness) {
+        return generator.curve(element.points, options);
+      }
+      if (options.fill) {
+        return generator.polygon(element.points, options);
+      }
+      return generator.linearPath(element.points, options);
+    }
     default:
       throw new Error(`derive.mjs does not draw ${element.type}`);
   }

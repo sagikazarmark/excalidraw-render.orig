@@ -2519,16 +2519,108 @@ fn outline_operations_match_the_pinned_roughjs_vectors() {
     );
     assert_eq!(
         sha256_hex(&paths.join("\n")),
-        "6d0e81bef0d09500efd1e8f97e78d2a998331d4a4e7683d0adbf596a695fbe80",
-        // The original vectors came from an independent pinned Rough.js 4.6.4 run,
-        // but that run was fed midpoint diamond vertices, which is not what the
-        // official export uses. The two diamond entries were re-derived after the
-        // vertex fix; their geometry is corroborated by official evidence at two
-        // sizes of differing parity, 170x110 and 130x95, where every path matches
-        // byte for byte. The five non-diamond entries are unchanged from the
-        // independent run.
-        "diamond vectors re-derived against official evidence; the rest are the \
-         independent pinned Rough.js 4.6.4 run"
+        "6aac27aa315f3786f158ba71a73ed6e18537665c5e65335280ea6407aa68c567",
+        // Every entry is the pinned npm Rough.js 4.6.4's, derived with
+        // `tools/rough-filler-vectors/derive.mjs` over this scene, which
+        // draws each shape as the reference's `generateElementShape` does. The
+        // digest moved with the rounded diamond's corner radii (#160): they
+        // come from the diamond's vertex offsets `floor(extent / 2) + 1`, as
+        // its vertices do, not from the exact half extents.
+        "outline families derived from the pinned npm Rough.js 4.6.4"
+    );
+}
+
+/// Rounded diamonds at the sizes and roundness records that distinguish the
+/// reference's radius rule (#160): the radii are `getCornerRadius` of the
+/// vertex offsets `floor(width / 2) + 1` and `floor(height / 2) + 1`, so an
+/// even extent gives a quarter pixel more than its half would, and an odd one
+/// half a pixel more. The adaptive (type 3) record's fixed 32 applies only
+/// where the vertex offset exceeds its 128 cutoff, so a 300x180 diamond takes
+/// 32 horizontally and `91 * 0.25` vertically; the small one takes the
+/// proportional branch on both axes, and carries a hachure fill so the fill
+/// scan reads the same rounded outline.
+const ROUNDED_DIAMOND_FAMILIES: &[u8] = br##"{
+  "type":"excalidraw","version":2,
+  "elements":[
+    {"id":"proportional-even","type":"diamond","x":10,"y":10,"width":120,"height":80,"roundness":{"type":2},"roughness":0,"seed":61,"updated":1},
+    {"id":"proportional-odd","type":"diamond","x":150,"y":10,"width":131,"height":77,"roundness":{"type":2},"seed":62,"updated":1},
+    {"id":"adaptive-cutoff","type":"diamond","x":300,"y":10,"width":300,"height":180,"roundness":{"type":3},"seed":63,"updated":1},
+    {"id":"adaptive-small","type":"diamond","x":620,"y":10,"width":80,"height":50,"roundness":{"type":3,"value":32},"backgroundColor":"#e03131","fillStyle":"hachure","seed":64,"updated":1}
+  ],
+  "appState":{},"files":{}
+}"##;
+
+#[test]
+fn rounded_diamond_radii_match_the_pinned_roughjs_vectors() {
+    // Every digest here is the pinned npm Rough.js 4.6.4's, computed with
+    //
+    //   node tools/rough-filler-vectors/derive.mjs \
+    //     tools/reference-oracle/node_modules/roughjs/bundled/rough.esm.js \
+    //     <<< "$ROUNDED_DIAMOND_FAMILIES"
+    //
+    // under Node 24.19.0 after `tools/reference-oracle/run-container.sh
+    // install`; the script builds the rounded diamond's path from the vertex
+    // offsets exactly as `generateElementShape` spells it (#160). The first
+    // element is the 120x80 diamond of `focused.legacy-stroke-sharpness.v1`
+    // at a different seed: its outline starts at `76.25 10.25`, where the
+    // official export starts, not at `76 10`.
+    const EXPECTED: &[(&str, &[usize], &[&str])] = &[
+        (
+            "proportional-even",
+            &[32],
+            &["0c50847ac1ab2e46ae6385be582994490b9b240848978c35052cbf7561c43b15"],
+        ),
+        (
+            "proportional-odd",
+            &[32],
+            &["918a24b270e36b18d5b147fec4d3ac93ef6870047416f8e19143e928ddab868e"],
+        ),
+        (
+            "adaptive-cutoff",
+            &[32],
+            &["52fc37db5a43582c6c53ee3cf730dfe3f4aacd34a9dcf83cf6cf655b206aed8c"],
+        ),
+        (
+            "adaptive-small",
+            &[32, 32],
+            &[
+                "9123e6c501f02751ba23ff438847c3de1ada05aa97f9e8276686b85c93e9e17c",
+                "be04099e9c51603cd91f8617864105f734743de2a8180961d1f8d35dd267140d",
+            ],
+        ),
+    ];
+    let elements = normalized_elements(ROUNDED_DIAMOND_FAMILIES);
+    assert_eq!(elements.len(), EXPECTED.len());
+    let mut all_paths = Vec::new();
+    for (element, (id, operations, digests)) in elements.iter().zip(EXPECTED) {
+        assert_eq!(element.source.id(), *id);
+        let paths = rough_svg_paths(element);
+        assert_eq!(
+            paths
+                .iter()
+                .map(|path| path.matches(['M', 'C', 'L']).count())
+                .collect::<Vec<_>>(),
+            *operations,
+            "{id} operations"
+        );
+        assert_eq!(
+            paths
+                .iter()
+                .map(|path| sha256_hex(path))
+                .collect::<Vec<_>>(),
+            *digests,
+            "{id} paths"
+        );
+        all_paths.extend(paths);
+    }
+    assert!(
+        all_paths[0].starts_with("M76.25 10.25 "),
+        "{}",
+        all_paths[0]
+    );
+    assert_eq!(
+        sha256_hex(&all_paths.join("\n")),
+        "3bed14cd6fd44ce9905e462f050a6f6409f166029eb9b4f4173ffecf761992f2"
     );
 }
 

@@ -467,8 +467,13 @@ pub(super) fn rough_drawing(
                     budget,
                 );
             };
-            let vertical_radius = corner_radius(width / 2.0, roundness);
-            let horizontal_radius = corner_radius(height / 2.0, roundness);
+            // The radii come from the diamond's own vertex offsets, as the
+            // official export's `getCornerRadius(Math.abs(topX - leftX))` and
+            // `getCornerRadius(Math.abs(rightY - topY))` do, not from the
+            // exact half extents: for a 120x80 diamond they are 15.25 / 10.25
+            // (from 61 and 41), not 15 / 10 (#160).
+            let vertical_radius = corner_radius(mid_x, roundness);
+            let horizontal_radius = corner_radius(mid_y, roundness);
             let [top, right, bottom, left] = points;
             let start = Point {
                 x: top.x + vertical_radius,

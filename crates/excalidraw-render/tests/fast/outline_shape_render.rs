@@ -33,16 +33,17 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
             .render(&scene, &request)
             .expect("all outline families render");
         // The SVG's one pin is the path-vector digest below, which holds the
-        // geometry; PNG and PDF each keep one whole-artifact digest. The PDF's
-        // moved for Flate streams and the trailer /ID (ADR-0008), pixels and
-        // operators unchanged.
+        // geometry; PNG and PDF each keep one whole-artifact digest. Both
+        // moved with the rounded diamond's corner radii (#160), which now come
+        // from the vertex offsets `floor(extent / 2) + 1` as the reference's
+        // do: the 80x50 rounded diamond's radii are 10.25 / 6.5, not 10 / 6.25.
         let expected_digest = match format {
             OutputFormat::Svg => None,
             OutputFormat::Png => {
-                Some("5963335877cfde4ec0079ee163a4c29c2e170e44dcbfff7965f4f89bd0019d6b")
+                Some("267d2f7b19997dbc9df1e0b5643a3bfeccfd317b78914428db09ab5a9064f170")
             }
             OutputFormat::Pdf => {
-                Some("0a1c464641d8e323df5c876befaf3b418da5f0d1271d47c0157309f12b3daf73")
+                Some("e05b4e14cfc0cb2b7f2290632a247d52511188b0d367e95e0d982dda04bc72c7")
             }
             _ => unreachable!("the test enumerates every revision-1 output format"),
         };
