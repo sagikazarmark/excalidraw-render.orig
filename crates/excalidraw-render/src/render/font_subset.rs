@@ -621,6 +621,10 @@ fn validate_mappings_and_metrics(
 }
 
 fn validate_layout_closure(font: &FontRef<'_>) -> Result<(), Error> {
+    // read-fonts 0.44 removed traversal. Keep the bounded validator on its
+    // qualified parser, crossing parser versions only through the sfnt bytes.
+    use read_fonts::TableProvider;
+    let font = read_fonts::FontRef::new(font.data().as_bytes()).map_err(|_| validate_error())?;
     let glyph_count = u32::from(font.maxp().map_err(|_| validate_error())?.num_glyphs());
     let mut glyphs = Vec::new();
     glyphs
@@ -665,6 +669,8 @@ fn fallible_probe(characters: &[char]) -> Result<String, Error> {
 
 #[cfg(test)]
 pub(super) fn layout_glyph_ids(font: &FontRef<'_>) -> Option<Vec<bool>> {
+    use read_fonts::TableProvider;
+    let font = read_fonts::FontRef::new(font.data().as_bytes()).ok()?;
     let glyph_count = u32::from(font.maxp().ok()?.num_glyphs());
     let mut glyphs = vec![false; usize::try_from(glyph_count).ok()?];
     let mut budget = MAX_LAYOUT_TRAVERSAL_NODES;
@@ -681,7 +687,7 @@ pub(super) fn layout_glyph_ids(font: &FontRef<'_>) -> Option<Vec<bool>> {
 }
 
 fn validate_layout_table<'a>(
-    table: &(dyn write_fonts::read::traversal::SomeTable<'a> + 'a),
+    table: &(dyn read_fonts::traversal::SomeTable<'a> + 'a),
     glyph_count: u32,
     glyphs: &mut [bool],
     budget: &mut usize,
@@ -696,10 +702,10 @@ fn validate_layout_table<'a>(
     for field in table.iter() {
         if validates_class_range {
             match (&field.name, &field.value) {
-                (&"start_glyph_id", write_fonts::read::traversal::FieldType::GlyphId16(glyph)) => {
+                (&"start_glyph_id", read_fonts::traversal::FieldType::GlyphId16(glyph)) => {
                     class_start = Some(glyph.to_u32());
                 }
-                (&"class_value_array", write_fonts::read::traversal::FieldType::Array(array)) => {
+                (&"class_value_array", read_fonts::traversal::FieldType::Array(array)) => {
                     class_count = Some(array.len());
                 }
                 _ => {}
@@ -719,14 +725,14 @@ fn validate_layout_table<'a>(
 }
 
 fn validate_layout_field<'a>(
-    field: write_fonts::read::traversal::FieldType<'a>,
+    field: read_fonts::traversal::FieldType<'a>,
     glyph_count: u32,
     glyphs: &mut [bool],
     budget: &mut usize,
     depth: usize,
 ) -> Result<(), Error> {
     *budget = budget.checked_sub(1).ok_or_else(validate_error)?;
-    use write_fonts::read::traversal::FieldType;
+    use read_fonts::traversal::FieldType;
     match field {
         FieldType::GlyphId16(glyph) => {
             if glyph.to_u32() >= glyph_count {
@@ -763,7 +769,7 @@ fn validate_layout_field<'a>(
 }
 
 fn validate_layout_array<'a>(
-    array: &(dyn write_fonts::read::traversal::SomeArray<'a> + 'a),
+    array: &(dyn read_fonts::traversal::SomeArray<'a> + 'a),
     glyph_count: u32,
     glyphs: &mut [bool],
     budget: &mut usize,
@@ -780,10 +786,10 @@ fn validate_layout_array<'a>(
 }
 
 fn validate_single_substitution_deltas(
-    gsub: &write_fonts::read::tables::gsub::Gsub<'_>,
+    gsub: &read_fonts::tables::gsub::Gsub<'_>,
     glyph_count: u32,
 ) -> Result<(), Error> {
-    use write_fonts::read::tables::gsub::{SingleSubst, SubstitutionSubtables};
+    use read_fonts::tables::gsub::{SingleSubst, SubstitutionSubtables};
     for lookup in gsub
         .lookup_list()
         .map_err(|_| validate_error())?

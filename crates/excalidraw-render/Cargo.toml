@@ -38,11 +38,8 @@ pdf-writer.workspace = true
 resvg.workspace = true
 roxmltree.workspace = true
 rustybuzz.workspace = true
-# Not named in any `use`: the renderer reaches read-fonts through the
-# `write_fonts::read` re-export, but `write-fonts` does not enable its
-# `experimental_traverse` feature. This direct dependency turns it on for
-# `write_fonts::read::traversal`, which the SVG font subsetter's layout-table
-# closure walks (`render/font_subset.rs`).
+# The layout validator retains the traversal API removed from the newer
+# read-fonts used by skera/write-fonts; it parses the same sfnt bytes separately.
 read-fonts.workspace = true
 unicode-bidi.workspace = true
 svgtypes.workspace = true

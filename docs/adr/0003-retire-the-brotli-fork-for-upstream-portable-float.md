@@ -175,6 +175,38 @@ version, and the full evidence regeneration. The 2026-12-01 fallback and the
 "interim stripping" note below are moot: there is no fork left to strip or
 re-vendor.
 
+Amended again 2026-09-10: the same byte-preserving retirement now includes
+the skera safety adapter. Upstream **skera 0.7.0** contains
+[googlefonts/fontations#1996](https://github.com/googlefonts/fontations/pull/1996),
+the malformed-name-record panic fix first released in 0.6.0. The renderer pins
+`skera = "=0.7.0"` with default features disabled and `write-fonts = "=0.53.0"`;
+the adapter crate and its packaging patches are removed. The subsetter's parser
+is now read-fonts 0.44.0. Since that release removed traversal, the bounded
+layout validator retains read-fonts 0.42.1 and reparses the same standalone
+sfnt bytes at its boundary. Its traversal checks and budgets are unchanged.
+Upstream can omit a malformed name table instead of failing immediately, but
+the renderer's name rewrite requires that table and preserves the typed `Sfnt`
+failure; the existing malformed-name regression passes on both targets.
+
+This extends the pending single refresh to **three** version tokens: skera,
+ttf2woff2 and brotli. Until that refresh, the `skera-0.5.1` profile token and
+spec §8.3.3 version are frozen historical identities, not the active dependency
+version; the exact implementation is recorded by the manifests and lockfiles.
+The refresh must replace the skera token with `skera-0.7.0` alongside the other
+two, update the spec, and regenerate the full evidence once.
+
+Measured with rustc 1.97.1 on Linux and browser WASM (local Chromium
+151.0.7922.173): all 977 font byte pins and 1204 traces match the committed
+`bb4e7dcd…9283` / `79ea93cd…90fa` measurements. The complete regenerated
+viewer-input manifest is byte-identical (`554673d2…b310`), so the existing
+canonical viewer reports are reused without a viewer rerun. The parser-boundary
+edit moves only `font_subset.rs` in the viewer qualification subject; the
+maintainer explicitly approved its new binding in
+[#99](https://github.com/sagikazarmark/excalidraw-render.orig/issues/99#issuecomment-5621836548).
+The packaged facade passes 10/10 on each target. Full verification details and
+the independently reproduced pre-existing WASM scene-fuzz failure are recorded
+in `docs/research/skera-upstream-name-record-fix.md`.
+
 If no upstream release lands by 2026-12-01, the fallback is a zero-patch
 re-vendor of upstream at `fb3104d`. It is not free: the identity token becomes
 `excalidraw-render-brotli-0.2.0(upstream-fb3104d)` — the current token claims

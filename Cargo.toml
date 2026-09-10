@@ -6,7 +6,6 @@ members = [
     "crates/excalidraw-render-assets-data-001",
     "crates/excalidraw-render-cli",
     "crates/excalidraw-render-compare",
-    "crates/skera-safe",
     "xtask",
 ]
 resolver = "2"
@@ -50,10 +49,12 @@ serde = { version = "=1.0.219", features = ["derive"] }
 serde_json = "=1.0.141"
 sha1 = "=0.10.6"
 sha2 = "=0.10.9"
-skera = { package = "excalidraw-render-skera", path = "crates/skera-safe", version = "=0.1.0" }
+# The upstream malformed-name fix replaces the safety adapter. The frozen
+# profile token stays at 0.5.1 until ADR-0003's single evidence refresh.
+skera = { version = "=0.7.0", default-features = false }
 rustybuzz = { version = "=0.20.1", default-features = false, features = ["std"] }
-# `experimental_traverse` is what the renderer depends on read-fonts for: it
-# gates `read_fonts::traversal`, which `write-fonts` does not enable.
+# The bounded layout validator uses traversal, removed in read-fonts 0.44.
+# Keep its parser separate from skera/write-fonts and cross via sfnt bytes.
 read-fonts = { version = "=0.42.1", features = ["experimental_traverse"] }
 unicode-bidi = "=0.3.18"
 unicode-normalization = "=0.1.24"
@@ -69,7 +70,7 @@ tiny-skia = { version = "=0.11.4", default-features = false, features = ["png-fo
 ttf2woff2 = { version = "=0.13.3", default-features = false, features = ["portable-float"] }
 usvg = { version = "=0.45.1", default-features = false, features = ["text"] }
 wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
-write-fonts = { version = "=0.51.0", default-features = false, features = ["read", "tables"] }
+write-fonts = { version = "=0.53.0", default-features = false, features = ["read", "tables"] }
 zune-jpeg = { version = "=0.5.15", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
