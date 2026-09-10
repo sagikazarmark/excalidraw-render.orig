@@ -3999,3 +3999,90 @@ fn liberation_sans_substitution_names_ordinary_text_and_generated_labels_apart()
         "generated fallback label used bundled Liberation Sans"
     );
 }
+
+/// An elbow arrow's geometry transaction charges the shape the reference
+/// measures its scene extent with beside the drawn elbow path (#176): the
+/// Rough.js `linearPath` over its route points, generated for that measurement
+/// alone, counted in the element's geometry segments at 32 work units and a
+/// 64-byte command record each, in every format alike and identically on
+/// repeated renders. A two-segment `linearPath` at one stroke draws two
+/// `move`/`bcurveTo` pairs per segment (the second pair the multi-stroke
+/// overlay), so the route's three segments add 12 commands; the same route as
+/// an ordinary arrow pays for its drawn outline alone.
+#[test]
+fn an_elbow_arrow_charges_its_extent_shape_as_generated_geometry() {
+    let arrow = |elbowed: &str, roughness: &str| {
+        format!(
+            r##"{{"type":"excalidraw","version":2,"elements":[
+              {{"id":"arrow","type":"arrow","x":50,"y":50,"width":300,"height":90,"angle":0.4,"roughness":{roughness},"points":[[0,0],[150,0],[150,90],[300,90]],"elbowed":{elbowed},"endArrowhead":null,"seed":103,"updated":1}}
+            ],"appState":{{}},"files":{{}}}}"##
+        )
+    };
+    let geometry_delta = |source: &str, format: OutputFormat| {
+        let scene = SceneDocument::parse(source.as_bytes()).expect("scene is admitted");
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("request is valid");
+        let profile = Renderer::profile_identity(CompatibilityRevision::REVISION_1)
+            .expect("revision 1 exists");
+        let (first_result, first_trace) = render_with_trace(profile, &scene, &request);
+        let (second_result, second_trace) = render_with_trace(profile, &scene, &request);
+        first_result.expect("traced render succeeds");
+        second_result.expect("repeated traced render succeeds");
+        assert_eq!(first_trace, second_trace, "{format:?} traces agree");
+        let trace: serde_json::Value =
+            serde_json::from_slice(&first_trace).expect("trace is valid JSON");
+        let entry = trace["entries"]
+            .as_array()
+            .expect("trace entries are an array")
+            .iter()
+            .find(|entry| entry["event"] == "rough_linear_geometry")
+            .expect("the arrow's geometry is one transaction")
+            .clone();
+        assert_eq!(entry["decision"], "committed");
+        (
+            entry["deltas"]["geometry_segments"]
+                .as_u64()
+                .expect("segments"),
+            entry["deltas"]["total_work_units"]
+                .as_u64()
+                .expect("work units"),
+            entry["deltas"]["working_bytes"]
+                .as_u64()
+                .expect("working bytes"),
+        )
+    };
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let (plain_segments, plain_work, plain_bytes) =
+            geometry_delta(&arrow("false", "1"), format);
+        let (elbow_segments, elbow_work, elbow_bytes) = geometry_delta(&arrow("true", "1"), format);
+        // The drawn shapes differ (a linearPath against the elbow path), so
+        // only the extent shape's share is compared, and it is the plain
+        // arrow's whole linearPath: 12 commands, 384 work units, 768 bytes.
+        assert_eq!(plain_segments, 12, "{format:?}");
+        assert_eq!((plain_work, plain_bytes), (12 * 32, 128 + 12 * 64));
+        let elbow_source = arrow("true", "1");
+        let elbow = &normalized_elements(elbow_source.as_bytes())[0];
+        let drawn_elbow_path =
+            rough_drawing(elbow, adjusted_roughness(elbow), &mut default_budget(elbow))
+                .ok()
+                .unwrap_or_else(|| panic!("{} generates", elbow.source.id()))
+                .operation_count() as u64;
+        assert_eq!(
+            elbow_segments,
+            drawn_elbow_path + 12,
+            "{format:?}: the elbow pays its drawn path and the extent shape's 12 commands"
+        );
+        assert_eq!(
+            (elbow_work, elbow_bytes),
+            (elbow_segments * 32, 128 + elbow_segments * 64),
+            "{format:?}: the extent shape pays the drawn shape's per-command rates"
+        );
+        // The charge does not depend on the roughness: the extent shape has
+        // the same commands at roughness 0, where it has no jitter to add.
+        assert_eq!(
+            geometry_delta(&arrow("true", "0"), format).0,
+            elbow_segments
+        );
+    }
+}
