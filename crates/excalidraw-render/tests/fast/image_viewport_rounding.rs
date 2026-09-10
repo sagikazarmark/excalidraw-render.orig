@@ -4,8 +4,11 @@
 //! whose visual authority is that export, size the image viewport that way;
 //! the crop offset, the flip about the element's center, the rotation, the
 //! corner clip and the link rectangle keep the element's unrounded size. PNG
-//! follows the canvas export, whose `drawImage` fills the unrounded element
-//! rectangle, so a fractional edge stays a fractional edge there (#131).
+//! follows the canvas export, whose `drawImage` maps the image onto the
+//! unrounded element rectangle and, for an axis-aligned image, paints exactly
+//! the device pixels whose centres that rectangle covers with no edge
+//! antialiasing (#131, #162): a fractional edge is a whole row or column or
+//! none, never a blend, and the geometry stays fractional in the sampling.
 
 use crate::common::pdf_inspect::pdf_text;
 use excalidraw_render::{OutputFormat, SceneDocument};
@@ -58,17 +61,25 @@ fn an_uncropped_fractional_image_fills_the_rounded_viewport_in_svg_and_pdf_and_t
     );
 
     // The canvas draws the image over device [10, 50.5) x [10, 50.4) of the
-    // truncated 60x60 surface: the column at 50 is half covered, the one at
-    // 51 untouched.
+    // truncated 60x60 surface by pixel-centre coverage (#162): column 50,
+    // whose centre 50.5 is on the right edge, is painted whole; row 50, whose
+    // centre 50.5 is below the bottom edge 50.4, is not painted at all; the
+    // column at 51 is untouched. No edge is a blend.
     let png = render_png(&scene);
     assert_eq!((png.width, png.height), (60, 60));
     assert_eq!(png.pixel(49, 30), [255, 0, 0, 255]);
-    let edge = png.pixel(50, 30);
-    assert!(
-        (64..=192).contains(&edge[3]),
-        "PNG right edge is not a half-covered fractional edge: {edge:?}"
+    assert_eq!(
+        png.pixel(50, 30),
+        [255, 0, 0, 255],
+        "PNG right edge column is painted whole, its centre lying on the edge"
     );
     assert_eq!(png.pixel(51, 30), [0, 0, 0, 0]);
+    assert_eq!(png.pixel(30, 49), [255, 0, 0, 255]);
+    assert_eq!(
+        png.pixel(30, 50),
+        [0, 0, 0, 0],
+        "PNG bottom edge row is left empty, its centre lying below the edge"
+    );
 }
 
 #[test]
@@ -102,7 +113,8 @@ fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_unrounded_c
     );
 
     // The canvas mirrors the unrounded rectangle: red now sits at the left,
-    // green at the right, and the right edge is still the half-covered column.
+    // green at the right, and the right edge column at 50, whose centre lies
+    // on the edge 50.5, is painted whole with the clamped edge pixel (#162).
     let png = render_png(&scene);
     let left = png.pixel(12, 30);
     assert!(
@@ -116,9 +128,10 @@ fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_unrounded_c
     );
     let edge = png.pixel(50, 30);
     assert!(
-        (64..=192).contains(&edge[3]),
-        "PNG right edge is not a half-covered fractional edge: {edge:?}"
+        edge[0] < 20 && edge[1] > 240 && edge[3] == 255,
+        "PNG right edge column is not the whole green edge pixel: {edge:?}"
     );
+    assert_eq!(png.pixel(51, 30), [0, 0, 0, 0]);
 }
 
 #[test]
@@ -189,11 +202,24 @@ fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewport_and_unro
     assert!(blue[0] < 20 && blue[1] < 20 && blue[2] > 240 && blue[3] == 255);
     let green = png.pixel(25, 25);
     assert!(green[0] < 20 && green[1] > 225 && green[2] < 30 && green[3] == 255);
-    let edge = png.pixel(30, 20);
-    assert!(
-        (64..=192).contains(&edge[3]),
-        "PNG right edge is not a half-covered fractional edge: {edge:?}"
+    // The element spans device [10, 30.5) on both axes: column 30 and row 30,
+    // whose centres lie on the edges, are painted whole and opaque (#162).
+    // Their colour blends the crop's edge with the column the crop leaves
+    // out, as the canvas's bilinear sampling of the whole image does at the
+    // crop boundary (the official evidence of `focused.image-codecs.v1` shows
+    // that bleed); coverage, not colour, is what the rule fixes.
+    let edge = png.pixel(30, 14);
+    assert_eq!(
+        edge[3], 255,
+        "PNG right edge column is not opaque: {edge:?}"
     );
+    let corner = png.pixel(30, 30);
+    assert_eq!(
+        corner[3], 255,
+        "PNG bottom-right edge pixel is not opaque: {corner:?}"
+    );
+    assert_eq!(png.pixel(31, 20), [0, 0, 0, 0]);
+    assert_eq!(png.pixel(20, 31), [0, 0, 0, 0]);
 }
 
 #[test]

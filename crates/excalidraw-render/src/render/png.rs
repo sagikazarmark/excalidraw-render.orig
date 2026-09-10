@@ -280,13 +280,24 @@ impl PngElement {
     /// element rectangle, or an image's rounded-corner outline when it has a
     /// roundness record. The placeholder is never corner-clipped: the
     /// reference's `drawElementOnCanvas` image case calls `roundRect` and
-    /// `clip` only before `drawImage`, not around `drawImagePlaceholder`.
-    fn image_clip(&self) -> Option<PngImageClip<'_>> {
+    /// `clip` only before `drawImage`, not around `drawImagePlaceholder`. An
+    /// axis-aligned image whose destination rectangle is snapped to pixel
+    /// centres ([`PngElement::snapped_image_rect`]) needs no rectangle clip:
+    /// the snapped rectangle is what it paints, and a rectangle mask at the
+    /// fractional edge would cut the row the canvas paints whole (#162).
+    fn image_clip(&self, raster_width: u32, raster_height: u32) -> Option<PngImageClip<'_>> {
         let corner_clip = match &self.planned.kind {
             PngElementKind::Image { corner_clip, .. } => corner_clip.as_ref(),
             PngElementKind::ImageFallback { .. } => None,
             _ => return None,
         };
+        if corner_clip.is_none()
+            && self
+                .snapped_image_rect(raster_width, raster_height)
+                .is_some()
+        {
+            return None;
+        }
         Some(PngImageClip {
             width: self.planned.width,
             height: self.planned.height,
@@ -294,6 +305,142 @@ impl PngElement {
             transform: self.planned.transform,
         })
     }
+
+    /// The device-pixel rectangle an axis-aligned raster image paints, or
+    /// `None` when the image is a nested SVG, is rotated, is thinner than a
+    /// device pixel, or lies entirely off the `raster_width` by
+    /// `raster_height` canvas, in which case it paints with antialiased edges
+    /// like any other shape.
+    ///
+    /// The reference canvas draws a raster image whose current transform
+    /// keeps rectangles rectangles (rotation 0, any flip, any scale) without
+    /// edge antialiasing, as Chromium's `drawImage` does for a destination at
+    /// least one device pixel wide and high: Skia rounds each edge of the
+    /// destination rectangle to `floor(edge + 0.5)`, so a pixel is painted if
+    /// and only if its centre lies inside the rectangle, a centre on the left
+    /// or top edge falling outside and one on the right or bottom edge inside.
+    /// A fractional edge is therefore a whole row or column or none, never a
+    /// blend, while the image is still sampled bilinearly at the exact
+    /// fractional mapping (#162). The rectangle is in canvas pixels before the
+    /// supersample; the painter scales it by the fixed multiplier, where its
+    /// edges land on whole subpixels and the box filter leaves them whole. A
+    /// nested-SVG image is not snapped: the canvas draws it as vectors whose
+    /// own edge is antialiased and clips it to the destination with a second
+    /// antialiased edge (see `clip_nested_svg_like_the_canvas`).
+    fn snapped_image_rect(&self, raster_width: u32, raster_height: u32) -> Option<SnappedRect> {
+        let PngElementKind::Image { asset, .. } = &self.planned.kind else {
+            return None;
+        };
+        if asset.sanitized_svg.is_some() {
+            return None;
+        }
+        let (left, top, right, bottom) = self.axis_aligned_device_rect()?;
+        if !(right - left >= 1.0 && bottom - top >= 1.0) {
+            return None;
+        }
+        let snap = |edge: f64, limit: u32| (edge + 0.5).floor().clamp(0.0, f64::from(limit)) as u32;
+        let rect = SnappedRect {
+            left: snap(left, raster_width),
+            top: snap(top, raster_height),
+            right: snap(right, raster_width),
+            bottom: snap(bottom, raster_height),
+        };
+        (rect.left < rect.right && rect.top < rect.bottom).then_some(rect)
+    }
+
+    /// The element rectangle in canvas pixels, `(left, top, right, bottom)`,
+    /// when the element's transform keeps rectangles rectangles (rotation 0,
+    /// any flip, any scale); `None` for a rotated element.
+    fn axis_aligned_device_rect(&self) -> Option<(f64, f64, f64, f64)> {
+        let transform = self.planned.transform;
+        if transform.b != 0.0 || transform.c != 0.0 {
+            return None;
+        }
+        let origin = transform.map_point(Point { x: 0.0, y: 0.0 });
+        let corner = transform.map_point(Point {
+            x: self.planned.width,
+            y: self.planned.height,
+        });
+        Some((
+            origin.x.min(corner.x),
+            origin.y.min(corner.y),
+            origin.x.max(corner.x),
+            origin.y.max(corner.y),
+        ))
+    }
+}
+
+/// Applies to a nested-SVG image's supersampled layer the two clips the
+/// reference canvas applies when it draws an SVG image through `drawImage`
+/// with an axis-aligned transform (Blink `SVGImage::DrawInternal`, #162):
+///
+/// - the SVG document's own viewport clip, antialiased, at the fractional
+///   destination rectangle `rect` (canvas pixels): the layer is multiplied by
+///   the destination's area coverage of each canvas pixel, so a fractional edge
+///   row or column, whose content resvg already antialiases to its coverage,
+///   carries the square of that coverage as the canvas does;
+/// - `clipRect(ToEnclosingRect(dst_rect))`, a non-antialiased clip of the
+///   destination rectangle enlarged to whole element-space pixels, `enclosing`
+///   in canvas pixels, which Skia snaps to device pixels by rounding each edge
+///   to `floor(edge + 0.5)`: a pixel whose centre lies at or left of the left
+///   edge, or right of the right edge, is not painted at all.
+///
+/// `layer` is the supersampled layer whose top-left subpixel is `(layer_left,
+/// layer_top)` on the surface and `multiplier` the supersample; every subpixel
+/// of one canvas pixel takes that pixel's factor, so the box filter leaves the
+/// product exact.
+fn clip_nested_svg_like_the_canvas(
+    layer: &mut Pixmap,
+    layer_left: u32,
+    layer_top: u32,
+    rect: (f64, f64, f64, f64),
+    enclosing: (f64, f64, f64, f64),
+    multiplier: u32,
+) {
+    let (left, top, right, bottom) = rect;
+    let coverage = |start: f64, end: f64, pixel: u32| -> f64 {
+        let pixel = f64::from(pixel);
+        (end.min(pixel + 1.0) - start.max(pixel)).clamp(0.0, 1.0)
+    };
+    let snapped = |edge: f64| (edge + 0.5).floor();
+    let inside = |edge_start: f64, edge_end: f64, pixel: u32| -> bool {
+        let pixel = f64::from(pixel);
+        snapped(edge_start) <= pixel && pixel < snapped(edge_end)
+    };
+    let width = layer.width() as usize;
+    let (layer_left, layer_top, multiplier) =
+        (layer_left as usize, layer_top as usize, multiplier as usize);
+    for (index, pixel) in layer.pixels_mut().iter_mut().enumerate() {
+        let column = ((layer_left + index % width) / multiplier) as u32;
+        let row = ((layer_top + index / width) / multiplier) as u32;
+        let factor =
+            if inside(enclosing.0, enclosing.2, column) && inside(enclosing.1, enclosing.3, row) {
+                coverage(left, right, column) * coverage(top, bottom, row)
+            } else {
+                0.0
+            };
+        if factor >= 1.0 {
+            continue;
+        }
+        let scale = |channel: u8| (f64::from(channel) * factor).round().clamp(0.0, 255.0) as u8;
+        *pixel = tiny_skia::PremultipliedColorU8::from_rgba(
+            scale(pixel.red()),
+            scale(pixel.green()),
+            scale(pixel.blue()),
+            scale(pixel.alpha()),
+        )
+        .unwrap_or(tiny_skia::PremultipliedColorU8::TRANSPARENT);
+    }
+}
+
+/// The whole device pixels an axis-aligned image paints, in canvas pixels,
+/// `left..right` by `top..bottom` (see [`PngElement::snapped_image_rect`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct SnappedRect {
+    left: u32,
+    top: u32,
+    right: u32,
+    bottom: u32,
 }
 
 /// The clip `PaintMasks::paint_mask` intersects into an image's mask, in the
@@ -925,6 +1072,13 @@ impl PngPlan {
                                 "PNG image lost its source identity".to_owned(),
                             ));
                         }
+                        // An axis-aligned raster image paints the whole device
+                        // pixels whose centres its destination rectangle
+                        // covers, as the canvas's non-antialiased `drawImage`
+                        // does (#162); a rotated one keeps antialiased edges.
+                        // Either way the corner clip and frame clips stay
+                        // antialiased masks.
+                        let snapped = element.snapped_image_rect(self.width, self.height);
                         if let Some(tree) = self.svg_trees.get(&asset.identity).map(Arc::as_ref) {
                             let corners = [
                                 Point { x: 0.0, y: 0.0 },
@@ -1002,6 +1156,31 @@ impl PngPlan {
                                 // light-mode pixels pass through it here.
                                 apply_theme_filter(&mut layer);
                             }
+                            if let Some(rect) = element.axis_aligned_device_rect() {
+                                // The canvas antialiases the nested document's
+                                // viewport clip like its content edge, so a
+                                // fractional edge carries its coverage squared,
+                                // and clips the whole draw to the enclosing
+                                // element-space rectangle snapped to device
+                                // pixels (#162).
+                                let enclosing = transform.map_point(Point {
+                                    x: width.ceil(),
+                                    y: height.ceil(),
+                                });
+                                clip_nested_svg_like_the_canvas(
+                                    &mut layer,
+                                    left,
+                                    top,
+                                    rect,
+                                    (
+                                        rect.0,
+                                        rect.1,
+                                        rect.0.max(enclosing.x),
+                                        rect.1.max(enclosing.y),
+                                    ),
+                                    SUBPIXEL_SCALE,
+                                );
+                            }
                             surface.draw_pixmap(
                                 i32::try_from(left).map_err(|_| png_size_error())?,
                                 i32::try_from(top).map_err(|_| png_size_error())?,
@@ -1029,18 +1208,66 @@ impl PngPlan {
                         })?;
                         let pixmap = PixmapRef::from_bytes(pixels, asset.width, asset.height)
                             .ok_or_else(png_size_error)?;
-                        surface.draw_pixmap(
-                            0,
-                            0,
-                            pixmap,
-                            &PixmapPaint {
-                                opacity: finite_f32(*opacity, "PNG image opacity")?,
-                                quality: FilterQuality::Bilinear,
-                                ..PixmapPaint::default()
-                            },
-                            raster_transform,
-                            paint_mask,
-                        );
+                        let image_paint = PixmapPaint {
+                            opacity: finite_f32(*opacity, "PNG image opacity")?,
+                            quality: FilterQuality::Bilinear,
+                            ..PixmapPaint::default()
+                        };
+                        match snapped {
+                            Some(rect) => {
+                                // The snapped rectangle, filled with the image
+                                // as a pattern under the exact fractional
+                                // mapping: coverage is the canvas's whole rows
+                                // and columns, sampling stays bilinear, and
+                                // the padded spread supplies the image's edge
+                                // pixel where the snapped edge reaches past the
+                                // mapped one, as Skia's clamped image shader
+                                // does. A cropped image is sampled from the
+                                // whole pixmap, as the canvas samples it: the
+                                // official evidence for `focused.image-codecs.v1`
+                                // blends the pixels beside the crop into its
+                                // edge rows, so the source rectangle does not
+                                // bound the sampling there either.
+                                let scaled = |edge: u32| {
+                                    finite_f32(
+                                        f64::from(edge) * f64::from(SUBPIXEL_SCALE),
+                                        "PNG image destination edge",
+                                    )
+                                };
+                                let destination = Rect::from_ltrb(
+                                    scaled(rect.left)?,
+                                    scaled(rect.top)?,
+                                    scaled(rect.right)?,
+                                    scaled(rect.bottom)?,
+                                )
+                                .ok_or_else(png_size_error)?;
+                                surface.fill_rect(
+                                    destination,
+                                    &tiny_skia::Paint {
+                                        shader: tiny_skia::Pattern::new(
+                                            pixmap,
+                                            tiny_skia::SpreadMode::Pad,
+                                            image_paint.quality,
+                                            image_paint.opacity,
+                                            raster_transform,
+                                        ),
+                                        blend_mode: image_paint.blend_mode,
+                                        anti_alias: false,
+                                        force_hq_pipeline: false,
+                                    },
+                                    Transform::identity(),
+                                    paint_mask,
+                                );
+                            }
+                            None => surface.draw_pixmap(
+                                0,
+                                0,
+                                pixmap,
+                                &image_paint,
+                                raster_transform,
+                                paint_mask,
+                            ),
+                        }
                     }
                     PngElementKind::ImageFallback { source, status } => {
                         if source.id().is_empty() || source.pointer().is_empty() {

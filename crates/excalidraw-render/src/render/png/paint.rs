@@ -405,7 +405,8 @@ impl PaintMasks {
     ) -> Result<Option<&Mask>, FormatEncodeError> {
         let clips = element.frame_clips();
         let label_mask = element.label_mask();
-        let image_clip = element.image_clip();
+        let image_clip =
+            element.image_clip(self.width / self.multiplier, self.height / self.multiplier);
         if clips.is_empty() && label_mask.is_none() && image_clip.is_none() {
             return Ok(None);
         }

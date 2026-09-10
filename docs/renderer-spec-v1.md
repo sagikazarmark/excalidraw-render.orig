@@ -704,9 +704,33 @@ scale()` group about the same center. PDF, whose clips all live in
 the element's space, installs the intersection of the two as one rectangle
 clip before the content matrix that maps the asset onto its content rectangle,
 and a nested SVG's form, whose Y axis svg2pdf inverts, is inverted back within
-that rectangle. PNG draws the crop into the element's unrounded rectangle, as
-`drawImage(..., 0, 0, element.width, element.height)` does, so a fractional
-edge stays fractional there while SVG and PDF round it.
+that rectangle. PNG maps the crop onto the element's unrounded rectangle, as
+`drawImage(..., 0, 0, element.width, element.height)` does, so the geometry
+stays fractional there while SVG and PDF round it; which device pixels that
+rectangle paints follows the canvas as well (#162). For an image whose device
+transform keeps rectangles rectangles — rotation 0, either flip, any export
+scale — the pinned Chromium draws without edge antialiasing once the
+destination is at least one device pixel wide and high, rounding each edge to
+`floor(edge + 0.5)`: a device pixel is painted if and only if its centre lies
+inside the destination rectangle, a centre on the left or top edge falling
+outside and one on the right or bottom edge inside, so a fractional edge is a
+whole row or column or none and never a blend, while the image is still
+sampled bilinearly at the exact fractional mapping and the strict source
+rectangle pads the snapped edge with the crop's own edge pixels. PNG paints
+the same whole pixels. A rotated image keeps antialiased edges, and the
+rounded-corner clip and frame clips stay antialiased masks whatever the
+transform, as the canvas's `clip` is, so a rounded image's straight fractional
+edge is the whole column attenuated by the clip's coverage. A nested-SVG image
+is not snapped: the canvas draws an SVG image as vectors (Blink
+`SVGImage::DrawInternal`), antialiasing the document's content edge and its
+viewport clip alike, inside a non-antialiased `clipRect` of the element
+rectangle enlarged to whole element-space pixels, which Skia snaps to device
+pixels by the same rounding. PNG follows: an axis-aligned nested-SVG image's
+fractional edge row or column carries the square of its coverage, and a pixel
+whose centre the snapped enclosing clip excludes carries nothing, as the
+pinned reference profile measured for #162 (a 96x96 nested SVG at a quarter-
+and half-pixel offset: 0.5625 in the left column, 0.25 in the bottom row, and
+nothing in the right column or top row).
 
 An image element with a `roundness` record is clipped to its rectangle with
 `getCornerRadius(min(width, height))` corners in every format, as the
@@ -1173,6 +1197,12 @@ never its rendering oracle. Controlled adapters own paths, glyph outlines,
 images, masks, clips, compositing, dark mode, dimensions, color type, filters,
 compression, chunk order, metadata order, and exclusion of host/time/random
 data.
+
+Edge coverage follows the reference canvas: paths, glyphs, clips and rotated
+images are antialiased by area coverage, and an axis-aligned image's
+destination rectangle is painted by pixel-centre coverage with no edge
+antialiasing (Section 8.2, #162), which the fixed supersample reproduces
+exactly because the snapped edges land on whole subpixels.
 
 ### 8.6 Vector-First PDF
 
