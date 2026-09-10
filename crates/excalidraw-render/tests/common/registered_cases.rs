@@ -528,9 +528,97 @@ impl ReferenceAuthorityDivergence {
     }
 }
 
+/// One variant whose official SVG the harness's own rasterizer cannot lay out
+/// as the reference does, for a reason that is neither a renderer defect, a
+/// compatibility exception nor a defect of the reference exporter: a
+/// limitation of the rasterizer itself. `usvg` ignores the `direction`
+/// attribute and lays out only the first UAX #9 paragraph (#168), so the
+/// official exporter's `text-anchor="end"` for a left-aligned right-to-left
+/// element, which Chromium and the canvas place at the element's left edge,
+/// lands off the canvas under it, and a right-to-left line's digits and
+/// neutrals take left-to-right positions. The rasterized-document dimension of
+/// the SVG harness holds the exact measurement, so the divergence can neither
+/// grow nor silently disappear, and names the issue that recorded the
+/// limitation and what it is. The proof that the renderer, judged where it can
+/// be judged, agrees with the reference is the same variant's direct PNG,
+/// which must be where its record says it is, inside the canonical budget or
+/// its approved tolerance exception, against the official canvas raster; the
+/// harness's geometry dimensions judge the variant's extent and paths as they
+/// judge every variant. Unlike a reference authority divergence the official
+/// SVG is right and only this rasterizer misreads it, and unlike a
+/// compatibility exception pin the measurement is not one the manifest's
+/// exception describes.
+pub struct RasterizerLimitation {
+    pub pin: PinnedDivergence,
+    /// What the rasterizer cannot do that the measurement records.
+    pub limitation: &'static str,
+}
+
+impl RasterizerLimitation {
+    /// The entry pinning one variant, if any.
+    pub fn lookup<'a>(pins: &'a [Self], case: &str, variant: &str) -> Option<&'a Self> {
+        pins.iter()
+            .find(|entry| entry.pin.case == case && entry.pin.variant == variant)
+    }
+
+    /// Every entry must name a variant the registry still declares.
+    pub fn assert_all_observed(pins: &[Self], observed: &BTreeSet<(String, String)>) {
+        let orphans: Vec<_> = pins
+            .iter()
+            .map(|entry| &entry.pin)
+            .filter(|pin| !observed.contains(&(pin.case.to_owned(), pin.variant.to_owned())))
+            .map(|pin| format!("{} [{}]", pin.case, pin.variant))
+            .collect();
+        assert!(
+            orphans.is_empty(),
+            "rasterizer limitations name variants the registry no longer declares: {orphans:?}"
+        );
+    }
+
+    /// `None` when the rasterized-document report carries the pinned
+    /// measurement and the variant's direct PNG is where its record says it
+    /// is; otherwise the failure to report.
+    pub fn mismatch(
+        &self,
+        report: &ComparisonReport,
+        variant: &RegisteredVariant,
+    ) -> Option<String> {
+        let direct_png = direct_png_report(variant);
+        let exception = whole_png_exception(&variant.manifest, &variant.variant);
+        if let Some(detail) = divergence(&direct_png, exception) {
+            return Some(format!(
+                "is pinned as a rasterizer limitation ({}) but its direct PNG is not where its \
+                 record says it is against the official canvas raster, so the renderer cannot \
+                 be judged right there: {detail}",
+                self.pin.issue
+            ));
+        }
+        self.pin
+            .mismatch(report)
+            .map(|detail| format!("rasterizer limitation ({}) {detail}", self.limitation))
+    }
+}
+
+/// The approved tolerance exception governing one variant's whole direct PNG,
+/// if the case manifest records one: the record `parity_registered_case_png`
+/// consumes.
+pub fn whole_png_exception(manifest: &Value, variant_id: &str) -> Option<ComparisonLimits> {
+    manifest["exceptions"]
+        .as_array()
+        .expect("manifest exceptions are an array")
+        .iter()
+        .find(|exception| {
+            exception["variant"] == variant_id
+                && exception["format"] == "png"
+                && exception["region"] == "whole"
+        })
+        .map(exception_limits)
+}
+
 /// The canonical comparison of one variant's direct PNG against the official
 /// canvas raster: the measurement `parity_registered_case_png` judges, taken
-/// here as the proof a reference authority divergence pin requires.
+/// here as the proof a reference authority divergence pin or a rasterizer
+/// limitation pin requires.
 pub fn direct_png_report(variant: &RegisteredVariant) -> ComparisonReport {
     let context = variant.context();
     let request = variant_request(OutputFormat::Png, variant.options(), &context);

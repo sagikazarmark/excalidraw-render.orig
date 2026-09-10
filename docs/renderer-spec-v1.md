@@ -970,6 +970,41 @@ content), as do missing-codepoint diagnostics. A left-to-right occurrence with
 no right-to-left content whose shaped scalars the whole-text face all maps is
 one run of that face per line and emits no direction.
 
+The reference SVG's anchoring of a right-aligned right-to-left element is a
+reference authority divergence (#168), of the same shape as the frame clip and
+rounded-image clip of Sections 8.2 and 8.4. The exporter writes every
+right-to-left element (its `isRTL`, above) as
+`<text direction="rtl" text-anchor="end">` with `x` at `0`, `width / 2` or
+`width` for `textAlign` left, center or right
+(`textAlign === "center" ? "middle" : textAlign === "right" || direction ===
+"rtl" ? "end" : "start"`). Under SVG semantics, and in the pinned Chromium,
+`end` under `direction: rtl` places the text's left edge at `x`: a left-aligned
+element therefore sits where the canvas draws it, while a right-aligned one has
+its left edge at the element's right edge and overflows it, where the canvas
+(`textAlign = "right"`, a physical alignment) right-aligns it; Chromium's
+raster of the official SVG shows only the first glyph's columns inside the
+export. Revision 1 follows the canvas in every format: its SVG positions every
+glyph of a right-to-left or mixed line explicitly (Section 8.4), and PNG and
+PDF place the same glyphs, so a right-aligned right-to-left line ends at the
+element's right edge. Like the clip divergences this is recorded here rather
+than diagnosed or excepted, and a harness observes it only when the official
+SVG's browser raster is its authority.
+
+The registered-case SVG harness cannot judge right-to-left alignment on its
+raster dimension at all, for a reason of its own (#168): `usvg 0.45.1` (and
+0.47) parses `direction` but never reads it, resolving `text-anchor` as if
+every text were left-to-right and running UAX #9 at a left-to-right base level,
+and it lays out only the first UAX #9 paragraph of a `<text>`. Under it the
+official document's left-aligned right-to-left elements land off the canvas,
+its right-aligned ones coincide with the canvas by accident, and a
+right-to-left line's digits and neutrals take left-to-right positions; a
+`<text>` holding a U+2029 shows its first paragraph only. The SVG document
+parity of that harness (extent and path data) and the direct PNG against the
+official canvas raster are the gates for right-to-left text; the raster
+dimension holds such a variant as a rasterizer limitation pin
+(`tests/conformance/README.md`), at its exact measurement, requiring the
+variant's direct PNG to be where its record says it is.
+
 #### 8.3.1 Semantic Demand and Face Selection
 
 The Excalidraw adapter MUST collect first-use-ordered Unicode scalar values from
@@ -1179,7 +1214,10 @@ presentation attribute: the reference SVG paints a frame's children unclipped
 there while the reference canvas clips them. This is a reference authority
 divergence, not a format difference the revision preserves. Revision 1 emits
 the plain `clip-path` attribute and follows the canvas in every format, as it
-does for the rounded-image corner clip the same spelling affects (Section 8.2).
+does for the rounded-image corner clip the same spelling affects (Section 8.2)
+and for the anchoring of right-aligned right-to-left text (Section 8.3, #168),
+whose `text-anchor="end"` under `direction="rtl"` the reference SVG writes and
+browsers place off the element.
 A `usvg`-based rasterization accepts an attribute in the SVG namespace as the
 property it names and clips the reference SVG anyway, so neither the in-process
 `resvg` raster dimension of the registered-case SVG harness nor the pure-Rust

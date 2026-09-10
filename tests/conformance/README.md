@@ -152,6 +152,36 @@ that the renderer, not the reference SVG, is right. A variant whose direct PNG
 fails that comparison is not a reference authority divergence and the harness
 refuses the pin. `KNOWN_DEFECTS` stays for renderer defects only.
 
+The raster dimension has one more blind spot, and it is the harness's own
+rasterizer's rather than the reference's (#168). `usvg 0.45.1` parses the
+`direction` attribute but never reads it: it resolves `text-anchor` as if every
+text were left-to-right (`end` puts the text's right edge at `x`), runs UAX #9
+at a left-to-right base level, and lays out only the first UAX #9 paragraph of
+a `<text>`; `usvg 0.47` does the same. The official exporter writes every
+right-to-left element as `<text direction="rtl" text-anchor="end">` with `x` at
+0, width/2 or width for `textAlign` left, center or right, which browsers place
+at the element's left edge, centre or, overflowing, right edge (the last a
+reference authority divergence spec 8.3 records; the renderer follows the
+canvas). Under `usvg` a left-aligned right-to-left element of the official
+document lands off the canvas and a right-to-left line's digits and neutrals
+take left-to-right positions, so the raster dimension cannot judge right-to-left
+alignment; the SVG document parity of the extent and path dimensions and the
+direct PNG against the official canvas raster are the gates for it. A variant
+whose official document this rasterizer cannot lay out as browsers do is held
+in the SVG harness's fourth list, `RASTERIZER_LIMITATIONS`, as a rasterizer
+limitation pin: the exact `changed_pixels` and SSIM bits, the issue that
+recorded the limitation and what it is, failing if the measurement moves in
+either direction, plus the requirement that the same variant's direct PNG is
+where its record says it is against the official canvas raster (inside the
+canonical budget or its approved tolerance exception) — the proof that the
+renderer, judged where it can be judged, agrees with the reference
+(`focused.bidi-alignment.v1`). Nothing in that list awaits a renderer fix and
+nothing in it excepts a difference; a rasterizer bump that lifts the limitation
+moves the entry, which then goes. Neither of the other three lists fits it: the
+official SVG is right and only this rasterizer misreads it, so it is no
+reference authority divergence, and the measurement is not the one the
+manifest's compatibility exception describes.
+
 One filler has no case here. The reference's `DotFiller` draws each dot's
 centre from the unseeded `Math.random()` (spec 8.1), so two fresh browser
 processes never export the same bytes and the generator's own repeatability

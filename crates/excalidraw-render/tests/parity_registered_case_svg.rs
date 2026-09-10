@@ -44,12 +44,14 @@
 //! that is neither embedded nor substituted (`Segoe UI Emoji` in a fallback
 //! list) stays unresolved and contributes nothing on either side.
 //!
-//! The raster dimension holds three kinds of pinned divergence apart from the
+//! The raster dimension holds four kinds of pinned divergence apart from the
 //! budget: known defects (renderer defects awaiting a decision), compatibility
-//! exception pins (approved direct-PNG exceptions this dimension observes too)
-//! and reference authority divergences (official SVGs this rasterizer
-//! misrenders where the renderer follows the official canvas, proved by the
-//! variant's direct PNG passing the canonical budget).
+//! exception pins (approved direct-PNG exceptions this dimension observes too),
+//! reference authority divergences (official SVGs this rasterizer misrenders
+//! where the renderer follows the official canvas, proved by the variant's
+//! direct PNG passing the canonical budget) and rasterizer limitations
+//! (official SVGs this rasterizer cannot lay out as browsers do, proved by the
+//! variant's direct PNG being where its record says it is).
 //!
 //! Every registered variant is compared on both dimensions, since dark mode and
 //! sizing must leave path geometry untouched, and each variant is rendered once:
@@ -76,7 +78,8 @@ use usvg::fontdb;
 
 use common::registered_cases::{
     case_count, judge_each, observed, registered_scene_variants, variant_request, visual_class,
-    PinnedDivergence, PinnedGeometryDefect, ReferenceAuthorityDivergence, RegisteredVariant,
+    PinnedDivergence, PinnedGeometryDefect, RasterizerLimitation, ReferenceAuthorityDivergence,
+    RegisteredVariant,
 };
 use common::reports::assert_report_matches;
 use common::repository_root;
@@ -199,6 +202,46 @@ const REFERENCE_AUTHORITY_DIVERGENCES: &[ReferenceAuthorityDivergence] = &[
     },
 ];
 
+/// Limitations of this harness's own rasterizer (#168): official SVGs it
+/// cannot lay out as the pinned Chromium and the canvas do, where neither the
+/// renderer nor the reference exporter is wrong. `usvg` parses `direction`
+/// but never reads it and resolves `text-anchor` as if every text were
+/// left-to-right, and it lays out only the first UAX #9 paragraph of a `<text>`.
+/// The official exporter writes every right-to-left element as
+/// `<text direction="rtl" text-anchor="end">` with `x` at 0, width/2 or width
+/// for textAlign left, center or right: in Chromium `end` under `rtl` puts the
+/// text's left edge at `x`, so a left-aligned element sits where the canvas
+/// draws it, while under `usvg` its right edge does and the element lands off
+/// the canvas. Each entry is held at its exact measurement, names the issue
+/// and the limitation, and requires the same variant's direct PNG to be where
+/// its record says it is against the official canvas raster (spec 8.3 and
+/// `tests/conformance/README.md`). Nothing here awaits a renderer fix; a bump
+/// of the rasterizer that lifts the limitation moves the entry, which then
+/// goes.
+const RASTERIZER_LIMITATIONS: &[RasterizerLimitation] = &[
+    // The left- and right-aligned right-to-left elements and the two
+    // direction-mixed elements (#168, measured on this rasterizer): the
+    // official document's left-aligned right-to-left elements (`x="0"
+    // text-anchor="end" direction="rtl"`) land off the canvas, its pure
+    // Hebrew lines set in the embedded Excalifont subset draw nothing, and
+    // the left-to-right element's Hebrew-first second line is laid out at a
+    // left-to-right base level, while the renderer's document positions every
+    // run's `?` glyphs (#124) explicitly where the canvas puts them. The
+    // extent and every path match, and the variant's direct PNG is under its
+    // recorded #124-class exception, with the anchored side of every line
+    // agreeing with the official canvas.
+    RasterizerLimitation {
+        pin: PinnedDivergence {
+            case: "focused.bidi-alignment.v1",
+            variant: "default",
+            issue: "#168",
+            changed_pixels: 1190,
+            ssim_bits: 0x3fea_564b_9c97_ab4f,
+        },
+        limitation: "usvg ignores direction and anchors right-to-left text as left-to-right",
+    },
+];
+
 /// The rasterizer, its pixel backend and its font database — which drives the
 /// glyph fallback both pinned cases exercise — that the pins above were
 /// measured with, as the lockfile names them.
@@ -261,6 +304,7 @@ fn every_registered_scene_case_matches_its_official_svg_geometry_and_raster() {
     PinnedGeometryDefect::assert_all_observed(KNOWN_GEOMETRY_DEFECTS, &seen);
     PinnedDivergence::assert_all_observed(COMPATIBILITY_EXCEPTION_PINS, &seen);
     ReferenceAuthorityDivergence::assert_all_observed(REFERENCE_AUTHORITY_DIVERGENCES, &seen);
+    RasterizerLimitation::assert_all_observed(RASTERIZER_LIMITATIONS, &seen);
     assert!(
         failures.is_empty(),
         "{} divergence(s) from the official SVG export across {} cases:\n  {}",
@@ -430,14 +474,22 @@ fn raster_divergence(
         &variant.case,
         &variant.variant,
     );
+    let limitation =
+        RasterizerLimitation::lookup(RASTERIZER_LIMITATIONS, &variant.case, &variant.variant);
     assert!(
-        [defect.is_some(), exception.is_some(), authority.is_some()]
-            .into_iter()
-            .filter(|pinned| *pinned)
-            .count()
+        [
+            defect.is_some(),
+            exception.is_some(),
+            authority.is_some(),
+            limitation.is_some()
+        ]
+        .into_iter()
+        .filter(|pinned| *pinned)
+        .count()
             <= 1,
         "{context} is pinned in more than one list; a variant is a known defect, a \
-         compatibility exception or a reference authority divergence, never two of them"
+         compatibility exception, a reference authority divergence or a rasterizer \
+         limitation, never two of them"
     );
     if exception.is_some() {
         // The pin stands for the manifest's approved judgment on this variant,
@@ -449,11 +501,12 @@ fn raster_divergence(
              direct-PNG tolerance exception for the variant"
         );
     }
-    match (defect, exception, authority) {
-        (Some(defect), _, _) => defect.mismatch(&report),
-        (None, Some(exception), _) => exception.mismatch(&report),
-        (None, None, Some(authority)) => authority.mismatch(&report, variant),
-        (None, None, None) => (!report.passed())
+    match (defect, exception, authority, limitation) {
+        (Some(defect), ..) => defect.mismatch(&report),
+        (None, Some(exception), ..) => exception.mismatch(&report),
+        (None, None, Some(authority), _) => authority.mismatch(&report, variant),
+        (None, None, None, Some(limitation)) => limitation.mismatch(&report, variant),
+        (None, None, None, None) => (!report.passed())
             .then(|| format!("outside the pure-Rust SVG budget: {}", observed(&report))),
     }
 }
