@@ -869,7 +869,23 @@ Liberation Sans and Noto Emoji replace local-only Helvetica/Arial and Segoe UI
 Emoji behavior for user text and generated labels, with one informational
 substitution diagnostic per affected occurrence. Missing codepoints use the
 bundled deterministic replacement glyph at defined metrics and identify the
-element and codepoint.
+element and codepoint. A default-ignorable code point is not a missing
+codepoint (#167): the class is the pinned shaper's (`rustybuzz 0.20.1`,
+HarfBuzz's `is_default_ignorable`, the Unicode `Default_Ignorable_Code_Point`
+property less the Hangul fillers U+115F, U+1160, U+3164 and U+FFA0) — the
+bidi controls U+200E, U+200F, U+202A–U+202E and U+2060–U+206F, the joiners
+U+200B–U+200D, the soft hyphen U+00AD, U+034F, U+061C, U+17B4–U+17B5,
+U+180B–U+180E, the variation selectors U+FE00–U+FE0F, U+FEFF, U+FFF0–U+FFF8,
+U+1D173–U+1D17A and U+E0000–U+E0FFF. The browser draws nothing for any of
+them, whether or not a face has a glyph, and so does revision 1 in every
+format: such a scalar stays in the display text and in its bidi visual run
+(the bidi marks are exactly what UAX #9 reads), is shaped by the face of the
+nearest other scalar of that run (the preceding one in logical order, else the
+following, else the whole-text face), is hidden by the shaper as one glyph of
+zero advance that draws nothing, pays no font fallback probe, is excluded from
+the scalars the whole-text face must declare and map, and reports no
+diagnostic. The paragraph separator U+2029 is not in the class and stays the
+missing codepoint #125 records.
 
 Ordinary scene text and generated embeddable labels take their baselines from
 the source family's metadata metrics: the `unitsPerEm`, `ascender`, and
@@ -1000,10 +1016,12 @@ generated embeddable labels alike, and consults declared Unicode ranges before
 any `cmap`. A resolved family's whole-text face is fixed once per target, when
 the family's first live occurrence is laid out: the first official font chunk
 of the family, in pinned face order, whose declared ranges cover every shaped
-scalar of that occurrence and whose `cmap` maps them all; failing that, the
-family's first chunk declaring and mapping `?` and `A`. Every later occurrence
-of the family shapes with that face. A shaped scalar the whole-text face maps
-takes it. Any other shaped scalar consults, in this order and stopping at the
+scalar of that occurrence other than its default-ignorable code points (8.3,
+#167) and whose `cmap` maps them all; failing that, the family's first chunk
+declaring and mapping `?` and `A`. Every later occurrence of the family shapes
+with that face. A shaped scalar the whole-text face maps takes it, and a
+default-ignorable code point takes its run's face without consulting any. Any
+other shaped scalar consults, in this order and stopping at the
 first face whose `cmap` maps it: each official font chunk of the family whose
 declared range covers the scalar, in pinned face order; for Excalifont when the
 trigger selected Xiaolai, each Xiaolai chunk likewise; the complete Noto Emoji
@@ -1016,7 +1034,8 @@ Each of those consultations is one font fallback probe, the event 13.2 charges
 32 work units (#122): one for each consulted chunk of the family and, when
 selected, of Xiaolai, one for the Noto Emoji consultation, and one for the
 replacement. Every shaped scalar occurrence pays its own probes, repeated
-scalars included. Once the family's whole-text face is fixed, whether a
+scalars included; a default-ignorable code point consults no face and pays
+none. Once the family's whole-text face is fixed, whether a
 consulted face already serves the target changes neither the count nor the
 order; and neither the whole-text face's initial `cmap` test nor a
 declared-range test is a probe. So an untriggered Excalifont scalar that no

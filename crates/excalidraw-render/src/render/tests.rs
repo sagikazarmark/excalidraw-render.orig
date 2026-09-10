@@ -1523,6 +1523,259 @@ fn the_elements_direction_is_the_references_regex_over_utf16_units() {
     );
 }
 
+/// The default-ignorable code points #167 names, plus one from each further
+/// range of the shaper's class.
+const DEFAULT_IGNORABLES: &[char] = &[
+    '\u{ad}',
+    '\u{34f}',
+    '\u{61c}',
+    '\u{17b4}',
+    '\u{180b}',
+    '\u{200b}',
+    '\u{200c}',
+    '\u{200d}',
+    '\u{200e}',
+    '\u{200f}',
+    '\u{202a}',
+    '\u{202b}',
+    '\u{202c}',
+    '\u{202d}',
+    '\u{202e}',
+    '\u{2060}',
+    '\u{2066}',
+    '\u{2067}',
+    '\u{2068}',
+    '\u{2069}',
+    '\u{fe0f}',
+    '\u{feff}',
+    '\u{fff0}',
+    '\u{1d173}',
+    '\u{e0001}',
+    '\u{e0100}',
+];
+
+fn utf16(text: &str) -> Vec<u16> {
+    text.encode_utf16().collect()
+}
+
+/// Whether two label paths draw the same outlines: the same operations with
+/// every coordinate within floating-point noise, since a scalar that splits a
+/// line into runs positions the later glyphs through a shifted run origin
+/// rather than one pen, which differs by an ulp or two.
+fn same_outlines(left: &text::LabelPath, right: &text::LabelPath) -> bool {
+    use text::LabelPathOperation as Op;
+    let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
+    left.operations.len() == right.operations.len()
+        && left
+            .operations
+            .iter()
+            .zip(&right.operations)
+            .all(|(left, right)| match (left, right) {
+                (Op::Move { x: ax, y: ay }, Op::Move { x: bx, y: by })
+                | (Op::Line { x: ax, y: ay }, Op::Line { x: bx, y: by }) => {
+                    close(*ax, *bx) && close(*ay, *by)
+                }
+                (
+                    Op::Quadratic {
+                        control_x: acx,
+                        control_y: acy,
+                        x: ax,
+                        y: ay,
+                    },
+                    Op::Quadratic {
+                        control_x: bcx,
+                        control_y: bcy,
+                        x: bx,
+                        y: by,
+                    },
+                ) => close(*acx, *bcx) && close(*acy, *bcy) && close(*ax, *bx) && close(*ay, *by),
+                (
+                    Op::Cubic {
+                        control_1_x: a1x,
+                        control_1_y: a1y,
+                        control_2_x: a2x,
+                        control_2_y: a2y,
+                        x: ax,
+                        y: ay,
+                    },
+                    Op::Cubic {
+                        control_1_x: b1x,
+                        control_1_y: b1y,
+                        control_2_x: b2x,
+                        control_2_y: b2y,
+                        x: bx,
+                        y: by,
+                    },
+                ) => {
+                    close(*a1x, *b1x)
+                        && close(*a1y, *b1y)
+                        && close(*a2x, *b2x)
+                        && close(*a2y, *b2y)
+                        && close(*ax, *bx)
+                        && close(*ay, *by)
+                }
+                (Op::Close, Op::Close) => true,
+                _ => false,
+            })
+}
+
+#[test]
+fn a_default_ignorable_code_point_is_hidden_and_never_a_missing_codepoint() {
+    // Spec 8.3 (#167): a default-ignorable code point is not a missing
+    // codepoint. No bundled face maps U+200F, but the browser draws nothing
+    // for it and neither does the renderer: it is kept in its run, hidden by
+    // the shaper with a zero advance, pays no font fallback probe, and is
+    // reported by no diagnostic, so `rlm<RLM>mark` reads `rlmmark` with no gap.
+    for family in [1, 2, 3, 5, 6, 7, 8, 9] {
+        for character in DEFAULT_IGNORABLES {
+            assert!(text::is_default_ignorable(*character));
+            let source = format!("a{character}b");
+            let laid_out = fallback_layout(family, &source);
+            let scalar = u32::from(*character);
+            assert!(
+                laid_out.missing_codepoints.is_empty(),
+                "family {family} reports U+{scalar:04X} as missing"
+            );
+            assert_eq!(
+                laid_out.fallback_probes, 0,
+                "family {family} probes a face for U+{scalar:04X}"
+            );
+            assert!(!laid_out.noto_emoji_substituted);
+            let [line] = &laid_out.lines[..] else {
+                panic!("one line");
+            };
+            assert_eq!(
+                line.display_text.chars().collect::<Vec<_>>(),
+                ['a', *character, 'b'],
+                "family {family}: the scalar stays in the display text and is not replaced"
+            );
+            // One glyph per scalar; the hidden one is the face's space glyph
+            // at zero advance, so `b` sits where it sits without the scalar.
+            // A joiner or variation selector is a cluster continuation, so
+            // its glyph shares `a`'s cluster text; a bidi mark is its own run.
+            assert_eq!(
+                line.glyphs.len(),
+                3,
+                "family {family} U+{scalar:04X}: one glyph per scalar"
+            );
+            let plain = fallback_line(family, "ab");
+            let b_x = |line: &text::ResolvedLabel| {
+                line.glyphs
+                    .iter()
+                    .find(|glyph| glyph.unicode == utf16("b"))
+                    .expect("b has a glyph")
+                    .x
+            };
+            assert!(
+                (b_x(line) - b_x(&plain)).abs() < 1e-9,
+                "family {family} U+{scalar:04X}: the hidden glyph adds no advance ({} vs {})",
+                b_x(line),
+                b_x(&plain)
+            );
+            let hidden = &line.glyphs[1];
+            assert!(
+                (hidden.x - b_x(line)).abs() < 1e-9,
+                "family {family} U+{scalar:04X}: the hidden glyph has zero advance"
+            );
+            assert!(
+                same_outlines(&line.path, &plain.path),
+                "family {family} U+{scalar:04X}: the hidden glyph draws nothing"
+            );
+        }
+    }
+
+    // The probe: with the mark and without, the visible glyphs sit at the
+    // same positions and draw the same outlines. The mark is its own
+    // right-to-left UAX #9 run of zero width between the two Latin runs.
+    let plain = fallback_line(5, "rlmmark");
+    let marked = fallback_line(5, "rlm\u{200f}mark");
+    assert_eq!(marked.display_text, "rlm\u{200f}mark");
+    assert_eq!(
+        runs_of(&marked),
+        [("rlm", false), ("\u{200f}", true), ("mark", false)]
+    );
+    let visible = |line: &text::ResolvedLabel| {
+        line.glyphs
+            .iter()
+            .filter(|glyph| glyph.unicode != utf16("\u{200f}"))
+            .map(|glyph| (glyph.id, glyph.x, glyph.y))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        visible(&marked),
+        visible(&plain),
+        "the mark adds no advance"
+    );
+    assert!(
+        same_outlines(&marked.path, &plain.path),
+        "the mark draws nothing"
+    );
+    let mark = marked
+        .glyphs
+        .iter()
+        .find(|glyph| glyph.unicode == utf16("\u{200f}"))
+        .expect("the mark has a glyph");
+    let m_of_mark = marked.glyphs[marked.runs[2].glyph_start].x;
+    assert!(
+        (mark.x - m_of_mark).abs() < 1e-9,
+        "the zero-advance mark sits where the next glyph starts: {} vs {m_of_mark}",
+        mark.x
+    );
+
+    // A joiner between two emoji stays in their Noto Emoji run rather than
+    // splitting it, and a mark at the very start of a run takes the run's
+    // face from the scalar after it.
+    let joined = fallback_line(5, "\u{1f600}\u{200d}\u{1f389}");
+    assert_eq!(
+        faced_runs_of(&joined),
+        [("\u{1f600}\u{200d}\u{1f389}", false, "Noto Emoji")]
+    );
+    assert!(joined.missing_codepoints.is_empty());
+    let leading = fallback_line(5, "\u{200d}\u{1f600}");
+    assert_eq!(
+        faced_runs_of(&leading),
+        [("\u{200d}\u{1f600}", false, "Noto Emoji")]
+    );
+
+    // The whole-text face is chosen over the shaped scalars without the
+    // default-ignorables: a Cyrillic text with a joiner still shapes whole in
+    // the Cyrillic chunk and pays no probe.
+    assert_eq!(fallback_probes_for(5, "\u{41f}\u{440}\u{438}\u{200d}"), 0);
+
+    // The paragraph separator is not default-ignorable and stays the missing
+    // codepoint #125 pinned.
+    assert!(!text::is_default_ignorable('\u{2029}'));
+    assert!(
+        !text::is_default_ignorable('\u{115f}'),
+        "HarfBuzz omits the Hangul fillers"
+    );
+    assert!(!text::is_default_ignorable(' '));
+}
+
+#[test]
+fn a_default_ignorable_code_point_produces_no_diagnostic_in_any_format() {
+    // End to end: a text element carrying U+200F renders with an empty
+    // compatibility report in every format, where it used to report one
+    // `font.missing-glyph` per format (#167).
+    let scene = SceneDocument::parse(
+        r##"{"type":"excalidraw","version":2,"elements":[{"id":"probe","type":"text","x":10,"y":10,"width":120,"height":25,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"strokeStyle":"solid","roughness":1,"opacity":100,"groupIds":[],"frameId":null,"index":"a1","roundness":null,"seed":1,"version":1,"versionNonce":2,"isDeleted":false,"boundElements":null,"updated":1,"link":null,"locked":false,"text":"rlm\u200fmark","fontSize":20,"fontFamily":5,"textAlign":"left","verticalAlign":"top","containerId":null,"originalText":"rlm\u200fmark","autoResize":true,"lineHeight":1.25}],"appState":{"viewBackgroundColor":"#ffffff"},"files":{}}"##.as_bytes(),
+    )
+    .expect("probe scene is admitted");
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .build()
+            .expect("request is valid");
+        let outcome = Renderer::new()
+            .render(&scene, &request)
+            .expect("probe renders");
+        assert!(
+            outcome.report().is_empty(),
+            "{format:?} reports {:?}",
+            outcome.report()
+        );
+    }
+}
+
 #[test]
 fn a_right_to_left_run_is_shaped_right_to_left() {
     // Spec 8.3: within a run, glyph order and placement are the shaper's for

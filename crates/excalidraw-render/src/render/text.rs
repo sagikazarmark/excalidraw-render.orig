@@ -379,8 +379,10 @@ impl FallbackFont {
 }
 
 /// The text `face` can show: every character it has a glyph for, and `?` for
-/// each it has not, with the replaced scalars in source order. `text` is one
-/// line's content; a line terminator never reaches this.
+/// each it has not, with the replaced scalars in source order. A
+/// default-ignorable code point is kept as it is and never replaced or
+/// reported (spec 8.3, #167): the shaper hides it, as the browser does. `text`
+/// is one line's content; a line terminator never reaches this.
 fn fallback_display_text(
     face: &rustybuzz::Face<'_>,
     text: &str,
@@ -389,7 +391,7 @@ fn fallback_display_text(
     display_text.try_reserve_exact(text.len())?;
     let mut missing_codepoints = Vec::new();
     for character in text.chars() {
-        if face.glyph_index(character).is_some() {
+        if is_default_ignorable(character) || face.glyph_index(character).is_some() {
             display_text.push(character);
         } else {
             display_text.push('?');
@@ -398,6 +400,46 @@ fn fallback_display_text(
         }
     }
     Ok((display_text, missing_codepoints))
+}
+
+/// Whether `character` is a default-ignorable code point as the pinned shaper
+/// (`rustybuzz 0.20.1`, HarfBuzz's `is_default_ignorable`) classifies it: the
+/// bidi controls U+200E, U+200F, U+202A–U+202E and U+2066–U+2069 with the
+/// rest of U+2060–U+206F, the joiners U+200B–U+200D, the soft hyphen U+00AD,
+/// the combining grapheme joiner U+034F, the Arabic letter mark U+061C, the
+/// Khmer and Mongolian format controls U+17B4–U+17B5 and U+180B–U+180E, the
+/// variation selectors U+FE00–U+FE0F, U+FEFF, U+FFF0–U+FFF8, the musical
+/// format controls U+1D173–U+1D17A and the tag and variation selector plane
+/// U+E0000–U+E0FFF. This is HarfBuzz's modified Default_Ignorable_Code_Point,
+/// which omits the Hangul fillers U+115F, U+1160, U+3164 and U+FFA0 the
+/// Unicode property includes; the reference renders these through HarfBuzz,
+/// which draws nothing for any of them whether or not the face has a glyph.
+///
+/// Such a scalar is never a missing codepoint (spec 8.3): it pays no font
+/// fallback probe, is shaped in the run its neighbours use with the zero
+/// advance the shaper gives it, draws nothing and reports nothing.
+pub(super) fn is_default_ignorable(character: char) -> bool {
+    let scalar = u32::from(character);
+    match scalar >> 16 {
+        0 => match scalar >> 8 {
+            0x00 => scalar == 0x00ad,
+            0x03 => scalar == 0x034f,
+            0x06 => scalar == 0x061c,
+            0x17 => (0x17b4..=0x17b5).contains(&scalar),
+            0x18 => (0x180b..=0x180e).contains(&scalar),
+            0x20 => {
+                (0x200b..=0x200f).contains(&scalar)
+                    || (0x202a..=0x202e).contains(&scalar)
+                    || (0x2060..=0x206f).contains(&scalar)
+            }
+            0xfe => (0xfe00..=0xfe0f).contains(&scalar) || scalar == 0xfeff,
+            0xff => (0xfff0..=0xfff8).contains(&scalar),
+            _ => false,
+        },
+        0x01 => (0x1d173..=0x1d17a).contains(&scalar),
+        0x0e => (0xe0000..=0xe0fff).contains(&scalar),
+        _ => false,
+    }
 }
 
 fn shaped_advance_units(glyphs: &rustybuzz::GlyphBuffer) -> i64 {
@@ -552,9 +594,13 @@ impl OfficialFont {
             _ => return Err(LabelError::InvalidFont),
         };
         let mut chunks = OfficialFontChunks::load(catalog_family)?;
+        // The shaped scalars: every scalar but the line terminators and the
+        // default-ignorable code points, which no face needs to declare or
+        // map since the shaper hides them in whichever run they fall (#167).
         let shaped = || {
-            text.chars()
-                .filter(|character| !is_line_terminator(*character))
+            text.chars().filter(|character| {
+                !is_line_terminator(*character) && !is_default_ignorable(*character)
+            })
         };
         // The face for the whole text is the first official font chunk, in
         // pinned face order, whose declared Unicode ranges cover every shaped
@@ -786,6 +832,14 @@ pub(super) fn layout_with_fallbacks(
                     .get(range.clone())
                     .ok_or(LabelError::InvalidFont)?;
                 for (offset, character) in run_text.char_indices() {
+                    // A default-ignorable code point is shaped, hidden, by the
+                    // face of the run it falls in (#167): it consults no face
+                    // and pays no probe. Its face is settled below, once its
+                    // neighbours' are known.
+                    if is_default_ignorable(character) {
+                        selections.push((bidi_run, rtl, usize::MAX, character));
+                        continue;
+                    }
                     let (font_index, display, noto, missing) = resolve_character_cached(
                         primary_index,
                         fonts,
@@ -808,6 +862,7 @@ pub(super) fn layout_with_fallbacks(
         line_missing.sort_unstable_by_key(|(offset, _)| *offset);
         missing_codepoints.try_reserve(line_missing.len())?;
         missing_codepoints.extend(line_missing.into_iter().map(|(_, codepoint)| codepoint));
+        settle_default_ignorable_faces(&mut selections, primary_index);
 
         let mut grouped = Vec::<(usize, bool, usize, String)>::new();
         for (bidi_run, rtl, font_index, character) in selections {
@@ -940,6 +995,34 @@ pub(super) fn layout_with_fallbacks(
         },
         used_noto,
     ))
+}
+
+/// Gives every default-ignorable code point of one line's `selections`
+/// (`(bidi run, rtl, face index, display)`, the face still `usize::MAX`) the
+/// face of the nearest scalar of its own bidi visual run: the preceding one in
+/// logical order, else the following one, else the whole-text face when the
+/// run holds nothing else (a lone bidi control is its own UAX #9 run). So a
+/// joiner between two emoji stays in their Noto Emoji run, and a mark inside
+/// a Cyrillic run in the Cyrillic chunk's, and no run is split for a scalar
+/// that draws nothing.
+fn settle_default_ignorable_faces(selections: &mut [(usize, bool, usize, char)], primary: usize) {
+    for index in 0..selections.len() {
+        let (bidi_run, _, face, _) = selections[index];
+        if face != usize::MAX {
+            continue;
+        }
+        let neighbour = |candidates: &mut dyn Iterator<Item = usize>| {
+            candidates
+                .map(|candidate| selections[candidate])
+                .take_while(|(run, ..)| *run == bidi_run)
+                .map(|(_, _, face, _)| face)
+                .find(|face| *face != usize::MAX)
+        };
+        let settled = neighbour(&mut (0..index).rev())
+            .or_else(|| neighbour(&mut (index + 1..selections.len())))
+            .unwrap_or(primary);
+        selections[index].2 = settled;
+    }
 }
 
 /// Whether `text` needs the UAX #9 layout of `layout_with_fallbacks` rather
