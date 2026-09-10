@@ -52,10 +52,10 @@
     }
   },
   "viewerEvidence": {
-    "approvalSubject": "sha256:41b1c5ab5c9a9b2c5b1287d76a1404b0bf415b834e00b0e64af173d659bbb830",
+    "approvalSubject": "sha256:e3e81c84737fee3169cd12722b815286f1d0fbffa90bead328ded2eb7c0e7266",
     "executions": 857,
     "path": "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json",
-    "sha256": "4dabce932916ae44212ed5549b1b599ea5d6e9179eea849432152bdec02f5737",
+    "sha256": "644dbe55ebdc87d6013f6a2d2801cfd9a01abd9b3e003df90d85bbf269751e2d",
     "status": "approved"
   }
 }
