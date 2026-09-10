@@ -1703,7 +1703,11 @@ function buildElementKinds() {
     text: ["/backgroundColor", "/fillStyle", "/strokeWidth", "/strokeStyle", "/roundness", "/roughness", "/seed"],
     line: [],
     arrow: ["/backgroundColor", "/fillStyle"],
-    freedraw: ["/roundness", "/roughness", "/seed"],
+    // A freedraw element reads the common `roughness` and `seed` like every
+    // other shape: the perfect-freehand stroke consults neither, but the
+    // Rough.js background fill of a closed loop is generateRoughOptions(element)
+    // over the element's own seed and adjusted roughness (#170).
+    freedraw: ["/roundness"],
     image: ["/strokeColor", "/backgroundColor", "/fillStyle", "/strokeWidth", "/strokeStyle", "/roughness", "/seed"],
     frame: ["/strokeColor", "/backgroundColor", "/fillStyle", "/strokeWidth", "/strokeStyle", "/roundness", "/roughness", "/seed", "/boundElements"],
     magicframe: ["/strokeColor", "/backgroundColor", "/fillStyle", "/strokeWidth", "/strokeStyle", "/roundness", "/roughness", "/seed", "/boundElements"],
@@ -1732,7 +1736,9 @@ function buildElementKinds() {
         ? "Render the official offline shell and label in the final iframe-like paint pass."
         : kind === "image"
           ? "Resolve the authoritative local file and apply format-specific raster or local-SVG behavior."
-          : "Render the complete understood static-export semantics for this kind.",
+          : kind === "freedraw"
+            ? "Render the perfect-freehand stroke, which reads neither roughness nor seed, and fill a closed loop's background through the Rough.js curve with the element's own seed and adjusted roughness, as the reference does."
+            : "Render the complete understood static-export semantics for this kind.",
     ignoredInheritedPaths: ignoredInherited[kind],
     kind,
     recordKind: ownRecord[kind],

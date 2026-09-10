@@ -667,7 +667,14 @@ or jitter them as the reference's `preserveVertices` decides: the option is
 path — the rounded rectangle, the rounded diamond and the elbow arrow — so a
 rounded line or arrow, whose closed loop the reference fills as a curve, and a
 freedraw loop drop their fill vertices at cartoonist roughness like an
-unrounded shape does (#158).
+unrounded shape does (#158). A freedraw loop's background is the reference's
+`generator.curve` with `stroke: "none"` over the points-on-curve
+simplification of its points at 0.75, drawn with the element's own seed and
+adjusted roughness, which the scene surface admits for the freedraw kind as for
+every other shape although the perfect-freehand stroke reads neither; the curve
+generates its outline before the fill and `stroke: "none"` only drops it
+afterwards, so the fill reads the shared seeded stream from after the
+outline's `2 · (n + 2)` offsets for `n` simplified points (#170).
 
 An arrow's heads are generated through the one Rough.js options object the
 reference's `getArrowheadShapes` shares between the outline and both heads,
@@ -868,8 +875,15 @@ carry the exact baseline. No format consults installed fonts or OS text
 services.
 
 Liberation Sans and Noto Emoji replace local-only Helvetica/Arial and Segoe UI
-Emoji behavior for user text and generated labels, with one informational
-substitution diagnostic per affected occurrence. Missing codepoints use the
+Emoji behavior for ordinary scene text and generated export text. Ordinary
+scene text and compatibility placeholder labels report the Liberation Sans
+substitution with one informational `font.liberation-sans-substituted`
+diagnostic per affected occurrence; frame names and generated embeddable
+labels, whose Liberation Sans face is renderer-owned chrome rather than a
+substitute for a source family the scene named, report none (#175). The Noto
+Emoji substitution is reported with one informational
+`font.noto-emoji-substituted` diagnostic per affected occurrence of ordinary
+scene text or generated embeddable label. Missing codepoints use the
 bundled deterministic replacement glyph at defined metrics and identify the
 element and codepoint. A default-ignorable code point is not a missing
 codepoint (#167): the class is the pinned shaper's (`rustybuzz 0.20.1`,
