@@ -82,9 +82,9 @@ pub(super) fn resolve_geometry(
             + source.repair_work_units,
     };
     match geometry {
-        GeneratedGeometry::Rough(drawing) => Ok(ResolvedElement::Outline(resolve_outline(
+        GeneratedGeometry::Rough(rough) => Ok(ResolvedElement::Outline(resolve_outline(
             source,
-            drawing,
+            rough.drawing,
             common,
             context,
             official_fonts,

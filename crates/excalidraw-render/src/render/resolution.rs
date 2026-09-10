@@ -23,7 +23,7 @@ use super::diagnostics::{
 use super::frame_target::{
     selected_file_ids, EffectiveFrameRendering, FrameSelection, FrameViewport,
 };
-use super::geometry::{adjusted_roughness, rough_drawing, GeneratedFreedraw, GeneratedGeometry};
+use super::geometry::{adjusted_roughness, generate_rough, GeneratedFreedraw, GeneratedGeometry};
 use super::prepared::PreparedFrameRender;
 use super::resolve::{
     fallback_fits_local_limits, format_error_code, generation_local_crossing,
@@ -338,9 +338,8 @@ impl RenderSession {
                             },
                         )
                     }
-                    _ => {
-                        rough_drawing(&source, roughness, &mut budget).map(GeneratedGeometry::Rough)
-                    }
+                    _ => generate_rough(&source, roughness, &mut budget)
+                        .map(GeneratedGeometry::Rough),
                 };
                 match generated {
                     Ok(geometry) => Some(geometry),

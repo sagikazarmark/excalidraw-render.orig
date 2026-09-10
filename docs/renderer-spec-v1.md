@@ -576,9 +576,18 @@ its end points and, for each axis, the values at the roots of the derivative
 in `[0, 1]` from `solveQuadratic`'s spelling of the coefficients, with
 `Math.pow(x, 3)` rounded once (the platform `pow` the pinned V8 defers to) and
 `Math.pow(x, 2)` as `x · x`. Arrowheads and bound text take no part in a
-linear element's own extent. An elbow arrow contributes its declared route's
-points rotated about that centre, which is the reference's extent at
-roughness 0.
+linear element's own extent. An elbow arrow contributes the same analytic
+extent of a Rough.js shape the reference measures it with (#176): not its
+drawn elbow path but `generateLinearElementShape`, the shape
+`getLinearElementRotatedBounds` generates while the shape cache is cold — a
+`linearPath` over its route points with the element's own
+`generateRoughOptions` (`preserveVertices` at the raw `roughness < 2`, its
+control points jittered by the element's roughness and seed), or a `curve`
+over them when the element carries a `roundness` record — rotated about the
+centre of its points' box like every other linear kind. At roughness 0 the
+shape has no jitter and its extrema are the route points; above it the extent
+includes the jitter. The renderer generates that shape for the measurement
+alone and charges it as generated geometry (Section 13.2).
 
 The scene document's own export options — `appState.exportBackground`,
 `exportWithDarkMode`, `exportScale`, and `exportEmbedScene` — are validated and
@@ -2606,7 +2615,15 @@ references, projection, masking, and compositing do not share charges.
 
 `max_elements` counts all source occurrences. Geometry counts every move, line,
 quadratic, cubic, close, rough operation, clip, mask, and glyph-outline command.
-Text counts normalized Unicode scalars before shaping. Decoded pixels share only
+An elbow arrow's geometry is its drawn elbow path together with the Rough.js
+shape the reference measures its scene extent with (Section 8.1, #176): the
+extent shape's commands are generated geometry commands of the element like the
+drawn shape's, counted in its geometry segments, charged 32 work units and a
+64-byte command record each on the same ledger row and in the same
+shared-semantic-resolution transaction, and subject to the same per-element
+segment and work ceilings, so a scene's canonical trace moves only where it has
+an elbow arrow and identically on every path. Text counts normalized Unicode
+scalars before shaping. Decoded pixels share only
 per identity and decode policy. Each selected raster surface pays its full area;
 the main PNG surface precedes fallbacks.
 

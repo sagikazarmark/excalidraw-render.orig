@@ -164,8 +164,26 @@ fn retain_cubic_extremum(
 }
 
 pub(super) enum GeneratedGeometry {
-    Rough(rough::Drawing),
+    Rough(GeneratedRough),
     Freedraw(GeneratedFreedraw),
+}
+
+/// A Rough outline's generated geometry: the drawing every format paints and,
+/// for an elbow arrow, the shape the reference measures its scene extent
+/// with and never draws.
+pub(super) struct GeneratedRough {
+    pub(super) drawing: rough::Drawing,
+    /// The Rough.js shape `getLinearElementRotatedBounds` generates over an
+    /// elbow arrow's route points while the `ShapeCache` is cold, as it is
+    /// when `getCanvasSize` measures a freshly restored scene:
+    /// `generateLinearElementShape`, a `linearPath` over the points with the
+    /// element's own `generateRoughOptions` (`preserveVertices` = raw
+    /// `roughness < 2`, jitter included), or a `curve` over them when the
+    /// element carries a roundness record. The drawn shape is the elbow path,
+    /// so this is geometry the element generates for its extent alone; it is
+    /// charged like every other generated command (#176). `None` for every
+    /// other outline, whose drawn outline is what the reference measures.
+    pub(super) extent_outline: Option<Path>,
 }
 
 pub(super) struct GeneratedFreedraw {
@@ -174,9 +192,18 @@ pub(super) struct GeneratedFreedraw {
 }
 
 impl GeneratedGeometry {
+    /// Every generated geometry command the element pays for: the drawing's
+    /// outline, fill and decorations, a freedraw's path and background fill,
+    /// and an elbow arrow's extent shape.
     pub(super) fn operation_count(&self) -> usize {
         match self {
-            Self::Rough(drawing) => drawing.operation_count(),
+            Self::Rough(rough) => {
+                rough.drawing.operation_count()
+                    + rough
+                        .extent_outline
+                        .as_ref()
+                        .map_or(0, |outline| outline.operations.len())
+            }
             Self::Freedraw(freedraw) => {
                 freedraw.path.operation_count()
                     + freedraw
@@ -189,7 +216,7 @@ impl GeneratedGeometry {
 
     pub(super) fn bounds(&self, source: &NormalizedElement) -> (f64, f64, f64, f64) {
         match self {
-            Self::Rough(drawing) => local_outline_bounds(source, Some(drawing)),
+            Self::Rough(rough) => local_outline_bounds(source, Some(&rough.drawing)),
             Self::Freedraw(_) => source_layout_bounds(source),
         }
     }
@@ -558,6 +585,80 @@ pub(super) fn adjusted_roughness(source: &NormalizedElement) -> f64 {
     } else {
         (source.roughness / if max_size < 10.0 { 3.0 } else { 2.0 }).min(2.5)
     }
+}
+
+/// A Rough outline's complete generated geometry: the drawing, then, for an
+/// elbow arrow, the shape the reference measures its extent with (#176). Both
+/// draw on one budget, so the element's segment, work and working-byte
+/// charges and the point at which it crosses a local limit count the extent
+/// shape's commands like the drawn shape's.
+pub(super) fn generate_rough(
+    source: &NormalizedElement,
+    roughness: f64,
+    budget: &mut rough::GenerationBudget,
+) -> Result<GeneratedRough, rough::GenerationError> {
+    let drawing = rough_drawing(source, roughness, budget)?;
+    let extent_outline = match &source.kind {
+        NormalizedElementKind::Linear(linear) if linear.elbowed => {
+            Some(elbow_extent_outline(source, linear, roughness, budget)?)
+        }
+        _ => None,
+    };
+    Ok(GeneratedRough {
+        drawing,
+        extent_outline,
+    })
+}
+
+/// `generateLinearElementShape(element)` for an elbow arrow, the shape
+/// `getLinearElementRotatedBounds` falls back to while the `ShapeCache` is
+/// cold: `generator.linearPath(element.points, generateRoughOptions(element))`
+/// — or `generator.curve` when the element carries a `roundness` record, as
+/// the reference checks that first — with the element's own options rather
+/// than the elbow path's `continuousPath` ones, so `preserveVertices` is the
+/// raw `roughness < 2` and the control points jitter (#176). An arrow's
+/// options never carry a fill, so the `polygon` branch is unreachable.
+fn elbow_extent_outline(
+    source: &NormalizedElement,
+    linear: &crate::normalization::NormalizedLinear,
+    roughness: f64,
+    budget: &mut rough::GenerationBudget,
+) -> Result<Path, rough::GenerationError> {
+    let mut points = Vec::new();
+    budget.work(u64::try_from(linear.points.len()).unwrap_or(u64::MAX))?;
+    points.try_reserve_exact(linear.points.len())?;
+    points.extend(linear.points.iter().map(|point| Point {
+        x: point[0],
+        y: point[1],
+    }));
+    let preserve_vertices = source.roughness < 2.0;
+    let disable_multi_stroke = source.stroke_style != "solid";
+    let drawing = if source.roundness.is_some() {
+        rough::curve_drawing(
+            &points,
+            false,
+            source.seed,
+            roughness,
+            preserve_vertices,
+            disable_multi_stroke,
+            None,
+            source.stroke_width,
+            budget,
+        )?
+    } else {
+        rough::linear_drawing(
+            &points,
+            false,
+            source.seed,
+            roughness,
+            preserve_vertices,
+            disable_multi_stroke,
+            None,
+            source.stroke_width,
+            budget,
+        )?
+    };
+    Ok(drawing.outline)
 }
 
 pub(super) fn rough_drawing(
@@ -1339,6 +1440,15 @@ fn local_outline_bounds(
             return bounds;
         }
     }
+    linear_points_bounds(linear)
+}
+
+/// The box of a linear element's points in its own coordinates: what
+/// `LinearElementEditor.getElementAbsoluteCoords` reduces the points to while
+/// the `ShapeCache` is cold, before adding the element's position.
+pub(super) fn linear_points_bounds(
+    linear: &crate::normalization::NormalizedLinear,
+) -> (f64, f64, f64, f64) {
     linear.points.iter().fold(
         (
             f64::INFINITY,

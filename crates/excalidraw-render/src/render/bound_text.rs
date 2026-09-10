@@ -108,8 +108,8 @@ fn linear_midpoint(
     let left_point = points.get(right.checked_sub(1)?)?;
     let right_point = points.get(right)?;
     if points.len() > 2 && source.roundness.is_some() {
-        if let Some(GeneratedGeometry::Rough(drawing)) = geometry {
-            if let Some(midpoint) = rough_segment_midpoint(&drawing.outline, *right_point) {
+        if let Some(GeneratedGeometry::Rough(rough)) = geometry {
+            if let Some(midpoint) = rough_segment_midpoint(&rough.drawing.outline, *right_point) {
                 return Some(midpoint);
             }
         }

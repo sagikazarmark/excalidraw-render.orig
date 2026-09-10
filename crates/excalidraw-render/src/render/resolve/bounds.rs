@@ -11,8 +11,9 @@ use super::super::frame_target::{
     relationship_frame_target, EffectiveFrameRendering, FrameViewport,
 };
 use super::super::geometry::{
-    include_diamond_bounds, include_ellipse_bounds, include_transformed_bounds, point_rotate_rads,
-    reference_curve_bounds, source_layout_bounds, GeneratedGeometry, Point,
+    include_diamond_bounds, include_ellipse_bounds, include_transformed_bounds,
+    linear_points_bounds, point_rotate_rads, reference_curve_bounds, source_layout_bounds,
+    GeneratedGeometry, Point,
 };
 use super::super::text::{FrameName, FRAME_NAME_BOX_HEIGHT, FRAME_NAME_OFFSET_Y};
 
@@ -228,11 +229,17 @@ fn include_element_bounds(
 /// that of the element's points' box (`getElementAbsoluteCoords` reads the
 /// points when the shape cache is cold, which it is while `getCanvasSize`
 /// measures a freshly restored scene), and the extent is the analytic extent
-/// of the drawn outline's cubics with every control point placed on the page
-/// and rotated about that centre (#172, #173). An elbow arrow keeps the
-/// renderer's existing rule, its declared route's points rotated about that
-/// centre; the reference measures a Rough.js `linearPath` over the points
-/// there, which agrees at roughness 0.
+/// of a Rough.js shape's cubics with every control point placed on the page
+/// and rotated about that centre (#172, #173). The shape is
+/// `ShapeCache.get(element)?.[0] ?? generateLinearElementShape(element)` on
+/// that same cold cache: the drawn outline for a line or arrow, whose
+/// `generateLinearElementShape` is the shape `renderElement` draws, and for
+/// an elbow arrow the `linearPath` (or `curve`) over its route points that
+/// the renderer generates for this measurement alone, jitter included, since
+/// the drawn elbow path is not what the reference measures (#176). At
+/// roughness 0 the elbow's shape has no jitter and its extrema are the route
+/// points. A shape that draws no cubic, or an element with no geometry, falls
+/// back to the rotated points.
 fn include_linear_bounds(
     source: &NormalizedElement,
     linear: &crate::normalization::NormalizedLinear,
@@ -242,18 +249,7 @@ fn include_linear_bounds(
     max_x: &mut f64,
     max_y: &mut f64,
 ) {
-    let (mut points_min_x, mut points_min_y, mut points_max_x, mut points_max_y) = (
-        f64::INFINITY,
-        f64::INFINITY,
-        f64::NEG_INFINITY,
-        f64::NEG_INFINITY,
-    );
-    for point in &linear.points {
-        points_min_x = points_min_x.min(point[0]);
-        points_min_y = points_min_y.min(point[1]);
-        points_max_x = points_max_x.max(point[0]);
-        points_max_y = points_max_y.max(point[1]);
-    }
+    let (points_min_x, points_min_y, points_max_x, points_max_y) = linear_points_bounds(linear);
     let (x1, y1, x2, y2) = (
         points_min_x + source.x,
         points_min_y + source.y,
@@ -276,8 +272,12 @@ fn include_linear_bounds(
         )
     };
     let outline = match geometry {
-        Some(GeneratedGeometry::Rough(drawing)) if !linear.elbowed => {
-            reference_curve_bounds(&drawing.outline.operations, transform)
+        Some(GeneratedGeometry::Rough(rough)) => {
+            let operations = match &rough.extent_outline {
+                Some(extent_outline) if linear.elbowed => &extent_outline.operations,
+                _ => &rough.drawing.outline.operations,
+            };
+            reference_curve_bounds(operations, transform)
         }
         _ => None,
     };

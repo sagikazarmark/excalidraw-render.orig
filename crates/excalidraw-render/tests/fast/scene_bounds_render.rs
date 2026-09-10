@@ -127,10 +127,9 @@ fn rotated_rough_ellipse_diamond_and_curve_share_one_scene() {
 
 #[test]
 fn a_rotated_elbow_arrow_at_roughness_zero_rotates_its_route_points() {
-    // An elbow arrow keeps the renderer's rule, its declared route's points
-    // rotated about their box's centre, which is the reference's extent for a
-    // roughness-0 elbow arrow (its Rough.js `linearPath` over the points has
-    // no jitter to add).
+    // At roughness 0 the Rough.js `linearPath` the reference measures an elbow
+    // arrow with has no jitter, so its extrema are the route points, rotated
+    // about their box's centre.
     assert_eq!(
         view_box(br##"{
           "type":"excalidraw","version":2,
@@ -141,4 +140,42 @@ fn a_rotated_elbow_arrow_at_roughness_zero_rotates_its_route_points() {
         }"##),
         "0 0 261.27064739308696 219.72099215285482"
     );
+}
+
+#[test]
+fn a_rough_elbow_arrow_extends_the_scene_by_its_linear_path_jitter() {
+    // The reference measures an elbow arrow's extent with
+    // `generateLinearElementShape` on a cold `ShapeCache`: a Rough.js
+    // `linearPath` over the route points with the element's own options
+    // (`preserveVertices` at raw `roughness < 2`, the control points
+    // jittered), not the drawn elbow path and not the points (#176). #176's
+    // lone elbow at roughness 1, seed 103, padding 10: the route's box is
+    // 300 by 90, the official `viewBox="0 0 320 111.89645531056797"`; the
+    // route points alone gave 320 by 110. The same arrow rotated 0.4 rad
+    // measures the roughness-0 extent, `261.27064739308696
+    // 219.72099215285482`, its jitter not reaching the rotated envelope; at
+    // roughness 2 (`preserveVertices` off, so the end points jitter too) the
+    // official `viewBox` is `0 0 265.5311531410145 222.85408278611837`.
+    for (roughness, angle, expected) in [
+        ("1", "0", "0 0 320 111.89645531056797"),
+        ("1", "0.4", "0 0 261.27064739308696 219.72099215285482"),
+        ("2", "0.4", "0 0 265.5311531410145 222.85408278611837"),
+    ] {
+        assert_eq!(
+            view_box(
+                format!(
+                    r##"{{
+                      "type":"excalidraw","version":2,
+                      "elements":[
+                        {{"id":"elbow","type":"arrow","x":50,"y":50,"width":300,"height":90,"angle":{angle},"roughness":{roughness},"points":[[0,0],[150,0],[150,90],[300,90]],"elbowed":true,"seed":103,"updated":1}}
+                      ],
+                      "appState":{{}},"files":{{}}
+                    }}"##
+                )
+                .as_bytes()
+            ),
+            expected,
+            "roughness {roughness}, angle {angle}"
+        );
+    }
 }
