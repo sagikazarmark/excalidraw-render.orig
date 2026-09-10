@@ -30,6 +30,7 @@ mod freedraw_render;
 mod helvetica_text_render;
 mod image_corner_clip;
 mod image_edge_coverage;
+mod image_resampling;
 mod image_viewport_rounding;
 mod license_bundle;
 mod missing_glyph_render;

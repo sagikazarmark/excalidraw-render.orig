@@ -774,7 +774,14 @@ outside and one on the right or bottom edge inside, so a fractional edge is a
 whole row or column or none and never a blend, while the image is still
 sampled bilinearly at the exact fractional mapping and the strict source
 rectangle pads the snapped edge with the crop's own edge pixels. PNG paints
-the same whole pixels. A rotated image keeps antialiased edges, and the
+the same whole pixels, and resamples the image as the canvas does: once per
+destination pixel, a bilinear sample at the pixel's centre under that mapping
+(#165). The renderer's fixed supersample takes no part in an axis-aligned
+raster image's sampling — each destination pixel paints one constant block of
+subpixels, which the box filter returns unchanged — so its interior pixels are
+the canvas's rather than a footprint one destination pixel wider; a 1:1 image
+is its own texels. A rotated image, whose edges the supersample antialiases,
+is sampled at every subpixel centre. A rotated image keeps antialiased edges, and the
 rounded-corner clip and frame clips stay antialiased masks whatever the
 transform, as the canvas's `clip` is, so a rounded image's straight fractional
 edge is the whole column attenuated by the clip's coverage. A nested-SVG image
@@ -1267,7 +1274,10 @@ Edge coverage follows the reference canvas: paths, glyphs, clips and rotated
 images are antialiased by area coverage, and an axis-aligned image's
 destination rectangle is painted by pixel-centre coverage with no edge
 antialiasing (Section 8.2, #162), which the fixed supersample reproduces
-exactly because the snapped edges land on whole subpixels.
+exactly because the snapped edges land on whole subpixels. Inside that
+rectangle an axis-aligned raster image is resampled once per destination
+pixel centre and painted as constant subpixel blocks (Section 8.2, #165), so
+the supersample neither blurs nor widens it.
 
 ### 8.6 Vector-First PDF
 

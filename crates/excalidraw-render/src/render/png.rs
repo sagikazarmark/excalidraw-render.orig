@@ -1216,18 +1216,71 @@ impl PngPlan {
                         match snapped {
                             Some(rect) => {
                                 // The snapped rectangle, filled with the image
-                                // as a pattern under the exact fractional
-                                // mapping: coverage is the canvas's whole rows
-                                // and columns, sampling stays bilinear, and
-                                // the padded spread supplies the image's edge
-                                // pixel where the snapped edge reaches past the
-                                // mapped one, as Skia's clamped image shader
-                                // does. A cropped image is sampled from the
-                                // whole pixmap, as the canvas samples it: the
-                                // official evidence for `focused.image-codecs.v1`
-                                // blends the pixels beside the crop into its
-                                // edge rows, so the source rectangle does not
-                                // bound the sampling there either.
+                                // resampled once per destination pixel centre
+                                // as the canvas's `drawImage` resamples it
+                                // (#165): a canvas-resolution layer of the
+                                // rectangle's size takes the image as a
+                                // pattern under the exact fractional mapping,
+                                // sampled bilinearly at each of its pixel
+                                // centres, and each of its pixels then paints
+                                // one constant block of subpixels, which the
+                                // box filter returns unchanged. Sampling the
+                                // image at every subpixel centre instead gave
+                                // an upscaled image a footprint one
+                                // destination pixel wider than the canvas's.
+                                // Coverage is the canvas's whole rows and
+                                // columns, and the padded spread supplies the
+                                // image's edge pixel where the snapped edge
+                                // reaches past the mapped one, as Skia's
+                                // clamped image shader does. A cropped image
+                                // is sampled from the whole pixmap, as the
+                                // canvas samples it: the official evidence for
+                                // `focused.image-codecs.v1` blends the pixels
+                                // beside the crop into its edge rows, so the
+                                // source rectangle does not bound the sampling
+                                // there either.
+                                let layer_width = rect.right - rect.left;
+                                let layer_height = rect.bottom - rect.top;
+                                let sampling_transform = transform
+                                    .raster_image_transform_with_origin(
+                                        1,
+                                        *source_rect,
+                                        *width,
+                                        *height,
+                                        *scale,
+                                        rect.left,
+                                        rect.top,
+                                    )?;
+                                let mut layer = Pixmap::new(layer_width, layer_height).ok_or(
+                                    FormatEncodeError::MemoryUnavailable {
+                                        subject_kind: "raster_surface",
+                                        subject: "png_image_resample_surface",
+                                    },
+                                )?;
+                                let layer_rect = Rect::from_xywh(
+                                    0.0,
+                                    0.0,
+                                    finite_f32(f64::from(layer_width), "PNG image layer width")?,
+                                    finite_f32(f64::from(layer_height), "PNG image layer height")?,
+                                )
+                                .ok_or_else(png_size_error)?;
+                                layer.fill_rect(
+                                    layer_rect,
+                                    &tiny_skia::Paint {
+                                        shader: tiny_skia::Pattern::new(
+                                            pixmap,
+                                            tiny_skia::SpreadMode::Pad,
+                                            image_paint.quality,
+                                            1.0,
+                                            sampling_transform,
+                                        ),
+                                        blend_mode: tiny_skia::BlendMode::Source,
+                                        anti_alias: false,
+                                        force_hq_pipeline: false,
+                                    },
+                                    Transform::identity(),
+                                    None,
+                                );
                                 let scaled = |edge: u32| {
                                     finite_f32(
                                         f64::from(edge) * f64::from(SUBPIXEL_SCALE),
@@ -1241,15 +1294,24 @@ impl PngPlan {
                                     scaled(rect.bottom)?,
                                 )
                                 .ok_or_else(png_size_error)?;
+                                let block_scale =
+                                    finite_f32(f64::from(SUBPIXEL_SCALE), "PNG image block scale")?;
                                 surface.fill_rect(
                                     destination,
                                     &tiny_skia::Paint {
                                         shader: tiny_skia::Pattern::new(
-                                            pixmap,
+                                            layer.as_ref(),
                                             tiny_skia::SpreadMode::Pad,
-                                            image_paint.quality,
+                                            FilterQuality::Nearest,
                                             image_paint.opacity,
-                                            raster_transform,
+                                            Transform::from_row(
+                                                block_scale,
+                                                0.0,
+                                                0.0,
+                                                block_scale,
+                                                scaled(rect.left)?,
+                                                scaled(rect.top)?,
+                                            ),
                                         ),
                                         blend_mode: image_paint.blend_mode,
                                         anti_alias: false,

@@ -352,7 +352,10 @@ fn packaged_public_facade_preserves_png_scanline_filter_bytes_across_targets() {
     // predictive scanline filters and exercises the deflate compressor on
     // dense data, while the padding rows stay unfiltered. Together with the
     // flat rectangle expectation this pins both filter paths and the
-    // compressor on every supported target (#113).
+    // compressor on every supported target (#113). The digest moved with
+    // #165: the 16x8 image at 128x64 is now resampled once per destination
+    // pixel centre, as the canvas resamples it, instead of at every subpixel
+    // centre of the supersample, so its interior pixels changed.
     let scene =
         SceneDocument::parse(NOISY_RASTER_SCENE).expect("the noisy raster scene is admitted");
     let request = RenderRequest::builder(OutputFormat::Png)
@@ -374,7 +377,7 @@ fn packaged_public_facade_preserves_png_scanline_filter_bytes_across_targets() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "f873403ca7e6533a3231c119ed9cd8db09bbede8304c191e079e56a61cbcd28f"
+        "865cb1358fc686b1f7a271cccf9cb0923f33a15fdc1135d862c47a8b62023800"
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(&report)),
