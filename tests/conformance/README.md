@@ -26,16 +26,28 @@ coverage, feature tags, purpose, licence, sanitization, determinism, semantic
 expectations, and any tolerance exceptions.
 
 A scene case declares one or more export variants. The default variant is the
-reference wrapper's default export; a further variant may vary dark mode and
-selects exactly one sizing mode (`exportScale` or `maxWidthOrHeight`), and its
+reference wrapper's default export; a further variant may vary dark mode,
+selects exactly one sizing mode (`exportScale` or `maxWidthOrHeight`), and may
+drop the scene background (`exportBackground: false`), change the export
+padding (`exportPadding`) or embed the scene (`exportEmbedScene: true`); its
 evidence nests under `evidence/<variant-id>/`. Both parity harnesses build the
-renderer request from the variant's options and fail closed on any other
-deviation, so a variant cannot be compared against evidence generated under
-settings the harness did not reproduce. A scaled variant's official SVG
-multiplies only the root `width` and `height` while the `viewBox` stays logical;
-a maximum-dimension export leaves the SVG untouched and downscales only the PNG.
-The verifier holds both rasters to those rules: the SVG rounds `viewBox` times
-the scale, the PNG truncates it.
+renderer request from the variant's options — dark mode, the sizing mode, the
+scene background, the padding and the embedded canonicalized original scene
+document, each the request control the reference option stands for — and fail
+closed on any other deviation, so a variant cannot be compared against
+evidence generated under settings the harness did not reproduce. A scaled
+variant's official SVG multiplies only the root `width` and `height` while the
+`viewBox` stays logical; a maximum-dimension export leaves the SVG untouched
+and downscales only the PNG. The verifier holds both rasters to those rules:
+the SVG rounds `viewBox` times the scale, the PNG truncates it. A variant
+without the scene background has no opaque surface to hold to and must show a
+transparent pixel instead, and its official SVG omits the one background
+`<rect>` the registered `svg_element_counts` include for the default export.
+A variant that embeds the scene must carry the reference's payload and nothing
+else may: the `tEXt` chunk keyed `application/vnd.excalidraw+json` before the
+PNG's `IEND`, and inside the SVG's `<metadata>` the `payload-type`,
+`payload-version:2`, `payload-start` and `payload-end` comments around the
+encoded scene text.
 
 Two registry-driven harnesses in `crates/excalidraw-render/tests` compare the
 renderer against every registered scene case and variant, rendering each

@@ -170,6 +170,9 @@ fn variant_request_builds_the_default_export_from_default_options() {
     assert_eq!(request.format(), OutputFormat::Png);
     assert_eq!(request.sizing(), Sizing::Scale(1.0));
     assert_eq!(request.color_mode(), ColorMode::Light);
+    assert!(request.include_background());
+    assert_eq!(request.padding(), 10.0);
+    assert!(!request.metadata_options().embedded_scene());
 }
 
 #[test]
@@ -198,11 +201,47 @@ fn variant_request_honours_dark_mode_and_each_sizing_mode() {
 }
 
 #[test]
-#[should_panic(expected = "varies exportPadding")]
+fn variant_request_honours_the_background_padding_and_scene_embedding_options() {
+    // Each reference export option maps onto the request control it stands
+    // for, so a variant's evidence and its render are produced under the same
+    // settings: `exportBackground` is the scene background, `exportPadding`
+    // the logical padding, and `exportEmbedScene` the embedded canonicalized
+    // original scene document with nothing else beside it.
+    let mut transparent = default_options();
+    transparent["exportBackground"] = serde_json::json!(false);
+    assert!(!variant_request(OutputFormat::Png, &transparent, "test").include_background());
+
+    let mut tight = default_options();
+    tight["exportPadding"] = serde_json::json!(0);
+    assert_eq!(
+        variant_request(OutputFormat::Svg, &tight, "test").padding(),
+        0.0
+    );
+
+    let mut embedded = default_options();
+    embedded["exportEmbedScene"] = serde_json::json!(true);
+    let metadata = variant_request(OutputFormat::Svg, &embedded, "test")
+        .metadata_options()
+        .clone();
+    assert!(metadata.embedded_scene());
+    assert!(!metadata.provenance());
+    assert!(!metadata.diagnostic_summary());
+}
+
+#[test]
+#[should_panic(expected = "varies viewBackgroundColor")]
 fn variant_request_refuses_an_option_it_does_not_build() {
-    let mut padded = default_options();
-    padded["exportPadding"] = serde_json::json!(20);
-    variant_request(OutputFormat::Png, &padded, "test");
+    let mut tinted = default_options();
+    tinted["viewBackgroundColor"] = serde_json::json!("#f8f9fa");
+    variant_request(OutputFormat::Png, &tinted, "test");
+}
+
+#[test]
+#[should_panic(expected = "exportPadding is not a number")]
+fn variant_request_refuses_a_non_numeric_padding() {
+    let mut odd = default_options();
+    odd["exportPadding"] = serde_json::json!("none");
+    variant_request(OutputFormat::Png, &odd, "test");
 }
 
 #[test]

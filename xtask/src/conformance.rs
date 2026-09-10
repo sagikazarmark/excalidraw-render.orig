@@ -1305,7 +1305,7 @@ fn verify_typography_format(
         if png_dimensions(&bytes)? != (width, height) {
             return Err("typography PNG dimensions are invalid".to_owned());
         }
-        verify_png_semantics(&bytes, &raw_bytes)
+        verify_png_semantics(&bytes, &raw_bytes, false)
     } else {
         if svg_dimensions(&bytes)? != (width, height) {
             return Err("typography SVG dimensions are invalid".to_owned());
@@ -1472,6 +1472,7 @@ fn verify_variants(case_data: &LoadedCase, referenced: &mut Vec<Value>) -> Resul
                 value,
                 sizing,
                 logical,
+                ExportOptions::from_variant(options),
                 &case_data.entry,
             )?;
             // A raster carries no hyperlink to sanitize, so a case can legitimately
@@ -1508,12 +1509,32 @@ fn collect_variant_descriptors(
     Ok(())
 }
 
+/// The two registered export options, besides sizing and dark mode, that
+/// change what the official evidence must contain: whether the export paints
+/// the scene background and whether it embeds the scene.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct ExportOptions {
+    background: bool,
+    embed_scene: bool,
+}
+
+impl ExportOptions {
+    fn from_variant(options: &Map<String, Value>) -> Self {
+        Self {
+            background: options["exportBackground"] != json!(false),
+            embed_scene: options["exportEmbedScene"] == json!(true),
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn verify_format_dimensions(
     root: &Path,
     format: &str,
     value: &Map<String, Value>,
     sizing: Sizing,
     logical: (f64, f64),
+    export: ExportOptions,
     entry: &CaseEntry,
 ) -> Result<(), String> {
     let artifact = object(&value["artifact"], "artifact")?;
@@ -1545,7 +1566,9 @@ fn verify_format_dimensions(
     // pixels carry partial alpha whenever the extent is not pixel-aligned. The
     // interior must still be fully opaque for a white-background case. The
     // direct-canvas PNG is pixel-aligned by construction and stays strict over
-    // the whole surface, which is where an unintended hole would show.
+    // the whole surface, which is where an unintended hole would show. A
+    // variant exported without the scene background has no opaque surface to
+    // hold to; it must instead show the transparency it exists to evidence.
     let artifact_path = descriptor_path(root, &value["artifact"])?;
     let bytes = fs::read(artifact_path)
         .map_err(|error| format!("failed to read {format} artifact: {error}"))?;
@@ -1553,28 +1576,34 @@ fn verify_format_dimensions(
     if width <= 2 * border || height <= 2 * border {
         return Err(format!("{format} raster is too small to verify"));
     }
-    for row in border..height - border {
-        for column in border..width - border {
-            let index = ((row as usize * width as usize) + column as usize) * 4;
-            if raw_bytes[index + 3] != 255 {
-                return Err(format!(
-                    "{format} raw raster is not opaque at {column},{row} for this white-background case"
-                ));
+    let alpha = |row: u32, column: u32| raw_bytes[((row * width + column) as usize) * 4 + 3];
+    if export.background {
+        for row in border..height - border {
+            for column in border..width - border {
+                if alpha(row, column) != 255 {
+                    return Err(format!(
+                        "{format} raw raster is not opaque at {column},{row} for this white-background case"
+                    ));
+                }
             }
         }
+    } else if !(0..height).any(|row| (0..width).any(|column| alpha(row, column) == 0)) {
+        return Err(format!(
+            "{format} raw raster has no transparent pixel for this transparent-background variant"
+        ));
     }
     if format == "png" {
         if png_dimensions(&bytes)? != (width, height) {
             return Err("png encoded dimensions do not match the manifest".to_owned());
         }
         verify_png_extent(logical, sizing, width, height)?;
-        verify_png_semantics(&bytes, &raw_bytes)?;
+        verify_png_semantics(&bytes, &raw_bytes, export.embed_scene)?;
     } else {
         let (svg_width, svg_height) = svg_f64_dimensions(&bytes)?;
         if svg_width.round() != f64::from(width) || svg_height.round() != f64::from(height) {
             return Err("svg encoded dimensions do not match the manifest".to_owned());
         }
-        verify_svg_semantics(&bytes, width, height, sizing.svg_factor(), entry)?;
+        verify_svg_semantics(&bytes, width, height, sizing.svg_factor(), export, entry)?;
     }
     Ok(())
 }
@@ -2019,7 +2048,16 @@ pub(crate) fn read_repository_file(root: &Path, relative: &str) -> Result<Vec<u8
     fs::read(resolved).map_err(|error| format!("failed to read {relative}: {error}"))
 }
 
-fn verify_png_semantics(bytes: &[u8], expected_rgba: &[u8]) -> Result<(), String> {
+/// The keyword of the `tEXt` chunk the reference's `encodePngMetadata` writes
+/// before `IEND` when `exportEmbedScene` is on, and the MIME type its SVG
+/// `payload-type` comment names.
+const EMBEDDED_SCENE_MIME_TYPE: &str = "application/vnd.excalidraw+json";
+
+fn verify_png_semantics(
+    bytes: &[u8],
+    expected_rgba: &[u8],
+    embed_scene: bool,
+) -> Result<(), String> {
     let decoder = png::Decoder::new(Cursor::new(bytes));
     let mut reader = decoder
         .read_info()
@@ -2036,6 +2074,7 @@ fn verify_png_semantics(bytes: &[u8], expected_rgba: &[u8]) -> Result<(), String
     }
     let mut offset = 8;
     let mut chunk_types = Vec::new();
+    let mut embedded_scenes = 0;
     while offset < bytes.len() {
         if offset + 12 > bytes.len() {
             return Err("truncated PNG chunk".to_owned());
@@ -2047,7 +2086,18 @@ fn verify_png_semantics(bytes: &[u8], expected_rgba: &[u8]) -> Result<(), String
         }
         let chunk = &bytes[offset + 4..offset + 8];
         chunk_types.push(chunk.to_vec());
-        if matches!(
+        // The one metadata chunk the reference writes is the embedded scene,
+        // a `tEXt` keyed by the Excalidraw MIME type, and only when the
+        // variant asks for it; every other metadata chunk is unexpected.
+        let embedded_scene = embed_scene
+            && chunk == b"tEXt"
+            && bytes[offset + 8..end - 4]
+                .split(|byte| *byte == 0)
+                .next()
+                .is_some_and(|keyword| keyword == EMBEDDED_SCENE_MIME_TYPE.as_bytes());
+        if embedded_scene {
+            embedded_scenes += 1;
+        } else if matches!(
             chunk,
             b"tEXt" | b"zTXt" | b"iTXt" | b"iCCP" | b"sRGB" | b"gAMA" | b"cHRM" | b"eXIf" | b"tIME"
         ) {
@@ -2057,6 +2107,11 @@ fn verify_png_semantics(bytes: &[u8], expected_rgba: &[u8]) -> Result<(), String
             ));
         }
         offset = end;
+    }
+    if embed_scene && embedded_scenes != 1 {
+        return Err(format!(
+            "PNG evidence carries {embedded_scenes} embedded-scene tEXt chunks; the variant embeds the scene once"
+        ));
     }
     if chunk_types.first().map(Vec::as_slice) != Some(&b"IHDR"[..])
         || chunk_types.last().map(Vec::as_slice) != Some(&b"IEND"[..])
@@ -2178,6 +2233,7 @@ fn verify_svg_semantics(
     width: u32,
     height: u32,
     export_scale: f64,
+    export: ExportOptions,
     entry: &CaseEntry,
 ) -> Result<(), String> {
     let text = std::str::from_utf8(bytes).map_err(|error| format!("SVG is not UTF-8: {error}"))?;
@@ -2218,7 +2274,17 @@ fn verify_svg_semantics(
     };
     let declared = object(&entry.svg_element_counts, "svg_element_counts")?;
     for name in ["rect", "path", "a", "clipPath", "image", "mask", "text"] {
-        let expected = declared.get(name).and_then(Value::as_u64).unwrap_or(0);
+        let mut expected = declared.get(name).and_then(Value::as_u64).unwrap_or(0);
+        // The registered counts describe the default export, whose one
+        // background `<rect>` the reference emits only when the export paints
+        // the scene background; a variant without it has exactly one fewer.
+        if name == "rect" && !export.background {
+            expected = expected.checked_sub(1).ok_or_else(|| {
+                "the registered svg_element_counts declare no background rect for the \
+                 transparent-background variant to omit"
+                    .to_owned()
+            })?;
+        }
         let observed = element_count(name) as u64;
         if observed != expected {
             return Err(format!(
@@ -2226,14 +2292,44 @@ fn verify_svg_semantics(
             ));
         }
     }
+    verify_svg_metadata(&document, export.embed_scene)
+}
+
+/// The `<metadata>` element every reference SVG carries: empty for the default
+/// export, and for an `exportEmbedScene` variant the `encodeSvgMetadata`
+/// payload — the type, version, start and end markers as comments around the
+/// encoded scene text — and nothing else in either case.
+fn verify_svg_metadata(document: &roxmltree::Document, embed_scene: bool) -> Result<(), String> {
     let metadata = document
         .descendants()
         .find(|node| node.is_element() && node.tag_name().name() == "metadata")
         .ok_or_else(|| "SVG metadata marker is missing".to_owned())?;
-    if metadata
+    if metadata.children().any(|child| child.is_element()) {
+        return Err("SVG metadata carries an element".to_owned());
+    }
+    let payload_text = metadata
         .children()
-        .any(|child| child.is_element() || child.text().is_some_and(|text| !text.trim().is_empty()))
-    {
+        .any(|child| child.is_text() && child.text().is_some_and(|text| !text.trim().is_empty()));
+    let comments: Vec<&str> = metadata
+        .children()
+        .filter(|child| child.is_comment())
+        .filter_map(|child| child.text())
+        .map(str::trim)
+        .collect();
+    if embed_scene {
+        let expected = [
+            format!("payload-type:{EMBEDDED_SCENE_MIME_TYPE}"),
+            "payload-version:2".to_owned(),
+            "payload-start".to_owned(),
+            "payload-end".to_owned(),
+        ];
+        if comments != expected || !payload_text {
+            return Err(
+                "SVG metadata does not carry the reference's embedded-scene payload comments and text"
+                    .to_owned(),
+            );
+        }
+    } else if payload_text || !comments.is_empty() {
         return Err("SVG unexpectedly embeds scene metadata".to_owned());
     }
     Ok(())
@@ -2364,7 +2460,88 @@ fn svg_f64_attribute(root: &str, name: &str) -> Result<f64, String> {
 mod tests {
     use serde_json::{json, Value};
 
-    use super::{verify_exceptions, verify_png_extent, verify_svg_root_extent, Sizing};
+    use super::{
+        verify_exceptions, verify_png_extent, verify_png_semantics, verify_svg_metadata,
+        verify_svg_root_extent, Sizing, EMBEDDED_SCENE_MIME_TYPE,
+    };
+
+    /// A one-pixel untagged RGBA8 PNG and its raw raster, with `chunks`
+    /// spliced in before `IEND` as the reference's `encodePngMetadata` does.
+    fn png_with_chunks(chunks: &[(&[u8; 4], &[u8])]) -> (Vec<u8>, Vec<u8>) {
+        let rgba = vec![0x12, 0x34, 0x56, 0xff];
+        let mut bytes = Vec::new();
+        {
+            let mut encoder = png::Encoder::new(&mut bytes, 1, 1);
+            encoder.set_color(png::ColorType::Rgba);
+            encoder.set_depth(png::BitDepth::Eight);
+            let mut writer = encoder.write_header().expect("header writes");
+            writer.write_image_data(&rgba).expect("pixels write");
+        }
+        let iend = bytes.len() - 12;
+        let mut spliced = bytes[..iend].to_vec();
+        for (kind, data) in chunks {
+            spliced.extend_from_slice(&(data.len() as u32).to_be_bytes());
+            spliced.extend_from_slice(*kind);
+            spliced.extend_from_slice(data);
+            // The verifier reads chunk boundaries, not CRCs.
+            spliced.extend_from_slice(&[0; 4]);
+        }
+        spliced.extend_from_slice(&bytes[iend..]);
+        (spliced, rgba)
+    }
+
+    #[test]
+    fn png_semantics_admit_the_embedded_scene_chunk_only_for_an_embedding_variant() {
+        let (plain, rgba) = png_with_chunks(&[]);
+        verify_png_semantics(&plain, &rgba, false).expect("a plain PNG verifies");
+        assert!(verify_png_semantics(&plain, &rgba, true)
+            .expect_err("an embedding variant must carry the scene")
+            .contains("0 embedded-scene tEXt chunks"));
+
+        let payload = [
+            EMBEDDED_SCENE_MIME_TYPE.as_bytes(),
+            b"\0{\"encoded\":\"...\"}",
+        ]
+        .concat();
+        let (embedded, rgba) = png_with_chunks(&[(b"tEXt", &payload)]);
+        verify_png_semantics(&embedded, &rgba, true).expect("the reference's scene chunk verifies");
+        assert!(verify_png_semantics(&embedded, &rgba, false)
+            .expect_err("a default export carries no metadata chunk")
+            .contains("unexpected PNG metadata chunk tEXt"));
+
+        let (foreign, rgba) = png_with_chunks(&[(b"tEXt", b"Comment\0anything")]);
+        assert!(verify_png_semantics(&foreign, &rgba, true)
+            .expect_err("only the Excalidraw-keyed chunk is the embedded scene")
+            .contains("unexpected PNG metadata chunk tEXt"));
+    }
+
+    #[test]
+    fn svg_metadata_carries_the_embedded_scene_only_for_an_embedding_variant() {
+        let verify = |metadata: &str, embed_scene: bool| {
+            let text = format!("<svg xmlns=\"http://www.w3.org/2000/svg\">{metadata}</svg>");
+            let document = roxmltree::Document::parse(&text).expect("test document parses");
+            verify_svg_metadata(&document, embed_scene)
+        };
+        verify("<metadata/>", false).expect("an empty marker verifies");
+        assert!(verify("<metadata/>", true)
+            .expect_err("an embedding variant must carry the payload")
+            .contains("embedded-scene payload"));
+
+        let embedded = "<metadata><!-- payload-type:application/vnd.excalidraw+json -->\
+                        <!-- payload-version:2 --><!-- payload-start -->eJzT0yMAAGTvBe8=\
+                        <!-- payload-end --></metadata>";
+        verify(embedded, true).expect("the reference's payload verifies");
+        assert!(verify(embedded, false)
+            .expect_err("a default export embeds nothing")
+            .contains("unexpectedly embeds"));
+
+        let markers_only = "<metadata><!-- payload-type:application/vnd.excalidraw+json -->\
+                            <!-- payload-version:2 --><!-- payload-start --><!-- payload-end -->\
+                            </metadata>";
+        assert!(verify(markers_only, true).is_err());
+        assert!(verify("<metadata><x/></metadata>", true).is_err());
+        assert!(verify("<metadata><x/></metadata>", false).is_err());
+    }
 
     fn record() -> Value {
         json!({

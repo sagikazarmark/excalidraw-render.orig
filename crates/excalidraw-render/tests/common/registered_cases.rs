@@ -13,7 +13,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 
-use excalidraw_render::{ColorMode, OutputFormat, RenderRequest, Renderer, SceneDocument, Sizing};
+use excalidraw_render::{
+    ColorMode, MetadataOptions, OutputFormat, RenderRequest, Renderer, SceneDocument, Sizing,
+};
 use excalidraw_render_compare::{
     compare, CanonicalRgba8, ComparisonLimits, ComparisonMode, ComparisonReport, RegionReport,
     SsimOutcome, VisualClass,
@@ -173,16 +175,15 @@ pub fn judge_each<T: Send>(
 
 /// Builds the render request a registered export variant describes.
 ///
-/// Only the options a variant is allowed to vary are honoured: dark mode and the
-/// two sizing modes. Any other deviation from the default export panics, so an
+/// Only the options a variant is allowed to vary are honoured: dark mode, the
+/// two sizing modes, the scene background, the export padding and scene
+/// embedding, each mapped onto the request control the reference option
+/// stands for. Any other deviation from the default export panics, so an
 /// unrecognised option fails rather than silently rendering the default and
 /// comparing it against evidence generated under different settings. `context`
 /// names the case and variant in that failure.
 pub fn variant_request(format: OutputFormat, options: &Value, context: &str) -> RenderRequest {
     for (key, default) in [
-        ("exportBackground", json!(true)),
-        ("exportEmbedScene", json!(false)),
-        ("exportPadding", json!(10)),
         (
             "frameRendering",
             json!({"clip": true, "enabled": true, "name": true, "outline": true}),
@@ -194,11 +195,28 @@ pub fn variant_request(format: OutputFormat, options: &Value, context: &str) -> 
             "{context} varies {key}, which the parity harnesses do not build"
         );
     }
-    let mut builder = RenderRequest::builder(format);
-    match options["exportWithDarkMode"].as_bool() {
-        Some(true) => builder = builder.color_mode(ColorMode::Dark),
-        Some(false) => {}
-        None => panic!("{context} exportWithDarkMode is not a boolean"),
+    let boolean = |key: &str| {
+        options[key]
+            .as_bool()
+            .unwrap_or_else(|| panic!("{context} {key} is not a boolean"))
+    };
+    let mut builder = RenderRequest::builder(format)
+        .include_background(boolean("exportBackground"))
+        .padding(
+            options["exportPadding"]
+                .as_f64()
+                .unwrap_or_else(|| panic!("{context} exportPadding is not a number")),
+        )
+        // The reference's `exportEmbedScene` embeds the serialized scene; the
+        // renderer's counterpart is the canonicalized original scene document,
+        // with no provenance or diagnostic summary beside it.
+        .metadata_options(MetadataOptions::new(
+            boolean("exportEmbedScene"),
+            false,
+            false,
+        ));
+    if boolean("exportWithDarkMode") {
+        builder = builder.color_mode(ColorMode::Dark);
     }
     // The reference wrapper selects exactly one sizing mode; a variant that
     // selects neither or both is malformed rather than a default export.
