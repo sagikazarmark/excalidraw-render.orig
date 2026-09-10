@@ -46,7 +46,7 @@ function loadCase(caseId) {
 const ORIGIN = "http://reference.invalid";
 const PROFILE_DIGEST = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 const ASSET_DIGEST = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const SURFACE_DIGEST = "22021bc4676f6c0d541921b22e8646f556e25e80d8f339cda457abd7d2c8deac";
+const SURFACE_DIGEST = "14309697cdb5bf9ebe660dccf27c4c929c0f5edb7174443dd4f962544fcc4bea";
 const CONTAINER_IMAGE = "mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9";
 const BROWSER_VERSION = "149.0.7827.55";
 const BROWSER_ARGUMENTS = [

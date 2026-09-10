@@ -41,21 +41,7 @@ use common::repository_root;
 
 /// Diagnosed defects whose fix is pending a maintainer decision. See
 /// `PinnedDivergence` for why these are pinned rather than excepted.
-const KNOWN_DEFECTS: &[PinnedDivergence] = &[
-    // #170: a freedraw loop's Rough.js background fill now starts its seeded
-    // stream after the discarded curve outline's draws, as the reference's
-    // does, but the revision-1 scene surface still substitutes roughness 1
-    // and seed 1 for the element's own, so every fill path but none of the
-    // strokes differs from the official export's until the manifest half of
-    // the issue lands.
-    PinnedDivergence {
-        case: "focused.freedraw-loop-fills.v1",
-        variant: "default",
-        issue: "#170",
-        changed_pixels: 548,
-        ssim_bits: 0x3fed_5cf7_c9a1_d754,
-    },
-];
+const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
 
 /// Diagnosed scene-extent defects whose fix is pending a maintainer decision:
 /// variants whose raster is not the official evidence's size, held at their

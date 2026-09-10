@@ -7125,8 +7125,7 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
       ],
       "variants": [
         {
@@ -7152,7 +7151,19 @@
       "expected_diagnostics": {
         "png": [],
         "svg": []
-      }
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/170",
+          "format": "png",
+          "max_changed_pixels": 2,
+          "minimum_ssim_bits": "3fefc46dc84ce512",
+          "reason": "Fill and stroke rasterization. All 8 SVG paths match the official export byte for byte and the document rasterizes identically under one rasterizer (0 changed pixels, SSIM 1.0), so the difference arises while rasterizing geometry both renderers agree on, not in the geometry: the two rasterizers' antialiasing of the three hachure fills' hairlines, whose fillWeight is one pixel, and of the solid fill's edge, which moves 2 pixels past the Pixelmatch threshold and enough sub-threshold coverage to hold SSIM under the geometry/image floor. The scene carries no text. The same class is recorded on #104 for focused.ellipse-diamond-fills.v1, on #137 for focused.rough-fillers-dashed-zigzag-line.v1 and on #152 for focused.cartoonist-roughness.v1. Decided on #170.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
     },
     {
       "id": "focused.iframe-element.v1",

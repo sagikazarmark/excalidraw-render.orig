@@ -3404,7 +3404,7 @@ static SCENE_ELEMENT_POLICIES: &[SceneElementPolicy] = &[
         kind: "freedraw",
         record_kind: "element.freedraw",
         status: "supported",
-        ignored_inherited_paths: &["/roundness","/roughness","/seed",],
+        ignored_inherited_paths: &["/roundness",],
     },
     SceneElementPolicy {
         kind: "image",

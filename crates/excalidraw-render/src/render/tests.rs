@@ -3765,18 +3765,18 @@ fn freedraw_loop_fills_match_the_pinned_roughjs_vectors() {
             panic!("{id} is a freedraw element");
         };
         // The element's own seed and roughness, which the revision-1 scene
-        // surface substitutes 1 and 1 for until #170's manifest half lands.
+        // surface admits for a freedraw element as for every other shape
+        // (#170) and resolution hands the fill.
         let seed = i32::try_from(source_element["seed"].as_i64().expect("seed")).expect("i32 seed");
         let roughness = source_element["roughness"].as_f64().expect("roughness");
+        assert_eq!(element.seed, seed, "{id} keeps its seed");
+        assert_eq!(element.roughness, roughness, "{id} keeps its roughness");
         let mut budget = default_budget(element);
         let fill = freedraw::background_fill(
             &freedraw.points,
-            seed,
-            adjusted_roughness(&NormalizedElement {
-                roughness,
-                ..element.clone()
-            }),
-            roughness < 2.0,
+            element.seed,
+            adjusted_roughness(element),
+            element.roughness < 2.0,
             element.stroke_style != "solid",
             rough::FillStyle::from_normalized(&element.fill_style),
             element.stroke_width,
