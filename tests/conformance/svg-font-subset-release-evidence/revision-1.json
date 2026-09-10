@@ -3,10 +3,10 @@
   "compatibilityRevision": 1,
   "corpus": {
     "path": "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qualification-corpus.json",
-    "sha256": "560b85da0aefab791f2c41385a159db8b76d40c2ef230616f242e344c23493fc",
-    "successfulCells": 971
+    "sha256": "fa24e2ce2afb49319bae315983862b7304c06082ca4c534ab861b4b705f39de6",
+    "successfulCells": 977
   },
-  "decision": "pass",
+  "decision": "pending_target_aggregation",
   "fuzzRegressions": {
     "path": "crates/excalidraw-render/tests/qualification/font-subset-fuzz-regressions.json",
     "sha256": "48ce706327a5b18676da8e65c03f30fb16ae80a26b3514c521e593adc8781551"
@@ -14,14 +14,14 @@
   "id": "svg-font-subsets.release-evidence.revision-1.v1",
   "licensing": {
     "evidenceOwner": "corpus.sources[].licenseIdentity/reservedFontNames and cells[].transformationNoticeSha256",
-    "qualifiedSources": 230,
-    "qualifiedTransformationNotices": 971
+    "qualifiedSources": 231,
+    "qualifiedTransformationNotices": 977
   },
   "originatingIssue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/101",
   "reproductionCommands": [
     "cargo run --locked -p xtask -- catalog verify",
     "bash tools/svg-font-subset-qualification.sh reproduce",
-    "cargo test --locked --release -p excalidraw-render --lib complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces"
+    "cargo test --locked --release -p excalidraw-render --features release-qualification --lib complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces"
   ],
   "sizeCorpus": {
     "path": "crates/excalidraw-render/tests/qualification/svg-font-subset-size-corpus.json",
@@ -32,26 +32,20 @@
     "sha256": "19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d"
   },
   "targetEvidence": {
-    "aggregate": {
-      "commit": "6e5f9c45dbd141ea5140043704c2baee8e117ef3",
-      "path": "tests/conformance/svg-font-subset-target-aggregate/revision-1.json",
-      "provenanceUrl": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/101#issuecomment-5562204641",
-      "sha256": "e4db497c4ed1fc9486d2d4e20dbbbb608938b4e37f8bdcaf0a29be6d2316949f"
-    },
     "aggregateArtifact": "svg-font-subset-target-aggregate",
     "crossTargetMeasurement": {
       "path": "tests/conformance/svg-font-subset-cross-target-measurement/revision-1.json",
-      "sha256": "e6b608595af457ee1a80f6a65d6139036b15594b396c6051a7e098631ff352c1"
+      "sha256": "17bdfe1c78ee5f234b2b628b649993e85ba8d81028bf6b921abe4dfe08ac0a4a"
     },
     "generatorAndAggregator": {
       "path": "xtask/src/svg_font_subset_targets.rs",
-      "sha256": "588182accf784d9d966f3812b0763d12a114dd370a41d43fe3b1ffd5e5813153"
+      "sha256": "ee099545069eb5dc56669d13061d970fd0a026dd32a72f654a8850bc66e194f4"
     },
     "reportSchema": {
       "path": "tests/conformance/svg-font-subset-target-evidence-v3.schema.json",
-      "sha256": "705b0239114113a4543dbfea022fe0c5598f8c83475f3366fb4492d89dbf4ce5"
+      "sha256": "7b6f8ca607a2696e3377cdfa764c465dd7eb4ef8871792360124997217e81aaf"
     },
-    "status": "aggregated",
+    "status": "pending_ci",
     "workflow": {
       "path": ".github/workflows/packaged-public-facade.yml",
       "sha256": "88e5a042b72fa15ff30d2bb23bc0b1af499e6a068e82c750d61b48b4396e7950"
@@ -59,7 +53,7 @@
   },
   "viewerEvidence": {
     "approvalSubject": "sha256:41b1c5ab5c9a9b2c5b1287d76a1404b0bf415b834e00b0e64af173d659bbb830",
-    "executions": 851,
+    "executions": 857,
     "path": "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json",
     "sha256": "4dabce932916ae44212ed5549b1b599ea5d6e9179eea849432152bdec02f5737",
     "status": "approved"

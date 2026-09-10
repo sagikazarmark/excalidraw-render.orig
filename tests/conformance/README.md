@@ -240,6 +240,55 @@ undeclared data URLs. Cases containing text or images supply a closed declaratio
 that binds embedded source identities to reviewed sfnt faces or canonical
 in-memory image bytes; ambient fallback is never permitted.
 
+## SVG font subset qualification
+
+`svg-font-subset-viewer-qualification/revision-1.json` is the dual-viewer
+qualification of every SVG font subset the renderer can derive (issue #99):
+the corpus `tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qualification-corpus.json`
+classifies each of the 231 sources — the 230 official WOFF2 chunks and the
+Noto Emoji fallback face (#150) — into the eight qualification classes, and
+every successful cell's subset is rendered beside its complete source in
+pinned Chromium and the controlled pure-Rust viewer, one semantic execution
+per distinct subset identity. Both viewers admit only WOFF2, so the source
+role of an sfnt source is the subsetter's own WOFF2 encoding of the
+manifested face; the corpus records that encoding's digest as
+`viewerSourceWoff2Sha256` beside the sfnt's `sourceSha256`, the pure-Rust
+viewer renders from the sfnt itself, and the corpus test checks that the
+encoding reconstructs the face's outlines, advances and tables.
+
+Ordinary verification is offline; the corpus test is part of the release-mode
+qualification set and needs the `release-qualification` feature:
+
+```sh
+cargo run --locked -p xtask -- conformance verify-svg-font-subsets
+cargo run --locked -p xtask -- conformance verify-svg-font-subset-release
+cargo test --locked --release -p excalidraw-render --features release-qualification --lib \
+  complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces
+```
+
+Regenerating the corpus stages it under `target/tmp` and prints the `cp`
+commands that refresh the committed copies; the dual-viewer run then writes
+the viewer inputs, both reports and the manifest, which waits for its
+approval on #99:
+
+```sh
+cargo test --locked --release -p excalidraw-render --lib \
+  render::font_subset_qualification::materialize_complete_font_subset_qualification_corpus \
+  -- --ignored --exact --nocapture
+bash tools/svg-font-subset-qualification.sh generate
+bash tools/svg-font-subset-qualification.sh reproduce
+```
+
+The manifest's `implementation` list follows the producer-only rule above:
+the subsetter, the qualification module that produces the corpus and viewer
+inputs, the two viewer drivers, the report runner, the materializer and the
+harness script. The release evidence beside it
+(`svg-font-subset-release-evidence/revision-1.json`) binds the approved
+viewer qualification to the supported-target measurement the packaged
+public facade workflow produces (`svg_font_subset_targets.rs`), and returns
+to `pending_ci` whenever the corpus moves until a fresh aggregate is
+recorded.
+
 ## Canonical PDF harnesses
 
 The PDF qualification pins PDFium, PDF.js, and qpdf independently. PDFium and

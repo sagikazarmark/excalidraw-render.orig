@@ -2,10 +2,12 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Component, Path};
 
-use serde_json::{json, Map, Value};
-use sha2::{Digest, Sha256};
+use serde_json::{json, Value};
 
-use crate::conformance::repo_root;
+use crate::conformance::{
+    canonical_bytes, object, read_repository_file as read_repository_file_in, repo_root, sha256,
+    valid_date, valid_github_login,
+};
 
 const MANIFEST_PATH: &str =
     "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json";
@@ -16,6 +18,17 @@ const CORPUS_PATH: &str = concat!(
     "tests/oracle/compatibility-artifacts/",
     "revision-1-svg-font-subset-qualification-corpus.json"
 );
+/// The corpus cells and semantic executions the qualification covers: the 8
+/// classes over 230 official chunks and the Noto Emoji fallback (#150), less
+/// the not-selected and not-applicable cells, deduplicated by semantic subset
+/// identity into executions. `verify` holds the corpus and the manifest to
+/// these counts; the schema states the execution count as well.
+pub(crate) const SUCCESSFUL_CELLS: usize = 977;
+pub(crate) const EXECUTIONS: usize = 857;
+/// The committed qualification corpus every piece of SVG font subset evidence
+/// binds.
+pub(crate) const CORPUS_SHA256: &str =
+    "fa24e2ce2afb49319bae315983862b7304c06082ca4c534ab861b4b705f39de6";
 const REQUIRED_CHECKS: [&str; 7] = [
     "shaping",
     "glyph_choice",
@@ -142,8 +155,8 @@ fn materialize_schema() -> Result<(), String> {
         &fs::read(&path).map_err(|error| format!("failed to read {}: {error}", path.display()))?,
     )
     .map_err(|error| format!("invalid SVG font subset viewer schema: {error}"))?;
-    schema["properties"]["executions"]["minItems"] = json!(851);
-    schema["properties"]["executions"]["maxItems"] = json!(851);
+    schema["properties"]["executions"]["minItems"] = json!(EXECUTIONS);
+    schema["properties"]["executions"]["maxItems"] = json!(EXECUTIONS);
     let bytes = canonical_bytes(&schema)?;
     fs::write(&path, [&bytes[..], b"\n"].concat())
         .map_err(|error| format!("failed to write {}: {error}", path.display()))
@@ -178,15 +191,7 @@ fn descriptor(path: &str) -> Result<Value, String> {
 }
 
 fn read_repository_file(relative: &str) -> Result<Vec<u8>, String> {
-    let path = Path::new(relative);
-    if path.is_absolute()
-        || path
-            .components()
-            .any(|component| !matches!(component, Component::Normal(_)))
-    {
-        return Err(format!("unsafe repository-relative path {relative:?}"));
-    }
-    fs::read(repo_root().join(path)).map_err(|error| format!("failed to read {relative}: {error}"))
+    read_repository_file_in(&repo_root(), relative)
 }
 
 pub fn verify() -> Result<(), String> {
@@ -328,8 +333,7 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
         verify_descriptor(descriptor)?;
     }
     if manifest["corpus"]["path"] != json!(CORPUS_PATH)
-        || manifest["corpus"]["sha256"]
-            != json!("560b85da0aefab791f2c41385a159db8b76d40c2ef230616f242e344c23493fc")
+        || manifest["corpus"]["sha256"] != json!(CORPUS_SHA256)
         || manifest["subset_profile"]["sha256"]
             != json!("19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d")
         || manifest["viewer_profiles"]["chromium"]["sha256"]
@@ -361,18 +365,47 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
 struct ExpectedCell {
     semantic_identity: String,
     scalars: Value,
+    /// The WOFF2 the viewers load as the source face: the chunk itself, or
+    /// the encoding of the Noto Emoji sfnt the corpus pins as
+    /// `viewerSourceWoff2Sha256`.
     source_woff2_sha256: String,
+    /// The manifested source sfnt, when the source is one (the Noto Emoji
+    /// fallback); the execution's `source_sfnt_sha256` must be it.
+    source_sfnt_sha256: Option<String>,
     subset_woff2_sha256: String,
 }
 
 fn expected_cells() -> Result<BTreeMap<(String, String), ExpectedCell>, String> {
     let bytes = fs::read(repo_root().join(CORPUS_PATH))
         .map_err(|error| format!("failed to read {CORPUS_PATH}: {error}"))?;
+    if sha256(&bytes) != CORPUS_SHA256 {
+        return Err(format!(
+            "{CORPUS_PATH} is not the bound qualification corpus"
+        ));
+    }
     let corpus: Value = serde_json::from_slice(&bytes)
         .map_err(|error| format!("invalid font subset qualification corpus: {error}"))?;
     let mut expected = BTreeMap::new();
     for source in array(&corpus["sources"], "font subset corpus sources")? {
         let source_id = string(&source["sourceIdentity"], "source identity")?;
+        let source_sha256 = string(&source["sourceSha256"], "source digest")?;
+        let (source_woff2_sha256, source_sfnt_sha256) =
+            match string(&source["sourceContainer"], "source container")? {
+                "woff2" => (source_sha256.to_owned(), None),
+                "sfnt" => (
+                    string(
+                        &source["viewerSourceWoff2Sha256"],
+                        "viewer source WOFF2 digest",
+                    )?
+                    .to_owned(),
+                    Some(source_sha256.to_owned()),
+                ),
+                container => {
+                    return Err(format!(
+                        "{source_id} has an unknown source container {container:?}"
+                    ))
+                }
+            };
         for cell in array(&source["cells"], "font subset corpus cells")? {
             if cell["status"] != json!("success") {
                 continue;
@@ -387,11 +420,8 @@ fn expected_cells() -> Result<BTreeMap<(String, String), ExpectedCell>, String> 
                     ExpectedCell {
                         semantic_identity: semantic_identity.to_owned(),
                         scalars: cell["orderedScalars"].clone(),
-                        source_woff2_sha256: string(
-                            &source["sourceSha256"],
-                            "source WOFF2 digest",
-                        )?
-                        .to_owned(),
+                        source_woff2_sha256: source_woff2_sha256.clone(),
+                        source_sfnt_sha256: source_sfnt_sha256.clone(),
                         subset_woff2_sha256: string(
                             &cell["generatedWoff2Sha256"],
                             "generated WOFF2 digest",
@@ -405,9 +435,9 @@ fn expected_cells() -> Result<BTreeMap<(String, String), ExpectedCell>, String> 
             }
         }
     }
-    if expected.len() != 971 {
+    if expected.len() != SUCCESSFUL_CELLS {
         return Err(format!(
-            "font subset corpus has {} successful cells, expected 971",
+            "font subset corpus has {} successful cells, expected {SUCCESSFUL_CELLS}",
             expected.len()
         ));
     }
@@ -454,6 +484,10 @@ fn verify_execution_coverage<'a>(
             if expected_cell.semantic_identity != id
                 || coverage["ordered_scalars"] != expected_cell.scalars
                 || execution["source_woff2_sha256"] != json!(expected_cell.source_woff2_sha256)
+                || expected_cell
+                    .source_sfnt_sha256
+                    .as_ref()
+                    .is_some_and(|sfnt| execution["source_sfnt_sha256"] != json!(sfnt))
                 || execution["subset_woff2_sha256"] != json!(expected_cell.subset_woff2_sha256)
                 || !actual.insert(key)
             {
@@ -464,9 +498,9 @@ fn verify_execution_coverage<'a>(
     if actual != expected.keys().cloned().collect::<BTreeSet<_>>() {
         return Err("qualification does not cover every successful corpus cell".to_owned());
     }
-    if executions.len() != 851 {
+    if executions.len() != EXECUTIONS {
         return Err(format!(
-            "qualification has {} semantic executions, expected 851",
+            "qualification has {} semantic executions, expected {EXECUTIONS}",
             executions.len()
         ));
     }
@@ -678,39 +712,6 @@ fn verify_approval(approval: &Value, subject: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn valid_github_login(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 39
-        && !value.starts_with('-')
-        && !value.ends_with('-')
-        && value
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric() || character == '-')
-}
-
-fn valid_date(value: &str) -> bool {
-    let parts = value.split('-').collect::<Vec<_>>();
-    if parts.len() != 3 || parts[0].len() != 4 || parts[1].len() != 2 || parts[2].len() != 2 {
-        return false;
-    }
-    let (Ok(year), Ok(month), Ok(day)) = (
-        parts[0].parse::<u32>(),
-        parts[1].parse::<u32>(),
-        parts[2].parse::<u32>(),
-    ) else {
-        return false;
-    };
-    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
-    let days = match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 if leap => 29,
-        2 => 28,
-        _ => return false,
-    };
-    (1..=days).contains(&day)
-}
-
 fn result_passed(result: &Value) -> bool {
     result["decision"] == json!("pass")
         && REQUIRED_CHECKS
@@ -803,12 +804,6 @@ fn verify_sha256(value: &str, subject: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn object<'a>(value: &'a Value, subject: &str) -> Result<&'a Map<String, Value>, String> {
-    value
-        .as_object()
-        .ok_or_else(|| format!("{subject} must be an object"))
-}
-
 fn array<'a>(value: &'a Value, subject: &str) -> Result<&'a [Value], String> {
     value
         .as_array()
@@ -820,51 +815,4 @@ fn string<'a>(value: &'a Value, subject: &str) -> Result<&'a str, String> {
     value
         .as_str()
         .ok_or_else(|| format!("{subject} must be a string"))
-}
-
-fn canonical_bytes(value: &Value) -> Result<Vec<u8>, String> {
-    let mut output = String::new();
-    write_canonical(value, &mut output)?;
-    Ok(output.into_bytes())
-}
-
-fn write_canonical(value: &Value, output: &mut String) -> Result<(), String> {
-    match value {
-        Value::Null => output.push_str("null"),
-        Value::Bool(value) => output.push_str(if *value { "true" } else { "false" }),
-        Value::Number(value) => output.push_str(&value.to_string()),
-        Value::String(value) => output.push_str(
-            &serde_json::to_string(value)
-                .map_err(|error| format!("invalid JSON string: {error}"))?,
-        ),
-        Value::Array(values) => {
-            output.push('[');
-            for (index, value) in values.iter().enumerate() {
-                if index > 0 {
-                    output.push(',');
-                }
-                write_canonical(value, output)?;
-            }
-            output.push(']');
-        }
-        Value::Object(values) => {
-            output.push('{');
-            let mut keys = values.keys().collect::<Vec<_>>();
-            keys.sort();
-            for (index, key) in keys.into_iter().enumerate() {
-                if index > 0 {
-                    output.push(',');
-                }
-                output.push_str(&serde_json::to_string(key).expect("object key serializes"));
-                output.push(':');
-                write_canonical(&values[key], output)?;
-            }
-            output.push('}');
-        }
-    }
-    Ok(())
-}
-
-fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
 }

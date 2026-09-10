@@ -4,9 +4,8 @@ use std::process::Command;
 
 use rustybuzz::ttf_parser::{GlyphId, OutlineBuilder, Rect};
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 
-use crate::conformance::repo_root;
+use crate::conformance::{canonical_bytes, repo_root, sha256};
 
 pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> {
     let inputs_path = repository_path(inputs)?;
@@ -22,9 +21,10 @@ pub fn generate(inputs: &str, viewer: &str, output: &str) -> Result<(), String> 
     let cases = inputs["cases"]
         .as_array()
         .ok_or_else(|| "viewer input cases must be an array".to_owned())?;
-    if cases.len() != 851 {
+    if cases.len() != crate::svg_font_subsets::EXECUTIONS {
         return Err(format!(
-            "expected 851 viewer input cases, got {}",
+            "expected {} viewer input cases, got {}",
+            crate::svg_font_subsets::EXECUTIONS,
             cases.len()
         ));
     }
@@ -423,7 +423,9 @@ fn validate_raster(bytes: &[u8], expected_length: usize) -> Result<(), String> {
         ));
     }
     if bytes
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .any(|pixel| pixel[3] == 0 && pixel[..3] != [0, 0, 0])
     {
         return Err("viewer raster has nonzero RGB below zero alpha".to_owned());
@@ -516,51 +518,4 @@ fn write_json(path: &Path, value: &Value) -> Result<(), String> {
     let mut bytes = canonical_bytes(value)?;
     bytes.push(b'\n');
     fs::write(path, bytes).map_err(|error| format!("failed to write {}: {error}", path.display()))
-}
-
-fn canonical_bytes(value: &Value) -> Result<Vec<u8>, String> {
-    let mut output = String::new();
-    write_canonical(value, &mut output)?;
-    Ok(output.into_bytes())
-}
-
-fn write_canonical(value: &Value, output: &mut String) -> Result<(), String> {
-    match value {
-        Value::Null => output.push_str("null"),
-        Value::Bool(value) => output.push_str(if *value { "true" } else { "false" }),
-        Value::Number(value) => output.push_str(&value.to_string()),
-        Value::String(value) => output.push_str(
-            &serde_json::to_string(value)
-                .map_err(|error| format!("invalid JSON string: {error}"))?,
-        ),
-        Value::Array(values) => {
-            output.push('[');
-            for (index, value) in values.iter().enumerate() {
-                if index > 0 {
-                    output.push(',');
-                }
-                write_canonical(value, output)?;
-            }
-            output.push(']');
-        }
-        Value::Object(values) => {
-            output.push('{');
-            let mut keys = values.keys().collect::<Vec<_>>();
-            keys.sort();
-            for (index, key) in keys.into_iter().enumerate() {
-                if index > 0 {
-                    output.push(',');
-                }
-                output.push_str(&serde_json::to_string(key).expect("object key serializes"));
-                output.push(':');
-                write_canonical(&values[key], output)?;
-            }
-            output.push('}');
-        }
-    }
-    Ok(())
-}
-
-fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
 }

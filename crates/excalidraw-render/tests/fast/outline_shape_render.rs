@@ -68,8 +68,10 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
             OutputFormat::Png => {
                 assert!(decode_png(outcome.artifact().bytes())
                     .rgba
-                    .chunks_exact(4)
-                    .any(|pixel| pixel != [255, 255, 255, 255]));
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .any(|pixel| *pixel != [255, 255, 255, 255]));
             }
             OutputFormat::Pdf => {
                 let pdf = pdf_text(outcome.artifact().bytes());

@@ -115,12 +115,9 @@ type Lint {
 
   `--no-deps` keeps the vendored forks out of the gate: they are workspace
   members, so `--exclude` alone would still lint them as dependencies of the
-  selected packages. `manual_is_multiple_of` is allowed because its one
-  occurrence sits in crates/excalidraw-render/src/render/font_subset.rs, which
-  is digest-pinned by the approved SVG font subset qualification (issue #99).
-  `chunks_exact_to_as_chunks` (Rust 1.98) is allowed for the same reason: its
-  remaining occurrences sit in that file and in
-  xtask/src/svg_font_subset_runner.rs (also pinned by issue #99).
+  selected packages. No lint is allowed: the `manual_is_multiple_of` and
+  `chunks_exact_to_as_chunks` occurrences that sat in the #99-pinned files
+  were fixed in the font approval round that re-pinned them (#141).
   """
   clippy: String! @check {
     self.run([
@@ -128,8 +125,7 @@ type Lint {
       "--package", "excalidraw-render",
       "--package", "excalidraw-render-cli",
       "--package", "xtask",
-      "--", "-D", "warnings", "-A", "clippy::manual_is_multiple_of",
-      "-A", "clippy::chunks_exact_to_as_chunks",
+      "--", "-D", "warnings",
     ])
   }
 
@@ -234,11 +230,9 @@ second compile. nextest runs no doc tests, so `doc` runs them through cargo.
 
 The test profile in the root Cargo.toml is optimized, and the two corpus-driven
 tests the push gate does not carry are held back the way the workflow holds
-them: the frame batch property test behind the `release-qualification` feature
-(off here), and the SVG font subset qualification corpus by name in every
-profile's default filter, because its file is digest-pinned by issue #99 and
-cannot carry the feature gate until its next re-approval round.
-`packaging:qualification` runs both in `--release`.
+them: the frame batch property test and the SVG font subset qualification
+corpus are both `#[ignore]`d unless the `release-qualification` feature is on
+(off here). `packaging:qualification` runs both in `--release`.
 """
 type Test {
   let container: Container!

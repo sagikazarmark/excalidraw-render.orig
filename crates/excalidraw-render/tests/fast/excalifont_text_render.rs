@@ -80,7 +80,7 @@ fn excalifont_text_renders_semantically_in_every_format() {
             OutputFormat::Png => {
                 let png = decode_png(first.artifact().bytes());
                 assert_eq!((png.width, png.height), (118, 102));
-                assert!(png.rgba.chunks_exact(4).any(|pixel| {
+                assert!(png.rgba.as_chunks::<4>().0.iter().any(|pixel| {
                     pixel[2] > pixel[0] && pixel[2] > pixel[1] && pixel[3] == 255
                 }));
                 assert_eq!(

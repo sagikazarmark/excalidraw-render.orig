@@ -10,6 +10,10 @@ const ORACLE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = resolve(ORACLE_ROOT, "../..");
 const INPUT_URL = "http://reference.invalid/input.svg";
 const BROWSER_VERSION = "149.0.7827.55";
+// The semantic subset executions the corpus deduplicates its successful cells
+// into: the 230 official chunks' 851 and the Noto Emoji fallback's 6 (#150),
+// the count `xtask/src/svg_font_subsets.rs` holds the corpus to.
+const EXECUTIONS = 857;
 const BROWSER_ARGUMENTS = [
   "--disable-gpu",
   "--font-render-hinting=none",
@@ -39,7 +43,7 @@ async function main() {
   const inputBytes = readFileSync(inputsPath);
   const inputs = JSON.parse(inputBytes.toString("utf8"));
   if (inputs.schema !== "excalidraw-render/svg-font-subset-viewer-inputs/v1"
-      || !Array.isArray(inputs.cases) || inputs.cases.length !== 851) {
+      || !Array.isArray(inputs.cases) || inputs.cases.length !== EXECUTIONS) {
     throw new Error("invalid SVG font subset viewer input manifest");
   }
   inputs.cases.forEach(validateCase);

@@ -179,16 +179,9 @@ filter, so a renamed test cannot drop out silently:
 cargo test --locked --release -p excalidraw-render --features release-qualification --lib
 ```
 
-The property test is `#[ignore]`d unless `release-qualification` is enabled.
-The corpus test's file is digest-pinned by the approved SVG font subset
-qualification (issue #99), so it keeps the same gate only from the next
-re-approval round on; until then every nextest profile excludes it by name, and
-a plain `cargo test` run leaves it to the release-mode run by skipping it at the
-runner:
-
-```sh
-cargo test --locked --workspace -- --skip complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces
-```
+Both tests are `#[ignore]`d unless `release-qualification` is enabled, so a
+plain `cargo test` or `cargo nextest run` leaves them to the release-mode run
+without naming them.
 
 ## Containerized checks
 

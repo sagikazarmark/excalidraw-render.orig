@@ -43,8 +43,10 @@ fn valid_empty_scene_renders_a_complete_png_artifact() {
     assert_eq!(decoded.data().len(), 20 * 20 * 4);
     assert!(decoded
         .data()
-        .chunks_exact(4)
-        .all(|pixel| pixel == [255, 255, 255, 255]));
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .all(|pixel| *pixel == [255, 255, 255, 255]));
 
     let chunks = png_chunk_types(artifact.bytes());
     assert_eq!(chunks.first(), Some(b"IHDR"));

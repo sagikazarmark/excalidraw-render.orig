@@ -67,18 +67,13 @@ pub(super) fn resolve_with_svg_trees_for_test(
     Ok((resolved, session.svg_trees))
 }
 
+/// The canonical resource trace of one SVG font demand for `family` (a
+/// resolved family name, or `Noto Emoji` for the fallback face) over
+/// `scalars`, run through the same accounting the SVG encoder runs.
 pub(super) fn render_font_subset_qualification_trace(
-    record: &'static excalidraw_render_assets_base::AssetRecord,
+    family: &'static str,
     scalars: &[u32],
 ) -> (Result<(), RenderError>, Vec<u8>) {
-    let family = match record.family {
-        "Cascadia" => "Cascadia Code",
-        "ComicShanns" => "Comic Shanns",
-        "Liberation" => "Liberation Sans",
-        "Lilita" => "Lilita One",
-        "Excalifont" | "Nunito" | "Virgil" | "Xiaolai" => record.family,
-        _ => panic!("unknown qualification source family"),
-    };
     let scene = SceneDocument::parse(
         br#"{"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}}"#,
     )

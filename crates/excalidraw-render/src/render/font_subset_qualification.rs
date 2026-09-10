@@ -37,6 +37,136 @@ const CLASS_IDS: [&str; 8] = [
     "composite-closure",
     "layout-closure-heavy",
 ];
+/// The qualified sources: the 230 official chunks in catalog order, then the
+/// Noto Emoji fallback face (#150), which direct SVG subsets like a chunk.
+const SOURCE_COUNT: usize = 231;
+
+/// One source the corpus qualifies, as the subsetter sees it plus the catalog
+/// facts the corpus records beside it.
+#[derive(Clone, Copy)]
+struct QualificationSource {
+    source: svg_fonts::SubsetSource,
+    upstream_path: &'static str,
+    /// The catalog family: the notice table's key and the qualifier's family
+    /// for the Xiaolai-specific empty-intersection candidates.
+    family: &'static str,
+    license_identity: &'static str,
+    reserved_font_names: &'static [&'static str],
+}
+
+impl QualificationSource {
+    const fn chunk(record: &'static excalidraw_render_assets_base::AssetRecord) -> Self {
+        Self {
+            source: svg_fonts::SubsetSource::chunk(record),
+            upstream_path: record.upstream_path,
+            family: record.family,
+            license_identity: record.license_identity,
+            reserved_font_names: record.reserved_font_names,
+        }
+    }
+
+    /// The Noto Emoji fallback: an sfnt rather than a WOFF2 chunk, its own
+    /// one-face family declaring all of Unicode, OFL without a Reserved Font
+    /// Name, so its alias is its canonical name.
+    const fn noto_emoji() -> Self {
+        Self {
+            source: svg_fonts::SubsetSource::noto_emoji(),
+            upstream_path: "scripts/woff2/assets/NotoEmoji-Regular.ttf",
+            family: excalidraw_render_assets_base::NOTO_EMOJI_FAMILY,
+            license_identity: "font.noto-emoji.ofl-1.1",
+            reserved_font_names: &[],
+        }
+    }
+
+    fn identity(self) -> &'static str {
+        self.source.identity()
+    }
+
+    fn alias(self) -> &'static str {
+        effective_alias(self.family)
+    }
+
+    /// The resolved family name the demand and the trace scene name.
+    fn family_name(self) -> &'static str {
+        family_name(self.family)
+    }
+
+    /// The corpus spelling of the source container.
+    fn container_name(self) -> &'static str {
+        match self.source.container() {
+            font_subset::SourceContainer::Woff2 => "woff2",
+            font_subset::SourceContainer::Sfnt => "sfnt",
+        }
+    }
+
+    fn ranges(self) -> &'static [(u32, u32)] {
+        self.source
+            .unicode_ranges()
+            .expect("qualified source has declared ranges")
+    }
+
+    fn load(self) -> excalidraw_render_assets_base::VerifiedAsset {
+        self.source.load().expect("qualified source verifies")
+    }
+
+    /// The sfnt the subsetter plans over: the chunk's decode, the fallback
+    /// itself.
+    fn decode(self, bytes: &[u8]) -> Vec<u8> {
+        match self.source.container() {
+            font_subset::SourceContainer::Woff2 => {
+                wuff::decompress_woff2(bytes).expect("qualified source decodes")
+            }
+            font_subset::SourceContainer::Sfnt => bytes.to_vec(),
+        }
+    }
+
+    /// The WOFF2 the canonical viewers, which admit only that container, load
+    /// as the source face: the chunk's own bytes, or the fallback sfnt encoded
+    /// by the subsetter's encoder. The corpus pins the digest of the encoding
+    /// beside the sfnt's, so the viewer manifest's source role stays bound to
+    /// the manifested face.
+    fn viewer_source_woff2(self, bytes: &[u8], sfnt: &[u8]) -> Vec<u8> {
+        match self.source.container() {
+            font_subset::SourceContainer::Woff2 => bytes.to_vec(),
+            font_subset::SourceContainer::Sfnt => {
+                font_subset::encode_woff2(sfnt).expect("qualified fallback source encodes")
+            }
+        }
+    }
+
+    fn semantic_identity(self, scalars: &[u32]) -> String {
+        svg_fonts::source_semantic_identity(self.source, scalars)
+            .expect("qualified semantic identity can be represented")
+    }
+
+    fn derive(
+        self,
+        bytes: &[u8],
+        scalars: &[u32],
+        identity: &str,
+    ) -> Result<font_subset::Derived, font_subset::Error> {
+        font_subset::derive(
+            bytes,
+            self.source.container(),
+            scalars,
+            self.alias(),
+            identity,
+        )
+    }
+}
+
+/// Every qualified source in corpus order.
+fn qualification_sources() -> Vec<QualificationSource> {
+    let catalog = excalidraw_render_assets_base::revision_1();
+    let mut sources = catalog
+        .assets
+        .iter()
+        .map(QualificationSource::chunk)
+        .collect::<Vec<_>>();
+    sources.push(QualificationSource::noto_emoji());
+    assert_eq!(sources.len(), SOURCE_COUNT);
+    sources
+}
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Corpus {
@@ -63,6 +193,12 @@ struct SourceQualification {
     source_identity: String,
     upstream_path: String,
     source_sha256: String,
+    /// `woff2` for an official chunk, `sfnt` for the Noto Emoji fallback.
+    source_container: String,
+    /// For an sfnt source, the digest of its WOFF2 encoding, the container the
+    /// canonical viewers load the source face through.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    viewer_source_woff2_sha256: Option<String>,
     effective_alias: String,
     license_identity: String,
     reserved_font_names: Vec<String>,
@@ -170,7 +306,6 @@ fn update_framed(hasher: &mut Sha256, bytes: &[u8]) {
 }
 
 pub(crate) fn assert_complete_font_subset_qualification_corpus() {
-    let catalog = excalidraw_render_assets_base::revision_1();
     let corpus_bytes = include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/qualification/font-subset-corpus.json"
@@ -188,48 +323,73 @@ pub(crate) fn assert_complete_font_subset_qualification_corpus() {
         assert_eq!(definition.id, expected);
         assert!(!definition.definition.is_empty());
     }
-    assert_eq!(corpus.sources.len(), 230);
-    assert_eq!(corpus.sources.len(), catalog.assets.len());
+    let sources = qualification_sources();
+    assert_eq!(corpus.sources.len(), SOURCE_COUNT);
+    assert_eq!(
+        corpus.sources.len(),
+        excalidraw_render_assets_base::revision_1().assets.len() + 1
+    );
 
     let mut measurement = QualificationMeasurement::new();
     let mut source_identities = BTreeSet::new();
     let mut cell_identities = BTreeSet::new();
-    for (source, record) in corpus.sources.iter().zip(catalog.assets) {
-        assert_eq!(source.source_identity, record.identity);
-        assert_eq!(source.upstream_path, record.upstream_path);
-        assert_eq!(source.source_sha256, record.complete_sha256);
-        assert_eq!(source.effective_alias, effective_alias(record.family));
-        assert_eq!(source.license_identity, record.license_identity);
+    for (qualified, source) in corpus.sources.iter().zip(&sources) {
+        assert_eq!(qualified.source_identity, source.identity());
+        assert_eq!(qualified.upstream_path, source.upstream_path);
+        assert_eq!(qualified.source_sha256, source.source.complete_sha256());
+        assert_eq!(qualified.source_container, source.container_name());
+        assert_eq!(qualified.effective_alias, source.alias());
+        assert_eq!(qualified.license_identity, source.license_identity);
         assert_eq!(
-            source.reserved_font_names,
-            record
+            qualified.reserved_font_names,
+            source
                 .reserved_font_names
                 .iter()
                 .map(|name| (*name).to_owned())
                 .collect::<Vec<_>>()
         );
-        assert!(source_identities.insert(source.source_identity.as_str()));
-        assert_eq!(source.cells.len(), CLASS_IDS.len());
+        assert!(source_identities.insert(qualified.source_identity.as_str()));
+        assert_eq!(qualified.cells.len(), CLASS_IDS.len());
 
-        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
-            .expect("qualified source verifies")
-            .expect("qualified source exists");
-        let expected_cells = classify_source(record, asset.bytes());
-        for ((cell, expected), class) in source.cells.iter().zip(expected_cells).zip(CLASS_IDS) {
+        let asset = source.load();
+        let sfnt = source.decode(asset.bytes());
+        let viewer_source = source.viewer_source_woff2(asset.bytes(), &sfnt);
+        assert_eq!(
+            qualified.viewer_source_woff2_sha256.as_deref(),
+            (source.source.container() == font_subset::SourceContainer::Sfnt)
+                .then(|| sha256(&viewer_source))
+                .as_deref(),
+            "{} viewer source container",
+            source.upstream_path
+        );
+        if source.source.container() == font_subset::SourceContainer::Sfnt {
+            assert_eq!(
+                wuff::decompress_woff2(&viewer_source)
+                    .map(|decoded| canonical_tables(&decoded))
+                    .expect("viewer source WOFF2 decodes"),
+                canonical_tables(&sfnt),
+                "{} viewer source WOFF2 reconstructs the manifested face",
+                source.upstream_path
+            );
+        }
+        let expected_cells = classify_source(source.family, source.ranges(), &sfnt);
+        for ((cell, expected), class) in qualified.cells.iter().zip(expected_cells).zip(CLASS_IDS) {
             assert_eq!(cell.class, class);
-            assert!(cell_identities.insert((source.source_identity.as_str(), cell.class.as_str())));
+            assert!(
+                cell_identities.insert((qualified.source_identity.as_str(), cell.class.as_str()))
+            );
             assert_cell(
-                record,
+                *source,
                 asset.bytes(),
-                source,
+                qualified,
                 cell,
                 expected,
                 &mut measurement,
             );
         }
     }
-    assert_eq!(source_identities.len(), 230);
-    assert_eq!(cell_identities.len(), 230 * CLASS_IDS.len());
+    assert_eq!(source_identities.len(), SOURCE_COUNT);
+    assert_eq!(cell_identities.len(), SOURCE_COUNT * CLASS_IDS.len());
     assert_failure_cells(&corpus.failures);
     println!(
         "SVG_FONT_SUBSET_TARGET_MEASUREMENT={}",
@@ -238,10 +398,100 @@ pub(crate) fn assert_complete_font_subset_qualification_corpus() {
     );
 }
 
+/// The tables of an sfnt by tag, with `head.checkSumAdjustment` zeroed: what a
+/// lossless container round trip preserves. `glyf` and `loca` are compared
+/// through the canonical serializer since the WOFF2 transform re-serializes
+/// them, and `hmtx` likewise since the transform may reconstruct it.
+fn canonical_tables(sfnt: &[u8]) -> BTreeMap<String, Vec<u8>> {
+    let font = FontRef::new(sfnt).expect("sfnt parses");
+    let mut tables = BTreeMap::new();
+    for record in font.table_directory().table_records() {
+        let tag = record.tag();
+        let mut bytes = font
+            .data_for_tag(tag)
+            .expect("table directory entry has data")
+            .as_bytes()
+            .to_vec();
+        if tag == write_fonts::read::types::Tag::new(b"head") {
+            bytes[8..12].fill(0);
+        }
+        tables.insert(tag.to_string(), bytes);
+    }
+    for tag in ["glyf", "loca", "hmtx"] {
+        tables.remove(tag);
+    }
+    let face = rustybuzz::Face::from_slice(sfnt, 0).expect("sfnt shapes");
+    let glyph_count = face.number_of_glyphs();
+    let mut glyphs = Vec::new();
+    for glyph in 0..glyph_count {
+        let glyph = rustybuzz::ttf_parser::GlyphId(glyph);
+        let mut outline = OutlineDigest::default();
+        let bounds = face.outline_glyph(glyph, &mut outline);
+        glyphs.extend_from_slice(
+            &face
+                .glyph_hor_advance(glyph)
+                .unwrap_or_default()
+                .to_le_bytes(),
+        );
+        glyphs.extend_from_slice(
+            &face
+                .glyph_hor_side_bearing(glyph)
+                .unwrap_or_default()
+                .to_le_bytes(),
+        );
+        glyphs.extend_from_slice(&outline.bytes);
+        if let Some(bounds) = bounds {
+            for value in [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max] {
+                glyphs.extend_from_slice(&value.to_le_bytes());
+            }
+        }
+        glyphs.push(b'|');
+    }
+    tables.insert("glyphs".to_owned(), glyphs);
+    tables
+}
+
+#[derive(Default)]
+struct OutlineDigest {
+    bytes: Vec<u8>,
+}
+
+impl rustybuzz::ttf_parser::OutlineBuilder for OutlineDigest {
+    fn move_to(&mut self, x: f32, y: f32) {
+        self.bytes.push(b'M');
+        self.bytes.extend_from_slice(&x.to_bits().to_le_bytes());
+        self.bytes.extend_from_slice(&y.to_bits().to_le_bytes());
+    }
+
+    fn line_to(&mut self, x: f32, y: f32) {
+        self.bytes.push(b'L');
+        self.bytes.extend_from_slice(&x.to_bits().to_le_bytes());
+        self.bytes.extend_from_slice(&y.to_bits().to_le_bytes());
+    }
+
+    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
+        self.bytes.push(b'Q');
+        for value in [x1, y1, x, y] {
+            self.bytes.extend_from_slice(&value.to_bits().to_le_bytes());
+        }
+    }
+
+    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
+        self.bytes.push(b'C');
+        for value in [x1, y1, x2, y2, x, y] {
+            self.bytes.extend_from_slice(&value.to_bits().to_le_bytes());
+        }
+    }
+
+    fn close(&mut self) {
+        self.bytes.push(b'Z');
+    }
+}
+
 fn assert_cell(
-    record: &'static excalidraw_render_assets_base::AssetRecord,
-    source_woff2: &[u8],
-    source: &SourceQualification,
+    source: QualificationSource,
+    source_bytes: &[u8],
+    qualified: &SourceQualification,
     cell: &QualificationCell,
     expected: ClassifiedCell,
     measurement: &mut QualificationMeasurement,
@@ -253,8 +503,7 @@ fn assert_cell(
             assert_eq!(cell.expected_validation_outcome, "valid");
             assert!(cell.reason.is_none());
             let scalars = expected.scalars.as_deref().expect("success has scalars");
-            let semantic_identity = svg_fonts::semantic_identity(record, scalars)
-                .expect("qualified semantic identity can be represented");
+            let semantic_identity = source.semantic_identity(scalars);
             assert_eq!(
                 cell.semantic_subset_identity.as_deref(),
                 Some(semantic_identity.as_str())
@@ -262,26 +511,26 @@ fn assert_cell(
             let mut session = font_subset::Session::new();
             let derived = session
                 .derive(
-                    record.identity,
-                    source_woff2,
-                    font_subset::SourceContainer::Woff2,
+                    source.identity(),
+                    source_bytes,
+                    source.source.container(),
                     scalars,
-                    &source.effective_alias,
+                    &qualified.effective_alias,
                     &semantic_identity,
                 )
                 .unwrap_or_else(|error| {
                     panic!(
                         "{} {} derives at {:?}",
-                        record.upstream_path, cell.class, error.stage
+                        source.upstream_path, cell.class, error.stage
                     )
                 });
             let cached = session
                 .derive(
-                    record.identity,
-                    source_woff2,
-                    font_subset::SourceContainer::Woff2,
+                    source.identity(),
+                    source_bytes,
+                    source.source.container(),
                     scalars,
-                    &source.effective_alias,
+                    &qualified.effective_alias,
                     &semantic_identity,
                 )
                 .expect("qualified request-cache replay succeeds");
@@ -295,25 +544,28 @@ fn assert_cell(
                     .expect("divergent WOFF2 still decodes");
                 panic!(
                     "{} {} generated WOFF2 diverged: expected {:?}, actual {}, decoded sfnt {}",
-                    record.upstream_path,
+                    source.upstream_path,
                     cell.class,
                     cell.generated_woff2_sha256,
                     output_sha256,
                     sha256(&decoded)
                 );
             }
-            measurement.record_generated(record.identity, &cell.class, derived.woff2.as_ref());
-            let trace = canonical_trace(record, scalars, Some(&derived));
-            measurement.record_trace(record.identity, &cell.class, &trace);
+            measurement.record_generated(source.identity(), &cell.class, derived.woff2.as_ref());
+            let trace = canonical_trace(source, scalars, Some(&derived));
+            measurement.record_trace(source.identity(), &cell.class, &trace);
             let notice = svg_fonts::subset_notice(
-                svg_fonts::SubsetSource::chunk(record),
-                family_name(record.family),
-                &source.effective_alias,
+                source.source,
+                source.family_name(),
+                &qualified.effective_alias,
                 &semantic_identity,
                 &derived,
             )
             .unwrap_or_else(|error| panic!("qualified subset notice failed at {:?}", error.stage));
-            assert_eq!(notice.provenance.license_identity, source.license_identity);
+            assert_eq!(
+                notice.provenance.license_identity,
+                qualified.license_identity
+            );
             assert_eq!(
                 cell.transformation_notice_sha256.as_deref(),
                 Some(sha256(notice.resource_text.as_bytes()).as_str())
@@ -328,8 +580,8 @@ fn assert_cell(
                 .scalars
                 .as_deref()
                 .expect("not-selected has scalars");
-            let trace = canonical_trace(record, scalars, None);
-            measurement.record_trace(record.identity, &cell.class, &trace);
+            let trace = canonical_trace(source, scalars, None);
+            measurement.record_trace(source.identity(), &cell.class, &trace);
         }
         CellStatus::NotApplicable => {
             assert_eq!(cell.expected_validation_outcome, "not_applicable");
@@ -430,26 +682,17 @@ struct ClassifiedCell {
     reason: Option<&'static str>,
 }
 
-fn classify_source(
-    record: &excalidraw_render_assets_base::AssetRecord,
-    source_woff2: &[u8],
-) -> Vec<ClassifiedCell> {
-    let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
-        record.family,
-        record.upstream_path,
-    )
-    .expect("qualified source has declared ranges");
-    let sfnt = wuff::decompress_woff2(source_woff2).expect("qualified source decodes");
-    let face = rustybuzz::Face::from_slice(&sfnt, 0).expect("qualified source parses");
-    let font = FontRef::new(&sfnt).expect("qualified source is an sfnt");
+fn classify_source(family: &str, ranges: &[(u32, u32)], sfnt: &[u8]) -> Vec<ClassifiedCell> {
+    let face = rustybuzz::Face::from_slice(sfnt, 0).expect("qualified source parses");
+    let font = FontRef::new(sfnt).expect("qualified source is an sfnt");
 
-    let mapped = first_mapped(&face, &ranges, |_| true).expect("source declares a mapped scalar");
-    let boundaries = range_boundaries(&face, &ranges);
-    let outside = first_outside(record.family, &ranges);
-    let full = full_intersection(&face, &ranges);
-    let non_bmp = first_mapped(&face, &ranges, |scalar| scalar > 0xffff);
-    let combining = first_mapped(&face, &ranges, is_combining_mark);
-    let composite = first_mapped(&face, &ranges, |scalar| {
+    let mapped = first_mapped(&face, ranges, |_| true).expect("source declares a mapped scalar");
+    let boundaries = range_boundaries(&face, ranges);
+    let outside = first_outside(family, ranges);
+    let full = full_intersection(&face, ranges);
+    let non_bmp = first_mapped(&face, ranges, |scalar| scalar > 0xffff);
+    let combining = first_mapped(&face, ranges, is_combining_mark);
+    let composite = first_mapped(&face, ranges, |scalar| {
         mapped_glyph_is_composite(&face, &font, scalar)
     });
     let layout = layout_probe(&face, &font);
@@ -746,18 +989,19 @@ fn probe_exercises_layout(face: &rustybuzz::Face<'_>, probe: &str) -> bool {
 }
 
 fn canonical_trace(
-    record: &'static excalidraw_render_assets_base::AssetRecord,
+    source: QualificationSource,
     scalars: &[u32],
     derived: Option<&font_subset::Derived>,
 ) -> Vec<u8> {
     let selected = derived.is_some();
-    let (outcome, trace) = super::render_font_subset_qualification_trace(record, scalars);
+    let (outcome, trace) =
+        super::render_font_subset_qualification_trace(source.family_name(), scalars);
     outcome.unwrap_or_else(|error| {
         panic!(
             "{} {scalars:?} canonical trace render fails with {error:?} / {:?}; {}",
-            record.upstream_path,
+            source.upstream_path,
             error.code(),
-            family_failure_diagnosis(record, scalars)
+            family_failure_diagnosis(source, scalars)
         )
     });
     let trace_value: serde_json::Value =
@@ -768,7 +1012,7 @@ fn canonical_trace(
     let has_event = |event: &str| {
         entries
             .iter()
-            .any(|entry| entry["event"] == event && entry["semantic_identity"] == record.identity)
+            .any(|entry| entry["event"] == event && entry["semantic_identity"] == source.identity())
     };
     assert!(has_event("svg_font_chunk_considered"));
     assert_eq!(has_event("svg_font_chunk_selected"), selected);
@@ -781,60 +1025,31 @@ fn canonical_trace(
             "svg_font_validate",
             "svg_font_css_data_url",
         ] {
-            assert!(has_event(event), "{} lacks {event}", record.upstream_path);
+            assert!(has_event(event), "{} lacks {event}", source.upstream_path);
         }
     }
     trace
 }
 
-fn family_failure_diagnosis(
-    target: &excalidraw_render_assets_base::AssetRecord,
-    scalars: &[u32],
-) -> String {
-    for record in excalidraw_render_assets_base::revision_1()
-        .assets
-        .iter()
-        .filter(|record| record.family == target.family)
+fn family_failure_diagnosis(target: QualificationSource, scalars: &[u32]) -> String {
+    for source in qualification_sources()
+        .into_iter()
+        .filter(|source| source.family == target.family)
     {
-        let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
-            record.family,
-            record.upstream_path,
-        )
-        .expect("diagnosed source has ranges");
-        if !scalars.iter().any(|scalar| {
-            ranges
-                .iter()
-                .any(|(start, end)| start <= scalar && scalar <= end)
-        }) {
+        if source.source.selected_by(scalars) != Some(true) {
             continue;
         }
-        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
-            .expect("diagnosed source verifies")
-            .expect("diagnosed source exists");
-        let identity = svg_fonts::semantic_identity(record, scalars).expect("diagnosed identity");
-        if let Err(error) = font_subset::derive(
-            asset.bytes(),
-            font_subset::SourceContainer::Woff2,
-            scalars,
-            effective_alias(record.family),
-            &identity,
-        ) {
+        let asset = source.load();
+        let identity = source.semantic_identity(scalars);
+        if let Err(error) = source.derive(asset.bytes(), scalars, &identity) {
             let prefix = (1..=scalars.len()).find(|length| {
                 let values = &scalars[..*length];
-                let identity =
-                    svg_fonts::semantic_identity(record, values).expect("diagnosed identity");
-                font_subset::derive(
-                    asset.bytes(),
-                    font_subset::SourceContainer::Woff2,
-                    values,
-                    effective_alias(record.family),
-                    &identity,
-                )
-                .is_err()
+                let identity = source.semantic_identity(values);
+                source.derive(asset.bytes(), values, &identity).is_err()
             });
             return format!(
                 "{} fails at {:?}, first bad prefix {prefix:?}",
-                record.upstream_path, error.stage
+                source.upstream_path, error.stage
             );
         }
     }
@@ -845,17 +1060,12 @@ fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
-fn effective_alias(family: &str) -> &str {
-    match family {
-        "Cascadia" => "ExcalidrawRender-3",
-        "ComicShanns" => "Comic Shanns",
-        "Liberation" => "ExcalidrawRender-9",
-        "Lilita" => "ExcalidrawRender-7",
-        "Virgil" => "ExcalidrawRender-1",
-        family => family,
-    }
+fn effective_alias(family: &str) -> &'static str {
+    svg_fonts::Bundle::effective_family(family_name(family))
 }
 
+/// The resolved family name of a catalog family: the inverse of
+/// `svg_fonts::catalog_family`.
 fn family_name(family: &str) -> &'static str {
     match family {
         "Cascadia" => "Cascadia Code",
@@ -866,6 +1076,7 @@ fn family_name(family: &str) -> &'static str {
         "Nunito" => "Nunito",
         "Virgil" => "Virgil",
         "Xiaolai" => "Xiaolai",
+        "NotoEmoji" => "Noto Emoji",
         _ => panic!("unknown qualification source family"),
     }
 }
@@ -883,26 +1094,27 @@ fn stage_name(stage: crate::SvgFontSubsetStage) -> &'static str {
 #[cfg(not(target_arch = "wasm32"))]
 fn build_corpus() -> Corpus {
     let catalog = excalidraw_render_assets_base::revision_1();
-    let mut sources = Vec::with_capacity(catalog.assets.len());
-    for record in catalog.assets {
-        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
-            .expect("qualified source verifies")
-            .expect("qualified source exists");
-        let alias = effective_alias(record.family);
+    let mut sources = Vec::with_capacity(SOURCE_COUNT);
+    for source in qualification_sources() {
+        let asset = source.load();
+        let sfnt = source.decode(asset.bytes());
+        let viewer_source_woff2_sha256 = (source.source.container()
+            == font_subset::SourceContainer::Sfnt)
+            .then(|| sha256(&source.viewer_source_woff2(asset.bytes(), &sfnt)));
         let cells = CLASS_IDS
             .into_iter()
-            .zip(classify_source(record, asset.bytes()))
-            .map(|(class, classified)| {
-                materialize_cell(record, asset.bytes(), alias, class, classified)
-            })
+            .zip(classify_source(source.family, source.ranges(), &sfnt))
+            .map(|(class, classified)| materialize_cell(source, asset.bytes(), class, classified))
             .collect();
         sources.push(SourceQualification {
-            source_identity: record.identity.to_owned(),
-            upstream_path: record.upstream_path.to_owned(),
-            source_sha256: record.complete_sha256.to_owned(),
-            effective_alias: alias.to_owned(),
-            license_identity: record.license_identity.to_owned(),
-            reserved_font_names: record
+            source_identity: source.identity().to_owned(),
+            upstream_path: source.upstream_path.to_owned(),
+            source_sha256: source.source.complete_sha256().to_owned(),
+            source_container: source.container_name().to_owned(),
+            viewer_source_woff2_sha256,
+            effective_alias: source.alias().to_owned(),
+            license_identity: source.license_identity.to_owned(),
+            reserved_font_names: source
                 .reserved_font_names
                 .iter()
                 .map(|name| (*name).to_owned())
@@ -933,48 +1145,33 @@ fn build_corpus() -> Corpus {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn materialize_cell(
-    record: &'static excalidraw_render_assets_base::AssetRecord,
-    source_woff2: &[u8],
-    alias: &str,
+    source: QualificationSource,
+    source_bytes: &[u8],
     class: &str,
     classified: ClassifiedCell,
 ) -> QualificationCell {
     match classified.status {
         CellStatus::Success => {
             let scalars = classified.scalars.expect("success has scalars");
-            let semantic_identity =
-                svg_fonts::semantic_identity(record, &scalars).expect("semantic identity");
-            let derived = font_subset::derive(
-                source_woff2,
-                font_subset::SourceContainer::Woff2,
-                &scalars,
-                alias,
-                &semantic_identity,
-            )
-            .unwrap_or_else(|error| {
-                let first_bad_prefix = (1..=scalars.len()).find(|length| {
-                    let prefix = &scalars[..*length];
-                    let identity = svg_fonts::semantic_identity(record, prefix)
-                        .expect("prefix semantic identity");
-                    font_subset::derive(
-                        source_woff2,
-                        font_subset::SourceContainer::Woff2,
-                        prefix,
-                        alias,
-                        &identity,
+            let semantic_identity = source.semantic_identity(&scalars);
+            let derived = source
+                .derive(source_bytes, &scalars, &semantic_identity)
+                .unwrap_or_else(|error| {
+                    let first_bad_prefix = (1..=scalars.len()).find(|length| {
+                        let prefix = &scalars[..*length];
+                        let identity = source.semantic_identity(prefix);
+                        source.derive(source_bytes, prefix, &identity).is_err()
+                    });
+                    panic!(
+                        "{} {class} {scalars:?}, first bad prefix {first_bad_prefix:?}: {:?}",
+                        source.upstream_path, error.stage
                     )
-                    .is_err()
                 });
-                panic!(
-                    "{} {class} {scalars:?}, first bad prefix {first_bad_prefix:?}: {:?}",
-                    record.upstream_path, error.stage
-                )
-            });
             let output_sha256 = sha256(derived.woff2.as_ref());
             let notice = svg_fonts::subset_notice(
-                svg_fonts::SubsetSource::chunk(record),
-                family_name(record.family),
-                alias,
+                source.source,
+                source.family_name(),
+                source.alias(),
                 &semantic_identity,
                 &derived,
             )
@@ -1074,18 +1271,28 @@ fn materialize_viewer_inputs() {
         "/tests/qualification/font-subset-corpus.json"
     )))
     .expect("the font subset qualification corpus is valid JSON");
-    let catalog = excalidraw_render_assets_base::revision_1();
-    assert_eq!(corpus.sources.len(), catalog.assets.len());
+    let sources = qualification_sources();
+    assert_eq!(corpus.sources.len(), sources.len());
     let mut executions = BTreeMap::<String, serde_json::Value>::new();
 
-    for (source, record) in corpus.sources.iter().zip(catalog.assets) {
-        assert_eq!(source.source_identity, record.identity);
-        assert_eq!(source.upstream_path, record.upstream_path);
-        assert_eq!(source.source_sha256, record.complete_sha256);
-        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
-            .expect("qualified source verifies")
-            .expect("qualified source exists");
-        for cell in &source.cells {
+    for (source, qualified) in sources.iter().zip(&corpus.sources) {
+        assert_eq!(qualified.source_identity, source.identity());
+        assert_eq!(qualified.upstream_path, source.upstream_path);
+        assert_eq!(qualified.source_sha256, source.source.complete_sha256());
+        assert_eq!(qualified.source_container, source.container_name());
+        let asset = source.load();
+        let source_sfnt = source.decode(asset.bytes());
+        // The canonical viewers admit only WOFF2: a chunk is loaded as itself,
+        // the fallback sfnt through the subsetter's encoder, whose digest the
+        // corpus pins beside the sfnt's.
+        let source_woff2 = source.viewer_source_woff2(asset.bytes(), &source_sfnt);
+        assert_eq!(
+            qualified.viewer_source_woff2_sha256.as_deref(),
+            (source.source.container() == font_subset::SourceContainer::Sfnt)
+                .then(|| sha256(&source_woff2))
+                .as_deref()
+        );
+        for cell in &qualified.cells {
             if cell.status != CellStatus::Success {
                 continue;
             }
@@ -1100,7 +1307,7 @@ fn materialize_viewer_inputs() {
             let coverage = serde_json::json!({
                 "class": cell.class,
                 "ordered_scalars": scalars,
-                "source_identity": source.source_identity,
+                "source_identity": qualified.source_identity,
             });
             if let Some(execution) = executions.get_mut(identity) {
                 execution["coverage"]
@@ -1110,21 +1317,14 @@ fn materialize_viewer_inputs() {
                 continue;
             }
 
-            let derived = font_subset::derive(
-                asset.bytes(),
-                font_subset::SourceContainer::Woff2,
-                scalars,
-                &source.effective_alias,
-                identity,
-            )
-            .unwrap_or_else(|error| {
-                panic!(
-                    "{} {} viewer subset derives at {:?}",
-                    record.upstream_path, cell.class, error.stage
-                )
-            });
-            let source_sfnt =
-                wuff::decompress_woff2(asset.bytes()).expect("qualified source decodes");
+            let derived = source
+                .derive(asset.bytes(), scalars, identity)
+                .unwrap_or_else(|error| {
+                    panic!(
+                        "{} {} viewer subset derives at {:?}",
+                        source.upstream_path, cell.class, error.stage
+                    )
+                });
             let subset_sfnt =
                 wuff::decompress_woff2(derived.woff2.as_ref()).expect("qualified subset decodes");
             let mapped_scalars = scalars
@@ -1148,7 +1348,7 @@ fn materialize_viewer_inputs() {
             let subset_woff2_path = case_dir.join("subset.woff2");
             let source_sfnt_path = case_dir.join("source.sfnt");
             let subset_sfnt_path = case_dir.join("subset.sfnt");
-            fs::write(&source_woff2_path, asset.bytes()).expect("source WOFF2 can be staged");
+            fs::write(&source_woff2_path, &source_woff2).expect("source WOFF2 can be staged");
             fs::write(&subset_woff2_path, derived.woff2.as_ref())
                 .expect("subset WOFF2 can be staged");
             fs::write(&source_sfnt_path, &source_sfnt).expect("source sfnt can be staged");
@@ -1173,7 +1373,7 @@ fn materialize_viewer_inputs() {
                 .expect("SVG height does not overflow");
             let source_svg = qualification_svg(
                 &family,
-                asset.bytes(),
+                &source_woff2,
                 &lines,
                 width,
                 height,
@@ -1196,7 +1396,7 @@ fn materialize_viewer_inputs() {
 
             let source_assets = qualification_assets(
                 &root,
-                asset.bytes(),
+                &source_woff2,
                 &source_sfnt_path,
                 &source_sfnt,
                 &family,
@@ -1229,7 +1429,7 @@ fn materialize_viewer_inputs() {
                         "pixel_format": "straight-alpha-srgb-rgba8",
                         "width": width,
                     },
-                    "effective_alias": source.effective_alias,
+                    "effective_alias": qualified.effective_alias,
                     "mapped_scalars": mapped_scalars,
                     "semantic_subset_identity": identity,
                     "source_assets": relative("source.assets.json"),
@@ -1239,7 +1439,7 @@ fn materialize_viewer_inputs() {
                     "source_svg": relative("source.svg"),
                     "source_svg_sha256": sha256(source_svg.as_bytes()),
                     "source_woff2": relative("source.woff2"),
-                    "source_woff2_sha256": sha256(asset.bytes()),
+                    "source_woff2_sha256": sha256(&source_woff2),
                     "subset_assets": relative("subset.assets.json"),
                     "subset_assets_sha256": sha256(&json_bytes(&subset_assets)),
                     "subset_sfnt": relative("subset.sfnt"),
@@ -1469,11 +1669,25 @@ fn layout_probe_detects_horizontal_advance_only_gpos() {
     panic!("manifest contains advance-only GPOS evidence");
 }
 
+/// The release-mode qualification set (#138, #141): every cell of the corpus
+/// derives, matches its pinned bytes and replays its canonical trace. It takes
+/// minutes even optimized, so the push gate leaves it `#[ignore]`d and the
+/// packaged-facade workflow lifts the gate with the `release-qualification`
+/// feature and no name filter, so a rename cannot drop it out of the run.
 #[test]
+#[cfg_attr(
+    not(feature = "release-qualification"),
+    ignore = "release-mode qualification set; run with `--features release-qualification`"
+)]
 fn complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces() {
     assert_complete_font_subset_qualification_corpus();
 }
 
+/// Regenerates the qualification corpus and stages it, with its digest sidecar
+/// and its packaged copy, under Cargo's scratch space rather than in the
+/// source tree (#140): the printed `cp` lines refresh the committed copies,
+/// so running the ignored test leaves the checkout clean until the refresh is
+/// a deliberate step.
 #[cfg(not(target_arch = "wasm32"))]
 #[test]
 #[ignore = "explicitly refreshes immutable qualification evidence"]
@@ -1484,15 +1698,48 @@ fn materialize_complete_font_subset_qualification_corpus() {
     let value = serde_json::to_value(build_corpus()).expect("corpus is serializable");
     let bytes = serde_json::to_vec(&value).expect("corpus value is serializable");
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let path = root.join(CORPUS_PATH);
-    fs::write(&path, &bytes).expect("corpus can be written");
-    fs::write(root.join(PACKAGED_CORPUS_PATH), &bytes)
-        .expect("packaged corpus copy can be written");
-    fs::write(
-        path.with_extension("sha256"),
-        format!("{}\n", sha256(&bytes)),
-    )
-    .expect("corpus sidecar can be written");
+    let root = fs::canonicalize(root).expect("repository root resolves");
+    let staged = scratch_directory("svg-font-subset-qualification-corpus");
+    let committed = root.join(CORPUS_PATH);
+    let sidecar = committed.with_extension("sha256");
+    let packaged = root.join(PACKAGED_CORPUS_PATH);
+    let staged_corpus = staged.join(committed.file_name().expect("corpus has a file name"));
+    let staged_sidecar = staged.join(sidecar.file_name().expect("sidecar has a file name"));
+    fs::write(&staged_corpus, &bytes).expect("corpus can be staged");
+    fs::write(&staged_sidecar, format!("{}\n", sha256(&bytes))).expect("sidecar can be staged");
+    println!(
+        "staged the SVG font subset qualification corpus ({} bytes, sha256 {}); refresh the \
+         committed copies with:\n  cp {} {}\n  cp {} {}\n  cp {} {}",
+        bytes.len(),
+        sha256(&bytes),
+        staged_corpus.display(),
+        committed.display(),
+        staged_sidecar.display(),
+        sidecar.display(),
+        staged_corpus.display(),
+        packaged.display(),
+    );
+}
+
+/// A fresh `<target>/tmp/<name>-<pid>` directory. Lib tests have no
+/// `CARGO_TARGET_TMPDIR`, so the target directory is the one this test binary
+/// runs from (`<target>/<profile>/deps/`), which keeps the staging inside the
+/// checkout whenever the target directory is.
+#[cfg(not(target_arch = "wasm32"))]
+fn scratch_directory(name: &str) -> std::path::PathBuf {
+    let executable = std::env::current_exe().expect("test executable path is known");
+    let target = executable
+        .ancestors()
+        .nth(3)
+        .expect("test executable lives under <target>/<profile>/deps");
+    let path = target
+        .join("tmp")
+        .join(format!("{name}-{}", std::process::id()));
+    if path.exists() {
+        std::fs::remove_dir_all(&path).expect("stale scratch directory is removable");
+    }
+    std::fs::create_dir_all(&path).expect("scratch directory is creatable");
+    path
 }
 
 #[cfg(not(target_arch = "wasm32"))]

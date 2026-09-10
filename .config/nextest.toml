@@ -17,11 +17,10 @@
 # `ci-fast`.
 #
 # The two release-mode qualification tests are not a tier of their own: the
-# frame batch property test is #[ignore]d unless the `release-qualification`
-# feature is on, and the SVG font subset qualification corpus is excluded here
-# by name because its file is digest-pinned by issue #99 and cannot carry the
-# feature gate until its next re-approval round. The packaged-facade workflow
-# runs both in `--release` through `cargo test`.
+# frame batch property test and the SVG font subset qualification corpus are
+# both #[ignore]d unless the `release-qualification` feature is on, so no
+# profile needs to name them. The packaged-facade workflow runs both in
+# `--release` through `cargo test`.
 #
 # nextest does not run doc tests; the workflows keep a `cargo test --doc` step.
 #
@@ -36,12 +35,7 @@ nextest-version = { required = "0.9.75", recommended = "0.9.143" }
 # a release-mode budget. Harness binaries are excluded as binaries, so they are
 # not even listed; the developer with a harness selects them with the
 # `harness` profile below.
-default-filter = '''
-not (
-  binary(/^harness_/)
-  | test(=render::font_subset_qualification::complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces)
-)
-'''
+default-filter = 'not binary(/^harness_/)'
 
 # The two registry harnesses judge their variants over every core themselves
 # (`common::registered_cases::judge_each`), so each runs alone rather than
@@ -53,12 +47,7 @@ threads-required = "num-cpus"
 # The PR gate's fast leg: the `default` set without the parity and limits
 # tiers. Together with `ci-render` it covers the `default` set exactly once.
 [profile.ci-fast]
-default-filter = '''
-not (
-  binary(/^(harness|parity|limits)_/)
-  | test(=render::font_subset_qualification::complete_font_subset_qualification_corpus_matches_generated_bytes_and_traces)
-)
-'''
+default-filter = 'not binary(/^(harness|parity|limits)_/)'
 fail-fast = false
 
 # The PR gate's render leg: the parity harnesses and the fixed parser ceilings.

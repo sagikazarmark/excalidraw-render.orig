@@ -28,6 +28,12 @@ const RUN_URL_PREFIX: &str =
 const ATTESTATION_URL_PREFIX: &str =
     "https://github.com/sagikazarmark/excalidraw-render.orig/issues/";
 const MEASUREMENT_PREFIX: &str = "SVG_FONT_SUBSET_TARGET_MEASUREMENT=";
+/// The corpus sources the release evidence qualifies: the 230 official chunks
+/// and the Noto Emoji fallback (#150).
+const QUALIFIED_SOURCES: usize = 231;
+/// The cells that replay a canonical trace: every successful cell and every
+/// not-selected cell of the corpus.
+const TRACED_CELLS: usize = 1204;
 /// The supported targets (spec §10, ADR-0006), in canonical order.
 const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"];
 /// The fields every target report, and the aggregate built from them, must
@@ -345,9 +351,12 @@ impl ReleaseEvidence {
         let manifest = &self.manifest;
         if required_string(manifest, "id")? != RELEASE_ID
             || required_path(manifest, &["compatibilityRevision"]) != Ok(&json!(1))
-            || required_path(manifest, &["corpus", "successfulCells"]) != Ok(&json!(971))
-            || required_path(manifest, &["licensing", "qualifiedSources"]) != Ok(&json!(230))
-            || required_path(manifest, &["viewerEvidence", "executions"]) != Ok(&json!(851))
+            || required_path(manifest, &["corpus", "successfulCells"])
+                != Ok(&json!(crate::svg_font_subsets::SUCCESSFUL_CELLS))
+            || required_path(manifest, &["licensing", "qualifiedSources"])
+                != Ok(&json!(QUALIFIED_SOURCES))
+            || required_path(manifest, &["viewerEvidence", "executions"])
+                != Ok(&json!(crate::svg_font_subsets::EXECUTIONS))
             || required_path_string(manifest, &["viewerEvidence", "status"])? != "approved"
         {
             return Err("SVG font subset release evidence state is stale".to_owned());
@@ -632,8 +641,9 @@ fn validate_measurement(measurement: &Value) -> Result<(), String> {
         64,
         "resource-trace measurement",
     )?;
-    if required_path(measurement, &["successfulCells"]) != Ok(&json!(971))
-        || required_path(measurement, &["tracedCells"]) != Ok(&json!(1198))
+    if required_path(measurement, &["successfulCells"])
+        != Ok(&json!(crate::svg_font_subsets::SUCCESSFUL_CELLS))
+        || required_path(measurement, &["tracedCells"]) != Ok(&json!(TRACED_CELLS))
     {
         return Err("qualification measurement cell counts are stale".to_owned());
     }
@@ -726,8 +736,8 @@ mod tests {
     use super::{
         record_aggregate_in, valid_provenance_url, verify_release_in, ReleaseEvidence,
         TargetEvidenceState, AGGREGATE_PATH, AGGREGATE_SCHEMA, ATTESTATION_URL_PREFIX,
-        CROSS_TARGET_PATH, CROSS_TARGET_SCHEMA, RELEASE_PATH, REPORT_SCHEMA, RUN_URL_PREFIX,
-        TARGETS,
+        CROSS_TARGET_PATH, CROSS_TARGET_SCHEMA, QUALIFIED_SOURCES, RELEASE_PATH, REPORT_SCHEMA,
+        RUN_URL_PREFIX, TARGETS, TRACED_CELLS,
     };
     use crate::conformance::{repo_root, sha256};
     use serde_json::{json, Value};
@@ -748,8 +758,8 @@ mod tests {
         json!({
             "generatedBytesSha256": GENERATED,
             "resourceTracesSha256": TRACES,
-            "successfulCells": 971,
-            "tracedCells": 1198,
+            "successfulCells": crate::svg_font_subsets::SUCCESSFUL_CELLS,
+            "tracedCells": TRACED_CELLS,
         })
     }
 
@@ -759,10 +769,10 @@ mod tests {
         json!({
             "approval": null,
             "compatibilityRevision": 1,
-            "corpus": {"path": "corpus.json", "sha256": CORPUS, "successfulCells": 971},
+            "corpus": {"path": "corpus.json", "sha256": CORPUS, "successfulCells": crate::svg_font_subsets::SUCCESSFUL_CELLS},
             "decision": "pending_target_aggregation",
             "id": "svg-font-subsets.release-evidence.revision-1.v1",
-            "licensing": {"qualifiedSources": 230},
+            "licensing": {"qualifiedSources": QUALIFIED_SOURCES},
             "subsetProfile": {"path": "profile.json", "sha256": PROFILE},
             "targetEvidence": {
                 "aggregateArtifact": "svg-font-subset-target-aggregate",
@@ -770,7 +780,7 @@ mod tests {
             },
             "viewerEvidence": {
                 "approvalSubject": VIEWER,
-                "executions": 851,
+                "executions": crate::svg_font_subsets::EXECUTIONS,
                 "path": "viewer.json",
                 "status": "approved",
             },

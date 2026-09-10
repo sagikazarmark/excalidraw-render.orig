@@ -149,7 +149,9 @@ pub fn pdf_actual_text(pdf: &str) -> String {
         let hex = tail.split('>').next().expect("ActualText hex terminates");
         let units = hex
             .as_bytes()
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .map(|digits| {
                 u16::from_str_radix(std::str::from_utf8(digits).expect("hex is ASCII"), 16)
                     .expect("ActualText is hexadecimal")

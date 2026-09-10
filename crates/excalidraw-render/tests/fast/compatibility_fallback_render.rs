@@ -186,9 +186,7 @@ fn compatibility_placeholder_labels_carry_their_derived_font_notice_and_artifact
 
     let png = render(&scene, OutputFormat::Png);
     let rgba = decode_png(png.artifact().bytes()).rgba;
-    assert!(rgba
-        .chunks_exact(4)
-        .any(|pixel| pixel == [0x49, 0x50, 0x57, 0xff]));
+    assert!(rgba.as_chunks::<4>().0.contains(&[0x49, 0x50, 0x57, 0xff]));
     assert!(!png
         .artifact()
         .bytes()
@@ -406,7 +404,9 @@ fn iframe_and_embeddable_render_the_official_offline_shell_in_the_final_pass() {
     let png = render(&scene, OutputFormat::Png);
     let rgba = decode_png(png.artifact().bytes()).rgba;
     assert!(rgba
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .any(|pixel| pixel[..3] == [0xd3, 0xd3, 0xd3]));
     assert!(!png
         .artifact()
@@ -679,8 +679,10 @@ fn png_fallback_surface_is_charged_after_the_required_main_raster() {
         .expect("the main and fallback surfaces fit at exact aggregate equality");
     let rgba = decode_png(outcome.artifact().bytes()).rgba;
     assert!(rgba
-        .chunks_exact(4)
-        .any(|pixel| pixel != [255, 255, 255, 255]));
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .any(|pixel| *pixel != [255, 255, 255, 255]));
 }
 
 #[test]

@@ -217,18 +217,7 @@ pub(super) fn derive(
     let subset_sfnt = normalize_simple_glyph_overlap(&subset_sfnt)?;
     let subset_sfnt = ensure_nonempty_glyf(&subset_sfnt)?;
 
-    let subset_woff2: Arc<[u8]> = ttf2woff2::encode_with_options(
-        &subset_sfnt,
-        ttf2woff2::EncodeOptions {
-            quality: ttf2woff2::BrotliQuality::from(11),
-            transform_glyf_loca: true,
-            threads: ENCODER_THREADS,
-        },
-    )
-    .map_err(|_| Error {
-        stage: crate::SvgFontSubsetStage::Encode,
-    })?
-    .into();
+    let subset_woff2: Arc<[u8]> = encode_woff2(&subset_sfnt)?.into();
     let decoded = wuff::decompress_woff2(&subset_woff2).map_err(|_| Error {
         stage: crate::SvgFontSubsetStage::Validate,
     })?;
@@ -247,6 +236,25 @@ pub(super) fn derive(
         decoded_sfnt_bytes: source_sfnt.len(),
         subset_sfnt_bytes: subset_sfnt.len(),
         subset_tables: decoded_font.table_directory().table_records().len(),
+    })
+}
+
+/// The encode stage: the pinned `ttf2woff2` at quality 11 with the `glyf`/`loca`
+/// transformation on one thread and no metadata or private block (spec
+/// 8.3.3). The qualification corpus also encodes the Noto Emoji fallback's
+/// complete sfnt with it, so the canonical viewers, which admit only WOFF2,
+/// see the source face through the same container the subsets use.
+pub(super) fn encode_woff2(sfnt: &[u8]) -> Result<Vec<u8>, Error> {
+    ttf2woff2::encode_with_options(
+        sfnt,
+        ttf2woff2::EncodeOptions {
+            quality: ttf2woff2::BrotliQuality::from(11),
+            transform_glyf_loca: true,
+            threads: ENCODER_THREADS,
+        },
+    )
+    .map_err(|_| Error {
+        stage: crate::SvgFontSubsetStage::Encode,
     })
 }
 

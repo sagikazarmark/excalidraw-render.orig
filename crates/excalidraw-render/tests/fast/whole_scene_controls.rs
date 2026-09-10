@@ -35,10 +35,7 @@ fn chromium_css_colors_are_canonicalized_for_every_projection() {
     let decoded = decode_png(png.artifact().bytes());
     assert_eq!((decoded.width, decoded.height), (40, 30));
     assert_eq!(decoded.pixel(0, 0), [102, 51, 153, 255]);
-    assert!(decoded
-        .rgba
-        .chunks_exact(4)
-        .any(|pixel| pixel == [64, 0, 191, 255]));
+    assert!(decoded.rgba.as_chunks::<4>().0.contains(&[64, 0, 191, 255]));
 
     let pdf = render_source(COLORED_RECTANGLE, OutputFormat::Pdf);
     let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");
@@ -83,7 +80,7 @@ fn canonical_color_alpha_is_preserved_by_every_projection() {
             .expect("transparent PNG request is valid"),
     );
     let rgba = decode_png(transparent_png.artifact().bytes()).rgba;
-    assert!(rgba.chunks_exact(4).any(|pixel| pixel == [255, 0, 0, 128]));
+    assert!(rgba.as_chunks::<4>().0.contains(&[255, 0, 0, 128]));
 
     let pdf = render_source(source, OutputFormat::Pdf);
     let pdf_text = pdf_text(pdf.artifact().bytes());
@@ -131,7 +128,7 @@ fn element_opacity_multiplies_color_alpha_in_every_projection() {
             .expect("transparent PNG request is valid"),
     );
     let rgba = decode_png(png.artifact().bytes()).rgba;
-    assert!(rgba.chunks_exact(4).any(|pixel| pixel == [255, 0, 0, 64]));
+    assert!(rgba.as_chunks::<4>().0.contains(&[255, 0, 0, 64]));
 
     let pdf = render_source_with_request(
         source,
@@ -170,9 +167,7 @@ fn dark_mode_lowers_scene_colors_before_every_projection() {
     let dark_png = render_dark(source, OutputFormat::Png);
     let rgba = decode_png(dark_png.artifact().bytes()).rgba;
     assert_eq!(&rgba[..4], &[17, 17, 17, 255]);
-    assert!(rgba
-        .chunks_exact(4)
-        .any(|pixel| pixel == [211, 211, 211, 255]));
+    assert!(rgba.as_chunks::<4>().0.contains(&[211, 211, 211, 255]));
 
     let dark_pdf = render_dark(source, OutputFormat::Pdf);
     let content = stream_text(dark_pdf.artifact().bytes(), b"4 0 obj");
@@ -214,7 +209,7 @@ fn renderer_owned_fallback_colors_follow_dark_mode() {
 
     let png = render_dark(source, OutputFormat::Png);
     let rgba = decode_png(png.artifact().bytes()).rgba;
-    assert!(rgba.chunks_exact(4).any(|pixel| pixel == [26, 28, 30, 255]));
+    assert!(rgba.as_chunks::<4>().0.contains(&[26, 28, 30, 255]));
 
     let pdf = render_dark(source, OutputFormat::Pdf);
     let content = stream_text(pdf.artifact().bytes(), b"4 0 obj");

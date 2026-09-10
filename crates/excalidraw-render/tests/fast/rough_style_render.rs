@@ -48,7 +48,7 @@ fn rough_fills_and_stroke_variants_render_directly_in_every_format() {
             }
             OutputFormat::Png => {
                 let decoded = decode_png(first.artifact().bytes());
-                let pixels = decoded.rgba.chunks_exact(4);
+                let pixels = decoded.rgba.as_chunks::<4>().0.iter();
                 assert!(pixels.clone().any(|pixel| pixel[0] > pixel[1]));
                 assert!(pixels.clone().any(|pixel| pixel[1] > pixel[0]));
                 assert!(pixels.clone().any(|pixel| pixel[2] > pixel[0]));
@@ -130,7 +130,7 @@ fn dots_dashed_and_zigzag_line_fills_render_undiagnosed_in_every_format() {
             }
             OutputFormat::Png => {
                 let decoded = decode_png(outcome.artifact().bytes());
-                let pixels = decoded.rgba.chunks_exact(4);
+                let pixels = decoded.rgba.as_chunks::<4>().0.iter();
                 assert!(pixels.clone().any(|pixel| pixel[0] > pixel[1]));
                 assert!(pixels.clone().any(|pixel| pixel[1] > pixel[0]));
                 assert!(pixels.clone().any(|pixel| pixel[2] > pixel[0]));

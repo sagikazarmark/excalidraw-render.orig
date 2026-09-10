@@ -33,23 +33,15 @@ jobs:
           -p xtask
       # `--no-deps` keeps the vendored forks out of the gate: they are
       # workspace members, so `--exclude` alone would still lint them as
-      # dependencies of the selected packages.
-      # `manual_is_multiple_of` is allowed across the linted crates because its
-      # one current occurrence is in crates/excalidraw-render/src/render/
-      # font_subset.rs, which is digest-pinned by the approved SVG font subset
-      # qualification (issue #99). Drop the allowance in the re-approval round
-      # that next moves that file.
-      # `chunks_exact_to_as_chunks` (Rust 1.98) is allowed for the same reason:
-      # every editable occurrence is `as_chunks` already, and the two left are
-      # in files the SVG font subset qualification pins: font_subset.rs and
-      # xtask/src/svg_font_subset_runner.rs (issue #99). Drop it in the round
-      # that moves those files.
+      # dependencies of the selected packages. No lint is allowed: the
+      # `manual_is_multiple_of` and `chunks_exact_to_as_chunks` occurrences
+      # that sat in the #99-pinned files were fixed in the font approval round
+      # that re-pinned them (#141).
       - name: Lint the renderer, CLI, and xtask
         run: >-
           cargo clippy --locked --no-deps --all-targets
           -p excalidraw-render -p excalidraw-render-cli -p xtask
-          -- -D warnings -A clippy::manual_is_multiple_of
-          -A clippy::chunks_exact_to_as_chunks
+          -- -D warnings
 
   registered-cases:
     name: registered conformance cases

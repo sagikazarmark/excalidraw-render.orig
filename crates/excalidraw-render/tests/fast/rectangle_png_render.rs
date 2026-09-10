@@ -65,16 +65,22 @@ fn transparent_rectangle_png_uses_canonical_straight_alpha() {
     let rgba = &decoded.rgba;
 
     assert_eq!((decoded.width, decoded.height), (200, 120));
-    assert!(rgba.chunks_exact(4).any(|pixel| pixel[3] == 0));
+    assert!(rgba.as_chunks::<4>().0.iter().any(|pixel| pixel[3] == 0));
     assert!(rgba
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .any(|pixel| (1..=254).contains(&pixel[3])));
     assert!(rgba
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .filter(|pixel| pixel[3] == 0)
         .all(|pixel| pixel[..3] == [0, 0, 0]));
     assert!(rgba
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .any(|pixel| (64..=192).contains(&pixel[3])
             && pixel[..3].iter().all(|channel| *channel >= 28)));
 }
@@ -96,8 +102,10 @@ fn png_vector_coverage_obeys_the_rectangle_element_work_limit() {
 
     assert!(decoded
         .rgba
-        .chunks_exact(4)
-        .all(|pixel| pixel == [255, 255, 255, 255]));
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .all(|pixel| *pixel == [255, 255, 255, 255]));
     let [diagnostic] = outcome.report().diagnostics() else {
         panic!("local coverage crossing retains exactly one diagnostic");
     };
@@ -126,8 +134,10 @@ fn png_vector_coverage_is_charged_and_recovered_per_rectangle() {
 
     assert!(decoded
         .rgba
-        .chunks_exact(4)
-        .any(|pixel| pixel != [255, 255, 255, 255]));
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .any(|pixel| *pixel != [255, 255, 255, 255]));
     let [diagnostic] = outcome.report().diagnostics() else {
         panic!("only the large rectangle exceeds its local work limit");
     };
