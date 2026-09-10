@@ -3134,6 +3134,1935 @@
         "png": [],
         "svg": []
       }
+    },
+    {
+      "id": "focused.font-families-virgil-lilita-comic.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/font-families-virgil-lilita-comic",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Shape and position ordinary scene text in the three bundled families the corpus never evidenced, Virgil (fontFamily 1), Lilita One (7) and Comic Shanns (8), beside an Excalifont control: each family carries a two-line wrapped element at fontSize 20 and at 36 under every textAlign value, with the family's metadata line height (1.25, 1.15, 1.25), so the family metadata metrics that place each baseline, the stored width that anchors the centred and right-aligned lines, and the Reserved Font Name aliases the direct SVG embeds the Virgil and Lilita One subsets under (ExcalidrawRender-1, ExcalidrawRender-7) are observed against official evidence.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "font.virgil",
+          "role": "primary"
+        },
+        {
+          "identity": "font.lilita-one",
+          "role": "primary"
+        },
+        {
+          "identity": "font.comic-shanns",
+          "role": "primary"
+        },
+        {
+          "identity": "font.reserved-name-alias",
+          "role": "primary"
+        },
+        {
+          "identity": "text.align",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:text",
+        "font:virgil",
+        "font:lilita-one",
+        "font:comic-shanns",
+        "font:excalifont",
+        "text:align",
+        "text:line-height",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "text": 19
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "text": 38
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+          "format": "png",
+          "max_changed_pixels": 2060,
+          "minimum_ssim_bits": "3fef4977608aa6c3",
+          "reason": "Sub-pixel glyph coverage. The 19 elements in Virgil, Lilita One, Comic Shanns and Excalifont are positioned by each family's metadata metrics and shaped with the bundled faces (evidenced on #152): the SVG document matches the official export under one rasterizer (0 changed pixels, SSIM 1.0), the scene extent and all 38 baselines agree to the last digit, and in the direct PNG every glyph's horizontal placement agrees; only glyph ink differs between the renderer's rasterizer and the browser's canvas. The canvas snaps each line's baseline to the nearest whole pixel while the renderer fills the outlines at the exact fractional baseline the SVG declares (#169): the vertical ink centroid of every line is displaced by round(baseline) - baseline, 0.38 px for Excalifont and Virgil at 20 px, 0.28 for Virgil at 36 px, 0.47 and -0.35 for Lilita One at 20 and 36 px, 0.5 for Comic Shanns, so a text row's edge moves by at most one pixel and no glyph moves horizontally. The same class is recorded on #104, #105, #108, #110 and #153 for the other text-bearing cases.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
+    },
+    {
+      "id": "focused.bidi-text.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/bidi-text",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/bidi-text",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Lay out bidirectional text as spec 8.3 requires, in Excalifont and in Helvetica (fontFamily 2, shaped by Liberation Sans): two centred right-to-left elements whose lines are one Hebrew and one Arabic word, and three left-to-right elements at textAlign left and right whose lines embed an Arabic run followed by European digits (which take the Arabic-number level and precede the run visually), a Hebrew run followed by an exclamation mark, and a Hebrew run holding a bracket pair whose parentheses resolve to the run's level and show their mirror glyphs; one line ends in the paragraph separator U+2029. No bundled face maps a Hebrew or Arabic scalar, so every right-to-left run is spec 8.3's deterministic basic-Latin ? from Liberation Sans, one font.missing-glyph per scalar per occurrence in logical order, and the separator is that replacement glyph too (#125); the official export draws the pinned container's system-font fallback for the same scalars (FreeSans and the system Liberation Sans for Hebrew, FreeSerif for Arabic) and FreeSans's blank for the separator. The right-to-left elements are centred and every element's lines begin in one direction because the harness rasterizer resolves the official export's text-anchor without regard to its direction and the official export anchors every right-to-left element with text-anchor end (#168), and because the reference detects the base direction once per element (#166); left- and right-aligned right-to-left elements and direction-mixed elements are evidenced once those are decided.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "text.bidi",
+          "role": "primary"
+        },
+        {
+          "identity": "text.bidi-mirroring",
+          "role": "primary"
+        },
+        {
+          "identity": "text.paragraph-separator",
+          "role": "primary"
+        },
+        {
+          "identity": "font.missing-glyph",
+          "role": "primary"
+        },
+        {
+          "identity": "font.liberation-sans-substitution",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:text",
+        "text:bidi",
+        "text:rtl",
+        "text:align",
+        "font:excalifont",
+        "font:helvetica",
+        "font:liberation-sans",
+        "font:missing-glyph",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "text": 5
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "text": 11
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1493,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1501,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1605,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1585,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1581,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1576,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1575,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.liberation-sans-substituted",
+            "details": {
+              "kind": "compatibility",
+              "recipe_id": null,
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "generated fallback label used bundled Liberation Sans",
+            "severity": "info"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1493,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1501,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1605,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1585,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1581,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1576,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1575,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "png",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1605,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "png",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1585,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "png",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1581,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "png",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1576,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "png",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1575,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "png",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "png",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1511,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "png",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "png",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 8233,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "png",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1493,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1501,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1506,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1493,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1501,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1511,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.liberation-sans-substituted",
+            "details": {
+              "kind": "compatibility",
+              "recipe_id": null,
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/4",
+            "message": "generated fallback label used bundled Liberation Sans",
+            "severity": "info"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1605,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1585,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1581,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1576,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1575,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1511,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "png",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          }
+        ],
+        "svg": [
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1493,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1501,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1605,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1585,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1581,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1576,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1575,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/0",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.liberation-sans-substituted",
+            "details": {
+              "kind": "compatibility",
+              "recipe_id": null,
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "generated fallback label used bundled Liberation Sans",
+            "severity": "info"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1493,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1501,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1605,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1585,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1581,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1576,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1575,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-rtl-center",
+            "format": "svg",
+            "json_pointer": "/elements/1",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1605,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "svg",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1585,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "svg",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1581,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "svg",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1576,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "svg",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1575,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "svg",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "svg",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1511,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "svg",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "svg",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 8233,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-left",
+            "format": "svg",
+            "json_pointer": "/elements/2",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1493,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1501,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1506,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1493,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1501,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1511,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "excalifont-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/3",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.liberation-sans-substituted",
+            "details": {
+              "kind": "compatibility",
+              "recipe_id": null,
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/4",
+            "message": "generated fallback label used bundled Liberation Sans",
+            "severity": "info"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1605,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1585,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1581,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1576,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1575,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1513,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1511,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          },
+          {
+            "code": "font.missing-glyph",
+            "details": {
+              "codepoint": 1500,
+              "kind": "missing_glyph",
+              "recovery": "substituted"
+            },
+            "effects": [
+              "visual"
+            ],
+            "element_id": "helvetica-mixed-right",
+            "format": "svg",
+            "json_pointer": "/elements/4",
+            "message": "official text used the deterministic basic-Latin replacement glyph",
+            "severity": "warning"
+          }
+        ]
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+          "format": "png",
+          "max_changed_pixels": 2513,
+          "minimum_ssim_bits": "3fec5be16a814378",
+          "reason": "Spec 8.3's replacement glyph. No bundled face maps a Hebrew or Arabic scalar, so revision 1 shapes each as the deterministic basic-Latin ? from Liberation Sans and reports it as font.missing-glyph, and shapes the trailing paragraph separator U+2029 the same way (decided on #124 and #125). The official export has no bundled glyph for them either and falls through to the pinned container's system fonts: FreeSans for Hebrew in Excalifont text and the system Liberation Sans for Hebrew in Helvetica text, FreeSerif for Arabic in both, and FreeSans's blank advance for the separator. The divergence is each right-to-left cell against its ? glyphs and, on the same line, the Latin word or punctuation the differing advances displace toward the line's unanchored side; the anchored side agrees pixel for pixel (the leading words of the left-aligned lines, the trailing words of the right-aligned lines, the centres of the centred lines), so the visual run order, the digits placed before the Arabic run, the exclamation mark after the Hebrew run and the mirrored bracket pair, matches the official export. The Latin words differ only by the sub-pixel glyph-coverage class recorded on #104, #105, #108, #110, #153 and #169.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
+    },
+    {
+      "id": "focused.text-alignment-vertical.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/text-alignment-vertical",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/text-alignment-vertical",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Place text by its stored fields as the static export does: three standalone Excalifont elements with autoResize false and a width wider than either stored line carry textAlign left, center and right with verticalAlign top, middle and bottom, the middle and bottom ones in a box taller than their two lines, so the export lays out the stored wrapped text (not a re-wrap of originalText to the width), anchors each line on the stored width, and ignores verticalAlign for standalone text; three roughness-0 containers, a rectangle, an ellipse and a diamond, each carry a bound label whose stored coordinates are where the editor's verticalAlign top, middle and bottom and textAlign left, right and center placed it, so a shape container's label paints at its stored coordinates rather than being re-derived from the container.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "text.align",
+          "role": "primary"
+        },
+        {
+          "identity": "text.vertical-align",
+          "role": "primary"
+        },
+        {
+          "identity": "text.stored-wrapped-text",
+          "role": "primary"
+        },
+        {
+          "identity": "bound-text.stored-placement",
+          "role": "primary"
+        },
+        {
+          "identity": "bound-text.rectangle",
+          "role": "primary"
+        },
+        {
+          "identity": "bound-text.ellipse",
+          "role": "primary"
+        },
+        {
+          "identity": "bound-text.diamond",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:text",
+        "element:rectangle",
+        "element:ellipse",
+        "element:diamond",
+        "text:align",
+        "text:vertical-align",
+        "text:auto-resize",
+        "bound-text:container",
+        "bound-text:stored-placement",
+        "font:excalifont",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "rectangle": 1,
+          "ellipse": 1,
+          "diamond": 1,
+          "text": 6
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 3,
+        "text": 12
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+          "format": "png",
+          "max_changed_pixels": 996,
+          "minimum_ssim_bits": "3fefb3e1d9e72582",
+          "reason": "Sub-pixel glyph coverage. Standalone text and bound labels paint at their stored coordinates with the stored wrapped text, the stored width anchoring each line and verticalAlign ignored (evidenced on #152): all three container paths match the official export byte for byte, the SVG document matches under one rasterizer (0 changed pixels, SSIM 1.0), the scene extent and all twelve baselines agree to the last digit, and in the direct PNG every glyph's horizontal placement agrees; only glyph ink differs between the renderer's rasterizer and the browser's canvas, which snaps each line's baseline to the nearest whole pixel where the renderer fills the outlines at the exact fractional baseline (#169; 0.38 px on every Excalifont line here), together with the roughness-0 stroke edges of the rectangle, ellipse and diamond. The same class is recorded on #104, #105, #108, #110 and #153 for the other text-bearing cases.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
     }
   ]
 }

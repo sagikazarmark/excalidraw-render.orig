@@ -121,6 +121,23 @@ const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
         changed_pixels: 577,
         ssim_bits: 0x3fea_ff42_54bc_d188,
     },
+    // Spec 8.3's replacement glyph on bidirectional text (#152, the #124
+    // class): no bundled face maps a Hebrew or Arabic scalar, so the official
+    // document sets them in the embedded Excalifont subset and in Helvetica
+    // (resolved here to the Liberation Sans substitute), which draw blank
+    // advances and `.notdef` boxes, while the renderer's sets `?` from
+    // Liberation Sans; the differing advances displace the word on each
+    // line's unanchored side, and the trailing U+2029 is a `?` against
+    // nothing. The run order agrees: the case keeps its right-to-left
+    // elements centred and single-run so this rasterizer's direction-blind
+    // anchoring (#168) stays out of the measurement.
+    PinnedDivergence {
+        case: "focused.bidi-text.v1",
+        variant: "default",
+        issue: "#152",
+        changed_pixels: 2331,
+        ssim_bits: 0x3feb_ec2a_82aa_04f8,
+    },
 ];
 
 /// Reference authority divergences the rasterized-document dimension can see
