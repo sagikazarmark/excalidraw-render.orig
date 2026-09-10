@@ -34,9 +34,15 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
         // `ExcalidrawRender-9`; then with #151 item 1, when `<metadata>`
         // began carrying the Liberation Sans attribution and the OFL body as
         // two notices instead of the full OFL notice under the family's
-        // license identity. The report is unchanged.
+        // license identity. Then with #172: the placeholder is rotated 0.2
+        // rad, and its box corners now rotate in the reference's
+        // `pointRotateRads` order, which lands the scene's bottom edge and
+        // the layout origin one ulp away (`viewBox` height
+        // 118.53786082948673, `translate(... 29.268930414743366)`); the PNG
+        // truncates to the same rows and is unchanged. The report is
+        // unchanged.
         OutputFormat::Svg,
-        "fcc462ec3914eb77f187ffabad91c1572441eff4a8e0e5dfc48ee275c6ca7b30",
+        "6337df379b994af0ac1ed76fc5e3ba8d690b1723a2e4203cda2b418e9ef0f467",
         "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
     ),
     (
@@ -49,9 +55,10 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
         // Flate, the Liberation Sans program carries its subset tag and the
         // trailer its content-derived /ID; then with #151 item 1, when the
         // XMP manifest began carrying the attribution and license body
-        // notices. The report is unchanged.
+        // notices; then with #172, the same one-ulp page height and origin
+        // as the SVG above. The report is unchanged.
         OutputFormat::Pdf,
-        "df0d55da24a112e0de71fbf4d1e524c6a72df0ef6487fd0111178da47d43f3ff",
+        "098ce25631cf8e1f638e0fbe20e7ebe866767b92c391f87968e323a2bc0f8103",
         "737130c9efaa38327d3fe31ecdeddc35ad72a01ea8dc7c11e3a57942c4867247",
     ),
 ];
