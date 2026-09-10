@@ -38,6 +38,15 @@ The public profile identity is the SHA-256 in
 wrapper source records, generated browser bundle, official rendering assets,
 container host fonts, browser settings, and evidence invocation rules.
 
+The container's host fonts are an environment-dependent input with a visible
+effect: the pinned release has no bundled Helvetica, so `fontFamily` 2 text,
+frame names and embeddable labels are drawn with the container's system
+Liberation Sans, and Chromium takes a system font's render parameters from
+fontconfig — `--font-render-hinting=none` governs web fonts only — so those
+glyphs carry FreeType's light autohinting (x-height snapped to the pixel grid)
+while every bundled `@font-face` family is unhinted. Spec 8.5 and #174 record
+the consequence for the direct-PNG evidence of Helvetica-family text.
+
 The smoke fixture is profile validation, not approved conformance evidence.
 Conformance cases and their review protocol belong to the conformance corpus.
 
