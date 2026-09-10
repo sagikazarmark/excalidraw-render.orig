@@ -345,6 +345,13 @@ impl SourceDiagnosticPosition {
     /// low half keeps it last within its own member rather than after every
     /// later member of the element.
     fn as_u64(self) -> u64 {
+        // A missing source member has no packed position. Widen its sentinel
+        // explicitly: on wasm32, shifting usize::MAX would otherwise produce
+        // 0xffffffff00000000 instead of the native saturated u64::MAX, putting
+        // missing-timestamp repairs before render-phase missing-glyph reports.
+        if self.member == usize::MAX {
+            return u64::MAX;
+        }
         let nested = u64::try_from(self.nested)
             .unwrap_or(u64::MAX)
             .min(u64::from(u32::MAX));

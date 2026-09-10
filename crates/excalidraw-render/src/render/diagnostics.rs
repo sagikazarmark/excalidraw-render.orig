@@ -552,6 +552,35 @@ mod tests {
         }
     }
 
+    /// Missing-member normalization positions must meet render-phase positions
+    /// in the same fixed-width order on native and wasm32 (ADR-0002).
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    #[cfg_attr(not(target_arch = "wasm32"), test)]
+    fn missing_timestamp_sorts_after_render_phase_missing_glyph() {
+        let scene = crate::SceneDocument::parse(
+            r#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","fontFamily":3,"text":"中"}],"appState":{},"files":{}}"#.as_bytes(),
+        )
+        .expect("valid scene");
+        let request = crate::RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("valid request");
+        let outcome = crate::Renderer::new()
+            .render(&scene, &request)
+            .expect("rendered scene");
+        let diagnostics = outcome.report().diagnostics();
+        let actual = diagnostics
+            .iter()
+            .map(|diagnostic| (diagnostic.code().as_str(), diagnostic.json_pointer()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            actual,
+            [
+                ("font.missing-glyph", "/elements/0"),
+                ("normalization.missing-timestamp", "/elements/0/updated"),
+            ]
+        );
+    }
+
     /// Spec §11.3: the final report is ordered by the source owner, not by
     /// the phase that reported. A render-phase coordinate crossing on the
     /// first element is retained after a normalization repair on the second

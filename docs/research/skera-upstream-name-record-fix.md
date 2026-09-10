@@ -101,6 +101,39 @@ browser. It predates this upgrade. Logs are under
 `target/svg-font-subset-target-evidence/skera-0.7.0-{native,wasm}.log`; the
 temporary baseline worktree was removed after comparison.
 
+### Follow-up: cross-target diagnostic ordering
+
+The scene corpus failure also reproduces with checksum-verified Chromium and
+ChromeDriver **149.0.7827.55**, Rust 1.97.1 and wasm-bindgen-test-runner 0.2.126.
+It is a renderer defect, independent of Chromium-151 drift and the skera upgrade.
+`SourceDiagnosticPosition::as_u64` packed the `usize::MAX` missing-member
+sentinel as `0xffffffff00000000` on wasm32, but saturated it to `u64::MAX`
+natively. Missing-glyph diagnostics use `u64::MAX`, so the missing timestamp
+sorted before them only on WASM. Explicitly widening the missing-member sentinel
+to `u64::MAX` restores the native ordering without changing the corpus pins.
+
+The reduced public-facade regression
+`missing_timestamp_sorts_after_render_phase_missing_glyph` uses one Cascadia
+character and a missing timestamp; it failed on pinned 149 before the fix and
+passes afterward. The original scene corpus and fixed-seed smoke pass natively
+and on Chromium 149 and 151. Local WASM runs used
+`CARGO_PROFILE_RELEASE_LTO=false CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16` after
+the default fat-LTO build exceeded compilation timeouts; native checks used the
+unmodified release profile.
+
+With the pinned tools installed, the original reproduction command is:
+
+```sh
+PATH="$BROWSER/chrome-linux64:$PATH" \
+CHROMEDRIVER="$BROWSER/chromedriver-linux64/chromedriver" \
+WASM_BINDGEN_TEST_WEBDRIVER_JSON="$PWD/tests/package-consumer/webdriver.json" \
+CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner \
+CARGO_PROFILE_RELEASE_LTO=false CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16 \
+cargo test --locked --release -p excalidraw-render --lib \
+  --target wasm32-unknown-unknown wasm_tests::scene_fuzz_regression_corpus_in_wasm \
+  -- --nocapture
+```
+
 The only changed viewer qualification subject field is the `font_subset.rs`
 source digest, now `9682171dc186d421ec271c64e607c417b1b51470acd619fd5e4c4183e4a280f9`.
 The maintainer approved renewal in the session; it is recorded on
