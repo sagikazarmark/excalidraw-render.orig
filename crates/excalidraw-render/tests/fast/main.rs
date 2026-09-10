@@ -33,6 +33,7 @@ mod image_edge_coverage;
 mod image_resampling;
 mod image_viewport_rounding;
 mod license_bundle;
+mod linear_rotation_render;
 mod missing_glyph_render;
 mod nested_svg_asset_render;
 mod normalization;

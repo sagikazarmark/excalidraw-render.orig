@@ -7679,11 +7679,11 @@
         },
         {
           "identity": "arrow.elbowed",
-          "role": "secondary"
+          "role": "primary"
         },
         {
           "identity": "roughness.cartoonist",
-          "role": "secondary"
+          "role": "primary"
         },
         {
           "identity": "reference.direct-png",
