@@ -10,7 +10,10 @@ use crate::scene_surface::SurfaceFallback;
 use super::super::frame_target::{
     relationship_frame_target, EffectiveFrameRendering, FrameViewport,
 };
-use super::super::geometry::{include_transformed_bounds, source_layout_bounds, GeneratedGeometry};
+use super::super::geometry::{
+    include_diamond_bounds, include_ellipse_bounds, include_transformed_bounds, point_rotate_rads,
+    reference_curve_bounds, source_layout_bounds, GeneratedGeometry, Point,
+};
 use super::super::text::{FrameName, FRAME_NAME_BOX_HEIGHT, FRAME_NAME_OFFSET_Y};
 
 /// The scene's layout bounds as `(min_x, min_y, max_x, max_y)`: the frame
@@ -87,54 +90,14 @@ pub(super) fn scene_bounds(
         if viewport.is_some() {
             continue;
         }
-        let (local_min_x, local_min_y, local_max_x, local_max_y) = geometry.as_ref().map_or_else(
-            || source_layout_bounds(source),
-            |geometry| geometry.bounds(source),
+        include_element_bounds(
+            source,
+            geometry.as_ref(),
+            &mut min_x,
+            &mut min_y,
+            &mut max_x,
+            &mut max_y,
         );
-        let (center_x, center_y) = if is_frame {
-            (
-                source.x + source.width / 2.0,
-                source.y + source.height / 2.0,
-            )
-        } else {
-            (
-                source.x + (local_min_x + local_max_x) / 2.0,
-                source.y + (local_min_y + local_max_y) / 2.0,
-            )
-        };
-        let (sin, cos) = sin_cos(source.angle);
-        if let NormalizedElementKind::Freedraw(freedraw) = &source.kind {
-            if !freedraw.points.is_empty() {
-                for point in &freedraw.points {
-                    let point_x = source.x + point[0];
-                    let point_y = source.y + point[1];
-                    let delta_x = point_x - center_x;
-                    let delta_y = point_y - center_y;
-                    let rotated_x = center_x + delta_x * cos - delta_y * sin;
-                    let rotated_y = center_y + delta_x * sin + delta_y * cos;
-                    min_x = min_x.min(rotated_x);
-                    min_y = min_y.min(rotated_y);
-                    max_x = max_x.max(rotated_x);
-                    max_y = max_y.max(rotated_y);
-                }
-                continue;
-            }
-        }
-        for (corner_x, corner_y) in [
-            (source.x + local_min_x, source.y + local_min_y),
-            (source.x + local_max_x, source.y + local_min_y),
-            (source.x + local_max_x, source.y + local_max_y),
-            (source.x + local_min_x, source.y + local_max_y),
-        ] {
-            let delta_x = corner_x - center_x;
-            let delta_y = corner_y - center_y;
-            let rotated_x = center_x + delta_x * cos - delta_y * sin;
-            let rotated_y = center_y + delta_x * sin + delta_y * cos;
-            min_x = min_x.min(rotated_x);
-            min_y = min_y.min(rotated_y);
-            max_x = max_x.max(rotated_x);
-            max_y = max_y.max(rotated_y);
-        }
     }
     for fallback in fallbacks {
         if viewport.is_some() {
@@ -166,4 +129,176 @@ pub(super) fn scene_bounds(
         );
     }
     Some((min_x, min_y, max_x, max_y))
+}
+
+/// Extends the bounds by one outline as the reference's `getElementBounds`
+/// measures its kind (#172): a freedraw's rotated points, a linear element's
+/// rotated curve (below), a diamond's rotated vertices, an ellipse's exact
+/// extent, and the rotated box corners of everything else.
+fn include_element_bounds(
+    source: &NormalizedElement,
+    geometry: Option<&GeneratedGeometry>,
+    min_x: &mut f64,
+    min_y: &mut f64,
+    max_x: &mut f64,
+    max_y: &mut f64,
+) {
+    match &source.kind {
+        NormalizedElementKind::Freedraw(freedraw) if !freedraw.points.is_empty() => {
+            // `getFreeDrawElementAbsoluteCoords` centres the element on its
+            // points' box, and `calculateBounds` rotates each point in local
+            // coordinates about `(cx - x, cy - y)` before adding `x` and `y`.
+            let (local_min_x, local_min_y, local_max_x, local_max_y) = source_layout_bounds(source);
+            let (x1, y1, x2, y2) = (
+                local_min_x + source.x,
+                local_min_y + source.y,
+                local_max_x + source.x,
+                local_max_y + source.y,
+            );
+            let center = Point {
+                x: (x1 + x2) / 2.0 - source.x,
+                y: (y1 + y2) / 2.0 - source.y,
+            };
+            let sin_cos = sin_cos(source.angle);
+            let (mut local_min_x, mut local_min_y, mut local_max_x, mut local_max_y) = (
+                f64::INFINITY,
+                f64::INFINITY,
+                f64::NEG_INFINITY,
+                f64::NEG_INFINITY,
+            );
+            for point in &freedraw.points {
+                let rotated = point_rotate_rads(
+                    Point {
+                        x: point[0],
+                        y: point[1],
+                    },
+                    center,
+                    sin_cos,
+                );
+                local_min_x = local_min_x.min(rotated.x);
+                local_min_y = local_min_y.min(rotated.y);
+                local_max_x = local_max_x.max(rotated.x);
+                local_max_y = local_max_y.max(rotated.y);
+            }
+            *min_x = min_x.min(local_min_x + source.x);
+            *min_y = min_y.min(local_min_y + source.y);
+            *max_x = max_x.max(local_max_x + source.x);
+            *max_y = max_y.max(local_max_y + source.y);
+        }
+        NormalizedElementKind::Linear(linear) => {
+            include_linear_bounds(source, linear, geometry, min_x, min_y, max_x, max_y);
+        }
+        NormalizedElementKind::Diamond => include_diamond_bounds(
+            source.x,
+            source.y,
+            source.width,
+            source.height,
+            source.angle,
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        ),
+        NormalizedElementKind::Ellipse => include_ellipse_bounds(
+            source.x,
+            source.y,
+            source.width,
+            source.height,
+            source.angle,
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        ),
+        _ => include_transformed_bounds(
+            source.x,
+            source.y,
+            source.width,
+            source.height,
+            source.angle,
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        ),
+    }
+}
+
+/// `getLinearElementRotatedBounds` as the export reaches it: the centre is
+/// that of the element's points' box (`getElementAbsoluteCoords` reads the
+/// points when the shape cache is cold, which it is while `getCanvasSize`
+/// measures a freshly restored scene), and the extent is the analytic extent
+/// of the drawn outline's cubics with every control point placed on the page
+/// and rotated about that centre (#172, #173). An elbow arrow keeps the
+/// renderer's existing rule, its declared route's points rotated about that
+/// centre; the reference measures a Rough.js `linearPath` over the points
+/// there, which agrees at roughness 0.
+fn include_linear_bounds(
+    source: &NormalizedElement,
+    linear: &crate::normalization::NormalizedLinear,
+    geometry: Option<&GeneratedGeometry>,
+    min_x: &mut f64,
+    min_y: &mut f64,
+    max_x: &mut f64,
+    max_y: &mut f64,
+) {
+    let (mut points_min_x, mut points_min_y, mut points_max_x, mut points_max_y) = (
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+    );
+    for point in &linear.points {
+        points_min_x = points_min_x.min(point[0]);
+        points_min_y = points_min_y.min(point[1]);
+        points_max_x = points_max_x.max(point[0]);
+        points_max_y = points_max_y.max(point[1]);
+    }
+    let (x1, y1, x2, y2) = (
+        points_min_x + source.x,
+        points_min_y + source.y,
+        points_max_x + source.x,
+        points_max_y + source.y,
+    );
+    let center = Point {
+        x: (x1 + x2) / 2.0,
+        y: (y1 + y2) / 2.0,
+    };
+    let sin_cos = sin_cos(source.angle);
+    let transform = |point: Point| {
+        point_rotate_rads(
+            Point {
+                x: source.x + point.x,
+                y: source.y + point.y,
+            },
+            center,
+            sin_cos,
+        )
+    };
+    let outline = match geometry {
+        Some(GeneratedGeometry::Rough(drawing)) if !linear.elbowed => {
+            reference_curve_bounds(&drawing.outline.operations, transform)
+        }
+        _ => None,
+    };
+    match outline {
+        Some((curve_min_x, curve_min_y, curve_max_x, curve_max_y)) => {
+            *min_x = min_x.min(curve_min_x);
+            *min_y = min_y.min(curve_min_y);
+            *max_x = max_x.max(curve_max_x);
+            *max_y = max_y.max(curve_max_y);
+        }
+        None => {
+            for point in &linear.points {
+                let rotated = transform(Point {
+                    x: point[0],
+                    y: point[1],
+                });
+                *min_x = min_x.min(rotated.x);
+                *min_y = min_y.min(rotated.y);
+                *max_x = max_x.max(rotated.x);
+                *max_y = max_y.max(rotated.y);
+            }
+        }
+    }
 }

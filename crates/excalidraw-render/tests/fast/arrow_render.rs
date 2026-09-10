@@ -45,14 +45,20 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
         // `circle_outline` start, and the start head's 0.5 clamp was carried
         // to it where the reference clamps each head on its own kind, so the
         // triangle is now drawn at roughness 1 (paths 11 and 12 of the SVG;
-        // every other path is byte-identical).
+        // every other path is byte-identical). The PNG and PDF moved once more
+        // with #172: the `line` rotated 15 degrees at roughness 1 set the
+        // scene's bottom edge with its rotated box corners, where the
+        // reference rotates the curve's control points about the centre of
+        // the points' box and takes their extrema, 20.7 px less
+        // (`viewBox` height 259.488887394336, the official export's); the
+        // paths are unchanged.
         let whole_artifact_digest = match format {
             OutputFormat::Svg => None,
             OutputFormat::Png => {
-                Some("c916f8dfed9d695b52ef3f24a98f5e8f24c3ce9357e403ea810bf68befdefb86")
+                Some("94951f079f0d61fb6780f3c98324abb9a3cdf8e1d7a2caa1e1e546eff61b5315")
             }
             OutputFormat::Pdf => {
-                Some("865dacf1422a4c32ebac641300bf1409761ca30643d9d5f5b4fc6d237e082cd4")
+                Some("b9e7577189ca4f08827b751958b9a2ad6bf701ed536458550c2f0d6a595eacd0")
             }
             _ => unreachable!("the test enumerates every revision-1 format"),
         };

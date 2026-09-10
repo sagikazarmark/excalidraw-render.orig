@@ -109,15 +109,6 @@ const KNOWN_GEOMETRY_DEFECTS: &[PinnedGeometryDefect] = &[
         issue: "#170",
         geometry_sha256: "93496b8f25d9afa32190c0726b8376c67c46ca7b0705d9f48c1dd17d5e176ffe",
     },
-    // #172: the extent alone differs, `viewBox` 436.46x150.64 against the
-    // official 409.21x146.34, from the rotated ellipse's, diamond's and
-    // line's box corners; every path matches.
-    PinnedGeometryDefect {
-        case: "focused.rotated-shape-bounds.v1",
-        variant: "default",
-        issue: "#172",
-        geometry_sha256: "b4c136d30211d6b0bd50d5a0260b4563cb2f49ddab8d006e7186c817b453447a",
-    },
 ];
 
 /// Compatibility exceptions whose approved tolerance exception the case

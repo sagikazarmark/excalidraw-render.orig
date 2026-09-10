@@ -65,8 +65,13 @@ fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
         "<svg version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" ",
         "viewBox=\"0 0 277.27937713600704 176.26819239215\""
     )));
+    // The translation's last digit moved with #172: the layout origin is the
+    // rotated box's leftmost corner, now rotated in the reference's
+    // `pointRotateRads` order (`(x - cx) cos - (y - cy) sin + cx`), one ulp
+    // from the renderer's former `cx + dx cos - dy sin`; the extent is
+    // unchanged.
     assert!(svg.contains(concat!(
-        "<g transform=\"translate(18.639688568003514 38.13409619607499)",
+        "<g transform=\"translate(18.63968856800352 38.13409619607499)",
         " rotate(14.32394487827058 120 50)\" opacity=\"0.4\">"
     )));
     assert!(svg.contains(concat!(

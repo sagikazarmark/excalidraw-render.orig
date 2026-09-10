@@ -553,6 +553,33 @@ Scene-export bounds, paint order, clipping, masking, frames, bound text, links,
 dark mode, application state, and embedded files participate according to the
 scene-surface manifest.
 
+The scene-export bounds are the union of the reference's `getElementBounds`
+over every element frame clipping leaves visible, each kind measured as the
+reference measures it, in its arithmetic, since the last ulp of the extent is
+what the SVG `viewBox` prints and what decides a raster dimension near a half
+pixel (#172, #173). A rectangle, embeddable, iframe, image, text element or
+frame contributes the four corners of its box rotated about the box's centre
+in `pointRotateRads`' order, `(x - cx) cos - (y - cy) sin + cx`. An ellipse
+contributes its exact rotated extent, `hypot(w cos, h sin)` by
+`hypot(h cos, w sin)` about its centre for its half extents, with `Math.hypot`
+as V8 evaluates it (the arguments normalized to the larger and the root scaled
+back). A diamond contributes its four vertices at the exact midpoints of the
+box's sides, each rotated about the centre; the drawn vertices at
+`floor(extent / 2) + 1` do not enter the bounds. A freedraw element contributes
+its points rotated, in local coordinates, about the centre of their box. A
+line or arrow contributes the analytic extent of its drawn Rough.js outline's
+cubics after every control point is placed on the page and rotated about the
+centre of the element's points' box — the centre `getElementAbsoluteCoords`
+reads while the shape cache is cold, as it is while `getCanvasSize` measures a
+freshly restored scene — where each cubic's extent is `getCubicBezierCurveBound`:
+its end points and, for each axis, the values at the roots of the derivative
+in `[0, 1]` from `solveQuadratic`'s spelling of the coefficients, with
+`Math.pow(x, 3)` rounded once (the platform `pow` the pinned V8 defers to) and
+`Math.pow(x, 2)` as `x · x`. Arrowheads and bound text take no part in a
+linear element's own extent. An elbow arrow contributes its declared route's
+points rotated about that centre, which is the reference's extent at
+roughness 0.
+
 The scene document's own export options — `appState.exportBackground`,
 `exportWithDarkMode`, `exportScale`, and `exportEmbedScene` — are validated and
 diagnosed under that manifest but never consumed: background, color mode,

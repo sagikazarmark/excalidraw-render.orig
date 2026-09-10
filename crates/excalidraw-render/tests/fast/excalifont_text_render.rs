@@ -71,10 +71,15 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 // #151 item 1, when `<metadata>` began carrying the Excalifont
                 // attribution and the OFL body as two notices instead of one
                 // OFL text under the family's license identity. Nothing
-                // outside `<metadata>` moved the second time.
+                // outside `<metadata>` moved the second time. Moved a third
+                // time with #172: the text element is rotated 0.125 rad and
+                // its box corners now rotate in the reference's
+                // `pointRotateRads` order, which lands the layout origin one
+                // ulp away (`translate(14.137185427188001 ...)`); the extent,
+                // the PNG and the PDF are unchanged.
                 assert_eq!(
                     artifact_sha256(&first),
-                    "de8315fa5bc5d5a6c2807c8b0bcffb879d9ff972bfb1d6437d7410096f9bbd95"
+                    "d1c856ed53ccee6c4cf9ef50c1913eb908a9468521b05b5dff557d70dea4c6a0"
                 );
             }
             OutputFormat::Png => {

@@ -58,18 +58,7 @@ const KNOWN_DEFECTS: &[PinnedDivergence] = &[
 /// Diagnosed scene-extent defects whose fix is pending a maintainer decision:
 /// variants whose raster is not the official evidence's size, held at their
 /// rendered dimensions. See `PinnedExtentDefect`.
-const KNOWN_EXTENT_DEFECTS: &[PinnedExtentDefect] = &[
-    // #172: the scene bounds of a rotated ellipse, diamond and line rotate
-    // the element box's corners where the reference takes the ellipse's exact
-    // extent, the diamond's vertices and the rotated curve points, so the
-    // raster is 27 px wider and 4 px taller than the official 409x146.
-    PinnedExtentDefect {
-        case: "focused.rotated-shape-bounds.v1",
-        variant: "default",
-        issue: "#172",
-        rendered: (436, 150),
-    },
-];
+const KNOWN_EXTENT_DEFECTS: &[PinnedExtentDefect] = &[];
 
 #[test]
 fn every_registered_scene_case_matches_its_official_direct_png() {

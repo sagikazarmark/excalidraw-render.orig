@@ -37,13 +37,18 @@ fn admitted_outline_shape_families_render_directly_in_every_format() {
         // moved with the rounded diamond's corner radii (#160), which now come
         // from the vertex offsets `floor(extent / 2) + 1` as the reference's
         // do: the 80x50 rounded diamond's radii are 10.25 / 6.5, not 10 / 6.25.
+        // The PDF moved again with #173: the bottom edge is a line's cubic
+        // extremum, which the reference's solver and once-rounded
+        // `Math.pow(x, 3)` place at `141.14833106583293` where the renderer's
+        // own solver had `141.1483310658329`; the PNG truncates to the same
+        // 141 rows and did not move.
         let expected_digest = match format {
             OutputFormat::Svg => None,
             OutputFormat::Png => {
                 Some("267d2f7b19997dbc9df1e0b5643a3bfeccfd317b78914428db09ab5a9064f170")
             }
             OutputFormat::Pdf => {
-                Some("e05b4e14cfc0cb2b7f2290632a247d52511188b0d367e95e0d982dda04bc72c7")
+                Some("052c33fd7106ce06f53fcceca9d91239abb53286a1cf70da50a78ed3287b1ebb")
             }
             _ => unreachable!("the test enumerates every revision-1 output format"),
         };

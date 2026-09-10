@@ -7,7 +7,9 @@
 
 use crate::color::CanonicalColor;
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
-use crate::portable_math::{atan2, cos, cube, hypot, sin, sin_cos, square};
+use crate::portable_math::{
+    atan2, cos, cube, cube_rounded_once, ecmascript_hypot, hypot, sin, sin_cos, square,
+};
 use crate::ColorMode;
 
 use super::resolve::ResolveSceneError;
@@ -302,6 +304,20 @@ pub(super) fn resolved_frame_rect(width: f64, height: f64) -> Result<Path, Resol
     Ok(Path { operations })
 }
 
+/// `pointRotateRads`: `point` rotated by the angle whose `(sin, cos)` is given
+/// about `center`, in the reference's own association —
+/// `(x - cx) * cos - (y - cy) * sin + cx` — since the last ulp of a scene
+/// extent is what the SVG `viewBox` prints (#172).
+pub(super) fn point_rotate_rads(point: Point, center: Point, (sin, cos): (f64, f64)) -> Point {
+    Point {
+        x: (point.x - center.x) * cos - (point.y - center.y) * sin + center.x,
+        y: (point.x - center.x) * sin + (point.y - center.y) * cos + center.y,
+    }
+}
+
+/// The scene bounds `getElementBounds` gives a rectangle, embeddable, iframe,
+/// image, text or frame: the four corners of `(x, y)`-`(x + width, y + height)`
+/// each rotated about `(x + width / 2, y + height / 2)`.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn include_transformed_bounds(
     x: f64,
@@ -314,24 +330,216 @@ pub(super) fn include_transformed_bounds(
     max_x: &mut f64,
     max_y: &mut f64,
 ) {
+    let center = Point {
+        x: x + width / 2.0,
+        y: y + height / 2.0,
+    };
+    let sin_cos = sin_cos(angle);
+    let (x1, y1, x2, y2) = (x, y, x + width, y + height);
+    for corner in [
+        Point { x: x1, y: y1 },
+        Point { x: x1, y: y2 },
+        Point { x: x2, y: y2 },
+        Point { x: x2, y: y1 },
+    ] {
+        include_point(
+            point_rotate_rads(corner, center, sin_cos),
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        );
+    }
+}
+
+fn include_point(point: Point, min_x: &mut f64, min_y: &mut f64, max_x: &mut f64, max_y: &mut f64) {
+    *min_x = min_x.min(point.x);
+    *min_y = min_y.min(point.y);
+    *max_x = max_x.max(point.x);
+    *max_y = max_y.max(point.y);
+}
+
+/// The scene bounds `getElementBounds` gives an ellipse: not its rotated box
+/// but its exact extent, `hypot(w cos, h sin)` by `hypot(h cos, w sin)` about
+/// the centre for the half extents `w` and `h`, with `Math.hypot` as V8
+/// evaluates it (#172).
+#[allow(clippy::too_many_arguments)]
+pub(super) fn include_ellipse_bounds(
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    angle: f64,
+    min_x: &mut f64,
+    min_y: &mut f64,
+    max_x: &mut f64,
+    max_y: &mut f64,
+) {
+    // `getElementAbsoluteCoords`: `x2 - x1` is `(x + width) - x`, not `width`.
+    let (x1, y1, x2, y2) = (x, y, x + width, y + height);
     let center_x = x + width / 2.0;
     let center_y = y + height / 2.0;
+    let w = (x2 - x1) / 2.0;
+    let h = (y2 - y1) / 2.0;
     let (sin, cos) = sin_cos(angle);
-    for (corner_x, corner_y) in [
-        (x, y),
-        (x + width, y),
-        (x + width, y + height),
-        (x, y + height),
+    let ww = ecmascript_hypot(w * cos, h * sin);
+    let hh = ecmascript_hypot(h * cos, w * sin);
+    include_point(
+        Point {
+            x: center_x - ww,
+            y: center_y - hh,
+        },
+        min_x,
+        min_y,
+        max_x,
+        max_y,
+    );
+    include_point(
+        Point {
+            x: center_x + ww,
+            y: center_y + hh,
+        },
+        min_x,
+        min_y,
+        max_x,
+        max_y,
+    );
+}
+
+/// The scene bounds `getElementBounds` gives a diamond: its four vertices at
+/// the exact midpoints of the box's sides, `(cx, y1)`, `(cx, y2)`, `(x1, cy)`
+/// and `(x2, cy)`, each rotated about the centre (#172). The drawn vertices
+/// sit at `floor(extent / 2) + 1`; the bounds do not.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn include_diamond_bounds(
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    angle: f64,
+    min_x: &mut f64,
+    min_y: &mut f64,
+    max_x: &mut f64,
+    max_y: &mut f64,
+) {
+    let (x1, y1, x2, y2) = (x, y, x + width, y + height);
+    let center = Point {
+        x: x + width / 2.0,
+        y: y + height / 2.0,
+    };
+    let sin_cos = sin_cos(angle);
+    for vertex in [
+        Point { x: center.x, y: y1 },
+        Point { x: center.x, y: y2 },
+        Point { x: x1, y: center.y },
+        Point { x: x2, y: center.y },
     ] {
-        let delta_x = corner_x - center_x;
-        let delta_y = corner_y - center_y;
-        let rotated_x = center_x + delta_x * cos - delta_y * sin;
-        let rotated_y = center_y + delta_x * sin + delta_y * cos;
-        *min_x = min_x.min(rotated_x);
-        *min_y = min_y.min(rotated_y);
-        *max_x = max_x.max(rotated_x);
-        *max_y = max_y.max(rotated_y);
+        include_point(
+            point_rotate_rads(vertex, center, sin_cos),
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        );
     }
+}
+
+/// `getBezierValueForT`: the cubic through `p0`, `p1`, `p2`, `p3` at `t`, in
+/// the reference's term order with `Math.pow(x, 3)` rounded once (#173).
+fn bezier_value_for_t(t: f64, p0: f64, p1: f64, p2: f64, p3: f64) -> f64 {
+    let one_minus_t = 1.0 - t;
+    cube_rounded_once(one_minus_t) * p0
+        + 3.0 * square(one_minus_t) * t * p1
+        + 3.0 * one_minus_t * square(t) * p2
+        + cube_rounded_once(t) * p3
+}
+
+/// `solveQuadratic`: the cubic's values at the roots of its derivative that
+/// lie in `[0, 1]`, or `None` when the discriminant is negative, with the
+/// reference's coefficient spelling (`3i - 6j + 3k`, `6j - 6i`, `3i` for the
+/// three control differences), its exact `a === 0` test and its formula for
+/// each root, since a differently spelled solver lands an ulp away (#173).
+fn solve_quadratic(p0: f64, p1: f64, p2: f64, p3: f64) -> Option<[Option<f64>; 2]> {
+    let i = p1 - p0;
+    let j = p2 - p1;
+    let k = p3 - p2;
+    let a = 3.0 * i - 6.0 * j + 3.0 * k;
+    let b = 6.0 * j - 6.0 * i;
+    let c = 3.0 * i;
+    let sqrt_part = b * b - 4.0 * a * c;
+    // `hasSolution = sqrtPart >= 0`: a NaN discriminant has none either.
+    let has_solution = sqrt_part >= 0.0;
+    if !has_solution {
+        return None;
+    }
+    let (t1, t2) = if a == 0.0 {
+        (-c / b, -c / b)
+    } else {
+        (
+            (-b + sqrt_part.sqrt()) / (2.0 * a),
+            (-b - sqrt_part.sqrt()) / (2.0 * a),
+        )
+    };
+    let retain = |t: f64| {
+        (0.0..=1.0)
+            .contains(&t)
+            .then(|| bezier_value_for_t(t, p0, p1, p2, p3))
+    };
+    Some([retain(t1), retain(t2)])
+}
+
+/// `getCubicBezierCurveBound`: the exact extent of one cubic — its end
+/// points and the retained interior extrema of each axis (#173).
+fn cubic_bezier_curve_bound(p0: Point, p1: Point, p2: Point, p3: Point) -> (f64, f64, f64, f64) {
+    let axis = |p0: f64, p1: f64, p2: f64, p3: f64| {
+        let mut min = p0.min(p3);
+        let mut max = p0.max(p3);
+        if let Some(solutions) = solve_quadratic(p0, p1, p2, p3) {
+            for value in solutions.into_iter().flatten() {
+                min = min.min(value);
+                max = max.max(value);
+            }
+        }
+        (min, max)
+    };
+    let (min_x, max_x) = axis(p0.x, p1.x, p2.x, p3.x);
+    let (min_y, max_y) = axis(p0.y, p1.y, p2.y, p3.y);
+    (min_x, min_y, max_x, max_y)
+}
+
+/// `getMinMaxXYFromCurvePathOps(ops, transformXY)`: the extent of a Rough.js
+/// path's cubics, each control point passed through `transform` first — the
+/// scene extent of a linear element, whose control points the reference
+/// places on the page and rotates about the element's centre before taking
+/// their analytic extrema (#172, #173). A `move` sets the current point
+/// untransformed; a `lineTo` is not implemented by the reference and changes
+/// nothing. `None` when the path draws no cubic.
+pub(super) fn reference_curve_bounds(
+    operations: &[PathOperation],
+    transform: impl Fn(Point) -> Point,
+) -> Option<(f64, f64, f64, f64)> {
+    let mut current = Point { x: 0.0, y: 0.0 };
+    let mut bounds: Option<(f64, f64, f64, f64)> = None;
+    for operation in operations {
+        match *operation {
+            PathOperation::Move(point) => current = point,
+            PathOperation::Line(_) => {}
+            PathOperation::Cubic {
+                control_1,
+                control_2,
+                end,
+            } => {
+                let p1 = transform(control_1);
+                let p2 = transform(control_2);
+                let p3 = transform(end);
+                let p0 = transform(current);
+                current = end;
+                let segment = cubic_bezier_curve_bound(p0, p1, p2, p3);
+                bounds = union_bounds(bounds, Some(segment));
+            }
+        }
+    }
+    bounds
 }
 
 /// The roughness Rough.js is given for `source`: Excalidraw's
