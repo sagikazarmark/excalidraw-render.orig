@@ -3863,3 +3863,41 @@ fn png_snaps_each_text_baseline_to_the_device_pixel_grid_like_the_canvas() {
         "rotated text is not snapped"
     );
 }
+
+#[test]
+fn liberation_sans_substitution_names_ordinary_text_and_generated_labels_apart() {
+    // `font.liberation-sans-substituted` is reported once for a Helvetica
+    // (`fontFamily` 2) text element and once for a compatibility placeholder's
+    // generated label; the two are distinct glossary terms and the message
+    // says which one the bundled Liberation Sans shaped (#136).
+    let message_for = |scene: &[u8]| {
+        let scene = SceneDocument::parse(scene).expect("scene is admitted");
+        let request = RenderRequest::builder(OutputFormat::Svg)
+            .build()
+            .expect("request is valid");
+        let outcome = Renderer::new()
+            .render(&scene, &request)
+            .expect("scene renders");
+        let messages: Vec<String> = outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .filter(|diagnostic| {
+                diagnostic.code() == DiagnosticCode::FONT_LIBERATION_SANS_SUBSTITUTED
+            })
+            .map(|diagnostic| diagnostic.message().to_owned())
+            .collect();
+        assert_eq!(messages.len(), 1, "{messages:?}");
+        messages.into_iter().next().expect("one message")
+    };
+    let helvetica = br##"{"type":"excalidraw","version":2,"elements":[{"id":"h","type":"text","x":0,"y":0,"width":120,"height":23,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"strokeStyle":"solid","roughness":1,"opacity":100,"groupIds":[],"frameId":null,"index":"a1","roundness":null,"seed":1,"version":1,"versionNonce":2,"isDeleted":false,"boundElements":null,"updated":1,"link":null,"locked":false,"text":"Helvetica","fontSize":20,"fontFamily":2,"textAlign":"left","verticalAlign":"top","containerId":null,"originalText":"Helvetica","autoResize":true,"lineHeight":1.15}],"appState":{},"files":{}}"##;
+    let placeholder = br##"{"type":"excalidraw","version":2,"elements":[{"id":"future","type":"future","x":0,"y":0,"width":200,"height":60,"updated":1}],"appState":{},"files":{}}"##;
+    assert_eq!(
+        message_for(helvetica),
+        "Helvetica text used bundled Liberation Sans"
+    );
+    assert_eq!(
+        message_for(placeholder),
+        "generated fallback label used bundled Liberation Sans"
+    );
+}

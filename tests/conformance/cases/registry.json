@@ -1425,7 +1425,7 @@
             "element_id": "single-line",
             "format": "png",
             "json_pointer": "/elements/0",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           },
           {
@@ -1441,7 +1441,7 @@
             "element_id": "two-lines",
             "format": "png",
             "json_pointer": "/elements/1",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           },
           {
@@ -1457,7 +1457,7 @@
             "element_id": "right-aligned",
             "format": "png",
             "json_pointer": "/elements/2",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           }
         ],
@@ -1475,7 +1475,7 @@
             "element_id": "single-line",
             "format": "svg",
             "json_pointer": "/elements/0",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           },
           {
@@ -1491,7 +1491,7 @@
             "element_id": "two-lines",
             "format": "svg",
             "json_pointer": "/elements/1",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           },
           {
@@ -1507,7 +1507,7 @@
             "element_id": "right-aligned",
             "format": "svg",
             "json_pointer": "/elements/2",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           }
         ]
@@ -1647,7 +1647,7 @@
             "element_id": "helvetica-detected",
             "format": "png",
             "json_pointer": "/elements/0",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           }
         ],
@@ -1665,7 +1665,7 @@
             "element_id": "helvetica-detected",
             "format": "svg",
             "json_pointer": "/elements/0",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           }
         ]
@@ -3528,7 +3528,7 @@
             "element_id": "helvetica-rtl-center",
             "format": "png",
             "json_pointer": "/elements/1",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           },
           {
@@ -4008,7 +4008,7 @@
             "element_id": "helvetica-mixed-right",
             "format": "png",
             "json_pointer": "/elements/4",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           },
           {
@@ -4298,7 +4298,7 @@
             "element_id": "helvetica-rtl-center",
             "format": "svg",
             "json_pointer": "/elements/1",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           },
           {
@@ -4778,7 +4778,7 @@
             "element_id": "helvetica-mixed-right",
             "format": "svg",
             "json_pointer": "/elements/4",
-            "message": "generated fallback label used bundled Liberation Sans",
+            "message": "Helvetica text used bundled Liberation Sans",
             "severity": "info"
           },
           {

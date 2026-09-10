@@ -202,7 +202,7 @@ impl RenderSession {
         }
         if text.font_family == 2 && !text.text.is_empty() {
             let diagnostic = fallback_font_diagnostic(
-                FontFallback::LiberationSans,
+                FontFallback::HelveticaText,
                 request.format(),
                 Some(source.source.id()),
                 source.source.pointer(),

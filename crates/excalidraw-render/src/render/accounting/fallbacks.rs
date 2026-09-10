@@ -390,7 +390,7 @@ impl RenderSession {
             return Ok(());
         };
         let substitution = fallback_font_diagnostic(
-            FontFallback::LiberationSans,
+            FontFallback::GeneratedLabel,
             request.format(),
             fallback.source.id.as_deref(),
             &fallback.source.pointer,

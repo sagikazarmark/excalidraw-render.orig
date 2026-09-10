@@ -371,7 +371,12 @@ pub(super) fn relationship_cycle_diagnostic(
 /// instead of its source family, or a scalar no face mapped.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum FontFallback {
-    LiberationSans,
+    /// Ordinary scene text in the local-only Helvetica family (`fontFamily`
+    /// 2), shaped with the bundled Liberation Sans substitute.
+    HelveticaText,
+    /// A compatibility placeholder's generated label, shaped with the bundled
+    /// Liberation Sans.
+    GeneratedLabel,
     NotoEmoji,
     MissingGlyph(u32),
 }
@@ -382,11 +387,16 @@ pub(super) fn fallback_font_diagnostic(
     element_id: Option<&str>,
     json_pointer: &str,
 ) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
-    // Non-normative wording (spec 11.1). The two Liberation Sans strings are
-    // bound by approved expected reports and must not move; the Noto Emoji
-    // one names the face that substitution actually used.
+    // Non-normative wording (spec 11.1), bound by approved expected reports.
+    // Ordinary scene text and generated export text are distinct glossary
+    // terms and get distinct messages (#136); the Noto Emoji one names the
+    // face that substitution actually used.
     let (kind, message) = match fallback {
-        FontFallback::LiberationSans => (
+        FontFallback::HelveticaText => (
+            DiagnosticKind::LiberationSansSubstituted,
+            "Helvetica text used bundled Liberation Sans",
+        ),
+        FontFallback::GeneratedLabel => (
             DiagnosticKind::LiberationSansSubstituted,
             "generated fallback label used bundled Liberation Sans",
         ),
