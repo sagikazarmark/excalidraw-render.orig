@@ -520,9 +520,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
           "format": "png",
-          "max_changed_pixels": 326,
-          "minimum_ssim_bits": "3fefe8d8e5ced851",
-          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with one bound text label. Diagnosed on #104.",
+          "max_changed_pixels": 324,
+          "minimum_ssim_bits": "3fefe8df2571f4c5",
+          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with one bound text label. Diagnosed on #104. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does, so what remains is the two rasterizers' coverage of identically placed outlines.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -644,9 +644,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
           "format": "png",
-          "max_changed_pixels": 495,
-          "minimum_ssim_bits": "3fefd2ba5c67d5bc",
-          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with 27 bound text labels. Diagnosed on #104.",
+          "max_changed_pixels": 46,
+          "minimum_ssim_bits": "3feff10c46227fe0",
+          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with 27 bound text labels. Diagnosed on #104. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does, so what remains is the two rasterizers' coverage of identically placed outlines.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -782,43 +782,13 @@
       ],
       "exceptions": [
         {
-          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
-          "format": "png",
-          "max_changed_pixels": 188,
-          "minimum_ssim_bits": "3fef9fd8a6b58839",
-          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with CJK glyph complexity. Diagnosed on #104.",
-          "region": "whole",
-          "variant": "default",
-          "viewer_profile": null
-        },
-        {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
           "format": "png",
-          "max_changed_pixels": 1,
-          "minimum_ssim_bits": "3fefd3f152a68fad",
-          "reason": "Sub-pixel glyph coverage at export scale 2, the class diagnosed on #104 for this case's default variant: every text row is best-aligned with the official raster at zero offset and only interior glyph ink differs. At twice the scale the difference shrinks to one changed pixel, but SSIM stays under the canonical floor.",
-          "region": "whole",
-          "variant": "scale-2",
-          "viewer_profile": null
-        },
-        {
-          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
-          "format": "png",
-          "max_changed_pixels": 323,
-          "minimum_ssim_bits": "3fef53392edcb4a9",
-          "reason": "Sub-pixel glyph coverage after the downscale-only maximum-dimension export to 200 pixels (scale 0.588), the class diagnosed on #104 for this case's default variant: every text row is best-aligned with the official raster at zero offset and only interior glyph ink differs. Glyph edges are a larger share of ink at 14-pixel glyph heights, so the difference exceeds both the changed-pixel and SSIM budgets.",
+          "max_changed_pixels": 26,
+          "minimum_ssim_bits": "3fefeed7945d62bf",
+          "reason": "Sub-pixel glyph coverage after the downscale-only maximum-dimension export to 200 pixels (scale 0.588), the class diagnosed on #104 for this case's default variant: every text row is best-aligned with the official raster at zero offset and only interior glyph ink differs. Glyph edges are a larger share of ink at 14-pixel glyph heights, so the difference exceeds both the changed-pixel and SSIM budgets. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does, so what remains is the two rasterizers' coverage of identically placed outlines.",
           "region": "whole",
           "variant": "max-dimension-200",
-          "viewer_profile": null
-        },
-        {
-          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/103",
-          "format": "png",
-          "max_changed_pixels": 167,
-          "minimum_ssim_bits": "3fef9e3cdea1b22b",
-          "reason": "Sub-pixel glyph coverage under the dark-mode colour transform, the class diagnosed on #104 for this case's default variant: every text row is best-aligned with the official raster at zero offset and only interior glyph ink differs. The divergence is slightly smaller than the default variant's, so the transform itself introduces none.",
-          "region": "whole",
-          "variant": "dark-mode",
           "viewer_profile": null
         }
       ],
@@ -1123,9 +1093,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/105",
           "format": "png",
-          "max_changed_pixels": 551,
-          "minimum_ssim_bits": "3fefd4401debf114",
-          "reason": "Sub-pixel glyph coverage. With the placeholder label positioned by Excalidraw's Helvetica metadata metrics (decided on #105), the SVG document matches the official export under one rasterizer, SVG path geometry and the scene extent match exactly, and only interior glyph ink differs between the renderer's rasterizer and the browser's on the two label lines. The same class is recorded on #104 for the other text-bearing cases.",
+          "max_changed_pixels": 394,
+          "minimum_ssim_bits": "3fefe47c6bab1a76",
+          "reason": "Sub-pixel glyph coverage. With the placeholder label positioned by Excalidraw's Helvetica metadata metrics (decided on #105), the SVG document matches the official export under one rasterizer, SVG path geometry and the scene extent match exactly, and only interior glyph ink differs between the renderer's rasterizer and the browser's on the two label lines. The same class is recorded on #104 for the other text-bearing cases. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does; what remains is the two rasterizers' coverage of identically placed outlines and, for the Helvetica-family lines, the reference profile's light autohinting of the container's system Liberation Sans, whose x-height it snaps to the pixel grid (spec 8.5).",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -1261,20 +1231,10 @@
       },
       "empty_fields": [
         "assets",
-        "crops"
+        "crops",
+        "exceptions"
       ],
-      "exceptions": [
-        {
-          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/104",
-          "format": "png",
-          "max_changed_pixels": 64,
-          "minimum_ssim_bits": "3feff13f34146a9a",
-          "reason": "Sub-pixel glyph coverage. SVG path geometry and the scene extent match the official export exactly, and every glyph bounding box is pixel-identical; only interior glyph ink differs between the renderer's rasterizer and the browser's. The same difference stays inside the canonical budget on Latin-only text and exceeds it here with one bound text label. Diagnosed on #104.",
-          "region": "whole",
-          "variant": "default",
-          "viewer_profile": null
-        }
-      ],
+      "exceptions": [],
       "variants": [
         {
           "id": "default",
@@ -1381,9 +1341,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/105",
           "format": "png",
-          "max_changed_pixels": 170,
-          "minimum_ssim_bits": "3fef758bd1195939",
-          "reason": "Sub-pixel glyph coverage. Helvetica-family scene text is positioned by Excalidraw's metadata metrics (decided on #105): the SVG document matches the official export under one rasterizer and every baseline agrees to the last digit; only interior glyph ink differs between the renderer's rasterizer and the browser's across the four text lines. The same class is recorded on #104 for the other text-bearing cases.",
+          "max_changed_pixels": 175,
+          "minimum_ssim_bits": "3fef8c2053db1e29",
+          "reason": "Sub-pixel glyph coverage. Helvetica-family scene text is positioned by Excalidraw's metadata metrics (decided on #105): the SVG document matches the official export under one rasterizer and every baseline agrees to the last digit; only interior glyph ink differs between the renderer's rasterizer and the browser's across the four text lines. The same class is recorded on #104 for the other text-bearing cases. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does; what remains is the two rasterizers' coverage of identically placed outlines and, for the Helvetica-family lines, the reference profile's light autohinting of the container's system Liberation Sans, whose x-height it snaps to the pixel grid (spec 8.5).",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -1603,9 +1563,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/108",
           "format": "png",
-          "max_changed_pixels": 572,
-          "minimum_ssim_bits": "3fef6eec124f4ef3",
-          "reason": "Sub-pixel glyph coverage. A missing lineHeight is derived by the pinned restore rule (decided on #108): the SVG document matches the official export exactly under one rasterizer and every baseline agrees to the last digit; only interior glyph ink differs between the renderer's rasterizer and the browser's across six text lines in three faces. The same class is recorded on #104 and #105 for the other text-bearing cases.",
+          "max_changed_pixels": 261,
+          "minimum_ssim_bits": "3fefdd1738899b74",
+          "reason": "Sub-pixel glyph coverage. A missing lineHeight is derived by the pinned restore rule (decided on #108): the SVG document matches the official export exactly under one rasterizer and every baseline agrees to the last digit; only interior glyph ink differs between the renderer's rasterizer and the browser's across six text lines in three faces. The same class is recorded on #104 and #105 for the other text-bearing cases. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does; what remains is the two rasterizers' coverage of identically placed outlines and, for the Helvetica-family lines, the reference profile's light autohinting of the container's system Liberation Sans, whose x-height it snaps to the pixel grid (spec 8.5).",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -1855,9 +1815,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/110",
           "format": "png",
-          "max_changed_pixels": 331,
-          "minimum_ssim_bits": "3fef6f0efeb37ee7",
-          "reason": "Sub-pixel glyph coverage. CR and CRLF line endings break lines as LF does (decided on #110): the SVG document matches the official export exactly under one rasterizer and all six baselines agree to the last digit, including the restored 1.5 line height of the bare-CR element; only interior glyph ink differs between the renderer's rasterizer and the browser's across six Excalifont lines. The same class is recorded on #104, #105 and #108 for the other text-bearing cases.",
+          "max_changed_pixels": 15,
+          "minimum_ssim_bits": "3feff2b0c56c5701",
+          "reason": "Sub-pixel glyph coverage. CR and CRLF line endings break lines as LF does (decided on #110): the SVG document matches the official export exactly under one rasterizer and all six baselines agree to the last digit, including the restored 1.5 line height of the bare-CR element; only interior glyph ink differs between the renderer's rasterizer and the browser's across six Excalifont lines. The same class is recorded on #104, #105 and #108 for the other text-bearing cases. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does, so what remains is the two rasterizers' coverage of identically placed outlines.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -1961,9 +1921,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/124",
           "format": "png",
-          "max_changed_pixels": 762,
-          "minimum_ssim_bits": "3fe9c2915c201e31",
-          "reason": "Spec 8.3's replacement glyph. U+10000, U+10001 and U+10FFFF are absent from every bundled face, so revision 1 shapes each as the deterministic basic-Latin ? from Liberation Sans and reports it as font.missing-glyph (decided on #124). The official export has no glyph for them either and falls through to the pinned container's system fonts: a WenQuanYi Zen Hei placeholder box for U+10000, GNU Unifont Upper's Linear B syllabogram for U+10001, and a blank advance for the uncovered noncharacter U+10FFFF. The divergence is the region from the first unmapped scalar to the end of each of the two lines: that box, glyph and blank against three ? glyphs, and the trailing Latin word the differing advances shift. The leading Latin word on both lines differs only by the sub-pixel glyph-coverage class recorded on #104, #105, #108 and #110.",
+          "max_changed_pixels": 753,
+          "minimum_ssim_bits": "3fe9cfa29b86661f",
+          "reason": "Spec 8.3's replacement glyph. U+10000, U+10001 and U+10FFFF are absent from every bundled face, so revision 1 shapes each as the deterministic basic-Latin ? from Liberation Sans and reports it as font.missing-glyph (decided on #124). The official export has no glyph for them either and falls through to the pinned container's system fonts: a WenQuanYi Zen Hei placeholder box for U+10000, GNU Unifont Upper's Linear B syllabogram for U+10001, and a blank advance for the uncovered noncharacter U+10FFFF. The divergence is the region from the first unmapped scalar to the end of each of the two lines: that box, glyph and blank against three ? glyphs, and the trailing Latin word the differing advances shift. The leading Latin word on both lines differs only by the sub-pixel glyph-coverage class recorded on #104, #105, #108 and #110. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does, so what remains is the two rasterizers' coverage of identically placed outlines.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -2261,9 +2221,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/121",
           "format": "png",
-          "max_changed_pixels": 1240,
-          "minimum_ssim_bits": "3fec15063ad9c38d",
-          "reason": "Spec 8.3's Noto Emoji substitution. U+1F600 and U+1F389 are absent from every official font chunk, so revision 1 shapes each from the complete monochrome Noto Emoji 3.003 face and reports one font.noto-emoji-substituted per affected occurrence (decided on #121). The official export has no bundled glyph for them either: its font list ends in the local-only Segoe UI Emoji, which the pinned container's fontconfig resolves to Noto Color Emoji 2.047, so the browser draws colour bitmap glyphs. The divergence is the emoji cells on both lines, colour bitmaps against monochrome outlines at near-identical advances, plus the trailing Latin word each cell shifts by at most three pixels. The leading Latin word on both lines differs only by the sub-pixel glyph-coverage class recorded on #104, #105, #108 and #110.",
+          "max_changed_pixels": 1187,
+          "minimum_ssim_bits": "3fec4699f9a9ccbb",
+          "reason": "Spec 8.3's Noto Emoji substitution. U+1F600 and U+1F389 are absent from every official font chunk, so revision 1 shapes each from the complete monochrome Noto Emoji 3.003 face and reports one font.noto-emoji-substituted per affected occurrence (decided on #121). The official export has no bundled glyph for them either: its font list ends in the local-only Segoe UI Emoji, which the pinned container's fontconfig resolves to Noto Color Emoji 2.047, so the browser draws colour bitmap glyphs. The divergence is the emoji cells on both lines, colour bitmaps against monochrome outlines at near-identical advances, plus the trailing Latin word each cell shifts by at most three pixels. The leading Latin word on both lines differs only by the sub-pixel glyph-coverage class recorded on #104, #105, #108 and #110. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does, so what remains is the two rasterizers' coverage of identically placed outlines.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -2445,7 +2405,8 @@
       },
       "empty_fields": [
         "assets",
-        "crops"
+        "crops",
+        "exceptions"
       ],
       "variants": [
         {
@@ -2472,18 +2433,7 @@
         "png": [],
         "svg": []
       },
-      "exceptions": [
-        {
-          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/153",
-          "format": "png",
-          "max_changed_pixels": 98,
-          "minimum_ssim_bits": "3fefebf983f19956",
-          "reason": "Sub-pixel glyph coverage. The legacy strokeSharpness migration and the legacy font string are followed as the pinned restore migrates them (decided on #128 and #132, evidenced on #153): all sixteen SVG paths match the official export byte for byte, the rounded diamond's included since its corner radii come from the diamond's vertex offsets (#160), and the document matches under one rasterizer; only the interior glyph ink of the one legacy \"20px Virgil\" text element differs between the renderer's rasterizer and the browser's, with the roughness-0 stroke edges. The same class is recorded on #104, #105, #108 and #110 for the other text-bearing cases.",
-          "region": "whole",
-          "variant": "default",
-          "viewer_profile": null
-        }
-      ]
+      "exceptions": []
     },
     {
       "id": "focused.rounded-image.v1",
@@ -2994,9 +2944,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/153",
           "format": "png",
-          "max_changed_pixels": 52,
-          "minimum_ssim_bits": "3feff32ee1903754",
-          "reason": "Sub-pixel glyph coverage. The frame names are generated export text laid out as the reference's synthesized Helvetica text element and shaped with Liberation Sans (decided on #97 and #105, the dark-mode colour and the frame outline rule on #130 and #137, evidenced on #153): all ten SVG paths match the official export byte for byte and the document matches under one rasterizer in both modes; only the interior glyph ink of the two frame names differs between the renderer's rasterizer and the browser's, with the roughness-0 stroke edges of the rectangles and the half-opaque one's fill. The same class is recorded on #104, #105, #108 and #110 for the other text-bearing cases.",
+          "max_changed_pixels": 45,
+          "minimum_ssim_bits": "3feff41f1f461270",
+          "reason": "Sub-pixel glyph coverage. The frame names are generated export text laid out as the reference's synthesized Helvetica text element and shaped with Liberation Sans (decided on #97 and #105, the dark-mode colour and the frame outline rule on #130 and #137, evidenced on #153): all ten SVG paths match the official export byte for byte and the document matches under one rasterizer in both modes; only the interior glyph ink of the two frame names differs between the renderer's rasterizer and the browser's, with the roughness-0 stroke edges of the rectangles and the half-opaque one's fill. The same class is recorded on #104, #105, #108 and #110 for the other text-bearing cases. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does; what remains is the two rasterizers' coverage of identically placed outlines and, for the Helvetica-family lines, the reference profile's light autohinting of the container's system Liberation Sans, whose x-height it snaps to the pixel grid (spec 8.5).",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -3004,9 +2954,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/153",
           "format": "png",
-          "max_changed_pixels": 60,
-          "minimum_ssim_bits": "3feff2609f57f95c",
-          "reason": "Sub-pixel glyph coverage. The frame names are generated export text laid out as the reference's synthesized Helvetica text element and shaped with Liberation Sans (decided on #97 and #105, the dark-mode colour and the frame outline rule on #130 and #137, evidenced on #153): all ten SVG paths match the official export byte for byte and the document matches under one rasterizer in both modes; only the interior glyph ink of the two frame names differs between the renderer's rasterizer and the browser's, with the roughness-0 stroke edges of the rectangles and the half-opaque one's fill. The same class is recorded on #104, #105, #108 and #110 for the other text-bearing cases.",
+          "max_changed_pixels": 53,
+          "minimum_ssim_bits": "3feff35705076d84",
+          "reason": "Sub-pixel glyph coverage. The frame names are generated export text laid out as the reference's synthesized Helvetica text element and shaped with Liberation Sans (decided on #97 and #105, the dark-mode colour and the frame outline rule on #130 and #137, evidenced on #153): all ten SVG paths match the official export byte for byte and the document matches under one rasterizer in both modes; only the interior glyph ink of the two frame names differs between the renderer's rasterizer and the browser's, with the roughness-0 stroke edges of the rectangles and the half-opaque one's fill. The same class is recorded on #104, #105, #108 and #110 for the other text-bearing cases. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does; what remains is the two rasterizers' coverage of identically placed outlines and, for the Helvetica-family lines, the reference profile's light autohinting of the container's system Liberation Sans, whose x-height it snaps to the pixel grid (spec 8.5).",
           "region": "whole",
           "variant": "dark-mode",
           "viewer_profile": null
@@ -3251,9 +3201,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
           "format": "png",
-          "max_changed_pixels": 2060,
-          "minimum_ssim_bits": "3fef4977608aa6c3",
-          "reason": "Sub-pixel glyph coverage. The 19 elements in Virgil, Lilita One, Comic Shanns and Excalifont are positioned by each family's metadata metrics and shaped with the bundled faces (evidenced on #152): the SVG document matches the official export under one rasterizer (0 changed pixels, SSIM 1.0), the scene extent and all 38 baselines agree to the last digit, and in the direct PNG every glyph's horizontal placement agrees; only glyph ink differs between the renderer's rasterizer and the browser's canvas. The canvas snaps each line's baseline to the nearest whole pixel while the renderer fills the outlines at the exact fractional baseline the SVG declares (#169): the vertical ink centroid of every line is displaced by round(baseline) - baseline, 0.38 px for Excalifont and Virgil at 20 px, 0.28 for Virgil at 36 px, 0.47 and -0.35 for Lilita One at 20 and 36 px, 0.5 for Comic Shanns, so a text row's edge moves by at most one pixel and no glyph moves horizontally. The same class is recorded on #104, #105, #108, #110 and #153 for the other text-bearing cases.",
+          "max_changed_pixels": 90,
+          "minimum_ssim_bits": "3feff32f4774a055",
+          "reason": "Sub-pixel glyph coverage. The 19 elements in Virgil, Lilita One, Comic Shanns and Excalifont are positioned by each family's metadata metrics and shaped with the bundled faces (evidenced on #152): the SVG document matches the official export under one rasterizer (0 changed pixels, SSIM 1.0), the scene extent and all 38 baselines agree to the last digit, and in the direct PNG every glyph's horizontal placement agrees; only glyph ink differs between the renderer's rasterizer and the browser's canvas. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does, so the vertical ink centroid of every line agrees with the official raster within 0.02 px and what remains is the two rasterizers' coverage of identically placed outlines. The same class is recorded on #104, #105, #108, #110 and #153 for the other text-bearing cases.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -4915,9 +4865,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
           "format": "png",
-          "max_changed_pixels": 2513,
-          "minimum_ssim_bits": "3fec5be16a814378",
-          "reason": "Spec 8.3's replacement glyph. No bundled face maps a Hebrew or Arabic scalar, so revision 1 shapes each as the deterministic basic-Latin ? from Liberation Sans and reports it as font.missing-glyph, and shapes the trailing paragraph separator U+2029 the same way (decided on #124 and #125). The official export has no bundled glyph for them either and falls through to the pinned container's system fonts: FreeSans for Hebrew in Excalifont text and the system Liberation Sans for Hebrew in Helvetica text, FreeSerif for Arabic in both, and FreeSans's blank advance for the separator. The divergence is each right-to-left cell against its ? glyphs and, on the same line, the Latin word or punctuation the differing advances displace toward the line's unanchored side; the anchored side agrees pixel for pixel (the leading words of the left-aligned lines, the trailing words of the right-aligned lines, the centres of the centred lines), so the visual run order, the digits placed before the Arabic run, the exclamation mark after the Hebrew run and the mirrored bracket pair, matches the official export. The Latin words differ only by the sub-pixel glyph-coverage class recorded on #104, #105, #108, #110, #153 and #169.",
+          "max_changed_pixels": 2353,
+          "minimum_ssim_bits": "3fec7ae8cbdda354",
+          "reason": "Spec 8.3's replacement glyph. No bundled face maps a Hebrew or Arabic scalar, so revision 1 shapes each as the deterministic basic-Latin ? from Liberation Sans and reports it as font.missing-glyph, and shapes the trailing paragraph separator U+2029 the same way (decided on #124 and #125). The official export has no bundled glyph for them either and falls through to the pinned container's system fonts: FreeSans for Hebrew in Excalifont text and the system Liberation Sans for Hebrew in Helvetica text, FreeSerif for Arabic in both, and FreeSans's blank advance for the separator. The divergence is each right-to-left cell against its ? glyphs and, on the same line, the Latin word or punctuation the differing advances displace toward the line's unanchored side; the anchored side agrees pixel for pixel (the leading words of the left-aligned lines, the trailing words of the right-aligned lines, the centres of the centred lines), so the visual run order, the digits placed before the Arabic run, the exclamation mark after the Hebrew run and the mirrored bracket pair, matches the official export. The Latin words differ only by the sub-pixel glyph-coverage class recorded on #104, #105, #108, #110, #153 and #169. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does; what remains is the two rasterizers' coverage of identically placed outlines and, for the Helvetica-family lines, the reference profile's light autohinting of the container's system Liberation Sans, whose x-height it snaps to the pixel grid (spec 8.5).",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -6489,9 +6439,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
           "format": "png",
-          "max_changed_pixels": 996,
-          "minimum_ssim_bits": "3fefb3e1d9e72582",
-          "reason": "Sub-pixel glyph coverage. Standalone text and bound labels paint at their stored coordinates with the stored wrapped text, the stored width anchoring each line and verticalAlign ignored (evidenced on #152): all three container paths match the official export byte for byte, the SVG document matches under one rasterizer (0 changed pixels, SSIM 1.0), the scene extent and all twelve baselines agree to the last digit, and in the direct PNG every glyph's horizontal placement agrees; only glyph ink differs between the renderer's rasterizer and the browser's canvas, which snaps each line's baseline to the nearest whole pixel where the renderer fills the outlines at the exact fractional baseline (#169; 0.38 px on every Excalifont line here), together with the roughness-0 stroke edges of the rectangle, ellipse and diamond. The same class is recorded on #104, #105, #108, #110 and #153 for the other text-bearing cases.",
+          "max_changed_pixels": 70,
+          "minimum_ssim_bits": "3feff79bca9caa96",
+          "reason": "Sub-pixel glyph coverage. Standalone text and bound labels paint at their stored coordinates with the stored wrapped text, the stored width anchoring each line and verticalAlign ignored (evidenced on #152): all three container paths match the official export byte for byte, the SVG document matches under one rasterizer (0 changed pixels, SSIM 1.0), the scene extent and all twelve baselines agree to the last digit, and in the direct PNG every glyph's horizontal placement agrees; only glyph ink differs between the renderer's rasterizer and the browser's canvas, with each line's baseline snapped to the device pixel grid as the canvas snaps it (#169), together with the roughness-0 stroke edges of the rectangle, ellipse and diamond. The same class is recorded on #104, #105, #108, #110 and #153 for the other text-bearing cases.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -6620,9 +6570,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
           "format": "png",
-          "max_changed_pixels": 378,
-          "minimum_ssim_bits": "3fefbf19b25a043f",
-          "reason": "Sub-pixel glyph coverage. The frame names are generated export text laid out as the reference's synthesized Helvetica text element and shaped with Liberation Sans, cut at the frame width with a trailing ... where the name is wider (decided on #97 and #105, evidenced on #152): all six SVG paths match the official export byte for byte, the document matches under one rasterizer (0 changed pixels), the fractional scene extent agrees, and every label's truncation point and horizontal extent agree pixel for pixel; only the glyph ink of the three 14 px labels differs between the renderer's rasterizer and the browser's canvas, which draws them a fraction of a pixel lower and heavier (its whole-pixel baseline snapping, #169, and its small-size glyph rasterization), together with the roughness-0 stroke edges of the rectangles and frame outlines. The same class is recorded on #104, #105, #108, #110 and #153 for the other text-bearing cases.",
+          "max_changed_pixels": 484,
+          "minimum_ssim_bits": "3fefaeeedd0d4072",
+          "reason": "Sub-pixel glyph coverage. The frame names are generated export text laid out as the reference's synthesized Helvetica text element and shaped with Liberation Sans, cut at the frame width with a trailing ... where the name is wider (decided on #97 and #105, evidenced on #152): all six SVG paths match the official export byte for byte, the document matches under one rasterizer (0 changed pixels), the fractional scene extent agrees, and every label's truncation point and horizontal extent agree pixel for pixel; only the glyph ink of the three 14 px labels differs between the renderer's rasterizer and the browser's canvas: with each label's baseline snapped to the device pixel grid as the canvas snaps it (#169) their bottom rows agree, and the reference profile's light autohinting of the container's system Liberation Sans, which draws Helvetica-family text, snaps the 14 px x-height from 7.40 to 8 px and stretches the glyph image up from that baseline (spec 8.5), together with the roughness-0 stroke edges of the rectangles and frame outlines. The same class is recorded on #104, #105, #108, #110 and #153 for the other text-bearing cases.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -7313,9 +7263,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
           "format": "png",
-          "max_changed_pixels": 489,
-          "minimum_ssim_bits": "3fef914d3287731b",
-          "reason": "Sub-pixel glyph coverage. The two shell labels are generated export text positioned by Excalidraw's Helvetica metadata metrics and shaped with Liberation Sans (decided on #105): all four SVG paths match the official export byte for byte and the document matches under one rasterizer, and only the interior glyph ink of the two labels differs between the renderer's rasterizer and the browser's, with the roughness-1 stroke edges of the two shells. The same class is recorded on #105 for focused.embeddable-links.v1 and on #104, #108 and #110 for the other text-bearing cases.",
+          "max_changed_pixels": 230,
+          "minimum_ssim_bits": "3fefdaf14e0b4478",
+          "reason": "Sub-pixel glyph coverage. The two shell labels are generated export text positioned by Excalidraw's Helvetica metadata metrics and shaped with Liberation Sans (decided on #105): all four SVG paths match the official export byte for byte and the document matches under one rasterizer, and only the interior glyph ink of the two labels differs between the renderer's rasterizer and the browser's, with the roughness-1 stroke edges of the two shells. The same class is recorded on #105 for focused.embeddable-links.v1 and on #104, #108 and #110 for the other text-bearing cases. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does; what remains is the two rasterizers' coverage of identically placed outlines and, for the Helvetica-family lines, the reference profile's light autohinting of the container's system Liberation Sans, whose x-height it snaps to the pixel grid (spec 8.5).",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
