@@ -88,15 +88,16 @@ use common::repository_root;
 /// rasterized document. See `PinnedDivergence` for why these are pinned rather
 /// than excepted.
 const KNOWN_DEFECTS: &[PinnedDivergence] = &[
-    // #170: the freedraw loops' background fills, drawn from the wrong
-    // position of the seeded stream at roughness 1 and seed 1 whatever the
-    // element says; the perfect-freehand strokes around them match.
+    // #170: the freedraw loops' background fills, now drawn from the
+    // reference's position of the seeded stream but still at roughness 1 and
+    // seed 1 whatever the element says, until the manifest half of the issue
+    // lands; the perfect-freehand strokes around them match.
     PinnedDivergence {
         case: "focused.freedraw-loop-fills.v1",
         variant: "default",
         issue: "#170",
-        changed_pixels: 691,
-        ssim_bits: 0x3fec_fa54_7e0d_3931,
+        changed_pixels: 582,
+        ssim_bits: 0x3fed_49c2_48be_ca89,
     },
 ];
 
@@ -110,7 +111,7 @@ const KNOWN_GEOMETRY_DEFECTS: &[PinnedGeometryDefect] = &[
         case: "focused.freedraw-loop-fills.v1",
         variant: "default",
         issue: "#170",
-        geometry_sha256: "93496b8f25d9afa32190c0726b8376c67c46ca7b0705d9f48c1dd17d5e176ffe",
+        geometry_sha256: "f38a04e20f9971b5887b806e3ebb9aa2d9ddb794cffa2d0f6b1cf683bb2d32d0",
     },
 ];
 

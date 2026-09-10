@@ -3707,6 +3707,104 @@ fn freedraw_strokes_match_the_pinned_perfect_freehand_vectors() {
 }
 
 #[test]
+fn freedraw_loop_fills_match_the_pinned_roughjs_vectors() {
+    // The four loops of `focused.freedraw-loop-fills.v1`: one 13-point loop
+    // filled solid and hachure at roughness 2, hachure at roughness 1 and at
+    // roughness 0, each at its own seed. Every digest is the pinned npm
+    // Rough.js 4.6.4's, computed with
+    //
+    //   node tools/rough-filler-vectors/derive.mjs \
+    //     tools/reference-oracle/node_modules/roughjs/bundled/rough.esm.js \
+    //     < tests/conformance/cases/focused/freedraw-loop-fills/scene.excalidraw
+    //
+    // under Node 24.19.0 after `tools/reference-oracle/run-container.sh
+    // install`; the script draws the loop's background as the reference's
+    // `generateElementShape` does, a `generator.curve` over the
+    // points-on-curve simplification at 0.75 with `stroke: "none"` and the
+    // element's own seed and adjusted roughness, whose outline the generator
+    // draws and discards before the fill reads the same seeded stream (#170).
+    // The digests are the official export's: the issue records them as
+    // `eb9b70f9…`, `29197100…`, `fbcd1653…` and `c230e85a…`.
+    const EXPECTED: &[(&str, usize, &str)] = &[
+        (
+            "loop-solid-cartoonist",
+            10,
+            "eb9b70f933f01b01d66a3367843285c7d6337889619a92401d0d0ccfa7a694d4",
+        ),
+        (
+            "loop-hachure-cartoonist",
+            48,
+            "2919710051c9c97a47f25efd7eabc0006b2914375ea275462ec7ddeaa73246b1",
+        ),
+        (
+            "loop-hachure-artist",
+            48,
+            "fbcd165335e213f07a95e4ea79d994cbe54fc2eab3156ea065b057dc304779d6",
+        ),
+        (
+            "loop-hachure-architect",
+            48,
+            "c230e85a2e614ad9c3d1561eaea1fe512827d9e862b91c5fff0b790b319d16da",
+        ),
+    ];
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source =
+        fs::read(root.join("tests/conformance/cases/focused/freedraw-loop-fills/scene.excalidraw"))
+            .expect("the freedraw-loop-fills scene is checked in");
+    let scene: serde_json::Value = serde_json::from_slice(&source).expect("the scene is JSON");
+    let elements = normalized_elements(&source);
+    assert_eq!(elements.len(), EXPECTED.len());
+    let mut all_paths = Vec::new();
+    for ((element, source_element), (id, operations, digest)) in elements
+        .iter()
+        .zip(scene["elements"].as_array().expect("elements"))
+        .zip(EXPECTED)
+    {
+        assert_eq!(element.source.id(), *id);
+        let NormalizedElementKind::Freedraw(freedraw) = &element.kind else {
+            panic!("{id} is a freedraw element");
+        };
+        // The element's own seed and roughness, which the revision-1 scene
+        // surface substitutes 1 and 1 for until #170's manifest half lands.
+        let seed = i32::try_from(source_element["seed"].as_i64().expect("seed")).expect("i32 seed");
+        let roughness = source_element["roughness"].as_f64().expect("roughness");
+        let mut budget = default_budget(element);
+        let fill = freedraw::background_fill(
+            &freedraw.points,
+            seed,
+            adjusted_roughness(&NormalizedElement {
+                roughness,
+                ..element.clone()
+            }),
+            roughness < 2.0,
+            element.stroke_style != "solid",
+            rough::FillStyle::from_normalized(&element.fill_style),
+            element.stroke_width,
+            &mut budget,
+        )
+        .expect("the loop fills")
+        .expect("the loop closes within the threshold");
+        let mut path = String::new();
+        svg::push_rough_path(&mut path, &fill.path).expect("path data writes");
+        assert_eq!(
+            path.matches(['M', 'C', 'L']).count(),
+            *operations,
+            "{id} operations"
+        );
+        assert_eq!(
+            sha256_hex(&path),
+            *digest,
+            "{id}: the pinned npm Rough.js 4.6.4 fill"
+        );
+        all_paths.push(path);
+    }
+    assert_eq!(
+        sha256_hex(&all_paths.join("\n")),
+        "276ad4e738dfa83c8e77fe1c95ea78676d0505381153f55559733f7811f922e7"
+    );
+}
+
+#[test]
 fn ellipse_ignores_inapplicable_roundness_without_consuming_randomness() {
     // The revision-1 manifest does not read `/roundness` on an ellipse, so a
     // rounded ellipse normalizes as a plain one and draws the same vectors:

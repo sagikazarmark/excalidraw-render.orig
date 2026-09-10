@@ -699,6 +699,16 @@ pub(super) fn curve_drawing(
 /// as a `generator.curve` with `stroke: "none"` over the simplified points.
 /// `preserve_vertices` is the element's raw `roughness < 2`, as for
 /// [`curve_drawing`] (#158).
+///
+/// `generator.curve` generates the outline before the fill and `stroke:
+/// "none"` only drops it from the drawable afterwards, so the options'
+/// seeded stream, which the outline's first pass and the fill share, reaches
+/// the fill after the outline's `2 · (n + 2)` offsets; the multi-stroke
+/// overlay draws from its own stream at `seed + 1` and moves this one by
+/// nothing, whether or not `disable_multi_stroke` skips it. The outline's
+/// draws are made and discarded here as the reference makes and discards
+/// them (#170); nothing of the discarded outline is charged to the budget,
+/// since no geometry of it is emitted.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn curve_fill(
     points: &[Point],
@@ -711,6 +721,12 @@ pub(super) fn curve_fill(
     budget: &mut GenerationBudget,
 ) -> Result<Fill, GenerationError> {
     let mut random = Random::new(seed);
+    discard_curve_stroke(
+        points,
+        1.0 * (1.0 + roughness * 0.2),
+        roughness,
+        &mut random,
+    );
     curve_fill_with_random(
         points,
         FillOptions {
@@ -1034,6 +1050,19 @@ fn midpoint(first: Point, second: Point) -> Point {
     }
 }
 
+/// The vertices `_curveWithOffset` perturbs, in its order: the first point
+/// twice, then every later point, the last of them twice again, so a curve
+/// over `n >= 2` points draws `2 · (n + 2)` offsets from the seeded stream, two
+/// per vertex, `x` before `y`.
+fn curve_vertices(points: &[Point]) -> impl Iterator<Item = Point> + '_ {
+    points
+        .first()
+        .copied()
+        .into_iter()
+        .chain(points.iter().copied())
+        .chain(points.last().copied().filter(|_| points.len() > 1))
+}
+
 fn curve_stroke(
     points: &[Point],
     offset: f64,
@@ -1052,19 +1081,23 @@ fn curve_stroke(
             .saturating_add(2),
     )?;
     perturbed.try_reserve_exact(points.len().saturating_add(2))?;
-    let mut perturb = |point: Point| Point {
+    perturbed.extend(curve_vertices(points).map(|point| Point {
         x: point.x + random_offset(offset, roughness, 1.0, random),
         y: point.y + random_offset(offset, roughness, 1.0, random),
-    };
-    perturbed.push(perturb(points[0]));
-    perturbed.push(perturb(points[0]));
-    for (index, point) in points.iter().copied().enumerate().skip(1) {
-        perturbed.push(perturb(point));
-        if index == points.len() - 1 {
-            perturbed.push(perturb(point));
-        }
-    }
+    }));
     smooth_curve(&perturbed, operations, budget)
+}
+
+/// Draws from `random` exactly what [`curve_stroke`] over the same `points`
+/// would, keeping nothing: the reference's `generator.curve` generates the
+/// outline before the fill even when `stroke: "none"` then discards it, so a
+/// fill drawn without the outline reads the seeded stream from where the
+/// outline leaves it (#170).
+fn discard_curve_stroke(points: &[Point], offset: f64, roughness: f64, random: &mut Random) {
+    for _ in curve_vertices(points) {
+        random_offset(offset, roughness, 1.0, random);
+        random_offset(offset, roughness, 1.0, random);
+    }
 }
 
 fn smooth_curve(
