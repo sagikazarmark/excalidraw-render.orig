@@ -68,10 +68,14 @@ const SVG_FONT_SUBSET_PROFILE_DIGEST: &str =
     "19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d";
 const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
     "fc4e8ce56cb7bf4bca9dfd6f3495c9ae9f5440a5818aa3e6f645d5303265ff85";
+/// The SVG font subset qualification corpus covers every official chunk and
+/// the Noto Emoji fallback sfnt (#150).
+const QUALIFICATION_SOURCES: usize = 231;
+const NOTO_EMOJI_UPSTREAM_PATH: &str = "scripts/woff2/assets/NotoEmoji-Regular.ttf";
 const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST: &str =
-    "560b85da0aefab791f2c41385a159db8b76d40c2ef230616f242e344c23493fc";
+    "fa24e2ce2afb49319bae315983862b7304c06082ca4c534ab861b4b705f39de6";
 const SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST: &str =
-    "480aac78b75d31c3bfac5a683793df28ffcdf454e91f8558b7add3b6112e3765";
+    "feee942f94ef6d29dd22b7b5c2625f332222579fa6a6c9891b157e5dcec46015";
 
 struct IncorporatedArtifactSource {
     repository_path: &'static str,
@@ -673,10 +677,22 @@ fn materialize_svg_font_subset_qualification_schema(root: &Path) -> Result<(), S
         "type": "array",
         "uniqueItems": true,
     });
+    // A source is either an official WOFF2 chunk or the manifested sfnt of a
+    // non-WOFF2 fallback (the Noto Emoji face, #150); an sfnt source names the
+    // WOFF2 the subsetter encodes from it so both canonical viewers, which admit
+    // only WOFF2, can render the source face.
+    schema["$defs"]["source"]["properties"]["sourceContainer"] =
+        json!({"enum": ["woff2", "sfnt"], "type": "string"});
+    schema["$defs"]["source"]["properties"]["viewerSourceWoff2Sha256"] =
+        json!({"$ref": "#/$defs/sha256"});
+    schema["$defs"]["source"]["properties"]["upstreamPath"] =
+        json!({"pattern": "^(fonts/.+\\.woff2|scripts/woff2/assets/.+\\.ttf)$", "type": "string"});
+    schema["properties"]["sources"]["minItems"] = json!(QUALIFICATION_SOURCES);
+    schema["properties"]["sources"]["maxItems"] = json!(QUALIFICATION_SOURCES);
     let required = schema["$defs"]["source"]["required"]
         .as_array_mut()
         .ok_or_else(|| "SVG font subset source schema has no required array".to_owned())?;
-    for field in ["licenseIdentity", "reservedFontNames"] {
+    for field in ["licenseIdentity", "reservedFontNames", "sourceContainer"] {
         if !required.iter().any(|value| value == field) {
             required.push(json!(field));
         }
@@ -2323,16 +2339,31 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
         &["sources"],
         "font subset qualification corpus sources",
     )?;
-    if sources.len() != 230 || sources.len() != assets.len() {
+    if sources.len() != QUALIFICATION_SOURCES || assets.len() != 230 {
         return Err("font subset qualification source inventory is incomplete".to_owned());
     }
+    let (chunk_sources, sfnt_sources) = sources.split_at(assets.len());
     let mut source_ids = BTreeSet::new();
     let mut cell_ids = BTreeSet::new();
-    for (source, asset) in sources.iter().zip(assets) {
+    let expected_sfnt = json!({
+        "sourceIdentity": format!("{NOTO_EMOJI_UPSTREAM_PATH}@sha256:{NOTO_EMOJI_SHA256}"),
+        "upstreamPath": NOTO_EMOJI_UPSTREAM_PATH,
+        "completeSha256": NOTO_EMOJI_SHA256,
+    });
+    for (source, asset) in chunk_sources
+        .iter()
+        .zip(assets.iter().map(|asset| (asset, "woff2", false)))
+        .chain(sfnt_sources.iter().zip([(&expected_sfnt, "sfnt", true)]))
+    {
+        let (asset, container, viewer_woff2) = asset;
         let source_id = string(source, "sourceIdentity", "font subset source")?;
-        if source_id != string(asset, "identity", "catalog asset")?
+        if source_id
+            != string(asset, "identity", "catalog asset")
+                .or_else(|_| string(asset, "sourceIdentity", "fallback source"))?
             || source["upstreamPath"] != asset["upstreamPath"]
             || source["sourceSha256"] != asset["completeSha256"]
+            || source["sourceContainer"] != json!(container)
+            || source.get("viewerSourceWoff2Sha256").is_some() != viewer_woff2
             || !source_ids.insert(source_id)
         {
             return Err(
@@ -2383,7 +2414,9 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
             }
         }
     }
-    if source_ids.len() != 230 || cell_ids.len() != 230 * CLASSES.len() {
+    if source_ids.len() != QUALIFICATION_SOURCES
+        || cell_ids.len() != QUALIFICATION_SOURCES * CLASSES.len()
+    {
         return Err("font subset qualification coverage is incomplete".to_owned());
     }
     Ok(())
