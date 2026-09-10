@@ -862,8 +862,10 @@ official Unicode-range WOFF2 chunks under the contract below. PNG and PDF font
 artifacts, typography, diagnostics, failures, notices, and resource ledgers are
 unchanged. Text and fonts inside sanitized nested SVG are unchanged and do not
 participate in direct-export subsetting. PNG uses deterministic shaping and
-controlled glyph-outline rasterization. No format consults installed fonts or
-OS text services.
+controlled glyph-outline rasterization, with each line's baseline snapped to
+the device pixel grid as the canvas snaps it (Section 8.5, #169); SVG and PDF
+carry the exact baseline. No format consults installed fonts or OS text
+services.
 
 Liberation Sans and Noto Emoji replace local-only Helvetica/Arial and Segoe UI
 Emoji behavior for user text and generated labels, with one informational
@@ -1315,6 +1317,36 @@ exactly because the snapped edges land on whole subpixels. Inside that
 rectangle an axis-aligned raster image is resampled once per destination
 pixel centre and painted as constant subpixel blocks (Section 8.2, #165), so
 the supersample neither blurs nor widens it.
+
+Text placement follows the canvas's text rasterization as well (#169). The
+canvas draws every line of ordinary scene text, every frame name and every
+generated embeddable label with `fillText`, and Skia positions an
+axis-aligned glyph run's origin with horizontal subpixel precision while
+rounding its device y to `floor(y + 0.5)`. PNG therefore fills each such
+line's glyph outlines with the line's baseline snapped to the nearest whole
+device pixel, half-pixels rounding down the page (`floor(y + 0.5)`, so `.5`
+snaps to the next row), taken after the export scale in device pixels and
+applied to the whole line's outlines as one shift, while x stays fractional. A
+line whose element is rotated is not axis-aligned and keeps its exact
+baseline, as Skia positions a rotated run with subpixel precision on both
+axes. The snap is a raster placement detail of PNG alone: SVG and PDF carry
+the exact fractional baseline (the official SVG declares fractional `y` too),
+the compatibility placeholder's label, which the canvas never draws, keeps
+the exact baseline, and the semantic pixel-coverage charge is taken from the
+exact outlines (Section 13.2). With the snap, the vertical ink centroid of
+every line of a bundled face agrees with the official canvas raster to within
+the rasterizers' antialiasing noise; what remains of the sub-pixel glyph
+coverage class is the two rasterizers' coverage of identically placed
+outlines, and, for Helvetica-family text, the reference profile's own
+rendering of it: the reference has no bundled Helvetica and draws it with the
+container's system Liberation Sans, whose render parameters the pinned
+Chromium takes from fontconfig rather than from `--font-render-hinting=none`,
+so that face is drawn with FreeType's light autohinting — its x-height snapped
+to the pixel grid (`7.40 → 8` px at 14 px, `10.57 → 11` px at 20 px) and the
+glyph image stretched upward from the snapped baseline. The renderer, whose
+Liberation Sans shapes at the exact outline, follows the baseline but not the
+hinting, so a Helvetica-family line's bottom row agrees and its x-height row
+sits one row lower than the reference's.
 
 ### 8.6 Vector-First PDF
 

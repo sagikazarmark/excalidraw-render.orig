@@ -3742,3 +3742,124 @@ fn a_legacy_draw_element_normalizes_as_the_equivalent_line() {
     );
     assert_eq!(rough_svg_paths(&legacy[0]), rough_svg_paths(&line[0]));
 }
+
+/// A scene with one Excalifont text element at (`x`, `y`) inside a roughness-0
+/// rectangle that fixes the scene origin at (0, 0), so the text's device
+/// position is the padding plus its own coordinates times the export scale.
+fn anchored_text_scene(x: f64, y: f64, angle: f64) -> SceneDocument {
+    SceneDocument::parse(
+        format!(
+            r##"{{"type":"excalidraw","version":2,"elements":[{{"id":"anchor","type":"rectangle","x":0,"y":0,"width":300,"height":120,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"strokeStyle":"solid","roughness":0,"opacity":100,"groupIds":[],"frameId":null,"index":"a0","roundness":null,"seed":1,"version":1,"versionNonce":2,"isDeleted":false,"boundElements":null,"updated":1,"link":null,"locked":false}},{{"id":"probe","type":"text","x":{x},"y":{y},"width":200,"height":25,"angle":{angle},"strokeColor":"#1e1e1e","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"strokeStyle":"solid","roughness":1,"opacity":100,"groupIds":[],"frameId":null,"index":"a1","roundness":null,"seed":1,"version":1,"versionNonce":2,"isDeleted":false,"boundElements":null,"updated":1,"link":null,"locked":false,"text":"Baseline probe","fontSize":20,"fontFamily":5,"textAlign":"left","verticalAlign":"top","containerId":null,"originalText":"Baseline probe","autoResize":true,"lineHeight":1.25}}],"appState":{{"viewBackgroundColor":"#ffffff"}},"files":{{}}}}"##
+        )
+        .as_bytes(),
+    )
+    .expect("anchored text scene is admitted")
+}
+
+/// The renderer's PNG for `scene` at `scale`, decoded to `(width, height,
+/// RGBA8)`.
+fn png_rgba(scene: &SceneDocument, scale: f64) -> (u32, u32, Vec<u8>) {
+    let request = RenderRequest::builder(OutputFormat::Png)
+        .sizing(Sizing::Scale(scale))
+        .build()
+        .expect("PNG request is valid");
+    let outcome = Renderer::new()
+        .render(scene, &request)
+        .expect("anchored text scene renders");
+    let mut decoder = ::png::Decoder::new(std::io::Cursor::new(outcome.artifact().bytes()));
+    decoder.set_transformations(::png::Transformations::IDENTITY);
+    let mut reader = decoder.read_info().expect("PNG structure is valid");
+    let mut rgba = vec![0; reader.output_buffer_size()];
+    let frame = reader.next_frame(&mut rgba).expect("PNG pixels decode");
+    rgba.truncate(frame.buffer_size());
+    (frame.width, frame.height, rgba)
+}
+
+/// The ink of every row of `rows` inside the text's columns (the anchor
+/// rectangle's horizontal strokes lie outside the rows, its vertical strokes
+/// outside the columns): the sum of `255 - min(r, g, b)` per row.
+fn row_ink(
+    raster: &(u32, u32, Vec<u8>),
+    columns: std::ops::Range<u32>,
+    rows: std::ops::Range<u32>,
+) -> Vec<u64> {
+    let (width, _, rgba) = raster;
+    rows.map(|y| {
+        columns
+            .clone()
+            .map(|x| {
+                let offset = ((y * width + x) * 4) as usize;
+                let pixel = &rgba[offset..offset + 4];
+                255 - u64::from(pixel[0].min(pixel[1]).min(pixel[2]))
+            })
+            .sum()
+    })
+    .collect()
+}
+
+#[test]
+fn png_snaps_each_text_baseline_to_the_device_pixel_grid_like_the_canvas() {
+    // Spec 8.5 (#169): the reference canvas's text rasterization rounds a glyph
+    // run's device y to `floor(y + 0.5)` and keeps x fractional, so PNG fills
+    // each line's outlines at the snapped baseline. Excalifont at 20 px with
+    // line height 1.25 has its first baseline 17.62 below the element's top
+    // (12.5 + 20 * (886 - 374) / 1000 / 2), so with the padding of 10 a text
+    // at y = 10 has its device baseline at 37.62, which snaps to 38, and every
+    // y whose baseline rounds to the same pixel fills the same rows.
+    let columns = 20..200;
+    let at = |y: f64| png_rgba(&anchored_text_scene(10.0, y, 0.0), 1.0);
+    let reference = at(10.0);
+    assert_eq!(at(10.3).2, reference.2, "37.92 snaps to 38 as 37.62 does");
+    assert_eq!(at(10.5).2, reference.2, "38.12 snaps to 38 as 37.62 does");
+    assert_eq!(
+        at(10.87).2,
+        reference.2,
+        "38.49 snaps to 38: the snap is floor(y + 0.5), not ceil"
+    );
+    // A baseline past the half-pixel snaps to the next row: the same ink one
+    // row lower, which is a shift of round(b) - b = +0.5 device pixels of the
+    // exact outline against +0.38 for the reference position.
+    let lower = at(10.9);
+    let reference_rows = row_ink(&reference, columns.clone(), 14..60);
+    let lower_rows = row_ink(&lower, columns.clone(), 14..60);
+    assert!(reference_rows.iter().any(|ink| *ink > 0));
+    assert_ne!(lower.2, reference.2);
+    assert_eq!(
+        lower_rows[1..],
+        reference_rows[..reference_rows.len() - 1],
+        "38.52 snaps to 39: the filled rows are the reference's shifted down by one"
+    );
+    // x stays fractional: a horizontal move of less than a pixel changes the
+    // raster, as the canvas positions glyphs with horizontal subpixel precision.
+    assert_ne!(
+        png_rgba(&anchored_text_scene(10.3, 10.0, 0.0), 1.0).2,
+        reference.2,
+        "x is not snapped"
+    );
+
+    // At export scale 2 the snap is taken in device pixels: the device baseline
+    // 2 * 37.62 = 75.24 snaps to 75, as does 75.44 (y = 10.1), while 75.64
+    // (y = 10.2) snaps to 76, one device row lower.
+    let scaled = |y: f64| png_rgba(&anchored_text_scene(10.0, y, 0.0), 2.0);
+    let scaled_reference = scaled(10.0);
+    assert_eq!(scaled(10.1).2, scaled_reference.2);
+    let scaled_lower = scaled(10.2);
+    let scaled_columns = 40..400;
+    let scaled_reference_rows = row_ink(&scaled_reference, scaled_columns.clone(), 28..120);
+    let scaled_lower_rows = row_ink(&scaled_lower, scaled_columns, 28..120);
+    assert!(scaled_reference_rows.iter().any(|ink| *ink > 0));
+    assert_eq!(
+        scaled_lower_rows[1..],
+        scaled_reference_rows[..scaled_reference_rows.len() - 1],
+        "at scale 2 a tenth of a logical pixel crosses the device half-pixel"
+    );
+
+    // A rotated line is not axis-aligned and keeps the exact baseline, as Skia
+    // positions a rotated run with subpixel precision on both axes.
+    let rotated = |y: f64| png_rgba(&anchored_text_scene(10.0, y, 0.3), 1.0);
+    assert_ne!(
+        rotated(10.0).2,
+        rotated(10.3).2,
+        "rotated text is not snapped"
+    );
+}

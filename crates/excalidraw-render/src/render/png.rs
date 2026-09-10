@@ -523,6 +523,32 @@ impl PngTransform {
         self
     }
 
+    /// The raster transform that fills one text line's glyph outlines, with
+    /// the line's baseline snapped to the device pixel grid the way the
+    /// reference canvas's text rasterization snaps it (spec 8.5, #169): Skia
+    /// positions an axis-aligned glyph run's origin with horizontal subpixel
+    /// precision and rounds its device y to `floor(y + 0.5)`, so every line the
+    /// canvas draws with `fillText` sits on a whole device pixel while its x
+    /// stays fractional. `baseline` is the line's baseline in the element's own
+    /// space; the snap is taken after the export scale, in device pixels, and
+    /// shifts the whole line's outlines by the same amount. A rotated line is
+    /// not axis-aligned and keeps the exact baseline, as Skia positions a
+    /// rotated run with subpixel precision on both axes.
+    fn text_line_transform(
+        self,
+        baseline: f64,
+        multiplier: u32,
+    ) -> Result<Transform, FormatEncodeError> {
+        if self.b != 0.0 || self.c != 0.0 {
+            return self.raster_transform(multiplier);
+        }
+        let device_baseline = self.d * baseline + self.f;
+        let snapped = (device_baseline + 0.5).floor();
+        let mut snapped_transform = self;
+        snapped_transform.f += snapped - device_baseline;
+        snapped_transform.raster_transform(multiplier)
+    }
+
     fn raster_image_transform(
         self,
         multiplier: u32,
@@ -910,9 +936,8 @@ impl PngPlan {
                         if let (Some(label), Some(color)) = (generated_label, generated_label_color)
                         {
                             let paint = solid_paint(*color, 1.0)?;
-                            let label_transform = element_transform
-                                .with_local_offset(0.0, *generated_label_offset_y)
-                                .raster_transform(SUBPIXEL_SCALE)?;
+                            let label_transform =
+                                element_transform.with_local_offset(0.0, *generated_label_offset_y);
                             for line in &label.lines {
                                 let Some(path) = label_path(&line.path)? else {
                                     continue;
@@ -921,7 +946,8 @@ impl PngPlan {
                                     &path,
                                     &paint,
                                     FillRule::Winding,
-                                    label_transform,
+                                    label_transform
+                                        .text_line_transform(line.baseline, SUBPIXEL_SCALE)?,
                                     paint_mask,
                                 );
                             }
@@ -1027,7 +1053,8 @@ impl PngPlan {
                                     &path,
                                     &paint,
                                     FillRule::Winding,
-                                    name.transform.raster_transform(SUBPIXEL_SCALE)?,
+                                    name.transform
+                                        .text_line_transform(name.label.baseline, SUBPIXEL_SCALE)?,
                                     None,
                                 );
                             }
@@ -1045,7 +1072,6 @@ impl PngPlan {
                             ));
                         }
                         let paint = solid_paint(*color, *opacity)?;
-                        let raster_transform = transform.raster_transform(SUBPIXEL_SCALE)?;
                         for line in &text.lines {
                             let Some(path) = label_path(&line.path)? else {
                                 continue;
@@ -1054,7 +1080,7 @@ impl PngPlan {
                                 &path,
                                 &paint,
                                 FillRule::Winding,
-                                raster_transform,
+                                transform.text_line_transform(line.baseline, SUBPIXEL_SCALE)?,
                                 paint_mask,
                             );
                         }
