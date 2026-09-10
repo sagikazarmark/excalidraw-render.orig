@@ -747,6 +747,16 @@ pub(super) fn layout_with_fallbacks(
     let text_align = ResolvedTextAlign::from_normalized(layout.text_align);
     let line_step = layout.font_size * layout.line_height;
     let first_baseline = layout.first_baseline()?;
+    // The base direction is the element's, detected once over the stored
+    // `text` (spec 8.3, #166): the reference sets the canvas `dir` and every
+    // line's SVG `direction` from `isRTL(element.text)`, so every source line
+    // and every UAX #9 paragraph within one takes that level rather than
+    // detecting its own from its first strong character.
+    let base_level = if element_is_rtl(text) {
+        unicode_bidi::Level::rtl()
+    } else {
+        unicode_bidi::Level::ltr()
+    };
     let mut lines = Vec::new();
     let mut missing_codepoints = Vec::new();
     let mut used_noto = false;
@@ -759,14 +769,14 @@ pub(super) fn layout_with_fallbacks(
         let mut selections = Vec::<(usize, bool, usize, char)>::new();
         let mut line_missing = Vec::<(usize, u32)>::new();
         selections.try_reserve_exact(source_content.chars().count())?;
-        let bidi = unicode_bidi::BidiInfo::new(source_content, None);
+        let bidi = unicode_bidi::BidiInfo::new(source_content, Some(base_level));
         // Spec 8.3 keeps the reference's line rule, so a UAX #9 paragraph
         // separator (U+2029, U+0085, U+001C..U+001E) stays inside the source
         // line while unicode-bidi splits the line into paragraphs at it (P1).
-        // Every paragraph is content: each is laid out in order, with its own
-        // base level, and the separator ends the paragraph it belongs to. The
-        // paragraphs partition the line, so every scalar is in some visual run;
-        // an empty line has none.
+        // Every paragraph is content: each is laid out in order, at the
+        // element's base level, and the separator ends the paragraph it
+        // belongs to. The paragraphs partition the line, so every scalar is
+        // in some visual run; an empty line has none.
         let mut bidi_run = 0_usize;
         for paragraph in &bidi.paragraphs {
             let (levels, ranges) = bidi.visual_runs(paragraph, paragraph.range.clone());
@@ -932,8 +942,59 @@ pub(super) fn layout_with_fallbacks(
     ))
 }
 
-pub(super) fn contains_bidirectional_text(text: &str) -> bool {
-    unicode_bidi::BidiInfo::new(text, None).has_rtl()
+/// Whether `text` needs the UAX #9 layout of `layout_with_fallbacks` rather
+/// than the whole-line shaping of `OfficialFont::layout`: the element's base
+/// direction is right-to-left, or some scalar resolves to a right-to-left
+/// level under it. A left-to-right element whose every line resolves to one
+/// left-to-right run is unaffected by the base level and shapes whole.
+pub(super) fn needs_bidi_layout(text: &str) -> bool {
+    element_is_rtl(text) || unicode_bidi::BidiInfo::new(text, None).has_rtl()
+}
+
+/// The reference's `isRTL(element.text)`, which sets the canvas `dir`
+/// attribute and every line's SVG `direction` for the whole element (#166):
+///
+/// ```js
+/// const LTR = "A-Za-z\xC0-\xD6\xD8-\xF6\xF8-\u02B8\u0300-\u0590\u0800-\u1FFF\u2C00-\uFB1C\uFDFE-\uFE6F\uFEFD-\uFFFF";
+/// const RTL = "\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC";
+/// const isRTL = (text) => new RegExp(`^[^${LTR}]*[${RTL}]`).test(text);
+/// ```
+///
+/// The text is right-to-left when, reading from the start and skipping every
+/// unit in neither class (digits, spaces, punctuation, line terminators), the
+/// first unit in either class is in the right-to-left one. The regex has no
+/// `u` flag, so it reads UTF-16 code units: a surrogate falls inside the
+/// `\u2C00-\uFB1C` range and every supplementary scalar therefore counts as
+/// left-to-right, as do the combining marks of `\u0300-\u0590`. This is not
+/// UAX #9 P2/P3 and is reproduced as the reference spells it.
+pub(super) fn element_is_rtl(text: &str) -> bool {
+    const LTR: &[(u16, u16)] = &[
+        (0x41, 0x5a),
+        (0x61, 0x7a),
+        (0xc0, 0xd6),
+        (0xd8, 0xf6),
+        (0xf8, 0x2b8),
+        (0x300, 0x590),
+        (0x800, 0x1fff),
+        (0x2c00, 0xfb1c),
+        (0xfdfe, 0xfe6f),
+        (0xfefd, 0xffff),
+    ];
+    const RTL: &[(u16, u16)] = &[(0x591, 0x7ff), (0xfb1d, 0xfdfd), (0xfe70, 0xfefc)];
+    let within = |ranges: &[(u16, u16)], unit: u16| {
+        ranges
+            .iter()
+            .any(|(start, end)| (*start..=*end).contains(&unit))
+    };
+    for unit in text.encode_utf16() {
+        if within(LTR, unit) {
+            return false;
+        }
+        if within(RTL, unit) {
+            return true;
+        }
+    }
+    false
 }
 
 fn resolve_character_font(
@@ -1609,8 +1670,8 @@ fn shape_text(
 enum ShapeDirection {
     /// The shaper's guess from the text's script: left to right unless the
     /// text carries a right-to-left script. Text shaped this way has had no
-    /// UAX #9 resolution: the primary path's whole line, which has no
-    /// right-to-left content or it would take `layout_with_fallbacks`; the
+    /// UAX #9 resolution: the primary path's whole line, whose element needs
+    /// no bidi layout or it would take `layout_with_fallbacks`; the
     /// embeddable label wrapper's width measurements; and the frame name and
     /// placeholder labels `FallbackFont` shapes whole after `?`-replacement.
     Guessed,

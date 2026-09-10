@@ -1416,14 +1416,111 @@ fn every_bidi_paragraph_of_a_source_line_is_laid_out() {
         );
     }
 
-    // Each paragraph detects its own base level from its own first strong
-    // character: Hebrew then a separator is one right-to-left paragraph, the
-    // Latin after it a left-to-right one.
+    // Every paragraph takes the element's base level (#166): Hebrew then a
+    // separator is one right-to-left paragraph, and the Latin after it is
+    // laid out as its own paragraph at the same right-to-left level, whose
+    // one left-to-right run is unchanged by that level.
     let source = "\u{5d0}\u{2029}ab";
     let laid_out = fallback_layout(9, source);
     assert_eq!(line_texts(&laid_out), [(source, "??ab")]);
     assert_eq!(single_line_runs(&laid_out), [("??", true), ("ab", false)]);
     assert_eq!(laid_out.missing_codepoints, [0x5d0, 0x2029]);
+}
+
+#[test]
+fn the_bidi_base_direction_is_the_elements_and_applies_to_every_line() {
+    // The reference detects the direction once per text element with
+    // `isRTL(element.text)` and sets the canvas `dir` and every line's SVG
+    // `direction` from it, so a line is laid out at the element's base level
+    // whatever its own first strong character is (#166). The issue's probe:
+    // a Hebrew first line makes the element right-to-left, and its second
+    // line, which starts with Latin, reads `world 123 <Arabic> Hello` in
+    // visual order, as the official canvas draws it. Under a line's own
+    // detection the second line would read `Hello 123 <Arabic> world`.
+    let probe = "\u{5e9}\u{5dc}\u{5d5}\u{5dd} \u{5e2}\u{5d5}\u{5dc}\u{5dd}\nHello \u{645}\u{631}\u{62d}\u{628}\u{627} 123 world";
+    assert!(text::element_is_rtl(probe));
+    assert!(text::needs_bidi_layout(probe));
+    let laid_out = fallback_layout(5, probe);
+    assert_eq!(laid_out.lines.len(), 2);
+    let visual: String = laid_out.lines[1]
+        .runs
+        .iter()
+        .map(|run| run.display_text.as_str())
+        .collect();
+    assert_eq!(
+        visual, "world 123 ????? Hello",
+        "the Latin-first second line takes the element's right-to-left level"
+    );
+    assert_eq!(laid_out.lines[1].display_text, visual);
+    let leftmost = laid_out.lines[1].runs.first().expect("runs");
+    assert!(
+        laid_out.lines[1].glyphs[leftmost.glyph_start].x.abs() < 1e-9,
+        "the visually first run starts at the left-aligned line origin"
+    );
+
+    // The inverse: a Latin first line makes the element left-to-right, and a
+    // second line that starts with Hebrew is laid out at that level, so its
+    // trailing Latin word stays at the right and the digits follow the Hebrew
+    // in reading order: `123 <Hebrew> world`. Its own detection would give
+    // `world 123 <Hebrew>`.
+    let inverse = "Hello world\n\u{5e9}\u{5dc}\u{5d5}\u{5dd} 123 world";
+    assert!(!text::element_is_rtl(inverse));
+    assert!(text::needs_bidi_layout(inverse));
+    let laid_out = fallback_layout(5, inverse);
+    let visual: String = laid_out.lines[1]
+        .runs
+        .iter()
+        .map(|run| run.display_text.as_str())
+        .collect();
+    assert_eq!(visual, "123 ???? world");
+
+    // A left-to-right element with no right-to-left content needs no bidi
+    // layout at all, while a right-to-left element does even for a line whose
+    // scalars are all left-to-right or neutral: at the right-to-left level a
+    // trailing neutral takes the paragraph direction and moves to the left.
+    assert!(!text::needs_bidi_layout("Hello!\nworld"));
+    let trailing = "\u{5d0}\nHello!";
+    assert!(text::needs_bidi_layout(trailing));
+    let laid_out = fallback_layout(5, trailing);
+    assert_eq!(runs_of(&laid_out.lines[1]), [("!", true), ("Hello", false)]);
+}
+
+#[test]
+fn the_elements_direction_is_the_references_regex_over_utf16_units() {
+    // `isRTL` skips every unit in neither class and decides on the first unit
+    // in either; it reads UTF-16 code units, so a supplementary scalar (a
+    // surrogate pair inside `\u2C00-\uFB1C`) and a combining mark of
+    // `\u0300-\u0590` are left-to-right, unlike UAX #9's treatment of them.
+    assert!(text::element_is_rtl("\u{5d0}"));
+    assert!(text::element_is_rtl("\u{627}\u{644}"));
+    assert!(text::element_is_rtl(" 123 (\u{5d0}) abc"));
+    assert!(text::element_is_rtl("\n\r\t\u{5d0}"));
+    assert!(text::element_is_rtl("\u{fb1d}"));
+    assert!(text::element_is_rtl("\u{fe70}"));
+    assert!(
+        text::element_is_rtl("\u{660}12 abc"),
+        "Arabic digits are in the RTL class"
+    );
+    assert!(!text::element_is_rtl(""));
+    assert!(!text::element_is_rtl("123 !?"));
+    assert!(!text::element_is_rtl("abc \u{5d0}"));
+    assert!(!text::element_is_rtl("\u{e9}\u{5d0}"));
+    assert!(
+        !text::element_is_rtl("\u{300}\u{5d0}"),
+        "a combining mark is in the LTR class"
+    );
+    assert!(
+        !text::element_is_rtl("\u{1f600}\u{5d0}"),
+        "a surrogate pair is in the LTR class"
+    );
+    assert!(
+        !text::element_is_rtl("\u{4e2d}\u{5d0}"),
+        "CJK is in the LTR class"
+    );
+    assert!(
+        !text::element_is_rtl("\u{800}\u{5d0}"),
+        "U+0800-U+1FFF is in the LTR class"
+    );
 }
 
 #[test]

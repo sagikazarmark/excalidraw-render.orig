@@ -907,14 +907,32 @@ line's own terminator bytes, so the lines concatenate back to the stored
 `text`. This is the same line count the restored line height divides by.
 
 Within each source line, bidirectional text follows UAX #9 as the pinned
-`unicode-bidi 0.3.18` implements it (#122): the line's base level is detected
-from its first strong character (left-to-right when it has none), and its
-resolved levels are reordered into visual runs. Only the line terminators above
-end a source line, so a UAX #9 paragraph separator inside one (U+2029, U+0085,
-U+001C–U+001E) is admitted content that splits the line into paragraphs (P1):
-every paragraph is laid out, in order, with its own base level detected the
-same way, and the separator itself is shaped with the paragraph it ends, as
-the missing codepoint it is in every bundled face (#125). Every format lays
+`unicode-bidi 0.3.18` implements it (#122), at a base level that is the text
+element's, not the line's (#166). The reference detects the direction once per
+element with its `isRTL(element.text)` and sets the canvas `dir` attribute and
+every line's SVG `direction` from it, so revision 1 detects the base level
+once over the stored `text` with the same rule and lays out every source line,
+and every UAX #9 paragraph within one, at that level (`BidiInfo::new(line,
+Some(level))`), never from a line's own first strong character. The rule is
+the reference's regex, not P2/P3: reading the text's UTF-16 code units from
+the start and skipping every unit in neither class, the element is
+right-to-left when the first unit in either class is in
+`\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC` and left-to-right when it is in
+`A-Za-z\xC0-\xD6\xD8-\xF6\xF8-\u02B8\u0300-\u0590\u0800-\u1FFF\u2C00-\uFB1C\uFDFE-\uFE6F\uFEFD-\uFFFF`
+or the text has no unit in either class; digits, spaces, punctuation and line
+terminators are skipped, combining marks and, through their surrogates, every
+supplementary scalar count as left-to-right, and Arabic digits as
+right-to-left. A right-to-left element therefore reorders a line that starts
+with Latin the way the canvas does (`Hello <Arabic> 123 world` reads
+`world 123 <Arabic> Hello`), and a left-to-right element keeps a trailing
+neutral of a Hebrew line at the right; every line of a right-to-left element
+takes the UAX #9 layout even when none of its scalars is right-to-left. The
+line's resolved levels are reordered into visual runs. Only the line
+terminators above end a source line, so a UAX #9 paragraph separator inside
+one (U+2029, U+0085, U+001C–U+001E) is admitted content that splits the line
+into paragraphs (P1): every paragraph is laid out, in order, at the element's
+level, and the separator itself is shaped with the paragraph it ends, as the
+missing codepoint it is in every bundled face (#125). Every format lays
 those runs out left to right in visual order, and each visual run is split
 further by the face that shapes its scalars under 8.3.1, so one visual run of
 one face is one glyph run; the face runs of a right-to-left visual run follow
@@ -930,9 +948,9 @@ in visual order, leftmost first, so an asymmetric neutral inside it sits at
 its visual end, and a mirrored character shows its mirror glyph (UAX #9 L4)
 when the face has one. The text a format carries beside the glyphs stays in
 logical order (`data-source-text`, `ActualText`, and each run's `<tspan>`
-content), as do missing-codepoint diagnostics. An occurrence with no
-right-to-left content whose shaped scalars the whole-text face all maps is one
-run of that face per line and emits no direction.
+content), as do missing-codepoint diagnostics. A left-to-right occurrence with
+no right-to-left content whose shaped scalars the whole-text face all maps is
+one run of that face per line and emits no direction.
 
 #### 8.3.1 Semantic Demand and Face Selection
 

@@ -11,8 +11,8 @@ use super::super::bound_text::has_reciprocal_bound_text;
 use super::super::font_demand::ResolvedFont;
 use super::super::geometry::GeneratedGeometry;
 use super::super::text::{
-    contains_bidirectional_text, layout_with_fallbacks, CjkSubsetTrigger, OfficialFont,
-    ResolvedText, TextLayout, EXCALIFONT_FONT_FAMILY,
+    layout_with_fallbacks, needs_bidi_layout, CjkSubsetTrigger, OfficialFont, ResolvedText,
+    TextLayout, EXCALIFONT_FONT_FAMILY,
 };
 use super::super::try_owned;
 use super::{
@@ -81,7 +81,8 @@ pub(super) fn official_font_index(
 
 /// `text` laid out in `official_fonts[font_index]`, then again through the
 /// per-scalar fallback chain when that whole-text face misses a scalar or the
-/// text is bidirectional.
+/// element needs UAX #9 layout (a right-to-left base direction or a
+/// right-to-left run, spec 8.3).
 pub(super) fn layout_official_text(
     official_fonts: &mut Vec<OfficialFont>,
     font_index: usize,
@@ -100,7 +101,7 @@ pub(super) fn layout_official_text(
         .layout(text, layout)
         .map_err(label_error)?;
     laid_out.font_index = font_index;
-    if !laid_out.missing_codepoints.is_empty() || contains_bidirectional_text(text) {
+    if !laid_out.missing_codepoints.is_empty() || needs_bidi_layout(text) {
         laid_out = layout_with_fallbacks(
             font_index,
             official_fonts,
