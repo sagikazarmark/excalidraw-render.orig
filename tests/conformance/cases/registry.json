@@ -5288,8 +5288,7 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
       ],
       "variants": [
         {
@@ -5315,7 +5314,19 @@
       "expected_diagnostics": {
         "png": [],
         "svg": []
-      }
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+          "format": "png",
+          "max_changed_pixels": 241,
+          "minimum_ssim_bits": "3fefd1f0546a10dc",
+          "reason": "Fill and stroke rasterization. All 34 SVG paths match the official export byte for byte and the document rasterizes identically under one rasterizer (0 changed pixels), so the difference arises while rasterizing geometry both renderers agree on, not in the geometry: the hachure fills' fillWeight of one pixel and half a pixel, which the reference canvas's Skia strokes as hairlines whose overlapping segments accumulate coverage. The scene carries no text. The same class is recorded on #104 for focused.ellipse-diamond-fills.v1 and on #152 for focused.cartoonist-roughness.v1. Decided on #152.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
     },
     {
       "id": "focused.transform-opacity-groups.v1",

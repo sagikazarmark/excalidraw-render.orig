@@ -42,21 +42,6 @@ use common::repository_root;
 /// Diagnosed defects whose fix is pending a maintainer decision. See
 /// `PinnedDivergence` for why these are pinned rather than excepted.
 const KNOWN_DEFECTS: &[PinnedDivergence] = &[
-    // #152: not a renderer defect. All 34 paths match the official export
-    // byte for byte and the document rasterizes identically under one
-    // `resvg`; the direct PNG differs by the fill-and-stroke rasterization
-    // class #104 excepted for `ellipse-diamond-fills` (the hachure fills'
-    // hairline strokes, which the reference canvas's Skia accumulates where
-    // its segments overlap). Held here until #152 decides whether the case
-    // records that exception, which round C admitted for
-    // `cartoonist-roughness` only.
-    PinnedDivergence {
-        case: "focused.roundness-records.v1",
-        variant: "default",
-        issue: "#152",
-        changed_pixels: 241,
-        ssim_bits: 0x3fef_d1f0_546a_10dc,
-    },
     // #170: a freedraw loop's Rough.js background fill starts its seeded
     // stream without the discarded curve outline's draws, and the scene
     // surface substitutes roughness 1 and seed 1 for the element's own, so
