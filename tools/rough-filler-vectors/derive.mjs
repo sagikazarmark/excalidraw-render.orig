@@ -21,13 +21,16 @@
 //     < scene.excalidraw
 //
 // The scene is a scene document whose elements are rectangles, diamonds,
-// ellipses or lines without arrowheads (closed with a background, open, or
-// rounded), the shapes the test scenes carry; each element's paths are printed
-// in document order, the fill first, then the outline, with their SHA-256
-// digests and the digest of every path joined by `\n`, which is what the Rust
-// tests pin.
+// ellipses, lines without arrowheads (closed with a background, open, or
+// rounded) or freedraw loops with a background, the shapes the test scenes
+// carry; each element's paths are printed in document order, the fill first,
+// then the outline, with their SHA-256 digests and the digest of every path
+// joined by `\n`, which is what the Rust tests pin. A freedraw loop prints
+// only its Rough.js background fill: the reference draws its stroke with
+// perfect-freehand, not Rough.js, and passes `stroke: "none"` to the curve.
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const roughPath = process.argv[2];
@@ -36,6 +39,11 @@ if (!roughPath) {
   process.exit(2);
 }
 const { default: rough } = await import(pathToFileURL(roughPath).href);
+// `points-on-curve` is the dependency Excalidraw 0.18.1 simplifies a freedraw
+// loop with before filling it, resolved beside the bundled Rough.js.
+const { simplify } = await import(
+  pathToFileURL(resolve(dirname(roughPath), "../../points-on-curve/lib/index.js")).href
+);
 const generator = rough.generator();
 
 // Rough.js `Random` (bin/math.js), the seeded generator every option set
@@ -156,6 +164,15 @@ function shape(element) {
         return generator.polygon(element.points, options);
       }
       return generator.linearPath(element.points, options);
+    }
+    case "freedraw": {
+      // A freedraw loop's background is a curve over the RDP-simplified points
+      // with `stroke: "none"`, as the reference's `freedraw` case builds it;
+      // the stroke itself is perfect-freehand and not drawn here.
+      return generator.curve(simplify(element.points, 0.75), {
+        ...generateRoughOptions(element),
+        stroke: "none",
+      });
     }
     default:
       throw new Error(`derive.mjs does not draw ${element.type}`);

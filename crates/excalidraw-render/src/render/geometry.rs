@@ -361,7 +361,14 @@ pub(super) fn rough_drawing(
 
     let width = source.width;
     let height = source.height;
+    // The reference's `preserveVertices` is `continuousPath || roughness < 2`
+    // on the element's raw roughness; `continuousPath` is set only for the
+    // `generator.path` shapes, the rounded rectangle and diamond, which is
+    // what `roundness.is_some()` stands for here. A rounded line or arrow is a
+    // `generator.curve` with no `continuousPath`, so its fill takes the raw
+    // roughness test alone (#158).
     let preserve_vertices = source.roundness.is_some() || source.roughness < 2.0;
+    let curve_preserves_vertices = source.roughness < 2.0;
     let fill_style = (source.background_color != "transparent")
         .then(|| rough::FillStyle::from_normalized(&source.fill_style));
     let disable_multi_stroke = source.stroke_style != "solid";
@@ -584,6 +591,7 @@ pub(super) fn rough_drawing(
                     closed,
                     source.seed,
                     roughness,
+                    curve_preserves_vertices,
                     disable_multi_stroke,
                     closed.then_some(fill_style).flatten(),
                     source.stroke_width,

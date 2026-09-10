@@ -324,6 +324,7 @@ impl RenderSession {
                                         &freedraw.points,
                                         source.seed,
                                         roughness,
+                                        source.roughness < 2.0,
                                         source.stroke_style != "solid",
                                         rough::FillStyle::from_normalized(&source.fill_style),
                                         source.stroke_width,

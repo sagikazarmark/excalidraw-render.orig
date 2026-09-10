@@ -114,10 +114,15 @@ pub(super) fn generate(
     path_from_outline(&outline, budget)
 }
 
+/// The Rough.js background fill of a freedraw loop. `preserve_vertices` is the
+/// element's raw `roughness < 2`, the value the reference's
+/// `generateRoughOptions(element)` gives the curve it fills with (#158).
+#[allow(clippy::too_many_arguments)]
 pub(super) fn background_fill(
     points: &[[f64; 2]],
     seed: i32,
     roughness: f64,
+    preserve_vertices: bool,
     disable_multi_stroke: bool,
     fill_style: super::rough::FillStyle,
     stroke_width: f64,
@@ -135,6 +140,7 @@ pub(super) fn background_fill(
         &simplified,
         seed,
         roughness,
+        preserve_vertices,
         disable_multi_stroke,
         fill_style,
         stroke_width,

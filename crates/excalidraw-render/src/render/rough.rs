@@ -608,12 +608,18 @@ pub(super) enum RoundedSegment {
     },
 }
 
+/// A curve's outline never reads `preserve_vertices`; its pattern fill does,
+/// through `_line`, which jitters each fill line's endpoints unless the
+/// vertices are preserved. The reference drives a rounded line or arrow with
+/// `generateRoughOptions(element)` and no `continuousPath`, so the value is
+/// the element's raw `roughness < 2` (#158), which the caller passes in.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn curve_drawing(
     points: &[Point],
     closed: bool,
     seed: i32,
     roughness: f64,
+    preserve_vertices: bool,
     disable_multi_stroke: bool,
     fill_style: Option<FillStyle>,
     source_stroke_width: f64,
@@ -649,11 +655,7 @@ pub(super) fn curve_drawing(
                         style,
                         source_stroke_width,
                         roughness,
-                        // The reference's curve fill keeps its vertices only
-                        // below cartoonist roughness; the hachure port has
-                        // always kept them, the other fillers inherit that,
-                        // and #158 carries the correction.
-                        preserve_vertices: true,
+                        preserve_vertices,
                         disable_multi_stroke,
                         curve_fitting: 0.95,
                         seed,
@@ -674,10 +676,16 @@ pub(super) fn curve_drawing(
     })
 }
 
+/// The Rough.js background fill of a freedraw loop, which the reference draws
+/// as a `generator.curve` with `stroke: "none"` over the simplified points.
+/// `preserve_vertices` is the element's raw `roughness < 2`, as for
+/// [`curve_drawing`] (#158).
+#[allow(clippy::too_many_arguments)]
 pub(super) fn curve_fill(
     points: &[Point],
     seed: i32,
     roughness: f64,
+    preserve_vertices: bool,
     disable_multi_stroke: bool,
     fill_style: FillStyle,
     source_stroke_width: f64,
@@ -690,7 +698,7 @@ pub(super) fn curve_fill(
             style: fill_style,
             source_stroke_width,
             roughness,
-            preserve_vertices: true,
+            preserve_vertices,
             disable_multi_stroke,
             curve_fitting: 0.95,
             seed,

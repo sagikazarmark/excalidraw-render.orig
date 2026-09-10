@@ -633,7 +633,14 @@ to export identical bytes and rejects a dotted scene, so the JS-derived unit
 vectors in `render/tests.rs` and the fast test over the withdrawn dots scene
 (`tests/fixtures/rough-fillers-dots.excalidraw`), both pinned against the npm
 Rough.js through `tools/rough-filler-vectors/derive.mjs`, are its evidence
-(#137).
+(#137). Every pattern filler's lines keep their endpoints on the fill polygon
+or jitter them as the reference's `preserveVertices` decides: the option is
+`continuousPath || roughness < 2` on the element's raw `roughness`, with
+`continuousPath` set only for the shapes the reference draws as a Rough.js
+path — the rounded rectangle, the rounded diamond and the elbow arrow — so a
+rounded line or arrow, whose closed loop the reference fills as a curve, and a
+freedraw loop drop their fill vertices at cartoonist roughness like an
+unrounded shape does (#158).
 
 Dark mode is the reference export's `THEME_FILTER`,
 `invert(93%) hue-rotate(180deg)`, which the reference SVG carries on its root

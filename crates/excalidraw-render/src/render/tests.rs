@@ -2894,6 +2894,45 @@ fn patterned_curved_boundaries_match_pinned_js_sampling() {
 }
 
 #[test]
+fn cartoonist_curve_fill_drops_its_vertices_like_the_pinned_roughjs() {
+    // The rounded curve of `patterned_curved_boundaries_match_pinned_js_sampling`
+    // at roughness 2 (#158). The reference fills a rounded line through
+    // `generateRoughOptions(element)` with no `continuousPath`, so its
+    // `preserveVertices` is the raw `roughness < 2`: off here, and every
+    // hachure line's endpoints jitter. The digests are the pinned npm Rough.js
+    // 4.6.4's, computed with
+    //
+    //   node tools/rough-filler-vectors/derive.mjs \
+    //     tools/reference-oracle/node_modules/roughjs/bundled/rough.esm.js \
+    //     <<< "$SCENE"
+    //
+    // under Node 24.19.0 after `tools/reference-oracle/run-container.sh
+    // install`; the outline never reads `preserveVertices` and matched before
+    // the fix, and the roughness-1 fill above is unchanged by it.
+    let paths = rough_svg_paths_of(
+        br##"{
+      "type":"excalidraw","version":2,
+      "elements":[
+        {"id":"rounded-curve","type":"line","x":110,"y":10,"width":80,"height":50,"points":[[0,0],[80,0],[80,50],[0,50],[4,3]],"roundness":{"type":2},"backgroundColor":"#e03131","fillStyle":"hachure","roughness":2,"seed":32,"updated":1}
+      ],
+      "appState":{},"files":{}
+    }"##,
+    );
+    assert_eq!(paths.len(), 2);
+    assert_eq!(paths[0].matches(['M', 'C', 'L']).count(), 48);
+    assert_eq!(
+        sha256_hex(&paths[0]),
+        "e9c556b28004a9a7c9425d26d770e182af260fcf131b4a03304fd2d8da9c37f5",
+        "cartoonist rounded curve fill was generated independently with pinned Rough.js 4.6.4",
+    );
+    assert_eq!(
+        sha256_hex(&paths[1]),
+        "96e733b3bd8d647459779543a05f1e8e598f6635ac2def9aa23f8fdf889f36c1",
+        "cartoonist rounded curve outline was generated independently with pinned Rough.js 4.6.4",
+    );
+}
+
+#[test]
 fn line_fill_uses_the_exact_export_zoom_loop_threshold() {
     // The export treats a line as closed, and fills it, when its last point
     // sits within `LINE_CONFIRM_THRESHOLD / zoom` of its first; `[6.4, 4.8]`
