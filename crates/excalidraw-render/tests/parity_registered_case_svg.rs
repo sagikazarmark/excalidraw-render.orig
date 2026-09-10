@@ -84,7 +84,34 @@ use common::repository_root;
 /// Diagnosed defects whose fix is pending a maintainer decision, observed on the
 /// rasterized document. See `PinnedDivergence` for why these are pinned rather
 /// than excepted.
-const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
+const KNOWN_DEFECTS: &[PinnedDivergence] = &[
+    // #163: not a renderer defect. The official SVG declares the corner clip
+    // of a rounded, cropped image at the crop-shifted group origin and attaches
+    // it with a namespaced attribute, so under `usvg`, which honours the
+    // attribute, it hides all but the image's top-left quadrant, while the
+    // renderer clips at the element's rectangle as the official canvas does.
+    // Held here until #163 decides how the harness records a reference
+    // authority divergence it can see.
+    PinnedDivergence {
+        case: "focused.rounded-image-crop.v1",
+        variant: "default",
+        issue: "#163",
+        changed_pixels: 6468,
+        ssim_bits: 0x3fe8_8903_ca14_e3b0,
+    },
+    // #161: the renderer's dark-mode raster-image filter spells the saturate
+    // step as `feColorMatrix type="saturate" values="1.25"`, which `usvg`
+    // clamps to 1, so the raster image renders unsaturated under this
+    // rasterizer where the official export's `saturate(1.25)` function does
+    // not. The `default` variant of the same case passes.
+    PinnedDivergence {
+        case: "focused.dark-mode-frames-and-images.v1",
+        variant: "dark-mode",
+        issue: "#161",
+        changed_pixels: 8,
+        ssim_bits: 0x3fef_f63d_a137_8301,
+    },
+];
 
 /// Compatibility exceptions whose approved tolerance exception the case
 /// manifest carries for the direct PNG, observed here on the rasterized SVG

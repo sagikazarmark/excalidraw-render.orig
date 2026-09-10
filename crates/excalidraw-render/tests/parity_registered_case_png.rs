@@ -41,7 +41,90 @@ use common::repository_root;
 
 /// Diagnosed defects whose fix is pending a maintainer decision. See
 /// `PinnedDivergence` for why these are pinned rather than excepted.
-const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
+///
+/// The evidence round A cases (#153, #137 item 2) are registered with a null
+/// approval and every variant is held here at its exact direct-PNG
+/// measurement until the issue named on each entry is decided, so a fix, a
+/// recorded exception, or a regression moves a pin instead of passing quietly.
+const KNOWN_DEFECTS: &[PinnedDivergence] = &[
+    // #160: the rounded diamond's corner radii come from width/2 and height/2
+    // rather than the reference's diamond vertex offsets, so its outline is a
+    // quarter pixel off (the path dimension of `parity_registered_case_svg`
+    // shows the exact difference). The rest of the measurement is the frame
+    // of the legacy `20px Virgil` text's glyph coverage (#104 class) and the
+    // roughness-0 stroke edges.
+    PinnedDivergence {
+        case: "focused.legacy-stroke-sharpness.v1",
+        variant: "default",
+        issue: "#160",
+        changed_pixels: 100,
+        ssim_bits: 0x3fef_eb47_cf5f_f759,
+    },
+    // #162: the fractional-size images' edge rows and columns are area-
+    // antialiased where the reference canvas snaps axis-aligned images to
+    // pixel-centre coverage, plus the 32->96 resampling footprint at the
+    // payload's colour boundaries; zero Pixelmatch-changed pixels in either
+    // variant. The asset-bearing scene schema admits no tolerance exception.
+    PinnedDivergence {
+        case: "focused.rounded-image.v1",
+        variant: "default",
+        issue: "#162",
+        changed_pixels: 0,
+        ssim_bits: 0x3fef_eb08_a50a_ed8c,
+    },
+    PinnedDivergence {
+        case: "focused.rounded-image.v1",
+        variant: "scale-2",
+        issue: "#162",
+        changed_pixels: 0,
+        ssim_bits: 0x3fef_f417_75e1_62ed,
+    },
+    // #162 as well: the same resampling footprint on the two cropped images;
+    // the rounded clip itself agrees with the official canvas. The reference
+    // SVG's misplaced clip for this element is #163, observed by the SVG
+    // harness, not here.
+    PinnedDivergence {
+        case: "focused.rounded-image-crop.v1",
+        variant: "default",
+        issue: "#162",
+        changed_pixels: 0,
+        ssim_bits: 0x3fef_f2ed_dc0c_3648,
+    },
+    // #153: the two frame names' sub-pixel glyph coverage (the #104 class, the
+    // largest component in both variants) with the raster image's resampling
+    // footprint and the rounded frame corners' edge antialiasing. Not a
+    // renderer defect; pinned because the asset-bearing scene schema admits no
+    // tolerance exception, so whether the schema gains one or the case is
+    // approved another way is the maintainer's decision on #153.
+    PinnedDivergence {
+        case: "focused.dark-mode-frames-and-images.v1",
+        variant: "default",
+        issue: "#153",
+        changed_pixels: 52,
+        ssim_bits: 0x3fef_f289_2ae7_60db,
+    },
+    PinnedDivergence {
+        case: "focused.dark-mode-frames-and-images.v1",
+        variant: "dark-mode",
+        issue: "#153",
+        changed_pixels: 60,
+        ssim_bits: 0x3fef_f1b7_27cd_b3d5,
+    },
+    // #137: fill and stroke rasterization, the class #104 excepted for
+    // `focused.ellipse-diamond-fills.v1`. All 64 SVG paths match the official
+    // export byte for byte and the document rasterizes identically under one
+    // rasterizer (0 px, SSIM 1.0), so the whole difference is the two
+    // rasterizers' antialiasing of the fill lines, largest on the strokeWidth-1
+    // rows whose fillWeight is half a pixel. Not a renderer defect; pinned
+    // until the maintainer records the exception on #137.
+    PinnedDivergence {
+        case: "focused.rough-fillers-dashed-zigzag-line.v1",
+        variant: "default",
+        issue: "#137",
+        changed_pixels: 487,
+        ssim_bits: 0x3fef_910b_4970_cfd8,
+    },
+];
 
 #[test]
 fn every_registered_scene_case_matches_its_official_direct_png() {
