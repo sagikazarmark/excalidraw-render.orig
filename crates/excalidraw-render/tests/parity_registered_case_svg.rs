@@ -76,7 +76,7 @@ use usvg::fontdb;
 
 use common::registered_cases::{
     case_count, judge_each, observed, registered_scene_variants, variant_request, visual_class,
-    PinnedDivergence, ReferenceAuthorityDivergence, RegisteredVariant,
+    PinnedDivergence, PinnedGeometryDefect, ReferenceAuthorityDivergence, RegisteredVariant,
 };
 use common::reports::assert_report_matches;
 use common::repository_root;
@@ -84,7 +84,59 @@ use common::repository_root;
 /// Diagnosed defects whose fix is pending a maintainer decision, observed on the
 /// rasterized document. See `PinnedDivergence` for why these are pinned rather
 /// than excepted.
-const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
+const KNOWN_DEFECTS: &[PinnedDivergence] = &[
+    // #170: the freedraw loops' background fills, drawn from the wrong
+    // position of the seeded stream at roughness 1 and seed 1 whatever the
+    // element says; the perfect-freehand strokes around them match.
+    PinnedDivergence {
+        case: "focused.freedraw-loop-fills.v1",
+        variant: "default",
+        issue: "#170",
+        changed_pixels: 691,
+        ssim_bits: 0x3fec_fa54_7e0d_3931,
+    },
+    // #171: the end heads drawn at roughness 0.5 after a dot-kind start head
+    // and the `crowfoot_one` drawn at 1, where the reference draws them at 1
+    // and 2.
+    PinnedDivergence {
+        case: "focused.cartoonist-arrowheads.v1",
+        variant: "default",
+        issue: "#171",
+        changed_pixels: 17,
+        ssim_bits: 0x3fef_dce1_5ba7_d544,
+    },
+];
+
+/// Diagnosed defects whose fix is pending a maintainer decision, observed on
+/// the extent or path dimension, where the renderer's own geometry is held at
+/// its exact digest instead of a measurement. See `PinnedGeometryDefect`.
+const KNOWN_GEOMETRY_DEFECTS: &[PinnedGeometryDefect] = &[
+    // #170: paths 0, 2, 4 and 6, the four loops' fills, differ; see
+    // `KNOWN_DEFECTS`.
+    PinnedGeometryDefect {
+        case: "focused.freedraw-loop-fills.v1",
+        variant: "default",
+        issue: "#170",
+        geometry_sha256: "93496b8f25d9afa32190c0726b8376c67c46ca7b0705d9f48c1dd17d5e176ffe",
+    },
+    // #171: paths 8, 9, 13, 14 and 16, the two end heads after a dot-kind
+    // start and the `crowfoot_one`, differ; see `KNOWN_DEFECTS`.
+    PinnedGeometryDefect {
+        case: "focused.cartoonist-arrowheads.v1",
+        variant: "default",
+        issue: "#171",
+        geometry_sha256: "f0ab888fc8ccea21d3c26aa824feef11001446e682d8ea293e2e9e6e83c154f2",
+    },
+    // #172: the extent alone differs, `viewBox` 436.46x150.64 against the
+    // official 409.21x146.34, from the rotated ellipse's, diamond's and
+    // line's box corners; every path matches.
+    PinnedGeometryDefect {
+        case: "focused.rotated-shape-bounds.v1",
+        variant: "default",
+        issue: "#172",
+        geometry_sha256: "b4c136d30211d6b0bd50d5a0260b4563cb2f49ddab8d006e7186c817b453447a",
+    },
+];
 
 /// Compatibility exceptions whose approved tolerance exception the case
 /// manifest carries for the direct PNG, observed here on the rasterized SVG
@@ -233,6 +285,7 @@ fn every_registered_scene_case_matches_its_official_svg_geometry_and_raster() {
         .collect();
 
     PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
+    PinnedGeometryDefect::assert_all_observed(KNOWN_GEOMETRY_DEFECTS, &seen);
     PinnedDivergence::assert_all_observed(COMPATIBILITY_EXCEPTION_PINS, &seen);
     ReferenceAuthorityDivergence::assert_all_observed(REFERENCE_AUTHORITY_DIVERGENCES, &seen);
     assert!(
@@ -275,19 +328,31 @@ fn svg_divergences(variant: &RegisteredVariant) -> Vec<String> {
     )
     .expect("official SVG present");
 
-    [
-        ("extent", extent_divergence(candidate_svg, &official_svg)),
-        ("paths", path_divergence(candidate_svg, &official_svg)),
-        (
+    let extent = extent_divergence(candidate_svg, &official_svg);
+    let paths = path_divergence(candidate_svg, &official_svg);
+    // A geometry defect pin holds the renderer's extent and paths in place of
+    // the two geometry dimensions; the raster dimension is still judged when
+    // the two documents rasterize to one size, and is the pinned extent's
+    // consequence when they do not.
+    let geometry =
+        PinnedGeometryDefect::lookup(KNOWN_GEOMETRY_DEFECTS, &variant.case, &variant.variant);
+    let dimensions: Vec<(&str, Option<String>)> = match geometry {
+        Some(pin) => vec![(
+            "geometry",
+            pin.mismatch(candidate_svg, extent.is_some() || paths.is_some()),
+        )],
+        None => vec![("extent", extent), ("paths", paths)],
+    };
+    dimensions
+        .into_iter()
+        .chain(std::iter::once((
             "raster",
-            raster_divergence(variant, candidate_svg, &official_svg),
-        ),
-    ]
-    .into_iter()
-    .filter_map(|(dimension, divergence)| {
-        divergence.map(|detail| format!("{context} [{dimension}]: {detail}"))
-    })
-    .collect()
+            raster_divergence(variant, candidate_svg, &official_svg, geometry.is_some()),
+        )))
+        .filter_map(|(dimension, divergence)| {
+            divergence.map(|detail| format!("{context} [{dimension}]: {detail}"))
+        })
+        .collect()
 }
 
 /// The root extent divergence, if any. The viewBox is the logical extent;
@@ -329,11 +394,14 @@ fn path_divergence(candidate_svg: &str, official_svg: &str) -> Option<String> {
 }
 
 /// The rasterized-document divergence, if any: a size the evidence does not
-/// declare, a measurement off its pin, or a comparison outside the budget.
+/// declare, a measurement off its pin, or a comparison outside the budget. A
+/// candidate whose size differs under a geometry defect pin
+/// (`extent_pinned`) is that pinned extent's consequence and is not compared.
 fn raster_divergence(
     variant: &RegisteredVariant,
     candidate_svg: &str,
     official_svg: &str,
+    extent_pinned: bool,
 ) -> Option<String> {
     let context = variant.context();
     let reference = rasterize(official_svg, &format!("{context} official"));
@@ -358,13 +426,15 @@ fn raster_divergence(
         ));
     }
     if (candidate.width(), candidate.height()) != declared {
-        return Some(format!(
-            "candidate SVG rasterizes to {}x{}, official is {}x{}",
-            candidate.width(),
-            candidate.height(),
-            declared.0,
-            declared.1
-        ));
+        return (!extent_pinned).then(|| {
+            format!(
+                "candidate SVG rasterizes to {}x{}, official is {}x{}",
+                candidate.width(),
+                candidate.height(),
+                declared.0,
+                declared.1
+            )
+        });
     }
 
     let class = visual_class(svg["visual_class"].as_str().expect("visual class"));
@@ -682,6 +752,43 @@ fn a_pinned_divergence_holds_its_variant_to_the_exact_measurement() {
     assert!(pin
         .mismatch(&report(473, SsimOutcome::SmallArtifactMismatch))
         .is_some());
+}
+
+#[test]
+fn a_geometry_defect_pin_holds_the_renderer_geometry_and_requires_the_divergence() {
+    use common::registered_cases::svg_geometry;
+
+    let svg = "<svg viewBox=\"0 0 200 120\" width=\"200\" height=\"120\">\
+               <path d=\"M0 0 L1 1\"/><path fill=\"#000\" d=\"M2 2 L3 3\"/></svg>";
+    assert_eq!(
+        svg_geometry(svg),
+        "viewBox=0 0 200 120\nwidth=200\nheight=120\nM0 0 L1 1\nM2 2 L3 3\n"
+    );
+    let digest = format!(
+        "{:x}",
+        <sha2::Sha256 as sha2::Digest>::digest(svg_geometry(svg))
+    );
+    let pinned: &'static str = Box::leak(digest.into_boxed_str());
+    let pin = PinnedGeometryDefect {
+        case: "focused.example.v1",
+        variant: "default",
+        issue: "#172",
+        geometry_sha256: pinned,
+    };
+    assert_eq!(pin.mismatch(svg, true), None);
+    // The pin cannot outlive the defect: a renderer that agrees with the
+    // official export makes the entry stale.
+    let stale = pin.mismatch(svg, false).expect("agreement is a stale pin");
+    assert!(stale.contains("stale") && stale.contains("#172"), "{stale}");
+    // And it holds the geometry exactly: a moved path is a moved pin.
+    let moved = svg.replace("L3 3", "L3 4");
+    let detail = pin
+        .mismatch(&moved, true)
+        .expect("a moved coordinate moves the pin");
+    assert!(
+        detail.contains("geometry moved") && detail.contains("#172"),
+        "{detail}"
+    );
 }
 
 #[test]

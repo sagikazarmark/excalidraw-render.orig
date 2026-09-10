@@ -34,14 +34,67 @@ use serde_json::Value;
 use common::raster::decode_png;
 use common::registered_cases::{
     case_count, divergence, exception_limits, judge_each, registered_scene_variants,
-    variant_request, visual_class, PinnedDivergence, RegisteredVariant,
+    variant_request, visual_class, PinnedDivergence, PinnedExtentDefect, RegisteredVariant,
 };
 use common::reports::assert_report_matches;
 use common::repository_root;
 
 /// Diagnosed defects whose fix is pending a maintainer decision. See
 /// `PinnedDivergence` for why these are pinned rather than excepted.
-const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
+const KNOWN_DEFECTS: &[PinnedDivergence] = &[
+    // #152: not a renderer defect. All 34 paths match the official export
+    // byte for byte and the document rasterizes identically under one
+    // `resvg`; the direct PNG differs by the fill-and-stroke rasterization
+    // class #104 excepted for `ellipse-diamond-fills` (the hachure fills'
+    // hairline strokes, which the reference canvas's Skia accumulates where
+    // its segments overlap). Held here until #152 decides whether the case
+    // records that exception, which round C admitted for
+    // `cartoonist-roughness` only.
+    PinnedDivergence {
+        case: "focused.roundness-records.v1",
+        variant: "default",
+        issue: "#152",
+        changed_pixels: 241,
+        ssim_bits: 0x3fef_d1f0_546a_10dc,
+    },
+    // #170: a freedraw loop's Rough.js background fill starts its seeded
+    // stream without the discarded curve outline's draws, and the scene
+    // surface substitutes roughness 1 and seed 1 for the element's own, so
+    // every fill path differs from the official export's.
+    PinnedDivergence {
+        case: "focused.freedraw-loop-fills.v1",
+        variant: "default",
+        issue: "#170",
+        changed_pixels: 632,
+        ssim_bits: 0x3fed_00ce_bd65_22d1,
+    },
+    // #171: an arrowhead's roughness clamp is carried from the start head to
+    // the end head and applied to `crowfoot_one`, where the reference clamps
+    // per kind on the shared options and leaves `crowfoot_one` unclamped.
+    PinnedDivergence {
+        case: "focused.cartoonist-arrowheads.v1",
+        variant: "default",
+        issue: "#171",
+        changed_pixels: 89,
+        ssim_bits: 0x3fef_cbc1_e42a_7daf,
+    },
+];
+
+/// Diagnosed scene-extent defects whose fix is pending a maintainer decision:
+/// variants whose raster is not the official evidence's size, held at their
+/// rendered dimensions. See `PinnedExtentDefect`.
+const KNOWN_EXTENT_DEFECTS: &[PinnedExtentDefect] = &[
+    // #172: the scene bounds of a rotated ellipse, diamond and line rotate
+    // the element box's corners where the reference takes the ellipse's exact
+    // extent, the diamond's vertices and the rotated curve points, so the
+    // raster is 27 px wider and 4 px taller than the official 409x146.
+    PinnedExtentDefect {
+        case: "focused.rotated-shape-bounds.v1",
+        variant: "default",
+        issue: "#172",
+        rendered: (436, 150),
+    },
+];
 
 #[test]
 fn every_registered_scene_case_matches_its_official_direct_png() {
@@ -57,6 +110,7 @@ fn every_registered_scene_case_matches_its_official_direct_png() {
         .collect();
 
     PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
+    PinnedExtentDefect::assert_all_observed(KNOWN_EXTENT_DEFECTS, &seen);
     assert!(
         failures.is_empty(),
         "{} of {} registered scene cases diverge from their official direct PNG:\n  {}",
@@ -110,7 +164,16 @@ fn direct_png_divergence(variant: &RegisteredVariant) -> Option<String> {
         "{context} is both excepted and a known defect; a defect has no non-defect cause to \
          except"
     );
-    let divergence = if (candidate.width(), candidate.height()) != (width, height) {
+    let extent = PinnedExtentDefect::lookup(KNOWN_EXTENT_DEFECTS, &variant.case, &variant.variant);
+    let rendered = (candidate.width(), candidate.height());
+    let divergence = if let Some(extent) = extent {
+        assert!(
+            exception.is_none() && defect.is_none(),
+            "{context} is pinned as an extent defect and excepted or pinned again; a raster of \
+             another size has no comparison to except or pin"
+        );
+        extent.mismatch(rendered, (width, height))
+    } else if rendered != (width, height) {
         Some(format!(
             "rendered {}x{}, official evidence is {width}x{height}",
             candidate.width(),
@@ -226,6 +289,28 @@ fn variant_request_honours_the_background_padding_and_scene_embedding_options() 
     assert!(metadata.embedded_scene());
     assert!(!metadata.provenance());
     assert!(!metadata.diagnostic_summary());
+}
+
+#[test]
+fn an_extent_defect_pin_holds_the_rendered_size_and_requires_the_mismatch() {
+    let pin = PinnedExtentDefect {
+        case: "focused.example.v1",
+        variant: "default",
+        issue: "#172",
+        rendered: (436, 150),
+    };
+    assert_eq!(pin.mismatch((436, 150), (409, 146)), None);
+    let stale = pin
+        .mismatch((409, 146), (409, 146))
+        .expect("agreement with the evidence is a stale pin");
+    assert!(stale.contains("stale") && stale.contains("#172"), "{stale}");
+    let moved = pin
+        .mismatch((436, 151), (409, 146))
+        .expect("another size is a moved pin");
+    assert!(
+        moved.contains("extent moved") && moved.contains("436x151"),
+        "{moved}"
+    );
 }
 
 #[test]

@@ -317,6 +317,167 @@ pub struct ReferenceAuthorityDivergence {
     pub spec_section: &'static str,
 }
 
+/// A diagnosed renderer defect the SVG harness observes on its geometry
+/// dimensions — the root extent or the path data — which carry no changed-pixel
+/// or SSIM measurement to pin. What is held instead is the renderer's own
+/// geometry, the root `viewBox`, `width` and `height` and every path's data in
+/// document order, at its exact SHA-256, so a fix, a regression or a change in
+/// the divergence moves the entry; and the divergence from the official export
+/// must still exist, so the entry cannot outlive the defect. Like a known
+/// defect it names the issue that tracks the fix and never enters a manifest.
+pub struct PinnedGeometryDefect {
+    pub case: &'static str,
+    pub variant: &'static str,
+    pub issue: &'static str,
+    /// SHA-256 of [`svg_geometry`] over the renderer's SVG.
+    pub geometry_sha256: &'static str,
+}
+
+impl PinnedGeometryDefect {
+    /// The entry pinning one variant, if any.
+    pub fn lookup<'a>(pins: &'a [Self], case: &str, variant: &str) -> Option<&'a Self> {
+        pins.iter()
+            .find(|pin| pin.case == case && pin.variant == variant)
+    }
+
+    /// Every entry must name a variant the registry still declares.
+    pub fn assert_all_observed(pins: &[Self], observed: &BTreeSet<(String, String)>) {
+        let orphans: Vec<_> = pins
+            .iter()
+            .filter(|pin| !observed.contains(&(pin.case.to_owned(), pin.variant.to_owned())))
+            .map(|pin| format!("{} [{}]", pin.case, pin.variant))
+            .collect();
+        assert!(
+            orphans.is_empty(),
+            "pinned geometry defects name variants the registry no longer declares: {orphans:?}"
+        );
+    }
+
+    /// `None` when the renderer's geometry is the pinned one and still
+    /// diverges from the official export on at least one geometry dimension;
+    /// otherwise the failure to report, with the observed digest to transcribe.
+    pub fn mismatch(&self, candidate_svg: &str, diverges: bool) -> Option<String> {
+        let observed = sha256_hex(svg_geometry(candidate_svg).as_bytes());
+        if !diverges {
+            return Some(format!(
+                "matches the official export's extent and paths, so its geometry defect pin for \
+                 {} is stale and must be withdrawn (geometry_sha256={observed})",
+                self.issue
+            ));
+        }
+        (observed != self.geometry_sha256).then(|| {
+            format!(
+                "geometry moved from the pinned geometry_sha256={} recorded for {}; revisit the \
+                 entry: geometry_sha256={observed}",
+                self.geometry_sha256, self.issue
+            )
+        })
+    }
+}
+
+/// The geometry a [`PinnedGeometryDefect`] digests: the root `viewBox`,
+/// `width` and `height`, then every `<path>` element's `d` attribute in
+/// document order, one per line.
+pub fn svg_geometry(svg: &str) -> String {
+    let start = svg.find("<svg").expect("SVG has a root element");
+    let tag = &svg[start..];
+    let tag = &tag[..tag.find('>').expect("SVG root tag closes")];
+    let attribute = |name: &str| {
+        let marker = format!(" {name}=\"");
+        tag.find(&marker).map_or_else(String::new, |at| {
+            let value = &tag[at + marker.len()..];
+            value[..value.find('"').expect("attribute value closes")].to_owned()
+        })
+    };
+    let mut geometry = format!(
+        "viewBox={}\nwidth={}\nheight={}\n",
+        attribute("viewBox"),
+        attribute("width"),
+        attribute("height")
+    );
+    let mut rest = svg;
+    while let Some(at) = rest.find("<path") {
+        rest = &rest[at + "<path".len()..];
+        let Some(end) = rest.find('>') else { break };
+        let tag = &rest[..end];
+        if let Some(at) = tag.find(" d=\"") {
+            let value = &tag[at + " d=\"".len()..];
+            if let Some(close) = value.find('"') {
+                geometry.push_str(&value[..close]);
+                geometry.push('\n');
+            }
+        }
+        rest = &rest[end..];
+    }
+    geometry
+}
+
+/// A diagnosed renderer defect in the scene extent, observed by the direct-PNG
+/// harness as a raster whose dimensions are not the official evidence's, which
+/// no changed-pixel comparison can measure. The rendered dimensions are held
+/// exactly and must still differ from the evidence, so the entry moves with a
+/// fix or a regression and cannot outlive the defect; it names the issue that
+/// tracks the fix and never enters a manifest.
+pub struct PinnedExtentDefect {
+    pub case: &'static str,
+    pub variant: &'static str,
+    pub issue: &'static str,
+    /// The renderer's raster `(width, height)`.
+    pub rendered: (u32, u32),
+}
+
+impl PinnedExtentDefect {
+    /// The entry pinning one variant, if any.
+    pub fn lookup<'a>(pins: &'a [Self], case: &str, variant: &str) -> Option<&'a Self> {
+        pins.iter()
+            .find(|pin| pin.case == case && pin.variant == variant)
+    }
+
+    /// Every entry must name a variant the registry still declares.
+    pub fn assert_all_observed(pins: &[Self], observed: &BTreeSet<(String, String)>) {
+        let orphans: Vec<_> = pins
+            .iter()
+            .filter(|pin| !observed.contains(&(pin.case.to_owned(), pin.variant.to_owned())))
+            .map(|pin| format!("{} [{}]", pin.case, pin.variant))
+            .collect();
+        assert!(
+            orphans.is_empty(),
+            "pinned extent defects name variants the registry no longer declares: {orphans:?}"
+        );
+    }
+
+    /// `None` when the renderer's raster has the pinned dimensions and they
+    /// still differ from the official evidence's; otherwise the failure to
+    /// report, with the observed dimensions to transcribe.
+    pub fn mismatch(&self, rendered: (u32, u32), official: (u32, u32)) -> Option<String> {
+        if rendered == official {
+            return Some(format!(
+                "renders at the official evidence's {}x{}, so its extent defect pin for {} is \
+                 stale and must be withdrawn",
+                official.0, official.1, self.issue
+            ));
+        }
+        (rendered != self.rendered).then(|| {
+            format!(
+                "extent moved from the pinned {}x{} recorded for {}; revisit the entry: rendered \
+                 {}x{}, official evidence is {}x{}",
+                self.rendered.0,
+                self.rendered.1,
+                self.issue,
+                rendered.0,
+                rendered.1,
+                official.0,
+                official.1
+            )
+        })
+    }
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::Digest;
+    format!("{:x}", sha2::Sha256::digest(bytes))
+}
+
 impl ReferenceAuthorityDivergence {
     /// The entry pinning one variant, if any.
     pub fn lookup<'a>(pins: &'a [Self], case: &str, variant: &str) -> Option<&'a Self> {

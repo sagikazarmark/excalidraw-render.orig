@@ -1,0 +1,203 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "elements": [
+    {
+      "id": "arrow-start-then-dot",
+      "type": "arrow",
+      "x": 20,
+      "y": 20,
+      "width": 140,
+      "height": 30,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 2,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a0",
+      "roundness": null,
+      "seed": 1547013,
+      "version": 1,
+      "versionNonce": 1547016,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          30
+        ],
+        [
+          70,
+          0
+        ],
+        [
+          140,
+          30
+        ]
+      ],
+      "startBinding": null,
+      "endBinding": null,
+      "lastCommittedPoint": null,
+      "startArrowhead": "arrow",
+      "endArrowhead": "dot",
+      "elbowed": false
+    },
+    {
+      "id": "dot-start-then-arrow",
+      "type": "arrow",
+      "x": 200,
+      "y": 20,
+      "width": 140,
+      "height": 30,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 2,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a1",
+      "roundness": null,
+      "seed": 1547026,
+      "version": 1,
+      "versionNonce": 1547029,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          30
+        ],
+        [
+          70,
+          0
+        ],
+        [
+          140,
+          30
+        ]
+      ],
+      "startBinding": null,
+      "endBinding": null,
+      "lastCommittedPoint": null,
+      "startArrowhead": "dot",
+      "endArrowhead": "arrow",
+      "elbowed": false
+    },
+    {
+      "id": "circle-outline-start-then-triangle",
+      "type": "arrow",
+      "x": 20,
+      "y": 90,
+      "width": 140,
+      "height": 30,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 2,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a2",
+      "roundness": null,
+      "seed": 1547039,
+      "version": 1,
+      "versionNonce": 1547042,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          30
+        ],
+        [
+          70,
+          0
+        ],
+        [
+          140,
+          30
+        ]
+      ],
+      "startBinding": null,
+      "endBinding": null,
+      "lastCommittedPoint": null,
+      "startArrowhead": "circle_outline",
+      "endArrowhead": "triangle",
+      "elbowed": false
+    },
+    {
+      "id": "crowfoot-one-end",
+      "type": "arrow",
+      "x": 200,
+      "y": 90,
+      "width": 140,
+      "height": 30,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 2,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a3",
+      "roundness": null,
+      "seed": 1547052,
+      "version": 1,
+      "versionNonce": 1547055,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          0,
+          30
+        ],
+        [
+          70,
+          0
+        ],
+        [
+          140,
+          30
+        ]
+      ],
+      "startBinding": null,
+      "endBinding": null,
+      "lastCommittedPoint": null,
+      "startArrowhead": null,
+      "endArrowhead": "crowfoot_one",
+      "elbowed": false
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff"
+  },
+  "files": {}
+}

@@ -1,0 +1,347 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "elements": [
+    {
+      "id": "loop-solid-cartoonist",
+      "type": "freedraw",
+      "x": 20,
+      "y": 20,
+      "width": 84,
+      "height": 58,
+      "angle": 0,
+      "strokeColor": "#e03131",
+      "backgroundColor": "#ffc9c9",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 2,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a0",
+      "roundness": null,
+      "seed": 1544013,
+      "version": 1,
+      "versionNonce": 1544016,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          2,
+          4
+        ],
+        [
+          22,
+          1
+        ],
+        [
+          42,
+          0
+        ],
+        [
+          62,
+          2
+        ],
+        [
+          82,
+          4
+        ],
+        [
+          84,
+          29
+        ],
+        [
+          82,
+          54
+        ],
+        [
+          62,
+          56
+        ],
+        [
+          42,
+          58
+        ],
+        [
+          22,
+          56
+        ],
+        [
+          2,
+          54
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "pressures": [],
+      "simulatePressure": true
+    },
+    {
+      "id": "loop-hachure-cartoonist",
+      "type": "freedraw",
+      "x": 140,
+      "y": 20,
+      "width": 84,
+      "height": 58,
+      "angle": 0,
+      "strokeColor": "#1971c2",
+      "backgroundColor": "#a5d8ff",
+      "fillStyle": "hachure",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 2,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a1",
+      "roundness": null,
+      "seed": 1544026,
+      "version": 1,
+      "versionNonce": 1544029,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          2,
+          4
+        ],
+        [
+          22,
+          1
+        ],
+        [
+          42,
+          0
+        ],
+        [
+          62,
+          2
+        ],
+        [
+          82,
+          4
+        ],
+        [
+          84,
+          29
+        ],
+        [
+          82,
+          54
+        ],
+        [
+          62,
+          56
+        ],
+        [
+          42,
+          58
+        ],
+        [
+          22,
+          56
+        ],
+        [
+          2,
+          54
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "pressures": [],
+      "simulatePressure": true
+    },
+    {
+      "id": "loop-hachure-artist",
+      "type": "freedraw",
+      "x": 20,
+      "y": 110,
+      "width": 84,
+      "height": 58,
+      "angle": 0,
+      "strokeColor": "#2f9e44",
+      "backgroundColor": "#b2f2bb",
+      "fillStyle": "hachure",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a2",
+      "roundness": null,
+      "seed": 1544039,
+      "version": 1,
+      "versionNonce": 1544042,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          2,
+          4
+        ],
+        [
+          22,
+          1
+        ],
+        [
+          42,
+          0
+        ],
+        [
+          62,
+          2
+        ],
+        [
+          82,
+          4
+        ],
+        [
+          84,
+          29
+        ],
+        [
+          82,
+          54
+        ],
+        [
+          62,
+          56
+        ],
+        [
+          42,
+          58
+        ],
+        [
+          22,
+          56
+        ],
+        [
+          2,
+          54
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "pressures": [],
+      "simulatePressure": true
+    },
+    {
+      "id": "loop-hachure-architect",
+      "type": "freedraw",
+      "x": 140,
+      "y": 110,
+      "width": 84,
+      "height": 58,
+      "angle": 0,
+      "strokeColor": "#f08c00",
+      "backgroundColor": "#ffec99",
+      "fillStyle": "hachure",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 0,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a3",
+      "roundness": null,
+      "seed": 1544052,
+      "version": 1,
+      "versionNonce": 1544055,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "points": [
+        [
+          2,
+          4
+        ],
+        [
+          22,
+          1
+        ],
+        [
+          42,
+          0
+        ],
+        [
+          62,
+          2
+        ],
+        [
+          82,
+          4
+        ],
+        [
+          84,
+          29
+        ],
+        [
+          82,
+          54
+        ],
+        [
+          62,
+          56
+        ],
+        [
+          42,
+          58
+        ],
+        [
+          22,
+          56
+        ],
+        [
+          2,
+          54
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "pressures": [],
+      "simulatePressure": true
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff"
+  },
+  "files": {}
+}

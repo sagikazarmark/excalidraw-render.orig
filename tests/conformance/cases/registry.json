@@ -5194,6 +5194,1030 @@
           "viewer_profile": null
         }
       ]
+    },
+    {
+      "id": "focused.roundness-records.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/roundness-records",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/roundness-records",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Draw rectangles and diamonds carrying every roundness record the reference reads — the adaptive record with its default radius, with an explicit value of 8 and of 64, and the legacy proportional record — at 80x40, below the adaptive cutoff, and at 160x136 and 260x136, where the default radius fixes at 32 while an explicit 64 and the legacy record stay proportional and a wide diamond fixes only its vertical radius; a curved multi-point line and arrow with the type 2 record beside straight controls; and an ellipse carrying a record the reference ignores; solid and hachure fills at strokeWidth 1 and 2, roughness 1 throughout, so getCornerRadius and the curve dispatch are observed against official evidence.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "roundness.adaptive",
+          "role": "primary"
+        },
+        {
+          "identity": "roundness.adaptive-value",
+          "role": "primary"
+        },
+        {
+          "identity": "roundness.legacy",
+          "role": "primary"
+        },
+        {
+          "identity": "roundness.curve",
+          "role": "primary"
+        },
+        {
+          "identity": "roundness.ignored",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:rectangle",
+        "element:diamond",
+        "element:ellipse",
+        "element:line",
+        "element:arrow",
+        "roundness:adaptive",
+        "roundness:legacy",
+        "roundness:curve",
+        "fill:solid",
+        "fill:hachure",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "rectangle": 6,
+          "diamond": 6,
+          "line": 2,
+          "arrow": 2,
+          "ellipse": 1
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 34,
+        "mask": 4
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
+    },
+    {
+      "id": "focused.transform-opacity-groups.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/transform-opacity-groups",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/transform-opacity-groups",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Rotate a rectangle, an ellipse, a diamond, an arrow and a line by 0.3, 1.2 and pi/4 radians, the linear elements and one rectangle with strokeWidth 4 and a dashed or dotted stroke; draw shapes at opacity 30 and 60, one of them rotated as well; two overlapping shapes sharing a groupId, which changes nothing visible; and a rotated rectangle with a link; roughness 0 and solid fills throughout, and the scene envelope set by rectangles so the rotated ellipse, diamond and linear elements, whose reference bounds focused.rotated-shape-bounds.v1 isolates, lie inside it. Exported by default, at scale 2, without the scene background and with zero padding, so the rotation transform, per-element opacity, wide dashed and dotted strokes, the transparent-background export and the padding option are observed against official evidence.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "transform.rotation",
+          "role": "primary"
+        },
+        {
+          "identity": "element.opacity",
+          "role": "primary"
+        },
+        {
+          "identity": "element.group",
+          "role": "primary"
+        },
+        {
+          "identity": "stroke.width-4",
+          "role": "primary"
+        },
+        {
+          "identity": "stroke.dashed",
+          "role": "primary"
+        },
+        {
+          "identity": "stroke.dotted",
+          "role": "primary"
+        },
+        {
+          "identity": "link.admitted",
+          "role": "primary"
+        },
+        {
+          "identity": "export.no-background",
+          "role": "primary"
+        },
+        {
+          "identity": "export.padding",
+          "role": "primary"
+        },
+        {
+          "identity": "export.scale",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:rectangle",
+        "element:ellipse",
+        "element:diamond",
+        "element:arrow",
+        "element:line",
+        "transform:rotation",
+        "element:opacity",
+        "element:group",
+        "stroke:dashed",
+        "stroke:dotted",
+        "link:admitted",
+        "fill:solid",
+        "export:scale",
+        "export:no-background",
+        "export:padding",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "rectangle": 6,
+          "ellipse": 3,
+          "diamond": 1,
+          "arrow": 1,
+          "line": 1
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 1,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 23,
+        "a": 1,
+        "mask": 2
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "scale-2",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 2,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "no-background",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": false,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "padding-0",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 0,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
+    },
+    {
+      "id": "focused.cartoonist-roughness.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/cartoonist-roughness",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/cartoonist-roughness",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Draw rectangles, ellipses and diamonds with hachure, solid, cross-hatch and zigzag fills at strokeWidth 2 and again at strokeWidth 1, a multi-point line, an arrow with a triangle start and an arrow end, and a rounded closed line with a hachure fill (#158), all at roughness 2 and with the scene envelope set by the box-bounded shapes, so the cartoonist stroke passes, the unpreserved vertices of the outlines and of the pattern fills, and the arrowhead roughness clamp are observed against official evidence.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "roughness.cartoonist",
+          "role": "primary"
+        },
+        {
+          "identity": "roughness.cartoonist-fill-vertices",
+          "role": "primary"
+        },
+        {
+          "identity": "roughness.cartoonist-curve-fill",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.roughness-clamp",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:rectangle",
+        "element:ellipse",
+        "element:diamond",
+        "element:line",
+        "element:arrow",
+        "roughness:cartoonist",
+        "roundness:curve",
+        "fill:hachure",
+        "fill:solid",
+        "fill:cross-hatch",
+        "fill:zigzag",
+        "arrowhead:triangle",
+        "arrowhead:arrow",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "rectangle": 3,
+          "ellipse": 3,
+          "diamond": 2,
+          "line": 2,
+          "arrow": 1
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 24,
+        "mask": 3
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+          "format": "png",
+          "max_changed_pixels": 414,
+          "minimum_ssim_bits": "3fefb22895cdd9da",
+          "reason": "Fill and stroke rasterization. All 24 SVG paths match the official export byte for byte and the document rasterizes identically under one rasterizer (0 changed pixels, SSIM 1.0), so the difference arises while rasterizing geometry both renderers agree on, not in the geometry: the two rasterizers' antialiasing of the cartoonist double strokes and of the pattern fills, whose fillWeight of one pixel and half a pixel the reference canvas's Skia strokes as hairlines whose overlapping segments accumulate coverage. The scene carries no text. The same class is recorded on #104 for focused.ellipse-diamond-fills.v1 and on #137 for focused.rough-fillers-dashed-zigzag-line.v1. Decided on #152.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
+    },
+    {
+      "id": "focused.freedraw-loop-fills.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/freedraw-loop-fills",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/freedraw-loop-fills",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Fill a closed freedraw loop with a solid and a hachure background at roughness 2, and with a hachure background at roughness 1 and 0, each at its own seed, so the reference's Rough.js curve fill of a freedraw loop — drawn with the element's seed and adjusted roughness after the curve outline it discards — is observed against official evidence.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "freehand.loop-fill",
+          "role": "primary"
+        },
+        {
+          "identity": "freehand.loop-fill-roughness",
+          "role": "primary"
+        },
+        {
+          "identity": "freehand.loop-fill-seed",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:freedraw",
+        "freehand:loop-fill",
+        "fill:solid",
+        "fill:hachure",
+        "roughness:cartoonist",
+        "roughness:architect",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "freedraw": 4
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 8
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
+    },
+    {
+      "id": "focused.iframe-element.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/iframe-element",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/iframe-element",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Render one iframe element carrying a link beside an embeddable control with a link, so the official offline shell the reference draws for an iframe — its generated label and background — is observed against official evidence alongside the embeddable shell focused.embeddable-links.v1 approved.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "element.iframe",
+          "role": "primary"
+        },
+        {
+          "identity": "element.embeddable",
+          "role": "primary"
+        },
+        {
+          "identity": "link.admitted",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:iframe",
+        "element:embeddable",
+        "link:admitted",
+        "font:helvetica",
+        "font:liberation-sans",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "iframe": 1,
+          "embeddable": 1
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 2,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 4,
+        "a": 4,
+        "text": 2
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+          "format": "png",
+          "max_changed_pixels": 489,
+          "minimum_ssim_bits": "3fef914d3287731b",
+          "reason": "Sub-pixel glyph coverage. The two shell labels are generated export text positioned by Excalidraw's Helvetica metadata metrics and shaped with Liberation Sans (decided on #105): all four SVG paths match the official export byte for byte and the document matches under one rasterizer, and only the interior glyph ink of the two labels differs between the renderer's rasterizer and the browser's, with the roughness-1 stroke edges of the two shells. The same class is recorded on #105 for focused.embeddable-links.v1 and on #104, #108 and #110 for the other text-bearing cases.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
+    },
+    {
+      "id": "focused.embed-scene-metadata.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/embed-scene-metadata",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/embed-scene-metadata",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Export one roughness-0 rectangle outline by default and with exportEmbedScene, so the embedded scene is observed to change no pixel of either format while the official SVG's metadata carries the payload-type, payload-version, payload-start and payload-end comments around the encoded scene and the official PNG carries the Excalidraw-keyed tEXt chunk, the carriers the renderer's artifact manifest mirrors.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "export.embed-scene",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:rectangle",
+        "export:embed-scene",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "rectangle": 1
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 1
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "embed-scene",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": true,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
+    },
+    {
+      "id": "focused.cartoonist-arrowheads.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/cartoonist-arrowheads",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/cartoonist-arrowheads",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Draw four arrows at roughness 2 whose arrowhead kinds exercise the reference's per-kind roughness clamp on the options object both heads share: an arrow start before a dot end, a dot start before an arrow end, a circle_outline start before a triangle end, and a crowfoot_one end alone, so the roughness each head is drawn at is observed against official evidence.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "arrowhead.roughness-clamp",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.dot",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.circle-outline",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.triangle",
+          "role": "primary"
+        },
+        {
+          "identity": "arrowhead.crowfoot-one",
+          "role": "primary"
+        },
+        {
+          "identity": "roughness.cartoonist",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:arrow",
+        "arrowhead:arrow",
+        "arrowhead:dot",
+        "arrowhead:circle_outline",
+        "arrowhead:triangle",
+        "arrowhead:crowfoot_one",
+        "roughness:cartoonist",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "arrow": 4
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 17,
+        "mask": 4
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
+    },
+    {
+      "id": "focused.rotated-shape-bounds.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/rotated-shape-bounds",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/rotated-shape-bounds",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Place a rotated ellipse, a rotated diamond and a rotated four-point line each alone on an edge of the scene at roughness 0, so the scene extent the reference derives from a rotated ellipse's exact extent, a rotated diamond's four vertices and a rotated line's rotated curve points is observed against official evidence.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "bounds.rotated-ellipse",
+          "role": "primary"
+        },
+        {
+          "identity": "bounds.rotated-diamond",
+          "role": "primary"
+        },
+        {
+          "identity": "bounds.rotated-line",
+          "role": "primary"
+        },
+        {
+          "identity": "transform.rotation",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:ellipse",
+        "element:diamond",
+        "element:line",
+        "transform:rotation",
+        "bounds:rotated",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "ellipse": 1,
+          "diamond": 1,
+          "line": 1
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": false
+      },
+      "svg_element_counts": {
+        "rect": 1,
+        "path": 5,
+        "mask": 1
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops",
+        "exceptions"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      }
     }
   ]
 }

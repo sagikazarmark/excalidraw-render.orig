@@ -69,7 +69,16 @@ isolate one variable:
 A variant whose divergence is a diagnosed defect awaiting a decision is not
 excepted: it is listed in the harness that observes it as a known defect naming
 its issue, with its measurement pinned exactly so the entry fails if the
-divergence moves in either direction.
+divergence moves in either direction. A defect the SVG harness observes on its
+geometry dimensions — the root extent or the path data, which carry no
+changed-pixel or SSIM measurement — is held in that harness's
+`KNOWN_GEOMETRY_DEFECTS` at the exact SHA-256 of the renderer's own geometry
+(the root `viewBox`, `width` and `height`, then every path's data in document
+order), and the divergence from the official export must persist, so the entry
+moves with a fix or a regression and cannot outlive the defect; a scene-extent
+defect the direct-PNG harness observes as a raster of another size than the
+evidence is held likewise in `KNOWN_EXTENT_DEFECTS` at the rendered
+dimensions (#170, #171, #172).
 
 A tolerance exception records a maintainer's judgment that one variant's
 observed difference from the official evidence has a non-defect cause. It names
