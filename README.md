@@ -118,11 +118,16 @@ bytes with the checked native expectations.
 ```sh
 cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
 bash tests/package-consumer/check-packaged-cli.sh x86_64-unknown-linux-gnu
-cargo test --locked --release --manifest-path tests/package-consumer/Cargo.toml --test public_facade
+(cd tests/package-consumer && cargo clean && cargo test --locked --release --test public_facade)
 ```
 
-The target workflow executes this consumer on all four supported native
-targets and in the pinned browser-hosted `wasm32-unknown-unknown` harness.
+Run the consumer from its own directory so its `.cargo/config.toml` (target
+directory, WASM test runner) applies, and clean it first: `cargo package`
+stamps the unpacked sources with a fixed mtime, so a consumer build left over
+from an earlier package never notices that the crate changed.
+
+The target workflow executes this consumer on Linux and in the pinned
+browser-hosted `wasm32-unknown-unknown` harness (ADR-0006).
 
 ## Tests
 
