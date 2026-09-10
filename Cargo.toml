@@ -7,7 +7,6 @@ members = [
     "crates/excalidraw-render-cli",
     "crates/excalidraw-render-compare",
     "crates/skera-safe",
-    "crates/ttf2woff2-deterministic",
     "xtask",
 ]
 resolver = "2"
@@ -62,7 +61,12 @@ unicase = "=2.9.0"
 svg2pdf = { version = "=0.13.0", default-features = false, features = ["filters", "image", "text"] }
 svgtypes = "=0.15.3"
 tiny-skia = { version = "=0.11.4", default-features = false, features = ["png-format", "std"] }
-ttf2woff2 = { package = "excalidraw-render-ttf2woff2", path = "crates/ttf2woff2-deterministic", version = "=0.1.0", default-features = false }
+# `default-features = false` drops upstream's `cli` feature (and `clap`);
+# `portable-float` passes through to `brotli/portable-float`, which is what keeps
+# quality-11 WOFF2 bytes identical between native and wasm32 (ADR-0003). The
+# identity token in `excalidraw-render-assets-base` still names the retired
+# fork until the single evidence refresh ADR-0003 schedules.
+ttf2woff2 = { version = "=0.13.3", default-features = false, features = ["portable-float"] }
 usvg = { version = "=0.45.1", default-features = false, features = ["text"] }
 wuff = { version = "=0.2.8", default-features = false, features = ["brotli"] }
 write-fonts = { version = "=0.51.0", default-features = false, features = ["read", "tables"] }

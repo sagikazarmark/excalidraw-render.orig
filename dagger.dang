@@ -94,7 +94,7 @@ type Lint {
   """
   Check the formatting of every repo-authored crate.
 
-  The vendored forks (skera, ttf2woff2) keep upstream formatting. xtask joined
+  The vendored skera fork keeps upstream formatting. xtask joined
   when the #133/#150 PDF round re-pinned xtask/src/pdf_viewers.rs (issue #35).
   """
   fmt: String! @check {
@@ -113,8 +113,8 @@ type Lint {
   """
   Lint the renderer, the CLI, and xtask.
 
-  `--no-deps` keeps the vendored forks out of the gate: they are workspace
-  members, so `--exclude` alone would still lint them as dependencies of the
+  `--no-deps` keeps the vendored skera fork out of the gate: it is a workspace
+  member, so `--exclude` alone would still lint it as a dependency of the
   selected packages. No lint is allowed: the `manual_is_multiple_of` and
   `chunks_exact_to_as_chunks` occurrences that sat in the #99-pinned files
   were fixed in the font approval round that re-pinned them (#141).

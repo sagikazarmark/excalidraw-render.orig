@@ -492,7 +492,6 @@ dependencies = [
  "excalidraw-render-assets-base",
  "excalidraw-render-compare",
  "excalidraw-render-skera",
- "excalidraw-render-ttf2woff2",
  "gif 0.14.2",
  "image-webp",
  "jpeg-encoder",
@@ -511,6 +510,7 @@ dependencies = [
  "svg2pdf",
  "svgtypes",
  "tiny-skia",
+ "ttf2woff2",
  "unicode-bidi",
  "unicode-normalization",
  "usvg",
@@ -571,15 +571,6 @@ version = "0.1.0"
 dependencies = [
  "skera",
  "write-fonts 0.51.0",
-]
-
-[[package]]
-name = "excalidraw-render-ttf2woff2"
-version = "0.1.0"
-dependencies = [
- "brotli",
- "byteorder",
- "thiserror",
 ]
 
 [[package]]
@@ -1862,6 +1853,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 dependencies = [
  "core_maths",
+]
+
+[[package]]
+name = "ttf2woff2"
+version = "0.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61405db12fdd9c3881ccd8a9881fea46abec68096fedd6d50b6ab8538b442b28"
+dependencies = [
+ "brotli",
+ "byteorder",
+ "thiserror",
 ]
 
 [[package]]

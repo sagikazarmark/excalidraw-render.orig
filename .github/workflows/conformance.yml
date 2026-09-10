@@ -21,8 +21,8 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
       - name: Install rustfmt and clippy for the pinned toolchain
         run: rustup component add rustfmt clippy
-      # Every repo-authored crate. Vendored forks (skera, ttf2woff2) keep
-      # upstream formatting. xtask joined when the #133/#150 PDF round
+      # Every repo-authored crate. The vendored skera fork keeps upstream
+      # formatting. xtask joined when the #133/#150 PDF round
       # re-pinned xtask/src/pdf_viewers.rs (issue #35).
       - name: Check formatting
         run: >-
@@ -31,9 +31,9 @@ jobs:
           -p excalidraw-render-assets-base
           -p excalidraw-render-assets-data-000 -p excalidraw-render-assets-data-001
           -p xtask
-      # `--no-deps` keeps the vendored forks out of the gate: they are
-      # workspace members, so `--exclude` alone would still lint them as
-      # dependencies of the selected packages. No lint is allowed: the
+      # `--no-deps` keeps the vendored skera fork out of the gate: it is a
+      # workspace member, so `--exclude` alone would still lint it as a
+      # dependency of the selected packages. No lint is allowed: the
       # `manual_is_multiple_of` and `chunks_exact_to_as_chunks` occurrences
       # that sat in the #99-pinned files were fixed in the font approval round
       # that re-pinned them (#141).

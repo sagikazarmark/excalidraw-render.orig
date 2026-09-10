@@ -139,6 +139,42 @@ library, its output bytes, the identity token and the retirement path above
 are unchanged; `crates/ttf2woff2-deterministic/CONTROLLED-FORK.md` lists every
 difference from upstream.
 
+Amended 2026-09-10: upstream released **ttf2woff2 0.13.3** the same day,
+carrying [0x6b/ttf2woff2#28]: `brotli = "9"` with `disable-timer`, and a
+`portable-float = ["brotli/portable-float"]` passthrough. Its `src/` is
+byte-identical to 0.13.2 and therefore to the fork's, less the CLI entry point
+the fork had already removed. The ttf2woff2 fork retired the same way the brotli
+fork did — swap ahead of the refresh, identity string unchanged:
+`ttf2woff2 = { version = "=0.13.3", default-features = false, features =
+["portable-float"] }`, `crates/ttf2woff2-deterministic` deleted, and the
+package-consumer harness no longer patches `excalidraw-render-ttf2woff2`.
+`default-features = false` keeps upstream's `cli` feature and `clap` out;
+`cargo tree -e features` resolves brotli to exactly the fork's `std`,
+`disable-timer`, `portable-float` on both supported targets, because brotli
+9.0.0's only default feature is `std`. The lock moves by one package on each
+side of the swap and nothing else. `CONTROLLED-FORK.md` and the fork's source
+are reproducible from the parent commit.
+
+Proven on the pinned 1.97.1 toolchain before merge. On
+`x86_64-unknown-linux-gnu`, the release-mode qualification set passes with
+every per-cell `generatedWoff2Sha256` pin unchanged and its measurement
+identical to the committed `revision-1.json` (`generatedBytesSha256
+bb4e7dcd…9283`, `resourceTracesSha256 79ea93cd…90fa`, 977/1204 — the corpus
+has grown since the figures above were recorded). On `wasm32-unknown-unknown`,
+`complete_font_subset_qualification_corpus_in_wasm` passes in headless Chromium
+(151.0.7922.173 locally; the pinned 149 leg runs in CI) and emits the same two
+digests. `catalog verify`, `verify-svg-font-subset-release`,
+`verify-svg-font-subsets`, the packaged-CLI check, `cargo package --locked`,
+fmt, clippy and the `ci-fast`/`ci-render` nextest profiles all pass.
+
+What the single refresh still carries is unchanged in kind and smaller in
+scope: both tokens — `excalidraw-render-ttf2woff2-0.1.0(upstream-0.13.2)` now
+names a crate that no longer exists and becomes upstream `ttf2woff2-0.13.3`,
+alongside the brotli token — the wasm `console_log!` fix, the spec §8.3.3
+version, and the full evidence regeneration. The 2026-12-01 fallback and the
+"interim stripping" note below are moot: there is no fork left to strip or
+re-vendor.
+
 If no upstream release lands by 2026-12-01, the fallback is a zero-patch
 re-vendor of upstream at `fb3104d`. It is not free: the identity token becomes
 `excalidraw-render-brotli-0.2.0(upstream-fb3104d)` — the current token claims

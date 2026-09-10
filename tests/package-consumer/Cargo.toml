@@ -20,6 +20,5 @@ excalidraw-render-assets-base = { path = "../../target/package/excalidraw-render
 excalidraw-render-assets-data-000 = { path = "../../target/package/excalidraw-render-assets-data-000-0.1.0" }
 excalidraw-render-assets-data-001 = { path = "../../target/package/excalidraw-render-assets-data-001-0.1.0" }
 excalidraw-render-skera = { path = "../../target/package/excalidraw-render-skera-0.1.0" }
-excalidraw-render-ttf2woff2 = { path = "../../target/package/excalidraw-render-ttf2woff2-0.1.0" }
 
 [workspace]
