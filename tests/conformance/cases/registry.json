@@ -5063,6 +5063,137 @@
           "viewer_profile": null
         }
       ]
+    },
+    {
+      "id": "focused.frame-name-truncation.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/frame-name-truncation",
+      "approving_issue": "152",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/frame-name-truncation",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+      "purpose": "Synthesize frame names as the reference's whole-scene export does: a 200-wide frame whose name is far wider than the frame, so the name is cut to the longest prefix that fits with a trailing ... when measured in Helvetica 14 (shaped by Liberation Sans), a frame whose name is the empty string, so its label is an empty text element rather than the null-name default Frame, a named outer frame and, nested inside it, a 120-wide inner frame whose long name is cut at its own width and whose label is not clipped by the outer frame while the rectangle it holds is clipped by the inner frame; every frame holds one roughness-0 rectangle. The frame labels' line box fixes a fractional scene origin (frame.y - 3 - 17.5), so the export extent is fractional too.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; no external content."
+      },
+      "coverage": [
+        {
+          "identity": "frame.name-truncation",
+          "role": "primary"
+        },
+        {
+          "identity": "frame.empty-name",
+          "role": "primary"
+        },
+        {
+          "identity": "frame.nested",
+          "role": "primary"
+        },
+        {
+          "identity": "frame.name",
+          "role": "primary"
+        },
+        {
+          "identity": "frame.clip",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:frame",
+        "element:rectangle",
+        "frame:name",
+        "frame:name-truncation",
+        "frame:empty-name",
+        "frame:nested",
+        "frame:clip",
+        "frame:outline",
+        "font:helvetica",
+        "font:liberation-sans",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "frame": 4,
+          "rectangle": 3
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 9,
+        "path": 6,
+        "clipPath": 4,
+        "text": 4
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+          "format": "png",
+          "max_changed_pixels": 378,
+          "minimum_ssim_bits": "3fefbf19b25a043f",
+          "reason": "Sub-pixel glyph coverage. The frame names are generated export text laid out as the reference's synthesized Helvetica text element and shaped with Liberation Sans, cut at the frame width with a trailing ... where the name is wider (decided on #97 and #105, evidenced on #152): all six SVG paths match the official export byte for byte, the document matches under one rasterizer (0 changed pixels), the fractional scene extent agrees, and every label's truncation point and horizontal extent agree pixel for pixel; only the glyph ink of the three 14 px labels differs between the renderer's rasterizer and the browser's canvas, which draws them a fraction of a pixel lower and heavier (its whole-pixel baseline snapping, #169, and its small-size glyph rasterization), together with the roughness-0 stroke edges of the rectangles and frame outlines. The same class is recorded on #104, #105, #108, #110 and #153 for the other text-bearing cases.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
     }
   ]
 }
