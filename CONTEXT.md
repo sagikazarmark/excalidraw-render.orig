@@ -41,8 +41,12 @@ Perceptual parity judged separately against the reference renderer's SVG and PNG
 _Avoid_: Cross-format normalization
 
 **Reference authority divergence**:
-A point where the reference renderer's SVG and canvas outputs disagree because of a defect in the reference exporter's serialization rather than an intended format-specific difference, and the renderer follows one of them in every format: the canvas, for frame and rounded-image clipping, whose `clip-path` the official SVG writes as a namespaced attribute that browsers do not apply. It is recorded in the spec rather than diagnosed, excepted, or pinned, and a harness observes it only when its official evidence is the artifact the renderer does not follow.
+A point where the reference renderer's SVG and canvas outputs disagree because of a defect in the reference exporter's serialization rather than an intended format-specific difference, and the renderer follows one of them in every format: the canvas, for frame and rounded-image clipping, whose `clip-path` the official SVG writes as a namespaced attribute that browsers do not apply, and whose rectangle it misplaces for a rounded and cropped image. It is recorded in the spec rather than diagnosed or excepted, and a harness observes it only when its official evidence is the artifact the renderer does not follow; the harness that does holds it as a reference authority divergence pin.
 _Avoid_: Official SVG bug, compatibility exception (for a reference exporter defect), known defect, format-specific parity (for the unfollowed artifact)
+
+**Reference authority divergence pin**:
+A reference authority divergence's exact measurement, recorded in the parity harness whose own rasterizer misrenders the official SVG the renderer does not follow, with the spec section that records the divergence and the issue that measured it named. It fails the harness when the measurement moves in either direction and requires the same variant's direct PNG to pass the canonical budget against the official canvas raster, which is the proof that the renderer follows the canvas; unlike a known defect nothing about it awaits a fix, and unlike a compatibility exception pin no tolerance exception stands behind it.
+_Avoid_: Known defect (for a reference exporter defect), compatibility exception pin (for a divergence no exception records), harness suppression
 
 **Compatibility normalization**:
 Deterministic preprocessing that reproduces the rendering-affecting behavior of the reference renderer's public restore path without its random or time-dependent repairs.

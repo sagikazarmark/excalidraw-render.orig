@@ -44,6 +44,13 @@
 //! that is neither embedded nor substituted (`Segoe UI Emoji` in a fallback
 //! list) stays unresolved and contributes nothing on either side.
 //!
+//! The raster dimension holds three kinds of pinned divergence apart from the
+//! budget: known defects (renderer defects awaiting a decision), compatibility
+//! exception pins (approved direct-PNG exceptions this dimension observes too)
+//! and reference authority divergences (official SVGs this rasterizer
+//! misrenders where the renderer follows the official canvas, proved by the
+//! variant's direct PNG passing the canonical budget).
+//!
 //! Every registered variant is compared on both dimensions, since dark mode and
 //! sizing must leave path geometry untouched, and each variant is rendered once:
 //! the two dimensions judge the same bytes, and a divergence in each is reported
@@ -69,7 +76,7 @@ use usvg::fontdb;
 
 use common::registered_cases::{
     case_count, judge_each, observed, registered_scene_variants, variant_request, visual_class,
-    PinnedDivergence, RegisteredVariant,
+    PinnedDivergence, ReferenceAuthorityDivergence, RegisteredVariant,
 };
 use common::reports::assert_report_matches;
 use common::repository_root;
@@ -115,6 +122,23 @@ const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
         ssim_bits: 0x3fea_ff42_54bc_d188,
     },
 ];
+
+/// Reference authority divergences the rasterized-document dimension can see
+/// (spec 8.2 and 8.4): variants whose official SVG misrenders under this
+/// harness's own rasterizer because of a defect in the reference exporter's
+/// serialization, while the renderer follows the official canvas in every
+/// format. The frame clip and the rounded-image corner clip are written by
+/// the reference as a namespaced `clip-path` attribute that browsers ignore
+/// and `usvg` honours, so `usvg` clips the official document as the renderer
+/// does and this harness is blind to those; it is not blind when the honoured
+/// clip is itself misplaced, as the official export misplaces the corner clip
+/// of a rounded and cropped image at the crop-shifted group origin. Each entry
+/// is held at its exact measurement, names the spec section recording the
+/// divergence and the issue that measured it, and requires the same variant's
+/// direct PNG to pass the canonical budget against the official canvas
+/// raster, which is the proof that the renderer, not the reference SVG, is
+/// right. Nothing here awaits a fix and nothing here is excepted.
+const REFERENCE_AUTHORITY_DIVERGENCES: &[ReferenceAuthorityDivergence] = &[];
 
 /// The rasterizer, its pixel backend and its font database — which drives the
 /// glyph fallback both pinned cases exercise — that the pins above were
@@ -176,6 +200,7 @@ fn every_registered_scene_case_matches_its_official_svg_geometry_and_raster() {
 
     PinnedDivergence::assert_all_observed(KNOWN_DEFECTS, &seen);
     PinnedDivergence::assert_all_observed(COMPATIBILITY_EXCEPTION_PINS, &seen);
+    ReferenceAuthorityDivergence::assert_all_observed(REFERENCE_AUTHORITY_DIVERGENCES, &seen);
     assert!(
         failures.is_empty(),
         "{} divergence(s) from the official SVG export across {} cases:\n  {}",
@@ -323,10 +348,19 @@ fn raster_divergence(
         &variant.case,
         &variant.variant,
     );
+    let authority = ReferenceAuthorityDivergence::lookup(
+        REFERENCE_AUTHORITY_DIVERGENCES,
+        &variant.case,
+        &variant.variant,
+    );
     assert!(
-        defect.is_none() || exception.is_none(),
-        "{context} is both a known defect and a compatibility exception; a defect has no \
-         non-defect cause to except"
+        [defect.is_some(), exception.is_some(), authority.is_some()]
+            .into_iter()
+            .filter(|pinned| *pinned)
+            .count()
+            <= 1,
+        "{context} is pinned in more than one list; a variant is a known defect, a \
+         compatibility exception or a reference authority divergence, never two of them"
     );
     if exception.is_some() {
         // The pin stands for the manifest's approved judgment on this variant,
@@ -338,10 +372,11 @@ fn raster_divergence(
              direct-PNG tolerance exception for the variant"
         );
     }
-    match (defect, exception) {
-        (Some(defect), _) => defect.mismatch(&report),
-        (None, Some(exception)) => exception.mismatch(&report),
-        (None, None) => (!report.passed())
+    match (defect, exception, authority) {
+        (Some(defect), _, _) => defect.mismatch(&report),
+        (None, Some(exception), _) => exception.mismatch(&report),
+        (None, None, Some(authority)) => authority.mismatch(&report, variant),
+        (None, None, None) => (!report.passed())
             .then(|| format!("outside the pure-Rust SVG budget: {}", observed(&report))),
     }
 }

@@ -2,8 +2,8 @@
 //! declares and how a harness judges each of them once, how a registered export
 //! variant's options become a render request, how a recorded tolerance
 //! exception's ceilings judge a comparison, and how a divergence a harness must
-//! hold in place, a known defect or a compatibility exception, is pinned at its
-//! exact measurement.
+//! hold in place, a known defect, a compatibility exception or a reference
+//! authority divergence, is pinned at its exact measurement.
 
 use std::collections::BTreeSet;
 use std::fs;
@@ -13,11 +13,14 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 
-use excalidraw_render::{ColorMode, OutputFormat, RenderRequest, SceneDocument, Sizing};
+use excalidraw_render::{ColorMode, OutputFormat, RenderRequest, Renderer, SceneDocument, Sizing};
 use excalidraw_render_compare::{
-    ComparisonLimits, ComparisonReport, RegionReport, SsimOutcome, VisualClass,
+    compare, CanonicalRgba8, ComparisonLimits, ComparisonMode, ComparisonReport, RegionReport,
+    SsimOutcome, VisualClass,
 };
 use serde_json::{json, Value};
+
+use super::raster::decode_png;
 
 /// One export variant of a registered scene case, with everything a harness
 /// needs to render and judge it: the identifiers, the case directory, the case
@@ -222,13 +225,16 @@ pub fn variant_request(format: OutputFormat, options: &Value, context: &str) -> 
 /// absorb a second one, and every entry must name a variant the registry still
 /// declares, so an orphan cannot pin nothing and never fail.
 ///
-/// Two lists use it, and what they pin differs. A known defect is a diagnosed
-/// renderer defect whose fix awaits a decision; it has no non-defect cause to
-/// record, so it never enters a case manifest. A compatibility exception pin
-/// is a specified departure from reference behavior that the case manifest
-/// already excepts on the direct PNG, observed by a harness whose scope that
-/// exception cannot cover; the pin stands for that approved judgment and must
-/// correspond to a recorded exception for the same variant.
+/// Three lists use it, and what they pin differs. A known defect is a
+/// diagnosed renderer defect whose fix awaits a decision; it has no non-defect
+/// cause to record, so it never enters a case manifest. A compatibility
+/// exception pin is a specified departure from reference behavior that the
+/// case manifest already excepts on the direct PNG, observed by a harness
+/// whose scope that exception cannot cover; the pin stands for that approved
+/// judgment and must correspond to a recorded exception for the same variant.
+/// A reference authority divergence ([`ReferenceAuthorityDivergence`]) is a
+/// defect of the reference exporter's serialization that the harness's own
+/// rasterizer can see, where the renderer follows the official canvas.
 pub struct PinnedDivergence {
     pub case: &'static str,
     pub variant: &'static str,
@@ -273,6 +279,110 @@ impl PinnedDivergence {
             )
         })
     }
+}
+
+/// One variant whose official SVG misrenders under the harness's own
+/// rasterizer while the renderer follows the official canvas, as the spec
+/// records for frame clips and the rounded-image corner clip (spec 8.2 and
+/// 8.4): a reference authority divergence, neither a renderer defect nor a
+/// compatibility exception. The rasterized-document dimension of the SVG
+/// harness holds the exact measurement, so the divergence can neither grow
+/// nor silently disappear, and names the spec section that records the
+/// divergence and the issue that measured it. The proof that the renderer and
+/// not the reference SVG is right is the same variant's direct PNG, which must
+/// pass the canonical budget against the official canvas raster; a pin whose
+/// variant fails that comparison is not a reference authority divergence and
+/// the harness says so.
+pub struct ReferenceAuthorityDivergence {
+    pub pin: PinnedDivergence,
+    /// The spec section recording the divergence the pin holds.
+    pub spec_section: &'static str,
+}
+
+impl ReferenceAuthorityDivergence {
+    /// The entry pinning one variant, if any.
+    pub fn lookup<'a>(pins: &'a [Self], case: &str, variant: &str) -> Option<&'a Self> {
+        pins.iter()
+            .find(|entry| entry.pin.case == case && entry.pin.variant == variant)
+    }
+
+    /// Every entry must name a variant the registry still declares.
+    pub fn assert_all_observed(pins: &[Self], observed: &BTreeSet<(String, String)>) {
+        let pinned: Vec<&PinnedDivergence> = pins.iter().map(|entry| &entry.pin).collect();
+        let orphans: Vec<_> = pinned
+            .iter()
+            .filter(|pin| !observed.contains(&(pin.case.to_owned(), pin.variant.to_owned())))
+            .map(|pin| format!("{} [{}]", pin.case, pin.variant))
+            .collect();
+        assert!(
+            orphans.is_empty(),
+            "reference authority divergences name variants the registry no longer declares: \
+             {orphans:?}"
+        );
+    }
+
+    /// `None` when the rasterized-document report carries the pinned
+    /// measurement and the variant's direct PNG passes the canonical budget;
+    /// otherwise the failure to report.
+    pub fn mismatch(
+        &self,
+        report: &ComparisonReport,
+        variant: &RegisteredVariant,
+    ) -> Option<String> {
+        let direct_png = direct_png_report(variant);
+        if !direct_png.passed() {
+            return Some(format!(
+                "is pinned as a reference authority divergence ({}, {}) but its direct PNG does \
+                 not pass the canonical budget against the official canvas raster, so the \
+                 renderer is not following the canvas there: {}",
+                self.spec_section,
+                self.pin.issue,
+                observed(&direct_png)
+            ));
+        }
+        self.pin.mismatch(report).map(|detail| {
+            format!(
+                "reference authority divergence ({}) {detail}",
+                self.spec_section
+            )
+        })
+    }
+}
+
+/// The canonical comparison of one variant's direct PNG against the official
+/// canvas raster: the measurement `parity_registered_case_png` judges, taken
+/// here as the proof a reference authority divergence pin requires.
+pub fn direct_png_report(variant: &RegisteredVariant) -> ComparisonReport {
+    let context = variant.context();
+    let request = variant_request(OutputFormat::Png, variant.options(), &context);
+    let outcome = Renderer::new()
+        .render(&variant.scene, &request)
+        .unwrap_or_else(|error| panic!("{context} renders as PNG: {error:?}"));
+    let png = variant.format("png");
+    let raw = &png["raw_raster"];
+    let width = raw["width"].as_u64().expect("raster width") as u32;
+    let height = raw["height"].as_u64().expect("raster height") as u32;
+    let reference = CanonicalRgba8::new(
+        width,
+        height,
+        fs::read(variant.dir.join(raw["path"].as_str().expect("raster path")))
+            .expect("official raster present"),
+    )
+    .expect("official evidence is canonical RGBA8");
+    let candidate = decode_png(outcome.artifact().bytes()).into_canonical();
+    assert_eq!(
+        (candidate.width(), candidate.height()),
+        (width, height),
+        "{context}: the direct PNG has the official raster's size"
+    );
+    compare(
+        &reference,
+        &candidate,
+        visual_class(png["visual_class"].as_str().expect("visual class")),
+        &[],
+        ComparisonMode::Canonical,
+    )
+    .expect("dimensions agree")
 }
 
 /// The whole-artifact SSIM score as binary64 bits, if it is a score.

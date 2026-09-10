@@ -751,8 +751,16 @@ attribute, as it does for frame clips, so browsers leave its rounded images
 square while the reference canvas rounds them; revision 1 follows the canvas
 and clips in every format. The namespaced attribute is the same reference
 authority divergence Section 8.4 records for frame clips, and a `usvg`-based
-comparison is blind to it in the same way: only the canonical Chromium raster
-of the reference SVG shows the difference.
+comparison is blind to it in the same way for an uncropped rounded image:
+only the canonical Chromium raster of the reference SVG shows the difference.
+For a rounded and cropped image the clip `usvg` honours is the misplaced one,
+declared at the crop-shifted group origin with the element's size, so under
+one `resvg` the reference SVG shows only the image's top-left quadrant with one
+rounded corner while revision 1 clips at the element rectangle as the canvas
+does. The registered-case SVG harness sees that divergence and holds it as a
+reference authority divergence pin (#163): the exact measurement, this
+section, the issue, and the requirement that the variant's direct PNG passes
+the canonical budget against the official canvas raster.
 
 In dark mode the reference SVG puts `IMAGE_INVERT_FILTER`,
 `invert(100%) hue-rotate(180deg) saturate(1.25)`, on each raster image's `<use>`

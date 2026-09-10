@@ -112,6 +112,25 @@ Chromium SVG viewer once it admits frame scenes, or a scene-export PDF gate
 (see Canonical PDF harnesses) — sees the renderer clip what the official SVG
 does not.
 
+That blindness has a limit. For an image with both `roundness` and `crop`, the
+official exporter declares the corner `<clipPath>` at the crop-shifted group
+origin instead of the element's rectangle, so the clip usvg honours is itself
+misplaced: under one `resvg` the official document shows only the image's
+top-left quadrant with one rounded corner, while the renderer clips at the
+element rectangle as the official canvas does (`focused.rounded-image-crop.v1`,
+#163). The raster dimension of `parity_registered_case_svg` sees that, and
+neither of its other two lists fits it: it is not a renderer defect, and the
+asset-bearing scene schema admits no tolerance exception for a compatibility
+exception pin to stand for. It is held in that harness's third list,
+`REFERENCE_AUTHORITY_DIVERGENCES`, as a reference authority divergence pin:
+the exact `changed_pixels` and SSIM bits, the spec section that records the
+divergence (8.2) and the issue that measured it, failing if the measurement
+moves in either direction, plus the requirement that the same variant's direct
+PNG passes the canonical budget against the official canvas raster — the proof
+that the renderer, not the reference SVG, is right. A variant whose direct PNG
+fails that comparison is not a reference authority divergence and the harness
+refuses the pin. `KNOWN_DEFECTS` stays for renderer defects only.
+
 `xtask` resolves every case through this file, so adding a scene case is a
 registry entry plus a case directory rather than a new generator script or a new
 constant. `conformance-case.mjs` reads the same file and refuses any entry whose
