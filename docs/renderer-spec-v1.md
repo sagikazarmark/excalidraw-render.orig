@@ -1064,10 +1064,16 @@ the dark-mode image filters it references (Section 8.2), each defined once:
 `dark-mode-raster-image` (the image filter followed by the theme filter) before
 `dark-mode-nested-svg-image` (the theme filter alone). Each filter spells its
 CSS filter functions as the Filter Effects primitives they are defined as —
-`feComponentTransfer` tables for `invert`, `feColorMatrix` `hueRotate` and
-`saturate` — with `color-interpolation-filters="sRGB"`, and each image element's
-`<use>` references its filter by `filter="url(#…)"`. A light-mode export defines
-and references no filter.
+`feComponentTransfer` tables for `invert`, `feColorMatrix` `hueRotate` for
+`hue-rotate(180deg)`, and for `saturate(1.25)` an explicit `feColorMatrix
+type="matrix"` carrying the Filter Effects saturate matrix at `s = 1.25`
+(`1.19675 -0.17875 -0.018 0 0 -0.05325 1.07125 -0.018 0 0 -0.05325 -0.17875
+1.232 0 0 0 0 0 1 0`), never `type="saturate"`, whose SVG 1.1 domain is
+`[0, 1]` and which `usvg`-based viewers clamp to the identity while the CSS
+function keeps any positive amount (#161) — with
+`color-interpolation-filters="sRGB"`, and each image element's `<use>`
+references its filter by `filter="url(#…)"`. A light-mode export defines and
+references no filter.
 
 Every accepted image asset is defined once, as the reference's `reuseImages`
 export defines it (#151): `<symbol id="image-<source index>"

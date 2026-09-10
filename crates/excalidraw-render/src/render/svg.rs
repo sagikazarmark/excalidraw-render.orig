@@ -91,6 +91,20 @@ struct SvgImageSymbol {
     asset: Arc<ResolvedImageAsset>,
 }
 
+/// The Filter Effects `saturate` matrix for `s = 1.25`, row-major as a
+/// `feColorMatrix type="matrix"` lists it: `0.213 + 0.787s`,
+/// `0.715 - 0.715s`, `0.072 - 0.072s` on the red row, `0.213 - 0.213s`,
+/// `0.715 + 0.285s`, `0.072 - 0.072s` on the green row and `0.213 - 0.213s`,
+/// `0.715 - 0.715s`, `0.072 + 0.928s` on the blue row, alpha untouched. It is
+/// the matrix `color::saturate` evaluates for PDF and PNG; spelled out here
+/// because `type="saturate"` cannot carry an amount above 1 portably (#161).
+/// A macro rather than a `const` so `concat!` can splice the literal.
+macro_rules! saturate_1_25_matrix {
+    () => {
+        "1.19675 -0.17875 -0.018 0 0 -0.05325 1.07125 -0.018 0 0 -0.05325 -0.17875 1.232 0 0 0 0 0 1 0"
+    };
+}
+
 /// The `<defs>` filter standing in for the reference filters a dark-mode image
 /// passes through ([`DarkModeImageFilter`]): the renderer lowers the root
 /// `THEME_FILTER` into its vector colors and carries no root filter, so each
@@ -123,9 +137,17 @@ impl SvgImageFilterDefinition for DarkModeImageFilter {
                 "<feFuncG type=\"table\" tableValues=\"1 0\"/>",
                 "<feFuncB type=\"table\" tableValues=\"1 0\"/>",
                 "</feComponentTransfer>",
-                // hue-rotate(180deg) saturate(1.25)
+                // hue-rotate(180deg) saturate(1.25). The saturate step is
+                // spelled as the explicit Filter Effects saturate matrix for
+                // s = 1.25 rather than `type="saturate" values="1.25"`: the
+                // primitive's SVG 1.1 domain is [0, 1], and usvg/resvg clamp
+                // a larger value to 1, the identity, where the CSS function
+                // the reference uses keeps any positive amount (#161). Every
+                // viewer evaluates a literal matrix as written.
                 "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
-                "<feColorMatrix type=\"saturate\" values=\"1.25\"/>",
+                "<feColorMatrix type=\"matrix\" values=\"",
+                saturate_1_25_matrix!(),
+                "\"/>",
                 // invert(93%) hue-rotate(180deg)
                 "<feComponentTransfer>",
                 "<feFuncR type=\"table\" tableValues=\"0.93 0.07\"/>",

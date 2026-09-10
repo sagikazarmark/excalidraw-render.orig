@@ -116,10 +116,13 @@ fn light_mode_frame_outlines_keep_the_reference_light_constants() {
 /// validated octets (spec section 8.2). The literals are worked from the Filter
 /// Effects equivalents of the official filter functions, in their order:
 /// `invert(a)` is `feComponentTransfer` with the table `a, 1 - a` on each
-/// channel, `hue-rotate(180deg)` and `saturate(1.25)` are `feColorMatrix`
-/// `hueRotate 180` and `saturate 1.25`, all in sRGB like the functions. They
-/// pin the serialization the spec (section 8.4) promises; the viewer test below
-/// checks what it paints.
+/// channel, `hue-rotate(180deg)` is `feColorMatrix hueRotate 180`, and
+/// `saturate(1.25)` is the explicit `feColorMatrix type="matrix"` of the
+/// Filter Effects saturate matrix at `s = 1.25` (`0.213 + 0.787s`,
+/// `0.715 - 0.715s`, `0.072 - 0.072s`, ...), never `type="saturate"`, whose
+/// SVG 1.1 domain is `[0, 1]` and which usvg/resvg clamp to the identity
+/// (#161); all in sRGB like the functions. They pin the serialization the spec
+/// (section 8.4) promises; the viewer tests below check what it paints.
 const RASTER_IMAGE_FILTER: &str = concat!(
     "<filter id=\"dark-mode-raster-image\" color-interpolation-filters=\"sRGB\">",
     "<feComponentTransfer>",
@@ -128,7 +131,11 @@ const RASTER_IMAGE_FILTER: &str = concat!(
     "<feFuncB type=\"table\" tableValues=\"1 0\"/>",
     "</feComponentTransfer>",
     "<feColorMatrix type=\"hueRotate\" values=\"180\"/>",
-    "<feColorMatrix type=\"saturate\" values=\"1.25\"/>",
+    "<feColorMatrix type=\"matrix\" values=\"",
+    "1.19675 -0.17875 -0.018 0 0 ",
+    "-0.05325 1.07125 -0.018 0 0 ",
+    "-0.05325 -0.17875 1.232 0 0 ",
+    "0 0 0 1 0\"/>",
     "<feComponentTransfer>",
     "<feFuncR type=\"table\" tableValues=\"0.93 0.07\"/>",
     "<feFuncG type=\"table\" tableValues=\"0.93 0.07\"/>",
@@ -245,6 +252,55 @@ fn a_viewer_applies_the_dark_mode_svg_image_filters_to_the_reference_values() {
     assert_rgb_near(sample(20, 20), [0xed, 0xed, 0xed]);
     assert_rgb_near(sample(60, 20), [0xd3, 0xd3, 0xd3]);
     assert_eq!(sample(2, 2), [0x11, 0x11, 0x11], "background");
+}
+
+#[test]
+fn a_viewer_applies_the_saturate_step_of_the_dark_mode_raster_image_filter() {
+    // A gray is a fixed point of `saturate`, so the white probe above cannot
+    // see the step; a saturated blue can. `#1971c2` through the reference
+    // chain is what the renderer's own color math lowers into PDF
+    // (`color::dark_mode_raster_image_pixel`, `[25, 120, 192]`), which is also
+    // what Chromium paints for the official SVG. Spelled as `type="saturate"
+    // values="1.25"`, resvg clamped the amount to 1 and painted
+    // `[38, 115, 185]` instead (#161); the explicit matrix evaluates
+    // literally.
+    let blue = fixture_png(2, 2, &[[0x19, 0x71, 0xc2, 255]; 4]);
+    let scene = image_scene(&[ImageFixture {
+        media_type: "image/png",
+        payload: &blue,
+        geometry: r#""x":0,"y":0,"width":20,"height":20"#,
+    }]);
+    let svg = render(&scene, OutputFormat::Svg, ColorMode::Dark);
+    let svg = std::str::from_utf8(&svg).expect("SVG is UTF-8");
+    assert!(
+        svg.contains(
+            "<feColorMatrix type=\"matrix\" values=\"1.19675 -0.17875 -0.018 0 0 -0.05325 \
+             1.07125 -0.018 0 0 -0.05325 -0.17875 1.232 0 0 0 0 0 1 0\"/>"
+        ),
+        "{svg}"
+    );
+    assert!(!svg.contains("type=\"saturate\""), "{svg}");
+    let tree = usvg::Tree::from_str(svg, &usvg::Options::default())
+        .expect("the dark-mode SVG parses, filters included");
+    let mut pixmap = tiny_skia::Pixmap::new(40, 40).expect("pixmap allocates");
+    resvg::render(
+        &tree,
+        tiny_skia::Transform::identity(),
+        &mut pixmap.as_mut(),
+    );
+    let pixel = pixmap.pixel(20, 20).expect("pixel is inside").demultiply();
+    let sample = [pixel.red(), pixel.green(), pixel.blue()];
+    for (channel, expected) in sample.into_iter().zip([25, 120, 192]) {
+        assert!(
+            channel.abs_diff(expected) <= 2,
+            "{sample:?} differs from the reference chain's [25, 120, 192] by more than \
+             the viewer's per-primitive quantization"
+        );
+    }
+    assert!(
+        sample[2] > 188,
+        "{sample:?}: the saturate step was not applied (an identity saturate paints ~185)"
+    );
 }
 
 #[test]
