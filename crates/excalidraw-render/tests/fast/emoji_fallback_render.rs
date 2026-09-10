@@ -2,10 +2,11 @@
 //! `font.noto-emoji-substituted` once per affected occurrence, while every
 //! format keeps carrying the stored text beside the glyphs (spec 8.3).
 //! `focused.emoji-fallback.v1` (#121) is the evidence-bearing case; this pins
-//! what its PNG and SVG evidence cannot see: that the embedded face is the
-//! manifested Noto Emoji 3.003 asset byte for byte in both vector formats, the
-//! PDF's resource switches and logical text, the PDF report, and repeatability
-//! in every format.
+//! what its PNG and SVG evidence cannot see: that the SVG embeds a qualified
+//! WOFF2 subset of the fallback covering exactly the emoji runs (#150) while
+//! the PDF embeds the manifested Noto Emoji 3.003 asset byte for byte, the
+//! PDF's resource switches and logical text, the PDF report, and
+//! repeatability in every format.
 
 use std::fs;
 
@@ -51,8 +52,9 @@ fn checked_report(format: &str) -> Value {
     )
 }
 
-/// The manifested Noto Emoji 3.003 face: the bytes both vector formats must
-/// embed unchanged, since a non-WOFF2 fallback is never subset (spec 8.3.1).
+/// The manifested Noto Emoji 3.003 face: the bytes the PDF embeds unchanged
+/// (spec 8.6, #120 forecloses subsetting a reviewed program) and the source
+/// the SVG's subset derives from (spec 8.3.1).
 fn manifested_noto_emoji() -> Vec<u8> {
     excalidraw_render_assets_base::load_noto_emoji_sfnt()
         .expect("the Noto Emoji asset verifies")
@@ -111,7 +113,7 @@ fn every_format_reports_one_noto_emoji_substitution_per_occurrence() {
 }
 
 #[test]
-fn svg_sets_the_emoji_from_the_complete_noto_emoji_face_and_keeps_the_stored_text() {
+fn svg_sets_the_emoji_from_a_noto_emoji_subset_and_keeps_the_stored_text() {
     let outcome = render(&registered_scene(), OutputFormat::Svg);
     let svg = std::str::from_utf8(outcome.artifact().bytes()).expect("SVG is UTF-8");
 
@@ -119,13 +121,18 @@ fn svg_sets_the_emoji_from_the_complete_noto_emoji_face_and_keeps_the_stored_tex
     assert!(svg.contains(&format!("data-source-text=\"{EXCALIFONT_TEXT}\"")));
     assert!(svg.contains(&format!("data-source-text=\"{LIBERATION_TEXT}\"")));
 
-    // Three faces: the two families' subsets and the complete Noto Emoji
-    // fallback, declared once. Nothing from the chain the scene does not reach.
+    // Three faces: the two families' subsets and the Noto Emoji fallback's,
+    // declared once and last. Nothing from the chain the scene does not reach.
     assert!(svg.contains("@font-face{font-family:'Excalifont'"));
     assert!(svg.contains("@font-face{font-family:'ExcalidrawRender-9'"));
     assert_eq!(
         svg.matches("@font-face{font-family:'Noto Emoji'").count(),
         1
+    );
+    assert!(
+        svg.find("@font-face{font-family:'Noto Emoji'")
+            > svg.find("@font-face{font-family:'ExcalidrawRender-9'"),
+        "the fallback face is declared after every resolved family"
     );
     // Xiaolai is named only as a consumer fallback family in the Excalifont
     // element's `font-family` list; nothing embeds or shapes with it.
@@ -133,12 +140,57 @@ fn svg_sets_the_emoji_from_the_complete_noto_emoji_face_and_keeps_the_stored_tex
         !svg.contains("font-family:'Xiaolai'") && !svg.contains("<tspan font-family=\"Xiaolai"),
         "no scalar is in the CJK table, so Xiaolai stays out"
     );
-    // The fallback is not a WOFF2 subset like the families' payloads: it is
-    // the manifested sfnt, complete and byte for byte.
+    // The fallback is a WOFF2 subset like the families' payloads (#150): it
+    // maps exactly the scalars the emoji runs shaped, with the source's
+    // advances, under the canonical family name, and is a Modified Version
+    // the manifest notices as one. The complete 862,680-byte sfnt stays out.
+    let source = manifested_noto_emoji();
     let (media_type, payload) = embedded_font_payload(svg, "Noto Emoji");
-    assert_eq!(media_type, "font/ttf");
-    assert_eq!(payload, manifested_noto_emoji());
+    assert_eq!(media_type, "font/woff2");
+    assert!(payload.len() < source.len() / 64, "{} bytes", payload.len());
+    let subset_sfnt = wuff::decompress_woff2(&payload).expect("the emoji subset decodes");
+    let subset = rustybuzz::Face::from_slice(&subset_sfnt, 0).expect("the emoji subset parses");
+    let complete = rustybuzz::Face::from_slice(&source, 0).expect("Noto Emoji parses");
+    for emoji in ['\u{1f600}', '\u{1f389}'] {
+        let subset_glyph = subset
+            .glyph_index(emoji)
+            .unwrap_or_else(|| panic!("the subset maps {emoji}"));
+        let complete_glyph = complete
+            .glyph_index(emoji)
+            .expect("Noto Emoji maps the emoji");
+        assert_eq!(
+            subset.glyph_hor_advance(subset_glyph),
+            complete.glyph_hor_advance(complete_glyph)
+        );
+    }
+    for latin in ['L', 'a', ' ', 't'] {
+        assert!(
+            subset.glyph_index(latin).is_none(),
+            "{latin:?} was shaped by a family face and is not in the emoji subset"
+        );
+    }
     assert_eq!(embedded_font_payload(svg, "Excalifont").0, "font/woff2");
+    let manifest = artifact_manifest(svg);
+    let notices = manifest["notices"]
+        .as_array()
+        .expect("the manifest lists notices");
+    let emoji_notice = notices
+        .iter()
+        .find(|notice| {
+            notice["text"]
+                .as_str()
+                .is_some_and(|text| text.contains("NotoEmoji-Regular.ttf"))
+        })
+        .expect("the emoji subset carries a Modified Version notice");
+    assert!(emoji_notice["asset_identity"]
+        .as_str()
+        .is_some_and(|identity| identity.starts_with("svg-font-subset@sha256:")));
+    let text = emoji_notice["text"].as_str().expect("notice text");
+    assert!(
+        text.contains("Copyright 2013 Google LLC. Modified Version under font.noto-emoji.ofl-1.1.")
+    );
+    assert!(text.contains("Effective alias: Noto Emoji."));
+    assert!(text.contains(&format!("Output WOFF2: {} bytes", payload.len())));
 
     // The Excalifont element shapes the Latin itself and the two emoji as one
     // Noto Emoji run between; the Liberation Sans element likewise with one.
@@ -301,6 +353,21 @@ fn tspans(line: &str) -> Vec<(&str, &str)> {
             (family, text)
         })
         .collect()
+}
+
+/// The artifact manifest the SVG's `<metadata>` carries, as JSON.
+fn artifact_manifest(svg: &str) -> Value {
+    let json = svg
+        .split_once("<excalidraw-render:manifest")
+        .and_then(|(_, rest)| rest.split_once('>'))
+        .and_then(|(_, rest)| rest.split("</excalidraw-render:manifest>").next())
+        .expect("the SVG carries an artifact manifest");
+    let json = json
+        .replace("&quot;", "\"")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&amp;", "&");
+    serde_json::from_str(&json).expect("the artifact manifest is JSON")
 }
 
 /// The media type and decoded payload of the `@font-face` declaring `family`.

@@ -264,6 +264,7 @@ fn assert_cell(
                 .derive(
                     record.identity,
                     source_woff2,
+                    font_subset::SourceContainer::Woff2,
                     scalars,
                     &source.effective_alias,
                     &semantic_identity,
@@ -278,6 +279,7 @@ fn assert_cell(
                 .derive(
                     record.identity,
                     source_woff2,
+                    font_subset::SourceContainer::Woff2,
                     scalars,
                     &source.effective_alias,
                     &semantic_identity,
@@ -304,7 +306,7 @@ fn assert_cell(
             let trace = canonical_trace(record, scalars, Some(&derived));
             measurement.record_trace(record.identity, &cell.class, &trace);
             let notice = svg_fonts::subset_notice(
-                record,
+                svg_fonts::SubsetSource::chunk(record),
                 family_name(record.family),
                 &source.effective_alias,
                 &semantic_identity,
@@ -367,13 +369,25 @@ fn assert_failure_cells(failures: &[FailureQualification]) {
         assert!(scalar_count <= failure.max_scalars);
         let (actual, generated_woff2_bytes) = match id {
             "empty-source" => {
-                match font_subset::derive(&[], &[u32::from('A')], "Test", &"0".repeat(64)) {
+                match font_subset::derive(
+                    &[],
+                    font_subset::SourceContainer::Woff2,
+                    &[u32::from('A')],
+                    "Test",
+                    &"0".repeat(64),
+                ) {
                     Ok(derived) => (None, Some(derived.woff2.len())),
                     Err(error) => (Some(error.stage), None),
                 }
             }
             "short-semantic-identity" => {
-                match font_subset::derive(asset.bytes(), &[u32::from('A')], "Test", "short") {
+                match font_subset::derive(
+                    asset.bytes(),
+                    font_subset::SourceContainer::Woff2,
+                    &[u32::from('A')],
+                    "Test",
+                    "short",
+                ) {
                     Ok(derived) => (None, Some(derived.woff2.len())),
                     Err(error) => (Some(error.stage), None),
                 }
@@ -800,6 +814,7 @@ fn family_failure_diagnosis(
         let identity = svg_fonts::semantic_identity(record, scalars).expect("diagnosed identity");
         if let Err(error) = font_subset::derive(
             asset.bytes(),
+            font_subset::SourceContainer::Woff2,
             scalars,
             effective_alias(record.family),
             &identity,
@@ -810,6 +825,7 @@ fn family_failure_diagnosis(
                     svg_fonts::semantic_identity(record, values).expect("diagnosed identity");
                 font_subset::derive(
                     asset.bytes(),
+                    font_subset::SourceContainer::Woff2,
                     values,
                     effective_alias(record.family),
                     &identity,
@@ -928,22 +944,35 @@ fn materialize_cell(
             let scalars = classified.scalars.expect("success has scalars");
             let semantic_identity =
                 svg_fonts::semantic_identity(record, &scalars).expect("semantic identity");
-            let derived = font_subset::derive(source_woff2, &scalars, alias, &semantic_identity)
-                .unwrap_or_else(|error| {
-                    let first_bad_prefix = (1..=scalars.len()).find(|length| {
-                        let prefix = &scalars[..*length];
-                        let identity = svg_fonts::semantic_identity(record, prefix)
-                            .expect("prefix semantic identity");
-                        font_subset::derive(source_woff2, prefix, alias, &identity).is_err()
-                    });
-                    panic!(
-                        "{} {class} {scalars:?}, first bad prefix {first_bad_prefix:?}: {:?}",
-                        record.upstream_path, error.stage
+            let derived = font_subset::derive(
+                source_woff2,
+                font_subset::SourceContainer::Woff2,
+                &scalars,
+                alias,
+                &semantic_identity,
+            )
+            .unwrap_or_else(|error| {
+                let first_bad_prefix = (1..=scalars.len()).find(|length| {
+                    let prefix = &scalars[..*length];
+                    let identity = svg_fonts::semantic_identity(record, prefix)
+                        .expect("prefix semantic identity");
+                    font_subset::derive(
+                        source_woff2,
+                        font_subset::SourceContainer::Woff2,
+                        prefix,
+                        alias,
+                        &identity,
                     )
+                    .is_err()
                 });
+                panic!(
+                    "{} {class} {scalars:?}, first bad prefix {first_bad_prefix:?}: {:?}",
+                    record.upstream_path, error.stage
+                )
+            });
             let output_sha256 = sha256(derived.woff2.as_ref());
             let notice = svg_fonts::subset_notice(
-                record,
+                svg_fonts::SubsetSource::chunk(record),
                 family_name(record.family),
                 alias,
                 &semantic_identity,
@@ -1081,14 +1110,19 @@ fn materialize_viewer_inputs() {
                 continue;
             }
 
-            let derived =
-                font_subset::derive(asset.bytes(), scalars, &source.effective_alias, identity)
-                    .unwrap_or_else(|error| {
-                        panic!(
-                            "{} {} viewer subset derives at {:?}",
-                            record.upstream_path, cell.class, error.stage
-                        )
-                    });
+            let derived = font_subset::derive(
+                asset.bytes(),
+                font_subset::SourceContainer::Woff2,
+                scalars,
+                &source.effective_alias,
+                identity,
+            )
+            .unwrap_or_else(|error| {
+                panic!(
+                    "{} {} viewer subset derives at {:?}",
+                    record.upstream_path, cell.class, error.stage
+                )
+            });
             let source_sfnt =
                 wuff::decompress_woff2(asset.bytes()).expect("qualified source decodes");
             let subset_sfnt =

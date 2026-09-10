@@ -529,20 +529,28 @@ pub fn load_excalifont_basic_latin_sfnt() -> Result<VerifiedAsset, AssetIntegrit
     })
 }
 
-const NOTO_EMOJI_SFNT_IDENTITY: &str = concat!(
+/// The SHA-256 of the exact manifested Noto Emoji 3.003 fallback input.
+pub const NOTO_EMOJI_SHA256: &str =
+    "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634";
+/// The byte length of the exact manifested Noto Emoji 3.003 fallback input.
+pub const NOTO_EMOJI_LENGTH: usize = 862_680;
+/// The catalog identity of the Noto Emoji 3.003 fallback input: its upstream
+/// path and digest, as `catalog/fallback/NotoEmoji-Regular.ttf.json` records
+/// it. The face is a TrueType sfnt, not a WOFF2 chunk, and belongs to no
+/// resolved family; it is the one non-catalog source direct SVG subsets.
+pub const NOTO_EMOJI_IDENTITY: &str = concat!(
     "scripts/woff2/assets/NotoEmoji-Regular.ttf@sha256:",
     "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634"
 );
+/// The catalog family the Noto Emoji notice is filed under.
+pub const NOTO_EMOJI_FAMILY: &str = "NotoEmoji";
 const NOTO_EMOJI_SFNT: &[u8] = include_bytes!("../catalog/fallback/NotoEmoji-Regular.ttf");
 
 /// Loads the digest-verified Noto Emoji 3.003 fallback input.
 pub fn load_noto_emoji_sfnt() -> Result<VerifiedAsset, AssetIntegrityError> {
-    if NOTO_EMOJI_SFNT.len() != 862_680
-        || sha256(NOTO_EMOJI_SFNT)
-            != "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634"
-    {
+    if NOTO_EMOJI_SFNT.len() != NOTO_EMOJI_LENGTH || sha256(NOTO_EMOJI_SFNT) != NOTO_EMOJI_SHA256 {
         return Err(AssetIntegrityError {
-            asset_identity: NOTO_EMOJI_SFNT_IDENTITY,
+            asset_identity: NOTO_EMOJI_IDENTITY,
             stage: IntegrityStage::Complete,
         });
     }

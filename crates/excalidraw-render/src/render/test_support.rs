@@ -112,7 +112,7 @@ pub(super) fn render_font_subset_qualification_trace(
             &demand,
         )?;
         let mut subset_session = svg_fonts::Session::new();
-        let bundle = svg_fonts::build(demand, &[], svg_fonts::Payload::Subset, &mut subset_session)
+        let bundle = svg_fonts::build(demand, svg_fonts::Payload::Subset, &mut subset_session)
             .map_err(|error| {
                 session.format_failure(
                     &request,

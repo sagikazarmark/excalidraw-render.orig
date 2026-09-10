@@ -56,10 +56,179 @@ impl FamilyDemand {
     }
 }
 
-pub(super) struct UnchangedFont<'a> {
-    pub(super) family: &'static str,
-    pub(super) mime: &'static str,
-    pub(super) bytes: &'a [u8],
+/// One source direct SVG may subset for a demanded family (spec 8.3.1): an
+/// official Unicode-range WOFF2 chunk of a resolved family, or the complete
+/// Noto Emoji fallback face, which is its own one-face family declaring every
+/// Unicode scalar and is selected exactly when an emoji run demanded it
+/// (#150). Both go through the one qualified subsetter; the fallback differs
+/// only in arriving as an sfnt rather than a WOFF2 container.
+#[derive(Clone, Copy, Debug)]
+pub(super) struct SubsetSource {
+    kind: SubsetSourceKind,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum SubsetSourceKind {
+    Chunk(&'static excalidraw_render_assets_base::AssetRecord),
+    NotoEmoji,
+}
+
+/// The one declared range of the Noto Emoji fallback: like the single-face
+/// families' declaration, it covers all of Unicode, so the face is consulted
+/// for every scalar an emoji run demanded and never left out for one.
+const NOTO_EMOJI_RANGES: &[(u32, u32)] = &[(0, 0x10ffff)];
+
+/// The most sources one family can have: Xiaolai's chunk count bounds it, and
+/// the catalog holds no more chunks than this in total.
+const MAX_FAMILY_SOURCES: usize = 230;
+
+impl SubsetSource {
+    pub(super) const fn chunk(record: &'static excalidraw_render_assets_base::AssetRecord) -> Self {
+        Self {
+            kind: SubsetSourceKind::Chunk(record),
+        }
+    }
+
+    pub(super) const fn noto_emoji() -> Self {
+        Self {
+            kind: SubsetSourceKind::NotoEmoji,
+        }
+    }
+
+    /// The catalog identity the subset notice, the semantic identity and the
+    /// resource trace name the source by.
+    pub(super) const fn identity(self) -> &'static str {
+        match self.kind {
+            SubsetSourceKind::Chunk(record) => record.identity,
+            SubsetSourceKind::NotoEmoji => excalidraw_render_assets_base::NOTO_EMOJI_IDENTITY,
+        }
+    }
+
+    pub(super) const fn complete_sha256(self) -> &'static str {
+        match self.kind {
+            SubsetSourceKind::Chunk(record) => record.complete_sha256,
+            SubsetSourceKind::NotoEmoji => excalidraw_render_assets_base::NOTO_EMOJI_SHA256,
+        }
+    }
+
+    /// The manifested source length: the WOFF2 container of a chunk, the
+    /// sfnt itself for the fallback.
+    const fn complete_length(self) -> usize {
+        match self.kind {
+            SubsetSourceKind::Chunk(record) => record.complete_length,
+            SubsetSourceKind::NotoEmoji => excalidraw_render_assets_base::NOTO_EMOJI_LENGTH,
+        }
+    }
+
+    /// The decoded sfnt length the dependency envelope is sized from: a
+    /// chunk's reviewed decode, the fallback's own length.
+    fn decoded_length(self) -> Option<usize> {
+        match self.kind {
+            SubsetSourceKind::Chunk(record) => {
+                excalidraw_render_assets_base::font_face_decoded_length(record.upstream_path)
+            }
+            SubsetSourceKind::NotoEmoji => Some(excalidraw_render_assets_base::NOTO_EMOJI_LENGTH),
+        }
+    }
+
+    pub(super) const fn container(self) -> font_subset::SourceContainer {
+        match self.kind {
+            SubsetSourceKind::Chunk(_) => font_subset::SourceContainer::Woff2,
+            SubsetSourceKind::NotoEmoji => font_subset::SourceContainer::Sfnt,
+        }
+    }
+
+    /// The media type the source's own bytes carry when a test embeds them
+    /// complete in place of a subset.
+    #[cfg(test)]
+    const fn complete_mime(self) -> &'static str {
+        match self.kind {
+            SubsetSourceKind::Chunk(_) => "font/woff2",
+            SubsetSourceKind::NotoEmoji => "font/ttf",
+        }
+    }
+
+    /// The catalog family whose notice covers the source.
+    pub(super) const fn catalog_family(self) -> &'static str {
+        match self.kind {
+            SubsetSourceKind::Chunk(record) => record.family,
+            SubsetSourceKind::NotoEmoji => excalidraw_render_assets_base::NOTO_EMOJI_FAMILY,
+        }
+    }
+
+    /// The declared Unicode ranges selection intersects the family scalar set
+    /// with; `None` only when the catalog lacks a chunk's declaration.
+    pub(super) fn unicode_ranges(self) -> Option<&'static [(u32, u32)]> {
+        match self.kind {
+            SubsetSourceKind::Chunk(record) => {
+                excalidraw_render_assets_base::font_face_unicode_ranges(
+                    record.family,
+                    record.upstream_path,
+                )
+            }
+            SubsetSourceKind::NotoEmoji => Some(NOTO_EMOJI_RANGES),
+        }
+    }
+
+    /// The source's position in pinned face order within its family.
+    fn face_order(self) -> usize {
+        match self.kind {
+            SubsetSourceKind::Chunk(record) => {
+                excalidraw_render_assets_base::font_face_order(record.family, record.upstream_path)
+                    .unwrap_or(usize::MAX)
+            }
+            SubsetSourceKind::NotoEmoji => 0,
+        }
+    }
+
+    /// Whether the family scalar set intersects the declared ranges, which is
+    /// what selects the source.
+    pub(super) fn selected_by(self, scalars: &[u32]) -> Option<bool> {
+        let ranges = self.unicode_ranges()?;
+        Some(scalars.iter().any(|scalar| {
+            ranges
+                .iter()
+                .any(|(start, end)| start <= scalar && scalar <= end)
+        }))
+    }
+
+    /// The digest-verified source bytes, or `None` when the sealed asset fails
+    /// its integrity check.
+    pub(super) fn load(self) -> Option<excalidraw_render_assets_base::VerifiedAsset> {
+        match self.kind {
+            SubsetSourceKind::Chunk(record) => {
+                excalidraw_render_assets_base::load_asset(record.upstream_path)
+                    .ok()
+                    .flatten()
+            }
+            SubsetSourceKind::NotoEmoji => {
+                excalidraw_render_assets_base::load_noto_emoji_sfnt().ok()
+            }
+        }
+    }
+}
+
+/// Fills `slots` with every source of the resolved `family`, in pinned face
+/// order, and returns how many there are; `None` when the family has more
+/// sources than the slots hold, which the catalog bound above rules out.
+fn family_sources(family: &'static str, slots: &mut [Option<SubsetSource>]) -> Option<usize> {
+    let catalog_family = catalog_family(family);
+    let mut count = 0_usize;
+    if catalog_family == excalidraw_render_assets_base::NOTO_EMOJI_FAMILY {
+        *slots.first_mut()? = Some(SubsetSource::noto_emoji());
+        return Some(1);
+    }
+    for record in excalidraw_render_assets_base::revision_1()
+        .assets
+        .iter()
+        .filter(|record| record.family == catalog_family)
+    {
+        *slots.get_mut(count)? = Some(SubsetSource::chunk(record));
+        count += 1;
+    }
+    slots[..count]
+        .sort_unstable_by_key(|source| source.map_or(usize::MAX, SubsetSource::face_order));
+    Some(count)
 }
 
 #[derive(Clone, Copy)]
@@ -309,7 +478,10 @@ pub(super) struct SelectionAccounting {
     retained_len: usize,
 }
 
-const MAX_SELECTION_RECORDS: usize = 9 + 230 * 2;
+/// One scalar-set record per demanded family (eight resolved families,
+/// Xiaolai and Noto Emoji), then a considered and a selected record per
+/// source.
+const MAX_SELECTION_RECORDS: usize = 10 + (MAX_FAMILY_SOURCES + 1) * 2;
 
 impl SelectionAccounting {
     pub(super) fn release<A: ResourceAccount>(mut self, account: &mut A) -> Result<(), A::Error> {
@@ -412,30 +584,11 @@ pub(super) fn account_selection<A: ResourceAccount>(
         for family in &demand.families {
             let scalar_count = u64::try_from(family.scalars.len())
                 .map_err(|_| account.internal_failure("SVG font scalar count overflowed"))?;
-            let catalog_family = catalog_family(family.family);
-            let mut records = [None; 230];
-            let mut record_count = 0_usize;
-            for record in excalidraw_render_assets_base::revision_1()
-                .assets
-                .iter()
-                .filter(|record| record.family == catalog_family)
-            {
-                records[record_count] = Some(record);
-                record_count += 1;
-            }
-            let records = &mut records[..record_count];
-            records.sort_unstable_by_key(|record| {
-                let record = record.expect("populated catalog record");
-                excalidraw_render_assets_base::font_face_order(catalog_family, record.upstream_path)
-                    .unwrap_or(usize::MAX)
-            });
-            for record in records {
-                let record = record.expect("populated catalog record");
-                let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
-                    catalog_family,
-                    record.upstream_path,
-                )
-                .ok_or_else(|| {
+            let mut sources = [None; MAX_FAMILY_SOURCES];
+            let count = family_sources(family.family, &mut sources)
+                .ok_or_else(|| account.internal_failure("SVG font family source bound exceeded"))?;
+            for source in sources[..count].iter().flatten() {
+                let ranges = source.unicode_ranges().ok_or_else(|| {
                     account.internal_failure("official font range declaration is missing")
                 })?;
                 let range_count = u64::try_from(ranges.len())
@@ -453,7 +606,7 @@ pub(super) fn account_selection<A: ResourceAccount>(
                     "svg_font_chunk_considered",
                     "",
                 )
-                .with_semantic_identity(record.identity)
+                .with_semantic_identity(source.identity())
                 .with_record(ResourceRecordKind::BuiltInGlyphOrRangeState);
                 account.transact_resource(
                     considered_context,
@@ -470,17 +623,13 @@ pub(super) fn account_selection<A: ResourceAccount>(
                         bytes: 64,
                     },
                 )?;
-                if family.scalars.iter().any(|scalar| {
-                    ranges
-                        .iter()
-                        .any(|(start, end)| start <= scalar && scalar <= end)
-                }) {
+                if source.selected_by(&family.scalars) == Some(true) {
                     let context = ResourceContext::new(
                         ResourcePhase::FormatPlanning,
                         "svg_font_chunk_selected",
                         "",
                     )
-                    .with_semantic_identity(record.identity)
+                    .with_semantic_identity(source.identity())
                     .with_record(ResourceRecordKind::BuiltInSelectionState);
                     account.transact_resource(
                         context,
@@ -520,36 +669,26 @@ pub(super) fn account_dependency_envelope<A: ResourceAccount>(
     let mut active_bound = 0_u64;
     let mut work_bound = 0_u64;
     for family in &demand.families {
-        let catalog_family = catalog_family(family.family);
         let scalar_count = u64::try_from(family.scalars.len())
             .map_err(|_| account.internal_failure("SVG font scalar count overflowed"))?;
-        for record in excalidraw_render_assets_base::revision_1()
-            .assets
-            .iter()
-            .filter(|record| record.family == catalog_family)
-        {
-            let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
-                catalog_family,
-                record.upstream_path,
-            )
-            .ok_or_else(|| {
-                account.internal_failure("official font range declaration is missing")
-            })?;
-            if !family.scalars.iter().any(|scalar| {
-                ranges
-                    .iter()
-                    .any(|(start, end)| start <= scalar && scalar <= end)
-            }) {
-                continue;
+        let mut sources = [None; MAX_FAMILY_SOURCES];
+        let count = family_sources(family.family, &mut sources)
+            .ok_or_else(|| account.internal_failure("SVG font family source bound exceeded"))?;
+        for source in sources[..count].iter().flatten() {
+            match source.selected_by(&family.scalars) {
+                Some(true) => {}
+                Some(false) => continue,
+                None => {
+                    return Err(
+                        account.internal_failure("official font range declaration is missing")
+                    )
+                }
             }
-            let source = u64::try_from(record.complete_length)
+            let source_length = u64::try_from(source.complete_length())
                 .map_err(|_| account.internal_failure("SVG font source size overflowed"))?;
-            let decoded = u64::try_from(
-                excalidraw_render_assets_base::font_face_decoded_length(record.upstream_path)
-                    .ok_or_else(|| {
-                        account.internal_failure("official font decoded bound is missing")
-                    })?,
-            )
+            let decoded = u64::try_from(source.decoded_length().ok_or_else(|| {
+                account.internal_failure("official font decoded bound is missing")
+            })?)
             .map_err(|_| account.internal_failure("SVG font decoded size overflowed"))?;
             let table_bound = decoded / 16;
             let sfnt_bound = checked_product(
@@ -596,7 +735,7 @@ pub(super) fn account_dependency_envelope<A: ResourceAccount>(
             let chunk_work = checked_sum(
                 account,
                 &[
-                    source,
+                    source_length,
                     decoded,
                     table_work,
                     scalar_work,
@@ -703,7 +842,6 @@ fn checked_derived_blob_bytes<A: ResourceAccount>(
 
 pub(super) fn build(
     demand: Demand,
-    unchanged_fonts: &[UnchangedFont<'_>],
     payload: Payload,
     session: &mut Session,
 ) -> Result<Bundle, BuildError> {
@@ -711,59 +849,44 @@ pub(super) fn build(
     let mut licenses = BTreeMap::<&'static str, &'static str>::new();
     let mut resource_notices = Vec::<(String, String)>::new();
     for family in demand.families {
-        if family.scalars.is_empty() || family.family == "Noto Emoji" {
+        if family.scalars.is_empty() {
             continue;
         }
-        let catalog_family = catalog_family(family.family);
-        let mut records = excalidraw_render_assets_base::revision_1()
-            .assets
-            .iter()
-            .filter(|record| record.family == catalog_family)
-            .collect::<Vec<_>>();
-        records.sort_unstable_by_key(|record| {
-            excalidraw_render_assets_base::font_face_order(catalog_family, record.upstream_path)
-                .unwrap_or(usize::MAX)
-        });
-        for record in records {
-            let ranges = excalidraw_render_assets_base::font_face_unicode_ranges(
-                catalog_family,
-                record.upstream_path,
-            )
-            .ok_or(BuildError {
+        let mut sources = [None; MAX_FAMILY_SOURCES];
+        let count = family_sources(family.family, &mut sources).ok_or(BuildError {
+            stage: crate::SvgFontSubsetStage::Plan,
+            family: family.family,
+            asset_identity: "family-sources",
+        })?;
+        for source in sources[..count].iter().flatten().copied() {
+            let selected = source.selected_by(&family.scalars).ok_or(BuildError {
                 stage: crate::SvgFontSubsetStage::Plan,
                 family: family.family,
-                asset_identity: record.identity,
+                asset_identity: source.identity(),
             })?;
-            let selected = family.scalars.iter().any(|scalar| {
-                ranges
-                    .iter()
-                    .any(|(start, end)| start <= scalar && scalar <= end)
-            });
             if !selected {
                 continue;
             }
-            let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
-                .ok()
-                .flatten()
-                .ok_or(BuildError {
-                    stage: crate::SvgFontSubsetStage::Decode,
-                    family: family.family,
-                    asset_identity: record.identity,
-                })?;
+            let asset = source.load().ok_or(BuildError {
+                stage: crate::SvgFontSubsetStage::Decode,
+                family: family.family,
+                asset_identity: source.identity(),
+            })?;
             let effective_alias = Bundle::effective_family(family.family);
             match payload {
                 Payload::Subset => {
-                    let semantic_identity =
-                        semantic_identity(record, &family.scalars).ok_or(BuildError {
+                    let semantic_identity = source_semantic_identity(source, &family.scalars)
+                        .ok_or(BuildError {
                             stage: crate::SvgFontSubsetStage::Plan,
                             family: family.family,
-                            asset_identity: record.identity,
+                            asset_identity: source.identity(),
                         })?;
                     let derived = session
                         .subset
                         .derive(
-                            record.identity,
+                            source.identity(),
                             asset.bytes(),
+                            source.container(),
                             &family.scalars,
                             effective_alias,
                             &semantic_identity,
@@ -771,10 +894,10 @@ pub(super) fn build(
                         .map_err(|error| BuildError {
                             stage: error.stage,
                             family: family.family,
-                            asset_identity: record.identity,
+                            asset_identity: source.identity(),
                         })?;
                     let notice = subset_notice(
-                        record,
+                        source,
                         family.family,
                         effective_alias,
                         &semantic_identity,
@@ -788,7 +911,7 @@ pub(super) fn build(
                         family: effective_alias,
                         mime: "font/woff2",
                         metrics: Some(font_subset::DerivationMetrics::new(
-                            record.identity,
+                            source.identity(),
                             &derived,
                         )),
                         bytes: derived.woff2,
@@ -796,58 +919,30 @@ pub(super) fn build(
                 }
                 #[cfg(test)]
                 Payload::CompleteChunks => {
-                    let notice = family_notice(record, family.family)?
+                    let notice = family_notice(source, family.family)?
                         .artifact_text()
                         .map_err(|_| BuildError {
                             stage: crate::SvgFontSubsetStage::Encode,
                             family: family.family,
-                            asset_identity: record.identity,
+                            asset_identity: source.identity(),
                         })?;
-                    resource_notices.push((record.identity.to_owned(), notice));
+                    resource_notices.push((source.identity().to_owned(), notice));
                     let mut bytes = Vec::new();
                     bytes
                         .try_reserve_exact(asset.bytes().len())
                         .map_err(|_| BuildError {
                             stage: crate::SvgFontSubsetStage::Encode,
                             family: family.family,
-                            asset_identity: record.identity,
+                            asset_identity: source.identity(),
                         })?;
                     bytes.extend_from_slice(asset.bytes());
                     resources.push(Resource {
                         family: effective_alias,
-                        mime: "font/woff2",
+                        mime: source.complete_mime(),
                         bytes: bytes.into(),
                         metrics: None,
                     });
                 }
-            }
-        }
-    }
-    for unchanged in unchanged_fonts {
-        if resources.iter().any(|resource| {
-            resource.family == Bundle::effective_family(unchanged.family)
-                && resource.bytes.as_ref() == unchanged.bytes
-        }) {
-            continue;
-        }
-        let mut bytes = Vec::new();
-        bytes
-            .try_reserve_exact(unchanged.bytes.len())
-            .map_err(|_| BuildError {
-                stage: crate::SvgFontSubsetStage::Encode,
-                family: unchanged.family,
-                asset_identity: "unchanged-fallback",
-            })?;
-        bytes.extend_from_slice(unchanged.bytes);
-        resources.push(Resource {
-            family: Bundle::effective_family(unchanged.family),
-            mime: unchanged.mime,
-            bytes: bytes.into(),
-            metrics: None,
-        });
-        if unchanged.family == "Noto Emoji" {
-            if let Some(notice) = super::notices::noto_emoji_notice() {
-                licenses.entry("font.noto-emoji.ofl-1.1").or_insert(notice);
             }
         }
     }
@@ -871,13 +966,13 @@ pub(super) fn build(
 }
 
 pub(super) fn subset_notice(
-    record: &excalidraw_render_assets_base::AssetRecord,
+    source: SubsetSource,
     family: &'static str,
     effective_alias: &str,
     semantic_identity: &str,
     derived: &font_subset::Derived,
 ) -> Result<SubsetNotice, BuildError> {
-    let provenance = family_notice(record, family)?;
+    let provenance = family_notice(source, family)?;
     let output_digest = format!("{:x}", Sha256::digest(derived.woff2.as_ref()));
     let profile_digest =
         encode_hex_32(&excalidraw_render_assets_base::font_subset_profile_digest_v1());
@@ -887,8 +982,8 @@ pub(super) fn subset_notice(
         resource_identity: format!("svg-font-subset@sha256:{semantic_identity}"),
         resource_text: format!(
             "Derived font subset of {}. Source SHA-256: {}. {} Modified Version under {}. Transformation: Unicode and required layout/glyph closure subset; names rewritten for compatibility revision 1. Effective alias: {}. Subset profile SHA-256: {}. Semantic subset identity: {}. Output WOFF2: {} bytes, SHA-256 {}.",
-            record.identity,
-            record.complete_sha256,
+            source.identity(),
+            source.complete_sha256(),
             provenance.attribution,
             provenance.license_identity,
             effective_alias,
@@ -900,19 +995,19 @@ pub(super) fn subset_notice(
     })
 }
 
-/// The notice the catalog states for `record`'s family; a record without one
-/// cannot be validated for subsetting.
+/// The notice the catalog states for the source's family; a source without
+/// one cannot be validated for subsetting.
 fn family_notice(
-    record: &excalidraw_render_assets_base::AssetRecord,
+    source: SubsetSource,
     family: &'static str,
 ) -> Result<&'static FontNotice, BuildError> {
     crate::catalog::REVISION_1
         .asset_catalog()
-        .font_notice(record.family)
+        .font_notice(source.catalog_family())
         .ok_or(BuildError {
             stage: crate::SvgFontSubsetStage::Validate,
             family,
-            asset_identity: record.identity,
+            asset_identity: source.identity(),
         })
 }
 
@@ -926,19 +1021,30 @@ fn push_notice(json: &mut String, separator: &mut &'static str, identity: &str, 
     *separator = ",";
 }
 
+/// The semantic subset identity of one official chunk's subset (spec 8.3.2),
+/// as the qualification corpus and the fuzz regressions name it.
+#[cfg(test)]
 pub(super) fn semantic_identity(
-    record: &excalidraw_render_assets_base::AssetRecord,
+    record: &'static excalidraw_render_assets_base::AssetRecord,
     scalars: &[u32],
 ) -> Option<String> {
+    source_semantic_identity(SubsetSource::chunk(record), scalars)
+}
+
+/// The semantic subset identity of any source's subset: the spec 8.3.2
+/// preimage over the source's catalog identity and complete-bytes digest,
+/// which for the Noto Emoji fallback are its manifested path and sfnt digest.
+pub(super) fn source_semantic_identity(source: SubsetSource, scalars: &[u32]) -> Option<String> {
     let profile_digest = excalidraw_render_assets_base::font_subset_profile_digest_v1();
-    let source_digest = decode_hex_32(record.complete_sha256)?;
+    let source_digest = decode_hex_32(source.complete_sha256())?;
+    let identity = source.identity();
     let mut hasher = Sha256::new();
     hasher.update(b"excalidraw-render:svg-font-subset:v1");
     hasher.update([0]);
     hasher.update(1_u64.to_le_bytes());
     hasher.update(profile_digest);
-    hasher.update(u64::try_from(record.identity.len()).ok()?.to_le_bytes());
-    hasher.update(record.identity.as_bytes());
+    hasher.update(u64::try_from(identity.len()).ok()?.to_le_bytes());
+    hasher.update(identity.as_bytes());
     hasher.update(source_digest);
     hasher.update(u64::try_from(scalars.len()).ok()?.to_le_bytes());
     for scalar in scalars {
@@ -975,6 +1081,7 @@ pub(super) fn catalog_family(family: &str) -> &str {
         "Comic Shanns" => "ComicShanns",
         "Liberation Sans" => "Liberation",
         "Lilita One" => "Lilita",
+        "Noto Emoji" => excalidraw_render_assets_base::NOTO_EMOJI_FAMILY,
         family => family,
     }
 }

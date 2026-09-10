@@ -159,6 +159,7 @@ impl Context {
             .expect("the fuzz baseline has a semantic identity");
         let baseline = font_subset::derive(
             &source_woff2,
+            font_subset::SourceContainer::Woff2,
             &baseline_scalars,
             "ExcalidrawRender-9",
             &baseline_identity,
@@ -325,7 +326,13 @@ fn derive_outcome(source: &[u8], scalars: &[u32], alias: &str, identity: &str) -
     if source.len() > MAX_SOURCE_WOFF2_BYTES {
         return Outcome::Failure(crate::SvgFontSubsetStage::Decode);
     }
-    match font_subset::derive(source, scalars, alias, identity) {
+    match font_subset::derive(
+        source,
+        font_subset::SourceContainer::Woff2,
+        scalars,
+        alias,
+        identity,
+    ) {
         Ok(derived) => {
             if derived.decoded_sfnt_bytes > MAX_DECODED_SFNT_BYTES
                 || derived.subset_sfnt_bytes > MAX_DECODED_SFNT_BYTES
@@ -440,6 +447,7 @@ fn cache_outcome(context: &Context, payload: &[u8]) -> Outcome {
     let first = session.derive(
         context.record.identity,
         &context.source_woff2,
+        font_subset::SourceContainer::Woff2,
         &scalars,
         "ExcalidrawRender-9",
         &identity,
@@ -447,6 +455,7 @@ fn cache_outcome(context: &Context, payload: &[u8]) -> Outcome {
     let second = session.derive(
         context.record.identity,
         &context.source_woff2,
+        font_subset::SourceContainer::Woff2,
         &scalars,
         "ExcalidrawRender-9",
         &identity,

@@ -322,6 +322,16 @@ const FONT_NOTICES: &[FontNotice] = &[
 /// the OFL terms every OFL font's artifact notice carries.
 const OFL_TERMS_START: &str = "This Font Software is licensed";
 
+/// The catalog family of the Noto Emoji fallback face, which is no asset
+/// record but is subset for direct SVG like the chunks are (#150), so it
+/// needs a `FontNotice` too. Its attribution is the copyright statement the
+/// sealed `noto-emoji.ofl-full` notice opens with; the bundle already prints
+/// that notice complete under the output-traveling notices, so the fallback
+/// adds no line to the bundle's font section.
+const NOTO_EMOJI_FAMILY: &str = "NotoEmoji";
+const NOTO_EMOJI_NOTICE_ID: &str = "noto-emoji.ofl-full";
+const NOTO_EMOJI_LICENSE_IDENTITY: &str = "font.noto-emoji.ofl-1.1";
+
 const FALLBACK_RECIPE_COUNT: usize = 5;
 const NOTICE_COUNT: usize = 4;
 const SOURCE_COUNT: usize = 36;
@@ -1720,7 +1730,9 @@ fn generate_rust(
 
 /// Emits the official rendering font notices as the `FontNotice` table the
 /// renderer reads attribution and license terms from, with one `const` per
-/// distinct terms text. Every asset family must have exactly one notice.
+/// distinct terms text. Every asset family must have exactly one notice; the
+/// Noto Emoji fallback face follows them with the attribution its sealed
+/// notice states.
 fn generate_font_notices(
     output: &mut String,
     base: &Path,
@@ -1741,6 +1753,11 @@ fn generate_font_notices(
             "font notices cover {noticed:?} but the catalog assets belong to {families:?}"
         ));
     }
+    if families.contains(NOTO_EMOJI_FAMILY) {
+        return Err(format!(
+            "the Noto Emoji fallback family {NOTO_EMOJI_FAMILY} must not be a catalog asset family"
+        ));
+    }
 
     let mut terms = BTreeMap::new();
     for notice in FONT_NOTICES {
@@ -1758,7 +1775,7 @@ fn generate_font_notices(
 
     output.push_str(&format!(
         "#[rustfmt::skip]\nstatic FONT_NOTICES: [FontNotice; {}] = [\n",
-        FONT_NOTICES.len()
+        FONT_NOTICES.len() + 1
     ));
     for notice in FONT_NOTICES {
         let (license_identity, _, _) = family_metadata(notice.family)?;
@@ -1773,8 +1790,52 @@ fn generate_font_notices(
         output.push_str(&format!("        terms: {},\n", notice.terms.rust_const()));
         output.push_str("    },\n");
     }
+    output.push_str("    FontNotice {\n");
+    rust_field(output, "family", NOTO_EMOJI_FAMILY);
+    rust_field(output, "license_identity", NOTO_EMOJI_LICENSE_IDENTITY);
+    output.push_str("        license: FontLicense::Ofl11,\n");
+    rust_field(
+        output,
+        "attribution",
+        &noto_emoji_attribution(scene_surface)?,
+    );
+    output.push_str(&format!(
+        "        terms: {},\n",
+        FontTerms::LiberationSansOfl.rust_const()
+    ));
+    output.push_str("    },\n");
     output.push_str("];\n");
     Ok(())
+}
+
+/// The copyright statement the sealed `noto-emoji.ofl-full` notice opens
+/// with, before the OFL terms it goes on to state: the attribution the Noto
+/// Emoji subset notice carries. Its line breaks become one line and it ends
+/// in a period, as the bundle's font notices do.
+fn noto_emoji_attribution(scene_surface: &Value) -> Result<String, String> {
+    let notice = scene_surface["noticeCatalog"]
+        .as_array()
+        .ok_or_else(|| "notice catalog must be an array".to_owned())?
+        .iter()
+        .find(|notice| notice["id"] == NOTO_EMOJI_NOTICE_ID)
+        .ok_or_else(|| format!("notice catalog lacks {NOTO_EMOJI_NOTICE_ID}"))?;
+    let text = string(notice, "text", "notice")?;
+    let terms = text
+        .find(OFL_TERMS_START)
+        .ok_or_else(|| format!("the {NOTO_EMOJI_NOTICE_ID} notice does not state the OFL terms"))?;
+    let mut attribution = text[..terms]
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    if attribution.is_empty() {
+        return Err(format!(
+            "the {NOTO_EMOJI_NOTICE_ID} notice states no copyright before the OFL terms"
+        ));
+    }
+    if !attribution.ends_with('.') {
+        attribution.push('.');
+    }
+    Ok(attribution)
 }
 
 /// One Xiaolai face as the pinned upstream index declares it: the WOFF2 file

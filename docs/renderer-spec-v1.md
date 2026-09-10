@@ -868,10 +868,18 @@ classes MUST be frozen in the compatibility asset manifest before release.
 For each resolved family in canonical fallback order, `svg_fonts` compares every
 unique scalar with every official face's declared Unicode range and selects each
 intersecting WOFF2 chunk in pinned face order. Every selected chunk receives the
-complete ordered family scalar set, not only its range intersection. A used
-non-WOFF2 fallback, including Noto Emoji, remains complete and is emitted once;
-it is never subset. Only qualified, digest-verified built-in assets participate.
-Custom fonts and a public subset interface are forbidden.
+complete ordered family scalar set, not only its range intersection. The Noto
+Emoji fallback is demanded last, after every resolved family, as its own
+one-face family whose single declared range covers all of Unicode (#150): its
+scalar set is the first-use-ordered set of scalars glyph face selection shaped
+with it, collected from the emoji glyph runs of ordinary text in source order
+and then of generated embeddable labels in paint order, so it is selected
+exactly when an emoji run exists and receives no scalar a family face mapped.
+It goes through the same subsetter as the chunks; the one difference is that
+its source is the manifested TrueType sfnt rather than a WOFF2 container, so
+its decode stage is the identity and its decoded length is its manifested
+length. Only qualified, digest-verified built-in assets participate. Custom
+fonts and a public subset interface are forbidden.
 
 Glyph face selection is the same in every format, for ordinary scene text and
 generated embeddable labels alike, and consults declared Unicode ranges before
@@ -937,12 +945,17 @@ aliases and primary OpenType family names:
 The licensing and compatibility rationale is recorded in
 [ADR 0001](adr/0001-treat-font-subsets-as-modified-versions.md).
 
-Non-Reserved-Font-Name families retain their canonical family names. The same
+Non-Reserved-Font-Name families retain their canonical family names, Noto
+Emoji among them: its OFL reserves no font name, so its subset's alias is
+`Noto Emoji`. The same
 effective alias MUST be used by SVG text, CSS, and primary OpenType names; SVG
 text names it first in the `font-family` list Section 8.4 fixes per family.
 
 Subset semantic identity is SHA-256 over this exact preimage, where digests are
-their 32 raw bytes and asset identity is UTF-8:
+their 32 raw bytes and asset identity is UTF-8; for the Noto Emoji fallback the
+source asset identity is its manifested path and digest
+(`scripts/woff2/assets/NotoEmoji-Regular.ttf@sha256:…`) and the source asset
+digest is the digest of the sfnt itself:
 
 ```text
 UTF-8("excalidraw-render:svg-font-subset:v1")
@@ -996,13 +1009,14 @@ metadata, and deterministic serialization.
 
 `<defs>` contains exactly one font style element, `<style class="style-fonts">`,
 when direct-export fonts are used. It contains one `@font-face` declaration for
-each selected subset chunk and used unchanged fallback in canonical
-fallback/family/face order. A declaration contains only the effective
-`font-family` and data-URL `src`; selected subsets use WOFF2 and unchanged
-fallbacks retain their manifested format. Range and source-family properties are
-not emitted. CSS, data URL, base64, declaration, and style serialization are
-canonical. All selected chunks and used unchanged fallbacks share this one style
-block; no second font style element is emitted. The artifact manifest carries
+each selected subset — the resolved families' chunks in canonical
+fallback/family/face order, then the Noto Emoji fallback's when an emoji run
+selected it (Section 8.3.1). A declaration contains only the effective
+`font-family` and data-URL `src`, and every declaration's payload is a WOFF2
+subset; no complete face is embedded (#150). Range and source-family
+properties are not emitted. CSS, data URL, base64, declaration, and style
+serialization are canonical. All selected subsets share this one style block;
+no second font style element is emitted. The artifact manifest carries
 one complete applicable OFL or MIT license text per canonical license identity
 and distinct mandatory subset notices in canonical subset-identity order.
 
@@ -1257,7 +1271,12 @@ chunk's program carry the subset tag below. Only the reviewed decodes of
 chunks selected for glyphs actually used are embedded, each as one complete
 `FontFile2` stream, byte for byte before the stream filter; the complete Noto
 Emoji fallback, when selected, is embedded the same way as its exact
-digest-verified manifested bytes (Section 10), which have no decode.
+digest-verified manifested bytes (Section 10), which have no decode. This is
+deliberate and stays so after direct SVG began subsetting the fallback (#150):
+#120 admits only reviewed bytes into a PDF and ADR-0001 makes any subset a
+Modified Version, so PDF subsetting of the fallback is foreclosed on the same
+grounds as PDF subsetting of the chunks and is out of scope; the Flate filter
+below is what bounds the fallback's PDF cost.
 
 An official font chunk's reviewed decode is the sfnt the pinned `wuff 0.2.8`
 decode of the chunk's exact manifested WOFF2 bytes produces (#120). The revision
@@ -1533,8 +1552,9 @@ first release promises no explicit native deployment floor beyond the target OS
 ABI; release notes record toolchain and immutable builder identity.
 
 SVG carries the Section 8.3 complete license texts and distinct subset notices,
-plus complete notices for unchanged embedded fallbacks and rendered Font Awesome
-fallbacks. PNG carries Font Awesome attribution in deterministic `iTXt` only
+including the Noto Emoji fallback's when its subset is embedded, plus complete
+notices for rendered Font Awesome fallbacks. PNG carries Font Awesome
+attribution in deterministic `iTXt` only
 when that geometry appears; rasterized font glyphs alone carry no OFL notice.
 Official reference evidence remains byte-identical and carries notices in
 sidecars and evidence packages, not injected into official artifacts.

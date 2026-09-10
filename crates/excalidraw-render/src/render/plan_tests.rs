@@ -371,13 +371,8 @@ fn svg_plan(scene: &SceneDocument, request: &RenderRequest) -> SvgPlan {
     let text_order = svg_font_text_order(&resolved).expect("text order is enumerable");
     let demand = svg_font_demand(&resolved, &text_order).expect("font demand is enumerable");
     let mut session = svg_fonts::Session::new();
-    let bundle = build_svg_font_bundle(
-        &resolved,
-        demand,
-        svg_fonts::Payload::CompleteChunks,
-        &mut session,
-    )
-    .expect("complete chunks bundle without subsetting");
+    let bundle = build_svg_font_bundle(demand, svg_fonts::Payload::CompleteChunks, &mut session)
+        .expect("complete chunks bundle without subsetting");
     assert_eq!(
         session.stats(),
         (0, 0),

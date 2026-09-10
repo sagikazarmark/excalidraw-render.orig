@@ -25,6 +25,17 @@ pub(super) struct Error {
     pub(super) stage: crate::SvgFontSubsetStage,
 }
 
+/// The container the source bytes of a subset arrive in. Every official font
+/// chunk is a WOFF2 file whose reviewed decode is the sfnt the subsetter
+/// plans over; the Noto Emoji fallback (#150) is shipped as the TrueType sfnt
+/// itself, so its decode stage is the identity and its decoded length is its
+/// manifested length.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum SourceContainer {
+    Woff2,
+    Sfnt,
+}
+
 #[derive(Clone, Debug)]
 pub(super) struct Derived {
     pub(super) woff2: Arc<[u8]>,
@@ -114,7 +125,8 @@ impl Session {
     pub(super) fn derive(
         &mut self,
         asset_identity: &'static str,
-        source_woff2: &[u8],
+        source: &[u8],
+        container: SourceContainer,
         scalars: &[u32],
         effective_alias: &str,
         semantic_identity: &str,
@@ -135,7 +147,13 @@ impl Session {
         {
             self.misses = self.misses.saturating_add(1);
         }
-        let derived = derive(source_woff2, scalars, effective_alias, semantic_identity)?;
+        let derived = derive(
+            source,
+            container,
+            scalars,
+            effective_alias,
+            semantic_identity,
+        )?;
         self.retain(key, derived.clone());
         Ok(derived)
     }
@@ -154,14 +172,13 @@ impl Session {
 }
 
 pub(super) fn derive(
-    source_woff2: &[u8],
+    source: &[u8],
+    container: SourceContainer,
     scalars: &[u32],
     effective_alias: &str,
     semantic_identity: &str,
 ) -> Result<Derived, Error> {
-    let source_sfnt = wuff::decompress_woff2(source_woff2).map_err(|_| Error {
-        stage: crate::SvgFontSubsetStage::Decode,
-    })?;
+    let source_sfnt = decode_source(source, container)?;
     let font = FontRef::new(&source_sfnt).map_err(|_| Error {
         stage: crate::SvgFontSubsetStage::Plan,
     })?;
@@ -231,6 +248,38 @@ pub(super) fn derive(
         subset_sfnt_bytes: subset_sfnt.len(),
         subset_tables: decoded_font.table_directory().table_records().len(),
     })
+}
+
+/// The decode stage: the sfnt the subsetter plans over. A WOFF2 chunk is
+/// decoded by the pinned `wuff`; an sfnt source must parse as one whose every
+/// table lies inside the bytes, so a malformed or truncated fallback face
+/// fails at the same stage a malformed chunk does, and is otherwise the
+/// decode of itself.
+fn decode_source(source: &[u8], container: SourceContainer) -> Result<Vec<u8>, Error> {
+    let decode_error = || Error {
+        stage: crate::SvgFontSubsetStage::Decode,
+    };
+    match container {
+        SourceContainer::Woff2 => wuff::decompress_woff2(source).map_err(|_| decode_error()),
+        SourceContainer::Sfnt => {
+            let font = FontRef::new(source).map_err(|_| decode_error())?;
+            for record in font.table_directory().table_records() {
+                let end = usize::try_from(record.offset())
+                    .ok()
+                    .zip(usize::try_from(record.length()).ok())
+                    .and_then(|(offset, length)| offset.checked_add(length))
+                    .ok_or_else(decode_error)?;
+                if end > source.len() {
+                    return Err(decode_error());
+                }
+            }
+            let mut sfnt = Vec::new();
+            sfnt.try_reserve_exact(source.len())
+                .map_err(|_| decode_error())?;
+            sfnt.extend_from_slice(source);
+            Ok(sfnt)
+        }
+    }
 }
 
 fn ensure_required_cmap(sfnt: &[u8]) -> Result<Vec<u8>, Error> {
@@ -1132,9 +1181,9 @@ impl rustybuzz::ttf_parser::OutlineBuilder for Outline {
 }
 
 pub(super) fn validate_checksums(sfnt: &[u8]) -> Result<(), Error> {
-    if sfnt.len() % 4 != 0
-        || sfnt.chunks_exact(4).fold(0_u32, |sum, word| {
-            sum.wrapping_add(u32::from_be_bytes(word.try_into().unwrap_or([0; 4])))
+    if !sfnt.len().is_multiple_of(4)
+        || sfnt.as_chunks::<4>().0.iter().fold(0_u32, |sum, word| {
+            sum.wrapping_add(u32::from_be_bytes(*word))
         }) != 0xb1b0_afba
     {
         return Err(Error {
@@ -1271,6 +1320,7 @@ mod tests {
             .expect("Liberation source exists");
         let derived = derive(
             asset.bytes(),
+            SourceContainer::Woff2,
             &[u32::from(' ')],
             "ExcalidrawRender-9",
             &"0".repeat(64),
@@ -1301,13 +1351,91 @@ mod tests {
             bad_signature.as_slice(),
         ] {
             let result = std::panic::catch_unwind(|| {
-                derive(malformed, &[u32::from('A')], "Test", &"0".repeat(64))
+                derive(
+                    malformed,
+                    SourceContainer::Woff2,
+                    &[u32::from('A')],
+                    "Test",
+                    &"0".repeat(64),
+                )
             });
             let failure = result.expect("malformed source handling does not panic");
             let error = match failure {
                 Ok(_) => panic!("malformed WOFF2 is rejected"),
                 Err(error) => error,
             };
+            assert_eq!(error.stage, crate::SvgFontSubsetStage::Decode);
+        }
+    }
+
+    /// The Noto Emoji fallback is an sfnt, not a WOFF2 chunk (#150): its
+    /// decode stage is the identity, the frozen table policy admits every
+    /// table it carries, and the derived subset keeps the source's outlines,
+    /// advances and metrics for the requested scalars under the canonical
+    /// family name, since Noto Emoji reserves no font name.
+    #[test]
+    fn noto_emoji_sfnt_source_derives_a_validated_woff2_subset() {
+        let asset = excalidraw_render_assets_base::load_noto_emoji_sfnt()
+            .expect("Noto Emoji fallback verifies");
+        let scalars = [0x1f600, 0x1f389];
+        let identity = "1".repeat(64);
+        let derived = derive(
+            asset.bytes(),
+            SourceContainer::Sfnt,
+            &scalars,
+            "Noto Emoji",
+            &identity,
+        )
+        .expect("Noto Emoji subset derives");
+
+        assert_eq!(derived.decoded_sfnt_bytes, asset.bytes().len());
+        assert!(derived.woff2.len() < asset.bytes().len() / 64);
+        let sfnt = wuff::decompress_woff2(&derived.woff2).expect("subset decodes");
+        let subset = rustybuzz::Face::from_slice(&sfnt, 0).expect("subset parses");
+        let source = rustybuzz::Face::from_slice(asset.bytes(), 0).expect("source parses");
+        for scalar in scalars {
+            let character = char::from_u32(scalar).expect("scalar is a character");
+            let source_glyph = source
+                .glyph_index(character)
+                .expect("source maps the emoji");
+            let subset_glyph = subset
+                .glyph_index(character)
+                .expect("subset maps the emoji");
+            assert_eq!(
+                source.glyph_hor_advance(source_glyph),
+                subset.glyph_hor_advance(subset_glyph)
+            );
+        }
+        let font = FontRef::new(&sfnt).expect("subset sfnt parses");
+        let table = font
+            .data_for_tag(Tag::new(b"name"))
+            .expect("subset has names");
+        assert_eq!(
+            english_name(table.as_bytes(), 1),
+            Some(utf16be("Noto Emoji").as_slice())
+        );
+        assert_eq!(
+            english_name(table.as_bytes(), 0),
+            Some(utf16be("Copyright 2013 Google LLC").as_slice())
+        );
+        assert!(font.data_for_tag(Tag::new(b"FFTM")).is_none());
+    }
+
+    /// A truncated or non-sfnt fallback source fails at the decode stage like
+    /// a malformed WOFF2 chunk does, without panicking.
+    #[test]
+    fn malformed_sfnt_sources_return_typed_decode_failures() {
+        let asset = excalidraw_render_assets_base::load_noto_emoji_sfnt()
+            .expect("Noto Emoji fallback verifies");
+        for malformed in [&[][..], &asset.bytes()[..4], &asset.bytes()[..4096]] {
+            let error = derive(
+                malformed,
+                SourceContainer::Sfnt,
+                &[0x1f600],
+                "Noto Emoji",
+                &"1".repeat(64),
+            )
+            .expect_err("malformed sfnt is rejected");
             assert_eq!(error.stage, crate::SvgFontSubsetStage::Decode);
         }
     }
@@ -1336,6 +1464,7 @@ mod tests {
             .expect("Liberation source exists");
         let derived = derive(
             asset.bytes(),
+            SourceContainer::Woff2,
             &[u32::from('A')],
             "ExcalidrawRender-9",
             &"0".repeat(64),

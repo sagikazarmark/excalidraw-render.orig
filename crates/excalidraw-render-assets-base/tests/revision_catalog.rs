@@ -1,11 +1,11 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use excalidraw_render_assets_base::{
     excalifont_basic_latin_sfnt_transformation, find_asset, load_asset,
     load_excalifont_basic_latin_sfnt, revision_1, verify_reviewed_decode, FontLicense,
     FontSubsetTableAction, CJK_SCALAR_COUNT_V1, CJK_SCALAR_RANGES_V1, CJK_SCALAR_TABLE_BYTES_V1,
     CJK_SCALAR_TABLE_SHA256_V1, FONT_SUBSET_PROFILE_SETTINGS_V1, FONT_SUBSET_TABLE_RULES_V1,
-    RAW_SHARD_LIMIT,
+    NOTO_EMOJI_FAMILY, NOTO_EMOJI_IDENTITY, RAW_SHARD_LIMIT,
 };
 use sha2::{Digest, Sha256};
 
@@ -416,11 +416,41 @@ fn svg_font_compatibility_artifacts_are_incorporated_into_revision_1() {
 
 /// Artifacts attribute each official font through its catalog record's
 /// family: the notice names the record's license and carries the bundle's
-/// provenance line without its license sentence, plus the license terms.
+/// provenance line without its license sentence, plus the license terms. The
+/// Noto Emoji fallback, which is no asset record but is subset for direct SVG
+/// like the chunks (#150), has the ninth notice, with the copyright statement
+/// its sealed `noto-emoji.ofl-full` notice opens with.
 #[test]
 fn every_official_font_resolves_one_notice_by_asset_identity_that_agrees_with_its_record() {
     let catalog = revision_1();
-    assert_eq!(catalog.font_notices.len(), 8);
+    assert_eq!(catalog.font_notices.len(), 9);
+    let asset_families = catalog
+        .assets
+        .iter()
+        .map(|asset| asset.family)
+        .collect::<BTreeSet<_>>();
+    assert_eq!(asset_families.len(), 8);
+    assert!(!asset_families.contains(NOTO_EMOJI_FAMILY));
+    for notice in catalog.font_notices {
+        assert!(
+            asset_families.contains(notice.family) || notice.family == NOTO_EMOJI_FAMILY,
+            "{} covers no asset family and is not the fallback face",
+            notice.family
+        );
+    }
+    let noto_emoji = catalog
+        .font_notice(NOTO_EMOJI_FAMILY)
+        .expect("the Noto Emoji fallback has a notice");
+    assert_eq!(noto_emoji.license_identity, "font.noto-emoji.ofl-1.1");
+    assert_eq!(noto_emoji.license, FontLicense::Ofl11);
+    assert_eq!(noto_emoji.attribution, "Copyright 2013 Google LLC.");
+    assert!(noto_emoji.terms.starts_with(
+        "This Font Software is licensed under the SIL Open Font License, Version 1.1."
+    ));
+    assert!(
+        catalog.asset(NOTO_EMOJI_IDENTITY).is_none(),
+        "the fallback face is not a catalog asset record"
+    );
 
     for asset in catalog.assets {
         let record = catalog

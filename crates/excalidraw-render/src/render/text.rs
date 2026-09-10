@@ -41,14 +41,16 @@ pub(super) struct FallbackFont {
     sfnt: Vec<u8>,
 }
 
+/// One official face glyph selection loaded for a target: a family chunk's
+/// reviewed decode, or the complete Noto Emoji fallback. The sfnt is what
+/// shaping and PDF embedding read; direct SVG derives its own subset from the
+/// sealed source bytes (`svg_fonts`), so no format needs the container here.
 pub(super) struct OfficialFont {
     source_family: i32,
     catalog_family: &'static str,
     family: &'static str,
     pdf_name: &'static str,
     identity: &'static str,
-    svg_mime: &'static str,
-    woff2: Vec<u8>,
     sfnt: Vec<u8>,
 }
 
@@ -575,20 +577,12 @@ impl OfficialFont {
         record: &'static excalidraw_render_assets_base::AssetRecord,
         sfnt: Vec<u8>,
     ) -> Result<Self, LabelError> {
-        let asset = excalidraw_render_assets_base::load_asset(record.upstream_path)
-            .map_err(|_| LabelError::InvalidFont)?
-            .ok_or(LabelError::InvalidFont)?;
-        let mut woff2 = Vec::new();
-        woff2.try_reserve_exact(asset.bytes().len())?;
-        woff2.extend_from_slice(asset.bytes());
         Ok(Self {
             source_family,
             catalog_family,
             family,
             pdf_name,
             identity: record.identity,
-            svg_mime: "font/woff2",
-            woff2,
             sfnt,
         })
     }
@@ -694,24 +688,8 @@ impl OfficialFont {
         Ok(wrapped)
     }
 
-    pub(super) fn into_parts(
-        self,
-    ) -> (
-        &'static str,
-        &'static str,
-        &'static str,
-        &'static str,
-        Vec<u8>,
-        Vec<u8>,
-    ) {
-        (
-            self.family,
-            self.pdf_name,
-            self.identity,
-            self.svg_mime,
-            self.woff2,
-            self.sfnt,
-        )
+    pub(super) fn into_parts(self) -> (&'static str, &'static str, &'static str, Vec<u8>) {
+        (self.family, self.pdf_name, self.identity, self.sfnt)
     }
 
     fn supports(&self, character: char) -> bool {
@@ -743,21 +721,13 @@ impl OfficialFont {
         if face.glyph_index(character).is_none() {
             return Ok(None);
         }
-        let mut sfnt = Vec::new();
-        sfnt.try_reserve_exact(asset.bytes().len())?;
-        sfnt.extend_from_slice(asset.bytes());
         Ok(Some(Self {
             source_family: 1_000,
-            catalog_family: "NotoEmoji",
+            catalog_family: excalidraw_render_assets_base::NOTO_EMOJI_FAMILY,
             family: "Noto Emoji",
             pdf_name: "NotoEmoji",
-            identity: concat!(
-                "scripts/woff2/assets/NotoEmoji-Regular.ttf@sha256:",
-                "0ed584d111778b259f205a40807d78131de02a5b04dad4e24c43cc84f793b634"
-            ),
-            svg_mime: "font/ttf",
-            woff2: sfnt.clone(),
-            sfnt,
+            identity: excalidraw_render_assets_base::NOTO_EMOJI_IDENTITY,
+            sfnt: asset.into_bytes(),
         }))
     }
 

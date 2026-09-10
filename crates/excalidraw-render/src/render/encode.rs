@@ -67,7 +67,7 @@ impl RenderSession {
                 .font_subset_session
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            build_svg_font_bundle(&resolved, demand, svg_font_payload, &mut subset_session)
+            build_svg_font_bundle(demand, svg_font_payload, &mut subset_session)
         };
         let font_bundle = match font_bundle {
             Ok(bundle) => bundle,

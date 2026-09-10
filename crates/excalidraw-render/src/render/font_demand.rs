@@ -9,8 +9,6 @@ pub(super) struct ResolvedFont {
     pub(super) family: &'static str,
     pub(super) pdf_name: &'static str,
     pub(super) identity: &'static str,
-    pub(super) svg_mime: &'static str,
-    pub(super) woff2: Vec<u8>,
     pub(super) sfnt: Vec<u8>,
 }
 
@@ -58,13 +56,25 @@ pub(super) fn svg_font_demand(
             families.insert(0, xiaolai);
         }
     }
+    // The Noto Emoji fallback is demanded last, after every resolved family,
+    // by exactly the scalars glyph face selection shaped with it (#150): the
+    // runs already record which face each scalar took, so the subset covers
+    // what the emoji `<tspan>`s show and nothing a family face mapped.
+    visit_noto_emoji_runs(scene, text_order, |text| {
+        add_svg_font_text(&mut families, "Noto Emoji", text)
+    })?;
     Ok(svg_fonts::Demand { families })
 }
+
+/// The number of families one SVG demand can name: the eight resolved
+/// families, Xiaolai when the CJK subset trigger selects it, and Noto Emoji
+/// when an emoji run selected it.
+pub(super) const MAX_DEMAND_FAMILIES: usize = 10;
 
 pub(super) fn svg_font_demand_estimates(
     scene: &ResolvedScene,
     text_order: &[&ResolvedTextElement],
-) -> Result<[(&'static str, usize); 9], FormatEncodeError> {
+) -> Result<[(&'static str, usize); MAX_DEMAND_FAMILIES], FormatEncodeError> {
     const UNICODE_WORDS: usize = 0x11_0000_usize.div_ceil(u64::BITS as usize);
     let mut family_order = [None; 8];
     let mut family_count = 0_usize;
@@ -88,10 +98,10 @@ pub(super) fn svg_font_demand_estimates(
     let xiaolai_selected = scene.cjk_subset_trigger.selects_xiaolai()
         && family_order[..family_count].contains(&Some("Excalifont"));
 
-    let mut estimates = [("", 0_usize); 9];
+    let mut estimates = [("", 0_usize); MAX_DEMAND_FAMILIES];
     let mut seen = [0_u64; UNICODE_WORDS];
     // Slot 0 is reserved for Xiaolai when the CJK subset trigger selects it; at
-    // most eight families follow, so nine slots always suffice.
+    // most eight families follow, and Noto Emoji takes the slot after them.
     let slots = estimates.iter_mut().skip(usize::from(xiaolai_selected));
     for (slot, family) in slots.zip(family_order.into_iter().flatten()) {
         seen.fill(0);
@@ -100,27 +110,7 @@ pub(super) fn svg_font_demand_estimates(
             if candidate != family {
                 return Ok(());
             }
-            for scalar in text.chars().map(u32::from) {
-                let scalar = usize::try_from(scalar).unwrap_or(usize::MAX);
-                let word = scalar / u64::BITS as usize;
-                let bit = 1_u64 << (scalar % u64::BITS as usize);
-                let entry = seen
-                    .get_mut(word)
-                    .ok_or(FormatEncodeError::MemoryUnavailable {
-                        subject_kind: "svg_font_demand",
-                        subject: "scalar_range",
-                    })?;
-                if *entry & bit == 0 {
-                    *entry |= bit;
-                    unique = unique
-                        .checked_add(1)
-                        .ok_or(FormatEncodeError::MemoryUnavailable {
-                            subject_kind: "svg_font_demand",
-                            subject: "family_scalar_count",
-                        })?;
-                }
-            }
-            Ok(())
+            count_unique_scalars(&mut seen, &mut unique, text)
         })?;
         *slot = (family, unique);
     }
@@ -132,7 +122,82 @@ pub(super) fn svg_font_demand_estimates(
             .unwrap_or_default();
         estimates[0] = ("Xiaolai", excalifont);
     }
+    seen.fill(0);
+    let mut emoji_unique = 0_usize;
+    visit_noto_emoji_runs(scene, text_order, |text| {
+        count_unique_scalars(&mut seen, &mut emoji_unique, text)
+    })?;
+    if emoji_unique != 0 {
+        let slot = estimates
+            .iter_mut()
+            .find(|(family, _)| family.is_empty())
+            .ok_or(FormatEncodeError::MemoryUnavailable {
+                subject_kind: "svg_font_demand",
+                subject: "family_count",
+            })?;
+        *slot = ("Noto Emoji", emoji_unique);
+    }
     Ok(estimates)
+}
+
+fn count_unique_scalars(
+    seen: &mut [u64],
+    unique: &mut usize,
+    text: &str,
+) -> Result<(), FormatEncodeError> {
+    for scalar in text.chars().map(u32::from) {
+        let scalar = usize::try_from(scalar).unwrap_or(usize::MAX);
+        let word = scalar / u64::BITS as usize;
+        let bit = 1_u64 << (scalar % u64::BITS as usize);
+        let entry = seen
+            .get_mut(word)
+            .ok_or(FormatEncodeError::MemoryUnavailable {
+                subject_kind: "svg_font_demand",
+                subject: "scalar_range",
+            })?;
+        if *entry & bit == 0 {
+            *entry |= bit;
+            *unique = unique
+                .checked_add(1)
+                .ok_or(FormatEncodeError::MemoryUnavailable {
+                    subject_kind: "svg_font_demand",
+                    subject: "family_scalar_count",
+                })?;
+        }
+    }
+    Ok(())
+}
+
+/// Visits the display text of every glyph run the Noto Emoji fallback shaped,
+/// in the same order `visit_svg_font_text` visits the occurrences that own
+/// them: ordinary text in source order, then generated embeddable labels in
+/// paint order. Frame names and placeholder labels never reach the fallback.
+fn visit_noto_emoji_runs(
+    scene: &ResolvedScene,
+    text_order: &[&ResolvedTextElement],
+    mut visit: impl FnMut(&str) -> Result<(), FormatEncodeError>,
+) -> Result<(), FormatEncodeError> {
+    let mut visit_label = |label: &text::ResolvedText| -> Result<(), FormatEncodeError> {
+        for line in &label.lines {
+            for run in &line.runs {
+                if run.font_family == "Noto Emoji" {
+                    visit(&run.display_text)?;
+                }
+            }
+        }
+        Ok(())
+    };
+    for text in text_order {
+        visit_label(&text.text)?;
+    }
+    for element in &scene.elements {
+        if let ResolvedElement::Outline(outline) = element {
+            if let Some(label) = &outline.generated_label {
+                visit_label(label)?;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn visit_svg_font_text(
@@ -172,22 +237,11 @@ fn visit_svg_font_text(
 }
 
 pub(super) fn build_svg_font_bundle(
-    scene: &ResolvedScene,
     demand: svg_fonts::Demand,
     payload: svg_fonts::Payload,
     subset_session: &mut svg_fonts::Session,
 ) -> Result<svg_fonts::Bundle, FormatEncodeError> {
-    let unchanged = scene
-        .official_fonts
-        .iter()
-        .filter(|font| font.family == "Noto Emoji")
-        .map(|font| svg_fonts::UnchangedFont {
-            family: font.family,
-            mime: font.svg_mime,
-            bytes: &font.woff2,
-        })
-        .collect::<Vec<_>>();
-    svg_fonts::build(demand, &unchanged, payload, subset_session).map_err(|error| {
+    svg_fonts::build(demand, payload, subset_session).map_err(|error| {
         FormatEncodeError::SvgFontSubset {
             stage: error.stage,
             resolved_family: error.family,
