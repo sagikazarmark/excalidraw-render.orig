@@ -327,7 +327,11 @@ impl RenderSession {
                     "/elements",
                 )
             })? {
-                let surface_limit = request.resource_limits().max_raster_surface_pixels();
+                // The placeholder's surface is its element rectangle's
+                // coverage clamped to the canvas, so it is at most the main
+                // raster surface the `max_raster_surface_pixels` ceiling
+                // admitted above; it has no local ceiling of its own to cross
+                // and is charged against the aggregate alone (#159).
                 let raster_delta = ResourceDelta {
                     rasterized_pixels: fallback_pixels,
                     ..ResourceDelta::default()
@@ -346,50 +350,6 @@ impl RenderSession {
                         "fatal fallback raster preflight committed unexpectedly",
                         "/elements",
                     ));
-                }
-                if fallback_pixels > surface_limit {
-                    self.preflight_local_rejection(request, raster_context, raster_delta)?;
-                    let diagnostic = ElementLocalCrossing {
-                                limit: LocalLimit::FallbackRasterSurfacePixels,
-                                configured: ResourceValue::Integer(surface_limit),
-                                attempted: ResourceValue::Integer(fallback_pixels),
-                                pointer_field: None,
-                                message: "compatibility fallback omitted because its raster surface exceeds its limit",
-                            }
-                            .diagnostic(request.format(), element_id, json_pointer)
-                            .map_err(|_| {
-                                self.memory_failure(
-                                    request,
-                                    "compatibility_report",
-                                    "fallback_surface_recovery",
-                                )
-                            })?;
-                    self.retain_diagnostic(
-                        request,
-                        ResourcePhase::ProjectionAndFallback,
-                        "fallback_surface_local_recovery",
-                        diagnostic,
-                    )?;
-                    self.charge_work(
-                        request,
-                        ResourceContext::new(
-                            ResourcePhase::ProjectionAndFallback,
-                            "fallback_surface_local_omission",
-                            json_pointer,
-                        )
-                        .with_element_id(element_id)
-                        .with_local_owner(element_id),
-                        8,
-                    )?;
-                    self.discard_pending_png_animation_diagnostic(request, element_id)?;
-                    if !plan.omit_element(index) {
-                        return Err(self.internal_failure(
-                            request.format(),
-                            "PNG omitted fallback operation is missing",
-                            "/elements",
-                        ));
-                    }
-                    continue;
                 }
                 self.transact(request, raster_context, raster_delta)?;
             }

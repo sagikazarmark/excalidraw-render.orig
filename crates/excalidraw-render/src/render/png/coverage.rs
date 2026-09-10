@@ -388,3 +388,69 @@ pub(super) fn fallback_coverage_bounds(
     let bottom = max_y.ceil().clamp(0.0, f64::from(surface_height));
     (left as u32, top as u32, right as u32, bottom as u32)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::PngTransform;
+    use super::conservative_fallback_coverage_area;
+    use crate::render::resolve::ResolvedTransform;
+
+    #[test]
+    fn a_fallback_surface_never_exceeds_the_canvas_that_admitted_it() {
+        // `fallback_coverage_bounds` clamps the placeholder's rotated
+        // rectangle to `[0, width] x [0, height]`, so its surface is at most
+        // the canvas's own, which `max_raster_surface_pixels` has already
+        // admitted or rejected fatally before any placeholder is charged.
+        // The former local crossing of that ceiling was therefore unreachable
+        // (#159); this holds the clamp for the placements that would reach it
+        // if it were not: an element larger than the canvas, one straddling
+        // every edge, one rotated so its box outgrows the canvas, one placed
+        // far outside it, and one at an export scale that magnifies it.
+        let transform = |x: f64, y: f64, angle: f64, width: f64, height: f64, scale: f64| {
+            PngTransform::new(
+                &ResolvedTransform {
+                    translation_x: x,
+                    translation_y: y,
+                    angle_radians: angle,
+                    center_x: width / 2.0,
+                    center_y: height / 2.0,
+                },
+                scale,
+            )
+        };
+        let canvas = (120_u32, 80_u32);
+        let canvas_area = u64::from(canvas.0) * u64::from(canvas.1);
+        for (x, y, angle, width, height, scale) in [
+            (-1_000.0, -1_000.0, 0.0, 5_000.0, 5_000.0, 1.0),
+            (-10.0, -10.0, 0.0, 140.0, 100.0, 1.0),
+            (0.0, 0.0, 0.7, 120.0, 80.0, 1.0),
+            (10_000.0, 10_000.0, 0.0, 10.0, 10.0, 1.0),
+            (0.0, 0.0, 0.0, 120.0, 80.0, 8.0),
+            (0.0, 0.0, 0.0, 120.0, 80.0, 1.0),
+            (f64::MAX / 4.0, 0.0, 0.0, 10.0, 10.0, 1.0),
+        ] {
+            let area = conservative_fallback_coverage_area(
+                width,
+                height,
+                transform(x, y, angle, width, height, scale),
+                canvas.0,
+                canvas.1,
+            );
+            assert!(
+                area <= canvas_area,
+                "({x}, {y}, {angle}, {width}x{height}, x{scale}) covers {area} of {canvas_area}"
+            );
+        }
+        assert_eq!(
+            conservative_fallback_coverage_area(
+                120.0,
+                80.0,
+                transform(0.0, 0.0, 0.0, 120.0, 80.0, 1.0),
+                canvas.0,
+                canvas.1
+            ),
+            canvas_area,
+            "a placeholder filling the canvas costs exactly the canvas"
+        );
+    }
+}

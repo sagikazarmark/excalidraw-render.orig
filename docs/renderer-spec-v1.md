@@ -1914,16 +1914,19 @@ Recoverable mappings are:
 | `resource.asset-bytes-exceeded` | `max_asset_bytes` | bytes |
 | `resource.asset-work-exceeded` | `max_asset_work_units` | work_units |
 | `resource.image-dimensions-exceeded` | `max_raster_dimension` | dimension |
-| `resource.image-pixels-exceeded` | `max_decoded_pixels_per_asset` or `max_raster_surface_pixels` for replaceable fallback | pixels |
+| `resource.image-pixels-exceeded` | `max_decoded_pixels_per_asset` | pixels |
 | `resource.nested-svg-complexity-exceeded` | `max_nested_svg_nodes` | count |
 | `resource.nested-asset-depth-exceeded` | `max_nested_asset_depth` | depth |
 | `resource.coordinate-range-exceeded` | `max_coordinate_magnitude` | coordinate |
 | `resource.optional-metadata-omitted` | exact crossed limit | that limit's kind |
 
-The PNG compatibility-fallback surface crossing reports under the
-`resource.image-pixels-exceeded` row; the encoder was aligned to it while
-revision 1 was a draft (#157), so no retained report carried the earlier
-`resource.element-complexity-replaced` spelling.
+A PNG compatibility placeholder's raster surface has no local ceiling: it is
+the placeholder's rectangle clamped to the canvas, so it is at most the main
+raster surface `max_raster_surface_pixels` has already admitted (a fatal
+`resource.raster-surface-exceeded` when it has not), and it is charged against
+`max_total_rasterized_pixels` alone. Revision 1 carried an unreachable local
+crossing of that ceiling for the placeholder while a draft (#157, #159); no
+retained report can have carried it.
 
 Metadata component/operation bindings are provenance/serialization,
 diagnostic_summary/serialization, embedded_scene/serialization,
@@ -2380,8 +2383,9 @@ Other aggregate infeasibility is evaluated at render time.
 `max_svg_dimension` applies to logical `viewBox` extents and final scaled width
 and height. `max_pdf_page_points` applies after padding and sizing; PDF cannot
 evade it with `UserUnit`. Raster side and area limits apply after sizing and
-integer conversion. Main PNG side or surface exhaustion is fatal; an
-independently replaceable fallback surface uses local recovery.
+integer conversion. Main PNG side or surface exhaustion is fatal; a
+compatibility placeholder's surface, clamped to that admitted canvas, is
+charged against the aggregate only (#159).
 
 `max_coordinate_magnitude` applies to every normalized coordinate, dimension,
 control point, translated transform coefficient, and intermediate exposed to a

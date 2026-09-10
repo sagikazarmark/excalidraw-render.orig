@@ -173,10 +173,6 @@ impl ImageRecovery {
 pub(crate) enum LocalLimit {
     GeometrySegmentsPerElement,
     TextScalarsPerElement,
-    /// The raster surface a PNG compatibility fallback would need, reported
-    /// under `resource.image-pixels-exceeded` with `max_raster_surface_pixels`
-    /// in pixels, the row spec section 11.3 gives it (#157).
-    FallbackRasterSurfacePixels,
     ElementWorkUnits,
     AssetBytes,
     AssetWorkUnits,
@@ -197,9 +193,7 @@ impl LocalLimit {
             Self::AssetBytes => DiagnosticCode::RESOURCE_ASSET_BYTES_EXCEEDED,
             Self::AssetWorkUnits => DiagnosticCode::RESOURCE_ASSET_WORK_EXCEEDED,
             Self::RasterDimension => DiagnosticCode::RESOURCE_IMAGE_DIMENSIONS_EXCEEDED,
-            Self::DecodedPixelsPerAsset | Self::FallbackRasterSurfacePixels => {
-                DiagnosticCode::RESOURCE_IMAGE_PIXELS_EXCEEDED
-            }
+            Self::DecodedPixelsPerAsset => DiagnosticCode::RESOURCE_IMAGE_PIXELS_EXCEEDED,
             Self::NestedSvgNodes => DiagnosticCode::RESOURCE_NESTED_SVG_COMPLEXITY_EXCEEDED,
             Self::NestedAssetDepth => DiagnosticCode::RESOURCE_NESTED_ASSET_DEPTH_EXCEEDED,
             Self::CoordinateMagnitude => DiagnosticCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,
@@ -211,7 +205,6 @@ impl LocalLimit {
         match self {
             Self::GeometrySegmentsPerElement => "max_geometry_segments_per_element",
             Self::TextScalarsPerElement => "max_text_scalars_per_element",
-            Self::FallbackRasterSurfacePixels => "max_raster_surface_pixels",
             Self::ElementWorkUnits => "max_element_work_units",
             Self::AssetBytes => "max_asset_bytes",
             Self::AssetWorkUnits => "max_asset_work_units",
@@ -228,7 +221,7 @@ impl LocalLimit {
             Self::GeometrySegmentsPerElement
             | Self::TextScalarsPerElement
             | Self::NestedSvgNodes => ValueKind::Count,
-            Self::FallbackRasterSurfacePixels | Self::DecodedPixelsPerAsset => ValueKind::Pixels,
+            Self::DecodedPixelsPerAsset => ValueKind::Pixels,
             Self::ElementWorkUnits | Self::AssetWorkUnits => ValueKind::WorkUnits,
             Self::AssetBytes => ValueKind::Bytes,
             Self::RasterDimension => ValueKind::Dimension,
