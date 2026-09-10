@@ -40,14 +40,19 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
         // deflate-compressed scanlines (#113) with the pixels unchanged. The
         // PDF digest moved when every stream became Flate and the trailer
         // gained its content-derived /ID (#133, #150; ADR-0008), with the
-        // viewer rasters and operator sequence unchanged.
+        // viewer rasters and operator sequence unchanged. All three moved
+        // with #171: the `elbow` arrow's `triangle` end head follows a
+        // `circle_outline` start, and the start head's 0.5 clamp was carried
+        // to it where the reference clamps each head on its own kind, so the
+        // triangle is now drawn at roughness 1 (paths 11 and 12 of the SVG;
+        // every other path is byte-identical).
         let whole_artifact_digest = match format {
             OutputFormat::Svg => None,
             OutputFormat::Png => {
-                Some("09e2eb955e4134f3f3a6b19b1cee567f130b42d947248764faa036e1199fae23")
+                Some("c916f8dfed9d695b52ef3f24a98f5e8f24c3ce9357e403ea810bf68befdefb86")
             }
             OutputFormat::Pdf => {
-                Some("4b0564decfc9e118380e17e3f87adc1831e59f8da380a7fcd41493f5026f6537")
+                Some("865dacf1422a4c32ebac641300bf1409761ca30643d9d5f5b4fc6d237e082cd4")
             }
             _ => unreachable!("the test enumerates every revision-1 format"),
         };
@@ -71,7 +76,7 @@ fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
             assert!(paths.len() > 8, "arrowheads are separate vectors");
             assert_eq!(
                 format!("{:x}", Sha256::digest(paths.join("\n"))),
-                "5e25ba2ed774c760ceb3cb5389467fb12d6ef4c86ac1e453feb3951475b26c16",
+                "dd4a3a37eed922fa3ead257755202c3d3fe0e2872fc008e4cc95ef526d28cb87",
                 "exact arrow vectors changed"
             );
         } else if format == OutputFormat::Pdf {

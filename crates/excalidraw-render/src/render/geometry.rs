@@ -717,6 +717,17 @@ fn elbow_drawing(
     )
 }
 
+/// The two members of the Rough.js options object that the reference's
+/// `getArrowheadShapes` reads and, for some head kinds, mutates. The outline
+/// and both heads share one object: the start head is generated first, and a
+/// head that assigns to the object changes what the end head is generated
+/// with (#171).
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct SharedArrowheadOptions {
+    roughness: f64,
+    dash: rough::DecorationDash,
+}
+
 fn add_arrowheads(
     drawing: &mut rough::Drawing,
     linear: &crate::normalization::NormalizedLinear,
@@ -724,7 +735,16 @@ fn add_arrowheads(
     roughness: f64,
     budget: &mut rough::GenerationBudget,
 ) -> Result<(), rough::GenerationError> {
-    let mut arrowhead_roughness = roughness;
+    // `generateRoughOptions`: the element's adjusted roughness and its own
+    // `strokeLineDash`, which is what the outline was generated with.
+    let mut options = SharedArrowheadOptions {
+        roughness,
+        dash: match source.stroke_style.as_str() {
+            "dashed" => rough::DecorationDash::Dashed,
+            "dotted" => rough::DecorationDash::Dotted,
+            _ => rough::DecorationDash::Solid,
+        },
+    };
     for (start, arrowhead) in [
         (true, linear.start_arrowhead.as_deref()),
         (false, linear.end_arrowhead.as_deref()),
@@ -734,17 +754,14 @@ fn add_arrowheads(
         else {
             continue;
         };
-        arrowhead_roughness = arrowhead_roughness.min(
-            if matches!(arrowhead, "dot" | "circle" | "circle_outline") {
-                0.5
-            } else {
-                1.0
-            },
-        );
-        let head_roughness = arrowhead_roughness;
         let preserve_vertices = source.roughness < 2.0;
         match arrowhead {
             "dot" | "circle" | "circle_outline" => {
+                // `{ ...options, roughness: Math.min(0.5, options.roughness) }`
+                // after `delete options.strokeLineDash`: the clamp is the
+                // head's own, the deletion is shared.
+                options.dash = rough::DecorationDash::Solid;
+                let head_roughness = options.roughness.min(0.5);
                 let [center_x, center_y, diameter, ..] = points;
                 let mut head = rough::circle_drawing(
                     diameter,
@@ -768,10 +785,14 @@ fn add_arrowheads(
                     } else {
                         rough::DecorationFillPaint::Stroke
                     },
-                    dotted: false,
+                    dash: options.dash,
                 });
             }
             "triangle" | "triangle_outline" => {
+                // `{ ...options, roughness: Math.min(1, options.roughness) }`
+                // after `delete options.strokeLineDash`.
+                options.dash = rough::DecorationDash::Solid;
+                let head_roughness = options.roughness.min(1.0);
                 let [tip_x, tip_y, left_x, left_y, right_x, right_y, ..] = points;
                 let head_points = [
                     Point { x: tip_x, y: tip_y },
@@ -802,10 +823,14 @@ fn add_arrowheads(
                     } else {
                         rough::DecorationFillPaint::Stroke
                     },
-                    dotted: false,
+                    dash: options.dash,
                 });
             }
             "diamond" | "diamond_outline" => {
+                // `{ ...options, roughness: Math.min(1, options.roughness) }`
+                // after `delete options.strokeLineDash`.
+                options.dash = rough::DecorationDash::Solid;
+                let head_roughness = options.roughness.min(1.0);
                 let head_points = [
                     Point {
                         x: points[0],
@@ -845,10 +870,28 @@ fn add_arrowheads(
                     } else {
                         rough::DecorationFillPaint::Stroke
                     },
-                    dotted: false,
+                    dash: options.dash,
                 });
             }
+            "crowfoot_one" => {
+                // `generator.line(x3, y3, x4, y4, options)`: the shared
+                // options as they stand, roughness unclamped and the
+                // element's dash pattern kept unless an earlier head
+                // deleted or replaced it.
+                add_open_arrowhead(drawing, source, arrowhead, points, options, budget)?;
+            }
             _ => {
+                // `bar`, `arrow`, `crowfoot_many`, `crowfoot_one_or_many`:
+                // the default branch assigns `options.strokeLineDash` (the
+                // shortened dotted pattern, or deleted) and
+                // `options.roughness = Math.min(1, options.roughness)` on
+                // the shared object, so the head that follows inherits both.
+                options.dash = if source.stroke_style == "dotted" {
+                    rough::DecorationDash::DottedHead
+                } else {
+                    rough::DecorationDash::Solid
+                };
+                options.roughness = options.roughness.min(1.0);
                 let crossbar = (arrowhead == "crowfoot_one_or_many")
                     .then(|| {
                         arrowhead_points(
@@ -860,16 +903,9 @@ fn add_arrowheads(
                         )
                     })
                     .flatten();
-                add_open_arrowhead(drawing, source, arrowhead, points, head_roughness, budget)?;
+                add_open_arrowhead(drawing, source, arrowhead, points, options, budget)?;
                 if let Some(crossbar) = crossbar {
-                    add_open_arrowhead(
-                        drawing,
-                        source,
-                        "crowfoot_one",
-                        crossbar,
-                        head_roughness,
-                        budget,
-                    )?;
+                    add_open_arrowhead(drawing, source, "crowfoot_one", crossbar, options, budget)?;
                 }
             }
         }
@@ -882,7 +918,7 @@ fn add_open_arrowhead(
     source: &NormalizedElement,
     arrowhead: &str,
     points: [f64; 8],
-    roughness: f64,
+    options: SharedArrowheadOptions,
     budget: &mut rough::GenerationBudget,
 ) -> Result<(), rough::GenerationError> {
     let tip = Point {
@@ -902,7 +938,7 @@ fn add_open_arrowhead(
             &[start, end],
             false,
             source.seed,
-            roughness,
+            options.roughness,
             source.roughness < 2.0,
             source.stroke_style != "solid",
             None,
@@ -912,7 +948,7 @@ fn add_open_arrowhead(
         drawing.decorations.push(rough::Decoration {
             drawing: head,
             fill_paint: rough::DecorationFillPaint::Stroke,
-            dotted: source.stroke_style == "dotted",
+            dash: options.dash,
         });
         Ok(())
     };

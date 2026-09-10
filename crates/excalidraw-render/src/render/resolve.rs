@@ -1039,14 +1039,20 @@ pub(super) fn decoration_fill_color(
     }
 }
 
+/// The stroke style an arrowhead is drawn with and the stroke width its dash
+/// gap is derived from, from the `strokeLineDash` the head was generated
+/// under (#171): the element's own dashed or dotted pattern reads the
+/// element's stroke width, and the open heads' shortened dotted pattern
+/// `[1.5, 4 + strokeWidth]` is the dotted pattern of a stroke two narrower.
 pub(super) fn decoration_stroke_style(
     decoration: &rough::Decoration,
     source_stroke_width: f64,
 ) -> (StrokeStyle, f64) {
-    if decoration.dotted {
-        (StrokeStyle::Dotted, source_stroke_width - 2.0)
-    } else {
-        (StrokeStyle::Solid, source_stroke_width)
+    match decoration.dash {
+        rough::DecorationDash::Solid => (StrokeStyle::Solid, source_stroke_width),
+        rough::DecorationDash::Dashed => (StrokeStyle::Dashed, source_stroke_width),
+        rough::DecorationDash::Dotted => (StrokeStyle::Dotted, source_stroke_width),
+        rough::DecorationDash::DottedHead => (StrokeStyle::Dotted, source_stroke_width - 2.0),
     }
 }
 

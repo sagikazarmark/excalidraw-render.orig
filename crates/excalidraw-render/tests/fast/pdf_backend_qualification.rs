@@ -35,7 +35,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(PROJECT_STRUCTURE)),
-        "0a53b842f1c7a205d1bf4a67b45100e956d479d6619c074f4fdc0aa9a53a3d65"
+        "b6cbc6049556ae87780a83e9c252f64193594bf37c9d6a2f18a80434b31cb7b9"
     );
     let first = render_project_operations();
     let second = render_project_operations();
@@ -51,9 +51,12 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     // per embedded font family and the OFL body once; every other stream is
     // unchanged, so `operation_sha256` in the structure expectation holds and
     // only its `inventory_sha256` (which digests the XMP stream) is re-pinned.
+    // Moved with #171: the scene's arrow has a `circle` start and a `triangle`
+    // end at roughness 1, and the triangle is now drawn at 1, not at the
+    // start head's 0.5, so the content stream and `operation_sha256` moved.
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "b74535f14d6de70c4c640d23775fc6df964f1d82bda361b4d872b79e8494e400"
+        "b053159dc6ea0649e6c0fa5840196ccb81db6b41b7eb69d0181392851017ee43"
     );
 
     let pdf = pdf_text(first.artifact().bytes());

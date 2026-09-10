@@ -2932,6 +2932,341 @@ fn cartoonist_curve_fill_drops_its_vertices_like_the_pinned_roughjs() {
     );
 }
 
+/// The SVG path data a default render writes for one arrow, in the reference's
+/// order: the outline, then each arrowhead's sets (a closed head's fill and
+/// outline, an open head's line or lines), the start head before the end
+/// head; and beside them the `strokeLineDash` each head was generated under.
+fn arrow_svg_paths_and_dashes(
+    source: &NormalizedElement,
+) -> (Vec<String>, Vec<rough::DecorationDash>) {
+    let drawing = rough_drawing(
+        source,
+        adjusted_roughness(source),
+        &mut default_budget(source),
+    )
+    .ok()
+    .unwrap_or_else(|| panic!("{} generates", source.source.id()));
+    let path_data = |path: &geometry::Path| {
+        let mut data = String::new();
+        svg::push_rough_path(&mut data, path).expect("path data writes");
+        data
+    };
+    assert!(drawing.fill.is_none(), "an arrow has no fill");
+    let mut paths = vec![path_data(&drawing.outline)];
+    let mut dashes = Vec::new();
+    for decoration in &drawing.decorations {
+        paths.extend(
+            decoration
+                .drawing
+                .fill
+                .iter()
+                .map(|fill| path_data(&fill.path)),
+        );
+        paths.push(path_data(&decoration.drawing.outline));
+        dashes.push(decoration.dash);
+    }
+    (paths, dashes)
+}
+
+/// The four arrows of `focused.cartoonist-arrowheads.v1` with their points
+/// normalized as the reference's restore path normalizes them, at roughness 2:
+/// an `arrow` start followed by a `dot` end (the control), a `dot` start
+/// followed by an `arrow` end, a `circle_outline` start followed by a
+/// `triangle` end, and a `crowfoot_one` end alone.
+const CARTOONIST_ARROWHEAD_FAMILIES: &[u8] = br##"{
+  "type":"excalidraw","version":2,
+  "elements":[
+    {"id":"arrow-start-then-dot","type":"arrow","x":10,"y":40,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"roughness":2,"startArrowhead":"arrow","endArrowhead":"dot","seed":1547013,"updated":1},
+    {"id":"dot-start-then-arrow","type":"arrow","x":170,"y":40,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"roughness":2,"startArrowhead":"dot","endArrowhead":"arrow","seed":1547026,"updated":1},
+    {"id":"circle-outline-start-then-triangle","type":"arrow","x":330,"y":40,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"roughness":2,"startArrowhead":"circle_outline","endArrowhead":"triangle","seed":1547039,"updated":1},
+    {"id":"crowfoot-one-end","type":"arrow","x":490,"y":40,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"roughness":2,"startArrowhead":null,"endArrowhead":"crowfoot_one","seed":1547052,"updated":1}
+  ],
+  "appState":{},"files":{}
+}"##;
+
+#[test]
+fn cartoonist_arrowheads_clamp_their_roughness_per_kind_like_the_pinned_roughjs() {
+    // Every digest here is the pinned npm Rough.js 4.6.4's, computed with
+    //
+    //   node tools/rough-filler-vectors/derive.mjs \
+    //     tools/reference-oracle/node_modules/roughjs/bundled/rough.esm.js \
+    //     <<< "$CARTOONIST_ARROWHEAD_FAMILIES"
+    //
+    // under Node 24.19.0 after `tools/reference-oracle/run-container.sh
+    // install`; the script generates the heads through a verbatim
+    // `getArrowheadShapes` over the one options object the outline and both
+    // heads share, and over this scene it reproduces all 17 paths of the
+    // official export of `focused.cartoonist-arrowheads.v1` byte for byte
+    // (#171). A dot-kind head clamps its own roughness to 0.5 and a triangle
+    // or diamond its own to 1, each on a spread copy, so the end head after a
+    // `dot` or `circle_outline` start is drawn at 1, not 0.5; a `crowfoot_one`
+    // is drawn at the element's roughness, 2 here, unclamped.
+    const EXPECTED: &[(&str, &[usize], &[&str])] = &[
+        (
+            "arrow-start-then-dot",
+            &[8, 4, 4, 22, 22],
+            &[
+                "63d6ec6b5d4df4cdf68fcb81c06adf76ebfbd443275b3db7e3afc6360b38fc6f",
+                "d92964190e08ce94c33018250a042651f769c52d4108d3ca8361173bc7fd4e81",
+                "5477a590dc9b08cbf98eb73fedddac943ec23d8214fef9432723360239c3e26f",
+                "7522ef6b2bed77d2ccc77385090e2a12c90129677d55040425952930a7b89815",
+                "a91e01e6fef2dec7181789f7b36da79fc71a573c5762fb9d62963f284e73fb68",
+            ],
+        ),
+        (
+            "dot-start-then-arrow",
+            &[8, 22, 22, 4, 4],
+            &[
+                "31d22b605da1e2d0b75fc2de90fecb09bc5908ecb3f2111a8ea0e0be787e66c0",
+                "d965980132f6badc1f635d7f73a36948537b7271c52f6c4dee8ff578ba27980a",
+                "89d4480fc99b9fc23976f9541974ceb4a9f41dc3466533ea117e9517925a5387",
+                "9a223af957769bb35b5a6ca27a1e0c563b91b7b8da0f81e342d85b5830f5c929",
+                "034cbf834ecf1c8ba54aa3b141dcb5e225e558dc53feb2e5aa135d3337f39672",
+            ],
+        ),
+        (
+            "circle-outline-start-then-triangle",
+            &[8, 22, 22, 4, 16],
+            &[
+                "155646a17a2883872d408e4371d9368ff16e4daefcf9ec28f53d94df90096cb9",
+                "eeed92a61c3a32cc8043ada8823b769dcc2fbe55c7ad54220d941c5b1cc4dc97",
+                "c11fa53245d15afca589dccd458787cc501c301a9f5d0b14532ad16850fe6386",
+                "7d0b32501fa21fc5187352e73cb6225347a07eaf23a000c29fbb4064cbce03f5",
+                "ce98f244cf03740d7aab172fe3c5d6d5237b1e5a38af7069b6ebee14aa1c2343",
+            ],
+        ),
+        (
+            "crowfoot-one-end",
+            &[8, 4],
+            &[
+                "5e428d4053927e86bcb62948854c90cb78fe5e6dd8cc4c487086cc11d22c581a",
+                "3b89eb916f4b378ec02a4da616860a5c3a938f588e2059d1deb46c37e3a1c116",
+            ],
+        ),
+    ];
+    let elements = normalized_elements(CARTOONIST_ARROWHEAD_FAMILIES);
+    assert_eq!(elements.len(), EXPECTED.len());
+    let mut all_paths = Vec::new();
+    for (element, (id, operations, digests)) in elements.iter().zip(EXPECTED) {
+        assert_eq!(element.source.id(), *id);
+        let (paths, dashes) = arrow_svg_paths_and_dashes(element);
+        assert!(
+            dashes
+                .iter()
+                .all(|dash| *dash == rough::DecorationDash::Solid),
+            "{id}: a solid element's heads carry no dash"
+        );
+        assert_eq!(
+            paths
+                .iter()
+                .map(|path| path.matches(['M', 'C', 'L']).count())
+                .collect::<Vec<_>>(),
+            *operations,
+            "{id}: operation counts"
+        );
+        assert_eq!(
+            paths
+                .iter()
+                .map(|path| sha256_hex(path))
+                .collect::<Vec<_>>(),
+            *digests,
+            "{id}: the pinned npm Rough.js 4.6.4 arrowhead vectors"
+        );
+        all_paths.extend(paths);
+    }
+    assert_eq!(
+        sha256_hex(&all_paths.join("\n")),
+        "d427a4bb37c9e62549c6b5753988404b2346500d10170362c9a64c765d6e2498",
+        "the cartoonist arrowhead scene joined, as the official export's 17 paths join"
+    );
+}
+
+/// Arrows whose heads read what an earlier head left on the shared options
+/// object: the default branch's roughness clamp and dash carried to a
+/// `crowfoot_one` that follows, a `crowfoot_one` start keeping the element's
+/// own dashed or dotted pattern before an open or closed end head replaces or
+/// deletes it, a closed start head deleting the pattern a `crowfoot_one` end
+/// would otherwise keep, a `crowfoot_one_or_many` whose crossbar is drawn
+/// after its own branch's assignments, and a rounded (curve) arrow with a
+/// `bar` and a `crowfoot_many`.
+const ARROWHEAD_SHARED_OPTION_FAMILIES: &[u8] = br##"{
+  "type":"excalidraw","version":2,
+  "elements":[
+    {"id":"arrow-then-crowfoot-one","type":"arrow","x":10,"y":40,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"roughness":2,"startArrowhead":"arrow","endArrowhead":"crowfoot_one","seed":81,"updated":1},
+    {"id":"crowfoot-one-then-arrow","type":"arrow","x":170,"y":40,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"roughness":2,"startArrowhead":"crowfoot_one","endArrowhead":"arrow","seed":82,"updated":1},
+    {"id":"crowfoot-one-then-triangle","type":"arrow","x":330,"y":40,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"roughness":2,"startArrowhead":"crowfoot_one","endArrowhead":"triangle","seed":83,"updated":1},
+    {"id":"dotted-arrow-then-crowfoot-one","type":"arrow","x":10,"y":120,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"strokeStyle":"dotted","startArrowhead":"arrow","endArrowhead":"crowfoot_one","seed":84,"updated":1},
+    {"id":"dotted-crowfoot-one-then-arrow","type":"arrow","x":170,"y":120,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"strokeStyle":"dotted","startArrowhead":"crowfoot_one","endArrowhead":"arrow","seed":85,"updated":1},
+    {"id":"dashed-crowfoot-one-then-diamond","type":"arrow","x":330,"y":120,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"strokeStyle":"dashed","strokeWidth":4,"startArrowhead":"crowfoot_one","endArrowhead":"diamond","seed":86,"updated":1},
+    {"id":"dashed-dot-then-crowfoot-one","type":"arrow","x":10,"y":200,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"strokeStyle":"dashed","startArrowhead":"dot","endArrowhead":"crowfoot_one","seed":87,"updated":1},
+    {"id":"dotted-crowfoot-one-or-many","type":"arrow","x":170,"y":200,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"strokeStyle":"dotted","roughness":2,"startArrowhead":null,"endArrowhead":"crowfoot_one_or_many","seed":88,"updated":1},
+    {"id":"rounded-bar-then-crowfoot-many","type":"arrow","x":330,"y":200,"width":140,"height":30,"points":[[0,0],[70,-30],[140,0]],"roundness":{"type":2},"roughness":2,"startArrowhead":"bar","endArrowhead":"crowfoot_many","seed":89,"updated":1}
+  ],
+  "appState":{},"files":{}
+}"##;
+
+#[test]
+fn arrowheads_read_the_shared_options_in_the_pinned_roughjs_order() {
+    use rough::DecorationDash::{Dashed, Dotted, DottedHead, Solid};
+
+    // Every digest and dash here is the pinned npm Rough.js 4.6.4's, computed
+    // with
+    //
+    //   node tools/rough-filler-vectors/derive.mjs \
+    //     tools/reference-oracle/node_modules/roughjs/bundled/rough.esm.js \
+    //     <<< "$ARROWHEAD_SHARED_OPTION_FAMILIES"
+    //
+    // under Node 24.19.0; the script prints each head's `strokeLineDash` as
+    // Rough.js copied it from the shared options at generation time (#171).
+    // The default branch assigns `roughness = min(1, roughness)` and the
+    // dash on the shared object, so the `crowfoot_one` after an `arrow` start
+    // is drawn at 1 where the one before an `arrow` end is drawn at 2, and
+    // the one after a dotted `arrow` start takes the shortened `[1.5, 6]`
+    // where the one before it keeps the element's `[1.5, 8]`; a closed head
+    // deletes the pattern (the `crowfoot_one` after a `dot` start on a dashed
+    // element is solid) and leaves the roughness alone (the `arrow` end after
+    // a `crowfoot_one` start is still clamped to 1 by its own branch).
+    /// One arrow: its id, the operation count of each path, each head's
+    /// `strokeLineDash`, and each path's digest.
+    type ExpectedArrow = (
+        &'static str,
+        &'static [usize],
+        &'static [rough::DecorationDash],
+        &'static [&'static str],
+    );
+    const EXPECTED: &[ExpectedArrow] = &[
+        (
+            "arrow-then-crowfoot-one",
+            &[8, 4, 4, 4],
+            &[Solid, Solid, Solid],
+            &[
+                "91ed074143383355aaeefe46d6c646c84b9842a8ac84ac722c3ade0ec29db719",
+                "d035c0650df83c8fededbf613f7e5bfd1c48459daa42399505732edfc616967b",
+                "bc06591c670286d638686998dd2668178b8b8f2c46125efb1f5cd6ab20be15ae",
+                "9869288d223566a218162f1624e45da2a628406d5f3600660dbb48bac06c8751",
+            ],
+        ),
+        (
+            "crowfoot-one-then-arrow",
+            &[8, 4, 4, 4],
+            &[Solid, Solid, Solid],
+            &[
+                "d28baed91b1756207816d1ce96e90ad275087ec7f8a67df01a036518829e69e8",
+                "2348038bad60c4097a4f2cad05b485b1bc1caf2ca6af7e52ace01b19c8f853ff",
+                "1a6084153037919f446376e31fa04e447da9712d19384c483c23c75a559e96e6",
+                "1c61cc00b912227ecc37a7987828bb8be5f1c4058d03adc5edf582bb6af4f23d",
+            ],
+        ),
+        (
+            "crowfoot-one-then-triangle",
+            &[8, 4, 4, 16],
+            &[Solid, Solid],
+            &[
+                "27dc1a9cb135c0892168a24a9cc635f599843e3c21d15fc713feca174a420e49",
+                "a4fcee2db146fd2b1cab9a4d35499898f533d73900166f0f90272d54b426b7d5",
+                "2b294f93cbe55f1ceb4c2fe80ebb8f67871c8a2c51c5f0415d9b6506603a7a39",
+                "6f84c93ecdc2b4a9f05c85b8d15d7a2baf5aa2c0c2e86b149401a2bb7654673b",
+            ],
+        ),
+        (
+            "dotted-arrow-then-crowfoot-one",
+            &[4, 2, 2, 2],
+            &[DottedHead, DottedHead, DottedHead],
+            &[
+                "5585ddce561df575da97854cfa1518c826c60c967ac68a176324ac4ad95b7325",
+                "3dabf0c11eb4dedafd8666a2eb96482512d7eb4844da929263dad3ff5c59a51d",
+                "3da66ba7ea29aae6ca24ec6826d1bcae42eba1658399dc7c01a2b7fc02c5b8a6",
+                "acb0e41f99e829e4943af212132802c0e4be1469314c424e631310607c393558",
+            ],
+        ),
+        (
+            "dotted-crowfoot-one-then-arrow",
+            &[4, 2, 2, 2],
+            &[Dotted, DottedHead, DottedHead],
+            &[
+                "9c8352720b68fb4db6bf21de9200282c5ef362c72042fdecfd9431cbacb52017",
+                "9a0b855f17ee7c3413c95c345435f3f92e77ea815bbedc9e860e47e4931fb96c",
+                "844be959100f6671f99be191f414711586650356faacc6449ba76b24206a9eba",
+                "896269f36081df9fb810b6a2abf4b94a1c9731e2fe806ac1692ad316f22483de",
+            ],
+        ),
+        (
+            "dashed-crowfoot-one-then-diamond",
+            &[4, 2, 5, 10],
+            &[Dashed, Solid],
+            &[
+                "628558cb5082bccdeae0500abd2e20f45c4cd4607c3ad7acd59801de5eae39c0",
+                "c9eafab5e267642e02028a110a989a784723512d0c7331e2040217ff1817cc3b",
+                "238c7cecd884a7f4879fa33ed546298b36331cab62d9a1a49f1cbde99d179c7c",
+                "8bf580c20d360d3830f7c051a95304bffc78e3a28879c3666d9873fd2bde3594",
+            ],
+        ),
+        (
+            "dashed-dot-then-crowfoot-one",
+            &[4, 11, 11, 2],
+            &[Solid, Solid],
+            &[
+                "65cb92a55d288d069735cc774b8d3c738d8ce7903e988650d7f043a5169758ca",
+                "9e5d7b0e047d9dc4a746a9457ba9f5d4edfc7f676eb44d91488a6b7443e54668",
+                "8f9cd326eda9e03d5d05cd16f7679165dbfa72213ad0a1cfbeabffc745704260",
+                "594de913cf7d7c719ff19e35bb91df36a4f993e4c6ef7c18531d0a2ceb8642ca",
+            ],
+        ),
+        (
+            "dotted-crowfoot-one-or-many",
+            &[4, 2, 2, 2],
+            &[DottedHead, DottedHead, DottedHead],
+            &[
+                "3c7f6c089d1bdb4ee803095b4c6e7350566ba8decd88638e3a4262d10dd8f839",
+                "cd5039eb442cb95ba4a50944f303530a67e6d416224a6aaaf662ea3e57d3faa7",
+                "578a8d9bc68fe9e3b9f73fc2e4e02d19955fb5e0a77b3a84b4b86cd1184355bf",
+                "9faf05b6774b9270e898f68b1de63c0b2e42ff4939ab0b544a5ade2c574a673b",
+            ],
+        ),
+        (
+            "rounded-bar-then-crowfoot-many",
+            &[6, 4, 4, 4, 4],
+            &[Solid, Solid, Solid, Solid],
+            &[
+                "3bd21bd3eb48e6aa2a106238a0432308110d3dbef43c91ece618912aa72f4d9a",
+                "7cc61211efae773d734726c9b15d85b45e484fc9dc5f6e556c2792677bd004a7",
+                "b05359a809f0fa977d90c85b004cf755ee94bd7e90208fe942dd80c0b44c8aef",
+                "693c7d832379be817f236f5152513bddfd7539f34b678f4c10629a4252a71b68",
+                "5f5454e1ff9d9aacc98b9f70975ff55b498c0e5004b85d3ec005889190f09054",
+            ],
+        ),
+    ];
+    let elements = normalized_elements(ARROWHEAD_SHARED_OPTION_FAMILIES);
+    assert_eq!(elements.len(), EXPECTED.len());
+    let mut all_paths = Vec::new();
+    for (element, (id, operations, expected_dashes, digests)) in elements.iter().zip(EXPECTED) {
+        assert_eq!(element.source.id(), *id);
+        let (paths, dashes) = arrow_svg_paths_and_dashes(element);
+        assert_eq!(dashes, *expected_dashes, "{id}: each head's strokeLineDash");
+        assert_eq!(
+            paths
+                .iter()
+                .map(|path| path.matches(['M', 'C', 'L']).count())
+                .collect::<Vec<_>>(),
+            *operations,
+            "{id}: operation counts"
+        );
+        assert_eq!(
+            paths
+                .iter()
+                .map(|path| sha256_hex(path))
+                .collect::<Vec<_>>(),
+            *digests,
+            "{id}: the pinned npm Rough.js 4.6.4 arrowhead vectors"
+        );
+        all_paths.extend(paths);
+    }
+    assert_eq!(
+        sha256_hex(&all_paths.join("\n")),
+        "c355b2160da0c2c19677b94c78e08d677c95571845f189e96aded11366958375"
+    );
+}
+
 #[test]
 fn line_fill_uses_the_exact_export_zoom_loop_threshold() {
     // The export treats a line as closed, and fills it, when its last point

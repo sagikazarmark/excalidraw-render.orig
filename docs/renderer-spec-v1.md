@@ -642,6 +642,22 @@ rounded line or arrow, whose closed loop the reference fills as a curve, and a
 freedraw loop drop their fill vertices at cartoonist roughness like an
 unrounded shape does (#158).
 
+An arrow's heads are generated through the one Rough.js options object the
+reference's `getArrowheadShapes` shares between the outline and both heads,
+the start head before the end head, and each head kind reads and changes that
+object as the reference does (#171): a `dot`, `circle` or `circle_outline`
+draws at the lesser of 0.5 and the shared roughness, a `triangle`,
+`triangle_outline`, `diamond` or `diamond_outline` at the lesser of 1 and it,
+each on a copy, and each deletes the shared `strokeLineDash`; a `bar`,
+`arrow`, `crowfoot_many` or `crowfoot_one_or_many` assigns the shared
+roughness to the lesser of 1 and itself and the shared dash to the shortened
+dotted pattern `[1.5, 4 + strokeWidth]` for a dotted element or to none,
+so the head that follows inherits both; a `crowfoot_one` draws with the shared
+object as it stands, its roughness unclamped and a dashed or dotted element's
+own pattern kept unless an earlier head deleted or replaced it. The clamp is
+therefore never carried from a dot-kind start head to the end head, and a
+cartoonist `crowfoot_one` is as rough as its shaft.
+
 Dark mode is the reference export's `THEME_FILTER`,
 `invert(93%) hue-rotate(180deg)`, which the reference SVG carries on its root
 element and the reference canvas sets on its context. The renderer emits no

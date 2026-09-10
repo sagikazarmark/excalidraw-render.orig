@@ -6090,8 +6090,7 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
       ],
       "variants": [
         {
@@ -6117,7 +6116,19 @@
       "expected_diagnostics": {
         "png": [],
         "svg": []
-      }
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
+          "format": "png",
+          "max_changed_pixels": 68,
+          "minimum_ssim_bits": "3fefee171bcc5335",
+          "reason": "Fill and stroke rasterization. All 17 SVG paths match the official export byte for byte and the document rasterizes identically under one rasterizer (0 changed pixels, SSIM 1.0), so the difference arises while rasterizing geometry both renderers agree on, not in the geometry: the two rasterizers' antialiasing of the four arrows' cartoonist double strokes and of their heads' solid fills at strokeWidth 2 (2475 pixels differ by at most 72 levels, 68 of them beyond the Pixelmatch threshold, spread along every stroke). The scene carries no text. The same class is recorded on #104 for focused.ellipse-diamond-fills.v1 and on #152 for focused.cartoonist-roughness.v1 and focused.roundness-records.v1. Decided on #152; the measurement is the one taken after #171 fixed the heads' roughness.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
     },
     {
       "id": "focused.rotated-shape-bounds.v1",

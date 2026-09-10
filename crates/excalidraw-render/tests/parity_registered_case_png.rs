@@ -53,16 +53,6 @@ const KNOWN_DEFECTS: &[PinnedDivergence] = &[
         changed_pixels: 632,
         ssim_bits: 0x3fed_00ce_bd65_22d1,
     },
-    // #171: an arrowhead's roughness clamp is carried from the start head to
-    // the end head and applied to `crowfoot_one`, where the reference clamps
-    // per kind on the shared options and leaves `crowfoot_one` unclamped.
-    PinnedDivergence {
-        case: "focused.cartoonist-arrowheads.v1",
-        variant: "default",
-        issue: "#171",
-        changed_pixels: 89,
-        ssim_bits: 0x3fef_cbc1_e42a_7daf,
-    },
 ];
 
 /// Diagnosed scene-extent defects whose fix is pending a maintainer decision:

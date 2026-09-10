@@ -95,16 +95,6 @@ const KNOWN_DEFECTS: &[PinnedDivergence] = &[
         changed_pixels: 691,
         ssim_bits: 0x3fec_fa54_7e0d_3931,
     },
-    // #171: the end heads drawn at roughness 0.5 after a dot-kind start head
-    // and the `crowfoot_one` drawn at 1, where the reference draws them at 1
-    // and 2.
-    PinnedDivergence {
-        case: "focused.cartoonist-arrowheads.v1",
-        variant: "default",
-        issue: "#171",
-        changed_pixels: 17,
-        ssim_bits: 0x3fef_dce1_5ba7_d544,
-    },
 ];
 
 /// Diagnosed defects whose fix is pending a maintainer decision, observed on
@@ -118,14 +108,6 @@ const KNOWN_GEOMETRY_DEFECTS: &[PinnedGeometryDefect] = &[
         variant: "default",
         issue: "#170",
         geometry_sha256: "93496b8f25d9afa32190c0726b8376c67c46ca7b0705d9f48c1dd17d5e176ffe",
-    },
-    // #171: paths 8, 9, 13, 14 and 16, the two end heads after a dot-kind
-    // start and the `crowfoot_one`, differ; see `KNOWN_DEFECTS`.
-    PinnedGeometryDefect {
-        case: "focused.cartoonist-arrowheads.v1",
-        variant: "default",
-        issue: "#171",
-        geometry_sha256: "f0ab888fc8ccea21d3c26aa824feef11001446e682d8ea293e2e9e6e83c154f2",
     },
     // #172: the extent alone differs, `viewBox` 436.46x150.64 against the
     // official 409.21x146.34, from the rotated ellipse's, diamond's and

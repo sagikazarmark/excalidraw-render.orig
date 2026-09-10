@@ -149,13 +149,32 @@ pub(super) struct Drawing {
 pub(super) struct Decoration {
     pub(super) drawing: Drawing,
     pub(super) fill_paint: DecorationFillPaint,
-    pub(super) dotted: bool,
+    pub(super) dash: DecorationDash,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DecorationFillPaint {
     Stroke,
     Background,
+}
+
+/// The `strokeLineDash` an arrowhead is drawn with: the state of the options
+/// object the reference's `getArrowheadShapes` shares between the outline and
+/// both heads at the moment the head is generated (#171). A closed head
+/// deletes the pattern; an open head other than `crowfoot_one` replaces a
+/// dotted element's pattern with the shortened one and deletes any other; a
+/// `crowfoot_one` draws whatever pattern the options carry when it is reached.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum DecorationDash {
+    /// No pattern: a solid head.
+    Solid,
+    /// The element's own dashed pattern, `[8, 8 + strokeWidth]`.
+    Dashed,
+    /// The element's own dotted pattern, `[1.5, 6 + strokeWidth]`.
+    Dotted,
+    /// The open heads' dotted pattern, `getDashArrayDotted(strokeWidth - 1)`
+    /// with its gap shortened by one: `[1.5, 4 + strokeWidth]`.
+    DottedHead,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
