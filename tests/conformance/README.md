@@ -131,6 +131,17 @@ that the renderer, not the reference SVG, is right. A variant whose direct PNG
 fails that comparison is not a reference authority divergence and the harness
 refuses the pin. `KNOWN_DEFECTS` stays for renderer defects only.
 
+One filler has no case here. The reference's `DotFiller` draws each dot's
+centre from the unseeded `Math.random()` (spec 8.1), so two fresh browser
+processes never export the same bytes and the generator's own repeatability
+gate (`assertRepeatable`) rejects a dotted scene; evidence round A's
+`focused.rough-fillers-dots.v1` could not be generated and was withdrawn. The
+dots fill's evidence is the JS-derived unit vectors in
+`crates/excalidraw-render/src/render/tests.rs` and the fast test over the
+withdrawn scene, `crates/excalidraw-render/tests/fixtures/rough-fillers-dots.excalidraw`,
+both pinned against the npm Rough.js 4.6.4 through
+`tools/rough-filler-vectors/derive.mjs` (#137).
+
 `xtask` resolves every case through this file, so adding a scene case is a
 registry entry plus a case directory rather than a new generator script or a new
 constant. `conformance-case.mjs` reads the same file and refuses any entry whose

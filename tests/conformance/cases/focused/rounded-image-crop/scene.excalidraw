@@ -8,8 +8,8 @@
       "type": "image",
       "x": 30,
       "y": 30,
-      "width": 96,
-      "height": 96,
+      "width": 48,
+      "height": 48,
       "angle": 0,
       "strokeColor": "transparent",
       "backgroundColor": "transparent",
@@ -24,36 +24,36 @@
       "roundness": {
         "type": 3
       },
-      "seed": 1536019,
+      "seed": 1533136,
       "version": 1,
-      "versionNonce": 1536022,
+      "versionNonce": 1533139,
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
       "link": null,
       "locked": false,
-      "fileId": "file-png",
+      "fileId": "file-ramp",
       "status": "saved",
       "scale": [
         1,
         1
       ],
       "crop": {
-        "x": 8,
-        "y": 8,
-        "width": 16,
-        "height": 16,
-        "naturalWidth": 32,
-        "naturalHeight": 32
+        "x": 24,
+        "y": 24,
+        "width": 48,
+        "height": 48,
+        "naturalWidth": 96,
+        "naturalHeight": 96
       }
     },
     {
       "id": "square-crop-control",
       "type": "image",
-      "x": 146,
+      "x": 98,
       "y": 30,
-      "width": 96,
-      "height": 96,
+      "width": 48,
+      "height": 48,
       "angle": 0,
       "strokeColor": "transparent",
       "backgroundColor": "transparent",
@@ -66,27 +66,27 @@
       "frameId": null,
       "index": "a1",
       "roundness": null,
-      "seed": 1536038,
+      "seed": 1533153,
       "version": 1,
-      "versionNonce": 1536041,
+      "versionNonce": 1533156,
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
       "link": null,
       "locked": false,
-      "fileId": "file-png",
+      "fileId": "file-ramp",
       "status": "saved",
       "scale": [
         1,
         1
       ],
       "crop": {
-        "x": 8,
-        "y": 8,
-        "width": 16,
-        "height": 16,
-        "naturalWidth": 32,
-        "naturalHeight": 32
+        "x": 24,
+        "y": 24,
+        "width": 48,
+        "height": 48,
+        "naturalWidth": 96,
+        "naturalHeight": 96
       }
     }
   ],
@@ -94,12 +94,11 @@
     "viewBackgroundColor": "#ffffff"
   },
   "files": {
-    "file-png": {
-      "id": "file-png",
+    "file-ramp": {
+      "id": "file-ramp",
       "mimeType": "image/png",
-      "dataURL": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABUklEQVR4AcTVu0tCURwH8C/HwUc09Bwcgoa2oCFnl3KqNVqC9v6HtghaGxqDGlqa21rKVVcXEdFJVBQRL1wcrvcnKMfHfRzPC853OsPvwzk/fj8GwDvOZLz/fN6rFArCOXu/9GTCsqkU6o6D+1IJXdf1PWYP+8zlYBPBsuk0bCKoB2ATMQXQr9tCzAG2EAsAG4gVgGnEWoBJRCDAFCIUYAIRCdCNiAXgEf7iUro7YgNmiA9/d/CI8UBugQkBCLGfTIJH1F7KkEGwi9NHiOb2/Amjuy8kdo7gthyMn4v4bvziryce4RegV6Aktnaxd/OKkwOg2gGu3oD2kG7EsjGAyhDi5wFSCCkAIQ63ARmENEAWoQQQhGj26SY8ygBUZvk7rv3GjEIoBSwjqHgUQjlAFKEFIILQBoiL0AqIg9AOiEIYAYQhjAGCENoBVJgPP6xoTkwAAAD///LJpnwAAAAGSURBVAMAM6ZVz0Uea8MAAAAASUVORK5CYII=",
-      "created": 1,
-      "lastRetrieved": 1
+      "dataURL": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAA3ElEQVR42u3VMQrAIBAF0V1P4zFzc0WwsAikiGjziiEkhBQZ/JO1Pq1ExCDndSU/7v88861BeXkDxyDguoCcZwJXcAJMEAF+BAEiDBE2QSBAA6ABJggEEAARFmGYIAJAgAhDhE0QCCAAIizCMEEEQAM0ACaIABAgwhBhEwQCCIAIizBMEAEgQIQhwiYIBGgANMAEgQACIMIiDBNEAAgQYYiwCQIBBECERRgmiAAC7LAGmCAQQABEWIRhgggAASIMETZBIIAAiLAIwwQRAA3QAJggAkCACEOETRD20QFynEL5c+e0wgAAAABJRU5ErkJggg==",
+      "created": 1
     }
   }
 }

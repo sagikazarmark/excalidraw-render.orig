@@ -627,6 +627,13 @@ a dotted fill is not reproducible from one run to the next. Revision 1 draws
 that scatter from a second Rough.js generator seeded with the element seed and
 leaves the seeded stream the dot ellipses consume untouched: the dot shapes are
 the reference's own and the centres are one deterministic sample of its jitter.
+For the same reason the dots fill has no official evidence in the conformance
+corpus: the reference profile's generator requires two fresh browser processes
+to export identical bytes and rejects a dotted scene, so the JS-derived unit
+vectors in `render/tests.rs` and the fast test over the withdrawn dots scene
+(`tests/fixtures/rough-fillers-dots.excalidraw`), both pinned against the npm
+Rough.js through `tools/rough-filler-vectors/derive.mjs`, are its evidence
+(#137).
 
 Dark mode is the reference export's `THEME_FILTER`,
 `invert(93%) hue-rotate(180deg)`, which the reference SVG carries on its root

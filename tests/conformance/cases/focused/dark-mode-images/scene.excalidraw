@@ -1,0 +1,95 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "elements": [
+    {
+      "id": "raster-image",
+      "type": "image",
+      "x": 30,
+      "y": 30,
+      "width": 96,
+      "height": 96,
+      "angle": 0,
+      "strokeColor": "transparent",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a0",
+      "roundness": null,
+      "seed": 1533289,
+      "version": 1,
+      "versionNonce": 1533292,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "fileId": "file-ramp",
+      "status": "saved",
+      "scale": [
+        1,
+        1
+      ],
+      "crop": null
+    },
+    {
+      "id": "nested-svg-image",
+      "type": "image",
+      "x": 146,
+      "y": 30,
+      "width": 96,
+      "height": 96,
+      "angle": 0,
+      "strokeColor": "transparent",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a1",
+      "roundness": null,
+      "seed": 1533306,
+      "version": 1,
+      "versionNonce": 1533309,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1,
+      "link": null,
+      "locked": false,
+      "fileId": "file-svg",
+      "status": "saved",
+      "scale": [
+        1,
+        1
+      ],
+      "crop": null
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff"
+  },
+  "files": {
+    "file-ramp": {
+      "id": "file-ramp",
+      "mimeType": "image/png",
+      "dataURL": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAA3ElEQVR42u3VMQrAIBAF0V1P4zFzc0WwsAikiGjziiEkhBQZ/JO1Pq1ExCDndSU/7v88861BeXkDxyDguoCcZwJXcAJMEAF+BAEiDBE2QSBAA6ABJggEEAARFmGYIAJAgAhDhE0QCCAAIizCMEEEQAM0ACaIABAgwhBhEwQCCIAIizBMEAEgQIQhwiYIBGgANMAEgQACIMIiDBNEAAgQYYiwCQIBBECERRgmiAAC7LAGmCAQQABEWIRhgggAASIMETZBIIAAiLAIwwQRAA3QAJggAkCACEOETRD20QFynEL5c+e0wgAAAABJRU5ErkJggg==",
+      "created": 1
+    },
+    "file-svg": {
+      "id": "file-svg",
+      "mimeType": "image/svg+xml",
+      "dataURL": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9IiNkNjQ1NDUiLz48cmVjdCB4PSIxNiIgeT0iMCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSIjMmY5ZTQ0Ii8+PHJlY3QgeD0iMCIgeT0iMTYiIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgZmlsbD0iIzE5NzFjMiIvPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSIjZjA4YzAwIi8+PHBhdGggZD0iTTAgMCBMMzIgMzIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIi8+PC9zdmc+",
+      "created": 1,
+      "lastRetrieved": 1
+    }
+  }
+}

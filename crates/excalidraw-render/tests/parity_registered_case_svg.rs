@@ -84,34 +84,7 @@ use common::repository_root;
 /// Diagnosed defects whose fix is pending a maintainer decision, observed on the
 /// rasterized document. See `PinnedDivergence` for why these are pinned rather
 /// than excepted.
-const KNOWN_DEFECTS: &[PinnedDivergence] = &[
-    // #163: not a renderer defect. The official SVG declares the corner clip
-    // of a rounded, cropped image at the crop-shifted group origin and attaches
-    // it with a namespaced attribute, so under `usvg`, which honours the
-    // attribute, it hides all but the image's top-left quadrant, while the
-    // renderer clips at the element's rectangle as the official canvas does.
-    // Held here until #163 decides how the harness records a reference
-    // authority divergence it can see.
-    PinnedDivergence {
-        case: "focused.rounded-image-crop.v1",
-        variant: "default",
-        issue: "#163",
-        changed_pixels: 6468,
-        ssim_bits: 0x3fe8_8903_ca14_e3b0,
-    },
-    // #161: the renderer's dark-mode raster-image filter spells the saturate
-    // step as `feColorMatrix type="saturate" values="1.25"`, which `usvg`
-    // clamps to 1, so the raster image renders unsaturated under this
-    // rasterizer where the official export's `saturate(1.25)` function does
-    // not. The `default` variant of the same case passes.
-    PinnedDivergence {
-        case: "focused.dark-mode-frames-and-images.v1",
-        variant: "dark-mode",
-        issue: "#161",
-        changed_pixels: 8,
-        ssim_bits: 0x3fef_f63d_a137_8301,
-    },
-];
+const KNOWN_DEFECTS: &[PinnedDivergence] = &[];
 
 /// Compatibility exceptions whose approved tolerance exception the case
 /// manifest carries for the direct PNG, observed here on the rasterized SVG
@@ -165,7 +138,24 @@ const COMPATIBILITY_EXCEPTION_PINS: &[PinnedDivergence] = &[
 /// direct PNG to pass the canonical budget against the official canvas
 /// raster, which is the proof that the renderer, not the reference SVG, is
 /// right. Nothing here awaits a fix and nothing here is excepted.
-const REFERENCE_AUTHORITY_DIVERGENCES: &[ReferenceAuthorityDivergence] = &[];
+const REFERENCE_AUTHORITY_DIVERGENCES: &[ReferenceAuthorityDivergence] = &[
+    // The rounded and cropped 48x48 image (#163, measured on this rasterizer):
+    // the official SVG's corner clip sits at the crop-shifted group origin, so
+    // `usvg` shows the image's top-left quadrant with one rounded corner where
+    // the renderer clips the whole element as the canvas does. The unrounded
+    // crop control beside it agrees in both dimensions, and the variant's
+    // direct PNG passes the canonical budget (0 changed pixels, SSIM 0.99979).
+    ReferenceAuthorityDivergence {
+        pin: PinnedDivergence {
+            case: "focused.rounded-image-crop.v1",
+            variant: "default",
+            issue: "#163",
+            changed_pixels: 1572,
+            ssim_bits: 0x3fe9_11f7_8d01_2926,
+        },
+        spec_section: "spec 8.2",
+    },
+];
 
 /// The rasterizer, its pixel backend and its font database — which drives the
 /// glyph fallback both pinned cases exercise — that the pins above were

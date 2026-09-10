@@ -24,15 +24,15 @@
       "roundness": {
         "type": 3
       },
-      "seed": 1531019,
+      "seed": 1533017,
       "version": 1,
-      "versionNonce": 1531022,
+      "versionNonce": 1533020,
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
       "link": null,
       "locked": false,
-      "fileId": "file-png",
+      "fileId": "file-ramp",
       "status": "saved",
       "scale": [
         1,
@@ -61,15 +61,15 @@
       "roundness": {
         "type": 3
       },
-      "seed": 1531038,
+      "seed": 1533034,
       "version": 1,
-      "versionNonce": 1531041,
+      "versionNonce": 1533037,
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
       "link": null,
       "locked": false,
-      "fileId": "file-png",
+      "fileId": "file-ramp",
       "status": "saved",
       "scale": [
         -1,
@@ -98,15 +98,15 @@
       "roundness": {
         "type": 3
       },
-      "seed": 1531057,
+      "seed": 1533051,
       "version": 1,
-      "versionNonce": 1531060,
+      "versionNonce": 1533054,
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
       "link": null,
       "locked": false,
-      "fileId": "file-png",
+      "fileId": "file-ramp",
       "status": "saved",
       "scale": [
         1,
@@ -133,15 +133,15 @@
       "frameId": null,
       "index": "a3",
       "roundness": null,
-      "seed": 1531076,
+      "seed": 1533068,
       "version": 1,
-      "versionNonce": 1531079,
+      "versionNonce": 1533071,
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
       "link": null,
       "locked": false,
-      "fileId": "file-png",
+      "fileId": "file-ramp",
       "status": "saved",
       "scale": [
         1,
@@ -170,15 +170,15 @@
       "roundness": {
         "type": 3
       },
-      "seed": 1531095,
+      "seed": 1533085,
       "version": 1,
-      "versionNonce": 1531098,
+      "versionNonce": 1533088,
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
       "link": null,
       "locked": false,
-      "fileId": "file-png",
+      "fileId": "file-ramp-wide",
       "status": "saved",
       "scale": [
         1,
@@ -207,15 +207,15 @@
       "roundness": {
         "type": 3
       },
-      "seed": 1531114,
+      "seed": 1533102,
       "version": 1,
-      "versionNonce": 1531117,
+      "versionNonce": 1533105,
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
       "link": null,
       "locked": false,
-      "fileId": "file-png",
+      "fileId": "file-ramp",
       "status": "saved",
       "scale": [
         1,
@@ -242,15 +242,15 @@
       "frameId": null,
       "index": "a6",
       "roundness": null,
-      "seed": 1531133,
+      "seed": 1533119,
       "version": 1,
-      "versionNonce": 1531136,
+      "versionNonce": 1533122,
       "isDeleted": false,
       "boundElements": null,
       "updated": 1,
       "link": null,
       "locked": false,
-      "fileId": "file-png",
+      "fileId": "file-ramp-wide",
       "status": "saved",
       "scale": [
         1,
@@ -263,12 +263,17 @@
     "viewBackgroundColor": "#ffffff"
   },
   "files": {
-    "file-png": {
-      "id": "file-png",
+    "file-ramp": {
+      "id": "file-ramp",
       "mimeType": "image/png",
-      "dataURL": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABUklEQVR4AcTVu0tCURwH8C/HwUc09Bwcgoa2oCFnl3KqNVqC9v6HtghaGxqDGlqa21rKVVcXEdFJVBQRL1wcrvcnKMfHfRzPC853OsPvwzk/fj8GwDvOZLz/fN6rFArCOXu/9GTCsqkU6o6D+1IJXdf1PWYP+8zlYBPBsuk0bCKoB2ATMQXQr9tCzAG2EAsAG4gVgGnEWoBJRCDAFCIUYAIRCdCNiAXgEf7iUro7YgNmiA9/d/CI8UBugQkBCLGfTIJH1F7KkEGwi9NHiOb2/Amjuy8kdo7gthyMn4v4bvziryce4RegV6Aktnaxd/OKkwOg2gGu3oD2kG7EsjGAyhDi5wFSCCkAIQ63ARmENEAWoQQQhGj26SY8ygBUZvk7rv3GjEIoBSwjqHgUQjlAFKEFIILQBoiL0AqIg9AOiEIYAYQhjAGCENoBVJgPP6xoTkwAAAD///LJpnwAAAAGSURBVAMAM6ZVz0Uea8MAAAAASUVORK5CYII=",
-      "created": 1,
-      "lastRetrieved": 1
+      "dataURL": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAA3ElEQVR42u3VMQrAIBAF0V1P4zFzc0WwsAikiGjziiEkhBQZ/JO1Pq1ExCDndSU/7v88861BeXkDxyDguoCcZwJXcAJMEAF+BAEiDBE2QSBAA6ABJggEEAARFmGYIAJAgAhDhE0QCCAAIizCMEEEQAM0ACaIABAgwhBhEwQCCIAIizBMEAEgQIQhwiYIBGgANMAEgQACIMIiDBNEAAgQYYiwCQIBBECERRgmiAAC7LAGmCAQQABEWIRhgggAASIMETZBIIAAiLAIwwQRAA3QAJggAkCACEOETRD20QFynEL5c+e0wgAAAABJRU5ErkJggg==",
+      "created": 1
+    },
+    "file-ramp-wide": {
+      "id": "file-ramp-wide",
+      "mimeType": "image/png",
+      "dataURL": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGEAAABACAYAAAAK9hkwAAAAqElEQVR42u3VMQ7DIBBFwQVfhmP65sZIdDQ0GEtM8RKliBRl5fmplPvJEdFK/X3286rvnPdbrvdVW8vDCfV5noRfPAn+BBzJk4AjOYJNkE3AkXCEI+EIR8IRjuQINkE2AUfCEY6EIxwJRziSI9gE2QQcCUc4Eo5wJBzhSI5gE2QTcCQc4Ug4wpFwhCM5gk2QTcCRcIQj4QhHwhGO5Ag2QTYBR8IRjrSnCrcmQ2MEX7TXAAAAAElFTkSuQmCC",
+      "created": 1
     }
   }
 }

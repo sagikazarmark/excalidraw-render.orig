@@ -46,6 +46,7 @@ mod registered_case_determinism;
 mod relationships;
 mod render_request;
 mod resource_accounting;
+mod rough_fillers_dots_scene;
 mod rough_style_render;
 mod scene_admission;
 mod scene_surface_policy;

@@ -2445,8 +2445,7 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
       ],
       "variants": [
         {
@@ -2472,7 +2471,19 @@
       "expected_diagnostics": {
         "png": [],
         "svg": []
-      }
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/153",
+          "format": "png",
+          "max_changed_pixels": 98,
+          "minimum_ssim_bits": "3fefebf983f19956",
+          "reason": "Sub-pixel glyph coverage. The legacy strokeSharpness migration and the legacy font string are followed as the pinned restore migrates them (decided on #128 and #132, evidenced on #153): all sixteen SVG paths match the official export byte for byte, the rounded diamond's included since its corner radii come from the diamond's vertex offsets (#160), and the document matches under one rasterizer; only the interior glyph ink of the one legacy \"20px Virgil\" text element differs between the renderer's rasterizer and the browser's, with the roughness-0 stroke edges. The same class is recorded on #104, #105, #108 and #110 for the other text-bearing cases.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
     },
     {
       "id": "focused.rounded-image.v1",
@@ -2489,14 +2500,14 @@
       "layer": "focused",
       "generated_at": "2026-09-10",
       "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/153",
-      "purpose": "Clip one 32x32 PNG payload to its roundness corner radius (#129) as a plain rounded image, rounded and flipped on each axis, and rounded and rotated 30 degrees, beside a fractional 96.5x63.25 image with and without roundness and an unrounded 96x96 control, so the integer viewport rounding (#131) is observed with and without the corner clip; every element sits at an integer scene position and the scene origin is integer, so only the fractional sizes place an image edge between pixels. The scale-2 variant doubles the raster. The rounded and cropped image is focused.rounded-image-crop.v1.",
+      "purpose": "Clip an image to its roundness corner radius (#129) as a plain rounded image, rounded and flipped on each axis, and rounded and rotated 30 degrees, beside a fractional 96.5x63.25 image with and without roundness and an unrounded 96x96 control, so the integer viewport rounding (#131) and the pixel-centre edge coverage of an axis-aligned image (#162) are observed with and without the corner clip; every element sits at an integer scene position and the scene origin is integer, so only the fractional sizes place an image edge between pixels. Every source maps onto its element one to one: a project-authored 96x96 PNG for the 96x96 elements and a 97x64 PNG for the 96.5x63.25 ones, each a linear two-axis ramp (red rising left to right, green rising top to bottom, blue constant) so that a flip or rotation shows in the ramp's direction while any difference between the two rasterizers' bilinear resampling footprints is invisible and the comparison is about edges, clips and orientation. The scale-2 variant doubles the raster. The rounded and cropped image is focused.rounded-image-crop.v1.",
       "license": {
         "copyright": "Copyright 2026 excalidraw-render contributors",
         "expression": "MIT OR Apache-2.0"
       },
       "sanitization": {
         "performed": false,
-        "reason": "Project-authored synthetic scene document; no external content."
+        "reason": "Project-authored synthetic scene document; the two PNG payloads are project-authored linear ramps written with Python zlib and struct; no external content."
       },
       "coverage": [
         {
@@ -2513,6 +2524,10 @@
         },
         {
           "identity": "image.fractional-viewport",
+          "role": "primary"
+        },
+        {
+          "identity": "image.edge-coverage",
           "role": "primary"
         },
         {
@@ -2535,6 +2550,7 @@
         "image:flip",
         "image:rotation",
         "image:fractional-size",
+        "image:edge-coverage",
         "format:svg",
         "format:png",
         "export:scale"
@@ -2552,7 +2568,7 @@
       "svg_element_counts": {
         "rect": 6,
         "clipPath": 5,
-        "image": 1
+        "image": 2
       },
       "determinism": {
         "animation_offset_microseconds": 0,
@@ -2622,14 +2638,14 @@
       "layer": "focused",
       "generated_at": "2026-09-10",
       "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/153",
-      "purpose": "Clip a cropped image to its roundness corner radius (#129): the 32x32 PNG payload cropped to its centre 16x16 quadrant and drawn at 96x96 with roundness type 3, beside the same crop without roundness as the control. The reference canvas clips the cropped image at the element's rounded rectangle, which revision 1 follows in every format; the reference SVG declares the same clipPath but neither offsets its rectangle by the crop nor sets clip-path as a real attribute (spec 8.2), so its own clip is misplaced by the normalized crop offset under a viewer that honours the namespaced attribute and absent under one that does not.",
+      "purpose": "Clip a cropped image to its roundness corner radius (#129): the project-authored 96x96 ramp PNG cropped to its centre 48x48 and drawn at 48x48 with roundness type 3, so the crop maps onto the element one to one, beside the same crop without roundness as the control. The reference canvas clips the cropped image at the element's rounded rectangle, which revision 1 follows in every format; the reference SVG declares the same clipPath but neither offsets its rectangle by the crop nor sets clip-path as a real attribute (spec 8.2), so its own clip is misplaced by the normalized crop offset under a viewer that honours the namespaced attribute and absent under one that does not, a reference authority divergence the registered-case SVG harness pins (#163).",
       "license": {
         "copyright": "Copyright 2026 excalidraw-render contributors",
         "expression": "MIT OR Apache-2.0"
       },
       "sanitization": {
         "performed": false,
-        "reason": "Project-authored synthetic scene document; no external content."
+        "reason": "Project-authored synthetic scene document; the PNG payload is a project-authored linear ramp written with Python zlib and struct; no external content."
       },
       "coverage": [
         {
@@ -2797,8 +2813,7 @@
       },
       "empty_fields": [
         "assets",
-        "crops",
-        "exceptions"
+        "crops"
       ],
       "variants": [
         {
@@ -2824,24 +2839,36 @@
       "expected_diagnostics": {
         "png": [],
         "svg": []
-      }
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/137",
+          "format": "png",
+          "max_changed_pixels": 487,
+          "minimum_ssim_bits": "3fef910b4970cfd8",
+          "reason": "Fill and stroke rasterization. All 64 SVG paths match the official export byte for byte and the document rasterizes identically under one rasterizer (0 changed pixels, SSIM 1.0), so the difference arises while rasterizing geometry both renderers agree on, not in the geometry: the two rasterizers' antialiasing of the dashed and zigzag-line fill strokes, largest on the strokeWidth-1 rows whose fillWeight is half a pixel. The scene carries no text. The same class is recorded on #104 for focused.ellipse-diamond-fills.v1. Decided on #137.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        }
+      ]
     },
     {
-      "id": "focused.dark-mode-frames-and-images.v1",
+      "id": "focused.dark-mode-frames.v1",
       "kind": "scene",
-      "path": "tests/conformance/cases/focused/dark-mode-frames-and-images",
+      "path": "tests/conformance/cases/focused/dark-mode-frames",
       "approving_issue": "153",
       "runner": "tools/reference-oracle/run-conformance.sh",
       "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
-      "staging": "target/reference-evidence/dark-mode-frames-and-images",
+      "staging": "target/reference-evidence/dark-mode-frames",
       "schema": {
-        "id": "excalidraw-render/conformance-case/focused-asset-scene/v1",
-        "path": "tests/conformance/focused-asset-case-v1.schema.json"
+        "id": "excalidraw-render/conformance-case/focused-scene/v1",
+        "path": "tests/conformance/focused-scene-case-v1.schema.json"
       },
       "layer": "focused",
       "generated_at": "2026-09-10",
       "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/153",
-      "purpose": "Export a named frame holding a half-opaque rectangle, a raster PNG image, a nested SVG image and a solid rectangle, a named magic frame holding one rectangle, and an unframed rectangle whose top edge fixes an integer scene origin above the frame names, in the default and dark-mode exports, so the dark-mode frame and magic-frame outline colours, the per-format image lowering (#130) and the frame outline opacity rule (#137) are observed against official evidence; every shape is a rectangle with roughness 0 so the comparison is not dominated by stroke rasterization.",
+      "purpose": "Export a named frame holding a half-opaque rectangle and two solid rectangles, a named magic frame holding one rectangle, and an unframed rectangle whose top edge fixes an integer scene origin above the frame names, in the default and dark-mode exports, so the dark-mode frame and magic-frame outline colours, the frame names' dark-mode colour, the frame clip and the frame outline opacity rule (#137) are observed against official evidence; every shape is a rectangle with roughness 0 so the comparison is not dominated by stroke rasterization, and the scene carries no image, so the images' dark-mode lowering is focused.dark-mode-images.v1.",
       "license": {
         "copyright": "Copyright 2026 excalidraw-render contributors",
         "expression": "MIT OR Apache-2.0"
@@ -2864,6 +2891,154 @@
           "role": "primary"
         },
         {
+          "identity": "frame.name",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.direct-png",
+          "role": "primary"
+        },
+        {
+          "identity": "reference.svg",
+          "role": "primary"
+        },
+        {
+          "identity": "export.dark-mode",
+          "role": "primary"
+        }
+      ],
+      "feature_tags": [
+        "element:frame",
+        "element:magicframe",
+        "element:rectangle",
+        "frame:clip",
+        "frame:outline",
+        "frame:name",
+        "font:helvetica",
+        "font:liberation-sans",
+        "export:dark-mode",
+        "format:svg",
+        "format:png"
+      ],
+      "semantic_expectations": {
+        "element_counts": {
+          "frame": 1,
+          "magicframe": 1,
+          "rectangle": 5
+        },
+        "embedded_scene": false,
+        "images": 0,
+        "links": 0,
+        "masks": 0,
+        "selectable_text": true
+      },
+      "svg_element_counts": {
+        "rect": 5,
+        "path": 10,
+        "clipPath": 2,
+        "text": 2
+      },
+      "determinism": {
+        "animation_offset_microseconds": 0,
+        "fresh_process_runs": 2
+      },
+      "empty_fields": [
+        "assets",
+        "crops"
+      ],
+      "variants": [
+        {
+          "id": "default",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": false,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        },
+        {
+          "id": "dark-mode",
+          "visual_class": "geometry/image",
+          "options": {
+            "exportBackground": true,
+            "exportEmbedScene": false,
+            "exportPadding": 10,
+            "exportScale": 1,
+            "exportWithDarkMode": true,
+            "frameRendering": {
+              "clip": true,
+              "enabled": true,
+              "name": true,
+              "outline": true
+            },
+            "maxWidthOrHeight": null,
+            "viewBackgroundColor": "#ffffff"
+          }
+        }
+      ],
+      "expected_diagnostics": {
+        "png": [],
+        "svg": []
+      },
+      "exceptions": [
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/153",
+          "format": "png",
+          "max_changed_pixels": 52,
+          "minimum_ssim_bits": "3feff32ee1903754",
+          "reason": "Sub-pixel glyph coverage. The frame names are generated export text laid out as the reference's synthesized Helvetica text element and shaped with Liberation Sans (decided on #97 and #105, the dark-mode colour and the frame outline rule on #130 and #137, evidenced on #153): all ten SVG paths match the official export byte for byte and the document matches under one rasterizer in both modes; only the interior glyph ink of the two frame names differs between the renderer's rasterizer and the browser's, with the roughness-0 stroke edges of the rectangles and the half-opaque one's fill. The same class is recorded on #104, #105, #108 and #110 for the other text-bearing cases.",
+          "region": "whole",
+          "variant": "default",
+          "viewer_profile": null
+        },
+        {
+          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/153",
+          "format": "png",
+          "max_changed_pixels": 60,
+          "minimum_ssim_bits": "3feff2609f57f95c",
+          "reason": "Sub-pixel glyph coverage. The frame names are generated export text laid out as the reference's synthesized Helvetica text element and shaped with Liberation Sans (decided on #97 and #105, the dark-mode colour and the frame outline rule on #130 and #137, evidenced on #153): all ten SVG paths match the official export byte for byte and the document matches under one rasterizer in both modes; only the interior glyph ink of the two frame names differs between the renderer's rasterizer and the browser's, with the roughness-0 stroke edges of the rectangles and the half-opaque one's fill. The same class is recorded on #104, #105, #108 and #110 for the other text-bearing cases.",
+          "region": "whole",
+          "variant": "dark-mode",
+          "viewer_profile": null
+        }
+      ]
+    },
+    {
+      "id": "focused.dark-mode-images.v1",
+      "kind": "scene",
+      "path": "tests/conformance/cases/focused/dark-mode-images",
+      "approving_issue": "153",
+      "runner": "tools/reference-oracle/run-conformance.sh",
+      "generator": "tools/reference-oracle/scripts/conformance-case.mjs",
+      "staging": "target/reference-evidence/dark-mode-images",
+      "schema": {
+        "id": "excalidraw-render/conformance-case/focused-asset-scene/v1",
+        "path": "tests/conformance/focused-asset-case-v1.schema.json"
+      },
+      "layer": "focused",
+      "generated_at": "2026-09-10",
+      "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/153",
+      "purpose": "Export a raster PNG image and a nested SVG image, each 96x96 at an integer position with an integer scene origin, in the default and dark-mode exports, so the per-format dark-mode lowering of images (#130) is observed against official evidence: the reference canvas leaves raster pixels alone and inverts the nested SVG with the theme filter, while the reference SVG puts the image filter chain on the raster image's use and the root filter alone on the nested SVG's, which the renderer's defined filters must reproduce, the saturate step as an explicit matrix (#161). The raster payload is the project-authored 96x96 ramp PNG so the raster maps onto its element one to one; the nested SVG is the corpus's project-authored four-quadrant document with a diagonal stroke. The scene carries no frame and no text.",
+      "license": {
+        "copyright": "Copyright 2026 excalidraw-render contributors",
+        "expression": "MIT OR Apache-2.0"
+      },
+      "sanitization": {
+        "performed": false,
+        "reason": "Project-authored synthetic scene document; the PNG payload is a project-authored linear ramp written with Python zlib and struct and the SVG payload is project-authored; no external content."
+      },
+      "coverage": [
+        {
           "identity": "image.dark-mode-raster",
           "role": "primary"
         },
@@ -2885,40 +3060,27 @@
         }
       ],
       "feature_tags": [
-        "element:frame",
-        "element:magicframe",
         "element:image",
-        "element:rectangle",
         "codec:png",
         "codec:svg",
-        "frame:clip",
-        "frame:outline",
-        "frame:name",
-        "font:helvetica",
-        "font:liberation-sans",
+        "image:dark-mode",
         "export:dark-mode",
         "format:svg",
         "format:png"
       ],
       "semantic_expectations": {
         "element_counts": {
-          "frame": 1,
-          "magicframe": 1,
-          "image": 2,
-          "rectangle": 4
+          "image": 2
         },
         "embedded_scene": false,
         "images": 2,
         "links": 0,
         "masks": 0,
-        "selectable_text": true
+        "selectable_text": false
       },
       "svg_element_counts": {
-        "rect": 5,
-        "path": 8,
-        "clipPath": 2,
-        "image": 2,
-        "text": 2
+        "rect": 1,
+        "image": 2
       },
       "determinism": {
         "animation_offset_microseconds": 0,
