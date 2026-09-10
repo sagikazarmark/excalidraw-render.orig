@@ -125,7 +125,7 @@ The producer-neutral, first-use-ordered declaration of resolved font families an
 _Avoid_: SVG text scan, glyph census
 
 **SVG font bundle**:
-The complete direct-SVG font result prepared from one SVG font demand: effective family aliases, ordered derived and unmodified font resources, mandatory notices, and exact serialization and resource-accounting data.
+The complete direct-SVG font result prepared from one SVG font demand: effective family aliases, ordered derived font resources, mandatory notices, and exact serialization and resource-accounting data. Every resource is a derived font subset; the Noto Emoji fallback is subset like the official chunks (#150).
 _Avoid_: CSS string, font cache
 
 **Resolved font family**:
@@ -185,16 +185,24 @@ The domain-separated SHA-256 digest of the compatibility revision, complete font
 _Avoid_: Generated-byte digest, font filename
 
 **Derived font subset**:
-A request-derived font resource containing selected scalars and their required glyph and layout closure from one qualified font chunk. An OFL-licensed derived font subset is treated as a Modified Version; required bundled fonts that are not official font chunks remain unmodified resources.
-_Avoid_: Font chunk, PDF font subset
+A request-derived font resource containing selected scalars and their required glyph and layout closure from one qualified source: an official font chunk, or the Noto Emoji fallback face, whose source is the manifested sfnt rather than a WOFF2 container. An OFL-licensed derived font subset is treated as a Modified Version. PDF embeds complete reviewed programs and derives none.
+_Avoid_: Font chunk, PDF font subset, unmodified fallback resource
 
 **Derived font family alias**:
 The primary CSS and OpenType family name assigned to a derived font subset. Reserved Font Names use the renderer-owned aliases `ExcalidrawRender-1`, `ExcalidrawRender-3`, `ExcalidrawRender-7`, and `ExcalidrawRender-9`; non-reserved family names remain canonical resolved-family names.
 _Avoid_: Source font name, Reserved Font Name
 
 **Derived font notice**:
-An artifact-manifest entry identifying one derived font subset, its official source chunk, attribution, and transformation. Applicable complete OFL and MIT license texts are carried once per artifact rather than repeated in every derived font notice.
+An artifact-manifest entry identifying one derived font subset, its source, attribution, and transformation. It sits beside the font attribution notices and license body notices of the manifest rather than repeating them.
 _Avoid_: Package license bundle, font name record
+
+**Font attribution notice**:
+The artifact-manifest entry carried once per embedded font family under the family's canonical license identity: its copyright and Reserved Font Name statement, the license sentence, and the identity of the license body notice it refers to.
+_Avoid_: License text, full OFL notice
+
+**License body notice**:
+The artifact-manifest entry carrying one license text once per artifact under the canonical identity of that text (`license.ofl-1.1`, `license.comic-shanns.mit`), shared by every font attribution notice licensed under it (#151).
+_Avoid_: Per-font license copy, license bundle
 
 **Font subset resource transcript**:
 The canonical ordered semantic resource ledger for deriving and serializing selected font chunks in one direct SVG target. It is independent of allocator behavior; request-scoped cache hits and cross-target frame-batch reuse replay it independently for each target.

@@ -35,7 +35,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(PROJECT_STRUCTURE)),
-        "a307eccb831bc9250b576d8f0914238b0e88d61c7348cc37d11637707cc43dc5"
+        "0a53b842f1c7a205d1bf4a67b45100e956d479d6619c074f4fdc0aa9a53a3d65"
     );
     let first = render_project_operations();
     let second = render_project_operations();
@@ -47,9 +47,13 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
         .diagnostics()
         .iter()
         .any(|diagnostic| diagnostic.code() == DiagnosticCode::PDF_RASTER_FALLBACK));
+    // Moved with #151 item 1: the XMP manifest carries one attribution notice
+    // per embedded font family and the OFL body once; every other stream is
+    // unchanged, so `operation_sha256` in the structure expectation holds and
+    // only its `inventory_sha256` (which digests the XMP stream) is re-pinned.
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "78176e1c4a67a69c0bb0884c48ee2d6f37b5172a7eb3fd878def1f0000b9a6cb"
+        "b74535f14d6de70c4c640d23775fc6df964f1d82bda361b4d872b79e8494e400"
     );
 
     let pdf = pdf_text(first.artifact().bytes());

@@ -1016,9 +1016,10 @@ selected it (Section 8.3.1). A declaration contains only the effective
 subset; no complete face is embedded (#150). Range and source-family
 properties are not emitted. CSS, data URL, base64, declaration, and style
 serialization are canonical. All selected subsets share this one style block;
-no second font style element is emitted. The artifact manifest carries
-one complete applicable OFL or MIT license text per canonical license identity
-and distinct mandatory subset notices in canonical subset-identity order.
+no second font style element is emitted. The artifact manifest carries the
+Section 12 font notices: one attribution notice per subset family, each
+applicable license text once, and distinct mandatory subset notices, all in
+canonical identity order.
 
 Before the style element, `<defs>` defines each referenced frame clip once, in
 first-use order, as a `<clipPath>` holding the frame rectangle with the frame's
@@ -1551,10 +1552,11 @@ equals the official stable compiler. The
 first release promises no explicit native deployment floor beyond the target OS
 ABI; release notes record toolchain and immutable builder identity.
 
-SVG carries the Section 8.3 complete license texts and distinct subset notices,
-including the Noto Emoji fallback's when its subset is embedded, plus complete
-notices for rendered Font Awesome fallbacks. PNG carries Font Awesome
-attribution in deterministic `iTXt` only
+SVG and PDF carry the Section 12 font notices for every embedded face, each
+license text once and one attribution per family, SVG additionally the
+distinct subset notices, the Noto Emoji fallback's included when its subset is
+embedded, plus complete notices for rendered Font Awesome fallbacks. PNG
+carries Font Awesome attribution in deterministic `iTXt` only
 when that geometry appears; rasterized font glyphs alone carry no OFL notice.
 Official reference evidence remains byte-identical and carries notices in
 sidecars and evidence packages, not injected into official artifacts.
@@ -2065,13 +2067,26 @@ JSON:
 
 Unrequested, omitted, or failed provenance, summary, and embedded scene are
 literal null. `notices` is always an array, sorted by canonical asset identity,
-and deduplicates complete license texts by canonical license identity; the
-license notice object's `asset_identity` is that canonical license identity.
+and carries every identity once. A font's notice is two objects (#151): an
+attribution notice whose `asset_identity` is the family's canonical license
+identity (`font.cascadia-code.ofl-1.1`) and whose `text` is the family's
+copyright and Reserved Font Name statement, the license sentence, and the
+identity of the license body it refers to; and the license body itself, whose
+`asset_identity` is the canonical identity of that license text
+(`license.ofl-1.1` for the SIL Open Font License 1.1, `license.comic-shanns.mit`
+for the Comic Shanns MIT text, which carries its own copyright line) and whose
+`text` is the license text as the license bundle distributes it. Every family
+licensed under the same text refers to the one body, so an artifact embedding
+four OFL fonts carries the OFL once and four attribution notices; OFL §2's
+"the above copyright notice and this license" is met by the attribution
+notices together with the body. The same two objects cover an official font
+chunk a PDF embeds complete and a subset direct SVG derives from it.
 Every subset identity still contributes one distinct existing-schema notice object:
 its `asset_identity` is the full subset semantic identity, and its canonical
 `text` contains source identity and digest, profile digest, output digest and
 length, effective alias, and transformation statement; OFL output is identified
-as a Modified Version. Equal subset notice text is not deduplicated.
+as a Modified Version under the family's license identity. Equal subset notice
+text is not deduplicated.
 `by_severity` always contains info then warning. `by_code` contains positive
 counts sorted by stable-code bytes.
 

@@ -444,12 +444,27 @@ fn every_official_font_resolves_one_notice_by_asset_identity_that_agrees_with_it
     assert_eq!(noto_emoji.license_identity, "font.noto-emoji.ofl-1.1");
     assert_eq!(noto_emoji.license, FontLicense::Ofl11);
     assert_eq!(noto_emoji.attribution, "Copyright 2013 Google LLC.");
-    assert!(noto_emoji.terms.starts_with(
-        "This Font Software is licensed under the SIL Open Font License, Version 1.1."
-    ));
+    assert_eq!(noto_emoji.terms_identity, "license.ofl-1.1");
+    assert!(noto_emoji
+        .terms
+        .starts_with("SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007"));
     assert!(
         catalog.asset(NOTO_EMOJI_IDENTITY).is_none(),
         "the fallback face is not a catalog asset record"
+    );
+    // The OFL body is the bundle's copy of the license and is shared by every
+    // OFL family (#151): one `license.ofl-1.1` notice per artifact, referred
+    // to by each family's attribution notice.
+    let bundle = include_str!("../LICENSE-BUNDLE.txt");
+    let ofl_part = bundle
+        .split_once("SIL Open Font License 1.1\n==============================================================================\n\n")
+        .map(|(_, rest)| rest)
+        .and_then(|rest| rest.split("\n\n==============================================================================\n").next())
+        .expect("the bundle prints the OFL 1.1 text");
+    assert_eq!(noto_emoji.terms, ofl_part);
+    assert_eq!(
+        noto_emoji.attribution_notice().unwrap(),
+        "Copyright 2013 Google LLC. Licensed under the SIL Open Font License, Version 1.1; the license text is this manifest's license.ofl-1.1 notice."
     );
 
     for asset in catalog.assets {
@@ -462,24 +477,28 @@ fn every_official_font_resolves_one_notice_by_asset_identity_that_agrees_with_it
             .expect("every asset family has a notice");
         assert_eq!(notice.license_identity, asset.license_identity);
         assert!(!notice.attribution.contains("Licensed under"));
+        assert!(!notice.terms.ends_with('\n'));
+        assert_eq!(
+            notice.attribution_notice().unwrap(),
+            format!(
+                "{} {}; the license text is this manifest's {} notice.",
+                notice.attribution,
+                notice.license.sentence(),
+                notice.terms_identity
+            )
+        );
         match notice.license {
             FontLicense::Ofl11 => {
                 assert!(notice.license_identity.ends_with(".ofl-1.1"));
-                assert!(notice.terms.starts_with(
-                    "This Font Software is licensed under the SIL Open Font License, Version 1.1."
-                ));
-                assert_eq!(
-                    notice.artifact_text().unwrap(),
-                    format!("{}\n\n{}", notice.attribution, notice.terms)
-                );
+                assert_eq!(notice.terms_identity, "license.ofl-1.1");
+                assert!(std::ptr::eq(notice.terms, noto_emoji.terms));
             }
             FontLicense::Mit => {
                 assert_eq!(notice.license_identity, "font.comic-shanns.mit");
+                assert_eq!(notice.terms_identity, "license.comic-shanns.mit");
                 assert!(notice
                     .terms
                     .starts_with("MIT License\n\nCopyright (c) 2018 Shannon Miwa"));
-                assert!(!notice.terms.ends_with('\n'));
-                assert_eq!(notice.artifact_text().unwrap(), notice.terms);
             }
         }
     }

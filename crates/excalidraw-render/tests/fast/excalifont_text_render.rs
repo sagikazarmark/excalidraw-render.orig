@@ -67,11 +67,14 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert_eq!(svg_source_text(svg), FOCUSED_TEXT);
                 assert!(!svg.contains("Unavailable: text"));
                 // Moved with #150/#151: `font-family` carries the consumer
-                // fallback list after the embedded family; nothing else
-                // in the document changed.
+                // fallback list after the embedded family; then again with
+                // #151 item 1, when `<metadata>` began carrying the Excalifont
+                // attribution and the OFL body as two notices instead of one
+                // OFL text under the family's license identity. Nothing
+                // outside `<metadata>` moved the second time.
                 assert_eq!(
                     artifact_sha256(&first),
-                    "122cf1d0764d6cb1d15d1a15ae6c74a5fc5201928cfd9e645237577bc061c91b"
+                    "de8315fa5bc5d5a6c2807c8b0bcffb879d9ff972bfb1d6437d7410096f9bbd95"
                 );
             }
             OutputFormat::Png => {
@@ -101,9 +104,13 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert_eq!(pdf_actual_text(&pdf), FOCUSED_TEXT);
                 assert!(!pdf.contains("Unavailable: text"));
                 assert!(pdf.contains("Excalifont and Virgil provenance is retained together"));
+                assert!(pdf.contains("license.ofl-1.1"));
+                // Moved with #151 item 1: the XMP manifest carries the
+                // Excalifont attribution and the OFL body as two notices;
+                // every stream outside the metadata is unchanged.
                 assert_eq!(
                     artifact_sha256(&first),
-                    "b73cb9eb11265d548f0859e10f0ec1662106a304da2cbd285968465d6faf3f83"
+                    "ed5dd7b2faf6fcd7c56c6afd5f8adbfb01d4326079414de7b16ef9d53cc2c6bb"
                 );
             }
             _ => panic!("the test covers the revision-1 format set"),

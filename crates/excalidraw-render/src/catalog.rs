@@ -84,9 +84,14 @@ pub(crate) fn fallback_notices(
     Ok(notices)
 }
 
-/// The notice covering the official rendering font `asset_identity` names.
+/// The notice covering the official rendering font `asset_identity` names: a
+/// catalog chunk's family notice, or the Noto Emoji fallback's for its
+/// manifested identity, which is no catalog asset.
 pub(crate) fn font_notice(asset_identity: &str) -> Option<&'static FontNotice> {
     let assets = REVISION_1.asset_catalog();
+    if asset_identity == excalidraw_render_assets_base::NOTO_EMOJI_IDENTITY {
+        return assets.font_notice(excalidraw_render_assets_base::NOTO_EMOJI_FAMILY);
+    }
     let record = assets.asset(asset_identity)?;
     assets.font_notice(record.family)
 }
@@ -151,9 +156,18 @@ mod tests {
             cascadia.attribution,
             "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code."
         );
-        assert!(cascadia.terms.starts_with(
-            "This Font Software is licensed under the SIL Open Font License, Version 1.1."
-        ));
+        assert_eq!(cascadia.terms_identity, "license.ofl-1.1");
+        assert!(cascadia
+            .terms
+            .starts_with("SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007"));
         assert!(font_notice("fonts/Cascadia/CascadiaCode-Regular.woff2").is_none());
+        let noto_emoji = font_notice(excalidraw_render_assets_base::NOTO_EMOJI_IDENTITY)
+            .expect("the Noto Emoji fallback resolves to its notice");
+        assert_eq!(
+            noto_emoji.family,
+            excalidraw_render_assets_base::NOTO_EMOJI_FAMILY
+        );
+        assert_eq!(noto_emoji.license_identity, "font.noto-emoji.ofl-1.1");
+        assert!(std::ptr::eq(noto_emoji.terms, cascadia.terms));
     }
 }

@@ -699,7 +699,7 @@ fn xiaolai_only_joins_excalifont_fallback_when_the_cjk_subset_trigger_fires() {
         !resolved
             .official_fonts
             .iter()
-            .any(|font| font.family == "Xiaolai"),
+            .any(|font| font.identity.starts_with("fonts/Xiaolai/")),
         "no format declares a face the trigger did not select"
     );
 }
@@ -730,7 +730,7 @@ fn the_cjk_subset_trigger_extends_xiaolai_to_every_excalifont_text_in_the_scene(
     let xiaolai_chunks = resolved
         .official_fonts
         .iter()
-        .filter(|font| font.family == "Xiaolai")
+        .filter(|font| font.identity.starts_with("fonts/Xiaolai/"))
         .map(|font| font.identity)
         .collect::<Vec<_>>();
     assert_eq!(xiaolai_chunks.len(), 2, "{xiaolai_chunks:?}");

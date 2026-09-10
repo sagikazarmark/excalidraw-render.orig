@@ -105,7 +105,10 @@ pub(crate) struct SceneSurfacePolicy {
 }
 
 impl SceneSurfacePolicy {
-    /// Looks up one manifested notice by its catalog identity.
+    /// Looks up one manifested notice by its catalog identity. Artifacts
+    /// carry font notices from the asset catalog's `FontNotice` table (#151),
+    /// so only the policy's own tests look a notice up by identity.
+    #[cfg(test)]
     pub(crate) fn notice(&self, identity: &str) -> Option<&'static SceneNoticePolicy> {
         self.notices
             .iter()

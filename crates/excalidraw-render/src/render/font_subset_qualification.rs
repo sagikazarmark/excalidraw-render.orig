@@ -313,7 +313,7 @@ fn assert_cell(
                 &derived,
             )
             .unwrap_or_else(|error| panic!("qualified subset notice failed at {:?}", error.stage));
-            assert_eq!(notice.license_identity, source.license_identity);
+            assert_eq!(notice.provenance.license_identity, source.license_identity);
             assert_eq!(
                 cell.transformation_notice_sha256.as_deref(),
                 Some(sha256(notice.resource_text.as_bytes()).as_str())

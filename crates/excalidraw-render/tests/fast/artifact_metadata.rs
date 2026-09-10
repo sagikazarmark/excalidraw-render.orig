@@ -294,30 +294,36 @@ fn rasterized_font_glyphs_do_not_create_a_png_notice_manifest() {
             let manifest = manifest.expect("embedded font requires a manifest");
             let manifest: serde_json::Value = serde_json::from_str(&manifest).unwrap();
             let notices = manifest["notices"].as_array().unwrap();
+            // Both vector formats carry the family's attribution notice under
+            // its license identity and the OFL body once under
+            // `license.ofl-1.1` (#151); the SVG adds the subset's Modified
+            // Version notice, the PDF embeds the complete chunk and adds none.
+            assert_eq!(notices[0]["asset_identity"], "font.cascadia-code.ofl-1.1");
+            let attribution = notices[0]["text"].as_str().unwrap();
+            assert!(attribution.starts_with(
+                "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code. Licensed under the SIL Open Font License, Version 1.1; the license text is this manifest's license.ofl-1.1 notice."
+            ));
+            assert!(!attribution.contains("SIL OPEN FONT LICENSE Version 1.1"));
+            assert_eq!(notices[1]["asset_identity"], "license.ofl-1.1");
+            assert!(notices[1]["text"]
+                .as_str()
+                .unwrap()
+                .starts_with("SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007"));
             if format == OutputFormat::Svg {
-                assert_eq!(notices.len(), 2);
-                assert_eq!(notices[0]["asset_identity"], "font.cascadia-code.ofl-1.1");
-                assert!(notices[0]["text"]
-                    .as_str()
-                    .unwrap()
-                    .contains("SIL OPEN FONT LICENSE Version 1.1"));
-                assert!(notices[1]["asset_identity"]
+                assert_eq!(notices.len(), 3);
+                assert!(notices[2]["asset_identity"]
                     .as_str()
                     .unwrap()
                     .starts_with("svg-font-subset@sha256:"));
-                assert!(notices[1]["text"]
+                assert!(notices[2]["text"]
                     .as_str()
                     .unwrap()
                     .contains("names rewritten for compatibility revision 1"));
-                assert!(notices[1]["text"].as_str().unwrap().contains(
+                assert!(notices[2]["text"].as_str().unwrap().contains(
                     "Source SHA-256: 5bce041e0fcce617e35efbc335b1372d27a84acb65fb464c65ff80ab3424a885"
                 ));
             } else {
-                assert_eq!(notices.len(), 1);
-                assert!(notices[0]["asset_identity"]
-                    .as_str()
-                    .unwrap()
-                    .starts_with("fonts/Cascadia/"));
+                assert_eq!(notices.len(), 2);
             }
         }
     }

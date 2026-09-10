@@ -688,8 +688,8 @@ impl OfficialFont {
         Ok(wrapped)
     }
 
-    pub(super) fn into_parts(self) -> (&'static str, &'static str, &'static str, Vec<u8>) {
-        (self.family, self.pdf_name, self.identity, self.sfnt)
+    pub(super) fn into_parts(self) -> (&'static str, &'static str, Vec<u8>) {
+        (self.pdf_name, self.identity, self.sfnt)
     }
 
     fn supports(&self, character: char) -> bool {
@@ -1645,81 +1645,29 @@ fn glyph_cluster_text<'a>(
         .ok_or(LabelError::InvalidFont)
 }
 
+/// The font notices a PDF carries for the complete programs it embeds (spec
+/// 12, #151): one attribution notice per font family whose chunk or fallback
+/// face is embedded, plus the Liberation Sans family's when a generated label
+/// used the fallback font, and each license body once.
 pub(super) fn mandatory_notices_json(
     liberation: bool,
     official: &[super::font_demand::ResolvedFont],
 ) -> Result<super::notices::MandatoryNotices, LabelError> {
-    let full_ofl_notice =
-        super::notices::liberation_sans_notice().ok_or(LabelError::InvalidFont)?;
-    let prefix = "[";
-    let suffix = "]";
-    let mut manifest = String::new();
-    manifest.try_reserve_exact(
-        prefix
-            .len()
-            .saturating_add(suffix.len())
-            .saturating_add(256),
-    )?;
-    manifest.push_str(prefix);
-    let mut separator = "";
-    let mut ordered = Vec::new();
-    ordered.try_reserve_exact(official.len())?;
-    ordered.extend(official);
-    ordered.sort_unstable_by_key(|font| font.identity);
-    let mut liberation_pending = liberation;
-    for font in ordered {
-        if liberation && font.identity == LIBERATION_SANS_IDENTITY {
-            continue;
-        }
-        if liberation_pending && LIBERATION_SANS_IDENTITY < font.identity {
-            push_manifest_notice(
-                &mut manifest,
-                &mut separator,
-                LIBERATION_SANS_IDENTITY,
-                full_ofl_notice,
-            );
-            liberation_pending = false;
-        }
-        if font.family == "Noto Emoji" {
-            let notice = super::notices::noto_emoji_notice().ok_or(LabelError::InvalidFont)?;
-            push_manifest_notice(&mut manifest, &mut separator, font.identity, notice);
-            continue;
-        }
-        let official_notice = crate::catalog::font_notice(font.identity)
-            .ok_or(LabelError::InvalidFont)?
-            .artifact_text()?;
-        push_manifest_notice(
-            &mut manifest,
-            &mut separator,
-            font.identity,
-            &official_notice,
-        );
+    let mut notices = super::notices::FontNoticeSet::default();
+    let notice_error = |error| match error {
+        super::notices::NoticeError::Memory => LabelError::Memory,
+        super::notices::NoticeError::InvalidProvenance => LabelError::InvalidFont,
+    };
+    if liberation {
+        let notice =
+            crate::catalog::font_notice(LIBERATION_SANS_IDENTITY).ok_or(LabelError::InvalidFont)?;
+        notices.add_family(notice).map_err(notice_error)?;
     }
-    if liberation_pending {
-        push_manifest_notice(
-            &mut manifest,
-            &mut separator,
-            LIBERATION_SANS_IDENTITY,
-            full_ofl_notice,
-        );
+    for font in official {
+        let notice = crate::catalog::font_notice(font.identity).ok_or(LabelError::InvalidFont)?;
+        notices.add_family(notice).map_err(notice_error)?;
     }
-    manifest.push_str(suffix);
-    Ok(super::notices::MandatoryNotices::from_json(manifest))
-}
-
-fn push_manifest_notice(
-    manifest: &mut String,
-    separator: &mut &'static str,
-    identity: &str,
-    notice: &str,
-) {
-    manifest.push_str(separator);
-    manifest.push_str("{\"asset_identity\":\"");
-    manifest.push_str(identity);
-    manifest.push_str("\",\"text\":\"");
-    super::notices::push_json_string_content(manifest, notice);
-    manifest.push_str("\"}");
-    *separator = ",";
+    notices.into_manifest().map_err(notice_error)
 }
 
 struct GlyphOutlineBuilder<'a> {

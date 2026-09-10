@@ -204,7 +204,14 @@ fn compatibility_placeholder_labels_carry_their_derived_font_notice_and_artifact
     assert!(pdf.contains("BT\n/F1 14 Tf\n"));
     assert!(pdf.contains("/Type /Metadata\n/Subtype /XML"));
     assert!(pdf.contains("<er:manifest>{\"schema_version\":1,"));
-    assert!(pdf.contains("Digitized data copyright (c) 2010 Google Corporation\\n"));
+    // The label's Liberation Sans family is noticed under its license identity
+    // with the OFL body carried once beside it (#151).
+    assert!(pdf.contains(
+        "\"asset_identity\":\"font.liberation-sans.ofl-1.1\",\"text\":\"Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine."
+    ));
+    assert!(pdf.contains(
+        "\"asset_identity\":\"license.ofl-1.1\",\"text\":\"SIL OPEN FONT LICENSE Version 1.1"
+    ));
 }
 
 #[test]

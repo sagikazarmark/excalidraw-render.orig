@@ -31,9 +31,12 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
     (
         // The SVG artifact moved with #150/#151: the placeholder label's
         // `font-family` carries the consumer fallback list after
-        // `ExcalidrawRender-9`; the report is unchanged.
+        // `ExcalidrawRender-9`; then with #151 item 1, when `<metadata>`
+        // began carrying the Liberation Sans attribution and the OFL body as
+        // two notices instead of the full OFL notice under the family's
+        // license identity. The report is unchanged.
         OutputFormat::Svg,
-        "8baeb47886bd74bd797918b8261d822b9565a276b52a6b363691f267f7afad6c",
+        "fcc462ec3914eb77f187ffabad91c1572441eff4a8e0e5dfc48ee275c6ca7b30",
         "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
     ),
     (
@@ -44,20 +47,24 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
     (
         // The PDF artifact moved with #133/#150 (ADR-0008): every stream is
         // Flate, the Liberation Sans program carries its subset tag and the
-        // trailer its content-derived /ID; the report is unchanged.
+        // trailer its content-derived /ID; then with #151 item 1, when the
+        // XMP manifest began carrying the attribution and license body
+        // notices. The report is unchanged.
         OutputFormat::Pdf,
-        "89771fb8be59bb1324fa99e5226da497f42056bd956d8fde866e9975408dac17",
+        "df0d55da24a112e0de71fbf4d1e524c6a72df0ef6487fd0111178da47d43f3ff",
         "737130c9efaa38327d3fe31ecdeddc35ad72a01ea8dc7c11e3a57942c4867247",
     ),
 ];
 // Every PDF artifact digest here and in PDF_FALLBACK_FAMILIES moved with
 // #133/#150 (ADR-0008: Flate streams, subset-tagged chunk programs, the
-// trailer /ID); no report digest moved.
+// trailer /ID); the one font-bearing PDF here moved again with #151 item 1
+// (the XMP manifest's attribution and license body notices). No report digest
+// moved.
 const PDF_RISK_SET: &[(&str, &[u8], &str, &str)] = &[
     (
         "selectable-text",
         TEXT_SCENE,
-        "98b21e5dead45fe8ea1f2d81453f98cd94e563aa64c3374542b26f77dce209d6",
+        "0f6bdbae5f1dbda52b2e99e5cd605a748df04600c6a41a8ae20cab1f1064655b",
         "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b",
     ),
     (
@@ -186,11 +193,14 @@ fn packaged_svg_font_subsets_are_cross_target_stable() {
     // with a raw newline (a rendered character under xml:space="preserve");
     // the in-crate Excalifont digests were repinned then, this one was not
     // (#116). Moved again with #150/#151, when `font-family` became the list
-    // `Excalifont, Xiaolai, Segoe UI Emoji, sans-serif`.
+    // `Excalifont, Xiaolai, Segoe UI Emoji, sans-serif`, and with #151 item 1,
+    // when `<metadata>` began carrying the Excalifont attribution and the OFL
+    // body as two notices.
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "afe61d4afcfc4c768eb53b0ea5e085c33d71de1ad5947e250592288d3663b01b"
+        "3af157263cb465a042946e2721d68cf8f36b94cd7ae4903f2ba8d36f733012f8"
     );
+    assert!(svg.contains("\"asset_identity\":\"license.ofl-1.1\""));
     assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
     assert!(svg.contains("svg-font-subset@sha256:"));
 }

@@ -187,9 +187,8 @@ pub(super) fn resolve_fonts(
     let mut resolved_fonts = Vec::new();
     resolved_fonts.try_reserve_exact(official_fonts.len())?;
     for font in official_fonts {
-        let (family, pdf_name, identity, sfnt) = font.into_parts();
+        let (pdf_name, identity, sfnt) = font.into_parts();
         resolved_fonts.push(ResolvedFont {
-            family,
             pdf_name,
             identity,
             sfnt,

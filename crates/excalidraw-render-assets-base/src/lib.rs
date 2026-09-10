@@ -287,10 +287,27 @@ pub enum FontLicense {
     Mit,
 }
 
+impl FontLicense {
+    /// The sentence an artifact's attribution notice states the license with,
+    /// without its terminal period.
+    pub const fn sentence(self) -> &'static str {
+        match self {
+            Self::Ofl11 => "Licensed under the SIL Open Font License, Version 1.1",
+            Self::Mit => "Licensed under the MIT License",
+        }
+    }
+}
+
 /// One official rendering font family's notice, as the license bundle prints
 /// it under "Official rendering font notices" and as artifacts carry it. The
 /// generator emits the bundle and this table from one source, so an artifact
 /// never has to read the bundle.
+///
+/// An artifact carries the family's notice as two objects (spec 12, #151):
+/// one attribution notice under `license_identity`, stating the copyright
+/// and Reserved Font Name lines and naming the license, and the license body
+/// itself under `terms_identity`, which every family licensed under the same
+/// text shares, so a document embedding four OFL fonts carries the OFL once.
 #[derive(Clone, Copy, Debug)]
 pub struct FontNotice {
     /// The catalog `family` of the assets the notice covers.
@@ -299,35 +316,39 @@ pub struct FontNotice {
     pub license: FontLicense,
     /// The provenance line without its license sentence.
     pub attribution: &'static str,
-    /// The license terms artifacts carry with the attribution: the OFL terms
-    /// the sealed Liberation Sans notice states, or the family's MIT text as
-    /// the bundle prints it.
+    /// The identity of the license body notice the attribution refers to:
+    /// `license.ofl-1.1` for every OFL family, the family's own MIT text for
+    /// Comic Shanns, whose MIT file carries its copyright line.
+    pub terms_identity: &'static str,
+    /// The license body the artifact carries once under `terms_identity`: the
+    /// bundle's copy of the license text.
     pub terms: &'static str,
 }
 
 impl FontNotice {
-    /// The complete notice an artifact carries for the family: the MIT text
-    /// alone, since it states its own copyright, or the attribution above the
-    /// OFL terms.
-    pub fn artifact_text(&self) -> Result<String, TryReserveError> {
+    /// The attribution notice an artifact carries for the family: the
+    /// copyright and Reserved Font Name lines, the license sentence, and the
+    /// identity of the notice carrying the license text.
+    pub fn attribution_notice(&self) -> Result<String, TryReserveError> {
+        const REFERENCE: &str = "; the license text is this manifest's ";
+        const SUFFIX: &str = " notice.";
+        let sentence = self.license.sentence();
         let mut text = String::new();
-        match self.license {
-            FontLicense::Mit => {
-                text.try_reserve_exact(self.terms.len())?;
-                text.push_str(self.terms);
-            }
-            FontLicense::Ofl11 => {
-                text.try_reserve_exact(
-                    self.attribution
-                        .len()
-                        .saturating_add(2)
-                        .saturating_add(self.terms.len()),
-                )?;
-                text.push_str(self.attribution);
-                text.push_str("\n\n");
-                text.push_str(self.terms);
-            }
-        }
+        text.try_reserve_exact(
+            self.attribution
+                .len()
+                .saturating_add(1)
+                .saturating_add(sentence.len())
+                .saturating_add(REFERENCE.len())
+                .saturating_add(self.terms_identity.len())
+                .saturating_add(SUFFIX.len()),
+        )?;
+        text.push_str(self.attribution);
+        text.push(' ');
+        text.push_str(sentence);
+        text.push_str(REFERENCE);
+        text.push_str(self.terms_identity);
+        text.push_str(SUFFIX);
         Ok(text)
     }
 }

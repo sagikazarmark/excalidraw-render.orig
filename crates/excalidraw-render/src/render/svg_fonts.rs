@@ -4,7 +4,7 @@ use crate::resource_accounting::{
 };
 use excalidraw_render_assets_base::FontNotice;
 use sha2::{Digest, Sha256};
-use std::collections::{hash_map::DefaultHasher, BTreeMap, HashSet, TryReserveError};
+use std::collections::{hash_map::DefaultHasher, HashSet, TryReserveError};
 use std::hash::BuildHasherDefault;
 use std::sync::Arc;
 
@@ -297,8 +297,9 @@ pub(super) struct BuildError {
 }
 
 pub(super) struct SubsetNotice {
-    pub(super) license_identity: &'static str,
-    pub(super) terms: &'static str,
+    /// The family notice the subset is a Modified Version under; the artifact
+    /// carries its attribution and license body beside the subset notice.
+    pub(super) provenance: &'static FontNotice,
     pub(super) resource_identity: String,
     pub(super) resource_text: String,
 }
@@ -846,8 +847,7 @@ pub(super) fn build(
     session: &mut Session,
 ) -> Result<Bundle, BuildError> {
     let mut resources = Vec::new();
-    let mut licenses = BTreeMap::<&'static str, &'static str>::new();
-    let mut resource_notices = Vec::<(String, String)>::new();
+    let mut notices = super::notices::FontNoticeSet::default();
     for family in demand.families {
         if family.scalars.is_empty() {
             continue;
@@ -903,10 +903,15 @@ pub(super) fn build(
                         &semantic_identity,
                         &derived,
                     )?;
-                    licenses
-                        .entry(notice.license_identity)
-                        .or_insert(notice.terms);
-                    resource_notices.push((notice.resource_identity, notice.resource_text));
+                    let notice_error = || BuildError {
+                        stage: crate::SvgFontSubsetStage::Encode,
+                        family: family.family,
+                        asset_identity: source.identity(),
+                    };
+                    notices
+                        .add_family(notice.provenance)
+                        .map_err(|_| notice_error())?;
+                    notices.add_subset(notice.resource_identity, notice.resource_text);
                     resources.push(Resource {
                         family: effective_alias,
                         mime: "font/woff2",
@@ -919,14 +924,13 @@ pub(super) fn build(
                 }
                 #[cfg(test)]
                 Payload::CompleteChunks => {
-                    let notice = family_notice(source, family.family)?
-                        .artifact_text()
+                    notices
+                        .add_family(family_notice(source, family.family)?)
                         .map_err(|_| BuildError {
                             stage: crate::SvgFontSubsetStage::Encode,
                             family: family.family,
                             asset_identity: source.identity(),
                         })?;
-                    resource_notices.push((source.identity().to_owned(), notice));
                     let mut bytes = Vec::new();
                     bytes
                         .try_reserve_exact(asset.bytes().len())
@@ -946,19 +950,15 @@ pub(super) fn build(
             }
         }
     }
-    resource_notices.sort_unstable_by(|left, right| left.0.cmp(&right.0));
-    let mandatory_notices = (!licenses.is_empty() || !resource_notices.is_empty()).then(|| {
-        let mut json = String::from("[");
-        let mut separator = "";
-        for (identity, text) in licenses {
-            push_notice(&mut json, &mut separator, identity, text);
-        }
-        for (identity, text) in resource_notices {
-            push_notice(&mut json, &mut separator, &identity, &text);
-        }
-        json.push(']');
-        super::notices::MandatoryNotices::from_json(json)
-    });
+    let mandatory_notices = if notices.is_empty() {
+        None
+    } else {
+        Some(notices.into_manifest().map_err(|_| BuildError {
+            stage: crate::SvgFontSubsetStage::Encode,
+            family: "",
+            asset_identity: "mandatory-notices",
+        })?)
+    };
     Ok(Bundle {
         resources,
         mandatory_notices,
@@ -977,8 +977,7 @@ pub(super) fn subset_notice(
     let profile_digest =
         encode_hex_32(&excalidraw_render_assets_base::font_subset_profile_digest_v1());
     Ok(SubsetNotice {
-        license_identity: provenance.license_identity,
-        terms: provenance.terms,
+        provenance,
         resource_identity: format!("svg-font-subset@sha256:{semantic_identity}"),
         resource_text: format!(
             "Derived font subset of {}. Source SHA-256: {}. {} Modified Version under {}. Transformation: Unicode and required layout/glyph closure subset; names rewritten for compatibility revision 1. Effective alias: {}. Subset profile SHA-256: {}. Semantic subset identity: {}. Output WOFF2: {} bytes, SHA-256 {}.",
@@ -1009,16 +1008,6 @@ fn family_notice(
             family,
             asset_identity: source.identity(),
         })
-}
-
-fn push_notice(json: &mut String, separator: &mut &'static str, identity: &str, text: &str) {
-    json.push_str(separator);
-    json.push_str("{\"asset_identity\":\"");
-    super::notices::push_json_string_content(json, identity);
-    json.push_str("\",\"text\":\"");
-    super::notices::push_json_string_content(json, text);
-    json.push_str("\"}");
-    *separator = ",";
 }
 
 /// The semantic subset identity of one official chunk's subset (spec 8.3.2),

@@ -1,3 +1,7 @@
+use std::collections::BTreeMap;
+
+use excalidraw_render_assets_base::FontNotice;
+
 #[derive(Debug)]
 pub(super) struct MandatoryNotices(String);
 
@@ -7,6 +11,7 @@ pub(super) enum NoticeError {
 }
 
 impl MandatoryNotices {
+    #[cfg(test)]
     pub(super) fn from_json(json: String) -> Self {
         Self(json)
     }
@@ -31,36 +36,100 @@ impl MandatoryNotices {
         manifest.push('[');
         let mut separator = "";
         for notice in notices {
-            manifest.push_str(separator);
-            manifest.push_str("{\"asset_identity\":\"");
-            manifest.push_str(notice.asset_identity);
-            manifest.push_str("\",\"text\":\"");
-            push_json_string_content(&mut manifest, notice.text);
-            manifest.push_str("\"}");
-            separator = ",";
+            push_notice(
+                &mut manifest,
+                &mut separator,
+                notice.asset_identity,
+                notice.text,
+            );
         }
         manifest.push(']');
         Ok(Self(manifest))
     }
 }
 
-/// The sealed `liberation-sans.ofl-full` notice: the Liberation Sans
-/// copyright lines followed by the OFL terms.
-pub(super) fn liberation_sans_notice() -> Option<&'static str> {
-    manifested_notice("liberation-sans.ofl-full")
+/// The font notices one artifact carries, keyed by the identity each object
+/// is emitted under, so the manifest lists them sorted by identity (spec 12)
+/// and carries every identity once (#151): a family attribution under its
+/// license identity, a license body under its terms identity, shared by every
+/// family licensed under that text, and a subset notice under its semantic
+/// subset identity.
+#[derive(Default)]
+pub(super) struct FontNoticeSet {
+    notices: BTreeMap<String, String>,
 }
 
-/// The sealed `noto-emoji.ofl-full` notice: the Noto Emoji copyright line
-/// followed by the OFL terms.
-pub(super) fn noto_emoji_notice() -> Option<&'static str> {
-    manifested_notice("noto-emoji.ofl-full")
+impl FontNoticeSet {
+    /// Adds the family's attribution notice and the license body it refers
+    /// to; a family or body already present is not repeated.
+    pub(super) fn add_family(&mut self, notice: &FontNotice) -> Result<(), NoticeError> {
+        if !self.notices.contains_key(notice.license_identity) {
+            let attribution = notice
+                .attribution_notice()
+                .map_err(|_| NoticeError::Memory)?;
+            self.insert(notice.license_identity, attribution)?;
+        }
+        if !self.notices.contains_key(notice.terms_identity) {
+            self.insert(notice.terms_identity, try_owned(notice.terms)?)?;
+        }
+        Ok(())
+    }
+
+    /// Adds one subset's Modified Version notice under its semantic identity.
+    pub(super) fn add_subset(&mut self, identity: String, text: String) {
+        self.notices.insert(identity, text);
+    }
+
+    pub(super) fn is_empty(&self) -> bool {
+        self.notices.is_empty()
+    }
+
+    /// The `notices` array as canonical JSON.
+    pub(super) fn into_manifest(self) -> Result<MandatoryNotices, NoticeError> {
+        let mut json = String::new();
+        json.try_reserve_exact(
+            self.notices
+                .iter()
+                .fold(2_usize, |total, (identity, text)| {
+                    total
+                        .saturating_add(identity.len())
+                        .saturating_add(text.len())
+                        .saturating_add(48)
+                }),
+        )
+        .map_err(|_| NoticeError::Memory)?;
+        json.push('[');
+        let mut separator = "";
+        for (identity, text) in &self.notices {
+            push_notice(&mut json, &mut separator, identity, text);
+        }
+        json.push(']');
+        Ok(MandatoryNotices(json))
+    }
+
+    fn insert(&mut self, identity: &str, text: String) -> Result<(), NoticeError> {
+        self.notices.insert(try_owned(identity)?, text);
+        Ok(())
+    }
 }
 
-fn manifested_notice(identity: &str) -> Option<&'static str> {
-    crate::catalog::REVISION_1
-        .scene_surface()
-        .notice(identity)
-        .map(|notice| notice.text)
+fn try_owned(value: &str) -> Result<String, NoticeError> {
+    let mut owned = String::new();
+    owned
+        .try_reserve_exact(value.len())
+        .map_err(|_| NoticeError::Memory)?;
+    owned.push_str(value);
+    Ok(owned)
+}
+
+fn push_notice(json: &mut String, separator: &mut &'static str, identity: &str, text: &str) {
+    json.push_str(separator);
+    json.push_str("{\"asset_identity\":\"");
+    push_json_string_content(json, identity);
+    json.push_str("\",\"text\":\"");
+    push_json_string_content(json, text);
+    json.push_str("\"}");
+    *separator = ",";
 }
 
 pub(super) fn push_json_string_content(output: &mut String, value: &str) {

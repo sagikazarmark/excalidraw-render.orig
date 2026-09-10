@@ -4,9 +4,11 @@ use crate::{RenderError, RenderRequest};
 use super::resolve::{ResolveSceneError, ResolvedElement, ResolvedScene, ResolvedTextElement};
 use super::{svg_fonts, text, FormatEncodeError, RenderResourceAccount, RenderSession};
 
+/// One official face the PDF embeds complete: its catalog identity, which
+/// names its family notice and its reviewed program's subset tag, its PDF
+/// name, and the sfnt program itself.
 #[derive(Debug)]
 pub(super) struct ResolvedFont {
-    pub(super) family: &'static str,
     pub(super) pdf_name: &'static str,
     pub(super) identity: &'static str,
     pub(super) sfnt: Vec<u8>,

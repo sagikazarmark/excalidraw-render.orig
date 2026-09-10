@@ -185,30 +185,45 @@ const fn license_sentence(license: FontLicense) -> &'static str {
     }
 }
 
-/// Where the license terms an artifact carries alongside a font's attribution
-/// come from.
-#[derive(Clone, Copy, Debug)]
+/// The license body an artifact carries once, under one identity, for every
+/// font family licensed under that text (#151): the named `license-parts`
+/// file, as the bundle prints it.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum FontTerms {
-    /// The OFL terms the sealed `liberation-sans.ofl-full` notice states after
-    /// its copyright lines: what every OFL font's artifact notice carries.
-    LiberationSansOfl,
-    /// The named `license-parts` file, as the bundle prints it.
-    BundlePart(&'static str),
+    /// The SIL Open Font License 1.1 text, shared by every OFL family.
+    Ofl11,
+    /// The Comic Shanns MIT text, which carries its own copyright line.
+    ComicShannsMit,
 }
 
 impl FontTerms {
+    /// The `license-parts` file holding the text.
+    const fn bundle_part(self) -> &'static str {
+        match self {
+            Self::Ofl11 => "OFL-1.1.txt",
+            Self::ComicShannsMit => "comic-shanns-MIT.txt",
+        }
+    }
+
+    /// The notice identity the body is carried under; the attribution notice
+    /// of every family sharing the text refers to it.
+    const fn identity(self) -> &'static str {
+        match self {
+            Self::Ofl11 => "license.ofl-1.1",
+            Self::ComicShannsMit => "license.comic-shanns.mit",
+        }
+    }
+
     /// The generated `const` that holds the terms text, shared by every
     /// notice with the same source.
     fn rust_const(self) -> String {
-        match self {
-            Self::LiberationSansOfl => "OFL_1_1_TERMS".to_owned(),
-            Self::BundlePart(file) => format!(
-                "{}_TERMS",
-                file.trim_end_matches(".txt")
-                    .replace(['-', '.'], "_")
-                    .to_uppercase()
-            ),
-        }
+        format!(
+            "{}_TERMS",
+            self.bundle_part()
+                .trim_end_matches(".txt")
+                .replace(['-', '.'], "_")
+                .to_uppercase()
+        )
     }
 }
 
@@ -258,7 +273,7 @@ const FONT_NOTICES: &[FontNotice] = &[
         attribution: "Copyright (c) 2019 - Present, Microsoft Corporation, with Reserved Font Name Cascadia Code.",
         license: FontLicense::Ofl11,
         postscript: "",
-        terms: FontTerms::LiberationSansOfl,
+        terms: FontTerms::Ofl11,
     },
     FontNotice {
         family: "ComicShanns",
@@ -266,7 +281,7 @@ const FONT_NOTICES: &[FontNotice] = &[
         attribution: "Copyright (c) 2018 Shannon Miwa.",
         license: FontLicense::Mit,
         postscript: "",
-        terms: FontTerms::BundlePart("comic-shanns-MIT.txt"),
+        terms: FontTerms::ComicShannsMit,
     },
     FontNotice {
         family: "Excalifont",
@@ -274,7 +289,7 @@ const FONT_NOTICES: &[FontNotice] = &[
         attribution: "Copyright (c) 2024 by Excalidraw. Excalifont is derived from Virgil by Your Own Font Foundry, with modifications by Jan Filipek / DizajnDesign.",
         license: FontLicense::Ofl11,
         postscript: "Excalifont and Virgil provenance is retained together.",
-        terms: FontTerms::LiberationSansOfl,
+        terms: FontTerms::Ofl11,
     },
     FontNotice {
         family: "Liberation",
@@ -282,7 +297,7 @@ const FONT_NOTICES: &[FontNotice] = &[
         attribution: "Digitized data copyright (c) 2010 Google Corporation with Reserved Font Arimo, Tinos and Cousine. Copyright (c) 2012 Red Hat, Inc. with Reserved Font Name Liberation.",
         license: FontLicense::Ofl11,
         postscript: "",
-        terms: FontTerms::LiberationSansOfl,
+        terms: FontTerms::Ofl11,
     },
     FontNotice {
         family: "Lilita",
@@ -290,7 +305,7 @@ const FONT_NOTICES: &[FontNotice] = &[
         attribution: "Copyright (c) 2011 Juan Montoreano (juan@remolacha.biz), with Reserved Font Name Lilita.",
         license: FontLicense::Ofl11,
         postscript: "",
-        terms: FontTerms::LiberationSansOfl,
+        terms: FontTerms::Ofl11,
     },
     FontNotice {
         family: "Nunito",
@@ -298,7 +313,7 @@ const FONT_NOTICES: &[FontNotice] = &[
         attribution: "Copyright 2014 The Nunito Project Authors (https://github.com/googlefonts/nunito).",
         license: FontLicense::Ofl11,
         postscript: "",
-        terms: FontTerms::LiberationSansOfl,
+        terms: FontTerms::Ofl11,
     },
     FontNotice {
         family: "Virgil",
@@ -306,7 +321,7 @@ const FONT_NOTICES: &[FontNotice] = &[
         attribution: "Virgil by Your Own Font Foundry, with Reserved Font Name Virgil.",
         license: FontLicense::Ofl11,
         postscript: "",
-        terms: FontTerms::LiberationSansOfl,
+        terms: FontTerms::Ofl11,
     },
     FontNotice {
         family: "Xiaolai",
@@ -314,12 +329,12 @@ const FONT_NOTICES: &[FontNotice] = &[
         attribution: "Copyright (c) 2020 LXGW. Designed by Nozomi Seto.",
         license: FontLicense::Ofl11,
         postscript: "The shipped subsets remove non-CJK codepoints, reduce Hangul side-bearings to 40%, and center improperly centered CJK codepoints.",
-        terms: FontTerms::LiberationSansOfl,
+        terms: FontTerms::Ofl11,
     },
 ];
 
-/// The marker after which the sealed `liberation-sans.ofl-full` notice states
-/// the OFL terms every OFL font's artifact notice carries.
+/// The marker after which a sealed `*.ofl-full` notice states the OFL terms;
+/// what precedes it is the copyright statement.
 const OFL_TERMS_START: &str = "This Font Software is licensed";
 
 /// The catalog family of the Noto Emoji fallback face, which is no asset
@@ -1787,6 +1802,7 @@ fn generate_font_notices(
             notice.license
         ));
         rust_field(output, "attribution", &notice.artifact_attribution());
+        rust_field(output, "terms_identity", notice.terms.identity());
         output.push_str(&format!("        terms: {},\n", notice.terms.rust_const()));
         output.push_str("    },\n");
     }
@@ -1799,9 +1815,10 @@ fn generate_font_notices(
         "attribution",
         &noto_emoji_attribution(scene_surface)?,
     );
+    rust_field(output, "terms_identity", FontTerms::Ofl11.identity());
     output.push_str(&format!(
         "        terms: {},\n",
-        FontTerms::LiberationSansOfl.rust_const()
+        FontTerms::Ofl11.rust_const()
     ));
     output.push_str("    },\n");
     output.push_str("];\n");
@@ -3184,24 +3201,36 @@ fn read_license_part(base: &Path, file: &str) -> Result<String, String> {
     Ok(part.trim_end_matches(['\r', '\n']).to_owned())
 }
 
-/// The license terms a font notice's artifacts carry, as text.
+/// The license body a font notice's artifacts carry, as text: the bundle's
+/// copy of the license. The OFL body must be the license every sealed
+/// `*.ofl-full` notice goes on to state after its copyright lines, so the two
+/// distribution copies cannot drift apart.
 fn font_terms(base: &Path, scene_surface: &Value, terms: FontTerms) -> Result<String, String> {
-    match terms {
-        FontTerms::LiberationSansOfl => {
-            let notice = scene_surface["noticeCatalog"]
-                .as_array()
-                .ok_or_else(|| "notice catalog must be an array".to_owned())?
-                .iter()
-                .find(|notice| notice["id"] == "liberation-sans.ofl-full")
-                .ok_or_else(|| "notice catalog lacks liberation-sans.ofl-full".to_owned())?;
-            let text = string(notice, "text", "notice")?;
-            let start = text.find(OFL_TERMS_START).ok_or_else(|| {
-                "the liberation-sans.ofl-full notice does not state the OFL terms".to_owned()
-            })?;
-            Ok(text[start..].to_owned())
+    let text = read_license_part(base, terms.bundle_part())?;
+    if terms == FontTerms::Ofl11 {
+        for notice in scene_surface["noticeCatalog"]
+            .as_array()
+            .ok_or_else(|| "notice catalog must be an array".to_owned())?
+            .iter()
+            .filter(|notice| {
+                notice["id"]
+                    .as_str()
+                    .is_some_and(|id| id.ends_with(".ofl-full"))
+            })
+        {
+            let id = string(notice, "id", "notice")?;
+            let stated = string(notice, "text", "notice")?;
+            let start = stated
+                .find("SIL OPEN FONT LICENSE Version 1.1")
+                .ok_or_else(|| format!("the {id} notice does not state the OFL text"))?;
+            if stated[start..] != text {
+                return Err(format!(
+                    "the {id} notice states an OFL text other than license-parts/OFL-1.1.txt"
+                ));
+            }
         }
-        FontTerms::BundlePart(file) => read_license_part(base, file),
     }
+    Ok(text)
 }
 
 fn family_metadata(
@@ -3482,6 +3511,7 @@ fn rust_str_array(output: &mut String, name: &str, values: &[String]) {
 mod tests {
     use serde_json::{json, Value};
 
+    use super::FontLicense;
     use super::{
         carry_approval, generate_scene_surface_rust, parse_unicode_ranges, parse_xiaolai_index,
         review_decode, reviewed_decodes_record, reviewed_decodes_subject,
@@ -3525,6 +3555,20 @@ mod tests {
             by_family("Xiaolai").artifact_attribution(),
             "Copyright (c) 2020 LXGW. Designed by Nozomi Seto. The shipped subsets remove non-CJK codepoints, reduce Hangul side-bearings to 40%, and center improperly centered CJK codepoints."
         );
+        // Every OFL family refers to the one shared OFL body; Comic Shanns to
+        // its own MIT text, which carries its copyright line (#151).
+        for notice in FONT_NOTICES {
+            let expected = match notice.license {
+                FontLicense::Ofl11 => ("license.ofl-1.1", "OFL-1.1.txt"),
+                FontLicense::Mit => ("license.comic-shanns.mit", "comic-shanns-MIT.txt"),
+            };
+            assert_eq!(
+                (notice.terms.identity(), notice.terms.bundle_part()),
+                expected,
+                "{}",
+                notice.family
+            );
+        }
     }
 
     /// The scene-surface emitter carries the notice catalog and each fallback
