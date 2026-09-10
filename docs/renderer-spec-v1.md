@@ -1076,23 +1076,35 @@ references its filter by `filter="url(#…)"`. A light-mode export defines and
 references no filter.
 
 Every accepted image asset is defined once, as the reference's `reuseImages`
-export defines it (#151): `<symbol id="image-<source index>"
-overflow="visible"><image href="data:…" preserveAspectRatio="none"
-width="100%" height="100%"/></symbol>`, in first-use paint order, one per
-semantic asset identity, so two file records or nested payloads that decode to
-the same validated payload share one definition whatever their ids, and two
-elements that crop or size the same asset differently share it too. The key is
-the source index of the first element in paint order that draws the asset,
-never a file or element id. Each image element draws its definition through
+export defines it (#151): `<symbol id="image-<source index>"><image
+href="data:…" preserveAspectRatio="none" width="100%"
+height="100%"/></symbol>`, in first-use paint order, one per semantic asset
+identity, so two file records or nested payloads that decode to the same
+validated payload share one definition whatever their ids, and two elements
+that crop or size the same asset differently share it too. The key is the
+source index of the first element in paint order that draws the asset, never a
+file or element id. Each image element draws its definition through
 `<use href="#image-<source index>" width height>` sized to its content
 rectangle (Section 8.2), inside its own translated and rotated group, corner
-clip, crop viewports and flip. The symbol declares `overflow="visible"`
-because its viewport and the image it holds coincide, so the viewport clip a
-symbol otherwise implies could only re-apply the image's own edge coverage;
-the viewports that clip, a cropped image's mask and `<use>` viewport, are the
-nested `<svg overflow="hidden">` elements around the `<use>`. The reference
-keys its symbols by file id and gives a cropped image a second symbol per
-uncropped size; revision 1 does not reproduce either.
+clip, crop viewports and flip. The symbol carries no `overflow` attribute,
+like the reference's, so its viewport clips as a symbol's does by default
+(#164). That clip is load-bearing for a nested-SVG payload whose content
+overshoots its own `viewBox`: a `usvg`-based viewer paints the overshoot
+outside the image viewport when the symbol declares `overflow="visible"`, and
+clips it, as the reference canvas and Chromium do, when it does not. It also
+keeps the document rasterizing like the official one under the same viewer:
+under the in-process `resvg` of the registered-case SVG harness the
+`focused.image-codecs.v1` document is pixel-identical to the official export
+with the default overflow and differs by 144 pixels with `overflow="visible"`;
+under the pinned Chromium the two spellings paint the official evidence's
+integer-edged images identically, and at a fractional image position the
+symbol's viewport clip attenuates the image's own antialiased edge a second
+time in both the official document and revision 1's, which is the reference
+SVG's appearance rather than a divergence from it. The viewports that clip a
+cropped image, its mask and `<use>` viewport, are the nested
+`<svg overflow="hidden">` elements around the `<use>`. The reference keys its
+symbols by file id and gives a cropped image a second symbol per uncropped
+size; revision 1 does not reproduce either.
 
 Text markup targets browser rendering, where the embedded fonts resolve and the
 document renders as the reference SVG does; a consumer that ignores

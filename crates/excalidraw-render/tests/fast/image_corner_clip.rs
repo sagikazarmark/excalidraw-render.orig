@@ -45,7 +45,7 @@ fn a_rounded_image_is_clipped_to_the_official_corner_radius_in_every_format() {
         svg.contains(concat!(
             "<defs><clipPath id=\"image-clip-0\">",
             "<rect width=\"40\" height=\"40\" rx=\"10\" ry=\"10\"/>",
-            "</clipPath><symbol id=\"image-0\" overflow=\"visible\"><image href=\"data:image/png;base64,",
+            "</clipPath><symbol id=\"image-0\"><image href=\"data:image/png;base64,",
         )) && svg.contains(concat!(
             "</symbol></defs>",
             "<g transform=\"translate(10 10) rotate(0 20 20)\" clip-path=\"url(#image-clip-0)\">",

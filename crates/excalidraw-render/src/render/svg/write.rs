@@ -294,10 +294,12 @@ fn push_image_symbol_id<W: SvgSink + ?Sized>(
 /// The reference's shared image definition: a `<symbol>` holding the asset's
 /// data URL once as an `<image>` that fills whatever viewport the referencing
 /// `<use>` sizes, with the reference's `preserveAspectRatio="none"`. The
-/// symbol declares `overflow="visible"`: the `<use>` viewport and the image it
-/// holds coincide, so the viewport clip a symbol implies would only re-apply
-/// the image's own edge coverage; the viewports that do clip, a cropped
-/// image's mask and `<use>` viewport, stay the nested `<svg overflow="hidden">`
+/// symbol carries no `overflow` attribute, like the reference's, so its
+/// viewport clips as a symbol's does by default (#164): a nested-SVG payload
+/// whose content overshoots its own viewBox is clipped to the image viewport
+/// under every viewer, as the reference canvas clips it, and the document
+/// rasterizes like the official one under the same viewer. The cropped image's
+/// mask and `<use>` viewport stay the nested `<svg overflow="hidden">`
 /// elements around the `<use>` (spec 8.2).
 fn push_image_symbol_definition<W: SvgSink + ?Sized>(
     svg: &mut W,
@@ -305,7 +307,7 @@ fn push_image_symbol_definition<W: SvgSink + ?Sized>(
 ) -> Result<(), FormatEncodeError> {
     svg.push_str("<symbol id=\"");
     push_image_symbol_id(svg, symbol.source_index)?;
-    svg.push_str("\" overflow=\"visible\"><image href=\"data:");
+    svg.push_str("\"><image href=\"data:");
     svg.push_str(symbol.asset.media_type);
     svg.push_str(";base64,");
     push_base64(svg, &symbol.asset.source_bytes)?;

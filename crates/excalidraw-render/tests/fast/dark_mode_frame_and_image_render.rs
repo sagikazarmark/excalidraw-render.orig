@@ -178,8 +178,8 @@ fn dark_mode_svg_filters_raster_and_nested_svg_images_like_the_reference_export(
         .expect("defs define the shared images")
         + "</symbol>".len();
     assert!(
-        defs[..symbols_end].contains("</clipPath><symbol id=\"image-0\" ")
-            && defs[..symbols_end].contains("</symbol><symbol id=\"image-1\" "),
+        defs[..symbols_end].contains("</clipPath><symbol id=\"image-0\">")
+            && defs[..symbols_end].contains("</symbol><symbol id=\"image-1\">"),
         "the shared images follow the image clip in <defs>: {defs}"
     );
     assert_eq!(

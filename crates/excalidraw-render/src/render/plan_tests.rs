@@ -462,10 +462,10 @@ fn svg_plan_defines_each_shared_image_once_and_measures_exactly_what_it_encodes(
     assert_eq!(svg.matches("<symbol ").count(), 2);
     assert_eq!(svg.matches("<image ").count(), 2);
     let first_symbol = svg
-        .find("<symbol id=\"image-0\" ")
+        .find("<symbol id=\"image-0\">")
         .expect("the PNG is defined");
     let second_symbol = svg
-        .find("<symbol id=\"image-1\" ")
+        .find("<symbol id=\"image-1\">")
         .expect("the SVG is defined");
     assert!(first_symbol < second_symbol);
     assert_eq!(svg.matches("<use href=\"#image-0\" ").count(), 2);

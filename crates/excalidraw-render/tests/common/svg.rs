@@ -35,7 +35,7 @@ pub fn font_family_attribute(families: &str) -> String {
 /// fills whatever viewport a referencing `<use>` sizes.
 pub fn image_symbol(source_index: usize, data_url: &str) -> String {
     format!(
-        "<symbol id=\"image-{source_index}\" overflow=\"visible\"><image href=\"{data_url}\" \
+        "<symbol id=\"image-{source_index}\"><image href=\"{data_url}\" \
          preserveAspectRatio=\"none\" width=\"100%\" height=\"100%\"/></symbol>"
     )
 }
