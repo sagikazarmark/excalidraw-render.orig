@@ -1,0 +1,6674 @@
+{
+  "schema": "excalidraw-render/coverage-inventory/v1",
+  "compatibility_revision": 1,
+  "scope": "draft-registered-cases-and-surface-fields",
+  "sources": [
+    {
+      "path": "crates/excalidraw-render-assets-base/catalog/revision-1.json",
+      "sha256": "d8e9f04295ef7ba6eedda69b20d9c6b7485322f27be34723439f82cbe6fb0ab5"
+    },
+    {
+      "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
+      "sha256": "41eab5f459b0acbd97de34e085e078aa05930894cbc5049988a3e9a0f9ccd052"
+    },
+    {
+      "path": "tests/conformance/cases/focused/bidi-alignment/manifest.json",
+      "sha256": "4097ba07e6dc93b164ca8b0f6ccbb701835c8323f3af70de17aac632e81536da"
+    },
+    {
+      "path": "tests/conformance/cases/focused/bidi-text/manifest.json",
+      "sha256": "b3fae2e67b6b6bd9f797772f20506f4b801c91a968f1627cb3b49c3500df346a"
+    },
+    {
+      "path": "tests/conformance/cases/focused/bound-text-containers/manifest.json",
+      "sha256": "6a4c75e471dae313a021f6215c184c2437b4937a6a3c6a36788e8d920be3237c"
+    },
+    {
+      "path": "tests/conformance/cases/focused/bound-text-placement/manifest.json",
+      "sha256": "ec31f9ae23a5f18713fed20d14b2d01cd0c381e738600517386ddb2d5a4de512"
+    },
+    {
+      "path": "tests/conformance/cases/focused/cartoonist-arrowheads/manifest.json",
+      "sha256": "0ced46539ede715133ce491dd2be996e4d1010367e73362380b595d21c85bca3"
+    },
+    {
+      "path": "tests/conformance/cases/focused/cartoonist-roughness/manifest.json",
+      "sha256": "4babb797396321e09891d0cf2bb88758aa332842e8167641b97d95ac3274ee11"
+    },
+    {
+      "path": "tests/conformance/cases/focused/cjk-propagation/manifest.json",
+      "sha256": "042df8f83680ff325c9bf820aab9ef279fe0d82d86c03826eda2e7d470738c65"
+    },
+    {
+      "path": "tests/conformance/cases/focused/dark-mode-frames/manifest.json",
+      "sha256": "4698292b73431d7b433aedb842261aa4003f69552fc82669c58a64ecd79d870a"
+    },
+    {
+      "path": "tests/conformance/cases/focused/dark-mode-images/manifest.json",
+      "sha256": "ec392637a8993aa81b255324c3b8f9cf5536010d8f987e8a18a7f7354b8c7e2e"
+    },
+    {
+      "path": "tests/conformance/cases/focused/ellipse-diamond-fills/manifest.json",
+      "sha256": "88b6a24b1580f10722c864e228a6e8daf3ed5593c1985c72cb631d4dea7c7bc2"
+    },
+    {
+      "path": "tests/conformance/cases/focused/embed-scene-metadata/manifest.json",
+      "sha256": "c1d3e0a75c6299a758f1afb00e1f412d44412bcf783bd92daa382357982fdb80"
+    },
+    {
+      "path": "tests/conformance/cases/focused/embeddable-links/manifest.json",
+      "sha256": "e5c587c0bab9781a21e7ed87871d55e19a479cd7e96f2e624d24f625aa996299"
+    },
+    {
+      "path": "tests/conformance/cases/focused/emoji-fallback/manifest.json",
+      "sha256": "c33ce271d53b27a98bb09c2bcb7dc626dec1d8ffaea0c79202c07a420a8fc337"
+    },
+    {
+      "path": "tests/conformance/cases/focused/excalifont-text/manifest.json",
+      "sha256": "5b5b333965a1ef6ef433cbed1e8d63bc8e2d53d1993963c796250fd115025f56"
+    },
+    {
+      "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/manifest.json",
+      "sha256": "dca12470b6d983cdc5d76daced74cc5437f09aaaf01b561d8c4a96ddb7275cfc"
+    },
+    {
+      "path": "tests/conformance/cases/focused/frame-clip-mask-sharing/manifest.json",
+      "sha256": "802fd9c8d6e5f8e023e0a1ccc843d79563484d761872bddc85c8d1778239d35e"
+    },
+    {
+      "path": "tests/conformance/cases/focused/frame-export/manifest.json",
+      "sha256": "c6155d7264e92d2d0e997080ad0127b1cb64beab2d0ea3142a1a31fc0acac200"
+    },
+    {
+      "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
+      "sha256": "09ab25e650a9d1d676a5b79871895870e0e8f844033369ee6b3add4247ab5d71"
+    },
+    {
+      "path": "tests/conformance/cases/focused/freedraw-loop-fills/manifest.json",
+      "sha256": "da3b54cc6e98efa8cc4328d6ac8e82bd3927d4a53b224bffdd8f2df1c713bfd2"
+    },
+    {
+      "path": "tests/conformance/cases/focused/freedraw/manifest.json",
+      "sha256": "81f458dee36bcdc016a67e7e5b73b3461bc494e4c33d8af46cd70fb2e539a2bb"
+    },
+    {
+      "path": "tests/conformance/cases/focused/helvetica-text/manifest.json",
+      "sha256": "2705efad62fbcaa25c400551697e1c73832abcff6fc6db6a3985f1b770dc4d57"
+    },
+    {
+      "path": "tests/conformance/cases/focused/iframe-element/manifest.json",
+      "sha256": "e2492b6c25ff01d958f6b5e0eb13e1884ac968620388213577b8f3c1301b7dc2"
+    },
+    {
+      "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
+      "sha256": "626881815034ff1f380a0797417a7ea65a29322c2c5580887c7fe42a2fd71622"
+    },
+    {
+      "path": "tests/conformance/cases/focused/legacy-line-height/manifest.json",
+      "sha256": "cdbd140c4003a6930631c66bfed580b8b79ece6e70b692185e62b702e3f08e95"
+    },
+    {
+      "path": "tests/conformance/cases/focused/legacy-stroke-sharpness/manifest.json",
+      "sha256": "d32fe4eca2d617f6441571360e4c49513f1afea8e167cf218540d5bf019cd8cd"
+    },
+    {
+      "path": "tests/conformance/cases/focused/missing-glyph/manifest.json",
+      "sha256": "b9d7476fc675550ce45ee1a2519977dca2811c84762deab0de02fcab8427ebcd"
+    },
+    {
+      "path": "tests/conformance/cases/focused/rectangle-outline/manifest.json",
+      "sha256": "a7946661383309b971cf1eeb9b48c9aa1cbe1fc747d11ac49c1d27345b7d012d"
+    },
+    {
+      "path": "tests/conformance/cases/focused/rotated-rough-linear/manifest.json",
+      "sha256": "61cc32a35b986699778b8a249ea6d0576dad9dd33ca467493a595eda7e93025c"
+    },
+    {
+      "path": "tests/conformance/cases/focused/rotated-shape-bounds/manifest.json",
+      "sha256": "2a5cc388433fffa378bd476eb68ee63124f1f64fe01b861a5704fb8dd10e2817"
+    },
+    {
+      "path": "tests/conformance/cases/focused/rough-fillers-dashed-zigzag-line/manifest.json",
+      "sha256": "8395c61da107fcaa37fa9922d66b6253eb7b84a27b6391eed34ed283530475c5"
+    },
+    {
+      "path": "tests/conformance/cases/focused/rounded-image-crop/manifest.json",
+      "sha256": "531ee9321b998cb169bebb1aea833bd19d72f92f3d5f1f73cebd44335d757ee0"
+    },
+    {
+      "path": "tests/conformance/cases/focused/rounded-image/manifest.json",
+      "sha256": "585f967cf981c0bbf56ce7f3b061d95242dca6c4e4bd0650196c00877176abef"
+    },
+    {
+      "path": "tests/conformance/cases/focused/roundness-records/manifest.json",
+      "sha256": "55df2c6f5d94a926defdb7797f9e4c13d0addec5f9d864df361d99048d12a7cd"
+    },
+    {
+      "path": "tests/conformance/cases/focused/text-alignment-vertical/manifest.json",
+      "sha256": "cb35e37dc053c44be2dca9609f4adc0e89395c7f3760efa3ada14607883abc99"
+    },
+    {
+      "path": "tests/conformance/cases/focused/text-line-endings/manifest.json",
+      "sha256": "f89817d54875630440b7381c6030613c3ef345196e2a4107d876f6ebef30b41e"
+    },
+    {
+      "path": "tests/conformance/cases/focused/transform-opacity-groups/manifest.json",
+      "sha256": "c574a56acf81481ab39bd37ea669a74c4d5eee61014f25677c3c31f4df351ef2"
+    },
+    {
+      "path": "tests/conformance/cases/registry.json",
+      "sha256": "43d15bfd7538b1f752d1cb8eb71df19efdb63695bce3d956c3b5338306f26756"
+    },
+    {
+      "path": "tests/conformance/coverage/requirements.json",
+      "sha256": "d341e5404f83cec232552bfd9ffc6cb4e5e8d03f6a457b349963f5591ee4c7ba"
+    },
+    {
+      "path": "tests/oracle/reference-profiles/revision-1-frame.json",
+      "sha256": "63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e"
+    },
+    {
+      "path": "tests/oracle/reference-profiles/revision-1.json",
+      "sha256": "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71"
+    },
+    {
+      "path": "tests/oracle/scene-surfaces/revision-1.json",
+      "sha256": "14309697cdb5bf9ebe660dccf27c4c929c0f5edb7174443dd4f962544fcc4bea"
+    }
+  ],
+  "coverage": [
+    {
+      "id": "case-label:arrow.elbowed",
+      "candidates": [
+        "focused.arrow-suite.v1",
+        "focused.rotated-rough-linear.v1"
+      ]
+    },
+    {
+      "id": "case-label:arrowhead.circle-outline",
+      "candidates": [
+        "focused.cartoonist-arrowheads.v1"
+      ]
+    },
+    {
+      "id": "case-label:arrowhead.crowfoot",
+      "candidates": [
+        "focused.arrow-suite.v1"
+      ]
+    },
+    {
+      "id": "case-label:arrowhead.crowfoot-one",
+      "candidates": [
+        "focused.cartoonist-arrowheads.v1"
+      ]
+    },
+    {
+      "id": "case-label:arrowhead.dot",
+      "candidates": [
+        "focused.cartoonist-arrowheads.v1"
+      ]
+    },
+    {
+      "id": "case-label:arrowhead.filled",
+      "candidates": [
+        "focused.arrow-suite.v1"
+      ]
+    },
+    {
+      "id": "case-label:arrowhead.outline",
+      "candidates": [
+        "focused.arrow-suite.v1"
+      ]
+    },
+    {
+      "id": "case-label:arrowhead.roughness-clamp",
+      "candidates": [
+        "focused.cartoonist-arrowheads.v1",
+        "focused.cartoonist-roughness.v1"
+      ]
+    },
+    {
+      "id": "case-label:arrowhead.triangle",
+      "candidates": [
+        "focused.cartoonist-arrowheads.v1"
+      ]
+    },
+    {
+      "id": "case-label:bound-text.align",
+      "candidates": [
+        "focused.bound-text-containers.v1"
+      ]
+    },
+    {
+      "id": "case-label:bound-text.diamond",
+      "candidates": [
+        "focused.bound-text-containers.v1",
+        "focused.text-alignment-vertical.v1"
+      ]
+    },
+    {
+      "id": "case-label:bound-text.ellipse",
+      "candidates": [
+        "focused.bound-text-containers.v1",
+        "focused.text-alignment-vertical.v1"
+      ]
+    },
+    {
+      "id": "case-label:bound-text.mask-gap",
+      "candidates": [
+        "focused.arrow-suite.v1"
+      ]
+    },
+    {
+      "id": "case-label:bound-text.rectangle",
+      "candidates": [
+        "focused.bound-text-containers.v1",
+        "focused.text-alignment-vertical.v1"
+      ]
+    },
+    {
+      "id": "case-label:bound-text.scene-bounds",
+      "candidates": [
+        "focused.bound-text-placement.v1"
+      ]
+    },
+    {
+      "id": "case-label:bound-text.stored-placement",
+      "candidates": [
+        "focused.bound-text-placement.v1",
+        "focused.legacy-line-height.v1",
+        "focused.text-alignment-vertical.v1"
+      ]
+    },
+    {
+      "id": "case-label:bounds.elbow-arrow-linear-path",
+      "candidates": [
+        "focused.rotated-rough-linear.v1"
+      ]
+    },
+    {
+      "id": "case-label:bounds.rotated-diamond",
+      "candidates": [
+        "focused.rotated-shape-bounds.v1"
+      ]
+    },
+    {
+      "id": "case-label:bounds.rotated-ellipse",
+      "candidates": [
+        "focused.rotated-shape-bounds.v1"
+      ]
+    },
+    {
+      "id": "case-label:bounds.rotated-line",
+      "candidates": [
+        "focused.rotated-shape-bounds.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.arrow",
+      "candidates": [
+        "focused.arrow-suite.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.diamond",
+      "candidates": [
+        "focused.ellipse-diamond-fills.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.ellipse",
+      "candidates": [
+        "focused.ellipse-diamond-fills.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.embeddable",
+      "candidates": [
+        "focused.embeddable-links.v1",
+        "focused.iframe-element.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.freedraw",
+      "candidates": [
+        "focused.freedraw.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.group",
+      "candidates": [
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.iframe",
+      "candidates": [
+        "focused.iframe-element.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.opacity",
+      "candidates": [
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.rectangle",
+      "candidates": [
+        "focused.rectangle-outline.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.text",
+      "candidates": [
+        "focused.excalifont-text.v1"
+      ]
+    },
+    {
+      "id": "case-label:element.text.bound",
+      "candidates": [
+        "focused.arrow-suite.v1"
+      ]
+    },
+    {
+      "id": "case-label:export.dark-mode",
+      "candidates": [
+        "focused.cjk-propagation.v1",
+        "focused.dark-mode-frames.v1",
+        "focused.dark-mode-images.v1",
+        "focused.ellipse-diamond-fills.v1"
+      ]
+    },
+    {
+      "id": "case-label:export.embed-scene",
+      "candidates": [
+        "focused.embed-scene-metadata.v1"
+      ]
+    },
+    {
+      "id": "case-label:export.max-dimension",
+      "candidates": [
+        "focused.cjk-propagation.v1",
+        "focused.freedraw.v1"
+      ]
+    },
+    {
+      "id": "case-label:export.no-background",
+      "candidates": [
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:export.padding",
+      "candidates": [
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:export.scale",
+      "candidates": [
+        "focused.cjk-propagation.v1",
+        "focused.freedraw.v1",
+        "focused.rounded-image.v1",
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:fill.closed-line",
+      "candidates": [
+        "focused.rough-fillers-dashed-zigzag-line.v1"
+      ]
+    },
+    {
+      "id": "case-label:fill.cross-hatch",
+      "candidates": [
+        "focused.ellipse-diamond-fills.v1"
+      ]
+    },
+    {
+      "id": "case-label:fill.dashed",
+      "candidates": [
+        "focused.rough-fillers-dashed-zigzag-line.v1"
+      ]
+    },
+    {
+      "id": "case-label:fill.hachure",
+      "candidates": [
+        "focused.ellipse-diamond-fills.v1",
+        "focused.rough-fillers-dashed-zigzag-line.v1"
+      ]
+    },
+    {
+      "id": "case-label:fill.solid",
+      "candidates": [
+        "focused.ellipse-diamond-fills.v1"
+      ]
+    },
+    {
+      "id": "case-label:fill.zigzag",
+      "candidates": [
+        "focused.ellipse-diamond-fills.v1",
+        "focused.rough-fillers-dashed-zigzag-line.v1"
+      ]
+    },
+    {
+      "id": "case-label:fill.zigzag-line",
+      "candidates": [
+        "focused.rough-fillers-dashed-zigzag-line.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.cjk-propagation",
+      "candidates": [
+        "focused.cjk-propagation.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.comic-shanns",
+      "candidates": [
+        "focused.font-families-virgil-lilita-comic.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.emoji-fallback",
+      "candidates": [
+        "focused.emoji-fallback.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.excalifont",
+      "candidates": [
+        "focused.excalifont-text.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.helvetica-metadata-metrics",
+      "candidates": [
+        "focused.helvetica-text.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.liberation-sans-substitution",
+      "candidates": [
+        "focused.bidi-text.v1",
+        "focused.helvetica-text.v1",
+        "focused.legacy-line-height.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.lilita-one",
+      "candidates": [
+        "focused.font-families-virgil-lilita-comic.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.missing-glyph",
+      "candidates": [
+        "focused.bidi-alignment.v1",
+        "focused.bidi-text.v1",
+        "focused.missing-glyph.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.mixed-script",
+      "candidates": [
+        "focused.cjk-propagation.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.reserved-name-alias",
+      "candidates": [
+        "focused.font-families-virgil-lilita-comic.v1"
+      ]
+    },
+    {
+      "id": "case-label:font.virgil",
+      "candidates": [
+        "focused.font-families-virgil-lilita-comic.v1"
+      ]
+    },
+    {
+      "id": "case-label:frame.clip",
+      "candidates": [
+        "focused.frame-clip-mask-sharing.v1",
+        "focused.frame-name-truncation.v1"
+      ]
+    },
+    {
+      "id": "case-label:frame.dark-mode",
+      "candidates": [
+        "focused.dark-mode-frames.v1"
+      ]
+    },
+    {
+      "id": "case-label:frame.empty-name",
+      "candidates": [
+        "focused.frame-name-truncation.v1"
+      ]
+    },
+    {
+      "id": "case-label:frame.magic-outline",
+      "candidates": [
+        "focused.dark-mode-frames.v1"
+      ]
+    },
+    {
+      "id": "case-label:frame.name",
+      "candidates": [
+        "focused.dark-mode-frames.v1",
+        "focused.frame-clip-mask-sharing.v1",
+        "focused.frame-name-truncation.v1"
+      ]
+    },
+    {
+      "id": "case-label:frame.name-truncation",
+      "candidates": [
+        "focused.frame-name-truncation.v1"
+      ]
+    },
+    {
+      "id": "case-label:frame.nested",
+      "candidates": [
+        "focused.frame-name-truncation.v1"
+      ]
+    },
+    {
+      "id": "case-label:frame.outline",
+      "candidates": [
+        "focused.frame-clip-mask-sharing.v1"
+      ]
+    },
+    {
+      "id": "case-label:frame.outline-opacity",
+      "candidates": [
+        "focused.dark-mode-frames.v1"
+      ]
+    },
+    {
+      "id": "case-label:freehand.loop-fill",
+      "candidates": [
+        "focused.freedraw-loop-fills.v1"
+      ]
+    },
+    {
+      "id": "case-label:freehand.loop-fill-roughness",
+      "candidates": [
+        "focused.freedraw-loop-fills.v1"
+      ]
+    },
+    {
+      "id": "case-label:freehand.loop-fill-seed",
+      "candidates": [
+        "focused.freedraw-loop-fills.v1"
+      ]
+    },
+    {
+      "id": "case-label:freehand.recorded-pressure",
+      "candidates": [
+        "focused.freedraw.v1"
+      ]
+    },
+    {
+      "id": "case-label:freehand.simulated-pressure",
+      "candidates": [
+        "focused.freedraw.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.bmp",
+      "candidates": [
+        "focused.image-codecs.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.crop",
+      "candidates": [
+        "focused.image-codecs.v1",
+        "focused.rounded-image-crop.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.dark-mode-nested-svg",
+      "candidates": [
+        "focused.dark-mode-images.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.dark-mode-raster",
+      "candidates": [
+        "focused.dark-mode-images.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.edge-coverage",
+      "candidates": [
+        "focused.rounded-image.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.flip",
+      "candidates": [
+        "focused.image-codecs.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.fractional-viewport",
+      "candidates": [
+        "focused.rounded-image.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.gif",
+      "candidates": [
+        "focused.image-codecs.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.ico",
+      "candidates": [
+        "focused.image-codecs.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.jpeg",
+      "candidates": [
+        "focused.image-codecs.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.nested-svg",
+      "candidates": [
+        "focused.image-codecs.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.png",
+      "candidates": [
+        "focused.image-codecs.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.rounded",
+      "candidates": [
+        "focused.rounded-image.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.rounded-crop",
+      "candidates": [
+        "focused.rounded-image-crop.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.rounded-flip",
+      "candidates": [
+        "focused.rounded-image.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.rounded-rotation",
+      "candidates": [
+        "focused.rounded-image.v1"
+      ]
+    },
+    {
+      "id": "case-label:image.webp",
+      "candidates": [
+        "focused.image-codecs.v1"
+      ]
+    },
+    {
+      "id": "case-label:legacy.font-string",
+      "candidates": [
+        "focused.legacy-stroke-sharpness.v1"
+      ]
+    },
+    {
+      "id": "case-label:legacy.stroke-sharpness",
+      "candidates": [
+        "focused.legacy-stroke-sharpness.v1"
+      ]
+    },
+    {
+      "id": "case-label:link.admitted",
+      "candidates": [
+        "focused.embeddable-links.v1",
+        "focused.iframe-element.v1",
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:link.unsafe-omitted",
+      "candidates": [
+        "focused.embeddable-links.v1"
+      ]
+    },
+    {
+      "id": "case-label:reference.direct-png",
+      "candidates": [
+        "focused.arrow-suite.v1",
+        "focused.bidi-alignment.v1",
+        "focused.bidi-text.v1",
+        "focused.bound-text-containers.v1",
+        "focused.bound-text-placement.v1",
+        "focused.cartoonist-arrowheads.v1",
+        "focused.cartoonist-roughness.v1",
+        "focused.cjk-propagation.v1",
+        "focused.dark-mode-frames.v1",
+        "focused.dark-mode-images.v1",
+        "focused.ellipse-diamond-fills.v1",
+        "focused.embed-scene-metadata.v1",
+        "focused.embeddable-links.v1",
+        "focused.emoji-fallback.v1",
+        "focused.excalifont-text.v1",
+        "focused.font-families-virgil-lilita-comic.v1",
+        "focused.frame-clip-mask-sharing.v1",
+        "focused.frame-name-truncation.v1",
+        "focused.freedraw-loop-fills.v1",
+        "focused.freedraw.v1",
+        "focused.helvetica-text.v1",
+        "focused.iframe-element.v1",
+        "focused.image-codecs.v1",
+        "focused.legacy-line-height.v1",
+        "focused.legacy-stroke-sharpness.v1",
+        "focused.missing-glyph.v1",
+        "focused.rectangle-outline.v1",
+        "focused.rotated-rough-linear.v1",
+        "focused.rotated-shape-bounds.v1",
+        "focused.rough-fillers-dashed-zigzag-line.v1",
+        "focused.rounded-image-crop.v1",
+        "focused.rounded-image.v1",
+        "focused.roundness-records.v1",
+        "focused.text-alignment-vertical.v1",
+        "focused.text-line-endings.v1",
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:reference.svg",
+      "candidates": [
+        "focused.arrow-suite.v1",
+        "focused.bidi-alignment.v1",
+        "focused.bidi-text.v1",
+        "focused.bound-text-containers.v1",
+        "focused.bound-text-placement.v1",
+        "focused.cartoonist-arrowheads.v1",
+        "focused.cartoonist-roughness.v1",
+        "focused.cjk-propagation.v1",
+        "focused.dark-mode-frames.v1",
+        "focused.dark-mode-images.v1",
+        "focused.ellipse-diamond-fills.v1",
+        "focused.embed-scene-metadata.v1",
+        "focused.embeddable-links.v1",
+        "focused.emoji-fallback.v1",
+        "focused.excalifont-text.v1",
+        "focused.font-families-virgil-lilita-comic.v1",
+        "focused.frame-clip-mask-sharing.v1",
+        "focused.frame-name-truncation.v1",
+        "focused.freedraw-loop-fills.v1",
+        "focused.freedraw.v1",
+        "focused.helvetica-text.v1",
+        "focused.iframe-element.v1",
+        "focused.image-codecs.v1",
+        "focused.legacy-line-height.v1",
+        "focused.legacy-stroke-sharpness.v1",
+        "focused.missing-glyph.v1",
+        "focused.rectangle-outline.v1",
+        "focused.rotated-rough-linear.v1",
+        "focused.rotated-shape-bounds.v1",
+        "focused.rough-fillers-dashed-zigzag-line.v1",
+        "focused.rounded-image-crop.v1",
+        "focused.rounded-image.v1",
+        "focused.roundness-records.v1",
+        "focused.text-alignment-vertical.v1",
+        "focused.text-line-endings.v1",
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:rough.outline",
+      "candidates": [
+        "focused.rectangle-outline.v1"
+      ]
+    },
+    {
+      "id": "case-label:roughness.cartoonist",
+      "candidates": [
+        "focused.cartoonist-arrowheads.v1",
+        "focused.cartoonist-roughness.v1",
+        "focused.rotated-rough-linear.v1"
+      ]
+    },
+    {
+      "id": "case-label:roughness.cartoonist-curve-fill",
+      "candidates": [
+        "focused.cartoonist-roughness.v1"
+      ]
+    },
+    {
+      "id": "case-label:roughness.cartoonist-fill-vertices",
+      "candidates": [
+        "focused.cartoonist-roughness.v1"
+      ]
+    },
+    {
+      "id": "case-label:roundness.adaptive",
+      "candidates": [
+        "focused.roundness-records.v1"
+      ]
+    },
+    {
+      "id": "case-label:roundness.adaptive-value",
+      "candidates": [
+        "focused.roundness-records.v1"
+      ]
+    },
+    {
+      "id": "case-label:roundness.curve",
+      "candidates": [
+        "focused.roundness-records.v1"
+      ]
+    },
+    {
+      "id": "case-label:roundness.ignored",
+      "candidates": [
+        "focused.roundness-records.v1"
+      ]
+    },
+    {
+      "id": "case-label:roundness.legacy",
+      "candidates": [
+        "focused.roundness-records.v1"
+      ]
+    },
+    {
+      "id": "case-label:stroke.dashed",
+      "candidates": [
+        "focused.ellipse-diamond-fills.v1",
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:stroke.dotted",
+      "candidates": [
+        "focused.ellipse-diamond-fills.v1",
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:stroke.width-4",
+      "candidates": [
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.align",
+      "candidates": [
+        "focused.bidi-alignment.v1",
+        "focused.font-families-virgil-lilita-comic.v1",
+        "focused.helvetica-text.v1",
+        "focused.text-alignment-vertical.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.bidi",
+      "candidates": [
+        "focused.bidi-alignment.v1",
+        "focused.bidi-text.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.bidi-base-direction",
+      "candidates": [
+        "focused.bidi-alignment.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.bidi-mirroring",
+      "candidates": [
+        "focused.bidi-text.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.line-endings",
+      "candidates": [
+        "focused.text-line-endings.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.line-height-detection",
+      "candidates": [
+        "focused.legacy-line-height.v1",
+        "focused.text-line-endings.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.line-height-family-metadata",
+      "candidates": [
+        "focused.legacy-line-height.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.paragraph-separator",
+      "candidates": [
+        "focused.bidi-text.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.stored-wrapped-text",
+      "candidates": [
+        "focused.text-alignment-vertical.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.vertical-align",
+      "candidates": [
+        "focused.text-alignment-vertical.v1"
+      ]
+    },
+    {
+      "id": "case-label:text.wrapping",
+      "candidates": [
+        "focused.excalifont-text.v1"
+      ]
+    },
+    {
+      "id": "case-label:transform.rotation",
+      "candidates": [
+        "focused.rotated-rough-linear.v1",
+        "focused.rotated-shape-bounds.v1",
+        "focused.transform-opacity-groups.v1"
+      ]
+    },
+    {
+      "id": "case-label:transform.rotation-center.canvas-curve-box",
+      "candidates": [
+        "focused.rotated-rough-linear.v1"
+      ]
+    },
+    {
+      "id": "case-label:transform.rotation-center.svg-points-box",
+      "candidates": [
+        "focused.rotated-rough-linear.v1"
+      ]
+    },
+    {
+      "id": "surface:app_state:/activeEmbeddable",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/activeTool",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/collaborators",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/contextMenu",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/croppingElementId",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentChartType",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentHoveredFontFamily",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemArrowType",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemBackgroundColor",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemEndArrowhead",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemFillStyle",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemFontFamily",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemFontSize",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemOpacity",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemRoughness",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemRoundness",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemStartArrowhead",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemStrokeColor",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemStrokeStyle",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemStrokeWidth",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/currentItemTextAlign",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/cursorButton",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/defaultSidebarDockedPreference",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/editingFrame",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/editingGroupId",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/editingLinearElement",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/editingTextElement",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/elementsToHighlight",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/errorMessage",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/exportBackground",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/exportEmbedScene",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/exportScale",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/exportWithDarkMode",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/fileHandle",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/followedBy",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/frameRendering",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/frameToHighlight",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/gridModeEnabled",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/gridSize",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/gridStep",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/height",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/hoveredElementIds",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/isBindingEnabled",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/isCropping",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/isLoading",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/isResizing",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/isRotating",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/isSidebarDocked",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/lastPointerDownWith",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/multiElement",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/name",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/newElement",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/objectsSnapModeEnabled",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/offsetLeft",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/offsetTop",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/openDialog",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/openMenu",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/openPopup",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/openSidebar",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/originSnapOffset",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/pasteDialog",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/penDetected",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/penMode",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/pendingImageElementId",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/previousSelectedElementIds",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/resizingElement",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/scrollX",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/scrollY",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/scrolledOutside",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/searchMatches",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/selectedElementIds",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/selectedElementsAreBeingDragged",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/selectedGroupIds",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/selectedLinearElement",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/selectionElement",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/shouldCacheIgnoreZoom",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/showHyperlinkPopup",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/showWelcomeScreen",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/snapLines",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/startBoundElement",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/stats",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/suggestedBindings",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/theme",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/toast",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/userToFollow",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/viewBackgroundColor",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/viewModeEnabled",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/width",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/zenModeEnabled",
+      "candidates": []
+    },
+    {
+      "id": "surface:app_state:/zoom",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.arrow:/elbowed",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.arrow:/endArrowhead",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.arrow:/endIsSpecial",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.arrow:/fixedSegments",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.arrow:/startArrowhead",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.arrow:/startIsSpecial",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/angle",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/backgroundColor",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/boundElementIds",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/boundElements",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/customData",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/fillStyle",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/frameId",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/groupIds",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/height",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/id",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/index",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/isDeleted",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/link",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/locked",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/opacity",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/roughness",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/roundness",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/seed",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/strokeColor",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/strokeSharpness",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/strokeStyle",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/strokeWidth",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/type",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/updated",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/version",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/versionNonce",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/width",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/x",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.common:/y",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.embeddable:/validated",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.frame:/name",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.freedraw:/lastCommittedPoint",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.freedraw:/points",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.freedraw:/pressures",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.freedraw:/simulatePressure",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.iframe:/customData/generationData",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.image:/crop",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.image:/fileId",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.image:/scale",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.image:/status",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.legacy_draw:/type",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.line:/endArrowhead",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.line:/startArrowhead",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.linear:/endBinding",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.linear:/lastCommittedPoint",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.linear:/points",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.linear:/startBinding",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.magicframe:/name",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/autoResize",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/baseline",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/containerId",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/font",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/fontFamily",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/fontSize",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/lineHeight",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/originalText",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/rawText",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/text",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/textAlign",
+      "candidates": []
+    },
+    {
+      "id": "surface:element.text:/verticalAlign",
+      "candidates": []
+    },
+    {
+      "id": "surface:file_record:/$key",
+      "candidates": []
+    },
+    {
+      "id": "surface:file_record:/created",
+      "candidates": []
+    },
+    {
+      "id": "surface:file_record:/dataURL",
+      "candidates": []
+    },
+    {
+      "id": "surface:file_record:/id",
+      "candidates": []
+    },
+    {
+      "id": "surface:file_record:/lastRetrieved",
+      "candidates": []
+    },
+    {
+      "id": "surface:file_record:/mimeType",
+      "candidates": []
+    },
+    {
+      "id": "surface:file_record:/version",
+      "candidates": []
+    },
+    {
+      "id": "surface:frame_rendering:/clip",
+      "candidates": []
+    },
+    {
+      "id": "surface:frame_rendering:/enabled",
+      "candidates": []
+    },
+    {
+      "id": "surface:frame_rendering:/name",
+      "candidates": []
+    },
+    {
+      "id": "surface:frame_rendering:/outline",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.bound_element:/id",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.bound_element:/type",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.fixed_point_binding:/elementId",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.fixed_point_binding:/fixedPoint",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.fixed_point_binding:/focus",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.fixed_point_binding:/gap",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.fixed_segment:/end",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.fixed_segment:/index",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.fixed_segment:/start",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.generation_data:/code",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.generation_data:/html",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.generation_data:/message",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.generation_data:/status",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.image_crop:/height",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.image_crop:/naturalHeight",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.image_crop:/naturalWidth",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.image_crop:/width",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.image_crop:/x",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.image_crop:/y",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.local_svg_resource:/*",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.point:/0",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.point:/1",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.point_binding:/elementId",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.point_binding:/focus",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.point_binding:/gap",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.roundness:/type",
+      "candidates": []
+    },
+    {
+      "id": "surface:nested.roundness:/value",
+      "candidates": []
+    },
+    {
+      "id": "surface:scene:/appState",
+      "candidates": []
+    },
+    {
+      "id": "surface:scene:/elements",
+      "candidates": []
+    },
+    {
+      "id": "surface:scene:/files",
+      "candidates": []
+    },
+    {
+      "id": "surface:scene:/libraryItems",
+      "candidates": []
+    },
+    {
+      "id": "surface:scene:/scrollToContent",
+      "candidates": []
+    },
+    {
+      "id": "surface:scene:/source",
+      "candidates": []
+    },
+    {
+      "id": "surface:scene:/type",
+      "candidates": []
+    },
+    {
+      "id": "surface:scene:/version",
+      "candidates": []
+    }
+  ],
+  "executions": [
+    {
+      "key": {
+        "case": "focused.arrow-suite.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "10cb718746637e3e3cf2f51d6c24f785ab5aaf85b42ec5d5dae67a1896fc46d5"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/arrow-suite/evidence/official.svg",
+        "sha256": "874d6bb784ea97cedbbedba1730ac87bf2e3b0352aafd515637841be72c5fbd2"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.arrow-suite.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "10cb718746637e3e3cf2f51d6c24f785ab5aaf85b42ec5d5dae67a1896fc46d5"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/arrow-suite/evidence/official.png",
+        "sha256": "ca5a3a714e100dd1b109f01955c0da78a03aac586bfcdb7df9e012e699f954e0"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.arrow-suite.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "10cb718746637e3e3cf2f51d6c24f785ab5aaf85b42ec5d5dae67a1896fc46d5"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.bidi-alignment.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "521fc98fad0a2564dc8fe8cfca232ed2d50f2dc4e45c8bb34b5162a377aa6ecf"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/bidi-alignment/evidence/official.svg",
+        "sha256": "18ccf51aa7e44c0a2865b1172c17610fdf9b96388b39572f2c3fbb49d14c68b3"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.bidi-alignment.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "521fc98fad0a2564dc8fe8cfca232ed2d50f2dc4e45c8bb34b5162a377aa6ecf"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/bidi-alignment/evidence/official.png",
+        "sha256": "d331bc1a55b517e731c0fc54014bcd2ba33d1b9f1de363ea963ddaa31b239bb0"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.bidi-alignment.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "521fc98fad0a2564dc8fe8cfca232ed2d50f2dc4e45c8bb34b5162a377aa6ecf"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.bidi-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "ed782f966d61c7973696a1fdf004dcd0ecd9be5f39b4c485f31b01a93e54a8e2"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/bidi-text/evidence/official.svg",
+        "sha256": "601d05dd3d9c1d1bb6300bcb09699d9463be45c87f1baff34de27b16f43159bb"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.bidi-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "ed782f966d61c7973696a1fdf004dcd0ecd9be5f39b4c485f31b01a93e54a8e2"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/bidi-text/evidence/official.png",
+        "sha256": "a1db2aa2c6df9951b855007fe9e82919ad2251b4cbe3b8510b59928998b0066e"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.bidi-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "ed782f966d61c7973696a1fdf004dcd0ecd9be5f39b4c485f31b01a93e54a8e2"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.bound-text-containers.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "508dc2a355c5586bac54909f13a99ed1f1aafab630d0ec8971f8b42cdcc1c86f"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/bound-text-containers/evidence/official.svg",
+        "sha256": "13442a9dc7115b540453cf5ccecb30a672f26b8e5c7077a0968e0d6a9ae48bf4"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.bound-text-containers.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "508dc2a355c5586bac54909f13a99ed1f1aafab630d0ec8971f8b42cdcc1c86f"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/bound-text-containers/evidence/official.png",
+        "sha256": "f413929e7d99ee5ecd78636c1b44043be38cb8968ed124642cbf64bea8398c87"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.bound-text-containers.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "508dc2a355c5586bac54909f13a99ed1f1aafab630d0ec8971f8b42cdcc1c86f"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.bound-text-placement.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "4d3b4676accede99bc13a20413251ca601f3465977f29a54b29deb172388abd6"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/bound-text-placement/evidence/official.svg",
+        "sha256": "0bb32e4eca6b53edc475ffb3fcee1e35002a752aa517e31020ed3c4b0400902d"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.bound-text-placement.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "4d3b4676accede99bc13a20413251ca601f3465977f29a54b29deb172388abd6"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/bound-text-placement/evidence/official.png",
+        "sha256": "24c1569a41c921f1db2c15e57646064a39c8f5c9001e90f1813c238ac8d611ba"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.bound-text-placement.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "4d3b4676accede99bc13a20413251ca601f3465977f29a54b29deb172388abd6"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.cartoonist-arrowheads.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "ed0ed6d42c64d028af393f8244c3d0e6161587a48268a5d521cf7fa0a827a871"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cartoonist-arrowheads/evidence/official.svg",
+        "sha256": "7fc2df42a13c13d941763a34a98d70d38ef03e6e1755696e02e57c8ff8797973"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cartoonist-arrowheads.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "ed0ed6d42c64d028af393f8244c3d0e6161587a48268a5d521cf7fa0a827a871"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cartoonist-arrowheads/evidence/official.png",
+        "sha256": "a12103fcef19baa50ee735b04e98fd84baf6f36bed87aec1cb92aa0425b58773"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cartoonist-arrowheads.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "ed0ed6d42c64d028af393f8244c3d0e6161587a48268a5d521cf7fa0a827a871"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.cartoonist-roughness.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "17f9362180709a7712c755154ccdde4b33e3257fb60fa9039d36353c3aca1b8a"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cartoonist-roughness/evidence/official.svg",
+        "sha256": "589e76b71d00804dfc3237c6e55c37f176e474649c28ec366e0d70fa50912657"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cartoonist-roughness.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "17f9362180709a7712c755154ccdde4b33e3257fb60fa9039d36353c3aca1b8a"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cartoonist-roughness/evidence/official.png",
+        "sha256": "d8f729b6764cbf983db288eac90c5f831830d167ceec4136aef5349321c0278a"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cartoonist-roughness.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "17f9362180709a7712c755154ccdde4b33e3257fb60fa9039d36353c3aca1b8a"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "0484282abcb73f7852e4971f8e423ea34094a927a6ea1d137bb013e1de01c463"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cjk-propagation/evidence/dark-mode/official.svg",
+        "sha256": "870c6fbbad34985dd21711a3e813685104ae5050524b441dee7b55fece90c507"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "0484282abcb73f7852e4971f8e423ea34094a927a6ea1d137bb013e1de01c463"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cjk-propagation/evidence/dark-mode/official.png",
+        "sha256": "8e2b2efd463618d82b71909c03294aaee5c097ce61400d5999be4ef191580d66"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "0484282abcb73f7852e4971f8e423ea34094a927a6ea1d137bb013e1de01c463"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "1fc2266fa939ab74f1685b2f803be08d9662c787723127febea7aed000addf6a"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cjk-propagation/evidence/official.svg",
+        "sha256": "b729542dd6bbc353fb1173afc2662a98ce97f567155ec9cfa4f45248ba7e091a"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "1fc2266fa939ab74f1685b2f803be08d9662c787723127febea7aed000addf6a"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cjk-propagation/evidence/official.png",
+        "sha256": "59b32f1005f927c3d67164398273ceaf24733e815b1e5153c04351bad81b2f3b"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "1fc2266fa939ab74f1685b2f803be08d9662c787723127febea7aed000addf6a"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "max-dimension-200",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "c36c6f8ec1cd1551e4ff3b7807e4df4abf86a7f2744f880c1267685202282ea1"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": null,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": 200,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cjk-propagation/evidence/max-dimension-200/official.svg",
+        "sha256": "b729542dd6bbc353fb1173afc2662a98ce97f567155ec9cfa4f45248ba7e091a"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "max-dimension-200",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "c36c6f8ec1cd1551e4ff3b7807e4df4abf86a7f2744f880c1267685202282ea1"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": null,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": 200,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cjk-propagation/evidence/max-dimension-200/official.png",
+        "sha256": "48a520479bee789395c329dceb13bc1409410855d283f50b0e4c1e377e389b50"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "max-dimension-200",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "c36c6f8ec1cd1551e4ff3b7807e4df4abf86a7f2744f880c1267685202282ea1"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": null,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": 200,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "910ec27b540158a0582be8b09ed5c2bebfb44ab9f2a58f094f747996d6dd4b65"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cjk-propagation/evidence/scale-2/official.svg",
+        "sha256": "bbaadca0060f5318b302eb321098dd12dacd46541ad2e0a29f5f762c7790cc55"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "910ec27b540158a0582be8b09ed5c2bebfb44ab9f2a58f094f747996d6dd4b65"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/cjk-propagation/evidence/scale-2/official.png",
+        "sha256": "639c634150b9fb58eb55c9ac6ede97691531879c26bd889077ebdfa2f06c2882"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.cjk-propagation.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "910ec27b540158a0582be8b09ed5c2bebfb44ab9f2a58f094f747996d6dd4b65"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-frames.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "19d66901da3eb6879d298abfd8f4db46b1631e1b90dc61c77f5a7e1168d09c0b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/dark-mode-frames/evidence/dark-mode/official.svg",
+        "sha256": "3c244b358e3cada2ea212f9590d6f0904f9cb8c3c5c68183b16092488fa12110"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-frames.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "19d66901da3eb6879d298abfd8f4db46b1631e1b90dc61c77f5a7e1168d09c0b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/dark-mode-frames/evidence/dark-mode/official.png",
+        "sha256": "12fc8677623b0dceca95cf256978187c6a358787ddd685144f19ded1dc189944"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-frames.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "19d66901da3eb6879d298abfd8f4db46b1631e1b90dc61c77f5a7e1168d09c0b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-frames.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "40ef352a085753bb76093f58e1ea6aa0ccd93f8b1e84f4cf639f4998f20b5b5b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/dark-mode-frames/evidence/official.svg",
+        "sha256": "83b2dc841cde870c85d4b5de5e5fef8af6c5180f7bae7e1078dba034dedb10d6"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-frames.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "40ef352a085753bb76093f58e1ea6aa0ccd93f8b1e84f4cf639f4998f20b5b5b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/dark-mode-frames/evidence/official.png",
+        "sha256": "41864e7109f49373dfb6b33ae9f83afed1312daba7d1537aacd1553b69e2e48a"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-frames.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "40ef352a085753bb76093f58e1ea6aa0ccd93f8b1e84f4cf639f4998f20b5b5b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-images.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "fbdb6e6f94f454ce5eca9228e70d03844f585977797d0a135dda0172548a8fa2"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/dark-mode-images/evidence/dark-mode/official.svg",
+        "sha256": "1011f9fc1623fde95b19970458639ae108f66f1c482b7f08c1eb9fdd97d15be8"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-images.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "fbdb6e6f94f454ce5eca9228e70d03844f585977797d0a135dda0172548a8fa2"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/dark-mode-images/evidence/dark-mode/official.png",
+        "sha256": "e82c941410f9ca9a6348f0836ff9a341c7d834e4adf21814b42c323145a601af"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-images.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "fbdb6e6f94f454ce5eca9228e70d03844f585977797d0a135dda0172548a8fa2"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-images.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "fc6a81604620205c615d6f3915c7e82f236f77ffe4bd9f125d96ff21f41df006"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/dark-mode-images/evidence/official.svg",
+        "sha256": "f0782508e8e6f94da70bb55a4feea9d89e5aab232243252aecf27ead0d958685"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-images.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "fc6a81604620205c615d6f3915c7e82f236f77ffe4bd9f125d96ff21f41df006"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/dark-mode-images/evidence/official.png",
+        "sha256": "c5a5f31c19026c100693fa2bd6881f41b6473433ad7f16718738fb4dedfbfd7c"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.dark-mode-images.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "fc6a81604620205c615d6f3915c7e82f236f77ffe4bd9f125d96ff21f41df006"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.ellipse-diamond-fills.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "3a44fda1a3fa2198b14852c3405dd5666fc0ed4332a2da36b98784073524b2b7"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/ellipse-diamond-fills/evidence/dark-mode/official.svg",
+        "sha256": "1199325113a610400ff5e830f389fddfbec1cb660cd5efd54016d4bd514d97f5"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.ellipse-diamond-fills.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "3a44fda1a3fa2198b14852c3405dd5666fc0ed4332a2da36b98784073524b2b7"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/ellipse-diamond-fills/evidence/dark-mode/official.png",
+        "sha256": "9894216d19307ad4f22f553a92a2b710ea5ac51ca8d198453c0911350f815973"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.ellipse-diamond-fills.v1",
+        "variant": "dark-mode",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "3a44fda1a3fa2198b14852c3405dd5666fc0ed4332a2da36b98784073524b2b7"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": true,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.ellipse-diamond-fills.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "f4f45536f33db304dbc30fa93826dae93b938dae38af3b7a2de848aca0fa6aa0"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/ellipse-diamond-fills/evidence/official.svg",
+        "sha256": "882c59d5ace6a73702a5dd90cb91ee053542daf3770ab196b195b1f878b46d76"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.ellipse-diamond-fills.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "f4f45536f33db304dbc30fa93826dae93b938dae38af3b7a2de848aca0fa6aa0"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/ellipse-diamond-fills/evidence/official.png",
+        "sha256": "f3a8139c19923eeda6ef4421725a78370a5677f86071d4927ac4d923b354e3f4"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.ellipse-diamond-fills.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "f4f45536f33db304dbc30fa93826dae93b938dae38af3b7a2de848aca0fa6aa0"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.embed-scene-metadata.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "75cf44b7fa122306e6b42333bc4ce22d19de8e8f568111692efda4034fefe45b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/embed-scene-metadata/evidence/official.svg",
+        "sha256": "d003af88c36e5679b75153658d93bc171e0b81581530673758aef5018b9e9393"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.embed-scene-metadata.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "75cf44b7fa122306e6b42333bc4ce22d19de8e8f568111692efda4034fefe45b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/embed-scene-metadata/evidence/official.png",
+        "sha256": "e20c3bd7b4cbdbc18efaf6be1835b75b77d530d64a37615ab87531b2edda24b3"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.embed-scene-metadata.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "75cf44b7fa122306e6b42333bc4ce22d19de8e8f568111692efda4034fefe45b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.embed-scene-metadata.v1",
+        "variant": "embed-scene",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "2b01da732cc87cbebd3c4a326078b4a2733b2f1216981dc79c3fc718b20bcdfb"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": true,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/embed-scene-metadata/evidence/embed-scene/official.svg",
+        "sha256": "406fd8aaba1b7618a68bc1792650445c9ac446fb00263d5b02ce5bf64e640d71"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.embed-scene-metadata.v1",
+        "variant": "embed-scene",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "2b01da732cc87cbebd3c4a326078b4a2733b2f1216981dc79c3fc718b20bcdfb"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": true,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/embed-scene-metadata/evidence/embed-scene/official.png",
+        "sha256": "60a5e40e8e93fca1f840080a9597accb16e5e791498d8ca1c08cdc93bf15b2e5"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.embed-scene-metadata.v1",
+        "variant": "embed-scene",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "2b01da732cc87cbebd3c4a326078b4a2733b2f1216981dc79c3fc718b20bcdfb"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": true,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.embeddable-links.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "2fda20a664b8f03c913a49361e5f0901d15455393c338348d558cab6e9a2ffa5"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/embeddable-links/evidence/official.svg",
+        "sha256": "c95ca0c57f72f9d4911cccc06bdf839913c58c200726c7c8eafff4bdd7ba4594"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.embeddable-links.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "2fda20a664b8f03c913a49361e5f0901d15455393c338348d558cab6e9a2ffa5"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/embeddable-links/evidence/official.png",
+        "sha256": "d112dfc7041a725aae5b7686c8640b6223caf56f904e5483ec5d4d9be771c07f"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.embeddable-links.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "2fda20a664b8f03c913a49361e5f0901d15455393c338348d558cab6e9a2ffa5"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.emoji-fallback.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "e7b16f1d3d2c5387b9610ac4b388cc41f864eacf9be4075af1f861f6d2062964"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/emoji-fallback/evidence/official.svg",
+        "sha256": "40980f881bf69507e78aaf5717332310e26212c359e89785b775d0c5974c58f9"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.emoji-fallback.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "e7b16f1d3d2c5387b9610ac4b388cc41f864eacf9be4075af1f861f6d2062964"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/emoji-fallback/evidence/official.png",
+        "sha256": "1ccce5acb42c55a619edc934aebac082eb66d3d0ba0e33bbc12a8257c0738f53"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.emoji-fallback.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "e7b16f1d3d2c5387b9610ac4b388cc41f864eacf9be4075af1f861f6d2062964"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.excalifont-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "48fc0e8f0543d91614bdc49d8e680cb995774388ce5f0021116d4b6db7017bad"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/excalifont-text/evidence/official.svg",
+        "sha256": "f551da381f11ac39b2857a48dd7ac91e591cfe57d82b03961ddda6a35ea6e05f"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.excalifont-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "48fc0e8f0543d91614bdc49d8e680cb995774388ce5f0021116d4b6db7017bad"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/excalifont-text/evidence/official.png",
+        "sha256": "947e301ca834bf3b403458b7c27fd39021c43227cee81bbaa62edfef3c64b970"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.excalifont-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "48fc0e8f0543d91614bdc49d8e680cb995774388ce5f0021116d4b6db7017bad"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.font-families-virgil-lilita-comic.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "d8277628e0f9b3e9516137203269de7afe18b8caa93101ca5eb70cb620d094d2"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/evidence/official.svg",
+        "sha256": "04036ae708bb7704fdde1a7ba1102681e7ae955c8ae9448c8d2016f822c6e906"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.font-families-virgil-lilita-comic.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "d8277628e0f9b3e9516137203269de7afe18b8caa93101ca5eb70cb620d094d2"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/evidence/official.png",
+        "sha256": "0d101c0f2e555dcd27a6459ec73dd6a73a2e2e3c51754df14117567b68f82eae"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.font-families-virgil-lilita-comic.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "d8277628e0f9b3e9516137203269de7afe18b8caa93101ca5eb70cb620d094d2"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.frame-clip-mask-sharing.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "efcde78e25d988e8ed087e5aada9891f182e06f1d1fa15280ade447963a97f7d"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-clip-mask-sharing/evidence/official.svg",
+        "sha256": "88e6955c73f2de79e4f4bfd9656b6549703e2abd0bdd4c08f3a8ed2c437159a8"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-clip-mask-sharing.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "efcde78e25d988e8ed087e5aada9891f182e06f1d1fa15280ade447963a97f7d"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-clip-mask-sharing/evidence/official.png",
+        "sha256": "bd5b1433f09bb492efdf644fec9c5992d57fe65c9b046064183a11ff22aeb0c5"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-clip-mask-sharing.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "efcde78e25d988e8ed087e5aada9891f182e06f1d1fa15280ade447963a97f7d"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 1
+        },
+        "format": "svg",
+        "inputs_sha256": "6275522090fe2f3b52506e13dd421d2f3d6616b89f3ea42376cf88d9d033a7ee"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-1/official.svg",
+        "sha256": "93b82d2d6ad03bb929b1600258e0d87b9e0861dbd117082b48be329b49a939df"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 1
+        },
+        "format": "png",
+        "inputs_sha256": "6275522090fe2f3b52506e13dd421d2f3d6616b89f3ea42376cf88d9d033a7ee"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-1/official.png",
+        "sha256": "26ae1eccb4101dc2598433f5567309b6df2dc9467fbe835072475d799d2c2b9f"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 1
+        },
+        "format": "pdf",
+        "inputs_sha256": "6275522090fe2f3b52506e13dd421d2f3d6616b89f3ea42376cf88d9d033a7ee"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 2
+        },
+        "format": "svg",
+        "inputs_sha256": "b091ccd84ddcead85818ae813850308fa75f09fa74034aab54dba24f56e59e70"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-2/official.svg",
+        "sha256": "d09efbf31f45f911d32af2886dbf14e8af724b310e5f8e4018c248677e74c9dd"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 2
+        },
+        "format": "png",
+        "inputs_sha256": "b091ccd84ddcead85818ae813850308fa75f09fa74034aab54dba24f56e59e70"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-2/official.png",
+        "sha256": "fdca19b84fe43394eca1fd08007bf50abab906e9d841bab73259507a52e5199c"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 2
+        },
+        "format": "pdf",
+        "inputs_sha256": "b091ccd84ddcead85818ae813850308fa75f09fa74034aab54dba24f56e59e70"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 3
+        },
+        "format": "svg",
+        "inputs_sha256": "fc89926a08773f34ace8068cd20cc7a91c7a2498085952bf66b4361b0a3b48e5"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-3/official.svg",
+        "sha256": "c3b3be313d7cbc3d3add37bdcfd9d633463b813debcdbb9473e183c22389bff5"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 3
+        },
+        "format": "png",
+        "inputs_sha256": "fc89926a08773f34ace8068cd20cc7a91c7a2498085952bf66b4361b0a3b48e5"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-3/official.png",
+        "sha256": "93d73b91c5ce0173734eb714c5d130b12d7fbfed59d6a15535fe951ecef7efc9"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 3
+        },
+        "format": "pdf",
+        "inputs_sha256": "fc89926a08773f34ace8068cd20cc7a91c7a2498085952bf66b4361b0a3b48e5"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 4
+        },
+        "format": "svg",
+        "inputs_sha256": "e94ba8fbb07808c20c1619546474313ab79809c7492d5c7e106b1baaddcddffa"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-4/official.svg",
+        "sha256": "ec475d0fae1b7848b020b6b97e35195f82a4bf32a816bf232e769c24cbdf5134"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 4
+        },
+        "format": "png",
+        "inputs_sha256": "e94ba8fbb07808c20c1619546474313ab79809c7492d5c7e106b1baaddcddffa"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-4/official.png",
+        "sha256": "d6751295edad61f8ce1bcb785c50dc515d3dfe113d76da2b7effc2205e72c973"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 4
+        },
+        "format": "pdf",
+        "inputs_sha256": "e94ba8fbb07808c20c1619546474313ab79809c7492d5c7e106b1baaddcddffa"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 5
+        },
+        "format": "svg",
+        "inputs_sha256": "482fbcbf0ec161b967c39a290edd89a0d7e1c18a3950d6812c1f90088b5d0c03"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-5/official.svg",
+        "sha256": "362b972331bc636735692d9fb36e6f1e63543dd16030e434e30a3fe5a1f5bd2f"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 5
+        },
+        "format": "png",
+        "inputs_sha256": "482fbcbf0ec161b967c39a290edd89a0d7e1c18a3950d6812c1f90088b5d0c03"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-5/official.png",
+        "sha256": "fae6973cf47b22fc2ea1153f13b0fd9839aed010fcfc857cf717719e8b68646a"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 5
+        },
+        "format": "pdf",
+        "inputs_sha256": "482fbcbf0ec161b967c39a290edd89a0d7e1c18a3950d6812c1f90088b5d0c03"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 6
+        },
+        "format": "svg",
+        "inputs_sha256": "83927f3e6d234cf0006213399ca6a7910f6d7f2c0f966b2de59eced193f0b8e9"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-6/official.svg",
+        "sha256": "9b3f59777c5c1f2ef1d9f030ea9c4830abd60c7618bf7b6d7f9733f48abb6ef8"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 6
+        },
+        "format": "png",
+        "inputs_sha256": "83927f3e6d234cf0006213399ca6a7910f6d7f2c0f966b2de59eced193f0b8e9"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-6/official.png",
+        "sha256": "4d82683aceadcbcc41b0c18e9fa4fb2558f57f86b91ea370a623c4a4279eb3d0"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 6
+        },
+        "format": "pdf",
+        "inputs_sha256": "83927f3e6d234cf0006213399ca6a7910f6d7f2c0f966b2de59eced193f0b8e9"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 7
+        },
+        "format": "svg",
+        "inputs_sha256": "a203b84a713fd0dd5742a60ae01aca47605b9d307bb3f7d9ac5f13cb2c1bc06d"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-7/official.svg",
+        "sha256": "56621f949ba42f5786e4a7a3d007fa1911a2703356350918e945fbaf59e72012"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 7
+        },
+        "format": "png",
+        "inputs_sha256": "a203b84a713fd0dd5742a60ae01aca47605b9d307bb3f7d9ac5f13cb2c1bc06d"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-export/evidence/frame-7/official.png",
+        "sha256": "ff3f3a0fede5c051500e71f632aaeeeece8e174b99749b08dda928da86b75bd4"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-export.v1",
+        "variant": "default",
+        "export": {
+          "kind": "frame",
+          "ordinal": 7
+        },
+        "format": "pdf",
+        "inputs_sha256": "a203b84a713fd0dd5742a60ae01aca47605b9d307bb3f7d9ac5f13cb2c1bc06d"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.frame-name-truncation.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "9dfeda7e64162b65cf5b28762dd5d809a32bdf6a6ccf979a626100f0b0132109"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-name-truncation/evidence/official.svg",
+        "sha256": "b314c3551c4e2076e853c49597e87eed57a666280bbb2977a3d3a8fa18e8b106"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-name-truncation.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "9dfeda7e64162b65cf5b28762dd5d809a32bdf6a6ccf979a626100f0b0132109"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/frame-name-truncation/evidence/official.png",
+        "sha256": "6edb38724b4ecbe1dc8a5b41078642b8b3b9ee7ea513cf445d937c8d4bbb8b77"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.frame-name-truncation.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "9dfeda7e64162b65cf5b28762dd5d809a32bdf6a6ccf979a626100f0b0132109"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.freedraw-loop-fills.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "5918eb1b62cae3e707677bbd5e2070e53b0e5435013b73dfd96b1f2e813dc706"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/freedraw-loop-fills/evidence/official.svg",
+        "sha256": "85bc4815512e57758f97dcd7755f7e37aefaa8f8dc243d1627257998ea46e6f0"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.freedraw-loop-fills.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "5918eb1b62cae3e707677bbd5e2070e53b0e5435013b73dfd96b1f2e813dc706"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/freedraw-loop-fills/evidence/official.png",
+        "sha256": "f344e42f101852b01b3b8c6bfe673ac14f0817865c89d6c3a92ede97e332a539"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.freedraw-loop-fills.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "5918eb1b62cae3e707677bbd5e2070e53b0e5435013b73dfd96b1f2e813dc706"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.freedraw.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "dbc4a859d28832a4078de120e96da1edf6adce2b352fb39e5155fe46bc675f57"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/freedraw/evidence/official.svg",
+        "sha256": "aeaf23ec3e546bfaba27404e8deacc71f178799cca0db5ea2b9d106feb0ade6a"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.freedraw.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "dbc4a859d28832a4078de120e96da1edf6adce2b352fb39e5155fe46bc675f57"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/freedraw/evidence/official.png",
+        "sha256": "f0a13aafd44286e4d66b3c9c3ae50217d573ccb0cfdb5c141e6affbe19b7ff7d"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.freedraw.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "dbc4a859d28832a4078de120e96da1edf6adce2b352fb39e5155fe46bc675f57"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.freedraw.v1",
+        "variant": "max-dimension-160",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "19cc8d99f1ab8bcddbd2c2acf099cdb85f0365b074c3c762aa31abf57064e87e"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": null,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": 160,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/freedraw/evidence/max-dimension-160/official.svg",
+        "sha256": "aeaf23ec3e546bfaba27404e8deacc71f178799cca0db5ea2b9d106feb0ade6a"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.freedraw.v1",
+        "variant": "max-dimension-160",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "19cc8d99f1ab8bcddbd2c2acf099cdb85f0365b074c3c762aa31abf57064e87e"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": null,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": 160,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/freedraw/evidence/max-dimension-160/official.png",
+        "sha256": "1cedfaacc7198613df0993912c6d38c56e597a57ab868b1512915f6f4c8ba335"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.freedraw.v1",
+        "variant": "max-dimension-160",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "19cc8d99f1ab8bcddbd2c2acf099cdb85f0365b074c3c762aa31abf57064e87e"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": null,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": 160,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.freedraw.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "0368781aefe78c581157e4ab7a913c81ea25642575e21b2f46d804193c643369"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/freedraw/evidence/scale-2/official.svg",
+        "sha256": "82a4f672b251dac4021ae770dc331a930c098fc1c98a542d56bb142a9359f2e8"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.freedraw.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "0368781aefe78c581157e4ab7a913c81ea25642575e21b2f46d804193c643369"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/freedraw/evidence/scale-2/official.png",
+        "sha256": "fae8da645804d2a099eba0de664882bc37ddaf5bf1536f2a6ecb66cf69591c64"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.freedraw.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "0368781aefe78c581157e4ab7a913c81ea25642575e21b2f46d804193c643369"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.helvetica-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "8d9c419a1f9031fba369cdf3ed8a24e1b129189f373d60b1630e1b7f5b7e5b0d"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/helvetica-text/evidence/official.svg",
+        "sha256": "f54d6798329d81047fea8b98518abaf05b818fb1dcbd8393eaa2529fef456efd"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.helvetica-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "8d9c419a1f9031fba369cdf3ed8a24e1b129189f373d60b1630e1b7f5b7e5b0d"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/helvetica-text/evidence/official.png",
+        "sha256": "6eb58f5e17693eebcd24860955d92bc0280a5cc75de2a5ae51318b09a976c727"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.helvetica-text.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "8d9c419a1f9031fba369cdf3ed8a24e1b129189f373d60b1630e1b7f5b7e5b0d"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.iframe-element.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "c4eb211ac0a293d9f25c41f5b19b2b2555357cb3806c995139caaafe1ee57101"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/iframe-element/evidence/official.svg",
+        "sha256": "485f00e38cd4ea71a50f52e6a8c7e24085fdc55240227e3759f1c7c52f847c50"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.iframe-element.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "c4eb211ac0a293d9f25c41f5b19b2b2555357cb3806c995139caaafe1ee57101"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/iframe-element/evidence/official.png",
+        "sha256": "375a7eb297ddccb047f34fa0cac70c2cc360013a75f932cef92e987284a5a4a1"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.iframe-element.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "c4eb211ac0a293d9f25c41f5b19b2b2555357cb3806c995139caaafe1ee57101"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.image-codecs.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "cec21e7756e779330c66b56856d038360dafbe3469c1107cf094b4f83329780e"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/image-codecs/evidence/official.svg",
+        "sha256": "472e5eaee1e94e0c8ae0e768178ffc3ae492035ebf40b5ffae606d3bc1bc7d4e"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.image-codecs.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "cec21e7756e779330c66b56856d038360dafbe3469c1107cf094b4f83329780e"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/image-codecs/evidence/official.png",
+        "sha256": "3842fa1570c790b9d180c7c38a3ebb4b5846ec9f35c13cfb4c2ac6e0e5c3fdf0"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.image-codecs.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "cec21e7756e779330c66b56856d038360dafbe3469c1107cf094b4f83329780e"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.legacy-line-height.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "9067a4cee106fd971e54b4644f79f4e6c7a1130444a744d7236c37f0b28ca0de"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/legacy-line-height/evidence/official.svg",
+        "sha256": "a54bbad95905522847e3a00411b1d67bf80af9ffdd90d3b870422acdaedacdc7"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.legacy-line-height.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "9067a4cee106fd971e54b4644f79f4e6c7a1130444a744d7236c37f0b28ca0de"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/legacy-line-height/evidence/official.png",
+        "sha256": "fa5de61b7c58b029932a7e9e18b250bb5506bd3965b7697961eb7190b7401f94"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.legacy-line-height.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "9067a4cee106fd971e54b4644f79f4e6c7a1130444a744d7236c37f0b28ca0de"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.legacy-stroke-sharpness.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "f4939d8b9c1c04b294e7a63244c675a0c9d131ffecb499e5b0bbf1a32adfa348"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/legacy-stroke-sharpness/evidence/official.svg",
+        "sha256": "3f9d8a5971dfce83340e6b7510f5aedc508d17cde8e6339d9a375e9100e01399"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.legacy-stroke-sharpness.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "f4939d8b9c1c04b294e7a63244c675a0c9d131ffecb499e5b0bbf1a32adfa348"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/legacy-stroke-sharpness/evidence/official.png",
+        "sha256": "ac0e44941b09f428b59496560ce1c2d6b148d30e1267e4828a79d8a6c65b240a"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.legacy-stroke-sharpness.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "f4939d8b9c1c04b294e7a63244c675a0c9d131ffecb499e5b0bbf1a32adfa348"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.missing-glyph.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "1b03378895a6d5bf465965ccb67deb52c646cfd704b7dd10e2e6107bb169abab"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/missing-glyph/evidence/official.svg",
+        "sha256": "5e28e7deef360c14667f34c93a08a3d043464024e3174c74026cda4968bc5fa0"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.missing-glyph.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "1b03378895a6d5bf465965ccb67deb52c646cfd704b7dd10e2e6107bb169abab"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/missing-glyph/evidence/official.png",
+        "sha256": "a797deec2805e1f57aa7104d53afac4c419f3d76f0b49e97bb6c42a0da0b5238"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.missing-glyph.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "1b03378895a6d5bf465965ccb67deb52c646cfd704b7dd10e2e6107bb169abab"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.rectangle-outline.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "d547c0fc93dd07303d9cea5d982233938e4536aef0803a8b1a7702f09fa7b7b7"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rectangle-outline/evidence/official.svg",
+        "sha256": "a5d3aaa1c17add0167770c81ea0d55836b899d9e6c20e2a0c6f15e5ca86152f0"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rectangle-outline.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "d547c0fc93dd07303d9cea5d982233938e4536aef0803a8b1a7702f09fa7b7b7"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rectangle-outline/evidence/official.png",
+        "sha256": "0ea69742d840159459d95e10284ccc84b681b1c74c101abc08aac4d7d986f40d"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rectangle-outline.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "d547c0fc93dd07303d9cea5d982233938e4536aef0803a8b1a7702f09fa7b7b7"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.rotated-rough-linear.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "138019f1bdaa5aa19ee949997db85b90c7023b865527390c5014fecbbc2c83ab"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rotated-rough-linear/evidence/official.svg",
+        "sha256": "64d85cfadfaec95d9321ad985cb4eb2432fa47372a7a3ec77ae73ce3ea58f0e2"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rotated-rough-linear.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "138019f1bdaa5aa19ee949997db85b90c7023b865527390c5014fecbbc2c83ab"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rotated-rough-linear/evidence/official.png",
+        "sha256": "510e4223821a2f1e8fd9352b66b73c717c1909390951da13bb7616764c5e336e"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rotated-rough-linear.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "138019f1bdaa5aa19ee949997db85b90c7023b865527390c5014fecbbc2c83ab"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.rotated-shape-bounds.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "2b5eb50daaf106d835006971061a719484aa86c9f5875af2277242749d44679f"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rotated-shape-bounds/evidence/official.svg",
+        "sha256": "0b1d1bb7d5a0ee2fb1d3c03d735708c8a5b8a8111a9a98622bc02987bfe87f8f"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rotated-shape-bounds.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "2b5eb50daaf106d835006971061a719484aa86c9f5875af2277242749d44679f"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rotated-shape-bounds/evidence/official.png",
+        "sha256": "391bf54429c72931ad6211e13b7e94fdaaedf970ea39827a89a2b91832194671"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rotated-shape-bounds.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "2b5eb50daaf106d835006971061a719484aa86c9f5875af2277242749d44679f"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.rough-fillers-dashed-zigzag-line.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "c2c540e2ddf5aa6a01af658e88e22bc002a1a0b4ea75f71cc70c70645d412597"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rough-fillers-dashed-zigzag-line/evidence/official.svg",
+        "sha256": "18b66eaba0fd3aad6ad63d7d90ac94dfb3a92bf24fb6987517800000dd819e6c"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rough-fillers-dashed-zigzag-line.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "c2c540e2ddf5aa6a01af658e88e22bc002a1a0b4ea75f71cc70c70645d412597"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rough-fillers-dashed-zigzag-line/evidence/official.png",
+        "sha256": "49f02d875c14850efa15d33c14248714e64244cd6ccb882429356ff8e3e2b036"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rough-fillers-dashed-zigzag-line.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "c2c540e2ddf5aa6a01af658e88e22bc002a1a0b4ea75f71cc70c70645d412597"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.rounded-image-crop.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "c2fe41d82e3239c50041b067bdfcf816cc9470a83dc188408ef69eb64fd2b4df"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rounded-image-crop/evidence/official.svg",
+        "sha256": "f23c9ebbe2d705a572b3f782e276848f5f9201d72511de3b658864683f5e325a"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rounded-image-crop.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "c2fe41d82e3239c50041b067bdfcf816cc9470a83dc188408ef69eb64fd2b4df"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rounded-image-crop/evidence/official.png",
+        "sha256": "9570bfed243d04fd938dcd2ebbaaabfffea32800260e6306214fc23296c67ec3"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rounded-image-crop.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "c2fe41d82e3239c50041b067bdfcf816cc9470a83dc188408ef69eb64fd2b4df"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.rounded-image.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "8efaf19a445576cc9efa4b08167c7ffee8cb5bcd3791c4821b26c69fdffaec52"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rounded-image/evidence/official.svg",
+        "sha256": "a8ddc237ec9de1c655f37141fad99bf29db742f680ba64ed69db99e528e03405"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rounded-image.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "8efaf19a445576cc9efa4b08167c7ffee8cb5bcd3791c4821b26c69fdffaec52"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rounded-image/evidence/official.png",
+        "sha256": "aefd72ab54d2eff23902fe4db8e71d557a59000225f349c858494f09dd66398b"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rounded-image.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "8efaf19a445576cc9efa4b08167c7ffee8cb5bcd3791c4821b26c69fdffaec52"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.rounded-image.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "89efd5e8148f9154adc332978ce8331b9db36d718caddaa657fe1f69740c8a1a"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rounded-image/evidence/scale-2/official.svg",
+        "sha256": "e052b5502a13ba8b73ee33b01de2d7223cc88c17ccf4e2045aedc02cf2a75539"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rounded-image.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "89efd5e8148f9154adc332978ce8331b9db36d718caddaa657fe1f69740c8a1a"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/rounded-image/evidence/scale-2/official.png",
+        "sha256": "366659856f96c332c5cfe0f1c482f002012c59c193c5041f49caf768d0501b92"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.rounded-image.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "89efd5e8148f9154adc332978ce8331b9db36d718caddaa657fe1f69740c8a1a"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.roundness-records.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "a8c5c75afa9aadc0953be3a5062b0a655f291446347f2bca8a269e2e56fc1703"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/roundness-records/evidence/official.svg",
+        "sha256": "860b6ea8a623f2128443edf316774728beb493cca051ce205544ee3daefa33b1"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.roundness-records.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "a8c5c75afa9aadc0953be3a5062b0a655f291446347f2bca8a269e2e56fc1703"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/roundness-records/evidence/official.png",
+        "sha256": "6f2f53b1c557cc712f5141feedc740b3878fa72814a52e3d9bd0ba5dd20086ba"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.roundness-records.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "a8c5c75afa9aadc0953be3a5062b0a655f291446347f2bca8a269e2e56fc1703"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.text-alignment-vertical.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "52b35d1f27fc93085ed1e33f76564aa807ae143c604ef71fe4819be6ad7f23f7"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/text-alignment-vertical/evidence/official.svg",
+        "sha256": "ec785ac71c7db3a26c62214d0d75da69c78ecd2915484c7d9b7c9176f38201cc"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.text-alignment-vertical.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "52b35d1f27fc93085ed1e33f76564aa807ae143c604ef71fe4819be6ad7f23f7"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/text-alignment-vertical/evidence/official.png",
+        "sha256": "d78eb7387129b58030fba9f8b0edc0c4a536562ab62734ac47d7f607f4b36a26"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.text-alignment-vertical.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "52b35d1f27fc93085ed1e33f76564aa807ae143c604ef71fe4819be6ad7f23f7"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.text-line-endings.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "026ccf9bc00a8adc4ac9b3db384cc6ed67b411a4ac7af5768f5cbecef1873e45"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/text-line-endings/evidence/official.svg",
+        "sha256": "13a1fda19d396c82e11469b3611724fd4d4e0272d07b175ed4a65538d291e574"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.text-line-endings.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "026ccf9bc00a8adc4ac9b3db384cc6ed67b411a4ac7af5768f5cbecef1873e45"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/text-line-endings/evidence/official.png",
+        "sha256": "f794277383793777f6d6a85f65eb998aa1fe3024f42b869c493c57382ccc1ee0"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.text-line-endings.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "026ccf9bc00a8adc4ac9b3db384cc6ed67b411a4ac7af5768f5cbecef1873e45"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "4ffa726a06bed3288f150bedeb7cc9f74f9d329d457d54e6ccc243378396e026"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/transform-opacity-groups/evidence/official.svg",
+        "sha256": "2306b6beb688740989e6a5f3b8b416187907ac1a4cb9a69eff5b429b5ed74290"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "4ffa726a06bed3288f150bedeb7cc9f74f9d329d457d54e6ccc243378396e026"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/transform-opacity-groups/evidence/official.png",
+        "sha256": "227e94672e590556620eb7b0fded1f5c95a530863b4f20cbd8795c17723a1563"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "default",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "4ffa726a06bed3288f150bedeb7cc9f74f9d329d457d54e6ccc243378396e026"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "no-background",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "69d86d373d218387d43452a30840b0c7e7ce79ea861a22eb973a187c207e2c70"
+      },
+      "options": {
+        "exportBackground": false,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/transform-opacity-groups/evidence/no-background/official.svg",
+        "sha256": "e74542d0d9b6308bd6c6b0836564923f4834f5707b159ff50afc59d3530752f0"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "no-background",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "69d86d373d218387d43452a30840b0c7e7ce79ea861a22eb973a187c207e2c70"
+      },
+      "options": {
+        "exportBackground": false,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/transform-opacity-groups/evidence/no-background/official.png",
+        "sha256": "fb81bdabc39fc16366f553ddaa0e80dd0503997485b27cc2c4cd80d77431b863"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "no-background",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "69d86d373d218387d43452a30840b0c7e7ce79ea861a22eb973a187c207e2c70"
+      },
+      "options": {
+        "exportBackground": false,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "padding-0",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "cacd5ae0fad3ab43a0343e3d7a84aa0f251967342448dd0f1867ab8a2846379b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 0,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/transform-opacity-groups/evidence/padding-0/official.svg",
+        "sha256": "1c28c04ebdc8d1a4c2b6f5ad3790d3fa38e4e5ae3b77677501aa65ee31ae2190"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "padding-0",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "cacd5ae0fad3ab43a0343e3d7a84aa0f251967342448dd0f1867ab8a2846379b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 0,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/transform-opacity-groups/evidence/padding-0/official.png",
+        "sha256": "b46a05d4c62cfc9b16bb685adc98f746db68edcd758cef8b0efc182be6a9f175"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "padding-0",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "cacd5ae0fad3ab43a0343e3d7a84aa0f251967342448dd0f1867ab8a2846379b"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 0,
+        "exportScale": 1,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "svg",
+        "inputs_sha256": "e21845333cf9d53859b7af77f4ae5417f94c8a07f8e8b44f83dc21a273909c11"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/transform-opacity-groups/evidence/scale-2/official.svg",
+        "sha256": "0522d8114c79415e61c2bdb886502d520f31944f0f9cc2c3c7d75529beac72b8"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "png",
+        "inputs_sha256": "e21845333cf9d53859b7af77f4ae5417f94c8a07f8e8b44f83dc21a273909c11"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": {
+        "path": "tests/conformance/cases/focused/transform-opacity-groups/evidence/scale-2/official.png",
+        "sha256": "af4a14268e0d6ca0d98c2c0e7c00e890e8427b5472f1e92b31175f8e88944929"
+      }
+    },
+    {
+      "key": {
+        "case": "focused.transform-opacity-groups.v1",
+        "variant": "scale-2",
+        "export": {
+          "kind": "scene"
+        },
+        "format": "pdf",
+        "inputs_sha256": "e21845333cf9d53859b7af77f4ae5417f94c8a07f8e8b44f83dc21a273909c11"
+      },
+      "options": {
+        "exportBackground": true,
+        "exportEmbedScene": false,
+        "exportPadding": 10,
+        "exportScale": 2,
+        "exportWithDarkMode": false,
+        "frameRendering": {
+          "clip": true,
+          "enabled": true,
+          "name": true,
+          "outline": true
+        },
+        "maxWidthOrHeight": null,
+        "viewBackgroundColor": "#ffffff"
+      },
+      "reference_artifact": null
+    }
+  ],
+  "requirements": [
+    {
+      "id": "corpus.five-layers",
+      "issue": 85,
+      "remaining": "Integrate exact vectors, focused, representative, adversarial and regression owners; promote representative scenes with approved sanitization and crops.",
+      "evidence": [
+        {
+          "source": {
+            "path": "tests/public-scenes/README.md",
+            "sha256": "1919facd7644258c91f1fa37ea79a07f58c1b40d291c50f4f5ad9d416a62a064"
+          },
+          "anchor": "# Public scene pool"
+        }
+      ]
+    },
+    {
+      "id": "coverage.global-ownership",
+      "issue": 85,
+      "remaining": "Extend the draft field/label inventory to all diagnostic, codec/profile, exception and interaction rows; choose and approve exactly one primary owner or justified exclusion per row.",
+      "evidence": [
+        {
+          "source": {
+            "path": "xtask/src/conformance.rs",
+            "sha256": "8f9e6ec90fd590f121a83df7b6000255acd6e2996d00fa4b48d91e9a55d74087"
+          },
+          "anchor": "fn verify_case_metadata("
+        }
+      ]
+    },
+    {
+      "id": "fuzz.codecs",
+      "issue": 82,
+      "remaining": "Generate and mutate all admitted raster profiles and nested SVG paths under semantic limits; characterize and retain minimized failures.",
+      "evidence": [
+        {
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/static_png_asset_render.rs",
+            "sha256": "f7e38118b3838b65deb07b0caa96b77271a510884a1e6b8ee95519587a54b051"
+          },
+          "anchor": "fn apng_is_preserved_in_svg_and_flattened_to_frame_zero_in_png_and_pdf()"
+        }
+      ]
+    },
+    {
+      "id": "fuzz.complete-render",
+      "issue": 83,
+      "remaining": "Extend actual generated rendering beyond SVG to PNG/PDF, metadata, reports, frames and failure/limit outcomes.",
+      "evidence": [
+        {
+          "source": {
+            "path": "crates/excalidraw-render/src/scene_fuzz/mod.rs",
+            "sha256": "131f9f28adb9997de4b73225f6a4249abfd177003fdf7bd9326016724eb4b73c"
+          },
+          "anchor": "pub(crate) fn assert_scene_fuzz_smoke()"
+        },
+        {
+          "source": {
+            "path": "crates/excalidraw-render/src/render/font_subset_fuzz.rs",
+            "sha256": "10aa9c2c14509f3861e7cac760a117c55438cceef4cf97bcd076543619899a9a"
+          },
+          "anchor": "pub(crate) fn assert_font_subset_fuzz_smoke()"
+        }
+      ]
+    },
+    {
+      "id": "snapshots.public-facade",
+      "issue": 85,
+      "remaining": "Generate and approve exact artifact and serialized report expectations for every execution key through the packaged public facade.",
+      "evidence": [
+        {
+          "source": {
+            "path": "tests/package-consumer/tests/public_facade.rs",
+            "sha256": "0d8983c3d21c3d1d8fca49b68fca9ac2e77f0157b17be0d41cc28511b5e21937"
+          },
+          "anchor": "fn packaged_public_facade_preserves_artifact_byte_stability()"
+        }
+      ]
+    },
+    {
+      "id": "determinism.process-order",
+      "issue": 86,
+      "remaining": "Implement collectors executing forward/reverse keys in independent processes or WASM instances, with two fresh sessions per key.",
+      "evidence": [
+        {
+          "source": {
+            "path": "tests/package-consumer/tests/public_facade.rs",
+            "sha256": "0d8983c3d21c3d1d8fca49b68fca9ac2e77f0157b17be0d41cc28511b5e21937"
+          },
+          "anchor": "let mut reverse_round ="
+        }
+      ]
+    },
+    {
+      "id": "determinism.cross-target",
+      "issue": 86,
+      "remaining": "Populate this result contract from the complete risk inventory, compare approved canonical outputs, and wire automatic Dagger execution; existing live aggregation is font-specific.",
+      "evidence": [
+        {
+          "source": {
+            "path": "xtask/src/svg_font_subset_targets.rs",
+            "sha256": "ee099545069eb5dc56669d13061d970fd0a026dd32a72f654a8850bc66e194f4"
+          },
+          "anchor": "pub(crate) fn aggregate("
+        }
+      ]
+    },
+    {
+      "id": "smoke.mixed-scene",
+      "issue": 86,
+      "remaining": "One checked all-format scene must combine rough geometry, bundled/fallback fonts, image, frames/clipping and ordered diagnostics, with complete canonical report bytes.",
+      "evidence": [
+        {
+          "source": {
+            "path": "tests/package-consumer/tests/public_facade.rs",
+            "sha256": "0d8983c3d21c3d1d8fca49b68fca9ac2e77f0157b17be0d41cc28511b5e21937"
+          },
+          "anchor": "fn packaged_public_facade_renders_discovered_frames_directly_and_lazily()"
+        }
+      ]
+    }
+  ]
+}

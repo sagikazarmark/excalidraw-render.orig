@@ -93,6 +93,13 @@ checks them recursively. Viewer approvals and generated-byte pins are separate.
 
 ## Updating the runner
 
+The shared #85/#86 draft inventory is checked by
+`dagger check excalidraw-render:conformance:coverage-inventory` and staged with
+`dagger api call evidence inventory --output target/inventory.json`.
+See [the inventory/result contract](../tests/conformance/coverage/README.md).
+Its consistency check does not grant release closure: `conformance verify-closure`
+rejects the draft until ownership and canonical snapshot evidence are complete.
+
 Recent `daggerverse-beta` changes at `b0671fd12a` add toolchain/MSRV overrides,
 manifest-configured cargo-hack, automatic nextest plus doctests, cargo selection
 flags for clippy, and the `cargoProfile` CLI collision fix. The module lock now

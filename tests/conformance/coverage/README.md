@@ -1,0 +1,148 @@
+# Shared coverage and execution contract (#85 / #86)
+
+This is a **draft inventory**, not a release approval or a claim of complete
+revision-1 coverage. It gives corpus closure and target collectors one checked
+input set and one result key. The current inventory has:
+
+- 202 scene-surface field rows and 118 distinct existing case coverage labels;
+- 37 registered cases, 49 scene variants and 7 frame targets;
+- 168 execution keys: each scene variant/frame target in SVG, PNG and PDF;
+- 112 reference artifact descriptors and 56 explicit absent PDF reference
+  descriptors (specialized PDF evidence is still a separate integration task);
+- 27 labels with multiple candidate cases and eight unresolved milestones.
+
+## Inventory lifecycle
+
+`requirements.json` names the outstanding work and links existing tests/other
+evidence by source digest and exact textual anchor. These anchors establish
+where code exists, **not that it ran or completely covers a requirement**.
+The fixed milestone set cannot silently shrink. Source-anchor updates are ordinary
+reviewed edits; they are not additions to existing human approval subjects.
+
+`inventory.json` is derived from those requirements, the case registry, current
+case manifests, scene-surface fields, scene bytes, reference profiles and the
+asset catalog. The verifier derives it again, checks referenced bytes and source
+anchors, then verifies all registered-case approvals. New/deleted/changed cases,
+variants, field rows, scene bytes, artifact bytes and source anchors cannot leave
+a stale inventory green. Do not edit derived records by hand.
+
+```sh
+cargo run --locked -p xtask -- conformance inventory > target/inventory.json
+# Review the staged diff, then copy target/inventory.json here.
+cargo run --locked -p xtask -- conformance verify-inventory
+cargo run --locked -p xtask -- conformance inventory-digest
+dagger check excalidraw-render:conformance:coverage-inventory
+```
+
+Generation through the pinned Dagger environment:
+
+```sh
+dagger api call evidence inventory --output target/inventory.json
+```
+
+`surface:<recordKind>:<path>` rows come from the existing authority. `case-label:`
+rows come from the approved manifests' local labels. Their `candidates` are sorted
+case IDs, not globally selected owners. A single candidate is not automatically
+approved as primary, and several candidates do not silently pick the first one.
+Existing approved manifests are left intact during ownership design.
+
+The draft does not yet expand every diagnostic, codec/profile, exception and
+interaction into atomic inventory rows. `requirements.json` records that gap.
+`conformance verify-closure` **always rejects this draft**, even if all current
+rows have candidates or a synthetic result bundle validates. Completion needs
+the approved global ownership/exclusion ledger and canonical snapshots; that is
+the next schema transition, not flipping a free-standing `complete` flag.
+
+## Execution key
+
+Every result identifies the exact `key` object from an inventory execution:
+
+```json
+{
+  "case": "focused.rectangle-outline.v1",
+  "variant": "default",
+  "export": {"kind": "scene"},
+  "format": "svg",
+  "inputs_sha256": "<64 lowercase hex characters>"
+}
+```
+
+Frame keys use `{"kind":"frame","ordinal":1}`; ordinals are positive source
+ordinals, not names. `inputs_sha256` binds canonical JSON containing the manifest
+descriptor, scene descriptor, reference-profile descriptor, asset-catalog
+descriptor, options and export target. Each descriptor hashes the actual file
+bytes. The draft v1 digest uses this repository's `conformance::canonical_bytes`:
+recursive sorted object keys, compact arrays/objects and serde_json 1.0.141
+string/number spelling. It is independent of pretty printing but **not RFC8785
+number normalization** (for example, `1.0` remains distinct from `1`). Collectors
+must use `inventory-digest` rather than reserialize with another JSON library.
+The approved closure/snapshot transition must settle RFC8785 number handling;
+this draft digest must not be used as a canonical human approval subject.
+
+Execution `options` preserve the reference manifest's request vocabulary. A
+future public-facade collector must implement and validate its deterministic
+mapping to RenderRequest/FrameRenderRequest (including frame zero-padding and
+format-specific behavior); this draft does not claim those raw options are
+already normalized Rust request values. PDF keys are explicit work items rather
+than pretending official SVG bytes are a PDF canonical snapshot.
+
+## Result bundle v1
+
+`xtask/src/coverage.rs` defines strict serde types (`deny_unknown_fields` on every
+record and tagged union). This is the executable wire contract, shared through
+JSON with future native and WASM collectors:
+
+```text
+schema = "excalidraw-render/coverage-results/v1"
+compatibility_revision = 1
+commit = 40 lowercase hex characters
+inventory_sha256 = canonical inventory digest
+tool_manifest_sha256 = SHA-256(tests/package-consumer/tool-manifest.json)
+dagger_lock_sha256 = SHA-256(dagger.lock)
+runs = exactly one run per (supported target, forward|reverse)
+  target = x86_64-unknown-linux-gnu | wasm32-unknown-unknown
+  order = forward | reverse
+  process_id = nonempty collector-issued distinct process/instance identity
+  results = every inventory key in its declared forward/reverse order
+    key = exact inventory key
+    samples = exactly two fresh-session samples
+      outcome = {kind: artifact, bytes: {sha256, byte_length}}
+             or {kind: failure, code: nonempty string}
+      report = {sha256, byte_length}
+      trace = {sha256, byte_length}
+```
+
+All byte digests are 64 lowercase hex; byte lengths must be positive. Each sample
+carries the digest/length of the whole artifact (when present), complete serialized
+compatibility report, and canonical trace. The trace comes from a test-only seam;
+no public trace API is introduced. Both session samples, both process orders,
+and both supported targets must agree exactly by key, outcome and byte descriptors.
+Typed failures participate equally and cannot be substituted for artifacts on
+only one target. Trace values are compared fresh, not against historical per-cell
+pins (ADR-0002).
+
+```sh
+cargo run --locked -p xtask -- conformance verify-results target/results.json
+```
+
+The validator rejects missing/extra/duplicate/stale keys, wrong sequence, missing
+targets/orders, reused process IDs, malformed/unknown fields, mismatched tooling
+and unequal output/report/trace samples. It deliberately prints **draft equality**,
+not release success: hashes and process IDs alone cannot attest real execution,
+and no canonical snapshot oracle is connected yet. A future collector must own
+fresh process/session creation, hash the captured bytes, retain reproducible
+artifacts/logs, validate real commit/package provenance, and compare outcomes
+against approved canonical expectations. Inventing equal hashes (as contract
+tests do) proves only the validator's behavior.
+
+## Next implementation
+
+1. Expand the authority into complete atomic risks and approve ownership and
+   exclusions; connect exact vectors and specialized PDF/frame/regression owners.
+2. Implement the request adapter and native public-facade snapshot collector for
+   these keys; generate, review and approve canonical artifact/report expectations.
+3. Run the same keys in pinned browser WASM, collect test-only traces, and validate
+   actual fresh processes/instances in both orders using this result boundary.
+4. Promote representative cases and expand codec/renderer fuzz reach, then make
+   complete collection/equality/snapshot checking a Dagger release gate. Only then
+   replace the draft closure rejection with a verified approved closure state.

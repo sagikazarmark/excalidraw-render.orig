@@ -54,7 +54,7 @@
     "runnerInputs": [
       {
         "path": "dagger-evidence.dang",
-        "sha256": "18135f36318fcccb40476af2224228b6490c1085274248b00a304220ce38d685"
+        "sha256": "c87d505da3eccef938e2912b1cfcfc2a49478e8bac62b6ea06495ec3391c67b0"
       },
       {
         "path": "dagger.lock",
@@ -80,7 +80,7 @@
     "status": "aggregated",
     "workflow": {
       "path": "dagger.dang",
-      "sha256": "604aa84bcaf65e03ff11b4b0522663f2c74abe278d5d066dac2f787e6500bd65"
+      "sha256": "1e3abe0bd67d3bb6847f5f0aad5071a7ca92e6bf3d9b3ff4f603d6fa712eae3e"
     }
   },
   "viewerEvidence": {

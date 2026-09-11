@@ -38,6 +38,17 @@ type Evidence {
   }
 
   """
+  Stage the shared draft coverage inventory for review (#85 / #86).
+  """
+  inventory: File! {
+    self.container
+      .withExec([
+        "cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "inventory",
+      ], redirectStdout: "/inventory.json")
+      .file("/inventory.json")
+  }
+
+  """
   Regenerate the per-cell font subset corpus in the pinned native toolchain.
   """
   fontCorpus: Directory! {

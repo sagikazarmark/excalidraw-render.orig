@@ -1,5 +1,6 @@
 mod catalog;
 mod conformance;
+mod coverage;
 mod pdf_viewers;
 mod svg_font_subset_runner;
 mod svg_font_subset_targets;
@@ -77,6 +78,27 @@ fn run_catalog(mut args: impl Iterator<Item = String>) -> Result<(), String> {
 
 fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String> {
     match args.next().as_deref() {
+        Some("inventory") => {
+            no_more_args(args)?;
+            println!("{}", coverage::inventory_json()?);
+        }
+        Some("inventory-digest") => {
+            no_more_args(args)?;
+            println!("{}", coverage::inventory_digest()?);
+        }
+        Some("verify-inventory") => {
+            no_more_args(args)?;
+            coverage::verify_inventory()?;
+        }
+        Some("verify-results") => {
+            let report = required_arg(&mut args, "result bundle path")?;
+            no_more_args(args)?;
+            coverage::verify_results(&report)?;
+        }
+        Some("verify-closure") => {
+            no_more_args(args)?;
+            coverage::verify_closure()?;
+        }
         Some("verify") => {
             let case_id = required_arg(&mut args, "case ID")?;
             no_more_args(args)?;
@@ -278,7 +300,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
         "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
-        "conformance <generate|reproduce|verify|verify-all|approval-subject|record-approval|",
+        "conformance <inventory|inventory-digest|verify-inventory|verify-results|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"

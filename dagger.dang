@@ -188,6 +188,14 @@ type Conformance {
   }
 
   """
+  Validate the draft coverage inventory against current cases and source anchors.
+  This checks consistency; conformance verify-closure remains the release gate.
+  """
+  coverageInventory: String! @check {
+    self.xtask(["conformance", "verify-inventory"])
+  }
+
+  """
   Verify the sealed revision catalog.
   """
   catalog: String! @check {
