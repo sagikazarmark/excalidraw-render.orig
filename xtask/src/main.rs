@@ -100,6 +100,20 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             coverage::verify_snapshots(&directory)?;
         }
+        Some("stage-wasm-snapshots") => {
+            no_more_args(args)?;
+            coverage::stage_wasm_snapshots()?;
+        }
+        Some("verify-wasm-snapshots") => {
+            let directory = required_arg(&mut args, "WASM log directory")?;
+            no_more_args(args)?;
+            coverage::verify_wasm_snapshots(&directory)?;
+        }
+        Some("report-wasm-snapshots") => {
+            let directory = required_arg(&mut args, "WASM log directory")?;
+            no_more_args(args)?;
+            coverage::report_wasm_snapshots(&directory)?;
+        }
         Some("stage-native-baseline") => {
             let candidate = required_arg(&mut args, "snapshot directory")?;
             let output = required_arg(&mut args, "new baseline directory")?;
@@ -332,7 +346,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
         "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
-        "conformance <inventory|inventory-digest|verify-inventory|verify-results|verify-native-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
+        "conformance <inventory|inventory-digest|verify-inventory|verify-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"

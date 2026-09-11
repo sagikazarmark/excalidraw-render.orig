@@ -19,8 +19,8 @@ const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"
 
 mod snapshots;
 pub use snapshots::{
-    baseline_subject, record_baseline_approval, replay_snapshots, stage_baseline, verify_baseline,
-    verify_snapshots,
+    baseline_subject, record_baseline_approval, replay_snapshots, report_wasm_snapshots,
+    stage_baseline, stage_wasm_snapshots, verify_baseline, verify_snapshots, verify_wasm_snapshots,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]

@@ -439,12 +439,39 @@ type Packaging {
   Fails closed while the baseline awaits approval.
   """
   snapshotReplay: String! @check {
-    if (self.target != hostTarget) { return "native replay is checked by packaging:snapshot-replay" }
+    if (self.target != hostTarget) { return self.browserSnapshots.file("replay.json").contents }
     self.container
       .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "verify-native-baseline"])
       .withDirectory("/snapshots", self.snapshots)
       .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "replay-native-snapshots", "/snapshots"])
       .combinedOutput
+  }
+
+  """
+  Export browser snapshot logs and exact comparison with the approved native baseline.
+  """
+  browserSnapshots: Directory! {
+    self.browserSnapshotRun
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "verify-wasm-snapshots", "/wasm-snapshots"])
+      .directory("/wasm-snapshots")
+  }
+
+  """
+  Preserve successful browser execution logs even when baseline comparison fails.
+  """
+  browserSnapshotLogs: Directory! {
+    self.browserSnapshotRun
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "report-wasm-snapshots", "/wasm-snapshots"])
+      .directory("/wasm-snapshots")
+  }
+
+  let browserSnapshotRun: Container! {
+    if (self.target != "wasm32-unknown-unknown") { raise "browser snapshots require wasm target" }
+    self.packaged
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "stage-wasm-snapshots"])
+      .withWorkdir("tests/package-consumer")
+      .withExec(["bash", "/work/src/tools/ci/wasm-snapshots.sh"])
+      .withWorkdir("/work/src")
   }
 
   """

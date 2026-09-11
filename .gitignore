@@ -1,5 +1,7 @@
 /target/
 /tests/package-consumer/target/
+/tests/package-consumer/tests/generated_snapshots.rs
+/tests/package-consumer/tests/snapshot-inputs.json
 /tools/svg-viewer-rust/target/
 /tools/reference-oracle/dist/
 /tools/reference-oracle/frame-dist/

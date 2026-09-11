@@ -285,6 +285,29 @@ pub fn replay_snapshots(candidate: &str) -> Result<(), String> {
     Ok(())
 }
 
+pub(super) fn compare_results(
+    results: &[SnapshotResult],
+    reverse: bool,
+) -> Result<Vec<Value>, String> {
+    let baseline = load(&repo_root().join(BASELINE))?;
+    let mut actual: Vec<_> = results.iter().collect();
+    if reverse {
+        actual.reverse();
+    }
+    if actual.len() != baseline.expectations.len() {
+        return Err("WASM replay count differs from native baseline".into());
+    }
+    let mut differences = Vec::new();
+    for (expected, actual) in baseline.expectations.iter().zip(actual) {
+        if expected.key != actual.key || actual.samples.iter().any(|s| s != &expected.sample) {
+            differences.push(
+                json!({"key":expected.key,"expected":expected.sample,"actual":actual.samples}),
+            );
+        }
+    }
+    Ok(differences)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

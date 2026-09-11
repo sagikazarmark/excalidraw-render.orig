@@ -108,6 +108,12 @@ and exports complete artifact/report bytes and package provenance for review.
 approval and rerenders the current package against all canonical native
 expectations. The initial #85 baseline is approved and its full replay passes;
 see the coverage README for the approval record and exact workflow.
+The corresponding `excalidraw-render:wasm:snapshot-replay` check now executes all
+168 keys in pinned browser WASM and compares with the approved native baseline.
+Its initial run exposed seven mismatches; the ICO accounting fix resolves three,
+and four PNG mismatches remain tracked in #178. See
+[the investigation record](research/wasm-snapshot-mismatches.md). Export diagnostic
+logs with `dagger api call wasm browser-snapshot-logs --output target/wasm-snapshot-logs`.
 
 Recent `daggerverse-beta` changes at `b0671fd12a` add toolchain/MSRV overrides,
 manifest-configured cargo-hack, automatic nextest plus doctests, cargo selection

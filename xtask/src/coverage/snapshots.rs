@@ -25,14 +25,14 @@ struct SnapshotSample {
     report: Bytes,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 struct SnapshotResult {
     key: CaseKey,
     samples: [SnapshotSample; 2],
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 struct SnapshotRun {
     order: Order,
@@ -304,9 +304,11 @@ pub fn verify_snapshots(directory: &str) -> Result<(), String> {
 
 mod baseline;
 mod provenance;
+mod wasm;
 pub use baseline::{
     baseline_subject, record_baseline_approval, replay_snapshots, stage_baseline, verify_baseline,
 };
+pub use wasm::{report_wasm_snapshots, stage_wasm_snapshots, verify_wasm_snapshots};
 
 #[cfg(test)]
 mod tests {

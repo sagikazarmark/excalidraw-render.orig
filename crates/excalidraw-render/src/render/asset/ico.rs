@@ -58,8 +58,22 @@ pub(super) fn selected_entry(bytes: &[u8]) -> Result<Entry, ()> {
 
 pub(super) fn validation_work(bytes: &[u8]) -> Result<u64, ()> {
     let count = u64::try_from(directory_count(bytes)?).map_err(|_| ())?;
-    let comparisons_per_entry = u64::from(usize::BITS - count.max(1).leading_zeros());
+    let comparisons_per_entry = u64::from(u64::BITS - count.max(1).leading_zeros());
     count.checked_mul(comparisons_per_entry).ok_or(())
+}
+
+#[cfg(test)]
+mod work_tests {
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    #[cfg_attr(not(target_arch = "wasm32"), test)]
+    fn directory_sort_work_uses_the_count_width_on_every_target() {
+        for (count, expected) in [(1_u16, 1_u64), (2, 4), (3, 6), (4, 12), (255, 2040)] {
+            let mut bytes = vec![0; 6 + usize::from(count) * 16];
+            bytes[2..4].copy_from_slice(&1_u16.to_le_bytes());
+            bytes[4..6].copy_from_slice(&count.to_le_bytes());
+            assert_eq!(super::validation_work(&bytes), Ok(expected));
+        }
+    }
 }
 
 pub(super) fn directory_workspace(bytes: &[u8]) -> Result<u64, ()> {

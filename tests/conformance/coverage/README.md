@@ -137,6 +137,32 @@ tests do) proves only the validator's behavior.
 
 ## Next implementation
 
+### Browser-WASM collection and replay
+
+```sh
+dagger check excalidraw-render:wasm:snapshot-replay
+dagger api call wasm browser-snapshot-logs --output target/wasm-snapshot-logs
+```
+
+The first is a blocking comparison against the approved native baseline. The
+second exports logs and `replay.json` even when comparison fails; check its
+`decision`. Both execute all 168 keys twice in each of separate forward/reverse
+browser runner invocations. The generated harness embeds the scenes and options
+and reuses the approved native collector source's request adapter without editing
+that approval-pinned file. Generated Rust/input files are ignored staging files.
+
+Per-key digests/lengths cover complete artifacts, reports and typed failure
+descriptors. The host rejects missing/extra/duplicate/out-of-order keys, absent
+or duplicate completion, stale input binding, session drift, and any native
+baseline difference. Logs are execution evidence, not trusted attestations when
+supplied independently of the Dagger runner. No trace values are fabricated.
+
+Initial execution found seven cross-target mismatches (four PNG byte differences
+and image-codecs resource failures in all formats); 161 keys match. Both WASM
+orders and all repeats agree. The ICO accounting fix resolves the three resource
+failures; four PNG differences remain under #178. The automatic gate stays red
+until those discrepancies are fixed. See [the findings](../../../docs/research/wasm-snapshot-mismatches.md).
+
 ### Canonical baseline approval and replay
 
 `native-baseline/revision-1.json` stages the clean `2155a99` collection as
