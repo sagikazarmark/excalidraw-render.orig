@@ -239,3 +239,14 @@ tarball also fits the crates.io 10 MiB cap, though not by much:
 
 So publishing with the fork remains available at any time; retiring it is a
 maintenance decision, not a precondition for release.
+
+Single refresh in progress after `16d1fe4`: all three identity tokens now name
+the upstream versions, the spec and WASM logging call sites are updated, and
+the corpus/catalog, cross-target measurement and full dual-viewer evidence
+have been regenerated through Dagger. Both supported targets agree on all
+977 byte cells and 1204 traces; both viewers pass all 857 executions. The
+name-only sfnt comparison passes. The refreshed #99 and #120 subjects received
+explicit maintainer approval on 2026-09-11, followed by clean-commit packaging and aggregate
+binding. `docs/font-identity-refresh.md` records the exact subjects, results,
+and execution fixes. Stage C and the publication block remain open until
+those completion gates pass; other evidence-touching work remains frozen.

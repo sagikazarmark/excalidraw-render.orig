@@ -5,25 +5,6 @@
 //! covering artifact bytes, compatibility diagnostics, and failure behavior.
 //! The compatibility-revision public API is being implemented incrementally.
 
-/// `wasm32-unknown-unknown` has no stdout, so the qualification measurement
-/// line that `render/font_subset_qualification.rs` prints with `println!`
-/// never reaches `wasm-bindgen-test-runner`, and the supported-target aggregate
-/// cannot assemble (ADR-0003). That file is pinned by the #99 approval until
-/// the refresh, so WASM test builds route `println!` to the browser console
-/// here instead — textual macro scoping applies this to every module declared
-/// below — and the runner's `--nocapture` surfaces it in the job log the way
-/// native stdout does. The refresh replaces this with `console_log!` at the
-/// call site; delete this shim in the same change-set.
-#[cfg(all(test, target_arch = "wasm32"))]
-macro_rules! println {
-    () => {
-        wasm_bindgen_test::console_log!("")
-    };
-    ($($arg:tt)*) => {
-        wasm_bindgen_test::console_log!($($arg)*)
-    };
-}
-
 mod catalog;
 mod color;
 mod compatibility;

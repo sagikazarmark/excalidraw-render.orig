@@ -15,7 +15,7 @@ const MAX_SOURCE_WOFF2_BYTES: usize = 100_000;
 const MAX_DECODED_SFNT_BYTES: usize = 10_000_000;
 const MAX_DERIVED_WOFF2_BYTES: usize = 1_000_000;
 const REGRESSION_SCHEMA: &str = "excalidraw-render/svg-font-subset-fuzz-regressions/v1";
-const PROFILE_SHA256: &str = "49015dfb91f9e89fcf1e7f3e16fd892e4c1715f5d49b6488d67037b7aac21c23";
+const PROFILE_SHA256: &str = "522b5b9a6f1ae71af1ce72ddda9db2c6aca6607fc7567b1362ec449c2339abd0";
 const REQUIRED_RISKS: [Risk; 7] = [
     Risk::MalformedSourceWoff2,
     Risk::MalformedGeneratedSfnt,

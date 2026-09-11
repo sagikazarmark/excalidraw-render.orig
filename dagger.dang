@@ -381,6 +381,16 @@ type Packaging {
   }
 
   """
+  Execute qualification and export its log during an evidence refresh, before
+  viewer approval permits materializing release-target reports.
+  """
+  qualificationLog: File! {
+    self.container.withExec([
+      "bash", "tools/ci/qualification.sh", self.target, "/qualification.log",
+    ]).file("/qualification.log")
+  }
+
+  """
   Check the packaged CLI against the packaged renderer.
   """
   cli: String! @check {
@@ -419,9 +429,7 @@ type Packaging {
   }
 
   let qualified: Container! {
-    self.container.withExec([
-      "bash", "tools/ci/qualification.sh", self.target, "/qualification.log",
-    ])
+    self.container.withFile("/qualification.log", self.qualificationLog)
       .withExec([
         "cargo", "run", "--locked", "-p", "xtask", "--", "conformance",
         "materialize-svg-font-subset-target", self.target, "/qualification.log", "/qualification.json",

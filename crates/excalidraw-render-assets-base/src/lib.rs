@@ -42,7 +42,7 @@ const fn table_rule(
 }
 
 /// Non-table settings in the compatibility-revision-1 SVG subset profile.
-pub const FONT_SUBSET_PROFILE_SETTINGS_V1: &[u8] = b"excalidraw-render:svg-font-subset-profile:v1\nclosure=layout,composite,bidi\nlayout=all\nhinting=retain\nglyph-renumbering=true\nvariations=retain\nnames=0-6,13-14:en-US\nflags=none\noverlap-simple=clear\nempty-glyf=nonempty-notdef\nwoff2=wuff-0.2.8,skera-0.5.1,excalidraw-render-ttf2woff2-0.1.0(upstream-0.13.2),excalidraw-render-brotli-0.1.0(upstream-8.0.4),q11,glyf-loca,threads-1,portable-math\n";
+pub const FONT_SUBSET_PROFILE_SETTINGS_V1: &[u8] = b"excalidraw-render:svg-font-subset-profile:v1\nclosure=layout,composite,bidi\nlayout=all\nhinting=retain\nglyph-renumbering=true\nvariations=retain\nnames=0-6,13-14:en-US\nflags=none\noverlap-simple=clear\nempty-glyf=nonempty-notdef\nwoff2=wuff-0.2.8,skera-0.7.0,ttf2woff2-0.13.3,brotli-9.0.0,q11,glyf-loca,threads-1,portable-math\n";
 
 /// Complete table-action manifest for every table admitted by the sealed corpus.
 pub const FONT_SUBSET_TABLE_RULES_V1: &[FontSubsetTableRule] = &[

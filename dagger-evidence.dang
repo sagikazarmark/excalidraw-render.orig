@@ -130,7 +130,7 @@ type Evidence {
   let harness: Container! {
     Dagger.container(platform: "linux/amd64")
       .from("mcr.microsoft.com/playwright@sha256:111dde95859f2c659291cb60e698f9048a8fc30b35b4ddb7c90f9cb5b73062d9")
-      .withExec(["bash", "-eu", "-c", "apt-get update && apt-get install -y --no-install-recommends docker.io curl unzip jq build-essential pkg-config libssl-dev"])
+      .withExec(["bash", "-eu", "-c", "sed -i 's|http://archive.ubuntu.com/ubuntu|https://mirrors.edge.kernel.org/ubuntu|g; s|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources && apt-get -o APT::Update::Error-Mode=any update && apt-get install -y --no-install-recommends docker.io curl unzip jq build-essential pkg-config libssl-dev"])
       .withDirectory("/usr/local/rustup", self.container.directory("/usr/local/rustup"))
       .withDirectory("/usr/local/cargo/bin", self.container.directory("/usr/local/cargo/bin"))
       .withEnvVariable("RUSTUP_HOME", "/usr/local/rustup")

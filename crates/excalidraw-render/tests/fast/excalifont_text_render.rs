@@ -77,9 +77,11 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 // `pointRotateRads` order, which lands the layout origin one
                 // ulp away (`translate(14.137185427188001 ...)`); the extent,
                 // the PNG and the PDF are unchanged.
+                // ADR-0003's identity refresh changes the embedded subset's
+                // name table and its profile-derived identity/notice.
                 assert_eq!(
                     artifact_sha256(&first),
-                    "d1c856ed53ccee6c4cf9ef50c1913eb908a9468521b05b5dff557d70dea4c6a0"
+                    "25ce18f298281f6a899de079bd4e065d3f0e62d0e863fb431f8e55cc3350a90c"
                 );
             }
             OutputFormat::Png => {

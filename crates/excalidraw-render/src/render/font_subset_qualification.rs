@@ -18,7 +18,7 @@ const PACKAGED_CORPUS_PATH: &str =
 const CORPUS_SCHEMA: &str = "excalidraw-render/svg-font-subset-qualification-corpus/v1";
 const SOURCE_MANIFEST_SHA256: &str =
     "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const PROFILE_SHA256: &str = "49015dfb91f9e89fcf1e7f3e16fd892e4c1715f5d49b6488d67037b7aac21c23";
+const PROFILE_SHA256: &str = "522b5b9a6f1ae71af1ce72ddda9db2c6aca6607fc7567b1362ec449c2339abd0";
 /// Per-cell trace digests are not pinned: cross-target equality of the
 /// aggregate `resourceTracesSha256` is the determinism property (ADR-0002).
 /// Building with `EXCALIDRAW_FONT_SUBSET_TRACE_DIGESTS` set dumps one digest
@@ -283,6 +283,12 @@ impl QualificationMeasurement {
         update_framed(&mut self.resource_traces, bytes);
         self.traced_cells += 1;
         if TRACE_DIGEST_DIAGNOSTICS {
+            #[cfg(target_arch = "wasm32")]
+            wasm_bindgen_test::console_log!(
+                "SVG_FONT_SUBSET_CELL_TRACE={source}\t{class}\t{}",
+                sha256(bytes)
+            );
+            #[cfg(not(target_arch = "wasm32"))]
             println!(
                 "SVG_FONT_SUBSET_CELL_TRACE={source}\t{class}\t{}",
                 sha256(bytes)
@@ -391,11 +397,12 @@ pub(crate) fn assert_complete_font_subset_qualification_corpus() {
     assert_eq!(source_identities.len(), SOURCE_COUNT);
     assert_eq!(cell_identities.len(), SOURCE_COUNT * CLASS_IDS.len());
     assert_failure_cells(&corpus.failures);
-    println!(
-        "SVG_FONT_SUBSET_TARGET_MEASUREMENT={}",
-        serde_json::to_string(&measurement.report())
-            .expect("qualification measurement report is serializable")
-    );
+    let report = serde_json::to_string(&measurement.report())
+        .expect("qualification measurement report is serializable");
+    #[cfg(target_arch = "wasm32")]
+    wasm_bindgen_test::console_log!("SVG_FONT_SUBSET_TARGET_MEASUREMENT={report}");
+    #[cfg(not(target_arch = "wasm32"))]
+    println!("SVG_FONT_SUBSET_TARGET_MEASUREMENT={report}");
 }
 
 /// The tables of an sfnt by tag, with `head.checkSumAdjustment` zeroed: what a

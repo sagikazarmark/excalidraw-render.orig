@@ -3,13 +3,13 @@
   "compatibilityRevision": 1,
   "corpus": {
     "path": "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qualification-corpus.json",
-    "sha256": "fa24e2ce2afb49319bae315983862b7304c06082ca4c534ab861b4b705f39de6",
+    "sha256": "3d034ec2f9850d3e3cd19d0fc0c6305405240a151e7700eaa0ba2d43a43d3f8a",
     "successfulCells": 977
   },
   "decision": "pending_target_aggregation",
   "fuzzRegressions": {
     "path": "crates/excalidraw-render/tests/qualification/font-subset-fuzz-regressions.json",
-    "sha256": "48ce706327a5b18676da8e65c03f30fb16ae80a26b3514c521e593adc8781551"
+    "sha256": "36e32471e2d5e651382327e670e3e0dd7e38a7f774822a339441073074b4b776"
   },
   "id": "svg-font-subsets.release-evidence.revision-1.v1",
   "licensing": {
@@ -29,13 +29,13 @@
   },
   "subsetProfile": {
     "path": "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-profile.json",
-    "sha256": "19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d"
+    "sha256": "083073315198f4cc4d67cd2f3a3fa7b65c6ce651dfb52fed61f5090c932b92c7"
   },
   "targetEvidence": {
     "aggregateArtifact": "svg-font-subset-target-aggregate",
     "crossTargetMeasurement": {
       "path": "tests/conformance/svg-font-subset-cross-target-measurement/revision-1.json",
-      "sha256": "17bdfe1c78ee5f234b2b628b649993e85ba8d81028bf6b921abe4dfe08ac0a4a"
+      "sha256": "c2739a4a2550507ad6e571ce6a3d31df7a29b481691a7b12d498d4ff0a8c8a64"
     },
     "generatorAndAggregator": {
       "path": "xtask/src/svg_font_subset_targets.rs",
@@ -49,7 +49,7 @@
     "runnerInputs": [
       {
         "path": "dagger-evidence.dang",
-        "sha256": "3b5ac055f167169023732d0d98edd64451111a122579d620ca7a98d433e29aff"
+        "sha256": "18135f36318fcccb40476af2224228b6490c1085274248b00a304220ce38d685"
       },
       {
         "path": "dagger.lock",
@@ -74,14 +74,14 @@
     ],
     "workflow": {
       "path": "dagger.dang",
-      "sha256": "f803c767d7b11e3c803f8f3d599519066197f04102031d51dc26687b4b799341"
+      "sha256": "604aa84bcaf65e03ff11b4b0522663f2c74abe278d5d066dac2f787e6500bd65"
     }
   },
   "viewerEvidence": {
-    "approvalSubject": "sha256:f4e1eba24a6155a147730910384e025b7c07bbabf88bfbeebbcd61417596d804",
+    "approvalSubject": "sha256:6721df453ac6edb3225d8e6f49f92ebb440dfb84ad7cd28eb54a1992cb06a1df",
     "executions": 857,
     "path": "tests/conformance/svg-font-subset-viewer-qualification/revision-1.json",
-    "sha256": "2fad4d9c0093e21f63c7cf02713f79e96c0f651f875230a20421ad81bcadb9f9",
+    "sha256": "8e2e1a7464c11d88a78bcd5dd59bb33777cc07d6c6a6687bf121c71a7b1467f7",
     "status": "approved"
   }
 }

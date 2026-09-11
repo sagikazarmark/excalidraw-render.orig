@@ -28,7 +28,7 @@ pub(crate) const EXECUTIONS: usize = 857;
 /// The committed qualification corpus every piece of SVG font subset evidence
 /// binds.
 pub(crate) const CORPUS_SHA256: &str =
-    "fa24e2ce2afb49319bae315983862b7304c06082ca4c534ab861b4b705f39de6";
+    "3d034ec2f9850d3e3cd19d0fc0c6305405240a151e7700eaa0ba2d43a43d3f8a";
 const REQUIRED_CHECKS: [&str; 7] = [
     "shaping",
     "glyph_choice",
@@ -335,7 +335,7 @@ fn verify_identity_and_inputs(manifest: &Value) -> Result<(), String> {
     if manifest["corpus"]["path"] != json!(CORPUS_PATH)
         || manifest["corpus"]["sha256"] != json!(CORPUS_SHA256)
         || manifest["subset_profile"]["sha256"]
-            != json!("19a921a3e87bfff3c304db03da012dce812ba7cd84755b410b8e9e7a3e52806d")
+            != json!("083073315198f4cc4d67cd2f3a3fa7b65c6ce651dfb52fed61f5090c932b92c7")
         || manifest["viewer_profiles"]["chromium"]["sha256"]
             != json!("be1664b3ad79c09b99680ff5e8ca0e56a98fce703c94a13e19e889097c90426b")
         || manifest["viewer_profiles"]["pure_rust"]["sha256"]

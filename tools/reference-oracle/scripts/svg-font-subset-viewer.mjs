@@ -48,12 +48,10 @@ async function main() {
   }
   inputs.cases.forEach(validateCase);
 
-  const [source, sourceRepeat, subset, subsetRepeat] = await Promise.all([
-    runRole(inputs.cases, "source", 0),
-    runRole(inputs.cases, "source", 1),
-    runRole(inputs.cases, "subset", 0),
-    runRole(inputs.cases, "subset", 1),
-  ]);
+  const source = await runRole(inputs.cases, "source", 0);
+  const sourceRepeat = await runRole(inputs.cases, "source", 1);
+  const subset = await runRole(inputs.cases, "subset", 0);
+  const subsetRepeat = await runRole(inputs.cases, "subset", 1);
   const results = inputs.cases.map((entry, index) => {
     const roles = [source[index], sourceRepeat[index], subset[index], subsetRepeat[index]];
     if (roles.some((result) => result.id !== entry.semantic_subset_identity)) {
@@ -119,29 +117,37 @@ async function main() {
 
 async function runRole(cases, role, repeat) {
   const results = new Array(cases.length);
-  let next = 0;
-  await Promise.all(Array.from({ length: 3 }, async () => {
-    while (next < cases.length) {
-      const index = next;
-      next += 1;
-      const browser = await chromium.launch({
-        args: BROWSER_ARGUMENTS,
-        chromiumSandbox: false,
-        headless: true,
-      });
+  // Keep one fresh browser at a time so qualification fits small CI engines.
+  for (let index = 0; index < cases.length; index += 1) {
+    const browser = await chromium.launch({
+      args: BROWSER_ARGUMENTS,
+      chromiumSandbox: false,
+      headless: true,
+    });
+    try {
+      if (browser.version() !== BROWSER_VERSION) {
+        throw new Error(`expected Chromium ${BROWSER_VERSION}, received ${browser.version()}`);
+      }
+      let timeout;
       try {
-        if (browser.version() !== BROWSER_VERSION) {
-          throw new Error(`expected Chromium ${BROWSER_VERSION}, received ${browser.version()}`);
-        }
-        results[index] = await renderCase(browser, cases[index], role);
+        results[index] = await Promise.race([
+          renderCase(browser, cases[index], role),
+          new Promise((_, reject) => {
+            timeout = setTimeout(() => reject(new Error(
+              `Chromium ${role} repeat ${repeat} timed out at case ${index}: ${cases[index].semantic_subset_identity}`,
+            )), 60_000);
+          }),
+        ]);
       } finally {
-        await browser.close();
+        clearTimeout(timeout);
       }
-      if ((index + 1) % 50 === 0) {
-        console.error(`Chromium ${role} repeat ${repeat}: ${index + 1}/${cases.length}`);
-      }
+    } finally {
+      await browser.close();
     }
-  }));
+    if ((index + 1) % 50 === 0) {
+      console.error(`Chromium ${role} repeat ${repeat}: ${index + 1}/${cases.length}`);
+    }
+  }
   return results;
 }
 
