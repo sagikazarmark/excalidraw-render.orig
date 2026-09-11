@@ -100,6 +100,33 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             coverage::verify_snapshots(&directory)?;
         }
+        Some("stage-native-baseline") => {
+            let candidate = required_arg(&mut args, "snapshot directory")?;
+            let output = required_arg(&mut args, "new baseline directory")?;
+            no_more_args(args)?;
+            coverage::stage_baseline(&candidate, &output)?;
+        }
+        Some("native-baseline-approval-subject") => {
+            no_more_args(args)?;
+            println!("sha256:{}", coverage::baseline_subject()?);
+        }
+        Some("record-native-baseline-approval") => {
+            let login = required_arg(&mut args, "GitHub identity")?;
+            let date = required_arg(&mut args, "approval date")?;
+            let url = required_arg(&mut args, "approval comment URL")?;
+            let subject = required_arg(&mut args, "approval subject")?;
+            no_more_args(args)?;
+            coverage::record_baseline_approval(&login, &date, &url, &subject)?;
+        }
+        Some("verify-native-baseline") => {
+            no_more_args(args)?;
+            coverage::verify_baseline()?;
+        }
+        Some("replay-native-snapshots") => {
+            let candidate = required_arg(&mut args, "snapshot directory")?;
+            no_more_args(args)?;
+            coverage::replay_snapshots(&candidate)?;
+        }
         Some("verify-closure") => {
             no_more_args(args)?;
             coverage::verify_closure()?;
@@ -305,7 +332,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
         "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
-        "conformance <inventory|inventory-digest|verify-inventory|verify-results|verify-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
+        "conformance <inventory|inventory-digest|verify-inventory|verify-results|verify-native-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"

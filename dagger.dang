@@ -435,6 +435,19 @@ type Packaging {
   }
 
   """
+  Replay all native candidates against the approved canonical baseline.
+  Fails closed while the baseline awaits approval.
+  """
+  snapshotReplay: String! @check {
+    if (self.target != hostTarget) { return "native replay is checked by packaging:snapshot-replay" }
+    self.container
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "verify-native-baseline"])
+      .withDirectory("/snapshots", self.snapshots)
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "replay-native-snapshots", "/snapshots"])
+      .combinedOutput
+  }
+
+  """
   Passing qualification and packaged-facade evidence for this target.
   """
   evidence: Directory! {

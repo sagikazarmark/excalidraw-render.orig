@@ -137,6 +137,60 @@ tests do) proves only the validator's behavior.
 
 ## Next implementation
 
+### Canonical baseline approval and replay
+
+`native-baseline/revision-1.json` stages the clean `2155a99` collection as
+168 canonical native artifact/report expectations, with content-addressed blobs.
+It was **approved on 2026-09-11** in
+[#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5641266771),
+subject `sha256:1f11007a925d0aa2f277454c09e411d553e0f6f600c695d0acdb673ccbe4af2c`.
+The subject binds the complete expectation set,
+inventory bytes, collector and producer source identities, candidate digest,
+compiler, tooling and package provenance. Process IDs are left in the original
+candidate provenance instead of becoming comparison expectations. The subject
+contains strings/integers/null only; option JSON is bound by digest, avoiding the
+draft inventory's floating-point canonicalization limitation.
+
+```sh
+cargo run --locked -p xtask -- conformance stage-native-baseline \
+  target/native-snapshots-clean target/new-native-baseline
+cargo run --locked -p xtask -- conformance native-baseline-approval-subject
+cargo run --locked -p xtask -- conformance record-native-baseline-approval \
+  <login> <UTC-date> <issue-85-comment-URL> <exact-subject>
+cargo run --locked -p xtask -- conformance verify-native-baseline
+dagger check excalidraw-render:packaging:snapshot-replay
+```
+
+Staging refuses existing output directories and modified-source candidates. It
+checks source descriptors against the named Git tree and every authored archive
+payload against that tree, including original manifests and VCS identity.
+Cargo-generated normalized manifests/lockfiles are retained by archive digest
+rather than expected to be identical to workspace files. The original archives
+remain in `target/native-snapshots-clean/packages`; the baseline keeps their
+digests, not duplicate archive copies. Source provenance checks run at staging;
+approval recording rechecks the subject and Git ancestry.
+
+Replay requires explicit approval on #85, validates a newly collected candidate,
+and compares every key's complete outcome/artifact/report descriptors with the
+approved baseline. Missing cases, byte changes, artifact-to-failure changes and
+report drift fail. New process IDs, candidate commit, and package archive metadata
+are provenance, not output drift. The automatic Dagger check rejects an unapproved
+baseline. After recording this approval through Dagger, the complete native replay
+passed in 5m32s: all 168 keys match the approved artifact/report expectations
+across two sessions in each of two fresh process orders.
+The working-tree replay verification is recorded in
+[#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5641348782).
+
+Review of the initial clean collection: all 168 renders succeeded, 120 available
+manifest-owned expected reports match as complete JSON values, all 56 PNG sizes
+match reference dimensions, all 56 SVGs parse, and all 56 PDFs have header/EOF
+markers. **48 PDF executions have no manifest-owned expected report**, and these
+syntax/dimension checks are not full visual or PDF-structural qualification. The
+baseline approval accepts exact regression expectations for current output; it
+does not waive that missing conformance coverage or complete #85/#86. Full render
+tier and conformance checks pass independently. See the release-readiness audit
+for the remaining representative/PDF/ownership work.
+
 ### Native snapshot candidates
 
 The native public-facade collector is implemented as the non-published
@@ -188,8 +242,8 @@ of blobs and package archives; generated candidate files are not committed.
 
 1. Expand the authority into complete atomic risks and approve ownership and
    exclusions; connect exact vectors and specialized PDF/frame/regression owners.
-2. Review and approve canonical artifact/report expectations from native snapshot
-   candidates, then implement replay against those approved expectations.
+2. Maintain the approved canonical artifact/report expectations and native replay
+   gate as the inventory grows; changed expectations require explicit reapproval.
 3. Run the same keys in pinned browser WASM, collect test-only traces, and validate
    actual fresh processes/instances in both orders using this result boundary.
 4. Promote representative cases and expand codec/renderer fuzz reach, then make

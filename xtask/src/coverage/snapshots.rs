@@ -3,7 +3,7 @@
 use super::*;
 use std::path::Path;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 struct FileRecord {
     path: String,
@@ -11,14 +11,14 @@ struct FileRecord {
     byte_length: u64,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 enum SnapshotOutcome {
     Artifact { bytes: Bytes },
     Failure { code: String, descriptor: Bytes },
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 struct SnapshotSample {
     outcome: SnapshotOutcome,
@@ -132,29 +132,7 @@ fn validate(root: &Path, inventory: &Inventory, bundle: &Snapshots) -> Result<()
                     }
                     SnapshotOutcome::Failure { code, descriptor } => {
                         let descriptor: Value = parse(&blob(root, descriptor, &mut referenced)?)?;
-                        if code.trim().is_empty()
-                            || descriptor["code"] != code.as_str()
-                            || !fields(
-                                &descriptor,
-                                &[
-                                    "family",
-                                    "category",
-                                    "code",
-                                    "message",
-                                    "format",
-                                    "element_id",
-                                    "json_pointer",
-                                    "details",
-                                ],
-                            )
-                            || descriptor["family"] != "render"
-                            || !descriptor["category"].is_string()
-                            || !descriptor["message"].is_string()
-                            || descriptor["format"]
-                                != serde_json::to_value(&result.key.format).unwrap()
-                        {
-                            return Err("snapshot failure descriptor disagrees with code".into());
-                        }
+                        validate_failure(&descriptor, code, &result.key.format)?;
                     }
                 }
             }
@@ -188,6 +166,32 @@ fn fields(value: &Value, expected: &[&str]) -> bool {
     value.as_object().is_some_and(|o| {
         o.keys().map(String::as_str).collect::<BTreeSet<_>>() == expected.iter().copied().collect()
     })
+}
+
+fn validate_failure(descriptor: &Value, code: &str, format: &Format) -> Result<(), String> {
+    if code.trim().is_empty()
+        || descriptor["code"] != code
+        || !fields(
+            descriptor,
+            &[
+                "family",
+                "category",
+                "code",
+                "message",
+                "format",
+                "element_id",
+                "json_pointer",
+                "details",
+            ],
+        )
+        || descriptor["family"] != "render"
+        || !descriptor["category"].is_string()
+        || !descriptor["message"].is_string()
+        || descriptor["format"] != serde_json::to_value(format).unwrap()
+    {
+        return Err("snapshot failure descriptor disagrees with code or format".into());
+    }
+    Ok(())
 }
 
 fn validate_report(report: &Value, format: &Format) -> Result<(), String> {
@@ -297,6 +301,12 @@ pub fn verify_snapshots(directory: &str) -> Result<(), String> {
         inventory.executions.len(),if bundle.source_status.is_empty(){"clean"}else{"modified"});
     Ok(())
 }
+
+mod baseline;
+mod provenance;
+pub use baseline::{
+    baseline_subject, record_baseline_approval, replay_snapshots, stage_baseline, verify_baseline,
+};
 
 #[cfg(test)]
 mod tests {

@@ -104,6 +104,10 @@ Native snapshot candidates for the inventory's 168 keys can be exported with
 `dagger api call packaging snapshots --output target/native-snapshots`. This runs
 the packaged public facade twice per key in separate forward/reverse processes
 and exports complete artifact/report bytes and package provenance for review.
+`dagger check excalidraw-render:packaging:snapshot-replay` validates baseline
+approval and rerenders the current package against all canonical native
+expectations. The initial #85 baseline is approved and its full replay passes;
+see the coverage README for the approval record and exact workflow.
 
 Recent `daggerverse-beta` changes at `b0671fd12a` add toolchain/MSRV overrides,
 manifest-configured cargo-hack, automatic nextest plus doctests, cargo selection
