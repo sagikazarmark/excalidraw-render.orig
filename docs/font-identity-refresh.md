@@ -1,8 +1,9 @@
 # ADR-0003: single font identity refresh
 
 Base commit: `16d1fe4` (the Dagger aggregate verification record).
-Status: generated, verified on both targets, and approved by the maintainer;
-awaiting a clean-commit packaged-consumer/aggregate run. Publication remains blocked.
+Status: complete. Both approvals are recorded, clean-commit packaged consumers
+pass, and release evidence is `aggregated` / `pass`. ADR-0003's publication
+block and this round's evidence-change freeze are lifted.
 
 ## Changes
 
@@ -102,16 +103,31 @@ is `qualificationCorpusSha256`, so the catalog generator correctly cleared the
 previous approval. Explicitly approved on 2026-09-11 and recorded in
 [#120](https://github.com/sagikazarmark/excalidraw-render.orig/issues/120#issuecomment-5638706797).
 
-## Remaining completion gates
+## Completion
 
 Both approvals were recorded with the corresponding xtask commands through
-Dagger, and the release manifest now binds the approved viewer record.
-Commit the coordinated
-refresh, run packaged consumers and the supported-target aggregate with Dagger,
-attest that clean-commit run, and bind the aggregate to release evidence.
+Dagger, and the release manifest binds the approved viewer record. The refresh
+is committed as `e6f1344`; `3f06c91` updates two additional packaged SVG byte
+pins found by the first clean-commit run (font-subset and fallback SVG).
+
+The complete Dagger target-evidence operation passed on clean commit
+`3f06c919547a2d35407bbe7a3191dcc749752e2c` in 30m18s: native qualification
+358 passed/5 ignored, WASM qualification 6 passed/1 filtered, packaged CLI and
+both packaged public facades pass. The aggregate agrees with the refreshed
+measurement and approved viewer subject and is copied verbatim to
+`tests/conformance/svg-font-subset-target-aggregate/revision-1.json`.
+
+- Aggregate SHA-256: `abfaea613fa702fc25b52f95b60e9f492df1082fd7f5509a1560d62e3370a4dc`.
+- Native report SHA-256: `e6ed241672583b6c43c366dfdc352b7fe7893e4808e1e5c5cd43a485a96bd520`.
+- WASM report SHA-256: `2c44701d46c2197bc436a911b46bae367b7c3ed2dc757bcc62766f499b7de622`.
+- [Run attestation](https://github.com/sagikazarmark/excalidraw-render.orig/issues/101#issuecomment-5639444844).
+
+The aggregate recording command ran through Dagger with Git ancestry validation,
+and moved the release manifest to `targetEvidence.status: aggregated`,
+`decision: pass`.
 
 Lint, registered conformance verification, ordinary SVG/PDF viewer verification,
 the render test tier, and doctests pass. The fast tier initially found one
 expected SVG byte-pin change (updated and independently retested); its other
-eight failures were approval-dependent xtask tests. These gates are rerun after
-approval; package export requires the coordinated package changes to be committed.
+eight failures were approval-dependent xtask tests. After approval, all six
+conformance checks and all workspace test tiers/doctests passed.

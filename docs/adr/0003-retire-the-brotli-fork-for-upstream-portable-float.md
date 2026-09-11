@@ -250,3 +250,13 @@ explicit maintainer approval on 2026-09-11, followed by clean-commit packaging a
 binding. `docs/font-identity-refresh.md` records the exact subjects, results,
 and execution fixes. Stage C and the publication block remain open until
 those completion gates pass; other evidence-touching work remains frozen.
+
+Completed 2026-09-11: `e6f1344` records the coordinated identity refresh and
+both approvals; `3f06c91` refreshes the packaged SVG byte pins. Dagger's complete
+target-evidence operation passed on clean `3f06c919547a2d35407bbe7a3191dcc749752e2c`,
+including packaged consumers on both supported targets. The aggregate
+(`abfaea61…a4dc`) is committed and bound into release evidence as
+`aggregated` / `pass`, with the #101 attestation `issuecomment-5639444844`.
+Stage C is complete. This decision's publication block and serialized
+evidence-change freeze are lifted. No crates.io publication is performed by
+this evidence-recording operation.

@@ -1,0 +1,49 @@
+{
+  "commit": "3f06c919547a2d35407bbe7a3191dcc749752e2c",
+  "compatibility_revision": 1,
+  "corpus_sha256": "3d034ec2f9850d3e3cd19d0fc0c6305405240a151e7700eaa0ba2d43a43d3f8a",
+  "decision": "pass",
+  "measurement": {
+    "generatedBytesSha256": "6fb430ede9291c241081002ae6fd9c29d439fd878cbccc20f632016d196f459b",
+    "resourceTracesSha256": "79ea93cdb58f7f348a14df21358be0066360fde67aa3b0cbbd7c6556bccf90fa",
+    "successfulCells": 977,
+    "tracedCells": 1204
+  },
+  "schema": "excalidraw-render/svg-font-subset-target-aggregate/v3",
+  "subset_profile_sha256": "522b5b9a6f1ae71af1ce72ddda9db2c6aca6607fc7567b1362ec449c2339abd0",
+  "targets": [
+    {
+      "commit": "3f06c919547a2d35407bbe7a3191dcc749752e2c",
+      "compatibility_revision": 1,
+      "corpus_sha256": "3d034ec2f9850d3e3cd19d0fc0c6305405240a151e7700eaa0ba2d43a43d3f8a",
+      "measurement": {
+        "generatedBytesSha256": "6fb430ede9291c241081002ae6fd9c29d439fd878cbccc20f632016d196f459b",
+        "resourceTracesSha256": "79ea93cdb58f7f348a14df21358be0066360fde67aa3b0cbbd7c6556bccf90fa",
+        "successfulCells": 977,
+        "tracedCells": 1204
+      },
+      "schema": "excalidraw-render/svg-font-subset-target-evidence/v3",
+      "status": "pass",
+      "subset_profile_sha256": "522b5b9a6f1ae71af1ce72ddda9db2c6aca6607fc7567b1362ec449c2339abd0",
+      "target": "wasm32-unknown-unknown",
+      "viewer_approval_subject": "sha256:6721df453ac6edb3225d8e6f49f92ebb440dfb84ad7cd28eb54a1992cb06a1df"
+    },
+    {
+      "commit": "3f06c919547a2d35407bbe7a3191dcc749752e2c",
+      "compatibility_revision": 1,
+      "corpus_sha256": "3d034ec2f9850d3e3cd19d0fc0c6305405240a151e7700eaa0ba2d43a43d3f8a",
+      "measurement": {
+        "generatedBytesSha256": "6fb430ede9291c241081002ae6fd9c29d439fd878cbccc20f632016d196f459b",
+        "resourceTracesSha256": "79ea93cdb58f7f348a14df21358be0066360fde67aa3b0cbbd7c6556bccf90fa",
+        "successfulCells": 977,
+        "tracedCells": 1204
+      },
+      "schema": "excalidraw-render/svg-font-subset-target-evidence/v3",
+      "status": "pass",
+      "subset_profile_sha256": "522b5b9a6f1ae71af1ce72ddda9db2c6aca6607fc7567b1362ec449c2339abd0",
+      "target": "x86_64-unknown-linux-gnu",
+      "viewer_approval_subject": "sha256:6721df453ac6edb3225d8e6f49f92ebb440dfb84ad7cd28eb54a1992cb06a1df"
+    }
+  ],
+  "viewer_approval_subject": "sha256:6721df453ac6edb3225d8e6f49f92ebb440dfb84ad7cd28eb54a1992cb06a1df"
+}

@@ -75,19 +75,18 @@ the exported report and history. `pending_ci` is the existing manifest spelling
 for “awaiting a supported-target aggregate”; it does not mean “awaiting Actions”.
 Generating outputs does not grant human approval or change publication policy.
 
-## Pending single refresh (ADR-0003)
+## Completed single refresh (ADR-0003)
 
-The brotli, ttf2woff2 and skera forks have all retired. The remaining serialized
-refresh updates **three** historical profile tokens (brotli 9.0.0, ttf2woff2
-0.13.3, skera 0.7.0), the relevant spec versions, and the WASM logging call site.
-It then regenerates the catalog/profile, 977 per-cell font pins, cross-target
-measurement, and dual-viewer font qualification, and obtains the required
-re-approvals. Other evidence-touching work freezes during that round.
+The brotli, ttf2woff2 and skera forks have all retired. The serialized refresh
+is complete: all three tokens name their upstream implementations (brotli 9.0.0,
+ttf2woff2 0.13.3, skera 0.7.0), the spec and WASM logging are updated, and the
+regenerated catalog/profile, 977 font pins and 857 viewer executions are approved.
+Dagger's clean-commit aggregate on `3f06c91` is bound into release evidence as
+`aggregated` / `pass`. The round's publication block and evidence freeze are
+lifted. See [the refresh record](font-identity-refresh.md) for approvals,
+measurements and run provenance.
 
-Dagger supplies the execution environment for that round. The aggregate's first
-release-evidence binding belongs to the refreshed evidence, as ADR-0003 requires.
-The CI migration itself does not refresh those tokens or record approval.
-The unsigned pending release manifest's orchestration descriptors now bind
+The release manifest's orchestration descriptors bind
 the Dagger implementation and inputs rather than the retired Actions job body.
 Changing those files requires updating their SHA-256 descriptors; the verifier
 checks them recursively. Viewer approvals and generated-byte pins are separate.
@@ -109,7 +108,7 @@ dagger check dagger-gha:generate
 ```
 
 The PDF/nightly workflows only schedule Dagger calls. Target-evidence export is
-manual until the single refresh is ready. Native and WASM qualification and
+manual. Native and WASM qualification and
 packaged-facade checks still run on every push/PR through the generated adapter.
 
 ## Verification of this migration
@@ -152,8 +151,9 @@ cells, matching the committed cross-target measurement:
 - Native report SHA-256: `234a2cf8cf7124fc2a62d6a591a13136a64d7edec0b1f0db4c32050da93a7121`.
 - WASM report SHA-256: `cb2451fdd0027aef220cbb3e4701cbf06ad38447d1ef4511196a7eaaba73e1ad`.
 
-This verifies Dagger's aggregate path on the existing evidence. Release-evidence
-binding still belongs to the serialized identity refresh described above.
+This verified Dagger's aggregate path on the pre-refresh evidence. The subsequent
+refreshed aggregate and release-evidence binding are recorded above.
 The font-subset viewer round, PDF viewer evidence reproduction, and frame-profile update were not
 rerun for this migration; their Dagger entry points call the existing pinned
-scripts. The serialized font identity refresh and its approvals remain pending.
+scripts. The font-subset viewer round subsequently passed in full during the
+completed identity refresh; see its record above.
