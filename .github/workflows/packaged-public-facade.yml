@@ -1,190 +1,23 @@
-name: Packaged public facade
+name: Packaged public facade evidence
 
 on:
-  pull_request:
-  push:
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  qualification-evidence:
-    name: Approved SVG font subset evidence
+  evidence:
     runs-on: ubuntu-24.04
     steps:
-      - name: Check out repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Install pinned Rust toolchain
-        shell: bash
-        run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
-      - name: Restore the build cache
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
-      # The one `catalog verify` of a push: every target job below depends on
-      # this job, so the 230 reviewed decodes are re-derived once rather than
-      # once per target.
-      - name: Verify sealed revision catalog
-        run: cargo run --locked -p xtask -- catalog verify
-      - name: Verify approved SVG font subset evidence
-        run: |
-          cargo run --locked -p xtask -- conformance verify-svg-font-subset-release
-          cargo run --locked -p xtask -- conformance verify-svg-font-subsets
-      - name: Verify approved viewer qualification evidence
-        run: |
-          cargo run --locked -p xtask -- conformance verify-svg-viewers
-          cargo run --locked -p xtask -- conformance verify-pdf-viewers
-
-  native:
-    name: ${{ matrix.target }}
-    needs: qualification-evidence
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-24.04
-            target: x86_64-unknown-linux-gnu
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Install pinned Rust toolchain
-        shell: bash
-        run: bash tests/package-consumer/install-rust-toolchain.sh "${{ matrix.target }}" "$RUNNER_TEMP/rust"
-      - name: Restore the build cache
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Execute and aggregate both supported targets
+        uses: dagger/dagger-for-github@27b130bf0f79a7f6fbbbe0fbca6760dc9bb40a77
         with:
-          workspaces: |
-            .
-            tests/package-consumer
-      # The complete renderer unit target in `--release`, with the
-      # `release-qualification` feature lifting the `#[ignore]` from the tests
-      # the push gate leaves out. No name filter: a renamed test cannot drop
-      # out of this run, and the evidence step below fails unless the
-      # qualification corpus printed exactly one measurement into the log.
-      - name: Execute the release-mode qualification set
-        shell: bash
-        run: |
-          mkdir -p target/svg-font-subset-target-evidence
-          cargo test --locked --release --target ${{ matrix.target }} -p excalidraw-render \
-            --features release-qualification --lib -- --nocapture \
-            | tee target/svg-font-subset-target-evidence/${{ matrix.target }}.log
-      - name: Package library
-        run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
-      - name: Check packaged CLI against packaged renderer
-        shell: bash
-        run: bash tests/package-consumer/check-packaged-cli.sh "${{ matrix.target }}"
-      - name: Execute packaged public facade
-        working-directory: tests/package-consumer
-        run: cargo test --locked --release --target ${{ matrix.target }} --test public_facade
-      - name: Materialize target evidence
-        shell: bash
-        run: >-
-          cargo run --locked -p xtask -- conformance materialize-svg-font-subset-target
-          "${{ matrix.target }}"
-          "target/svg-font-subset-target-evidence/${{ matrix.target }}.log"
-          "target/svg-font-subset-target-evidence/${{ matrix.target }}.json"
-      - name: Upload target evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: svg-font-subset-target-${{ matrix.target }}
-          path: target/svg-font-subset-target-evidence/${{ matrix.target }}.json
-
-  browser-wasm:
-    name: wasm32-unknown-unknown in Chromium
-    needs: qualification-evidence
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Install pinned Rust toolchain
-        shell: bash
-        run: bash tests/package-consumer/install-rust-toolchain.sh wasm32-unknown-unknown "$RUNNER_TEMP/rust"
-      - name: Restore the build cache
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
-        with:
-          workspaces: |
-            .
-            tests/package-consumer
-      - name: Install pinned Chromium and ChromeDriver
-        shell: bash
-        run: bash tests/package-consumer/install-browser-tools.sh "$RUNNER_TEMP/browser"
-      - name: Verify browser identity
-        shell: bash
-        run: |
-          binary="$(jq -er '.browser.tools.chromium.binary' tests/package-consumer/tool-manifest.json)"
-          version="$(jq -er '.browser.version' tests/package-consumer/tool-manifest.json)"
-          "$RUNNER_TEMP/browser/$binary" --version | grep -F "$version"
-      - name: Install pinned WASM test runner
-        shell: bash
-        run: bash tests/package-consumer/install-wasm-test-runner.sh "$RUNNER_TEMP/wasm-test-runner"
-      - name: Package library
-        run: cargo package --locked --workspace --exclude xtask --exclude excalidraw-render-compare --no-verify
-      - name: Execute font qualification in Chromium
-        env:
-          FONTCONFIG_FILE: ${{ github.workspace }}/tests/package-consumer/fontconfig.xml
-          WASM_BINDGEN_TEST_TIMEOUT: "1800"
-          WASM_BINDGEN_TEST_WEBDRIVER_JSON: ${{ github.workspace }}/tests/package-consumer/webdriver.json
-        shell: bash
-        run: |
-          mkdir -p target/svg-font-subset-target-evidence
-          chrome="$(jq -er '.browser.tools.chromium.binary' tests/package-consumer/tool-manifest.json)"
-          driver="$(jq -er '.browser.tools.chromedriver.binary' tests/package-consumer/tool-manifest.json)"
-          PATH="$RUNNER_TEMP/browser/$(dirname "$chrome"):$PATH" \
-            CHROMEDRIVER="$RUNNER_TEMP/browser/$driver" \
-            CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-bindgen-test-runner \
-            cargo test --locked --release -p excalidraw-render --lib \
-              --target wasm32-unknown-unknown \
-              wasm_tests -- --nocapture \
-              | tee target/svg-font-subset-target-evidence/wasm32-unknown-unknown.log
-      - name: Execute packaged public facade in Chromium
-        working-directory: tests/package-consumer
-        env:
-          FONTCONFIG_FILE: ${{ github.workspace }}/tests/package-consumer/fontconfig.xml
-        shell: bash
-        run: |
-          chrome="$(jq -er '.browser.tools.chromium.binary' tool-manifest.json)"
-          driver="$(jq -er '.browser.tools.chromedriver.binary' tool-manifest.json)"
-          PATH="$RUNNER_TEMP/browser/$(dirname "$chrome"):$PATH" \
-            CHROMEDRIVER="$RUNNER_TEMP/browser/$driver" \
-            cargo test --locked --release --target wasm32-unknown-unknown --test public_facade
-      - name: Materialize target evidence
-        shell: bash
-        run: >-
-          cargo run --locked -p xtask -- conformance materialize-svg-font-subset-target
-          wasm32-unknown-unknown
-          target/svg-font-subset-target-evidence/wasm32-unknown-unknown.log
-          target/svg-font-subset-target-evidence/wasm32-unknown-unknown.json
-      - name: Upload target evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: svg-font-subset-target-wasm32-unknown-unknown
-          path: target/svg-font-subset-target-evidence/wasm32-unknown-unknown.json
-
-  aggregate-font-subset-evidence:
-    name: Aggregate SVG font subset target evidence
-    needs: [native, browser-wasm]
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Install pinned Rust toolchain
-        shell: bash
-        run: bash tests/package-consumer/install-rust-toolchain.sh x86_64-unknown-linux-gnu "$RUNNER_TEMP/rust"
-      - name: Restore the build cache
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
-      - name: Download target evidence
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: svg-font-subset-target-*
-          path: target/svg-font-subset-target-evidence
-          merge-multiple: true
-      - name: Aggregate target evidence
-        run: >-
-          cargo run --locked -p xtask -- conformance aggregate-svg-font-subset-targets
-          target/svg-font-subset-target-evidence
-          target/svg-font-subset-target-aggregate.json
-      - name: Upload aggregate evidence
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          version: v1.0.0-beta.11
+          verb: api
+          args: call target-evidence --output target/dagger-evidence
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: svg-font-subset-target-aggregate
-          path: target/svg-font-subset-target-aggregate.json
+          path: target/dagger-evidence

@@ -1,5 +1,5 @@
 [["version","2"]]
 ["","git-latest",["https://github.com/sagikazarmark/daggerverse-beta"],"refs/heads/main",[["tagPrefix","dagger-gha"]]]
 ["","git-latest",["https://github.com/sagikazarmark/daggerverse-beta"],"refs/heads/main",[["tagPrefix","rust"]]]
-["","git-sha",["https://github.com/sagikazarmark/daggerverse-beta","refs/heads/main"],"d2330bf872be4c1ab881e4e0194d3e659ce293a5"]
+["","git-sha",["https://github.com/sagikazarmark/daggerverse-beta","refs/heads/main"],"b0671fd12a040feaf0f811c70d66199cbbcd24ca"]
 ["","oci-sha",["docker.io/library/rust:1.97.1-slim-trixie"],"sha256:8e8cf8f7fd54a2d23d5a743b3a03f56e26b6c774276c33fa0595111704ebb15c"]

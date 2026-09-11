@@ -4,14 +4,14 @@ ignore = [".devenv", "target"]
 source = "."
 entrypoint = true
 
-# The workflows install the toolchain from tests/package-consumer/tool-manifest.json;
-# keep this tag on the same patch release.
+# Canonical toolchain, matching tests/package-consumer/tool-manifest.json.
 settings.rustVersion = "1.97.1-slim-trixie"
 
-# Registered for ad-hoc `dagger call rust ...` work only. Its own checks stay
+# Registered for ad-hoc `dagger api call rust ...` work only. Its own checks stay
 # skipped: this repository lints and formats a hand-picked subset of the
-# workspace (vendored forks keep upstream formatting, digest-pinned files carry
-# approved diffs), which the module's repo-wide defaults would not respect.
+# workspace, and uses manifest-hashed nextest archives and separate test tiers.
+# The upstream module now supports nextest and cargo selection flags, but its
+# default nextest archive is musl rather than our approved GNU archive.
 [modules.rust]
 source = "github.com/sagikazarmark/daggerverse-beta/rust"
 check.skip = ["rust"]

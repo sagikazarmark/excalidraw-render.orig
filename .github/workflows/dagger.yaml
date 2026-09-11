@@ -22,6 +22,7 @@ jobs:
                     - excalidraw-render:lint
                     - excalidraw-render:packaging
                     - excalidraw-render:test
+                    - excalidraw-render:wasm
 name: Dagger
 "on":
     pull_request: {}

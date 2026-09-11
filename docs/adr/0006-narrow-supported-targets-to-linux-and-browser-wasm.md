@@ -47,3 +47,12 @@ Consequences:
   execute the qualification with the pinned tool identities and agree on the
   committed measurement before it enters the supported set. Nothing in the
   renderer changes to support or drop a target; only what is promised does.
+
+Amended 2026-09-11: Dagger is the canonical CI and evidence runner for both
+supported targets. GitHub Actions is an optional caller, not the authority for
+the commands or their results. The maintainer attestation path above is valid
+for Dagger runs regardless of Actions availability; record the tested commit,
+lock, command, reports and digests, plus a trace URL when available. The existing
+`pending_ci` manifest state means pending target aggregation on any runner.
+See `docs/ci.md` for the canonical operation inventory. This changes orchestration,
+not the supported target set or ADR-0003's serialized evidence-refresh policy.

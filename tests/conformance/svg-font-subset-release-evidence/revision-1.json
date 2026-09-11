@@ -46,9 +46,35 @@
       "sha256": "7b6f8ca607a2696e3377cdfa764c465dd7eb4ef8871792360124997217e81aaf"
     },
     "status": "pending_ci",
+    "runnerInputs": [
+      {
+        "path": "dagger-evidence.dang",
+        "sha256": "3b5ac055f167169023732d0d98edd64451111a122579d620ca7a98d433e29aff"
+      },
+      {
+        "path": "dagger.lock",
+        "sha256": "e0096e1231bdb9a2c98f4d6f6e1c776fe4246cfd1bacc057787ec7e3f582fb9b"
+      },
+      {
+        "path": "dagger.toml",
+        "sha256": "ac88f21499954a29c1ce6a985353abe687d4a6af51da1bcf2791d79dec204b7d"
+      },
+      {
+        "path": "tools/ci/qualification.sh",
+        "sha256": "e5d431848d21c542f8f10798167d3ee5ebc3b8096df198533e3bb3990f9c82ba"
+      },
+      {
+        "path": "tools/ci/install-browser.sh",
+        "sha256": "b0ef83bc5dd201199177bb905ff8fb91b38312ab1758042a747adab4a2a966d2"
+      },
+      {
+        "path": "tools/ci/require-clean-source.sh",
+        "sha256": "5bc4bdad2c80db109256ea3b09c005d888f7ab1789dd5ac8e5ccbedb75a79424"
+      }
+    ],
     "workflow": {
-      "path": ".github/workflows/packaged-public-facade.yml",
-      "sha256": "88e5a042b72fa15ff30d2bb23bc0b1af499e6a068e82c750d61b48b4396e7950"
+      "path": "dagger.dang",
+      "sha256": "f803c767d7b11e3c803f8f3d599519066197f04102031d51dc26687b4b799341"
     }
   },
   "viewerEvidence": {

@@ -188,10 +188,10 @@ Both tests are `#[ignore]`d unless `release-qualification` is enabled, so a
 plain `cargo test` or `cargo nextest run` leaves them to the release-mode run
 without naming them.
 
-## Containerized checks
+## Canonical CI and evidence generation
 
-Every gate the Linux workflows run is also a Dagger check, so one command
-reproduces the whole set locally, in the same pinned container CI uses:
+Dagger owns CI for both supported targets: Linux x86-64 and browser WASM.
+Run the push gates locally or on any Dagger runner:
 
 ```sh
 dagger check
@@ -207,18 +207,17 @@ dagger check excalidraw-render:lint
 dagger check excalidraw-render:test:fast
 ```
 
-The checks mirror the workflow jobs one for one: `lint` is the `conformance`
-workflow's formatting and lint gate, `test` its fast and render tiers and the
-doc tests, `conformance` the catalog and approval-bearing
-evidence verification the `conformance` and `Packaged public facade` workflows
-share, and `packaging` the Linux leg of the packaged public facade, including
-the release-mode qualification set. The randomized expansions the nightly
-schedule runs are deliberately not checks:
+`lint` checks formatting and clippy; `test` runs the fast/render tiers and
+doctests; `conformance` verifies catalog and approved evidence; `packaging`
+executes the native qualification and packaged CLI/facade; `wasm` executes
+the browser tests and packaged facade in Chromium **149.0.7827.55**.
+Longer scheduled operations are explicit calls:
 
 ```sh
-dagger call nightly font-subset-fuzz
-dagger call nightly frame-batch-property --cases 64
-dagger call nightly scene-fuzz --cases 512
+dagger api call nightly font-subset-fuzz
+dagger api call nightly frame-batch-property --cases 64
+dagger api call nightly scene-fuzz --cases 512
+dagger api call evidence pdf
 ```
 
 `.github/workflows/dagger.yaml` is generated from `dagger.toml`. The
@@ -229,10 +228,10 @@ configuration; regenerate it with:
 dagger generate dagger-gha:generate
 ```
 
-`dagger.lock` pins the module revisions and the base image digest, so a check
-run reproduces byte for byte until the lock moves.
+`dagger.lock` pins module revisions and base image resolution. The package-consumer
+tool manifest pins Rust, nextest, Chromium, ChromeDriver, and the WASM runner;
+the reference/viewer harnesses retain their separately pinned images and tools.
+GitHub workflows only invoke Dagger and handle scheduling/artifact upload.
 
-What stays on GitHub Actions: the macOS and Windows legs of the packaged public
-facade, and the browser-hosted `wasm32-unknown-unknown` leg. The viewer and PDF
-harness tests remain `#[ignore]`d in every environment — they still need the
-pinned Chromium, PDFium, PDF.js, and qpdf harnesses.
+See [the Dagger operation guide](docs/ci.md) for evidence reproduction,
+generation, the two-target aggregate, and the pending identity refresh.

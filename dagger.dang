@@ -1,78 +1,105 @@
 """
-Continuous integration for the excalidraw-render workspace.
-
-The GitHub workflows remain the source of truth for the platform matrix
-(macOS, Windows, and the Chromium WASM leg); everything they run on Linux is
-mirrored here so the same gates are reproducible on a laptop.
+Canonical CI for both supported targets, plus explicit evidence generation.
+GitHub Actions is an optional caller of this module.
 """
 type ExcalidrawRender {
   let rust: Rust!
+  let sourceLock: File!
 
   new(
     ws: Workspace!,
     """
     Version (image tag) to use from the official Rust image repository as a base container.
     """
-    rustVersion: String! = "latest",
+    rustVersion: String! = "1.97.1-slim-trixie",
   ) {
-    self.rust = Dagger.rust(ws: ws, version: rustVersion)
+    self.sourceLock = ws.file("dagger.lock")
+    self.rust = Dagger.rust(
+      ws: ws,
+      version: rustVersion,
+      container: Dagger.container(platform: "linux/amd64").from("rust:" + rustVersion)
+        .withExec(["bash", "-eu", "-c", "apt-get update && apt-get install -y --no-install-recommends git"]),
+    ).withEnvVariable("CARGO_BUILD_JOBS", "2")
 
     self
+  }
+
+  let container: Container! {
+    self.rust.container.withFile("/work/src/dagger.lock", self.sourceLock)
   }
 
   """
   Formatting and lint gates.
   """
   lint: Lint! {
-    Lint(self.rust.container)
+    Lint(self.container)
   }
 
   """
   Verification of the sealed catalog and the approval-bearing evidence manifests.
   """
   conformance: Conformance! {
-    Conformance(self.rust.container)
+    Conformance(self.container)
   }
 
   """
   Unit, integration, and documentation test targets.
   """
   test: Test! {
-    Test(self.rust.container)
+    Test(self.container.withEnvVariable("CARGO_TARGET_DIR", "/work/src/target"))
   }
 
   """
   The packaged crates and the public facade a downstream consumer compiles against.
   """
   packaging: Packaging! {
-    Packaging(self.rust.container, hostTarget)
+    Packaging(self.container, hostTarget)
+  }
+
+  """
+  Browser WASM tests and packaged facade in the manifest-pinned Chromium.
+  """
+  wasm: Packaging! {
+    Packaging(browserContainer(self.container), "wasm32-unknown-unknown")
+  }
+
+  """
+  Export both target reports, logs, and their verified aggregate.
+  Requires a clean committed source tree so reports name the code actually tested.
+  """
+  targetEvidence: Directory! {
+    self.container
+      .withExec(["bash", "tools/ci/require-clean-source.sh"])
+      .withDirectory("/evidence/native", self.packaging.evidence)
+      .withDirectory("/evidence/wasm", self.wasm.evidence)
+      .withExec(["bash", "-eu", "-c", "mkdir -p /evidence/reports; cp /evidence/native/*.json /evidence/wasm/*.json /evidence/reports/"])
+      .withExec([
+        "cargo", "run", "--locked", "-p", "xtask", "--", "conformance",
+        "aggregate-svg-font-subset-targets", "/evidence/reports", "/evidence/aggregate.json",
+      ])
+      .directory("/evidence")
+  }
+
+  """
+  Pinned reference and viewer harnesses, and explicit generation operations.
+  """
+  evidence: Evidence! {
+    Evidence(self.container)
   }
 
   """
   Randomized expansions that the nightly schedule runs, not the push gates.
   """
   nightly: Nightly! {
-    Nightly(self.rust.container)
+    Nightly(self.container)
   }
 }
 
 """
-Rust target triple matching the engine's default platform.
-
-The packaging gates pass an explicit `--target`, the way the workflow matrix
-does, so the triple has to follow the platform the checks land on.
+The supported native target (ADR-0006). The base container explicitly selects
+linux/amd64, including when Dagger is invoked from an ARM laptop.
 """
-let hostTarget: String! {
-  Dagger
-    .defaultPlatform
-    .{
-      case (_) {
-        "linux/amd64" => "x86_64-unknown-linux-gnu"
-        "linux/arm64" => "aarch64-unknown-linux-gnu"
-        else => raise "unsupported platform: " + toString(_)
-      }
-    }
-}
+let hostTarget: String! = "x86_64-unknown-linux-gnu"
 
 """
 Formatting and lint gates from the `conformance` workflow's `lint` job.
@@ -121,9 +148,7 @@ type Lint {
   clippy: String! @check {
     self.run([
       "cargo", "clippy", "--locked", "--no-deps", "--all-targets",
-      "--package", "excalidraw-render",
-      "--package", "excalidraw-render-cli",
-      "--package", "xtask",
+      "-p", "excalidraw-render", "-p", "excalidraw-render-cli", "-p", "xtask",
       "--", "-D", "warnings",
     ])
   }
@@ -320,10 +345,7 @@ let cargoNextestBinary(container: Container!): File! {
 }
 
 """
-The Linux leg of the `Packaged public facade` workflow.
-
-The workflow runs this across a four-target matrix; only the Linux entry is
-reproducible here, so the macOS and Windows legs stay on GitHub Actions.
+The qualification and packaged facade for one supported target.
 """
 type Packaging {
   let container: Container!
@@ -355,41 +377,72 @@ type Packaging {
   execute here. No name filter, so a renamed test cannot drop out of the run.
   """
   qualification: String! @check {
-    self
-      .container
-      .withExec([
-        "cargo", "test", "--locked", "--release",
-        "--target", self.target,
-        "--package", "excalidraw-render",
-        "--features", "release-qualification",
-        "--lib",
-      ])
-      .combinedOutput
+    self.qualified.file("/qualification.log").contents
   }
 
   """
   Check the packaged CLI against the packaged renderer.
   """
   cli: String! @check {
-    self
-      .packaged
-      .withExec(["bash", "tests/package-consumer/check-packaged-cli.sh", self.target])
-      .combinedOutput
+    if (self.target == "wasm32-unknown-unknown") {
+      return "CLI is native-only; covered by packaging:cli"
+    }
+    self.cliChecked.combinedOutput
   }
 
   """
   Execute the packaged public facade against the packaged renderer.
   """
   publicFacade: String! @check {
-    self
-      .packaged
-      .withWorkdir("tests/package-consumer")
+    self.consumer.combinedOutput
+  }
+
+  """
+  Passing qualification and packaged-facade evidence for this target.
+  """
+  evidence: Directory! {
+    self.consumer
+      .withWorkdir("/work/src")
+      .withFile("/source-clean", self.container
+        .withExec(["bash", "tools/ci/require-clean-source.sh"], redirectStdout: "/source-clean")
+        .file("/source-clean"))
+      .withFile("/cli-check", self.cliChecked
+        .withExec(["true"], redirectStdout: "/cli-check")
+        .file("/cli-check"))
+      .withFile("/evidence/" + self.target + ".log", self.qualified.file("/qualification.log"))
+      .withExec([
+        "cargo", "run", "--locked", "-p", "xtask", "--", "conformance",
+        "materialize-svg-font-subset-target", self.target,
+        "/evidence/" + self.target + ".log", "/evidence/" + self.target + ".json",
+      ])
+      .directory("/evidence")
+  }
+
+  let qualified: Container! {
+    self.container.withExec([
+      "bash", "tools/ci/qualification.sh", self.target, "/qualification.log",
+    ])
+      .withExec([
+        "cargo", "run", "--locked", "-p", "xtask", "--", "conformance",
+        "materialize-svg-font-subset-target", self.target, "/qualification.log", "/qualification.json",
+      ])
+  }
+
+  let cliChecked: Container! {
+    self.packaged
+      .{
+        if (self.target == hostTarget) {
+          _.withExec(["bash", "tests/package-consumer/check-packaged-cli.sh", self.target])
+        } else _
+      }
+  }
+
+  let consumer: Container! {
+    self.packaged.withWorkdir("tests/package-consumer")
       .withExec([
         "cargo", "test", "--locked", "--release",
-        "--target", self.target,
-        "--test", "public_facade",
+        "--target", self.target, "--test", "public_facade",
       ])
-      .combinedOutput
   }
 
   """
@@ -429,7 +482,7 @@ The randomized expansions the nightly schedule runs.
 
 These are deliberately not checks: they are bounded but long, and the push
 gates should not carry them. Run one with
-`dagger call nightly font-subset-fuzz`.
+`dagger api call nightly font-subset-fuzz`.
 """
 type Nightly {
   let container: Container!
