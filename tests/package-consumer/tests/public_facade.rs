@@ -42,7 +42,7 @@ const FALLBACK_HASHES: &[(OutputFormat, &str, &str)] = &[
         // truncates to the same rows and is unchanged. The report is
         // unchanged.
         OutputFormat::Svg,
-        "6337df379b994af0ac1ed76fc5e3ba8d690b1723a2e4203cda2b418e9ef0f467",
+        "2d8873e946d60367340123e5bc789740c90f98bba6c4d0cfc6dc8a1e9318a3f0",
         "579d8c97406c5bbea1c25cd3638e2de5f96508adf89141ea4f17be5e9a7340f3",
     ),
     (
@@ -202,10 +202,11 @@ fn packaged_svg_font_subsets_are_cross_target_stable() {
     // (#116). Moved again with #150/#151, when `font-family` became the list
     // `Excalifont, Xiaolai, Segoe UI Emoji, sans-serif`, and with #151 item 1,
     // when `<metadata>` began carrying the Excalifont attribution and the OFL
-    // body as two notices.
+    // body as two notices. ADR-0003's identity refresh changes the embedded
+    // subset's name table and its profile-derived identity/notice.
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "3af157263cb465a042946e2721d68cf8f36b94cd7ae4903f2ba8d36f733012f8"
+        "e124ad8add5d237a75d5a506c68c062977f8d0ecbbb484d02acd2446ffc78307"
     );
     assert!(svg.contains("\"asset_identity\":\"license.ofl-1.1\""));
     assert_eq!(svg.matches("<style class=\"style-fonts\">").count(), 1);
