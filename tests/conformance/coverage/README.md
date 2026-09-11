@@ -137,10 +137,59 @@ tests do) proves only the validator's behavior.
 
 ## Next implementation
 
+### Native snapshot candidates
+
+The native public-facade collector is implemented as the non-published
+`tests/package-consumer/examples/native_snapshots.rs`. Run it in pinned Dagger:
+
+```sh
+dagger api call packaging snapshots --output target/native-snapshots
+cargo run --locked -p xtask -- conformance verify-native-snapshots target/native-snapshots
+```
+
+Dagger verifies the inventory, packages the library/assets, runs request-adapter
+tests, and builds the collector with `--release --locked` against those unpacked
+crates. The parent spawns two separate worker processes in forward/reverse order.
+Each key renders twice through fresh public-API sessions. The parent compares
+both process outputs and only writes `snapshots.json` when all results agree.
+
+The collector validates the complete option set rather than ignoring unfamiliar
+values: background inclusion, scene padding, exactly one sizing mode, dark mode,
+embedded-scene metadata and scene frame controls. Frame export uses the frame API's
+zero padding and selected source ordinal. The existing white background option
+is supported; other background overrides are rejected pending an explicit mapping.
+
+Output is a separate `excalidraw-render/native-snapshots/v1` candidate bundle:
+`snapshots.json`, forward/reverse result JSON, `blobs/<sha256>` containing full
+artifact/report/failure-descriptor bytes, and `packages/` holding the exact four
+library/asset archives. It reuses inventory execution keys and two-sample result
+shape but omits the unavailable trace field and WASM runs. It must not be fed to
+`verify-results`, which correctly requires both targets and traces.
+
+Provenance records rustc, Git HEAD, source status, inventory, tool and consumer
+locks, consumer manifest/configuration, collector source and package digests.
+Cargo metadata must resolve each library/asset dependency to the packaged source.
+Working-tree output is visibly
+marked modified; Git HEAD alone is not claimed as its complete source identity.
+The package archives preserve the actual compiled inputs. Output directory reuse
+is refused by the collector; Dagger exports to a caller-selected staging location.
+The verifier rehashes every artifact/report/failure blob, checks exact execution
+coverage/order and repeat equality, rejects extra blobs, verifies packaged archive
+digests, exported worker-report equality and current input/tool/collector bindings. This does not grant approval or
+prove semantic parity with official evidence: it stages reproducible candidates
+for that review. Typed render failures retain their error descriptor and full
+report instead of inventing an artifact.
+
+Initial Dagger execution on the working tree based on `cf4f64d` passed all 168
+keys (56 each of SVG, PNG and PDF), with 672 successful render calls across
+the two process orders and no render failures. The candidate manifest has null
+approval. The staged output in `target/native-snapshots` includes about 22 MB
+of blobs and package archives; generated candidate files are not committed.
+
 1. Expand the authority into complete atomic risks and approve ownership and
    exclusions; connect exact vectors and specialized PDF/frame/regression owners.
-2. Implement the request adapter and native public-facade snapshot collector for
-   these keys; generate, review and approve canonical artifact/report expectations.
+2. Review and approve canonical artifact/report expectations from native snapshot
+   candidates, then implement replay against those approved expectations.
 3. Run the same keys in pinned browser WASM, collect test-only traces, and validate
    actual fresh processes/instances in both orders using this result boundary.
 4. Promote representative cases and expand codec/renderer fuzz reach, then make

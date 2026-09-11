@@ -416,6 +416,25 @@ type Packaging {
   }
 
   """
+  Collect native public-facade snapshot candidates in two fresh process orders.
+  Artifacts and full reports are exported; human approval and WASM/traces follow.
+  """
+  snapshots: Directory! {
+    if (self.target != hostTarget) { raise "snapshot collection is native-only" }
+    Packaging(self.container.withEnvVariable("CARGO_TARGET_DIR", "/work/src/target"), self.target).packaged
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "verify-inventory"])
+      .withWorkdir("tests/package-consumer")
+      .withExec(["cargo", "test", "--locked", "--release", "--target", self.target, "--example", "native_snapshots"])
+      .withExec([
+        "cargo", "run", "--locked", "--release", "--target", self.target,
+        "--example", "native_snapshots", "--", "collect", "/work/src", "/snapshots",
+      ])
+      .withWorkdir("/work/src")
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "verify-native-snapshots", "/snapshots"])
+      .directory("/snapshots")
+  }
+
+  """
   Passing qualification and packaged-facade evidence for this target.
   """
   evidence: Directory! {

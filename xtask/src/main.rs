@@ -95,6 +95,11 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             coverage::verify_results(&report)?;
         }
+        Some("verify-native-snapshots") => {
+            let directory = required_arg(&mut args, "snapshot directory")?;
+            no_more_args(args)?;
+            coverage::verify_snapshots(&directory)?;
+        }
         Some("verify-closure") => {
             no_more_args(args)?;
             coverage::verify_closure()?;
@@ -300,7 +305,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
         "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
-        "conformance <inventory|inventory-digest|verify-inventory|verify-results|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
+        "conformance <inventory|inventory-digest|verify-inventory|verify-results|verify-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"

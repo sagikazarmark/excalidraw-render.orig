@@ -17,6 +17,9 @@ const INVENTORY_SCHEMA: &str = "excalidraw-render/coverage-inventory/v1";
 const RESULT_SCHEMA: &str = "excalidraw-render/coverage-results/v1";
 const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"];
 
+mod snapshots;
+pub use snapshots::verify_snapshots;
+
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 struct Descriptor {

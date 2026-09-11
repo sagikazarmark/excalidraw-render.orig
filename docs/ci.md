@@ -100,6 +100,11 @@ See [the inventory/result contract](../tests/conformance/coverage/README.md).
 Its consistency check does not grant release closure: `conformance verify-closure`
 rejects the draft until ownership and canonical snapshot evidence are complete.
 
+Native snapshot candidates for the inventory's 168 keys can be exported with
+`dagger api call packaging snapshots --output target/native-snapshots`. This runs
+the packaged public facade twice per key in separate forward/reverse processes
+and exports complete artifact/report bytes and package provenance for review.
+
 Recent `daggerverse-beta` changes at `b0671fd12a` add toolchain/MSRV overrides,
 manifest-configured cargo-hack, automatic nextest plus doctests, cargo selection
 flags for clippy, and the `cargoProfile` CLI collision fix. The module lock now
