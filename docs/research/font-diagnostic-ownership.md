@@ -49,7 +49,7 @@ Verification of the follow-up:
 - Dagger workspace tests: render and doctest checks pass; fast runs 865 tests with 864 passing and one failure, the same offline viewer-qualification stale-digest check (eight tests skipped by the configured tier).
 - Temporary diagnostic probes were removed; `git diff --check` passes.
 
-Next, regenerate/review the affected font qualification evidence using the canonical Dagger viewer flow, obtain a fresh maintainer approval for its subject, and refresh target evidence as required. The implementation fix is verified locally but the qualification gates remain red until that workflow is complete.
+The expanded corpus and both viewer reports have now been regenerated, with matching native/browser-WASM qualification measurements. See [the refresh record and approval subjects](soft-hyphen-qualification-refresh.md). Fresh maintainer approvals and release-target rebinding remain required before qualification gates can pass.
 
 ## Remaining ownership work
 

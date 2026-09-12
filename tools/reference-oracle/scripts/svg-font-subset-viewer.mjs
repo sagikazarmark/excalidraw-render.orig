@@ -13,7 +13,7 @@ const BROWSER_VERSION = "149.0.7827.55";
 // The semantic subset executions the corpus deduplicates its successful cells
 // into: the 230 official chunks' 851 and the Noto Emoji fallback's 6 (#150),
 // the count `xtask/src/svg_font_subsets.rs` holds the corpus to.
-const EXECUTIONS = 857;
+const EXECUTIONS = 864;
 const BROWSER_ARGUMENTS = [
   "--disable-gpu",
   "--font-render-hinting=none",

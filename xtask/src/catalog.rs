@@ -73,9 +73,9 @@ const CHROMIUM_149_CJK_SCALARS_DIGEST: &str =
 const QUALIFICATION_SOURCES: usize = 231;
 const NOTO_EMOJI_UPSTREAM_PATH: &str = "scripts/woff2/assets/NotoEmoji-Regular.ttf";
 const SVG_FONT_SUBSET_QUALIFICATION_CORPUS_DIGEST: &str =
-    "3d034ec2f9850d3e3cd19d0fc0c6305405240a151e7700eaa0ba2d43a43d3f8a";
+    "254d75ecf95dafb9cdf796d36993daac6587b5e4d589ed052fd01889d7ac9157";
 const SVG_FONT_SUBSET_QUALIFICATION_SCHEMA_DIGEST: &str =
-    "feee942f94ef6d29dd22b7b5c2625f332222579fa6a6c9891b157e5dcec46015";
+    "db0e54e516bd82bdc5733d6e950c36bd975bdd7d2a766e89e73804fe21d30264";
 
 struct IncorporatedArtifactSource {
     repository_path: &'static str,
@@ -2256,7 +2256,7 @@ fn verify_catalog_schema(base: &Path, catalog: &Value) -> Result<(), String> {
 }
 
 fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Result<(), String> {
-    const CLASSES: [&str; 8] = [
+    const CLASSES: [&str; 9] = [
         "mapped-scalar",
         "range-boundary",
         "empty-intersection",
@@ -2265,6 +2265,7 @@ fn verify_font_subset_qualification_corpus(root: &Path, catalog: &Value) -> Resu
         "combining-mark",
         "composite-closure",
         "layout-closure-heavy",
+        "default-ignorable-no-space",
     ];
     let corpus_path = root.join(
         "tests/oracle/compatibility-artifacts/revision-1-svg-font-subset-qualification-corpus.json",

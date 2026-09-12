@@ -27,7 +27,7 @@ const PROFILE_SHA256: &str = "522b5b9a6f1ae71af1ce72ddda9db2c6aca6607fc7567b1362
 /// unavailable.
 const TRACE_DIGEST_DIAGNOSTICS: bool =
     option_env!("EXCALIDRAW_FONT_SUBSET_TRACE_DIGESTS").is_some();
-const CLASS_IDS: [&str; 8] = [
+const CLASS_IDS: [&str; 9] = [
     "mapped-scalar",
     "range-boundary",
     "empty-intersection",
@@ -36,6 +36,7 @@ const CLASS_IDS: [&str; 8] = [
     "combining-mark",
     "composite-closure",
     "layout-closure-heavy",
+    "default-ignorable-no-space",
 ];
 /// The qualified sources: the 230 official chunks in catalog order, then the
 /// Noto Emoji fallback face (#150), which direct SVG subsets like a chunk.
@@ -728,6 +729,17 @@ fn classify_source(family: &str, ranges: &[(u32, u32)], sfnt: &[u8]) -> Vec<Clas
             || not_applicable("source has no mapped layout-referenced glyph"),
             success,
         ),
+        first_mapped(&face, ranges, |scalar| {
+            char::from_u32(scalar).is_some_and(super::text::is_default_ignorable)
+        })
+        .map_or_else(
+            || {
+                not_applicable(
+                    "source has no mapped default-ignorable scalar in its declared ranges",
+                )
+            },
+            |scalar| success(vec![scalar]),
+        ),
     ]
 }
 
@@ -1250,6 +1262,7 @@ fn class_definitions() -> Vec<ClassDefinition> {
         "first source-mapped scalar with a nonzero canonical combining class",
         "first source-mapped scalar whose TrueType glyph is composite",
         "complete bounded carrier for source-mapped glyphs referenced by GSUB/GPOS/GDEF closure, preferring a shaping probe that changes glyph choice, count, advance, or offset",
+        "first source-mapped default-ignorable scalar without a literal space; verifies the shaper's implicit space-glyph dependency",
     ]
     .into_iter()
     .zip(CLASS_IDS)
