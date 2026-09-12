@@ -90,6 +90,69 @@ struct SceneChrome {
 }
 
 impl RenderSession {
+    /// Effects describe channels the repaired source relationship can affect in
+    /// this target, rather than the number or kind of its graph projections.
+    fn cycle_effects(
+        &self,
+        cycle: &relationships::RemovedCycle,
+        inputs: &ResolutionInputs<'_>,
+        request: &RenderRequest,
+    ) -> (bool, bool) {
+        let elements = &inputs.normalization.elements;
+        let source = elements
+            .iter()
+            .find(|element| element.source.source_index() == cycle.source_index);
+        let target = elements
+            .iter()
+            .find(|element| element.source.source_index() == cycle.target_source_index);
+        // Frame scoping has already removed nonselected normalized elements.
+        // A rejected binding can have prevented selection of its target, so
+        // retain its pre-scope participation from the graph's normalized bounds.
+        let target_was_normalized = inputs.relationships.graph.nodes.iter().any(|node| {
+            node.source_index == cycle.target_source_index && node.hit_bounds.is_some()
+        });
+        let nonempty_text = |element: Option<&NormalizedElement>| {
+            element.is_some_and(|element| matches!(&element.kind, NormalizedElementKind::Text(text) if !text.text.is_empty()))
+        };
+        let frame_target = matches!(self.target, RenderTarget::Frame(_));
+        let frame_rendering = inputs.normalization.frame_rendering;
+        let scene_clip = frame_rendering.enabled
+            && frame_rendering.clip
+            && request.frame_options().enabled()
+            && request.frame_options().clip();
+        let visual = match cycle.channel {
+            relationships::CycleChannel::FrameMembership => {
+                // Membership filters frame exports even when PNG omits clips;
+                // scene bounds consume it whenever scene clipping is enabled.
+                (source.is_some()
+                    || inputs
+                        .normalization
+                        .fallbacks
+                        .iter()
+                        .any(|fallback| fallback.source_index == cycle.source_index))
+                    && (frame_target || scene_clip)
+            }
+            relationships::CycleChannel::TextContainer => {
+                nonempty_text(source) || (frame_target && source.is_some() && target_was_normalized)
+            }
+            relationships::CycleChannel::BoundElement => {
+                // Reverse bindings control text admission and frame selection.
+                (source.is_some()
+                    && nonempty_text(target)
+                    && super::resolve::relationship_element_target(
+                        cycle.target_source_index,
+                        relationships::RelationshipKind::Mask,
+                        &inputs.relationships.graph,
+                    ) == Some(cycle.source_index))
+                    || (frame_target && source.is_some() && target_was_normalized)
+            }
+            relationships::CycleChannel::EndpointBinding => {
+                frame_target && source.is_some() && target_was_normalized
+            }
+        };
+        (visual, visual && request.format() != OutputFormat::Png)
+    }
+
     /// Normalizes, relates, frame-scopes, and resolves the scene into the
     /// format-independent plan the encoder consumes. Phase order — inputs,
     /// census, element resolution, assembly — is the canonical charge order.
@@ -822,10 +885,13 @@ impl RenderSession {
             {
                 continue;
             }
+            let (visual, semantic) = self.cycle_effects(cycle, inputs, request);
             let diagnostic = relationship_cycle_diagnostic(
                 request.format(),
                 &cycle.element_id,
                 &cycle.json_pointer,
+                visual,
+                semantic,
             )
             .map_err(|_| {
                 self.memory_failure(request, "compatibility_report", "relationship_cycle")

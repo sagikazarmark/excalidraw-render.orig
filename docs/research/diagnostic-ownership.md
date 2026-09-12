@@ -42,7 +42,7 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 | `normalization.duplicate-element-id` | pdf, png, svg | gap | Existing normalization tests cover ID repair/rekey behavior, but generated IDs and relation-dependent effects require complete all-format report assertions and exact multiplicity/silence ownership. |
 | `normalization.missing-element-id` | pdf, png, svg | gap | Existing normalization tests cover ID repair/rekey behavior, but generated IDs and relation-dependent effects require complete all-format report assertions and exact multiplicity/silence ownership. |
 | `normalization.missing-timestamp` | pdf, png, svg | owned | missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent |
-| `normalization.relationship-cycle` | pdf, png, svg | gap | Duplicate source repairs are fixed and covered by exact all-format tests. Conditional visual/semantic effects still need reconciliation with the constructor's unconditional input_repair/semantic selection. |
+| `normalization.relationship-cycle` | pdf, png, svg | gap | Duplicate repairs and unconditional effects are fixed. Tests cover scene/frame consumers and format-dependent effects; mixed-cycle reciprocal bindings and fallback participation still need a complete exact-report owner. |
 | `normalization.zero-rough-seed` | pdf, png, svg | owned | zero_rough_seeds_are_repaired_once_per_participating_shape |
 | `pdf.raster-fallback` | pdf | gap | Existing PDF fallback tests cover isolated closure and forbid behavior; consolidate exact affected IDs, bounds, reason/family details and source order for all fallback families. |
 | `resource.asset-bytes-exceeded` | pdf, png, svg | gap | Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing. |
@@ -127,7 +127,7 @@ The minimal two-element cycle reproduced the same failure. A targeted probe at c
 
 The public-facade regression covers the minimal cycle, the original two independent cycles, self-cycles on two distinct properties of a text owner, acyclic/deleted silence, exact ordered machine-readable reports and repeated artifact/report equality in SVG, PNG and PDF. A separate test verifies per-frame scoping and standalone/batch replay equality. Exact cardinality assertions at the facade would have caught the original defect; `.find()` only proved existence.
 
-**Remaining effects gap:** `relationship_cycle_diagnostic` always supplies `[input_repair, semantic]`, while the registry requires adding visual/semantic effects for the broken relationship's actual channels. The new regression preserves the existing effects for these fixtures and establishes duplication recovery; it does not prove all conditional-effects branches. Counts therefore remain 134 proposed owners and 794 gaps.
+**Effects gap at the duplicate-fix checkpoint:** `relationship_cycle_diagnostic` still supplied `[input_repair, semantic]` unconditionally. The subsequent channel-aware fix below replaces that behavior. Counts remain 134 proposed owners and 794 gaps until the remaining branches have a complete owner.
 
 Follow-up verification on the working tree based on `97c8fa1`:
 
@@ -140,6 +140,33 @@ Follow-up verification on the working tree based on `97c8fa1`:
 - `git diff --check`: passed; temporary cycle-rejection instrumentation removed.
 
 ## Remaining work
+
+### Channel-aware cycle effects
+
+The follow-up based on `bfedb0b` preserves source/target indices and a source-consumer category in each removed-cycle record. Selection occurs during target-scoped semantic resolution, where normalized participation, persisted frame controls, request controls and output format are available. Graph traversal still removes each projection and emits one diagnostic per repaired source pointer.
+
+| Consumer | Visual effect selected when | Semantic effect |
+| --- | --- | --- |
+| Frame membership | Source participates and scene clipping is enabled, or the target is a frame export | SVG/PDF when visual is selected |
+| Text container | Source has nonempty normalized text, or its binding can select a normalized target in a frame export | SVG/PDF when visual is selected |
+| Reverse bound-element reference | Nonempty target text retains a container relationship to the source, or the reference can select a normalized target in a frame export | SVG/PDF when visual is selected |
+| Endpoint binding | The reference can select a normalized target in a frame export; whole-scene geometry uses stored coordinates | SVG/PDF when visual is selected |
+
+Every repair retains `input_repair`. PNG carries no text/link/vector output semantics, so its affected-output branch adds only `visual`. Disabled scene clipping (persisted or requested), empty unbound text, and unconsumed whole-scene bindings are input-only. Frame selection can exclude a target because its binding was removed; pre-scope normalized participation therefore comes from the relationship graph, rather than only the filtered element list.
+
+The minimal regression disables scene frame rendering and asserts input-only effects for a self-referencing `frameId`. It failed before the change with an extra `semantic` effect. Additional tests cover clip-off controls, persisted controls, both endpoint binding fields, both reverse-binding encodings, empty/nonempty text, per-frame scoping, and standalone/batch equality for a rejected binding to a nonselected target. Existing exact cycle reports now expect visual effects and the SVG/PDF semantic branch.
+
+The original constructor accepted neither consumer information nor selected-channel flags; it could not express the registry's conditional contract. Carrying the source relationship's consumer category to the target-aware diagnostic call fixes that loss of information. Remaining mixed-cycle reciprocal-binding and fallback-participation branches stay explicit ownership gaps.
+
+Verification for this follow-up:
+
+- The disabled-frame minimal test failed before the fix with an extra `semantic` effect and passed afterward.
+- `cargo test --locked -p excalidraw-render --test fast diagnostic_contract`: 14 passed.
+- `cargo test --locked -p excalidraw-render --test fast relationships::`: four passed, including the nonselected-target frame regression.
+- `cargo run --locked -p xtask -- conformance verify-ownership`: passed; 134 assigned/excluded, 794 gaps, approval pending.
+- `dagger check excalidraw-render:conformance excalidraw-render:lint`: all ten checks passed.
+- `dagger check excalidraw-render:test`: all three checks passed.
+- `git diff --check`: passed.
 
 - Complete generated-ID/rekey and relationship-cycle contracts.
 - Enumerate unsupported-property-value recovery branches and known-element fallback reachability.

@@ -1,14 +1,146 @@
 //! Public-facade diagnostic ownership: exact format, severity, effects, details,
 //! occurrence order and silence. Expected contracts are authored, not generated
 //! from the production diagnostic registry.
-use excalidraw_render::{OutputFormat, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{FrameOptions, OutputFormat, RenderRequest, Renderer, SceneDocument};
 use serde_json::{json, Value};
 
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn disabled_frame_cycle_repairs_input_without_claiming_output_effects() {
+    let mut element = rectangle("self");
+    element["frameId"] = json!("self");
+    for format in FORMATS {
+        for options in [
+            FrameOptions::new(false, true, true, true),
+            FrameOptions::new(true, false, true, true),
+        ] {
+            let request = RenderRequest::builder(format)
+                .frame_options(options)
+                .build()
+                .unwrap();
+            assert_report_with_request(
+                &scene(json!([element])),
+                &request,
+                json!([expected(
+                    "normalization.relationship-cycle",
+                    "warning",
+                    json!(["input_repair"]),
+                    json!("self"),
+                    "/elements/0/frameId",
+                    compatibility("removed")
+                )]),
+            );
+        }
+        for app_state in [
+            json!({"frameRendering":{"enabled":false}}),
+            json!({"frameRendering":{"clip":false}}),
+        ] {
+            let source = SceneDocument::parse(&serde_json::to_vec(&json!({"type":"excalidraw","version":2,"elements":[element],"appState":app_state,"files":{}})).unwrap()).unwrap();
+            assert_report(
+                &source,
+                format,
+                json!([expected(
+                    "normalization.relationship-cycle",
+                    "warning",
+                    json!(["input_repair"]),
+                    json!("self"),
+                    "/elements/0/frameId",
+                    compatibility("removed")
+                )]),
+            );
+        }
+    }
+}
+
+#[test]
+fn cycle_effects_follow_text_and_binding_consumers() {
+    for format in FORMATS {
+        let visual_effects = if format == OutputFormat::Png {
+            json!(["input_repair", "visual"])
+        } else {
+            json!(["input_repair", "visual", "semantic"])
+        };
+        for (text, effects) in [
+            ("Hello", visual_effects.clone()),
+            ("", json!(["input_repair"])),
+        ] {
+            let source = json!({"id":"text","type":"text","text":text,"fontFamily":9,"fontSize":20,"width":80,"height":25,"updated":1,"containerId":"text"});
+            assert_report(
+                &scene(json!([source])),
+                format,
+                json!([expected(
+                    "normalization.relationship-cycle",
+                    "warning",
+                    effects,
+                    json!("text"),
+                    "/elements/0/containerId",
+                    compatibility("removed")
+                )]),
+            );
+        }
+        // Endpoint bindings do not change stored scene geometry.
+        for binding in ["startBinding", "endBinding"] {
+            let mut arrow = json!({"id":"arrow","type":"arrow","width":40,"height":20,"points":[[0,0],[40,20]],"seed":1,"updated":1});
+            arrow[binding] = json!({"elementId":"arrow","focus":0,"gap":0});
+            assert_report(
+                &scene(json!([arrow])),
+                format,
+                json!([expected(
+                    "normalization.relationship-cycle",
+                    "warning",
+                    json!(["input_repair"]),
+                    json!("arrow"),
+                    &format!("/elements/0/{binding}/elementId"),
+                    compatibility("removed")
+                )]),
+            );
+        }
+        for field in ["boundElements", "boundElementIds"] {
+            for (text, effects) in [
+                (false, json!(["input_repair"])),
+                (true, json!(["input_repair"])),
+            ] {
+                let mut element = if text {
+                    json!({"id":"self","type":"text","text":"Hello","fontFamily":9,"fontSize":20,"width":80,"height":25,"updated":1})
+                } else {
+                    rectangle("self")
+                };
+                element[field] = if field == "boundElements" {
+                    json!([{"id":"self","type":"text"}])
+                } else {
+                    json!(["self"])
+                };
+                let pointer = if field == "boundElements" {
+                    "/elements/0/boundElements/0/id"
+                } else {
+                    "/elements/0/boundElementIds/0"
+                };
+                assert_report(
+                    &scene(json!([element])),
+                    format,
+                    json!([expected(
+                        "normalization.relationship-cycle",
+                        "warning",
+                        effects,
+                        json!("self"),
+                        pointer,
+                        compatibility("removed")
+                    )]),
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn relationship_cycles_report_each_closing_edge_once() {
     for format in FORMATS {
+        let effects = if format == OutputFormat::Png {
+            json!(["input_repair", "visual"])
+        } else {
+            json!(["input_repair", "visual", "semantic"])
+        };
         for pairs in [
             vec![("a", "b"), ("b", "a")],
             vec![("a", "b"), ("b", "a"), ("c", "d"), ("d", "c")],
@@ -29,7 +161,7 @@ fn relationship_cycles_report_each_closing_edge_once() {
                     expected(
                         "normalization.relationship-cycle",
                         "warning",
-                        json!(["input_repair", "semantic"]),
+                        effects.clone(),
                         json!(id),
                         &format!("/elements/{index}/frameId"),
                         compatibility("removed"),
@@ -48,7 +180,7 @@ fn relationship_cycles_report_each_closing_edge_once() {
                 expected(
                     "normalization.relationship-cycle",
                     "warning",
-                    json!(["input_repair", "semantic"]),
+                    effects.clone(),
                     json!("text"),
                     "/elements/0/containerId",
                     compatibility("removed")
@@ -56,7 +188,7 @@ fn relationship_cycles_report_each_closing_edge_once() {
                 expected(
                     "normalization.relationship-cycle",
                     "warning",
-                    json!(["input_repair", "semantic"]),
+                    effects.clone(),
                     json!("text"),
                     "/elements/0/frameId",
                     compatibility("removed")
@@ -103,10 +235,15 @@ fn compatibility(recovery: &str) -> Value {
 /// Compare every machine-readable field and the complete ordered report. The
 /// explanatory message must be nonempty and repeats byte-for-byte; its prose
 /// is not used to infer the diagnostic's semantics.
-fn assert_report(scene: &SceneDocument, format: OutputFormat, mut expected: Value) {
+fn assert_report(scene: &SceneDocument, format: OutputFormat, expected: Value) {
     let request = RenderRequest::builder(format).build().unwrap();
-    let first = Renderer::new().render(scene, &request).unwrap();
-    let second = Renderer::new().render(scene, &request).unwrap();
+    assert_report_with_request(scene, &request, expected);
+}
+
+fn assert_report_with_request(scene: &SceneDocument, request: &RenderRequest, mut expected: Value) {
+    let format = request.format();
+    let first = Renderer::new().render(scene, request).unwrap();
+    let second = Renderer::new().render(scene, request).unwrap();
     let bytes = serde_json::to_vec(first.report()).unwrap();
     assert_eq!(bytes, serde_json::to_vec(second.report()).unwrap());
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());

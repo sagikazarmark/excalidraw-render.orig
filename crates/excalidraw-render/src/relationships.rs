@@ -91,6 +91,18 @@ pub(crate) struct RemovedCycle {
     pub(crate) json_pointer: String,
     pub(crate) source_order: u64,
     pub(crate) source_position: u64,
+    pub(crate) source_index: usize,
+    pub(crate) target_source_index: usize,
+    pub(crate) channel: CycleChannel,
+}
+
+/// The source relationship's consumers, shared by its graph projections.
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum CycleChannel {
+    FrameMembership,
+    TextContainer,
+    BoundElement,
+    EndpointBinding,
 }
 
 #[derive(Clone)]
@@ -294,12 +306,33 @@ pub(crate) fn resolve<E>(
         .map_err(RelationshipError::Observer)?;
 
         if closes_cycle {
+            let CandidateTarget::Element(target) = candidate.target else {
+                unreachable!("only element dependencies can close cycles");
+            };
+            let channel = match candidate.kind {
+                RelationshipKind::Frame | RelationshipKind::Clip => CycleChannel::FrameMembership,
+                RelationshipKind::Mask => CycleChannel::TextContainer,
+                RelationshipKind::Binding if candidate.json_pointer.ends_with("/containerId") => {
+                    CycleChannel::TextContainer
+                }
+                RelationshipKind::Binding
+                    if candidate.json_pointer.contains("/boundElements/")
+                        || candidate.json_pointer.contains("/boundElementIds/") =>
+                {
+                    CycleChannel::BoundElement
+                }
+                RelationshipKind::Binding => CycleChannel::EndpointBinding,
+                _ => unreachable!("terminal relationships cannot close cycles"),
+            };
             removed_cycles.try_reserve(1)?;
             removed_cycles.push(RemovedCycle {
                 element_id: try_owned(&owner.id)?,
                 json_pointer: candidate.json_pointer,
                 source_order: owner.source_order,
                 source_position: candidate.source_position,
+                source_index: owner.source_index,
+                target_source_index: nodes[target].source_index,
+                channel,
             });
             continue;
         }

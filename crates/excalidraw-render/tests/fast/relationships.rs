@@ -78,7 +78,58 @@ fn cycle_diagnostics_are_scoped_and_replayed_once_per_frame() {
                 diagnostics[0].json_pointer(),
                 format!("/elements/{index}/frameId")
             );
+            let report = serde_json::to_value(standalone.report()).unwrap();
+            let effects = if format == OutputFormat::Png {
+                serde_json::json!(["input_repair", "visual"])
+            } else {
+                serde_json::json!(["input_repair", "visual", "semantic"])
+            };
+            assert_eq!(report["diagnostics"][0]["effects"], effects);
         }
+        assert!(batch.next().is_none());
+    }
+}
+
+#[test]
+fn rejected_bindings_report_frame_selection_effects_for_nonselected_targets() {
+    let scene = SceneDocument::parse(br#"{
+        "type":"excalidraw","version":2,"elements":[
+            {"id":"frame","type":"frame","width":100,"height":100,"updated":1},
+            {"id":"outside","type":"arrow","x":200,"width":40,"height":20,"points":[[0,0],[40,20]],"seed":1,"updated":1,"startBinding":{"elementId":"inside","focus":0,"gap":0}},
+            {"id":"inside","type":"arrow","x":10,"width":40,"height":20,"points":[[0,0],[40,20]],"seed":1,"updated":1,"startBinding":{"elementId":"outside","focus":0,"gap":0}}
+        ],"appState":{},"files":{}
+    }"#).unwrap();
+    let frame = scene.frames().next().unwrap();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let renderer = Renderer::new();
+        let scene_outcome = renderer
+            .render(&scene, &RenderRequest::builder(format).build().unwrap())
+            .unwrap();
+        let scene_report = serde_json::to_value(scene_outcome.report()).unwrap();
+        assert_eq!(scene_report["diagnostics"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            scene_report["diagnostics"][0]["effects"],
+            serde_json::json!(["input_repair"])
+        );
+        let request = FrameRenderRequest::builder(format).build().unwrap();
+        let outcome = renderer.render_frame(frame, &request).unwrap();
+        let report = serde_json::to_value(outcome.report()).unwrap();
+        let effects = if format == OutputFormat::Png {
+            serde_json::json!(["input_repair", "visual"])
+        } else {
+            serde_json::json!(["input_repair", "visual", "semantic"])
+        };
+        assert_eq!(report["diagnostics"].as_array().unwrap().len(), 1);
+        assert_eq!(report["diagnostics"][0]["effects"], effects);
+        assert_eq!(
+            report["diagnostics"][0]["json_pointer"],
+            "/elements/2/startBinding/elementId"
+        );
+        let mut batch = renderer.render_frames(&scene, [frame], &request).unwrap();
+        let item = batch.next().unwrap();
+        let replay = item.result().as_ref().unwrap();
+        assert_eq!(serde_json::to_value(replay.report()).unwrap(), report);
+        assert_eq!(replay.artifact().bytes(), outcome.artifact().bytes());
         assert!(batch.next().is_none());
     }
 }

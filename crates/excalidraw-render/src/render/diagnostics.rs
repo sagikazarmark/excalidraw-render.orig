@@ -356,11 +356,23 @@ pub(super) fn relationship_cycle_diagnostic(
     format: OutputFormat,
     element_id: &str,
     json_pointer: &str,
+    visual: bool,
+    semantic: bool,
 ) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    let effects: &[DiagnosticEffect] = match (visual, semantic) {
+        (false, false) => &[DiagnosticEffect::InputRepair],
+        (true, false) => &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+        (false, true) => &[DiagnosticEffect::InputRepair, DiagnosticEffect::Semantic],
+        (true, true) => &[
+            DiagnosticEffect::InputRepair,
+            DiagnosticEffect::Visual,
+            DiagnosticEffect::Semantic,
+        ],
+    };
     PendingDiagnostic::new(
         DiagnosticKind::RelationshipCycle,
         format,
-        &[DiagnosticEffect::InputRepair, DiagnosticEffect::Semantic],
+        effects,
         Some(element_id),
         json_pointer,
         "relationship cycle-closing edge was removed deterministically",
