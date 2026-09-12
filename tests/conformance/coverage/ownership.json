@@ -2315,7 +2315,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2344,7 +2344,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2373,7 +2373,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2450,7 +2450,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2479,7 +2479,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2508,7 +2508,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2561,7 +2561,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2590,7 +2590,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2619,7 +2619,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -3088,7 +3088,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3117,7 +3117,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3146,7 +3146,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3170,25 +3170,52 @@
     {
       "id": "diagnostic:normalization.relationship-cycle:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Cycle effects now follow scene/frame consumers and output format. Exact tests cover multiplicity, disabled clipping, empty/nonempty text, endpoint bindings and nonselected frame targets. Mixed-cycle reciprocal bindings and fallback participation still need a complete exact-report owner before assignment."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
+          },
+          "function": "relationship_cycle_contract_in_every_format",
+          "binary": "fast",
+          "command": ["cargo", "test", "--locked", "--release", "-p", "excalidraw-render", "--test", "fast", "diagnostic_contract::relationship_cycle_contract_in_every_format", "--", "--exact"]
+        },
+        "rationale": "pdf: Exact full ordered scene/frame reports cover source-edge multiplicity, both reverse-binding encodings, endpoint/text/frame channels, mixed cycles and reciprocal silence, placeholder/omission participation, disabled clipping and frame opacity, source-order independence from IDs, and fresh/standalone/batch repeatability."
       }
     },
     {
       "id": "diagnostic:normalization.relationship-cycle:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Cycle effects now follow scene/frame consumers and output format. Exact tests cover multiplicity, disabled clipping, empty/nonempty text, endpoint bindings and nonselected frame targets. Mixed-cycle reciprocal bindings and fallback participation still need a complete exact-report owner before assignment."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
+          },
+          "function": "relationship_cycle_contract_in_every_format",
+          "binary": "fast",
+          "command": ["cargo", "test", "--locked", "--release", "-p", "excalidraw-render", "--test", "fast", "diagnostic_contract::relationship_cycle_contract_in_every_format", "--", "--exact"]
+        },
+        "rationale": "png: Exact full ordered scene/frame reports cover source-edge multiplicity, both reverse-binding encodings, endpoint/text/frame channels, mixed cycles and reciprocal silence, placeholder/omission participation, disabled clipping and frame opacity, source-order independence from IDs, and fresh/standalone/batch repeatability."
       }
     },
     {
       "id": "diagnostic:normalization.relationship-cycle:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Cycle effects now follow scene/frame consumers and output format. Exact tests cover multiplicity, disabled clipping, empty/nonempty text, endpoint bindings and nonselected frame targets. Mixed-cycle reciprocal bindings and fallback participation still need a complete exact-report owner before assignment."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
+          },
+          "function": "relationship_cycle_contract_in_every_format",
+          "binary": "fast",
+          "command": ["cargo", "test", "--locked", "--release", "-p", "excalidraw-render", "--test", "fast", "diagnostic_contract::relationship_cycle_contract_in_every_format", "--", "--exact"]
+        },
+        "rationale": "svg: Exact full ordered scene/frame reports cover source-edge multiplicity, both reverse-binding encodings, endpoint/text/frame channels, mixed cycles and reciprocal silence, placeholder/omission participation, disabled clipping and frame opacity, source-order independence from IDs, and fresh/standalone/batch repeatability."
       }
     },
     {
@@ -3199,7 +3226,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3228,7 +3255,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3257,7 +3284,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "d4ecceb7fddea630742eef4fae670773a4f5b08b310176fe584e49b7e4c85717"
+            "sha256": "fe6d169e785bab3b5aab4357eb146b65242eda153249de1b5ad9948da9e75a0b"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",

@@ -122,6 +122,14 @@ impl RenderSession {
             && request.frame_options().clip();
         let visual = match cycle.channel {
             relationships::CycleChannel::FrameMembership => {
+                // Frame opacity is inherited even when outline/clipping
+                // controls are disabled (resolve_frame_opacity).
+                let frame_opacity = target.is_some_and(|element| {
+                    matches!(
+                        element.kind,
+                        NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
+                    ) && element.opacity != 100.0
+                });
                 // Membership filters frame exports even when PNG omits clips;
                 // scene bounds consume it whenever scene clipping is enabled.
                 (source.is_some()
@@ -130,21 +138,17 @@ impl RenderSession {
                         .fallbacks
                         .iter()
                         .any(|fallback| fallback.source_index == cycle.source_index))
-                    && (frame_target || scene_clip)
+                    && (frame_target || scene_clip || frame_opacity)
             }
             relationships::CycleChannel::TextContainer => {
                 nonempty_text(source) || (frame_target && source.is_some() && target_was_normalized)
             }
             relationships::CycleChannel::BoundElement => {
-                // Reverse bindings control text admission and frame selection.
-                (source.is_some()
-                    && nonempty_text(target)
-                    && super::resolve::relationship_element_target(
-                        cycle.target_source_index,
-                        relationships::RelationshipKind::Mask,
-                        &inputs.relationships.graph,
-                    ) == Some(cycle.source_index))
-                    || (frame_target && source.is_some() && target_was_normalized)
+                // A retained reciprocal Mask has the same dependency direction
+                // as this reverse binding, so it cannot coexist with the path
+                // that rejects the binding. Without that Mask, text is unbound;
+                // only frame selection can consume the rejected reference.
+                frame_target && source.is_some() && target_was_normalized
             }
             relationships::CycleChannel::EndpointBinding => {
                 frame_target && source.is_some() && target_was_normalized
@@ -721,12 +725,10 @@ impl RenderSession {
                 )?;
                 self.scope_frame_diagnostics(&diagnostic_sources);
                 self.diagnostic_attribution = DiagnosticAttribution::Target;
-                let FrameSelection {
-                    viewport,
-                    participating,
-                    ..
-                } = selection;
-                (Some(viewport), Some(participating), Some(file_ids))
+                let FrameSelection { viewport, .. } = selection;
+                // Cycle repairs belong to retained placeholders as well as
+                // normalized elements, just like normalization diagnostics.
+                (Some(viewport), Some(diagnostic_sources), Some(file_ids))
             }
         };
         Ok(ResolutionInputs {

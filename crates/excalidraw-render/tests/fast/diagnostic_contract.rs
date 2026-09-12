@@ -1,12 +1,296 @@
 //! Public-facade diagnostic ownership: exact format, severity, effects, details,
 //! occurrence order and silence. Expected contracts are authored, not generated
 //! from the production diagnostic registry.
-use excalidraw_render::{FrameOptions, OutputFormat, RenderRequest, Renderer, SceneDocument};
+use excalidraw_render::{
+    FrameOptions, FrameRenderRequest, OutputFormat, RenderOutcome, RenderRequest, Renderer,
+    SceneDocument,
+};
 use serde_json::{json, Value};
 
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn relationship_cycle_contract_in_every_format() {
+    disabled_frame_cycle_repairs_input_without_claiming_output_effects();
+    cycle_effects_follow_text_and_binding_consumers();
+    relationship_cycles_report_each_closing_edge_once();
+    mixed_reciprocal_cycles_and_fallbacks_have_exact_reports();
+    frame_opacity_cycle_affects_output_even_when_clipping_is_disabled();
+    frame_cycle_reports_and_binding_selection();
+}
+
+fn mixed_reciprocal_cycles_and_fallbacks_have_exact_reports() {
+    for format in FORMATS {
+        let effects = if format == OutputFormat::Png {
+            json!(["input_repair", "visual"])
+        } else {
+            json!(["input_repair", "visual", "semantic"])
+        };
+        for field in ["boundElements", "boundElementIds"] {
+            let mut container = rectangle("container");
+            container["frameId"] = json!("text");
+            container[field] = if field == "boundElements" {
+                json!([{"id":"text","type":"text"}])
+            } else {
+                json!(["text"])
+            };
+            let text = json!({"id":"text","type":"text","text":"Hello","fontFamily":9,"fontSize":20,"width":80,"height":25,"updated":1,"containerId":"container"});
+            let pointer = if field == "boundElements" {
+                "/elements/0/boundElements/0/id"
+            } else {
+                "/elements/0/boundElementIds/0"
+            };
+            assert_report(
+                &scene(json!([container, text])),
+                format,
+                json!([
+                    expected(
+                        "normalization.relationship-cycle",
+                        "warning",
+                        json!(["input_repair"]),
+                        json!("container"),
+                        pointer,
+                        compatibility("removed")
+                    ),
+                    expected(
+                        "normalization.relationship-cycle",
+                        "warning",
+                        effects.clone(),
+                        json!("text"),
+                        "/elements/1/containerId",
+                        compatibility("removed")
+                    )
+                ]),
+            );
+            // A genuine reciprocal pair is two projections of the same
+            // dependency direction, not a cycle. Removing the opposing frame
+            // edge therefore makes both reference encodings silent.
+            container.as_object_mut().unwrap().remove("frameId");
+            assert_report(&scene(json!([container, text])), format, json!([]));
+        }
+        let frame = json!({"id":"frame","type":"frame","width":100,"height":100,"updated":1,"frameId":"future"});
+        let fallback = json!({"id":"future","type":"future","width":40,"height":40,"updated":1,"frameId":"frame"});
+        let source = scene(json!([frame, fallback]));
+        let diagnostics = json!([
+            expected(
+                "compatibility.unsupported-element-type",
+                "warning",
+                json!(["visual", "semantic"]),
+                json!("future"),
+                "/elements/1",
+                json!({"kind":"compatibility","recovery":"placeholder","recipe_id":"renderer.unknown-element.v1"})
+            ),
+            expected(
+                "normalization.relationship-cycle",
+                "warning",
+                effects,
+                json!("future"),
+                "/elements/1/frameId",
+                compatibility("removed")
+            ),
+            expected(
+                "font.liberation-sans-substituted",
+                "info",
+                json!(["visual"]),
+                json!("future"),
+                "/elements/1",
+                compatibility("substituted")
+            )
+        ]);
+        assert_report(&source, format, diagnostics.clone());
+        assert_frame_reports(&source, format, std::slice::from_ref(&diagnostics));
+        let disabled = RenderRequest::builder(format)
+            .frame_options(FrameOptions::new(false, false, false, false))
+            .build()
+            .unwrap();
+        let mut disabled_diagnostics = diagnostics.clone();
+        disabled_diagnostics[1]["effects"] = json!(["input_repair"]);
+        assert_report_with_request(&source, &disabled, disabled_diagnostics);
+        // A placeholder outside the selected viewport is silent for that frame.
+        let outside = json!({"id":"future","type":"future","x":200,"width":40,"height":40,"updated":1,"frameId":"frame"});
+        assert_frame_reports(&scene(json!([frame, outside])), format, &[json!([])]);
+        // With no safe bounds the rejected source is omitted. Its source cycle
+        // still needs an input repair, but has no output channels to affect.
+        let omitted = json!({"id":"future","type":"future","x":null,"y":null,"width":null,"height":null,"updated":1,"frameId":"frame"});
+        let omitted_source = scene(json!([frame, omitted]));
+        assert_report(
+            &omitted_source,
+            format,
+            json!([
+                expected(
+                    "compatibility.unsupported-element-type",
+                    "warning",
+                    json!(["visual", "semantic"]),
+                    json!("future"),
+                    "/elements/1",
+                    compatibility("omitted")
+                ),
+                expected(
+                    "normalization.relationship-cycle",
+                    "warning",
+                    json!(["input_repair"]),
+                    json!("future"),
+                    "/elements/1/frameId",
+                    compatibility("removed")
+                )
+            ]),
+        );
+        assert_frame_reports(&omitted_source, format, &[json!([])]);
+    }
+}
+
+fn frame_opacity_cycle_affects_output_even_when_clipping_is_disabled() {
+    let source = scene(json!([
+        {"id":"parent","type":"frame","width":100,"height":100,"opacity":50,"updated":1,"frameId":"child"},
+        {"id":"child","type":"rectangle","width":40,"height":40,"seed":1,"updated":1,"frameId":"parent"}
+    ]));
+    for format in FORMATS {
+        let request = RenderRequest::builder(format)
+            .frame_options(FrameOptions::new(false, false, false, false))
+            .build()
+            .unwrap();
+        let effects = if format == OutputFormat::Png {
+            json!(["input_repair", "visual"])
+        } else {
+            json!(["input_repair", "visual", "semantic"])
+        };
+        assert_report_with_request(
+            &source,
+            &request,
+            json!([expected(
+                "normalization.relationship-cycle",
+                "warning",
+                effects,
+                json!("child"),
+                "/elements/1/frameId",
+                compatibility("removed")
+            )]),
+        );
+    }
+}
+
+fn assert_frame_reports(scene: &SceneDocument, format: OutputFormat, expected: &[Value]) {
+    let renderer = Renderer::new();
+    let frames: Vec<_> = scene.frames().collect();
+    assert_eq!(frames.len(), expected.len());
+    let request = FrameRenderRequest::builder(format).build().unwrap();
+    let mut batch = renderer
+        .render_frames(scene, frames.iter().copied(), &request)
+        .unwrap();
+    for (frame, expected) in frames.iter().zip(expected) {
+        let first = renderer.render_frame(*frame, &request).unwrap();
+        let second = Renderer::new().render_frame(*frame, &request).unwrap();
+        let item = batch.next().unwrap();
+        let replayed = item.result().as_ref().unwrap();
+        assert_eq!(first.artifact().bytes(), replayed.artifact().bytes());
+        assert_eq!(
+            serde_json::to_vec(first.report()).unwrap(),
+            serde_json::to_vec(replayed.report()).unwrap()
+        );
+        assert_outcomes(&first, &second, format, expected.clone());
+    }
+    assert!(batch.next().is_none());
+}
+
+fn cycle_expected(id: &str, pointer: &str, effects: Value) -> Value {
+    expected(
+        "normalization.relationship-cycle",
+        "warning",
+        effects,
+        json!(id),
+        pointer,
+        compatibility("removed"),
+    )
+}
+
+fn frame_cycle_reports_and_binding_selection() {
+    for format in FORMATS {
+        let effects = if format == OutputFormat::Png {
+            json!(["input_repair", "visual"])
+        } else {
+            json!(["input_repair", "visual", "semantic"])
+        };
+        let frames = scene(json!([
+            {"id":"first","type":"frame","width":40,"height":40,"updated":1,"frameId":"first"},
+            {"id":"second","type":"magicframe","x":150,"width":40,"height":40,"updated":1,"frameId":"second"}
+        ]));
+        assert_frame_reports(
+            &frames,
+            format,
+            &[
+                json!([cycle_expected(
+                    "first",
+                    "/elements/0/frameId",
+                    effects.clone()
+                )]),
+                json!([cycle_expected(
+                    "second",
+                    "/elements/1/frameId",
+                    effects.clone()
+                )]),
+            ],
+        );
+        for field in [
+            "startBinding",
+            "endBinding",
+            "containerId",
+            "boundElements",
+            "boundElementIds",
+        ] {
+            let mut outside = json!({"id":"outside","type":"arrow","x":200,"width":40,"height":20,"points":[[0,0],[40,20]],"seed":1,"updated":1});
+            let mut inside = if field == "containerId" {
+                json!({"id":"inside","type":"text","text":"","fontFamily":9,"fontSize":20,"x":10,"width":40,"height":20,"updated":1})
+            } else {
+                json!({"id":"inside","type":"arrow","x":10,"width":40,"height":20,"points":[[0,0],[40,20]],"seed":1,"updated":1})
+            };
+            let pointer = match field {
+                "boundElements" | "boundElementIds" => {
+                    // Reverse bindings create outside -> inside dependencies;
+                    // close them with a prior inside -> outside dependency.
+                    outside["boundElements"] = json!([{"id":"inside","type":"arrow"}]);
+                    inside[field] = if field == "boundElements" {
+                        json!([{"id":"outside","type":"arrow"}])
+                    } else {
+                        json!(["outside"])
+                    };
+                    if field == "boundElements" {
+                        "/elements/2/boundElements/0/id"
+                    } else {
+                        "/elements/2/boundElementIds/0"
+                    }
+                }
+                "containerId" => {
+                    outside["startBinding"] = json!({"elementId":"inside","focus":0,"gap":0});
+                    inside[field] = json!("outside");
+                    "/elements/2/containerId"
+                }
+                _ => {
+                    outside[field] = json!({"elementId":"inside","focus":0,"gap":0});
+                    inside[field] = json!({"elementId":"outside","focus":0,"gap":0});
+                    if field == "startBinding" {
+                        "/elements/2/startBinding/elementId"
+                    } else {
+                        "/elements/2/endBinding/elementId"
+                    }
+                }
+            };
+            let source = scene(json!([
+                {"id":"frame","type":"frame","width":100,"height":100,"updated":1}, outside, inside
+            ]));
+            assert_report(
+                &source,
+                format,
+                json!([cycle_expected("inside", pointer, json!(["input_repair"]))]),
+            );
+            assert_frame_reports(
+                &source,
+                format,
+                &[json!([cycle_expected("inside", pointer, effects.clone())])],
+            );
+        }
+    }
+}
+
 fn disabled_frame_cycle_repairs_input_without_claiming_output_effects() {
     let mut element = rectangle("self");
     element["frameId"] = json!("self");
@@ -53,7 +337,6 @@ fn disabled_frame_cycle_repairs_input_without_claiming_output_effects() {
     }
 }
 
-#[test]
 fn cycle_effects_follow_text_and_binding_consumers() {
     for format in FORMATS {
         let visual_effects = if format == OutputFormat::Png {
@@ -133,7 +416,6 @@ fn cycle_effects_follow_text_and_binding_consumers() {
     }
 }
 
-#[test]
 fn relationship_cycles_report_each_closing_edge_once() {
     for format in FORMATS {
         let effects = if format == OutputFormat::Png {
@@ -144,6 +426,7 @@ fn relationship_cycles_report_each_closing_edge_once() {
         for pairs in [
             vec![("a", "b"), ("b", "a")],
             vec![("a", "b"), ("b", "a"), ("c", "d"), ("d", "c")],
+            vec![("z", "a"), ("a", "z"), ("y", "b"), ("b", "y")],
         ] {
             let elements: Vec<_> = pairs
                 .iter()
@@ -240,10 +523,19 @@ fn assert_report(scene: &SceneDocument, format: OutputFormat, expected: Value) {
     assert_report_with_request(scene, &request, expected);
 }
 
-fn assert_report_with_request(scene: &SceneDocument, request: &RenderRequest, mut expected: Value) {
+fn assert_report_with_request(scene: &SceneDocument, request: &RenderRequest, expected: Value) {
     let format = request.format();
     let first = Renderer::new().render(scene, request).unwrap();
     let second = Renderer::new().render(scene, request).unwrap();
+    assert_outcomes(&first, &second, format, expected);
+}
+
+fn assert_outcomes(
+    first: &RenderOutcome,
+    second: &RenderOutcome,
+    format: OutputFormat,
+    mut expected: Value,
+) {
     let bytes = serde_json::to_vec(first.report()).unwrap();
     assert_eq!(bytes, serde_json::to_vec(second.report()).unwrap());
     assert_eq!(first.artifact().bytes(), second.artifact().bytes());
