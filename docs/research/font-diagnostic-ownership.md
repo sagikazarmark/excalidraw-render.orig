@@ -22,7 +22,7 @@ Spec §8.3, updated by #175, requires Liberation Sans substitution diagnostics f
 - hidden/truncated frame names and too-small compatibility-label silence;
 - selected default-ignorable controls (bidi marks, zero-width characters, combining grapheme joiner, Arabic letter mark, variation selector and BOM).
 
-## Unresolved soft-hyphen SVG failure
+## Soft-hyphen SVG failure and fix
 
 The broader default-ignorable test exposed an independent SVG subset validation failure. Individual control probes isolated it to **U+00AD**, without any bound-text omission or other control characters. The following scene with a default SVG request fails with `encode.svg-font-subset-failed`, stage `validate`, resolved family `Liberation Sans`, root pointer, and an empty compatibility report:
 
@@ -32,12 +32,29 @@ The broader default-ignorable test exposed an independent SVG subset validation 
 
 The failed asset is `fonts/Liberation/LiberationSans-Regular.woff2@sha256:006a2b28cbbeeaec937d1b367d0949f5f48ef4b2e7b4e1d8dc7a799d2d639be8`. Expected behavior under §8.3 is successful rendering with no diagnostic for the soft hyphen. The initial loop stopped at SVG; PNG/PDF behavior for this isolated fixture has not been independently asserted.
 
-The failing probe is preserved here rather than made an expected failure or accepted error contract. The passing control matrix deliberately does not claim coverage for U+00AD or the entire default-ignorable class. Diagnose subset mapping/shaping validation separately, with the producer/evidence approval constraints respected.
+The follow-up based on `0467847` reproduces the failure with U+00AD alone. Mapping, advance and outline validation succeed; the shaping comparison fails because the source returns one hidden zero-advance space glyph per soft hyphen, while the subset returns no glyphs. HarfBuzz uses the nominal U+0020 glyph to hide default-ignorables, and removes them if that mapping is absent. The subset plan retained requested Unicode mappings but omitted this implicit shaping dependency.
+
+`font_subset::derive` now retains the source's space mapping whenever the requested scalars include a default-ignorable and the source has a space glyph. The semantic scalar input and identity remain unchanged; the extra mapping is shaping closure. Existing strict mapping, metric, outline, cluster and position validation stays intact. The condition also covers default-ignorables absent from the source cmap, since the shaper still hides them through space. Ordinary `AB` subsets do not gain a space mapping.
+
+The public regression `soft_hyphen_render::soft_hyphen_renders_without_diagnostics` covers U+00AD alone and `A\u00ADB`, with success, silence and repeatability in SVG/PNG/PDF. The font-level test `default_ignorables_keep_the_space_dependency_and_hidden_clusters` checks soft hyphens and a joiner, source/subset shaping agreement in both directions, retained hidden glyph cardinality, zero advance and no outline, plus the no-default-ignorable negative case. This failure would have been caught by a qualification vector with a default-ignorable but no literal space.
+
+### Qualification refresh required
+
+The fix changes `font_subset.rs`, a producer bound by `tests/conformance/svg-font-subset-viewer-qualification/revision-1.json`. Its existing approval does not cover this producer change. No approved descriptor, byte pin or approval record was rewritten.
+
+Verification of the follow-up:
+
+- Both focused regression tests pass.
+- Dagger conformance/lint: nine checks pass; `conformance:svg-font-subsets` rejects the stale producer digest.
+- Dagger workspace tests: render and doctest checks pass; fast runs 865 tests with 864 passing and one failure, the same offline viewer-qualification stale-digest check (eight tests skipped by the configured tier).
+- Temporary diagnostic probes were removed; `git diff --check` passes.
+
+Next, regenerate/review the affected font qualification evidence using the canonical Dagger viewer flow, obtain a fresh maintainer approval for its subject, and refresh target evidence as required. The implementation fix is verified locally but the qualification gates remain red until that workflow is complete.
 
 ## Remaining ownership work
 
 - Reconcile registry wording with §8.3/#175 before assigning broad source scopes.
-- Fix the soft-hyphen SVG failure and cover the full default-ignorable boundary classes, including non-ignorable Hangul fillers and paragraph separators.
+- Refresh qualification approval for the soft-hyphen fix and cover the full default-ignorable boundary classes, including non-ignorable Hangul fillers and paragraph separators.
 - Complete local-resource omission and generated-label branch matrices, including frame/placeholder Unicode behavior and format-specific zero-size embeddables.
 - Only then assign complete test owners. Global totals remain **137 proposed owners / 791 gaps**.
 

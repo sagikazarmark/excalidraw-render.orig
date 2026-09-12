@@ -185,7 +185,21 @@ pub(super) fn derive(
     validate_source_profile(&font)?;
 
     let input_glyphs = IntSet::<GlyphId>::empty();
-    let input_unicodes = scalars.iter().copied().collect::<IntSet<u32>>();
+    let mut input_unicodes = scalars.iter().copied().collect::<IntSet<u32>>();
+    // HarfBuzz hides default-ignorables using the nominal space glyph. Without
+    // that cmap entry it deletes them instead, changing cluster cardinality.
+    // Space is a shaping dependency even when absent from the semantic text.
+    let face = rustybuzz::Face::from_slice(&source_sfnt, 0).ok_or(Error {
+        stage: crate::SvgFontSubsetStage::Plan,
+    })?;
+    if scalars
+        .iter()
+        .filter_map(|scalar| char::from_u32(*scalar))
+        .any(super::text::is_default_ignorable)
+        && face.glyph_index(' ').is_some()
+    {
+        input_unicodes.insert(u32::from(' '));
+    }
     let drop_tables = FONT_SUBSET_TABLE_RULES_V1
         .iter()
         .filter(|rule| rule.action == FontSubsetTableAction::Drop)
@@ -1320,6 +1334,57 @@ mod tests {
         assert_eq!(session.derived.len(), MAX_CACHE_ENTRIES);
         assert_eq!(session.derived.front().unwrap().0.semantic_identity, "001");
         assert_eq!(session.derived.back().unwrap().0.semantic_identity, "230");
+    }
+
+    #[test]
+    fn default_ignorables_keep_the_space_dependency_and_hidden_clusters() {
+        let asset = excalidraw_render_assets_base::load_asset(
+            "fonts/Liberation/LiberationSans-Regular.woff2",
+        )
+        .unwrap()
+        .unwrap();
+        let source_sfnt = wuff::decompress_woff2(asset.bytes()).unwrap();
+        let source = rustybuzz::Face::from_slice(&source_sfnt, 0).unwrap();
+        for text in ["\u{ad}", "A\u{ad}B", "A\u{200d}B", "AB"] {
+            let scalars: Vec<_> = text.chars().map(u32::from).collect();
+            let derived = derive(
+                asset.bytes(),
+                SourceContainer::Woff2,
+                &scalars,
+                "ExcalidrawRender-9",
+                &"0".repeat(64),
+            )
+            .unwrap();
+            let sfnt = wuff::decompress_woff2(&derived.woff2).unwrap();
+            let subset = rustybuzz::Face::from_slice(&sfnt, 0).unwrap();
+            assert_eq!(subset.glyph_index(' ').is_some(), text != "AB");
+            for direction in [
+                rustybuzz::Direction::LeftToRight,
+                rustybuzz::Direction::RightToLeft,
+            ] {
+                validate_shaping_probe(&source, &subset, text, Some(direction)).unwrap();
+            }
+            let mut buffer = rustybuzz::UnicodeBuffer::new();
+            buffer.push_str(text);
+            buffer.guess_segment_properties();
+            let shaped = rustybuzz::shape(&subset, &[], buffer);
+            assert_eq!(shaped.glyph_infos().len(), text.chars().count());
+            if let Some(offset) = text.find(super::super::text::is_default_ignorable) {
+                // A joiner can merge into its preceding grapheme cluster;
+                // locate its hidden glyph by the retained space mapping.
+                let space = subset.glyph_index(' ').unwrap();
+                let index = shaped
+                    .glyph_infos()
+                    .iter()
+                    .position(|info| info.glyph_id == u32::from(space.0))
+                    .unwrap();
+                assert!(shaped.glyph_infos()[index].cluster <= offset as u32);
+                assert_eq!(shaped.glyph_positions()[index].x_advance, 0);
+                let id =
+                    rustybuzz::ttf_parser::GlyphId(shaped.glyph_infos()[index].glyph_id as u16);
+                assert!(subset.outline_glyph(id, &mut Outline::default()).is_none());
+            }
+        }
     }
 
     #[test]

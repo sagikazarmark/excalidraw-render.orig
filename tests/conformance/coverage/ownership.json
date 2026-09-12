@@ -2669,7 +2669,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact tests cover repeated scalars in text, frame names, embeddable/fallback labels, frame scope and hidden/truncated silence. Soft-hyphen U+00AD triggers SVG subset validation failure; full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed with focused regressions but requires refreshed viewer qualification approval. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2677,7 +2677,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact tests cover repeated scalars in text, frame names, embeddable/fallback labels, frame scope and hidden/truncated silence. Soft-hyphen U+00AD triggers SVG subset validation failure; full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed with focused regressions but requires refreshed viewer qualification approval. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2685,7 +2685,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact tests cover repeated scalars in text, frame names, embeddable/fallback labels, frame scope and hidden/truncated silence. Soft-hyphen U+00AD triggers SVG subset validation failure; full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed with focused regressions but requires refreshed viewer qualification approval. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {

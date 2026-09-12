@@ -55,6 +55,7 @@ mod scene_admission;
 mod scene_bounds_render;
 mod scene_surface_policy;
 mod scratch_dir;
+mod soft_hyphen_render;
 mod static_bmp_asset_render;
 mod static_gif_asset_render;
 mod static_ico_asset_render;
