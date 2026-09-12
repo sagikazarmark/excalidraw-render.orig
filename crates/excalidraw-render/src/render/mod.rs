@@ -44,6 +44,8 @@ mod resolve_tests;
 mod resource_trace_qualification;
 #[cfg(all(test, target_arch = "wasm32"))]
 pub(crate) use resource_trace_qualification::assert_font_subset_resource_trace_matrix;
+#[cfg(test)]
+mod release_order_tests;
 mod resolution;
 mod resolve;
 mod rough;

@@ -18,10 +18,12 @@ const RESULT_SCHEMA: &str = "excalidraw-render/coverage-results/v1";
 const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"];
 
 mod snapshots;
+mod traces;
 pub use snapshots::{
     baseline_subject, record_baseline_approval, replay_snapshots, report_wasm_snapshots,
     stage_baseline, stage_wasm_snapshots, verify_baseline, verify_snapshots, verify_wasm_snapshots,
 };
+pub use traces::{aggregate_traces, join_trace_results, stage_traces, verify_joined_results};
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]

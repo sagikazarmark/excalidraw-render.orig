@@ -137,6 +137,20 @@ tests do) proves only the validator's behavior.
 
 ## Next implementation
 
+### Test-only trace collection
+
+`dagger api call traces` collects the same 168 keys through the internal test-only
+trace seam on both targets and orders. `dagger api call full-results` joins those
+measurements to fresh packaged native and WASM artifact/report measurements;
+`dagger check excalidraw-render:full-equality` rejects all combined disagreements.
+The exported trace-collection schema requires `conformance verify-joined-results`,
+not the generic draft `verify-results` command. No public trace API is added.
+See [execution details and findings](../../../docs/research/trace-collection.md).
+The initial run found 30 cross-target trace differences. A total semantic
+release-record ordering fixes 27; three remain because PNG output lengths differ
+under #178. The gate still rejects those differences; this is not a passing #86
+closure or a waiver of the upstream blocker.
+
 ### Browser-WASM collection and replay
 
 ```sh
@@ -270,8 +284,8 @@ of blobs and package archives; generated candidate files are not committed.
    exclusions; connect exact vectors and specialized PDF/frame/regression owners.
 2. Maintain the approved canonical artifact/report expectations and native replay
    gate as the inventory grows; changed expectations require explicit reapproval.
-3. Run the same keys in pinned browser WASM, collect test-only traces, and validate
-   actual fresh processes/instances in both orders using this result boundary.
+3. Resolve the exposed WASM byte and cross-target trace differences; both collectors
+   and their combined gate now execute the current inventory in both orders.
 4. Promote representative cases and expand codec/renderer fuzz reach, then make
    complete collection/equality/snapshot checking a Dagger release gate. Only then
    replace the draft closure rejection with a verified approved closure state.

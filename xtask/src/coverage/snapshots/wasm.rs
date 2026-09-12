@@ -35,7 +35,7 @@ fn renderer_sources_digest() -> Result<String, String> {
     digest(&sources)
 }
 
-fn inputs() -> Result<Vec<u8>, String> {
+pub(in crate::coverage) fn inputs() -> Result<Vec<u8>, String> {
     let inventory = load_inventory()?;
     let registry: Value = parse(&read("tests/conformance/cases/registry.json")?)?;
     let mut scenes = serde_json::Map::new();
@@ -78,7 +78,7 @@ pub fn stage_wasm_snapshots() -> Result<(), String> {
     Ok(())
 }
 
-fn parse_run(
+pub(super) fn parse_run(
     log: &str,
     order: Order,
     input_sha: &str,

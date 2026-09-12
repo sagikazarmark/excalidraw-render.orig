@@ -19,6 +19,7 @@ jobs:
                 check:
                     - dagger-gha:generate
                     - excalidraw-render:conformance
+                    - excalidraw-render:full-equality
                     - excalidraw-render:lint
                     - excalidraw-render:packaging
                     - excalidraw-render:test

@@ -115,6 +115,15 @@ and four PNG mismatches remain tracked in #178. See
 [the investigation record](research/wasm-snapshot-mismatches.md). Export diagnostic
 logs with `dagger api call wasm browser-snapshot-logs --output target/wasm-snapshot-logs`.
 
+Test-only traces now cover all 168 keys on both targets:
+`dagger api call traces --output target/trace-results`. `dagger api call full-results
+--output target/full-results` joins these to actual packaged artifact/report runs;
+`dagger check excalidraw-render:full-equality` gates the combined comparison.
+Initial collection found 30 differing trace keys. Deterministic release-record
+tie breaks fix 27; the remaining three follow PNG output lengths under #178.
+The public join has zero disagreements. See [trace collection](research/trace-collection.md) for sequential
+commands on small engines and the distinction between report export and a pass.
+
 Recent `daggerverse-beta` changes at `b0671fd12a` add toolchain/MSRV overrides,
 manifest-configured cargo-hack, automatic nextest plus doctests, cargo selection
 flags for clippy, and the `cargoProfile` CLI collision fix. The module lock now

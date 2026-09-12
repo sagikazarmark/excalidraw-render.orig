@@ -1173,6 +1173,31 @@ pub(super) struct SemanticWorkingRecord {
     pub(super) bytes: u64,
 }
 
+impl SemanticWorkingRecord {
+    /// Source order alone has ties (geometry, text runs and relationship edges
+    /// share an owner). Unstable sorting of those ties varies with target layout.
+    /// Compare every released-record field so only indistinguishable events tie,
+    /// retaining an allocation-free sort for the bounded accounting path.
+    pub(super) fn release_order(&self, other: &Self) -> std::cmp::Ordering {
+        (
+            self.source_order,
+            &self.json_pointer,
+            self.event,
+            &self.element_id,
+            &self.local_owner,
+            self.bytes,
+        )
+            .cmp(&(
+                other.source_order,
+                &other.json_pointer,
+                other.event,
+                &other.element_id,
+                &other.local_owner,
+                other.bytes,
+            ))
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct ResolvedTransform {
     pub(super) translation_x: f64,

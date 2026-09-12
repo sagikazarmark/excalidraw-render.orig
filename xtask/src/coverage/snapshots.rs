@@ -304,11 +304,69 @@ pub fn verify_snapshots(directory: &str) -> Result<(), String> {
 
 mod baseline;
 mod provenance;
-mod wasm;
+pub(super) mod wasm;
 pub use baseline::{
     baseline_subject, record_baseline_approval, replay_snapshots, stage_baseline, verify_baseline,
 };
 pub use wasm::{report_wasm_snapshots, stage_wasm_snapshots, verify_wasm_snapshots};
+
+/// Compare test-build outcomes with packaged public measurements before attaching traces.
+pub(super) fn join_public_results(
+    directory: &Path,
+    bundle: &mut ResultBundle,
+) -> Result<Vec<Value>, String> {
+    let native_root = directory.join("native-snapshots");
+    verify_snapshots(
+        native_root
+            .to_str()
+            .ok_or("non-UTF8 native snapshot path")?,
+    )?;
+    let native: Snapshots = parse(&read_repository_file(&native_root, "snapshots.json")?)?;
+    let wasm_root = directory.join("wasm-snapshots");
+    let wasm_commit = String::from_utf8(read_repository_file(&wasm_root, "commit.txt")?)
+        .map_err(|e| e.to_string())?;
+    if native.commit != bundle.commit || wasm_commit.trim() != bundle.commit {
+        return Err("trace/public collectors disagree on commit".into());
+    }
+    let inventory = load_inventory()?;
+    let input = sha256(&wasm::inputs()?);
+    let mut disagreements = Vec::new();
+    for run in &mut bundle.runs {
+        let index = if run.order == Order::Forward { 0 } else { 1 };
+        let name = if index == 0 { "forward" } else { "reverse" };
+        let public = if run.target == "x86_64-unknown-linux-gnu" {
+            native.runs[index].clone()
+        } else {
+            let log = String::from_utf8(read_repository_file(&wasm_root, &format!("{name}.log"))?)
+                .map_err(|e| e.to_string())?;
+            wasm::parse_run(&log, run.order.clone(), &input, &inventory)?
+        };
+        if run.results.len() != public.results.len() {
+            return Err("trace/public execution counts disagree".into());
+        }
+        for (traced, actual) in run.results.iter_mut().zip(public.results) {
+            if traced.key != actual.key {
+                return Err("trace/public execution keys disagree".into());
+            }
+            for (sample, public) in traced.samples.iter_mut().zip(actual.samples) {
+                let outcome = match public.outcome {
+                    SnapshotOutcome::Artifact { bytes } => Outcome::Artifact { bytes },
+                    SnapshotOutcome::Failure { code, .. } => Outcome::Failure { code },
+                };
+                if sample.outcome != outcome || sample.report != public.report {
+                    disagreements.push(
+                        json!({"target":run.target,"order":run.order,"key":traced.key,
+                        "test_outcome":sample.outcome,"test_report":sample.report,
+                        "public_outcome":outcome,"public_report":public.report}),
+                    );
+                }
+                sample.outcome = outcome;
+                sample.report = public.report;
+            }
+        }
+    }
+    Ok(disagreements)
+}
 
 #[cfg(test)]
 mod tests {

@@ -920,7 +920,7 @@ impl RenderSession {
         }
         self.account_compatibility_omissions(request)?;
         self.preflight_fallback_text(&mut fallbacks, request, semantic_working)?;
-        semantic_working.sort_unstable_by_key(|record| record.source_order);
+        semantic_working.sort_unstable_by(SemanticWorkingRecord::release_order);
         if outlines.is_empty() && fallbacks.is_empty() {
             match ResolvedScene::empty(&view_background_color, request, frame_viewport) {
                 Ok(resolved) => Ok(resolved),

@@ -88,6 +88,40 @@ type ExcalidrawRender {
   }
 
   """
+  Collect test-only traces on both targets and export all disagreements.
+  """
+  traces: Directory! {
+    self.container
+      .withDirectory("/trace-results/native", self.packaging.traceLogs)
+      .withDirectory("/trace-results/wasm", self.wasm.traceLogs)
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "aggregate-traces", "/trace-results"])
+      .directory("/trace-results")
+  }
+
+  """
+  Join both packaged public-facade runs to their measured test-only traces.
+  Exports a failing comparison too, so upstream-blocked differences stay visible.
+  """
+  fullResults: Directory! {
+    self.container
+      .withDirectory("/results", self.traces)
+      .withDirectory("/results/native-snapshots", self.packaging.snapshots)
+      .withDirectory("/results/wasm-snapshots", self.wasm.browserSnapshotLogs)
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "join-trace-results", "/results"])
+      .directory("/results")
+  }
+
+  """
+  Require packaged artifact/report and test-only trace equality on both targets.
+  """
+  fullEquality: String! @check {
+    self.container
+      .withDirectory("/results", self.fullResults)
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "verify-joined-results", "/results"])
+      .combinedOutput
+  }
+
+  """
   Randomized expansions that the nightly schedule runs, not the push gates.
   """
   nightly: Nightly! {
@@ -386,6 +420,16 @@ type Packaging {
   """
   qualification: String! @check {
     self.qualified.file("/qualification.log").contents
+  }
+
+  """
+  Export forward/reverse test-build trace logs without adding a public trace API.
+  """
+  traceLogs: Directory! {
+    self.container
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "stage-traces"])
+      .withExec(["bash", "tools/ci/trace-snapshots.sh", self.target])
+      .directory("/traces")
   }
 
   """

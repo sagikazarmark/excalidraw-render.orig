@@ -377,7 +377,7 @@ impl RenderSession {
         } else {
             None
         };
-        semantic_working.sort_unstable_by_key(|record| record.source_order);
+        semantic_working.sort_unstable_by(SemanticWorkingRecord::release_order);
         Ok(())
     }
 
