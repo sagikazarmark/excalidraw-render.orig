@@ -1,6 +1,6 @@
 # Font registry reconciliation: approval proposal
 
-Base commit: `ea78042`. Status: staged, **awaiting explicit maintainer reapproval**.
+Base commit: `ea78042`. Reconciliation committed as `2804308`. Status: **all 36 case subjects explicitly approved and recorded**; downstream snapshot reconciliation remains pending.
 
 Proposal identity (SHA-256 of canonical JSON without trailing LF):
 
@@ -33,7 +33,25 @@ The prior geometry probe at limit 10 rejected the outline itself, so it was repl
 - All 13 `diagnostic_contract` tests passed.
 - `dagger check excalidraw-render:lint`: formatting and clippy passed.
 - `git diff --check`: passed.
-- Ownership/registered-case gates currently reject missing case approvals, as intended.
+- Before recording approval, ownership/registered-case gates rejected missing case approvals, as intended. After recording, all eight Dagger conformance checks pass, including catalog, registered cases, inventory and ownership.
 - Native baseline verification rejects its stale inventory binding. Its approved metadata and expected output bytes have not been repinned. After case approval, refresh the inventory and case-owner hashes again, then prepare/review the baseline binding or fresh collection as required by its provenance contract.
 
-The ledger retains 137 proposed owners and 791 gaps; the nine font obligations remain gaps pending approval and downstream evidence reconciliation. This proposal does not approve baseline changes or global release closure.
+The ledger retains 137 proposed owners and 791 gaps; the nine font obligations remain gaps pending downstream evidence reconciliation. This proposal does not approve baseline changes or global release closure.
+
+## Recorded approvals
+
+The maintainer explicitly approved the proposal in the coding session on 2026-09-12. Every current case subject was recomputed and matched against the immutable proposal before recording. Scoped approval comments (grouping cases with the same approving issue):
+
+- [#103](https://github.com/sagikazarmark/excalidraw-render.orig/issues/103#issuecomment-5648894908)
+- [#152](https://github.com/sagikazarmark/excalidraw-render.orig/issues/152#issuecomment-5648895106)
+- [#153](https://github.com/sagikazarmark/excalidraw-render.orig/issues/153#issuecomment-5648895324)
+- [#121](https://github.com/sagikazarmark/excalidraw-render.orig/issues/121#issuecomment-5648895457)
+- [#58](https://github.com/sagikazarmark/excalidraw-render.orig/issues/58#issuecomment-5648895581)
+- [#112](https://github.com/sagikazarmark/excalidraw-render.orig/issues/112#issuecomment-5648895690)
+- [#124](https://github.com/sagikazarmark/excalidraw-render.orig/issues/124#issuecomment-5648895800)
+- [#32](https://github.com/sagikazarmark/excalidraw-render.orig/issues/32#issuecomment-5648895949)
+- [#177](https://github.com/sagikazarmark/excalidraw-render.orig/issues/177#issuecomment-5648896060)
+- [#137](https://github.com/sagikazarmark/excalidraw-render.orig/issues/137#issuecomment-5648896184)
+- [#110](https://github.com/sagikazarmark/excalidraw-render.orig/issues/110#issuecomment-5648896292)
+
+The ordinary `record-approval` verifier recorded each approval and verified the resulting manifest. The derived inventory and case-owner hashes are refreshed to the approved manifests; execution keys and owner selections are unchanged.
