@@ -1,6 +1,6 @@
 use excalidraw_render::{
-    DiagnosticCode, ErrorCode, OutputFormat, Recovery, RenderRequest, Renderer, ResourceLimits,
-    SceneDocument,
+    DiagnosticCode, ErrorCode, FrameRenderRequest, OutputFormat, Recovery, RenderRequest, Renderer,
+    ResourceLimits, SceneDocument,
 };
 
 #[test]
@@ -17,14 +17,16 @@ fn canonical_cycle_closing_edge_is_removed_with_its_source_pointer() {
         let outcome = Renderer::new()
             .render(&scene, &request)
             .expect("recoverable relationship cycle renders");
-        let cycle = outcome
+        let cycles: Vec<_> = outcome
             .report()
             .diagnostics()
             .iter()
-            .find(|diagnostic| {
+            .filter(|diagnostic| {
                 diagnostic.code() == DiagnosticCode::NORMALIZATION_RELATIONSHIP_CYCLE
             })
-            .expect("one cycle-closing edge is diagnosed");
+            .collect();
+        assert_eq!(cycles.len(), 1, "one source repair is diagnosed");
+        let cycle = cycles[0];
 
         assert_eq!(cycle.element_id(), Some("b"));
         assert_eq!(cycle.json_pointer(), "/elements/1/frameId");
@@ -35,6 +37,49 @@ fn canonical_cycle_closing_edge_is_removed_with_its_source_pointer() {
                 recipe_id: None,
             })
         ));
+    }
+}
+
+#[test]
+fn cycle_diagnostics_are_scoped_and_replayed_once_per_frame() {
+    let scene = SceneDocument::parse(br#"{
+        "type":"excalidraw","version":2,"elements":[
+            {"id":"first","type":"frame","width":40,"height":40,"updated":1,"frameId":"first"},
+            {"id":"second","type":"frame","x":50,"width":40,"height":40,"updated":1,"frameId":"second"}
+        ],"appState":{},"files":{}
+    }"#).unwrap();
+    let frames: Vec<_> = scene.frames().collect();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let renderer = Renderer::new();
+        let request = FrameRenderRequest::builder(format).build().unwrap();
+        let mut batch = renderer
+            .render_frames(&scene, frames.iter().copied(), &request)
+            .unwrap();
+        for (index, frame) in frames.iter().enumerate() {
+            let standalone = renderer.render_frame(*frame, &request).unwrap();
+            let item = batch.next().unwrap();
+            let replayed = item.result().as_ref().unwrap();
+            assert_eq!(standalone.artifact().bytes(), replayed.artifact().bytes());
+            assert_eq!(
+                serde_json::to_value(standalone.report()).unwrap(),
+                serde_json::to_value(replayed.report()).unwrap()
+            );
+            let diagnostics = standalone.report().diagnostics();
+            assert_eq!(
+                diagnostics.len(),
+                1,
+                "only the selected frame's repair is reported"
+            );
+            assert_eq!(
+                diagnostics[0].code(),
+                DiagnosticCode::NORMALIZATION_RELATIONSHIP_CYCLE
+            );
+            assert_eq!(
+                diagnostics[0].json_pointer(),
+                format!("/elements/{index}/frameId")
+            );
+        }
+        assert!(batch.next().is_none());
     }
 }
 

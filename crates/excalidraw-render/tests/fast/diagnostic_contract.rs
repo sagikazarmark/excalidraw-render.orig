@@ -6,6 +6,76 @@ use serde_json::{json, Value};
 
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
+#[test]
+fn relationship_cycles_report_each_closing_edge_once() {
+    for format in FORMATS {
+        for pairs in [
+            vec![("a", "b"), ("b", "a")],
+            vec![("a", "b"), ("b", "a"), ("c", "d"), ("d", "c")],
+        ] {
+            let elements: Vec<_> = pairs
+                .iter()
+                .map(|(id, target)| {
+                    let mut element = rectangle(id);
+                    element["frameId"] = json!(target);
+                    element
+                })
+                .collect();
+            let diagnostics: Vec<_> = pairs
+                .iter()
+                .enumerate()
+                .filter(|(index, _)| index % 2 == 1)
+                .map(|(index, (id, _))| {
+                    expected(
+                        "normalization.relationship-cycle",
+                        "warning",
+                        json!(["input_repair", "semantic"]),
+                        json!(id),
+                        &format!("/elements/{index}/frameId"),
+                        compatibility("removed"),
+                    )
+                })
+                .collect();
+            assert_report(&scene(json!(elements)), format, json!(diagnostics));
+        }
+        // Two distinct source properties on one owner must remain distinct,
+        // even though each projects to two graph edges.
+        let text = json!({"id":"text","type":"text","text":"Hello","fontFamily":9,"fontSize":20,"width":80,"height":25,"updated":1,"frameId":"text","containerId":"text"});
+        assert_report(
+            &scene(json!([text])),
+            format,
+            json!([
+                expected(
+                    "normalization.relationship-cycle",
+                    "warning",
+                    json!(["input_repair", "semantic"]),
+                    json!("text"),
+                    "/elements/0/containerId",
+                    compatibility("removed")
+                ),
+                expected(
+                    "normalization.relationship-cycle",
+                    "warning",
+                    json!(["input_repair", "semantic"]),
+                    json!("text"),
+                    "/elements/0/frameId",
+                    compatibility("removed")
+                )
+            ]),
+        );
+        let mut acyclic = rectangle("a");
+        acyclic["frameId"] = json!("b");
+        let mut deleted = rectangle("deleted");
+        deleted["frameId"] = json!("deleted");
+        deleted["isDeleted"] = json!(true);
+        assert_report(
+            &scene(json!([acyclic, rectangle("b"), deleted])),
+            format,
+            json!([]),
+        );
+    }
+}
+
 fn scene(elements: Value) -> SceneDocument {
     image_scene(elements, json!({}))
 }

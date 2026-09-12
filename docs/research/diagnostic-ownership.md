@@ -42,7 +42,7 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 | `normalization.duplicate-element-id` | pdf, png, svg | gap | Existing normalization tests cover ID repair/rekey behavior, but generated IDs and relation-dependent effects require complete all-format report assertions and exact multiplicity/silence ownership. |
 | `normalization.missing-element-id` | pdf, png, svg | gap | Existing normalization tests cover ID repair/rekey behavior, but generated IDs and relation-dependent effects require complete all-format report assertions and exact multiplicity/silence ownership. |
 | `normalization.missing-timestamp` | pdf, png, svg | owned | missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent |
-| `normalization.relationship-cycle` | pdf, png, svg | gap | Stronger two-cycle public-facade probe emits each closing-edge diagnostic twice (b/frameId and d/frameId). Existing relationships test uses find and misses duplicates. Diagnose before assigning; exact effect rules also require review. |
+| `normalization.relationship-cycle` | pdf, png, svg | gap | Duplicate source repairs are fixed and covered by exact all-format tests. Conditional visual/semantic effects still need reconciliation with the constructor's unconditional input_repair/semantic selection. |
 | `normalization.zero-rough-seed` | pdf, png, svg | owned | zero_rough_seeds_are_repaired_once_per_participating_shape |
 | `pdf.raster-fallback` | pdf | gap | Existing PDF fallback tests cover isolated closure and forbid behavior; consolidate exact affected IDs, bounds, reason/family details and source order for all fallback families. |
 | `resource.asset-bytes-exceeded` | pdf, png, svg | gap | Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing. |
@@ -58,7 +58,7 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 
 ## Cycle diagnostic finding
 
-A focused probe using two independent frameId cycles observed **two identical diagnostics per closing edge**, not one. The existing `relationships::canonical_cycle_closing_edge_is_removed_with_its_source_pointer` test uses `.find()` and cannot reject duplicates. All three relationship-cycle obligations remain gaps; no expected duplicate behavior was approved or installed as a passing regression.
+A focused probe using two independent frameId cycles observed **two identical diagnostics per closing edge**, not one. The original `relationships::canonical_cycle_closing_edge_is_removed_with_its_source_pointer` test used `.find()` and could not reject duplicates. The follow-up replaces that assertion with an exact count and fixes the duplication as described below. All three relationship-cycle obligations remain gaps pending conditional-effects coverage.
 
 Reproduction scene (render through each SVG/PNG/PDF default request):
 
@@ -117,7 +117,27 @@ Reproduction scene (render through each SVG/PNG/PDF default request):
 }
 ```
 
-Observed SVG order: `/elements/1/frameId` twice, then `/elements/3/frameId` twice; each is `normalization.relationship-cycle`, warning, effects `[input_repair, semantic]`, compatibility recovery `removed`, no recipe. Investigate repeated cycle admission/emission and reconcile conditional effects before assigning ownership. The initial exact-report probe stopped at SVG on failure; PNG/PDF duplication has not yet been independently asserted.
+Original SVG order: `/elements/1/frameId` twice, then `/elements/3/frameId` twice; each is `normalization.relationship-cycle`, warning, effects `[input_repair, semantic]`, compatibility recovery `removed`, no recipe. The initial exact-report probe stopped at SVG on failure.
+
+### Duplicate-emission fix
+
+The minimal two-element cycle reproduced the same failure. A targeted probe at cycle rejection identified two graph projections of one source relationship: `frameId` produces both `Frame` and `Clip`; `containerId` similarly produces `Binding` and `Mask`. Each rejected projection appended a removed-cycle record, so report assembly correctly emitted the duplicated records it received.
+
+`relationships::resolve` now sorts removed-cycle records by source owner/position/pointer and consolidates identical source pointers after traversal. Graph-edge admission/removal and traversal accounting remain intact. Distinct source properties on the same owner remain separate repairs.
+
+The public-facade regression covers the minimal cycle, the original two independent cycles, self-cycles on two distinct properties of a text owner, acyclic/deleted silence, exact ordered machine-readable reports and repeated artifact/report equality in SVG, PNG and PDF. A separate test verifies per-frame scoping and standalone/batch replay equality. Exact cardinality assertions at the facade would have caught the original defect; `.find()` only proved existence.
+
+**Remaining effects gap:** `relationship_cycle_diagnostic` always supplies `[input_repair, semantic]`, while the registry requires adding visual/semantic effects for the broken relationship's actual channels. The new regression preserves the existing effects for these fixtures and establishes duplication recovery; it does not prove all conditional-effects branches. Counts therefore remain 134 proposed owners and 794 gaps.
+
+Follow-up verification on the working tree based on `97c8fa1`:
+
+- `cargo test --locked -p excalidraw-render --test fast diagnostic_contract::relationship_cycles_report_each_closing_edge_once -- --exact`: failed before the fix with two identical SVG diagnostics, passed after the fix across all three formats.
+- `cargo test --locked -p excalidraw-render --test fast relationships::`: three passed.
+- `cargo test --locked -p excalidraw-render --test fast diagnostic_contract`: 12 passed.
+- `cargo run --locked -p xtask -- conformance verify-ownership`: passed with 134 assigned/excluded and 794 gaps.
+- `dagger check excalidraw-render:conformance excalidraw-render:lint`: ten checks passed.
+- `dagger check excalidraw-render:test`: fast, render and doctest checks passed.
+- `git diff --check`: passed; temporary cycle-rejection instrumentation removed.
 
 ## Remaining work
 

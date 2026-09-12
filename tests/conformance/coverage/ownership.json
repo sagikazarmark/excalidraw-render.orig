@@ -2315,7 +2315,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2344,7 +2344,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2373,7 +2373,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2450,7 +2450,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2479,7 +2479,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2508,7 +2508,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2561,7 +2561,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2590,7 +2590,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2619,7 +2619,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -3088,7 +3088,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3117,7 +3117,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3146,7 +3146,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3172,7 +3172,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Stronger two-cycle public-facade probe emits each closing-edge diagnostic twice (b/frameId and d/frameId). Existing relationships test uses find and misses duplicates. Diagnose before assigning; exact effect rules also require review."
+        "reason": "Duplicate source repairs are fixed and exact all-format tests cover multiple cycles, self-cycles, distinct properties, silence and frame replay. The registry requires conditional visual/semantic effects, but the constructor still unconditionally selects input_repair and semantic; branch-specific effects need reconciliation before ownership."
       }
     },
     {
@@ -3180,7 +3180,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Stronger two-cycle public-facade probe emits each closing-edge diagnostic twice (b/frameId and d/frameId). Existing relationships test uses find and misses duplicates. Diagnose before assigning; exact effect rules also require review."
+        "reason": "Duplicate source repairs are fixed and exact all-format tests cover multiple cycles, self-cycles, distinct properties, silence and frame replay. The registry requires conditional visual/semantic effects, but the constructor still unconditionally selects input_repair and semantic; branch-specific effects need reconciliation before ownership."
       }
     },
     {
@@ -3188,7 +3188,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Stronger two-cycle public-facade probe emits each closing-edge diagnostic twice (b/frameId and d/frameId). Existing relationships test uses find and misses duplicates. Diagnose before assigning; exact effect rules also require review."
+        "reason": "Duplicate source repairs are fixed and exact all-format tests cover multiple cycles, self-cycles, distinct properties, silence and frame replay. The registry requires conditional visual/semantic effects, but the constructor still unconditionally selects input_repair and semantic; branch-specific effects need reconciliation before ownership."
       }
     },
     {
@@ -3199,7 +3199,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3228,7 +3228,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3257,7 +3257,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "f98eac26c53286217932a1aa4809f7bfeb810d70fe798772ca3b937c099276a9"
+            "sha256": "9c8de68f67bb0328358a1ac67091886af80d5cacc61ce22b7dd6494cd45ef3f2"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",

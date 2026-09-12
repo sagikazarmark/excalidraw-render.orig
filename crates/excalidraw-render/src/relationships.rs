@@ -333,6 +333,17 @@ pub(crate) fn resolve<E>(
         });
     }
 
+    // One source relationship can project to multiple graph edges: frameId
+    // supplies Frame and Clip, and containerId supplies Binding and Mask.
+    // Traverse and remove each projection, but diagnose the source repair once.
+    removed_cycles.sort_unstable_by(|left, right| {
+        left.source_order
+            .cmp(&right.source_order)
+            .then_with(|| left.source_position.cmp(&right.source_position))
+            .then_with(|| left.json_pointer.cmp(&right.json_pointer))
+    });
+    removed_cycles.dedup_by(|left, right| left.json_pointer == right.json_pointer);
+
     Ok(RelationshipOutcome {
         graph: ResolvedRelationshipGraph { nodes, edges },
         removed_cycles,
