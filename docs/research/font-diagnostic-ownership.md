@@ -58,6 +58,30 @@ The expanded corpus and both viewer reports have now been regenerated and approv
 - Complete local-resource omission and generated-label branch matrices, including frame/placeholder Unicode behavior and format-specific zero-size embeddables.
 - Only then assign complete test owners. Global totals remain **137 proposed owners / 791 gaps**.
 
+## Boundary and omission follow-up
+
+The follow-up based on `c9e10ac` adds authored endpoint vectors for every default-ignorable class listed in §8.3, including U+00AD, supplementary musical controls and tag/variation-selector ranges. Hangul fillers U+115F/U+1160/U+3164/U+FFA0 and U+2029 are checked as non-ignorable missing scalars. These all pass in SVG/PNG/PDF with full ordered report and repeatability assertions.
+
+Zero-height embeddables now have exact format-specific tests: PNG omits the generated label and its font diagnostics; SVG/PDF retain the Noto recipe diagnostic and missing scalar. Source text has preflight-scalar and post-layout-geometry rejection tests, both proving absence of font diagnostics for omitted occurrences.
+
+The scalar-rejection test exposed a false Liberation diagnostic for a cleared compatibility-placeholder label. The original text was replaced with a box, the replacement label exceeded the limit and was cleared, but fallback resolution still created an empty shaped-label object. Resolution now represents that empty label as `None`. The test preserves both resource recovery diagnostics (source replaced, label omitted) and rejects any font diagnostic. No diagnostic expectation was weakened to accept the false substitution.
+
+### Registry correction scope
+
+The following correction is required in `tests/oracle/scene-surfaces/revision-1.json`, based on the already documented §8.3/#175 behavior:
+
+| Code | Correct source/owner scope | Recipe selection |
+| --- | --- | --- |
+| `font.liberation-sans-substituted` | One per surviving ordinary Helvetica text or visible compatibility-placeholder label; frame names and embeddable chrome are silent | None |
+| `font.noto-emoji-substituted` | One per surviving ordinary text or generated embeddable label where Noto supplies a glyph; no frame-name owner | None for ordinary text; offline-embeddable recipe for generated embeddable labels |
+| `font.missing-glyph` | Surviving ordinary text, visible frame names and generated labels; logical scalar order, excluding default-ignorables and truncated/omitted text | None |
+
+The scene-surface digest is bound by **36 approved focused-case manifests**, the generated catalog, spec identity, and coverage/snapshot metadata. It is not merely a consuming-test hash. This follow-up records the correction without rewriting those approval-bound authorities. Carry it through an explicit case-evidence reapproval round, preserving outputs and comparing approval subjects, before claiming registry-based font ownership.
+
+Generated-label work/geometry rejection and zero-width branches also remain to be combined with the passing matrix. No new owner assignments are made in this follow-up.
+
+Verification: all 13 `diagnostic_contract` tests pass; ownership validation passes with 137 assigned/excluded and 791 gaps; all ten Dagger conformance/lint checks and all three Dagger workspace test checks pass. The empty-label regression failed before the fix with an extra Liberation diagnostic. `git diff --check` passes and temporary measurement logging was removed.
+
 ## Verification
 
 - `cargo test --locked -p excalidraw-render --test fast diagnostic_contract`: 13 passed.

@@ -65,9 +65,12 @@ pub(super) fn resolve_fallback(
     let Some(font) = fallback_font else {
         return Err(ResolveSceneError::InvalidFallbackFont);
     };
-    let label = font
-        .resolve(&fallback.label, fallback.width, fallback.height)
-        .map_err(label_error)?;
+    let label = if fallback.label.is_empty() {
+        None
+    } else {
+        font.resolve(&fallback.label, fallback.width, fallback.height)
+            .map_err(label_error)?
+    };
     let source_index = fallback.element_id.as_deref().and_then(|id| {
         context
             .relationships

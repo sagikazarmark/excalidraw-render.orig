@@ -2315,7 +2315,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2344,7 +2344,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2373,7 +2373,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2450,7 +2450,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2479,7 +2479,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2508,7 +2508,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2561,7 +2561,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2590,7 +2590,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2619,7 +2619,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2645,7 +2645,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact font matrix covers user text, fallback labels, omitted-text silence and renderer-owned chrome silence under spec 8.3/#175. Reconcile stale registry frame/embeddable scope and complete local-resource omission branches before ownership; see docs/research/font-diagnostic-ownership.md."
+        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2653,7 +2653,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact font matrix covers user text, fallback labels, omitted-text silence and renderer-owned chrome silence under spec 8.3/#175. Reconcile stale registry frame/embeddable scope and complete local-resource omission branches before ownership; see docs/research/font-diagnostic-ownership.md."
+        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2661,7 +2661,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact font matrix covers user text, fallback labels, omitted-text silence and renderer-owned chrome silence under spec 8.3/#175. Reconcile stale registry frame/embeddable scope and complete local-resource omission branches before ownership; see docs/research/font-diagnostic-ownership.md."
+        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2669,7 +2669,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed, qualified and approved. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2677,7 +2677,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed, qualified and approved. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2685,7 +2685,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed, qualified and approved. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2693,7 +2693,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Embeddable Noto recipe mismatch is fixed; exact tests cover ordinary/embeddable occurrences, multi-emoji multiplicity, empty/omitted/unaffected silence and frame selection. Reconcile registry scope with spec 8.3/#175 and complete generated-label local-omission/zero-size branches before ownership."
+        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2701,7 +2701,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Embeddable Noto recipe mismatch is fixed; exact tests cover ordinary/embeddable occurrences, multi-emoji multiplicity, empty/omitted/unaffected silence and frame selection. Reconcile registry scope with spec 8.3/#175 and complete generated-label local-omission/zero-size branches before ownership."
+        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2709,7 +2709,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Embeddable Noto recipe mismatch is fixed; exact tests cover ordinary/embeddable occurrences, multi-emoji multiplicity, empty/omitted/unaffected silence and frame selection. Reconcile registry scope with spec 8.3/#175 and complete generated-label local-omission/zero-size branches before ownership."
+        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -3088,7 +3088,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3117,7 +3117,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3146,7 +3146,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3175,11 +3175,23 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
-          "command": ["cargo", "test", "--locked", "--release", "-p", "excalidraw-render", "--test", "fast", "diagnostic_contract::relationship_cycle_contract_in_every_format", "--", "--exact"]
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::relationship_cycle_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
         },
         "rationale": "pdf: Exact full ordered scene/frame reports cover source-edge multiplicity, both reverse-binding encodings, endpoint/text/frame channels, mixed cycles and reciprocal silence, placeholder/omission participation, disabled clipping and frame opacity, source-order independence from IDs, and fresh/standalone/batch repeatability."
       }
@@ -3192,11 +3204,23 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
-          "command": ["cargo", "test", "--locked", "--release", "-p", "excalidraw-render", "--test", "fast", "diagnostic_contract::relationship_cycle_contract_in_every_format", "--", "--exact"]
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::relationship_cycle_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
         },
         "rationale": "png: Exact full ordered scene/frame reports cover source-edge multiplicity, both reverse-binding encodings, endpoint/text/frame channels, mixed cycles and reciprocal silence, placeholder/omission participation, disabled clipping and frame opacity, source-order independence from IDs, and fresh/standalone/batch repeatability."
       }
@@ -3209,11 +3233,23 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
-          "command": ["cargo", "test", "--locked", "--release", "-p", "excalidraw-render", "--test", "fast", "diagnostic_contract::relationship_cycle_contract_in_every_format", "--", "--exact"]
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::relationship_cycle_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
         },
         "rationale": "svg: Exact full ordered scene/frame reports cover source-edge multiplicity, both reverse-binding encodings, endpoint/text/frame channels, mixed cycles and reciprocal silence, placeholder/omission participation, disabled clipping and frame opacity, source-order independence from IDs, and fresh/standalone/batch repeatability."
       }
@@ -3226,7 +3262,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3255,7 +3291,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3284,7 +3320,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "98beee0ff19f6ef98d480faa79686d22caded43caced32eeb7919bf3f7f0a34c"
+            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
