@@ -390,6 +390,7 @@ pub(super) enum FontFallback {
     /// Liberation Sans.
     GeneratedLabel,
     NotoEmoji,
+    EmbeddableNotoEmoji,
     MissingGlyph(u32),
 }
 
@@ -414,6 +415,10 @@ pub(super) fn fallback_font_diagnostic(
         ),
         FontFallback::NotoEmoji => (
             DiagnosticKind::NotoEmojiSubstituted,
+            "emoji text used bundled Noto Emoji",
+        ),
+        FontFallback::EmbeddableNotoEmoji => (
+            DiagnosticKind::EmbeddableNotoEmojiSubstituted,
             "emoji text used bundled Noto Emoji",
         ),
         FontFallback::MissingGlyph(codepoint) => (

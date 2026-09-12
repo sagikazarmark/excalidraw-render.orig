@@ -40,17 +40,20 @@ pub(crate) enum FallbackRecipe {
     OfficialImageError,
     /// The official placeholder for a rejected non-local image resource.
     OfficialForbiddenResource,
+    /// The official offline embeddable label recipe.
+    OfficialEmbeddableOffline,
 }
 
 impl FallbackRecipe {
     /// Every recipe, in the order the manifest and spec list them.
-    pub(crate) const ALL: [Self; 6] = [
+    pub(crate) const ALL: [Self; 7] = [
         Self::UnknownElement,
         Self::MalformedElement,
         Self::KnownElementUnavailable,
         Self::OfficialImage,
         Self::OfficialImageError,
         Self::OfficialForbiddenResource,
+        Self::OfficialEmbeddableOffline,
     ];
 
     /// The stable `recipe_id` spelling.
@@ -68,6 +71,7 @@ impl FallbackRecipe {
             Self::OfficialForbiddenResource => {
                 "official.forbidden-resource@sha256:4452f99158233e3703e46dbbb83f6900a894fbceacd3e98b141332d552e22827"
             }
+            Self::OfficialEmbeddableOffline => "official.embeddable-offline@sha256:d1d9207be2a4022886b9916ef0068b654c47f64d9ea59cd6d31d6432c5eecb01",
         }
     }
 
@@ -385,6 +389,8 @@ pub(crate) enum DiagnosticKind<'a> {
     LiberationSansSubstituted,
     /// `font.noto-emoji-substituted`.
     NotoEmojiSubstituted,
+    /// Noto Emoji supplied a glyph in an offline embeddable label.
+    EmbeddableNotoEmojiSubstituted,
     /// `font.missing-glyph` for the Unicode scalar `codepoint`.
     MissingGlyph { codepoint: u32 },
     /// A local resource ceiling crossed by an element and recovered locally.
@@ -471,7 +477,9 @@ impl DiagnosticKind<'_> {
             Self::UnsafeLinkOmitted => DiagnosticCode::LINK_UNSAFE_OMITTED,
             Self::InvalidColor => DiagnosticCode::COLOR_INVALID,
             Self::LiberationSansSubstituted => DiagnosticCode::FONT_LIBERATION_SANS_SUBSTITUTED,
-            Self::NotoEmojiSubstituted => DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED,
+            Self::NotoEmojiSubstituted | Self::EmbeddableNotoEmojiSubstituted => {
+                DiagnosticCode::FONT_NOTO_EMOJI_SUBSTITUTED
+            }
             Self::MissingGlyph { .. } => DiagnosticCode::FONT_MISSING_GLYPH,
             Self::LocalLimitCrossed { limit, .. } => limit.code(),
             Self::OptionalMetadataOmitted { .. } => {
@@ -488,7 +496,8 @@ impl DiagnosticKind<'_> {
         match self {
             Self::AnimationFlattened { .. }
             | Self::LiberationSansSubstituted
-            | Self::NotoEmojiSubstituted => DiagnosticSeverity::Info,
+            | Self::NotoEmojiSubstituted
+            | Self::EmbeddableNotoEmojiSubstituted => DiagnosticSeverity::Info,
             _ => DiagnosticSeverity::Warning,
         }
     }
@@ -584,6 +593,10 @@ impl DiagnosticKind<'_> {
             Self::InvalidColor | Self::LiberationSansSubstituted | Self::NotoEmojiSubstituted => {
                 compatibility(Recovery::Substituted, None)?
             }
+            Self::EmbeddableNotoEmojiSubstituted => compatibility(
+                Recovery::Substituted,
+                Some(FallbackRecipe::OfficialEmbeddableOffline),
+            )?,
             Self::MissingGlyph { codepoint } => ErrorDetails::MissingGlyph {
                 codepoint,
                 recovery: Recovery::Substituted,
@@ -795,8 +808,7 @@ mod tests {
 
     /// The recipes the registry can name are exactly the manifest's: the
     /// renderer-owned references and the official recipes the asset catalog
-    /// seals, minus the two official recipes (nested-resource and
-    /// embeddable-offline) no diagnostic names as its `recipe_id`.
+    /// seals, except nested-resource, which this typed subset does not yet name.
     #[test]
     fn recipe_identities_are_the_manifests() {
         let manifest = scene_surface_manifest();

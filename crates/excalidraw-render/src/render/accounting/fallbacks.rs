@@ -9,7 +9,9 @@ use crate::diagnostic_registry::LocalLimit;
 use crate::resource_accounting::{ResourceContext, ResourceDelta, ResourcePhase};
 use crate::{DiagnosticCode, ErrorDetails, Recovery, RenderError, RenderRequest, ResourceValue};
 
-use super::super::diagnostics::{fallback_font_diagnostic, FontFallback};
+use super::super::diagnostics::{
+    fallback_font_diagnostic, official_missing_glyph_diagnostic, FontFallback,
+};
 use super::super::resolve::{
     format_error_code, ElementLocalCrossing, ResolvedElement, ResolvedFallback, ResolvedScene,
     SemanticWorkingRecord,
@@ -131,6 +133,34 @@ impl RenderSession {
                 )
                 .with_element_id(Some(frame.source.id()))
                 .with_local_owner(Some(frame.source.id()));
+                if let Some(name) = &frame.name {
+                    for codepoint in &name.label.missing_codepoints {
+                        let diagnostic = official_missing_glyph_diagnostic(
+                            request.format(),
+                            frame.source.id(),
+                            frame.source.pointer(),
+                            *codepoint,
+                        )
+                        .map_err(|_| {
+                            self.memory_failure(
+                                request,
+                                "compatibility_report",
+                                "frame_name_missing_glyph",
+                            )
+                        })?;
+                        self.retain_diagnostic_with_owner(
+                            request,
+                            ResourcePhase::SharedSemanticResolution,
+                            "frame_name_missing_glyph",
+                            diagnostic,
+                            DiagnosticOwnership {
+                                local_owner: Some(frame.source.id()),
+                                source_order: Some(frame.source_order),
+                                source_position: Some(u64::MAX),
+                            },
+                        )?;
+                    }
+                }
                 self.transact(request, context, delta)?;
                 semantic_working.try_reserve(1).map_err(|_| {
                     self.memory_failure(request, "semantic_geometry", "frame_working_record")

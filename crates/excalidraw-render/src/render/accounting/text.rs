@@ -200,28 +200,6 @@ impl RenderSession {
             )?;
             self.excalifont_range_selected = true;
         }
-        if text.font_family == 2 && !text.text.is_empty() {
-            let diagnostic = fallback_font_diagnostic(
-                FontFallback::HelveticaText,
-                request.format(),
-                Some(source.source.id()),
-                source.source.pointer(),
-            )
-            .map_err(|_| {
-                self.memory_failure(request, "compatibility_report", "text_font_substitution")
-            })?;
-            self.retain_diagnostic_with_owner(
-                request,
-                ResourcePhase::SharedSemanticResolution,
-                "text_font_substitution",
-                diagnostic,
-                DiagnosticOwnership {
-                    local_owner: Some(source.source.id()),
-                    source_order: Some(source.source_order),
-                    source_position: Some(0),
-                },
-            )?;
-        }
         Ok(true)
     }
 
@@ -354,7 +332,7 @@ impl RenderSession {
         }
         if label.noto_emoji_substituted {
             let diagnostic = fallback_font_diagnostic(
-                FontFallback::NotoEmoji,
+                FontFallback::EmbeddableNotoEmoji,
                 request.format(),
                 Some(outline.source.id()),
                 outline.source.pointer(),
@@ -542,6 +520,28 @@ impl RenderSession {
             )?;
             text.render = false;
             return Ok(());
+        }
+        if text.font_family == 2 {
+            let diagnostic = fallback_font_diagnostic(
+                FontFallback::HelveticaText,
+                request.format(),
+                Some(text.source.id()),
+                text.source.pointer(),
+            )
+            .map_err(|_| {
+                self.memory_failure(request, "compatibility_report", "text_font_substitution")
+            })?;
+            self.retain_diagnostic_with_owner(
+                request,
+                ResourcePhase::SharedSemanticResolution,
+                "text_font_substitution",
+                diagnostic,
+                DiagnosticOwnership {
+                    local_owner: Some(text.source.id()),
+                    source_order: Some(text.source_order),
+                    source_position: Some(0),
+                },
+            )?;
         }
         if text.text.noto_emoji_substituted {
             let diagnostic = fallback_font_diagnostic(

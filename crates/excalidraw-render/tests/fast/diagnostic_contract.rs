@@ -10,6 +10,225 @@ use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn font_diagnostics_cover_text_generated_labels_and_silence() {
+    local_font_substitution_is_informational_per_occurrence_in_all_formats();
+    embeddable_emoji_diagnostics_identify_the_offline_recipe();
+    frame_missing_glyph_reports_follow_visible_names();
+    for format in FORMATS {
+        let content = "😀🎉\u{10001}\u{10000}\u{10001}\u{200d}\u{fe0f}";
+        let source = scene(json!([
+            font_text("z-first", content, 2),
+            font_text("a-second", content, 9)
+        ]));
+        let mut rows = vec![font_substitution(
+            "font.liberation-sans-substituted",
+            "z-first",
+            "/elements/0",
+            Value::Null,
+        )];
+        for (id, pointer) in [("z-first", "/elements/0"), ("a-second", "/elements/1")] {
+            rows.push(font_substitution(
+                "font.noto-emoji-substituted",
+                id,
+                pointer,
+                Value::Null,
+            ));
+            for codepoint in [0x10001, 0x10000, 0x10001] {
+                rows.push(missing_glyph(id, pointer, codepoint));
+            }
+        }
+        assert_report(&source, format, json!(rows));
+        let framed = scene(json!([
+            {"id":"frame","type":"frame","width":1000,"height":200,"updated":1},
+            font_text("inside", content, 2),
+            {"id":"outside","type":"text","x":2000,"width":500,"height":40,"fontFamily":2,"fontSize":20,"text":content,"updated":1}
+        ]));
+        assert_frame_reports(
+            &framed,
+            format,
+            &[json!([
+                font_substitution(
+                    "font.liberation-sans-substituted",
+                    "inside",
+                    "/elements/1",
+                    Value::Null
+                ),
+                font_substitution(
+                    "font.noto-emoji-substituted",
+                    "inside",
+                    "/elements/1",
+                    Value::Null
+                ),
+                missing_glyph("inside", "/elements/1", 0x10001),
+                missing_glyph("inside", "/elements/1", 0x10000),
+                missing_glyph("inside", "/elements/1", 0x10001)
+            ])],
+        );
+        let controls = "A\u{200d}\u{fe0f}B";
+        for control in [
+            '\u{200e}', '\u{200f}', '\u{200b}', '\u{200c}', '\u{200d}', '\u{034f}', '\u{061c}',
+            '\u{fe0f}', '\u{feff}',
+        ] {
+            assert_report(
+                &scene(json!([font_text("control", &format!("A{control}B"), 9)])),
+                format,
+                json!([]),
+            );
+        }
+        let mut omitted = font_text("unbound", content, 2);
+        omitted["containerId"] = json!("box");
+        let mut deleted = font_text("deleted", content, 2);
+        deleted["isDeleted"] = json!(true);
+        assert_report(
+            &scene(json!([
+                font_text("direct", controls, 9),
+                font_text("empty", "", 2),
+                rectangle("box"),
+                omitted,
+                deleted
+            ])),
+            format,
+            json!([]),
+        );
+        // Renderer-owned chrome is intentionally silent for Liberation Sans
+        // (§8.3/#175); frame labels are hidden in frame exports.
+        let chrome = scene(json!([
+            {"id":"frame","type":"frame","name":"Plain frame","width":300,"height":100,"updated":1},
+            {"id":"magic","type":"magicframe","name":"","x":400,"width":300,"height":100,"updated":1},
+            {"id":"embed","type":"embeddable","link":"https://example.com/plain","width":300,"height":100,"seed":1,"updated":1},
+            {"id":"iframe","type":"iframe","width":300,"height":100,"seed":1,"updated":1}
+        ]));
+        assert_report(&chrome, format, json!([]));
+        assert_frame_reports(&chrome, format, &[json!([]), json!([])]);
+        let embed = scene(
+            json!([{"id":"embed","type":"embeddable","link":"https://example.com/\u{10001}\u{10000}\u{10001}","width":1000,"height":100,"seed":1,"updated":1}]),
+        );
+        assert_report(
+            &embed,
+            format,
+            json!([
+                missing_glyph("embed", "/elements/0", 0x10001),
+                missing_glyph("embed", "/elements/0", 0x10000),
+                missing_glyph("embed", "/elements/0", 0x10001)
+            ]),
+        );
+        let fallback = scene(
+            json!([{"id":"fallback","type":"future\u{10001}\u{10000}","width":1000,"height":100,"updated":1}]),
+        );
+        assert_report(
+            &fallback,
+            format,
+            json!([
+                expected(
+                    "compatibility.unsupported-element-type",
+                    "warning",
+                    json!(["visual", "semantic"]),
+                    json!("fallback"),
+                    "/elements/0",
+                    json!({"kind":"compatibility","recovery":"placeholder","recipe_id":"renderer.unknown-element.v1"})
+                ),
+                font_substitution(
+                    "font.liberation-sans-substituted",
+                    "fallback",
+                    "/elements/0",
+                    Value::Null
+                ),
+                missing_glyph("fallback", "/elements/0", 0x10001),
+                missing_glyph("fallback", "/elements/0", 0x10000)
+            ]),
+        );
+        let tiny = scene(
+            json!([{"id":"fallback","type":"future\u{10000}","width":10,"height":5,"updated":1}]),
+        );
+        assert_report(
+            &tiny,
+            format,
+            json!([expected(
+                "compatibility.unsupported-element-type",
+                "warning",
+                json!(["visual", "semantic"]),
+                json!("fallback"),
+                "/elements/0",
+                json!({"kind":"compatibility","recovery":"placeholder","recipe_id":"renderer.unknown-element.v1"})
+            )]),
+        );
+    }
+}
+
+fn font_text(id: &str, text: &str, family: u8) -> Value {
+    json!({"id":id,"type":"text","text":text,"fontFamily":family,"fontSize":20,"width":500,"height":40,"updated":1})
+}
+
+fn frame_missing_glyph_reports_follow_visible_names() {
+    let source = scene(
+        json!([{"id":"frame","type":"frame","name":"A\u{10001}\u{10000}\u{10001}B","width":500,"height":100,"updated":1}]),
+    );
+    for format in FORMATS {
+        assert_report(
+            &source,
+            format,
+            json!([
+                missing_glyph("frame", "/elements/0", 0x10001),
+                missing_glyph("frame", "/elements/0", 0x10000),
+                missing_glyph("frame", "/elements/0", 0x10001)
+            ]),
+        );
+        assert_frame_reports(&source, format, &[json!([])]);
+        let hidden = RenderRequest::builder(format)
+            .frame_options(FrameOptions::new(true, true, false, true))
+            .build()
+            .unwrap();
+        assert_report_with_request(&source, &hidden, json!([]));
+        let truncated = scene(
+            json!([{"id":"frame","type":"frame","name":"A long ordinary prefix then \u{10000}","width":60,"height":100,"updated":1}]),
+        );
+        assert_report(&truncated, format, json!([]));
+    }
+}
+
+fn font_substitution(code: &str, id: &str, pointer: &str, recipe: Value) -> Value {
+    expected(
+        code,
+        "info",
+        json!(["visual"]),
+        json!(id),
+        pointer,
+        json!({"kind":"compatibility","recovery":"substituted","recipe_id":recipe}),
+    )
+}
+
+fn missing_glyph(id: &str, pointer: &str, codepoint: u32) -> Value {
+    expected(
+        "font.missing-glyph",
+        "warning",
+        json!(["visual"]),
+        json!(id),
+        pointer,
+        json!({"kind":"missing_glyph","codepoint":codepoint,"recovery":"substituted"}),
+    )
+}
+
+fn embeddable_emoji_diagnostics_identify_the_offline_recipe() {
+    let source = scene(
+        json!([{"id":"embed","type":"embeddable","link":"https://example.com/😀🎉","width":500,"height":100,"seed":1,"updated":1}]),
+    );
+    for format in FORMATS {
+        assert_report(
+            &source,
+            format,
+            json!([expected(
+                "font.noto-emoji-substituted",
+                "info",
+                json!(["visual"]),
+                json!("embed"),
+                "/elements/0",
+                json!({"kind":"compatibility","recovery":"substituted","recipe_id":"official.embeddable-offline@sha256:d1d9207be2a4022886b9916ef0068b654c47f64d9ea59cd6d31d6432c5eecb01"})
+            )]),
+        );
+    }
+}
+
+#[test]
 fn relationship_cycle_contract_in_every_format() {
     disabled_frame_cycle_repairs_input_without_claiming_output_effects();
     cycle_effects_follow_text_and_binding_consumers();
