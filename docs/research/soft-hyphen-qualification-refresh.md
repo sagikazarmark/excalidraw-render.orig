@@ -1,6 +1,6 @@
 # Soft-hyphen qualification refresh
 
-Base: `b484569`. Status: evidence generated and reviewed; **maintainer approvals pending**.
+Base: `b484569`. Refresh committed as `5889ac1`. Status: both maintainer approvals recorded; clean-commit target aggregation pending.
 
 The subset fix retains the nominal space mapping needed to shape default-ignorable characters as hidden zero-advance glyphs. Qualification now adds `default-ignorable-no-space` as its ninth class over all 231 sources. It selects the first mapped default-ignorable in declared ranges without adding literal space to the semantic input; sources without one are explicitly not applicable.
 
@@ -32,6 +32,12 @@ Includes the fixed producer, nine-class qualification generator, expanded corpus
 Approves the unchanged reviewed decodes against the expanded qualification corpus. This is a corpus-binding refresh, not a change to decoded font bytes.
 
 Both subjects were computed by the repository's approval-subject commands with no fabricated approval fields. Recording approval requires the maintainer's identity/date and issue comment URL.
+
+Explicit maintainer approval was granted in the coding session and recorded on 2026-09-12:
+- [#99 viewer approval](https://github.com/sagikazarmark/excalidraw-render.orig/issues/99#issuecomment-5647313250)
+- [#120 decode-binding approval](https://github.com/sagikazarmark/excalidraw-render.orig/issues/120#issuecomment-5647313230)
+
+The release manifest now binds the approved viewer record, expanded corpus and matching cross-target measurement. Its target state is reset to `pending_ci` / `pending_target_aggregation`; the previous aggregate remains in Git history and will be replaced by clean-commit evidence for these inputs.
 
 ## Execution record
 
