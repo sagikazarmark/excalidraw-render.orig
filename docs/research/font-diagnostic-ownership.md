@@ -49,12 +49,12 @@ Verification of the follow-up:
 - Dagger workspace tests: render and doctest checks pass; fast runs 865 tests with 864 passing and one failure, the same offline viewer-qualification stale-digest check (eight tests skipped by the configured tier).
 - Temporary diagnostic probes were removed; `git diff --check` passes.
 
-The expanded corpus and both viewer reports have now been regenerated, with matching native/browser-WASM qualification measurements. See [the refresh record and approval subjects](soft-hyphen-qualification-refresh.md). Fresh maintainer approvals and release-target rebinding remain required before qualification gates can pass.
+The expanded corpus and both viewer reports have now been regenerated and approved, with matching clean-commit native/browser-WASM qualification and packaged-consumer evidence bound as `aggregated` / `pass`. See [the completed refresh record](soft-hyphen-qualification-refresh.md). The soft-hyphen qualification blocker is resolved.
 
 ## Remaining ownership work
 
 - Reconcile registry wording with §8.3/#175 before assigning broad source scopes.
-- Refresh qualification approval for the soft-hyphen fix and cover the full default-ignorable boundary classes, including non-ignorable Hangul fillers and paragraph separators.
+- Cover the full default-ignorable boundary classes, including non-ignorable Hangul fillers and paragraph separators; the soft-hyphen fix is qualified and approved.
 - Complete local-resource omission and generated-label branch matrices, including frame/placeholder Unicode behavior and format-specific zero-size embeddables.
 - Only then assign complete test owners. Global totals remain **137 proposed owners / 791 gaps**.
 

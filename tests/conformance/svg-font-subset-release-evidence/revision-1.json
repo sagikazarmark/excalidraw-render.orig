@@ -6,7 +6,7 @@
     "sha256": "254d75ecf95dafb9cdf796d36993daac6587b5e4d589ed052fd01889d7ac9157",
     "successfulCells": 984
   },
-  "decision": "pending_target_aggregation",
+  "decision": "pass",
   "fuzzRegressions": {
     "path": "crates/excalidraw-render/tests/qualification/font-subset-fuzz-regressions.json",
     "sha256": "36e32471e2d5e651382327e670e3e0dd7e38a7f774822a339441073074b4b776"
@@ -32,6 +32,12 @@
     "sha256": "083073315198f4cc4d67cd2f3a3fa7b65c6ce651dfb52fed61f5090c932b92c7"
   },
   "targetEvidence": {
+    "aggregate": {
+      "commit": "e2ed94964e9007f8eff6ed7c60793e7e4f6b4f10",
+      "path": "tests/conformance/svg-font-subset-target-aggregate/revision-1.json",
+      "provenanceUrl": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/101#issuecomment-5647481747",
+      "sha256": "fcd4fdbaf110a7a16cb8391a9b0b6b99429b41ef405fee7cafa76a49044f66d9"
+    },
     "aggregateArtifact": "svg-font-subset-target-aggregate",
     "crossTargetMeasurement": {
       "path": "tests/conformance/svg-font-subset-cross-target-measurement/revision-1.json",
@@ -43,7 +49,7 @@
     },
     "reportSchema": {
       "path": "tests/conformance/svg-font-subset-target-evidence-v3.schema.json",
-      "sha256": "7b6f8ca607a2696e3377cdfa764c465dd7eb4ef8871792360124997217e81aaf"
+      "sha256": "abff454338378d7653a3bbb3aeb62f678a062680aaded07e68ae6b9f89ca6130"
     },
     "runnerInputs": [
       {
@@ -71,7 +77,7 @@
         "sha256": "5bc4bdad2c80db109256ea3b09c005d888f7ab1789dd5ac8e5ccbedb75a79424"
       }
     ],
-    "status": "pending_ci",
+    "status": "aggregated",
     "workflow": {
       "path": "dagger.dang",
       "sha256": "942e5e6a296f2046b3e46f6dfab942554e2611e66ed3d0057bbacc349c35c6e7"

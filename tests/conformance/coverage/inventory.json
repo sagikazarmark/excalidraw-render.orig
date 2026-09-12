@@ -161,7 +161,7 @@
     },
     {
       "path": "tests/conformance/coverage/requirements.json",
-      "sha256": "d341e5404f83cec232552bfd9ffc6cb4e5e8d03f6a457b349963f5591ee4c7ba"
+      "sha256": "4be72b4f668da9c50e94b2c3c5d048ffa4cdc7cb7483c4a2a1ca47033ca0c501"
     },
     {
       "path": "tests/oracle/reference-profiles/revision-1-frame.json",
@@ -6650,7 +6650,7 @@
         {
           "source": {
             "path": "xtask/src/svg_font_subset_targets.rs",
-            "sha256": "ee099545069eb5dc56669d13061d970fd0a026dd32a72f654a8850bc66e194f4"
+            "sha256": "4769a20f676e35e94ccd2d4ecf4204432e611ab135b9182512799e41250e3eab"
           },
           "anchor": "pub(crate) fn aggregate("
         }

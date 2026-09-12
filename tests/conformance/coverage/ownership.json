@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "d5c6f40357c1e7cbc83cbf3a30d19007a80e2cb70b7404469427593b6aeb549b",
+  "catalog_sha256": "7888d1b07b79934484b2f33a4bbe53f6c7460181a54e055b9a4a18d947c6d0e3",
   "approval": null,
   "assignments": [
     {
@@ -2669,7 +2669,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed with focused regressions but requires refreshed viewer qualification approval. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed, qualified and approved. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2677,7 +2677,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed with focused regressions but requires refreshed viewer qualification approval. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed, qualified and approved. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {
@@ -2685,7 +2685,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed with focused regressions but requires refreshed viewer qualification approval. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact tests cover text/frame/generated-label scalar reports and silence. Soft-hyphen shaping closure is fixed, qualified and approved. Full default-ignorable boundaries and local-resource omission branches remain incomplete. See docs/research/font-diagnostic-ownership.md."
       }
     },
     {

@@ -77,7 +77,7 @@
       "remaining": "Populate this result contract from the complete risk inventory, compare approved canonical outputs, and wire automatic Dagger execution; existing live aggregation is font-specific.",
       "evidence": [
         {
-          "source": {"path": "xtask/src/svg_font_subset_targets.rs", "sha256": "ee099545069eb5dc56669d13061d970fd0a026dd32a72f654a8850bc66e194f4"},
+          "source": {"path": "xtask/src/svg_font_subset_targets.rs", "sha256": "4769a20f676e35e94ccd2d4ecf4204432e611ab135b9182512799e41250e3eab"},
           "anchor": "pub(crate) fn aggregate("
         }
       ]

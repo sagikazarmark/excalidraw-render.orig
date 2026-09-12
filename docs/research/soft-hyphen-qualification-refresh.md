@@ -1,6 +1,6 @@
 # Soft-hyphen qualification refresh
 
-Base: `b484569`. Refresh committed as `5889ac1`. Status: both maintainer approvals recorded; clean-commit target aggregation pending.
+Base: `b484569`. Refresh committed as `5889ac1`; approved inputs committed as `e2ed949`. Status: **complete**, both approvals recorded and clean-commit target evidence aggregated/passing.
 
 The subset fix retains the nominal space mapping needed to shape default-ignorable characters as hidden zero-advance glyphs. Qualification now adds `default-ignorable-no-space` as its ninth class over all 231 sources. It selects the first mapped default-ignorable in declared ranges without adding literal space to the semantic input; sources without one are explicitly not applicable.
 
@@ -56,11 +56,17 @@ All listed operations passed. Final dual-viewer generation took 38m10s; native q
 
 An initial viewer attempt stopped at the old Chromium execution-count assertion. A subsequent complete pass used a corpus copy with an accidental trailing newline; the canonical corpus bytes were restored and the final full viewer pass above regenerated all digest-bound inputs and reports. No results from that noncanonical pass are used as the final evidence. Generation's overwrite guard was respected by retiring the previous manifest, preserved in Git at the base commit.
 
-## Remaining steps
+## Completion
 
-1. Record explicit approvals for both subjects above.
-2. Refresh the release evidence's viewer/corpus bindings and pending target state through the existing evidence workflow; its old aggregate describes the previous corpus and is no longer sufficient.
-3. Commit the approved source/evidence when requested, run clean-commit packaged target evidence for native and browser WASM, and bind the new aggregate with maintainer provenance.
-4. Rerun the approval-dependent catalog, viewer, release and workspace gates. They are expected to remain red while approvals and release bindings are pending.
+`dagger api call target-evidence --output target/soft-hyphen-target-evidence` passed in 28m49s on clean commit `e2ed94964e9007f8eff6ed7c60793e7e4f6b4f10`, including native/browser-WASM qualification and packaged consumers. Both targets agree on the measurements above.
+
+- Aggregate SHA-256: `fcd4fdbaf110a7a16cb8391a9b0b6b99429b41ef405fee7cafa76a49044f66d9`.
+- Dagger lock SHA-256: `e0096e1231bdb9a2c98f4d6f6e1c776fe4246cfd1bacc057787ec7e3f582fb9b`.
+- [Run provenance](https://github.com/sagikazarmark/excalidraw-render.orig/issues/101#issuecomment-5647481747).
+- The aggregate is recorded verbatim at `tests/conformance/svg-font-subset-target-aggregate/revision-1.json` and release evidence is `aggregated` / `pass`.
+
+Post-aggregation verification found stale coverage-requirement source bindings and target-report schema counts. The requirement digest, derived inventory/catalog binding and schema counts are refreshed without changing execution keys or ownership dispositions. The target report now validates against the expanded 984/1211 schema. These are consumer metadata updates, not changes to the qualified producer or approved subjects.
+
+All ten Dagger conformance/lint checks and all three workspace test checks pass across the final targeted runs. Initial stale-anchor and schema-count failures were corrected and their affected checks rerun successfully. `git diff --check` passes. The previous soft-hyphen qualification blockers are resolved.
 
 This qualification refresh does not approve global ownership or close upstream-blocked #178.
