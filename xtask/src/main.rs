@@ -82,6 +82,22 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             println!("{}", coverage::inventory_json()?);
         }
+        Some("ownership-catalog") => {
+            no_more_args(args)?;
+            println!("{}", coverage::ownership_catalog()?);
+        }
+        Some("seed-ownership") => {
+            no_more_args(args)?;
+            println!("{}", coverage::seed_ownership()?);
+        }
+        Some("verify-ownership") => {
+            no_more_args(args)?;
+            coverage::verify_ownership()?;
+        }
+        Some("ownership-approval-subject") => {
+            no_more_args(args)?;
+            println!("sha256:{}", coverage::ownership_subject()?);
+        }
         Some("inventory-digest") => {
             no_more_args(args)?;
             println!("{}", coverage::inventory_digest()?);
@@ -365,7 +381,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
         "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
-        "conformance <inventory|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
+        "conformance <inventory|ownership-catalog|seed-ownership|verify-ownership|ownership-approval-subject|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"

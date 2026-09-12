@@ -17,7 +17,9 @@ const INVENTORY_SCHEMA: &str = "excalidraw-render/coverage-inventory/v1";
 const RESULT_SCHEMA: &str = "excalidraw-render/coverage-results/v1";
 const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"];
 
+mod ownership;
 mod snapshots;
+pub use ownership::{ownership_catalog, ownership_subject, seed_ownership, verify_ownership};
 mod traces;
 pub use snapshots::{
     baseline_subject, record_baseline_approval, replay_snapshots, report_wasm_snapshots,
@@ -360,6 +362,8 @@ pub fn verify_inventory() -> Result<(), String> {
 }
 
 pub fn verify_closure() -> Result<(), String> {
+    ownership::verify_closed()
+        .map_err(|error| format!("release coverage is draft and unapproved: {error}"))?;
     let inventory = load_inventory()?;
     Err(format!(
         "release coverage is draft and unapproved; unresolved: {}",

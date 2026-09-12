@@ -55,7 +55,7 @@ fn release_order_distinguishes_source_and_optional_owners() {
         element_id,
         local_owner,
     };
-    let mut records = vec![
+    let mut records = [
         make(2, None, None),
         make(1, Some("b".into()), None),
         make(1, Some("a".into()), Some("z".into())),

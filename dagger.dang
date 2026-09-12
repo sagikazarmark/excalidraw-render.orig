@@ -230,6 +230,13 @@ type Conformance {
   }
 
   """
+  Check the global ownership ledger's exact assignments, evidence and explicit gaps.
+  """
+  coverageOwnership: String! @check {
+    self.xtask(["conformance", "verify-ownership"])
+  }
+
+  """
   Verify the sealed revision catalog.
   """
   catalog: String! @check {

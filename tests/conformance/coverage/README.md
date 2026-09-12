@@ -13,6 +13,12 @@ input set and one result key. The current inventory has:
 
 ## Inventory lifecycle
 
+The expanded global ownership proposal is in `ownership.json`, with derivation
+and semantics documented in [OWNERSHIP.md](OWNERSHIP.md). It adds 928 format-scoped
+obligations alongside this execution inventory and proposes single owners for the
+27 collided labels. The ledger consistency check is separate from final approved
+coverage closure; explicit gaps remain blocking.
+
 `requirements.json` names the outstanding work and links existing tests/other
 evidence by source digest and exact textual anchor. These anchors establish
 where code exists, **not that it ran or completely covers a requirement**.

@@ -49,6 +49,15 @@ type Evidence {
   }
 
   """
+  Export the current format-scoped ownership obligation catalog.
+  """
+  ownershipCatalog: File! {
+    self.container
+      .withExec(["cargo", "run", "--locked", "-p", "xtask", "--", "conformance", "ownership-catalog"], redirectStdout: "/ownership-catalog.json")
+      .file("/ownership-catalog.json")
+  }
+
+  """
   Regenerate the per-cell font subset corpus in the pinned native toolchain.
   """
   fontCorpus: Directory! {

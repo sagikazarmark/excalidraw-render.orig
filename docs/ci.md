@@ -99,6 +99,11 @@ The shared #85/#86 draft inventory is checked by
 See [the inventory/result contract](../tests/conformance/coverage/README.md).
 Its consistency check does not grant release closure: `conformance verify-closure`
 rejects the draft until ownership and canonical snapshot evidence are complete.
+The adjacent global ledger is checked by
+`dagger check excalidraw-render:conformance:coverage-ownership`; its 928 obligations
+have 119 proposed owners and 809 explicit gaps. See
+[ownership semantics](../tests/conformance/coverage/OWNERSHIP.md). These counts
+describe assignments, not an approved coverage percentage.
 
 Native snapshot candidates for the inventory's 168 keys can be exported with
 `dagger api call packaging snapshots --output target/native-snapshots`. This runs
