@@ -111,7 +111,7 @@ has been published.
 | --- | --- |
 | [Reference profile](../tests/oracle/reference-profiles/revision-1.json) | `1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71` |
 | [Reference asset manifest](../tests/oracle/reference-profiles/revision-1-assets.json) | `02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a` |
-| [Scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json) | `14309697cdb5bf9ebe660dccf27c4c929c0f5edb7174443dd4f962544fcc4bea` |
+| [Scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json) | `579e57f6a10e032ed4f460d3576c9be6bf4e86f595bd6a1acef2232bf22141ce` |
 | [Scene-surface schema](../tests/oracle/scene-surfaces/scene-surface-v1.schema.json) | `29871fad7bf7665142c8d625c3715b34603a6369a78ffa7baf96ade66be63362` |
 | [Scene-surface evidence index](../tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json) | `29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb` |
 

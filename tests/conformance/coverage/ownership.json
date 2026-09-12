@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "7888d1b07b79934484b2f33a4bbe53f6c7460181a54e055b9a4a18d947c6d0e3",
+  "catalog_sha256": "3b2ca5001baae14635fe81c4e37531b490d545a5a70a5fb2d079bd9f423a5439",
   "approval": null,
   "assignments": [
     {
@@ -13,7 +13,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "41eab5f459b0acbd97de34e085e078aa05930894cbc5049988a3e9a0f9ccd052"
+            "sha256": "39f2b075e13128a6faba8d177eb50932372147e33d97035b0f933095da638c2b"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -28,7 +28,7 @@
           "case": "focused.cartoonist-arrowheads.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cartoonist-arrowheads/manifest.json",
-            "sha256": "0ced46539ede715133ce491dd2be996e4d1010367e73362380b595d21c85bca3"
+            "sha256": "df6bfa88acd50dc9753d2c6f4b6c0a54b6c8a3527fbe5a9da53e5098ff733bf8"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw four arrows at roughness 2 whose arrowhead kinds exercise the reference's per-kind roughness clamp on the options object both heads share: an arrow start before a dot end, a dot start before an arrow end, a circle_outline start before a triangle end, and a crowfoot_one end alone, so the roughness each head is drawn at is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -43,7 +43,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "41eab5f459b0acbd97de34e085e078aa05930894cbc5049988a3e9a0f9ccd052"
+            "sha256": "39f2b075e13128a6faba8d177eb50932372147e33d97035b0f933095da638c2b"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -58,7 +58,7 @@
           "case": "focused.cartoonist-arrowheads.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cartoonist-arrowheads/manifest.json",
-            "sha256": "0ced46539ede715133ce491dd2be996e4d1010367e73362380b595d21c85bca3"
+            "sha256": "df6bfa88acd50dc9753d2c6f4b6c0a54b6c8a3527fbe5a9da53e5098ff733bf8"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw four arrows at roughness 2 whose arrowhead kinds exercise the reference's per-kind roughness clamp on the options object both heads share: an arrow start before a dot end, a dot start before an arrow end, a circle_outline start before a triangle end, and a crowfoot_one end alone, so the roughness each head is drawn at is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -73,7 +73,7 @@
           "case": "focused.cartoonist-arrowheads.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cartoonist-arrowheads/manifest.json",
-            "sha256": "0ced46539ede715133ce491dd2be996e4d1010367e73362380b595d21c85bca3"
+            "sha256": "df6bfa88acd50dc9753d2c6f4b6c0a54b6c8a3527fbe5a9da53e5098ff733bf8"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw four arrows at roughness 2 whose arrowhead kinds exercise the reference's per-kind roughness clamp on the options object both heads share: an arrow start before a dot end, a dot start before an arrow end, a circle_outline start before a triangle end, and a crowfoot_one end alone, so the roughness each head is drawn at is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -88,7 +88,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "41eab5f459b0acbd97de34e085e078aa05930894cbc5049988a3e9a0f9ccd052"
+            "sha256": "39f2b075e13128a6faba8d177eb50932372147e33d97035b0f933095da638c2b"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -103,7 +103,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "41eab5f459b0acbd97de34e085e078aa05930894cbc5049988a3e9a0f9ccd052"
+            "sha256": "39f2b075e13128a6faba8d177eb50932372147e33d97035b0f933095da638c2b"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -118,7 +118,7 @@
           "case": "focused.cartoonist-arrowheads.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cartoonist-arrowheads/manifest.json",
-            "sha256": "0ced46539ede715133ce491dd2be996e4d1010367e73362380b595d21c85bca3"
+            "sha256": "df6bfa88acd50dc9753d2c6f4b6c0a54b6c8a3527fbe5a9da53e5098ff733bf8"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Draw four arrows at roughness 2 whose arrowhead kinds exercise the reference's per-kind roughness clamp on the options object both heads share: an arrow start before a dot end, a dot start before an arrow end, a circle_outline start before a triangle end, and a crowfoot_one end alone, so the roughness each head is drawn at is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -133,7 +133,7 @@
           "case": "focused.cartoonist-arrowheads.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cartoonist-arrowheads/manifest.json",
-            "sha256": "0ced46539ede715133ce491dd2be996e4d1010367e73362380b595d21c85bca3"
+            "sha256": "df6bfa88acd50dc9753d2c6f4b6c0a54b6c8a3527fbe5a9da53e5098ff733bf8"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw four arrows at roughness 2 whose arrowhead kinds exercise the reference's per-kind roughness clamp on the options object both heads share: an arrow start before a dot end, a dot start before an arrow end, a circle_outline start before a triangle end, and a crowfoot_one end alone, so the roughness each head is drawn at is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -148,7 +148,7 @@
           "case": "focused.bound-text-containers.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bound-text-containers/manifest.json",
-            "sha256": "6a4c75e471dae313a021f6215c184c2437b4937a6a3c6a36788e8d920be3237c"
+            "sha256": "9ee19f576a17129d05a2280f67875ebe95c55dc33860e2a3f263e613706f618d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Justify a multi-line bound label under every textAlign value inside rectangle, ellipse and diamond containers. This assignment does not claim all format/profile sub-obligations."
@@ -163,7 +163,7 @@
           "case": "focused.bound-text-containers.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bound-text-containers/manifest.json",
-            "sha256": "6a4c75e471dae313a021f6215c184c2437b4937a6a3c6a36788e8d920be3237c"
+            "sha256": "9ee19f576a17129d05a2280f67875ebe95c55dc33860e2a3f263e613706f618d"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Justify a multi-line bound label under every textAlign value inside rectangle, ellipse and diamond containers. This assignment does not claim all format/profile sub-obligations."
@@ -178,7 +178,7 @@
           "case": "focused.bound-text-containers.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bound-text-containers/manifest.json",
-            "sha256": "6a4c75e471dae313a021f6215c184c2437b4937a6a3c6a36788e8d920be3237c"
+            "sha256": "9ee19f576a17129d05a2280f67875ebe95c55dc33860e2a3f263e613706f618d"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Justify a multi-line bound label under every textAlign value inside rectangle, ellipse and diamond containers. This assignment does not claim all format/profile sub-obligations."
@@ -193,7 +193,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "41eab5f459b0acbd97de34e085e078aa05930894cbc5049988a3e9a0f9ccd052"
+            "sha256": "39f2b075e13128a6faba8d177eb50932372147e33d97035b0f933095da638c2b"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -208,7 +208,7 @@
           "case": "focused.bound-text-containers.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bound-text-containers/manifest.json",
-            "sha256": "6a4c75e471dae313a021f6215c184c2437b4937a6a3c6a36788e8d920be3237c"
+            "sha256": "9ee19f576a17129d05a2280f67875ebe95c55dc33860e2a3f263e613706f618d"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Justify a multi-line bound label under every textAlign value inside rectangle, ellipse and diamond containers. This assignment does not claim all format/profile sub-obligations."
@@ -223,7 +223,7 @@
           "case": "focused.bound-text-placement.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bound-text-placement/manifest.json",
-            "sha256": "ec31f9ae23a5f18713fed20d14b2d01cd0c381e738600517386ddb2d5a4de512"
+            "sha256": "1751b50a1339702873b053dbb76d74709f3570c3d82973d8734e0cff08e61822"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Pin that a shape container's bound label paints at its stored coordinates rather than being re-derived from the container box, by storing it outside the container. This assignment does not claim all format/profile sub-obligations."
@@ -238,7 +238,7 @@
           "case": "focused.bound-text-placement.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bound-text-placement/manifest.json",
-            "sha256": "ec31f9ae23a5f18713fed20d14b2d01cd0c381e738600517386ddb2d5a4de512"
+            "sha256": "1751b50a1339702873b053dbb76d74709f3570c3d82973d8734e0cff08e61822"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Pin that a shape container's bound label paints at its stored coordinates rather than being re-derived from the container box, by storing it outside the container. This assignment does not claim all format/profile sub-obligations."
@@ -253,7 +253,7 @@
           "case": "focused.rotated-rough-linear.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rotated-rough-linear/manifest.json",
-            "sha256": "61cc32a35b986699778b8a249ea6d0576dad9dd33ca467493a595eda7e93025c"
+            "sha256": "70e44849c351084b7845a4f802f903e5d98fc540c52897d2ded89a368c1ba440"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Rotate rough linear elements whose drawn Rough.js outline overshoots their points' box \u2014 a roughness-1 line at 0.4 rad, a roughness-1 two-point arrow with arrow heads at 1.1 rad, a roughness-2 arrow with bar and arrow heads at 0.7 rad, and a roughness-1 elbow arrow at 1.55 rad alone on the scene's left edge so the jitter of the Rough.js linearPath the reference measures its extent with sets the envelope \u2014 beside a roughness-0 line and arrow as controls, so the official SVG's rotation about the points' box centre, the official canvas's rotation about the curve's box centre, and the elbow arrow's jittered extent are each observed against the evidence of their own format. This assignment does not claim all format/profile sub-obligations."
@@ -268,7 +268,7 @@
           "case": "focused.rotated-shape-bounds.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rotated-shape-bounds/manifest.json",
-            "sha256": "2a5cc388433fffa378bd476eb68ee63124f1f64fe01b861a5704fb8dd10e2817"
+            "sha256": "cfb2c676633aa5e969a7f2ee3f8dbe25b6515ca01ab63b0342740efc64577e34"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Place a rotated ellipse, a rotated diamond and a rotated four-point line each alone on an edge of the scene at roughness 0, so the scene extent the reference derives from a rotated ellipse's exact extent, a rotated diamond's four vertices and a rotated line's rotated curve points is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -283,7 +283,7 @@
           "case": "focused.rotated-shape-bounds.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rotated-shape-bounds/manifest.json",
-            "sha256": "2a5cc388433fffa378bd476eb68ee63124f1f64fe01b861a5704fb8dd10e2817"
+            "sha256": "cfb2c676633aa5e969a7f2ee3f8dbe25b6515ca01ab63b0342740efc64577e34"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Place a rotated ellipse, a rotated diamond and a rotated four-point line each alone on an edge of the scene at roughness 0, so the scene extent the reference derives from a rotated ellipse's exact extent, a rotated diamond's four vertices and a rotated line's rotated curve points is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -298,7 +298,7 @@
           "case": "focused.rotated-shape-bounds.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rotated-shape-bounds/manifest.json",
-            "sha256": "2a5cc388433fffa378bd476eb68ee63124f1f64fe01b861a5704fb8dd10e2817"
+            "sha256": "cfb2c676633aa5e969a7f2ee3f8dbe25b6515ca01ab63b0342740efc64577e34"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Place a rotated ellipse, a rotated diamond and a rotated four-point line each alone on an edge of the scene at roughness 0, so the scene extent the reference derives from a rotated ellipse's exact extent, a rotated diamond's four vertices and a rotated line's rotated curve points is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -313,7 +313,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "41eab5f459b0acbd97de34e085e078aa05930894cbc5049988a3e9a0f9ccd052"
+            "sha256": "39f2b075e13128a6faba8d177eb50932372147e33d97035b0f933095da638c2b"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -328,7 +328,7 @@
           "case": "focused.ellipse-diamond-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/ellipse-diamond-fills/manifest.json",
-            "sha256": "88b6a24b1580f10722c864e228a6e8daf3ed5593c1985c72cb631d4dea7c7bc2"
+            "sha256": "252552678b6ed6f9edf36317003a7e20950cfbaf00a4862bc533fb36de866d7d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Drive ellipse and diamond geometry through every Rough fill style and every stroke style, in both the default and dark-mode exports. This assignment does not claim all format/profile sub-obligations."
@@ -343,7 +343,7 @@
           "case": "focused.ellipse-diamond-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/ellipse-diamond-fills/manifest.json",
-            "sha256": "88b6a24b1580f10722c864e228a6e8daf3ed5593c1985c72cb631d4dea7c7bc2"
+            "sha256": "252552678b6ed6f9edf36317003a7e20950cfbaf00a4862bc533fb36de866d7d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Drive ellipse and diamond geometry through every Rough fill style and every stroke style, in both the default and dark-mode exports. This assignment does not claim all format/profile sub-obligations."
@@ -358,7 +358,7 @@
           "case": "focused.embeddable-links.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/embeddable-links/manifest.json",
-            "sha256": "e5c587c0bab9781a21e7ed87871d55e19a479cd7e96f2e624d24f625aa996299"
+            "sha256": "4e3891c066ff38ea1defe488c86aed15c05ed2f5a52d9bf28d2af437db9e0fe0"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Render the offline embeddable shell with its label and cover admitted and rejected link schemes across element kinds. This assignment does not claim all format/profile sub-obligations."
@@ -373,7 +373,7 @@
           "case": "focused.freedraw.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/freedraw/manifest.json",
-            "sha256": "81f458dee36bcdc016a67e7e5b73b3461bc494e4c33d8af46cd70fb2e539a2bb"
+            "sha256": "466fafbc584b6408e251072212e0a834f265050da43ef6a411c87de1a0a85715"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Exercise the qualified Perfect Freehand path with one simulated-pressure stroke carrying a velocity signal and one recorded-pressure stroke with a pressure value per point. This assignment does not claim all format/profile sub-obligations."
@@ -388,7 +388,7 @@
           "case": "focused.transform-opacity-groups.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/transform-opacity-groups/manifest.json",
-            "sha256": "c574a56acf81481ab39bd37ea669a74c4d5eee61014f25677c3c31f4df351ef2"
+            "sha256": "c5659be1255467404a44650cfd648a38d3eb3e84914781ee463a4d63da0eed83"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Rotate a rectangle, an ellipse, a diamond, an arrow and a line by 0.3, 1.2 and pi/4 radians, the linear elements and one rectangle with strokeWidth 4 and a dashed or dotted stroke; draw shapes at opacity 30 and 60, one of them rotated as well; two overlapping shapes sharing a groupId, which changes nothing visible; and a rotated rectangle with a link; roughness 0 and solid fills throughout, and the scene envelope set by rectangles so the rotated ellipse, diamond and linear elements, whose reference bounds focused.rotated-shape-bounds.v1 isolates, lie inside it. Exported by default, at scale 2, without the scene background and with zero padding, so the rotation transform, per-element opacity, wide dashed and dotted strokes, the transparent-background export and the padding option are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -403,7 +403,7 @@
           "case": "focused.iframe-element.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/iframe-element/manifest.json",
-            "sha256": "e2492b6c25ff01d958f6b5e0eb13e1884ac968620388213577b8f3c1301b7dc2"
+            "sha256": "a06bcf6bed00bd9b6768b5e178c4c2b8f0885a7a1c90322bfef2384b465615a6"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Render one iframe element carrying a link beside an embeddable control with a link, so the official offline shell the reference draws for an iframe \u2014 its generated label and background \u2014 is observed against official evidence alongside the embeddable shell focused.embeddable-links.v1 approved. This assignment does not claim all format/profile sub-obligations."
@@ -418,7 +418,7 @@
           "case": "focused.transform-opacity-groups.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/transform-opacity-groups/manifest.json",
-            "sha256": "c574a56acf81481ab39bd37ea669a74c4d5eee61014f25677c3c31f4df351ef2"
+            "sha256": "c5659be1255467404a44650cfd648a38d3eb3e84914781ee463a4d63da0eed83"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Rotate a rectangle, an ellipse, a diamond, an arrow and a line by 0.3, 1.2 and pi/4 radians, the linear elements and one rectangle with strokeWidth 4 and a dashed or dotted stroke; draw shapes at opacity 30 and 60, one of them rotated as well; two overlapping shapes sharing a groupId, which changes nothing visible; and a rotated rectangle with a link; roughness 0 and solid fills throughout, and the scene envelope set by rectangles so the rotated ellipse, diamond and linear elements, whose reference bounds focused.rotated-shape-bounds.v1 isolates, lie inside it. Exported by default, at scale 2, without the scene background and with zero padding, so the rotation transform, per-element opacity, wide dashed and dotted strokes, the transparent-background export and the padding option are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -433,7 +433,7 @@
           "case": "focused.rectangle-outline.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rectangle-outline/manifest.json",
-            "sha256": "a7946661383309b971cf1eeb9b48c9aa1cbe1fc747d11ac49c1d27345b7d012d"
+            "sha256": "8253b75a67943ebf5a449772195fdfd3d81d66dc1c576f0ecbb64901c64c906b"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Isolate one unrounded, transparent-fill Rough rectangle outline in official SVG and direct-canvas PNG. This assignment does not claim all format/profile sub-obligations."
@@ -448,7 +448,7 @@
           "case": "focused.excalifont-text.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/excalifont-text/manifest.json",
-            "sha256": "5b5b333965a1ef6ef433cbed1e8d63bc8e2d53d1993963c796250fd115025f56"
+            "sha256": "cd66e2efe2f6e916d8e4dc8f65f58ec1a760fd67a86480dd6944953a5e1428ec"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Isolate wrapped Excalifont text in official selectable SVG and direct-canvas PNG. This assignment does not claim all format/profile sub-obligations."
@@ -463,7 +463,7 @@
           "case": "focused.arrow-suite.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/arrow-suite/manifest.json",
-            "sha256": "41eab5f459b0acbd97de34e085e078aa05930894cbc5049988a3e9a0f9ccd052"
+            "sha256": "39f2b075e13128a6faba8d177eb50932372147e33d97035b0f933095da638c2b"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Cover every arrowhead kind on both ends, an elbowed arrow, and an arrow carrying a bound label whose mask interrupts the shaft. This assignment does not claim all format/profile sub-obligations."
@@ -478,7 +478,7 @@
           "case": "focused.ellipse-diamond-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/ellipse-diamond-fills/manifest.json",
-            "sha256": "88b6a24b1580f10722c864e228a6e8daf3ed5593c1985c72cb631d4dea7c7bc2"
+            "sha256": "252552678b6ed6f9edf36317003a7e20950cfbaf00a4862bc533fb36de866d7d"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Drive ellipse and diamond geometry through every Rough fill style and every stroke style, in both the default and dark-mode exports. This assignment does not claim all format/profile sub-obligations."
@@ -493,7 +493,7 @@
           "case": "focused.embed-scene-metadata.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/embed-scene-metadata/manifest.json",
-            "sha256": "c1d3e0a75c6299a758f1afb00e1f412d44412bcf783bd92daa382357982fdb80"
+            "sha256": "f8bfbb537a01e2bbbf280cfca0eb4946b8415c87a45ac92f33541bd93851092f"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Export one roughness-0 rectangle outline by default and with exportEmbedScene, so the embedded scene is observed to change no pixel of either format while the official SVG's metadata carries the payload-type, payload-version, payload-start and payload-end comments around the encoded scene and the official PNG carries the Excalidraw-keyed tEXt chunk, the carriers the renderer's artifact manifest mirrors. This assignment does not claim all format/profile sub-obligations."
@@ -508,7 +508,7 @@
           "case": "focused.freedraw.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/freedraw/manifest.json",
-            "sha256": "81f458dee36bcdc016a67e7e5b73b3461bc494e4c33d8af46cd70fb2e539a2bb"
+            "sha256": "466fafbc584b6408e251072212e0a834f265050da43ef6a411c87de1a0a85715"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Exercise the qualified Perfect Freehand path with one simulated-pressure stroke carrying a velocity signal and one recorded-pressure stroke with a pressure value per point. This assignment does not claim all format/profile sub-obligations."
@@ -523,7 +523,7 @@
           "case": "focused.transform-opacity-groups.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/transform-opacity-groups/manifest.json",
-            "sha256": "c574a56acf81481ab39bd37ea669a74c4d5eee61014f25677c3c31f4df351ef2"
+            "sha256": "c5659be1255467404a44650cfd648a38d3eb3e84914781ee463a4d63da0eed83"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Rotate a rectangle, an ellipse, a diamond, an arrow and a line by 0.3, 1.2 and pi/4 radians, the linear elements and one rectangle with strokeWidth 4 and a dashed or dotted stroke; draw shapes at opacity 30 and 60, one of them rotated as well; two overlapping shapes sharing a groupId, which changes nothing visible; and a rotated rectangle with a link; roughness 0 and solid fills throughout, and the scene envelope set by rectangles so the rotated ellipse, diamond and linear elements, whose reference bounds focused.rotated-shape-bounds.v1 isolates, lie inside it. Exported by default, at scale 2, without the scene background and with zero padding, so the rotation transform, per-element opacity, wide dashed and dotted strokes, the transparent-background export and the padding option are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -538,7 +538,7 @@
           "case": "focused.transform-opacity-groups.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/transform-opacity-groups/manifest.json",
-            "sha256": "c574a56acf81481ab39bd37ea669a74c4d5eee61014f25677c3c31f4df351ef2"
+            "sha256": "c5659be1255467404a44650cfd648a38d3eb3e84914781ee463a4d63da0eed83"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Rotate a rectangle, an ellipse, a diamond, an arrow and a line by 0.3, 1.2 and pi/4 radians, the linear elements and one rectangle with strokeWidth 4 and a dashed or dotted stroke; draw shapes at opacity 30 and 60, one of them rotated as well; two overlapping shapes sharing a groupId, which changes nothing visible; and a rotated rectangle with a link; roughness 0 and solid fills throughout, and the scene envelope set by rectangles so the rotated ellipse, diamond and linear elements, whose reference bounds focused.rotated-shape-bounds.v1 isolates, lie inside it. Exported by default, at scale 2, without the scene background and with zero padding, so the rotation transform, per-element opacity, wide dashed and dotted strokes, the transparent-background export and the padding option are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -553,7 +553,7 @@
           "case": "focused.freedraw.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/freedraw/manifest.json",
-            "sha256": "81f458dee36bcdc016a67e7e5b73b3461bc494e4c33d8af46cd70fb2e539a2bb"
+            "sha256": "466fafbc584b6408e251072212e0a834f265050da43ef6a411c87de1a0a85715"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Exercise the qualified Perfect Freehand path with one simulated-pressure stroke carrying a velocity signal and one recorded-pressure stroke with a pressure value per point. This assignment does not claim all format/profile sub-obligations."
@@ -568,7 +568,7 @@
           "case": "focused.rough-fillers-dashed-zigzag-line.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rough-fillers-dashed-zigzag-line/manifest.json",
-            "sha256": "8395c61da107fcaa37fa9922d66b6253eb7b84a27b6391eed34ed283530475c5"
+            "sha256": "ef6eb892699f165a04837b2949b53dd7cfc75d6724ab8529ab10329bb38a83ba"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Drive the ported Rough.js dashed and zigzag-line fillers (#137) through rectangle, ellipse, diamond and closed-line geometry at strokeWidth 2 with roughness 1, strokeWidth 1 with roughness 0 and strokeWidth 4 with roughness 1, with hachure and zigzag rows of the same shapes as controls, so hachureGap and fillWeight follow the element strokeWidth and every fill path matches the official export. This assignment does not claim all format/profile sub-obligations."
@@ -583,7 +583,7 @@
           "case": "focused.ellipse-diamond-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/ellipse-diamond-fills/manifest.json",
-            "sha256": "88b6a24b1580f10722c864e228a6e8daf3ed5593c1985c72cb631d4dea7c7bc2"
+            "sha256": "252552678b6ed6f9edf36317003a7e20950cfbaf00a4862bc533fb36de866d7d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Drive ellipse and diamond geometry through every Rough fill style and every stroke style, in both the default and dark-mode exports. This assignment does not claim all format/profile sub-obligations."
@@ -598,7 +598,7 @@
           "case": "focused.rough-fillers-dashed-zigzag-line.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rough-fillers-dashed-zigzag-line/manifest.json",
-            "sha256": "8395c61da107fcaa37fa9922d66b6253eb7b84a27b6391eed34ed283530475c5"
+            "sha256": "ef6eb892699f165a04837b2949b53dd7cfc75d6724ab8529ab10329bb38a83ba"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Drive the ported Rough.js dashed and zigzag-line fillers (#137) through rectangle, ellipse, diamond and closed-line geometry at strokeWidth 2 with roughness 1, strokeWidth 1 with roughness 0 and strokeWidth 4 with roughness 1, with hachure and zigzag rows of the same shapes as controls, so hachureGap and fillWeight follow the element strokeWidth and every fill path matches the official export. This assignment does not claim all format/profile sub-obligations."
@@ -613,7 +613,7 @@
           "case": "focused.ellipse-diamond-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/ellipse-diamond-fills/manifest.json",
-            "sha256": "88b6a24b1580f10722c864e228a6e8daf3ed5593c1985c72cb631d4dea7c7bc2"
+            "sha256": "252552678b6ed6f9edf36317003a7e20950cfbaf00a4862bc533fb36de866d7d"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Drive ellipse and diamond geometry through every Rough fill style and every stroke style, in both the default and dark-mode exports. This assignment does not claim all format/profile sub-obligations."
@@ -628,7 +628,7 @@
           "case": "focused.ellipse-diamond-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/ellipse-diamond-fills/manifest.json",
-            "sha256": "88b6a24b1580f10722c864e228a6e8daf3ed5593c1985c72cb631d4dea7c7bc2"
+            "sha256": "252552678b6ed6f9edf36317003a7e20950cfbaf00a4862bc533fb36de866d7d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Drive ellipse and diamond geometry through every Rough fill style and every stroke style, in both the default and dark-mode exports. This assignment does not claim all format/profile sub-obligations."
@@ -643,7 +643,7 @@
           "case": "focused.ellipse-diamond-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/ellipse-diamond-fills/manifest.json",
-            "sha256": "88b6a24b1580f10722c864e228a6e8daf3ed5593c1985c72cb631d4dea7c7bc2"
+            "sha256": "252552678b6ed6f9edf36317003a7e20950cfbaf00a4862bc533fb36de866d7d"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Drive ellipse and diamond geometry through every Rough fill style and every stroke style, in both the default and dark-mode exports. This assignment does not claim all format/profile sub-obligations."
@@ -658,7 +658,7 @@
           "case": "focused.rough-fillers-dashed-zigzag-line.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rough-fillers-dashed-zigzag-line/manifest.json",
-            "sha256": "8395c61da107fcaa37fa9922d66b6253eb7b84a27b6391eed34ed283530475c5"
+            "sha256": "ef6eb892699f165a04837b2949b53dd7cfc75d6724ab8529ab10329bb38a83ba"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Drive the ported Rough.js dashed and zigzag-line fillers (#137) through rectangle, ellipse, diamond and closed-line geometry at strokeWidth 2 with roughness 1, strokeWidth 1 with roughness 0 and strokeWidth 4 with roughness 1, with hachure and zigzag rows of the same shapes as controls, so hachureGap and fillWeight follow the element strokeWidth and every fill path matches the official export. This assignment does not claim all format/profile sub-obligations."
@@ -673,7 +673,7 @@
           "case": "focused.cjk-propagation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cjk-propagation/manifest.json",
-            "sha256": "042df8f83680ff325c9bf820aab9ef279fe0d82d86c03826eda2e7d470738c65"
+            "sha256": "097fa2f7e6f7a1363edb9841908df01ee4abda98d4ef0a37bedab178ed730a7c"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Propagate CJK text from Excalifont to the Xiaolai chain, including mixed Latin, digit and CJK runs in one text element. This assignment does not claim all format/profile sub-obligations."
@@ -688,7 +688,7 @@
           "case": "focused.font-families-virgil-lilita-comic.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/manifest.json",
-            "sha256": "dca12470b6d983cdc5d76daced74cc5437f09aaaf01b561d8c4a96ddb7275cfc"
+            "sha256": "1d3d799dfbb881524a2e310b8669260880700be2bfb7123171f63e710ce0d4fb"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Shape and position ordinary scene text in the three bundled families the corpus never evidenced, Virgil (fontFamily 1), Lilita One (7) and Comic Shanns (8), beside an Excalifont control: each family carries a two-line wrapped element at fontSize 20 and at 36 under every textAlign value, with the family's metadata line height (1.25, 1.15, 1.25), so the family metadata metrics that place each baseline, the stored width that anchors the centred and right-aligned lines, and the Reserved Font Name aliases the direct SVG embeds the Virgil and Lilita One subsets under (ExcalidrawRender-1, ExcalidrawRender-7) are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -703,7 +703,7 @@
           "case": "focused.emoji-fallback.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/emoji-fallback/manifest.json",
-            "sha256": "c33ce271d53b27a98bb09c2bcb7dc626dec1d8ffaea0c79202c07a420a8fc337"
+            "sha256": "b662086f7634ce0b2b98ad1e890e8b88964f08ced42b5dd8a4b2d02397fe990f"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Substitute emoji with the bundled Noto Emoji face as spec 8.3 requires: an Excalifont element carrying U+1F600 and U+1F389 and a Liberation Sans (fontFamily 9) element carrying U+1F600 each mix Latin with emoji no official chunk maps. The official export's font list ends in the local-only Segoe UI Emoji and draws whatever the browser's system-font fallback supplies for it; revision 1 shapes every emoji from the complete monochrome Noto Emoji 3.003 face, so the primary face and the replacement face both fall through to it, and reports one font.noto-emoji-substituted info per affected text occurrence rather than per scalar. No scalar belongs to the CJK table, so Xiaolai stays out of the fallback chain. This assignment does not claim all format/profile sub-obligations."
@@ -718,7 +718,7 @@
           "case": "focused.excalifont-text.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/excalifont-text/manifest.json",
-            "sha256": "5b5b333965a1ef6ef433cbed1e8d63bc8e2d53d1993963c796250fd115025f56"
+            "sha256": "cd66e2efe2f6e916d8e4dc8f65f58ec1a760fd67a86480dd6944953a5e1428ec"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Isolate wrapped Excalifont text in official selectable SVG and direct-canvas PNG. This assignment does not claim all format/profile sub-obligations."
@@ -733,7 +733,7 @@
           "case": "focused.helvetica-text.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/helvetica-text/manifest.json",
-            "sha256": "2705efad62fbcaa25c400551697e1c73832abcff6fc6db6a3985f1b770dc4d57"
+            "sha256": "d2c26a924fed61fc7e464991ff5b30daebe3b9a7c8c435f07f0829dccb90ea7d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Position Helvetica-family scene text by Excalidraw's metadata metrics while shaping it with the Liberation Sans substitute, across single- and multi-line elements and every textAlign value. This assignment does not claim all format/profile sub-obligations."
@@ -748,7 +748,7 @@
           "case": "focused.helvetica-text.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/helvetica-text/manifest.json",
-            "sha256": "2705efad62fbcaa25c400551697e1c73832abcff6fc6db6a3985f1b770dc4d57"
+            "sha256": "d2c26a924fed61fc7e464991ff5b30daebe3b9a7c8c435f07f0829dccb90ea7d"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Position Helvetica-family scene text by Excalidraw's metadata metrics while shaping it with the Liberation Sans substitute, across single- and multi-line elements and every textAlign value. This assignment does not claim all format/profile sub-obligations."
@@ -763,7 +763,7 @@
           "case": "focused.font-families-virgil-lilita-comic.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/manifest.json",
-            "sha256": "dca12470b6d983cdc5d76daced74cc5437f09aaaf01b561d8c4a96ddb7275cfc"
+            "sha256": "1d3d799dfbb881524a2e310b8669260880700be2bfb7123171f63e710ce0d4fb"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Shape and position ordinary scene text in the three bundled families the corpus never evidenced, Virgil (fontFamily 1), Lilita One (7) and Comic Shanns (8), beside an Excalifont control: each family carries a two-line wrapped element at fontSize 20 and at 36 under every textAlign value, with the family's metadata line height (1.25, 1.15, 1.25), so the family metadata metrics that place each baseline, the stored width that anchors the centred and right-aligned lines, and the Reserved Font Name aliases the direct SVG embeds the Virgil and Lilita One subsets under (ExcalidrawRender-1, ExcalidrawRender-7) are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -778,7 +778,7 @@
           "case": "focused.missing-glyph.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/missing-glyph/manifest.json",
-            "sha256": "b9d7476fc675550ce45ee1a2519977dca2811c84762deab0de02fcab8427ebcd"
+            "sha256": "5db2b12826401b9d052c8c28ffcd902bdf2300b963bf61da814a94d4a4341847"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Substitute scalars absent from the complete fallback chain as spec 8.3 requires: an Excalifont element and a Liberation Sans (fontFamily 9) element each mix Latin with Linear B U+10000 and U+10001 and the noncharacter U+10FFFF, which no bundled face maps. The official export has no bundled glyph for them and draws whatever the browser's system-font fallback supplies; revision 1 shapes the deterministic basic-Latin ? from Liberation Sans, so the primary face and the replacement face are both exercised, and reports one font.missing-glyph warning per scalar per occurrence in source order. No scalar belongs to the CJK table, so Xiaolai stays out of the fallback chain. This assignment does not claim all format/profile sub-obligations."
@@ -793,7 +793,7 @@
           "case": "focused.cjk-propagation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cjk-propagation/manifest.json",
-            "sha256": "042df8f83680ff325c9bf820aab9ef279fe0d82d86c03826eda2e7d470738c65"
+            "sha256": "097fa2f7e6f7a1363edb9841908df01ee4abda98d4ef0a37bedab178ed730a7c"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Propagate CJK text from Excalifont to the Xiaolai chain, including mixed Latin, digit and CJK runs in one text element. This assignment does not claim all format/profile sub-obligations."
@@ -808,7 +808,7 @@
           "case": "focused.font-families-virgil-lilita-comic.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/manifest.json",
-            "sha256": "dca12470b6d983cdc5d76daced74cc5437f09aaaf01b561d8c4a96ddb7275cfc"
+            "sha256": "1d3d799dfbb881524a2e310b8669260880700be2bfb7123171f63e710ce0d4fb"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Shape and position ordinary scene text in the three bundled families the corpus never evidenced, Virgil (fontFamily 1), Lilita One (7) and Comic Shanns (8), beside an Excalifont control: each family carries a two-line wrapped element at fontSize 20 and at 36 under every textAlign value, with the family's metadata line height (1.25, 1.15, 1.25), so the family metadata metrics that place each baseline, the stored width that anchors the centred and right-aligned lines, and the Reserved Font Name aliases the direct SVG embeds the Virgil and Lilita One subsets under (ExcalidrawRender-1, ExcalidrawRender-7) are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -823,7 +823,7 @@
           "case": "focused.font-families-virgil-lilita-comic.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/font-families-virgil-lilita-comic/manifest.json",
-            "sha256": "dca12470b6d983cdc5d76daced74cc5437f09aaaf01b561d8c4a96ddb7275cfc"
+            "sha256": "1d3d799dfbb881524a2e310b8669260880700be2bfb7123171f63e710ce0d4fb"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Shape and position ordinary scene text in the three bundled families the corpus never evidenced, Virgil (fontFamily 1), Lilita One (7) and Comic Shanns (8), beside an Excalifont control: each family carries a two-line wrapped element at fontSize 20 and at 36 under every textAlign value, with the family's metadata line height (1.25, 1.15, 1.25), so the family metadata metrics that place each baseline, the stored width that anchors the centred and right-aligned lines, and the Reserved Font Name aliases the direct SVG embeds the Virgil and Lilita One subsets under (ExcalidrawRender-1, ExcalidrawRender-7) are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -838,7 +838,7 @@
           "case": "focused.frame-clip-mask-sharing.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-clip-mask-sharing/manifest.json",
-            "sha256": "802fd9c8d6e5f8e023e0a1ccc843d79563484d761872bddc85c8d1778239d35e"
+            "sha256": "c429cca8edb749edd1b2270d5feb866ba59b057165e6c0161e2d23e01e7e8f1c"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Clip 196 filled rectangles with one named 580x580 frame in a whole-scene export: the frame clip is shared across every child, the frame outline is the rounded frame rectangle, and the frame name is the reference's synthesized Helvetica text element above the frame (#115). This assignment does not claim all format/profile sub-obligations."
@@ -853,7 +853,7 @@
           "case": "focused.dark-mode-frames.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/dark-mode-frames/manifest.json",
-            "sha256": "4698292b73431d7b433aedb842261aa4003f69552fc82669c58a64ecd79d870a"
+            "sha256": "9f63bb6b7f6d11bdd1d2de6a9f96db429cfd32914a7cc968e3d59818088528e3"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Export a named frame holding a half-opaque rectangle and two solid rectangles, a named magic frame holding one rectangle, and an unframed rectangle whose top edge fixes an integer scene origin above the frame names, in the default and dark-mode exports, so the dark-mode frame and magic-frame outline colours, the frame names' dark-mode colour, the frame clip and the frame outline opacity rule (#137) are observed against official evidence; every shape is a rectangle with roughness 0 so the comparison is not dominated by stroke rasterization, and the scene carries no image, so the images' dark-mode lowering is focused.dark-mode-images.v1. This assignment does not claim all format/profile sub-obligations."
@@ -868,7 +868,7 @@
           "case": "focused.frame-name-truncation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
-            "sha256": "09ab25e650a9d1d676a5b79871895870e0e8f844033369ee6b3add4247ab5d71"
+            "sha256": "484f1b4ad0d1ab37f7e9579f6b7a3ce6d798e39b4ede95f1c312d520bd5af3de"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Synthesize frame names as the reference's whole-scene export does: a 200-wide frame whose name is far wider than the frame, so the name is cut to the longest prefix that fits with a trailing ... when measured in Helvetica 14 (shaped by Liberation Sans), a frame whose name is the empty string, so its label is an empty text element rather than the null-name default Frame, a named outer frame and, nested inside it, a 120-wide inner frame whose long name is cut at its own width and whose label is not clipped by the outer frame while the rectangle it holds is clipped by the inner frame; every frame holds one roughness-0 rectangle. The frame labels' line box fixes a fractional scene origin (frame.y - 3 - 17.5), so the export extent is fractional too. This assignment does not claim all format/profile sub-obligations."
@@ -883,7 +883,7 @@
           "case": "focused.dark-mode-frames.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/dark-mode-frames/manifest.json",
-            "sha256": "4698292b73431d7b433aedb842261aa4003f69552fc82669c58a64ecd79d870a"
+            "sha256": "9f63bb6b7f6d11bdd1d2de6a9f96db429cfd32914a7cc968e3d59818088528e3"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Export a named frame holding a half-opaque rectangle and two solid rectangles, a named magic frame holding one rectangle, and an unframed rectangle whose top edge fixes an integer scene origin above the frame names, in the default and dark-mode exports, so the dark-mode frame and magic-frame outline colours, the frame names' dark-mode colour, the frame clip and the frame outline opacity rule (#137) are observed against official evidence; every shape is a rectangle with roughness 0 so the comparison is not dominated by stroke rasterization, and the scene carries no image, so the images' dark-mode lowering is focused.dark-mode-images.v1. This assignment does not claim all format/profile sub-obligations."
@@ -898,7 +898,7 @@
           "case": "focused.frame-name-truncation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
-            "sha256": "09ab25e650a9d1d676a5b79871895870e0e8f844033369ee6b3add4247ab5d71"
+            "sha256": "484f1b4ad0d1ab37f7e9579f6b7a3ce6d798e39b4ede95f1c312d520bd5af3de"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Synthesize frame names as the reference's whole-scene export does: a 200-wide frame whose name is far wider than the frame, so the name is cut to the longest prefix that fits with a trailing ... when measured in Helvetica 14 (shaped by Liberation Sans), a frame whose name is the empty string, so its label is an empty text element rather than the null-name default Frame, a named outer frame and, nested inside it, a 120-wide inner frame whose long name is cut at its own width and whose label is not clipped by the outer frame while the rectangle it holds is clipped by the inner frame; every frame holds one roughness-0 rectangle. The frame labels' line box fixes a fractional scene origin (frame.y - 3 - 17.5), so the export extent is fractional too. This assignment does not claim all format/profile sub-obligations."
@@ -913,7 +913,7 @@
           "case": "focused.frame-name-truncation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
-            "sha256": "09ab25e650a9d1d676a5b79871895870e0e8f844033369ee6b3add4247ab5d71"
+            "sha256": "484f1b4ad0d1ab37f7e9579f6b7a3ce6d798e39b4ede95f1c312d520bd5af3de"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Synthesize frame names as the reference's whole-scene export does: a 200-wide frame whose name is far wider than the frame, so the name is cut to the longest prefix that fits with a trailing ... when measured in Helvetica 14 (shaped by Liberation Sans), a frame whose name is the empty string, so its label is an empty text element rather than the null-name default Frame, a named outer frame and, nested inside it, a 120-wide inner frame whose long name is cut at its own width and whose label is not clipped by the outer frame while the rectangle it holds is clipped by the inner frame; every frame holds one roughness-0 rectangle. The frame labels' line box fixes a fractional scene origin (frame.y - 3 - 17.5), so the export extent is fractional too. This assignment does not claim all format/profile sub-obligations."
@@ -928,7 +928,7 @@
           "case": "focused.frame-name-truncation.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-name-truncation/manifest.json",
-            "sha256": "09ab25e650a9d1d676a5b79871895870e0e8f844033369ee6b3add4247ab5d71"
+            "sha256": "484f1b4ad0d1ab37f7e9579f6b7a3ce6d798e39b4ede95f1c312d520bd5af3de"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Synthesize frame names as the reference's whole-scene export does: a 200-wide frame whose name is far wider than the frame, so the name is cut to the longest prefix that fits with a trailing ... when measured in Helvetica 14 (shaped by Liberation Sans), a frame whose name is the empty string, so its label is an empty text element rather than the null-name default Frame, a named outer frame and, nested inside it, a 120-wide inner frame whose long name is cut at its own width and whose label is not clipped by the outer frame while the rectangle it holds is clipped by the inner frame; every frame holds one roughness-0 rectangle. The frame labels' line box fixes a fractional scene origin (frame.y - 3 - 17.5), so the export extent is fractional too. This assignment does not claim all format/profile sub-obligations."
@@ -943,7 +943,7 @@
           "case": "focused.frame-clip-mask-sharing.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/frame-clip-mask-sharing/manifest.json",
-            "sha256": "802fd9c8d6e5f8e023e0a1ccc843d79563484d761872bddc85c8d1778239d35e"
+            "sha256": "c429cca8edb749edd1b2270d5feb866ba59b057165e6c0161e2d23e01e7e8f1c"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Clip 196 filled rectangles with one named 580x580 frame in a whole-scene export: the frame clip is shared across every child, the frame outline is the rounded frame rectangle, and the frame name is the reference's synthesized Helvetica text element above the frame (#115). This assignment does not claim all format/profile sub-obligations."
@@ -958,7 +958,7 @@
           "case": "focused.dark-mode-frames.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/dark-mode-frames/manifest.json",
-            "sha256": "4698292b73431d7b433aedb842261aa4003f69552fc82669c58a64ecd79d870a"
+            "sha256": "9f63bb6b7f6d11bdd1d2de6a9f96db429cfd32914a7cc968e3d59818088528e3"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Export a named frame holding a half-opaque rectangle and two solid rectangles, a named magic frame holding one rectangle, and an unframed rectangle whose top edge fixes an integer scene origin above the frame names, in the default and dark-mode exports, so the dark-mode frame and magic-frame outline colours, the frame names' dark-mode colour, the frame clip and the frame outline opacity rule (#137) are observed against official evidence; every shape is a rectangle with roughness 0 so the comparison is not dominated by stroke rasterization, and the scene carries no image, so the images' dark-mode lowering is focused.dark-mode-images.v1. This assignment does not claim all format/profile sub-obligations."
@@ -973,7 +973,7 @@
           "case": "focused.freedraw-loop-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/freedraw-loop-fills/manifest.json",
-            "sha256": "da3b54cc6e98efa8cc4328d6ac8e82bd3927d4a53b224bffdd8f2df1c713bfd2"
+            "sha256": "9789a4f7301a98ab57037f79ea1fe285e4b145cca355eac96d668a6d88376b36"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Fill a closed freedraw loop with a solid and a hachure background at roughness 2, and with a hachure background at roughness 1 and 0, each at its own seed, so the reference's Rough.js curve fill of a freedraw loop \u2014 drawn with the element's seed and adjusted roughness after the curve outline it discards \u2014 is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -988,7 +988,7 @@
           "case": "focused.freedraw-loop-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/freedraw-loop-fills/manifest.json",
-            "sha256": "da3b54cc6e98efa8cc4328d6ac8e82bd3927d4a53b224bffdd8f2df1c713bfd2"
+            "sha256": "9789a4f7301a98ab57037f79ea1fe285e4b145cca355eac96d668a6d88376b36"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Fill a closed freedraw loop with a solid and a hachure background at roughness 2, and with a hachure background at roughness 1 and 0, each at its own seed, so the reference's Rough.js curve fill of a freedraw loop \u2014 drawn with the element's seed and adjusted roughness after the curve outline it discards \u2014 is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1003,7 +1003,7 @@
           "case": "focused.freedraw-loop-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/freedraw-loop-fills/manifest.json",
-            "sha256": "da3b54cc6e98efa8cc4328d6ac8e82bd3927d4a53b224bffdd8f2df1c713bfd2"
+            "sha256": "9789a4f7301a98ab57037f79ea1fe285e4b145cca355eac96d668a6d88376b36"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Fill a closed freedraw loop with a solid and a hachure background at roughness 2, and with a hachure background at roughness 1 and 0, each at its own seed, so the reference's Rough.js curve fill of a freedraw loop \u2014 drawn with the element's seed and adjusted roughness after the curve outline it discards \u2014 is observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1018,7 +1018,7 @@
           "case": "focused.freedraw.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/freedraw/manifest.json",
-            "sha256": "81f458dee36bcdc016a67e7e5b73b3461bc494e4c33d8af46cd70fb2e539a2bb"
+            "sha256": "466fafbc584b6408e251072212e0a834f265050da43ef6a411c87de1a0a85715"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Exercise the qualified Perfect Freehand path with one simulated-pressure stroke carrying a velocity signal and one recorded-pressure stroke with a pressure value per point. This assignment does not claim all format/profile sub-obligations."
@@ -1033,7 +1033,7 @@
           "case": "focused.freedraw.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/freedraw/manifest.json",
-            "sha256": "81f458dee36bcdc016a67e7e5b73b3461bc494e4c33d8af46cd70fb2e539a2bb"
+            "sha256": "466fafbc584b6408e251072212e0a834f265050da43ef6a411c87de1a0a85715"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Exercise the qualified Perfect Freehand path with one simulated-pressure stroke carrying a velocity signal and one recorded-pressure stroke with a pressure value per point. This assignment does not claim all format/profile sub-obligations."
@@ -1048,7 +1048,7 @@
           "case": "focused.image-codecs.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
-            "sha256": "626881815034ff1f380a0797417a7ea65a29322c2c5580887c7fe42a2fd71622"
+            "sha256": "114eb46c220bfafefe976e26ad943c5b534f21b34c1cd43e1664dd38231fa1dd"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Decode one embedded payload per accepted image family plus a sanitized nested SVG, and cover crop and both flip axes. This assignment does not claim all format/profile sub-obligations."
@@ -1063,7 +1063,7 @@
           "case": "focused.image-codecs.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
-            "sha256": "626881815034ff1f380a0797417a7ea65a29322c2c5580887c7fe42a2fd71622"
+            "sha256": "114eb46c220bfafefe976e26ad943c5b534f21b34c1cd43e1664dd38231fa1dd"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Decode one embedded payload per accepted image family plus a sanitized nested SVG, and cover crop and both flip axes. This assignment does not claim all format/profile sub-obligations."
@@ -1078,7 +1078,7 @@
           "case": "focused.dark-mode-images.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/dark-mode-images/manifest.json",
-            "sha256": "ec392637a8993aa81b255324c3b8f9cf5536010d8f987e8a18a7f7354b8c7e2e"
+            "sha256": "f53af009b1840e06ae4cebaff5e27086cdceaced24b26ee4327b72e9d94ff24f"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Export a raster PNG image and a nested SVG image, each 96x96 at an integer position with an integer scene origin, in the default and dark-mode exports, so the per-format dark-mode lowering of images (#130) is observed against official evidence: the reference canvas leaves raster pixels alone and inverts the nested SVG with the theme filter, while the reference SVG puts the image filter chain on the raster image's use and the root filter alone on the nested SVG's, which the renderer's defined filters must reproduce, the saturate step as an explicit matrix (#161). The raster payload is the project-authored 96x96 ramp PNG so the raster maps onto its element one to one; the nested SVG is the corpus's project-authored four-quadrant document with a diagonal stroke. The scene carries no frame and no text. This assignment does not claim all format/profile sub-obligations."
@@ -1093,7 +1093,7 @@
           "case": "focused.dark-mode-images.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/dark-mode-images/manifest.json",
-            "sha256": "ec392637a8993aa81b255324c3b8f9cf5536010d8f987e8a18a7f7354b8c7e2e"
+            "sha256": "f53af009b1840e06ae4cebaff5e27086cdceaced24b26ee4327b72e9d94ff24f"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Export a raster PNG image and a nested SVG image, each 96x96 at an integer position with an integer scene origin, in the default and dark-mode exports, so the per-format dark-mode lowering of images (#130) is observed against official evidence: the reference canvas leaves raster pixels alone and inverts the nested SVG with the theme filter, while the reference SVG puts the image filter chain on the raster image's use and the root filter alone on the nested SVG's, which the renderer's defined filters must reproduce, the saturate step as an explicit matrix (#161). The raster payload is the project-authored 96x96 ramp PNG so the raster maps onto its element one to one; the nested SVG is the corpus's project-authored four-quadrant document with a diagonal stroke. The scene carries no frame and no text. This assignment does not claim all format/profile sub-obligations."
@@ -1108,7 +1108,7 @@
           "case": "focused.rounded-image.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rounded-image/manifest.json",
-            "sha256": "585f967cf981c0bbf56ce7f3b061d95242dca6c4e4bd0650196c00877176abef"
+            "sha256": "03c8d0b1b6372639a9212ead62775e474cefd586fb0a0fa743d6b13574f00dcc"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Clip an image to its roundness corner radius (#129) as a plain rounded image, rounded and flipped on each axis, and rounded and rotated 30 degrees, beside a fractional 96.5x63.25 image with and without roundness and an unrounded 96x96 control, so the integer viewport rounding (#131) and the pixel-centre edge coverage of an axis-aligned image (#162) are observed with and without the corner clip; every element sits at an integer scene position and the scene origin is integer, so only the fractional sizes place an image edge between pixels. Every source maps onto its element one to one: a project-authored 96x96 PNG for the 96x96 elements and a 97x64 PNG for the 96.5x63.25 ones, each a linear two-axis ramp (red rising left to right, green rising top to bottom, blue constant) so that a flip or rotation shows in the ramp's direction while any difference between the two rasterizers' bilinear resampling footprints is invisible and the comparison is about edges, clips and orientation. The scale-2 variant doubles the raster. The rounded and cropped image is focused.rounded-image-crop.v1. This assignment does not claim all format/profile sub-obligations."
@@ -1123,7 +1123,7 @@
           "case": "focused.image-codecs.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
-            "sha256": "626881815034ff1f380a0797417a7ea65a29322c2c5580887c7fe42a2fd71622"
+            "sha256": "114eb46c220bfafefe976e26ad943c5b534f21b34c1cd43e1664dd38231fa1dd"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Decode one embedded payload per accepted image family plus a sanitized nested SVG, and cover crop and both flip axes. This assignment does not claim all format/profile sub-obligations."
@@ -1138,7 +1138,7 @@
           "case": "focused.rounded-image.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rounded-image/manifest.json",
-            "sha256": "585f967cf981c0bbf56ce7f3b061d95242dca6c4e4bd0650196c00877176abef"
+            "sha256": "03c8d0b1b6372639a9212ead62775e474cefd586fb0a0fa743d6b13574f00dcc"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Clip an image to its roundness corner radius (#129) as a plain rounded image, rounded and flipped on each axis, and rounded and rotated 30 degrees, beside a fractional 96.5x63.25 image with and without roundness and an unrounded 96x96 control, so the integer viewport rounding (#131) and the pixel-centre edge coverage of an axis-aligned image (#162) are observed with and without the corner clip; every element sits at an integer scene position and the scene origin is integer, so only the fractional sizes place an image edge between pixels. Every source maps onto its element one to one: a project-authored 96x96 PNG for the 96x96 elements and a 97x64 PNG for the 96.5x63.25 ones, each a linear two-axis ramp (red rising left to right, green rising top to bottom, blue constant) so that a flip or rotation shows in the ramp's direction while any difference between the two rasterizers' bilinear resampling footprints is invisible and the comparison is about edges, clips and orientation. The scale-2 variant doubles the raster. The rounded and cropped image is focused.rounded-image-crop.v1. This assignment does not claim all format/profile sub-obligations."
@@ -1153,7 +1153,7 @@
           "case": "focused.image-codecs.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
-            "sha256": "626881815034ff1f380a0797417a7ea65a29322c2c5580887c7fe42a2fd71622"
+            "sha256": "114eb46c220bfafefe976e26ad943c5b534f21b34c1cd43e1664dd38231fa1dd"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Decode one embedded payload per accepted image family plus a sanitized nested SVG, and cover crop and both flip axes. This assignment does not claim all format/profile sub-obligations."
@@ -1168,7 +1168,7 @@
           "case": "focused.image-codecs.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
-            "sha256": "626881815034ff1f380a0797417a7ea65a29322c2c5580887c7fe42a2fd71622"
+            "sha256": "114eb46c220bfafefe976e26ad943c5b534f21b34c1cd43e1664dd38231fa1dd"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Decode one embedded payload per accepted image family plus a sanitized nested SVG, and cover crop and both flip axes. This assignment does not claim all format/profile sub-obligations."
@@ -1183,7 +1183,7 @@
           "case": "focused.image-codecs.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
-            "sha256": "626881815034ff1f380a0797417a7ea65a29322c2c5580887c7fe42a2fd71622"
+            "sha256": "114eb46c220bfafefe976e26ad943c5b534f21b34c1cd43e1664dd38231fa1dd"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Decode one embedded payload per accepted image family plus a sanitized nested SVG, and cover crop and both flip axes. This assignment does not claim all format/profile sub-obligations."
@@ -1198,7 +1198,7 @@
           "case": "focused.image-codecs.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
-            "sha256": "626881815034ff1f380a0797417a7ea65a29322c2c5580887c7fe42a2fd71622"
+            "sha256": "114eb46c220bfafefe976e26ad943c5b534f21b34c1cd43e1664dd38231fa1dd"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Decode one embedded payload per accepted image family plus a sanitized nested SVG, and cover crop and both flip axes. This assignment does not claim all format/profile sub-obligations."
@@ -1213,7 +1213,7 @@
           "case": "focused.image-codecs.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
-            "sha256": "626881815034ff1f380a0797417a7ea65a29322c2c5580887c7fe42a2fd71622"
+            "sha256": "114eb46c220bfafefe976e26ad943c5b534f21b34c1cd43e1664dd38231fa1dd"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Decode one embedded payload per accepted image family plus a sanitized nested SVG, and cover crop and both flip axes. This assignment does not claim all format/profile sub-obligations."
@@ -1228,7 +1228,7 @@
           "case": "focused.rounded-image.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rounded-image/manifest.json",
-            "sha256": "585f967cf981c0bbf56ce7f3b061d95242dca6c4e4bd0650196c00877176abef"
+            "sha256": "03c8d0b1b6372639a9212ead62775e474cefd586fb0a0fa743d6b13574f00dcc"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Clip an image to its roundness corner radius (#129) as a plain rounded image, rounded and flipped on each axis, and rounded and rotated 30 degrees, beside a fractional 96.5x63.25 image with and without roundness and an unrounded 96x96 control, so the integer viewport rounding (#131) and the pixel-centre edge coverage of an axis-aligned image (#162) are observed with and without the corner clip; every element sits at an integer scene position and the scene origin is integer, so only the fractional sizes place an image edge between pixels. Every source maps onto its element one to one: a project-authored 96x96 PNG for the 96x96 elements and a 97x64 PNG for the 96.5x63.25 ones, each a linear two-axis ramp (red rising left to right, green rising top to bottom, blue constant) so that a flip or rotation shows in the ramp's direction while any difference between the two rasterizers' bilinear resampling footprints is invisible and the comparison is about edges, clips and orientation. The scale-2 variant doubles the raster. The rounded and cropped image is focused.rounded-image-crop.v1. This assignment does not claim all format/profile sub-obligations."
@@ -1243,7 +1243,7 @@
           "case": "focused.rounded-image-crop.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rounded-image-crop/manifest.json",
-            "sha256": "531ee9321b998cb169bebb1aea833bd19d72f92f3d5f1f73cebd44335d757ee0"
+            "sha256": "6f4204e792a7fb3e271adbf6e97507d046dcc9d913e46753c7fc0b2705bcc5ae"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Clip a cropped image to its roundness corner radius (#129): the project-authored 96x96 ramp PNG cropped to its centre 48x48 and drawn at 48x48 with roundness type 3, so the crop maps onto the element one to one, beside the same crop without roundness as the control. The reference canvas clips the cropped image at the element's rounded rectangle, which revision 1 follows in every format; the reference SVG declares the same clipPath but neither offsets its rectangle by the crop nor sets clip-path as a real attribute (spec 8.2), so its own clip is misplaced by the normalized crop offset under a viewer that honours the namespaced attribute and absent under one that does not, a reference authority divergence the registered-case SVG harness pins (#163). This assignment does not claim all format/profile sub-obligations."
@@ -1258,7 +1258,7 @@
           "case": "focused.rounded-image.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rounded-image/manifest.json",
-            "sha256": "585f967cf981c0bbf56ce7f3b061d95242dca6c4e4bd0650196c00877176abef"
+            "sha256": "03c8d0b1b6372639a9212ead62775e474cefd586fb0a0fa743d6b13574f00dcc"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Clip an image to its roundness corner radius (#129) as a plain rounded image, rounded and flipped on each axis, and rounded and rotated 30 degrees, beside a fractional 96.5x63.25 image with and without roundness and an unrounded 96x96 control, so the integer viewport rounding (#131) and the pixel-centre edge coverage of an axis-aligned image (#162) are observed with and without the corner clip; every element sits at an integer scene position and the scene origin is integer, so only the fractional sizes place an image edge between pixels. Every source maps onto its element one to one: a project-authored 96x96 PNG for the 96x96 elements and a 97x64 PNG for the 96.5x63.25 ones, each a linear two-axis ramp (red rising left to right, green rising top to bottom, blue constant) so that a flip or rotation shows in the ramp's direction while any difference between the two rasterizers' bilinear resampling footprints is invisible and the comparison is about edges, clips and orientation. The scale-2 variant doubles the raster. The rounded and cropped image is focused.rounded-image-crop.v1. This assignment does not claim all format/profile sub-obligations."
@@ -1273,7 +1273,7 @@
           "case": "focused.rounded-image.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rounded-image/manifest.json",
-            "sha256": "585f967cf981c0bbf56ce7f3b061d95242dca6c4e4bd0650196c00877176abef"
+            "sha256": "03c8d0b1b6372639a9212ead62775e474cefd586fb0a0fa743d6b13574f00dcc"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Clip an image to its roundness corner radius (#129) as a plain rounded image, rounded and flipped on each axis, and rounded and rotated 30 degrees, beside a fractional 96.5x63.25 image with and without roundness and an unrounded 96x96 control, so the integer viewport rounding (#131) and the pixel-centre edge coverage of an axis-aligned image (#162) are observed with and without the corner clip; every element sits at an integer scene position and the scene origin is integer, so only the fractional sizes place an image edge between pixels. Every source maps onto its element one to one: a project-authored 96x96 PNG for the 96x96 elements and a 97x64 PNG for the 96.5x63.25 ones, each a linear two-axis ramp (red rising left to right, green rising top to bottom, blue constant) so that a flip or rotation shows in the ramp's direction while any difference between the two rasterizers' bilinear resampling footprints is invisible and the comparison is about edges, clips and orientation. The scale-2 variant doubles the raster. The rounded and cropped image is focused.rounded-image-crop.v1. This assignment does not claim all format/profile sub-obligations."
@@ -1288,7 +1288,7 @@
           "case": "focused.image-codecs.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/image-codecs/manifest.json",
-            "sha256": "626881815034ff1f380a0797417a7ea65a29322c2c5580887c7fe42a2fd71622"
+            "sha256": "114eb46c220bfafefe976e26ad943c5b534f21b34c1cd43e1664dd38231fa1dd"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Decode one embedded payload per accepted image family plus a sanitized nested SVG, and cover crop and both flip axes. This assignment does not claim all format/profile sub-obligations."
@@ -1303,7 +1303,7 @@
           "case": "focused.legacy-stroke-sharpness.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/legacy-stroke-sharpness/manifest.json",
-            "sha256": "d32fe4eca2d617f6441571360e4c49513f1afea8e167cf218540d5bf019cd8cd"
+            "sha256": "57cab646369d283d95a9faf91d5f764f5228a52da8e38fec88fbabafd1659ed8"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Migrate a pre-roundness scene as the pinned restore does (#128): rectangles, diamonds, ellipses, three-point arrows, four-point lines and freedraw strokes each carry strokeSharpness round or sharp with roundness null and no record, so round rounds the rectangle and diamond corners and curves the arrow and line while sharp and the roundness-ignoring ellipse and freedraw stay as drawn; one text element carries only the legacy font \"20px Virgil\" with no fontSize or fontFamily (#132), so its size and family come from the migrated string. This assignment does not claim all format/profile sub-obligations."
@@ -1318,7 +1318,7 @@
           "case": "focused.legacy-stroke-sharpness.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/legacy-stroke-sharpness/manifest.json",
-            "sha256": "d32fe4eca2d617f6441571360e4c49513f1afea8e167cf218540d5bf019cd8cd"
+            "sha256": "57cab646369d283d95a9faf91d5f764f5228a52da8e38fec88fbabafd1659ed8"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Migrate a pre-roundness scene as the pinned restore does (#128): rectangles, diamonds, ellipses, three-point arrows, four-point lines and freedraw strokes each carry strokeSharpness round or sharp with roundness null and no record, so round rounds the rectangle and diamond corners and curves the arrow and line while sharp and the roundness-ignoring ellipse and freedraw stay as drawn; one text element carries only the legacy font \"20px Virgil\" with no fontSize or fontFamily (#132), so its size and family come from the migrated string. This assignment does not claim all format/profile sub-obligations."
@@ -1333,7 +1333,7 @@
           "case": "focused.embeddable-links.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/embeddable-links/manifest.json",
-            "sha256": "e5c587c0bab9781a21e7ed87871d55e19a479cd7e96f2e624d24f625aa996299"
+            "sha256": "4e3891c066ff38ea1defe488c86aed15c05ed2f5a52d9bf28d2af437db9e0fe0"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Render the offline embeddable shell with its label and cover admitted and rejected link schemes across element kinds. This assignment does not claim all format/profile sub-obligations."
@@ -1348,7 +1348,7 @@
           "case": "focused.embeddable-links.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/embeddable-links/manifest.json",
-            "sha256": "e5c587c0bab9781a21e7ed87871d55e19a479cd7e96f2e624d24f625aa996299"
+            "sha256": "4e3891c066ff38ea1defe488c86aed15c05ed2f5a52d9bf28d2af437db9e0fe0"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Render the offline embeddable shell with its label and cover admitted and rejected link schemes across element kinds. This assignment does not claim all format/profile sub-obligations."
@@ -1363,7 +1363,7 @@
           "case": "focused.rectangle-outline.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rectangle-outline/manifest.json",
-            "sha256": "a7946661383309b971cf1eeb9b48c9aa1cbe1fc747d11ac49c1d27345b7d012d"
+            "sha256": "8253b75a67943ebf5a449772195fdfd3d81d66dc1c576f0ecbb64901c64c906b"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Isolate one unrounded, transparent-fill Rough rectangle outline in official SVG and direct-canvas PNG. This assignment does not claim all format/profile sub-obligations."
@@ -1378,7 +1378,7 @@
           "case": "focused.rectangle-outline.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rectangle-outline/manifest.json",
-            "sha256": "a7946661383309b971cf1eeb9b48c9aa1cbe1fc747d11ac49c1d27345b7d012d"
+            "sha256": "8253b75a67943ebf5a449772195fdfd3d81d66dc1c576f0ecbb64901c64c906b"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Isolate one unrounded, transparent-fill Rough rectangle outline in official SVG and direct-canvas PNG. This assignment does not claim all format/profile sub-obligations."
@@ -1393,7 +1393,7 @@
           "case": "focused.rectangle-outline.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rectangle-outline/manifest.json",
-            "sha256": "a7946661383309b971cf1eeb9b48c9aa1cbe1fc747d11ac49c1d27345b7d012d"
+            "sha256": "8253b75a67943ebf5a449772195fdfd3d81d66dc1c576f0ecbb64901c64c906b"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Isolate one unrounded, transparent-fill Rough rectangle outline in official SVG and direct-canvas PNG. This assignment does not claim all format/profile sub-obligations."
@@ -1408,7 +1408,7 @@
           "case": "focused.cartoonist-roughness.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cartoonist-roughness/manifest.json",
-            "sha256": "4babb797396321e09891d0cf2bb88758aa332842e8167641b97d95ac3274ee11"
+            "sha256": "5d76dee8591d85b37e2b2dfef95112f94233b16e06396c42d2e059484432aeaf"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Draw rectangles, ellipses and diamonds with hachure, solid, cross-hatch and zigzag fills at strokeWidth 2 and again at strokeWidth 1, a multi-point line, an arrow with a triangle start and an arrow end, and a rounded closed line with a hachure fill (#158), all at roughness 2 and with the scene envelope set by the box-bounded shapes, so the cartoonist stroke passes, the unpreserved vertices of the outlines and of the pattern fills, and the arrowhead roughness clamp are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1423,7 +1423,7 @@
           "case": "focused.cartoonist-roughness.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cartoonist-roughness/manifest.json",
-            "sha256": "4babb797396321e09891d0cf2bb88758aa332842e8167641b97d95ac3274ee11"
+            "sha256": "5d76dee8591d85b37e2b2dfef95112f94233b16e06396c42d2e059484432aeaf"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw rectangles, ellipses and diamonds with hachure, solid, cross-hatch and zigzag fills at strokeWidth 2 and again at strokeWidth 1, a multi-point line, an arrow with a triangle start and an arrow end, and a rounded closed line with a hachure fill (#158), all at roughness 2 and with the scene envelope set by the box-bounded shapes, so the cartoonist stroke passes, the unpreserved vertices of the outlines and of the pattern fills, and the arrowhead roughness clamp are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1438,7 +1438,7 @@
           "case": "focused.cartoonist-roughness.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/cartoonist-roughness/manifest.json",
-            "sha256": "4babb797396321e09891d0cf2bb88758aa332842e8167641b97d95ac3274ee11"
+            "sha256": "5d76dee8591d85b37e2b2dfef95112f94233b16e06396c42d2e059484432aeaf"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw rectangles, ellipses and diamonds with hachure, solid, cross-hatch and zigzag fills at strokeWidth 2 and again at strokeWidth 1, a multi-point line, an arrow with a triangle start and an arrow end, and a rounded closed line with a hachure fill (#158), all at roughness 2 and with the scene envelope set by the box-bounded shapes, so the cartoonist stroke passes, the unpreserved vertices of the outlines and of the pattern fills, and the arrowhead roughness clamp are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1453,7 +1453,7 @@
           "case": "focused.roundness-records.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/roundness-records/manifest.json",
-            "sha256": "55df2c6f5d94a926defdb7797f9e4c13d0addec5f9d864df361d99048d12a7cd"
+            "sha256": "c6c42067cc07986a6f0e4004557986086a9a1f2a1aa249509669d248e653753d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw rectangles and diamonds carrying every roundness record the reference reads \u2014 the adaptive record with its default radius, with an explicit value of 8 and of 64, and the legacy proportional record \u2014 at 80x40, below the adaptive cutoff, and at 160x136 and 260x136, where the default radius fixes at 32 while an explicit 64 and the legacy record stay proportional and a wide diamond fixes only its vertical radius; a curved multi-point line and arrow with the type 2 record beside straight controls; and an ellipse carrying a record the reference ignores; solid and hachure fills at strokeWidth 1 and 2, roughness 1 throughout, so getCornerRadius and the curve dispatch are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1468,7 +1468,7 @@
           "case": "focused.roundness-records.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/roundness-records/manifest.json",
-            "sha256": "55df2c6f5d94a926defdb7797f9e4c13d0addec5f9d864df361d99048d12a7cd"
+            "sha256": "c6c42067cc07986a6f0e4004557986086a9a1f2a1aa249509669d248e653753d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw rectangles and diamonds carrying every roundness record the reference reads \u2014 the adaptive record with its default radius, with an explicit value of 8 and of 64, and the legacy proportional record \u2014 at 80x40, below the adaptive cutoff, and at 160x136 and 260x136, where the default radius fixes at 32 while an explicit 64 and the legacy record stay proportional and a wide diamond fixes only its vertical radius; a curved multi-point line and arrow with the type 2 record beside straight controls; and an ellipse carrying a record the reference ignores; solid and hachure fills at strokeWidth 1 and 2, roughness 1 throughout, so getCornerRadius and the curve dispatch are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1483,7 +1483,7 @@
           "case": "focused.roundness-records.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/roundness-records/manifest.json",
-            "sha256": "55df2c6f5d94a926defdb7797f9e4c13d0addec5f9d864df361d99048d12a7cd"
+            "sha256": "c6c42067cc07986a6f0e4004557986086a9a1f2a1aa249509669d248e653753d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw rectangles and diamonds carrying every roundness record the reference reads \u2014 the adaptive record with its default radius, with an explicit value of 8 and of 64, and the legacy proportional record \u2014 at 80x40, below the adaptive cutoff, and at 160x136 and 260x136, where the default radius fixes at 32 while an explicit 64 and the legacy record stay proportional and a wide diamond fixes only its vertical radius; a curved multi-point line and arrow with the type 2 record beside straight controls; and an ellipse carrying a record the reference ignores; solid and hachure fills at strokeWidth 1 and 2, roughness 1 throughout, so getCornerRadius and the curve dispatch are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1498,7 +1498,7 @@
           "case": "focused.roundness-records.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/roundness-records/manifest.json",
-            "sha256": "55df2c6f5d94a926defdb7797f9e4c13d0addec5f9d864df361d99048d12a7cd"
+            "sha256": "c6c42067cc07986a6f0e4004557986086a9a1f2a1aa249509669d248e653753d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw rectangles and diamonds carrying every roundness record the reference reads \u2014 the adaptive record with its default radius, with an explicit value of 8 and of 64, and the legacy proportional record \u2014 at 80x40, below the adaptive cutoff, and at 160x136 and 260x136, where the default radius fixes at 32 while an explicit 64 and the legacy record stay proportional and a wide diamond fixes only its vertical radius; a curved multi-point line and arrow with the type 2 record beside straight controls; and an ellipse carrying a record the reference ignores; solid and hachure fills at strokeWidth 1 and 2, roughness 1 throughout, so getCornerRadius and the curve dispatch are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1513,7 +1513,7 @@
           "case": "focused.roundness-records.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/roundness-records/manifest.json",
-            "sha256": "55df2c6f5d94a926defdb7797f9e4c13d0addec5f9d864df361d99048d12a7cd"
+            "sha256": "c6c42067cc07986a6f0e4004557986086a9a1f2a1aa249509669d248e653753d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Draw rectangles and diamonds carrying every roundness record the reference reads \u2014 the adaptive record with its default radius, with an explicit value of 8 and of 64, and the legacy proportional record \u2014 at 80x40, below the adaptive cutoff, and at 160x136 and 260x136, where the default radius fixes at 32 while an explicit 64 and the legacy record stay proportional and a wide diamond fixes only its vertical radius; a curved multi-point line and arrow with the type 2 record beside straight controls; and an ellipse carrying a record the reference ignores; solid and hachure fills at strokeWidth 1 and 2, roughness 1 throughout, so getCornerRadius and the curve dispatch are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1528,7 +1528,7 @@
           "case": "focused.ellipse-diamond-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/ellipse-diamond-fills/manifest.json",
-            "sha256": "88b6a24b1580f10722c864e228a6e8daf3ed5593c1985c72cb631d4dea7c7bc2"
+            "sha256": "252552678b6ed6f9edf36317003a7e20950cfbaf00a4862bc533fb36de866d7d"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Drive ellipse and diamond geometry through every Rough fill style and every stroke style, in both the default and dark-mode exports. This assignment does not claim all format/profile sub-obligations."
@@ -1543,7 +1543,7 @@
           "case": "focused.ellipse-diamond-fills.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/ellipse-diamond-fills/manifest.json",
-            "sha256": "88b6a24b1580f10722c864e228a6e8daf3ed5593c1985c72cb631d4dea7c7bc2"
+            "sha256": "252552678b6ed6f9edf36317003a7e20950cfbaf00a4862bc533fb36de866d7d"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Drive ellipse and diamond geometry through every Rough fill style and every stroke style, in both the default and dark-mode exports. This assignment does not claim all format/profile sub-obligations."
@@ -1558,7 +1558,7 @@
           "case": "focused.transform-opacity-groups.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/transform-opacity-groups/manifest.json",
-            "sha256": "c574a56acf81481ab39bd37ea669a74c4d5eee61014f25677c3c31f4df351ef2"
+            "sha256": "c5659be1255467404a44650cfd648a38d3eb3e84914781ee463a4d63da0eed83"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Rotate a rectangle, an ellipse, a diamond, an arrow and a line by 0.3, 1.2 and pi/4 radians, the linear elements and one rectangle with strokeWidth 4 and a dashed or dotted stroke; draw shapes at opacity 30 and 60, one of them rotated as well; two overlapping shapes sharing a groupId, which changes nothing visible; and a rotated rectangle with a link; roughness 0 and solid fills throughout, and the scene envelope set by rectangles so the rotated ellipse, diamond and linear elements, whose reference bounds focused.rotated-shape-bounds.v1 isolates, lie inside it. Exported by default, at scale 2, without the scene background and with zero padding, so the rotation transform, per-element opacity, wide dashed and dotted strokes, the transparent-background export and the padding option are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1573,7 +1573,7 @@
           "case": "focused.text-alignment-vertical.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/text-alignment-vertical/manifest.json",
-            "sha256": "cb35e37dc053c44be2dca9609f4adc0e89395c7f3760efa3ada14607883abc99"
+            "sha256": "b5b6f2e572eef1b2ee95cac12fa40351683ec9a261b289b6da90fbb21654cb03"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Place text by its stored fields as the static export does: three standalone Excalifont elements with autoResize false and a width wider than either stored line carry textAlign left, center and right with verticalAlign top, middle and bottom, the middle and bottom ones in a box taller than their two lines, so the export lays out the stored wrapped text (not a re-wrap of originalText to the width), anchors each line on the stored width, and ignores verticalAlign for standalone text; three roughness-0 containers, a rectangle, an ellipse and a diamond, each carry a bound label whose stored coordinates are where the editor's verticalAlign top, middle and bottom and textAlign left, right and center placed it, so a shape container's label paints at its stored coordinates rather than being re-derived from the container. This assignment does not claim all format/profile sub-obligations."
@@ -1588,7 +1588,7 @@
           "case": "focused.bidi-text.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bidi-text/manifest.json",
-            "sha256": "b3fae2e67b6b6bd9f797772f20506f4b801c91a968f1627cb3b49c3500df346a"
+            "sha256": "e03336667d9cd927bfbfd061c3a1bb2855ba9fbd3fd2988634edeb453e3ed03d"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Lay out bidirectional text as spec 8.3 requires, in Excalifont and in Helvetica (fontFamily 2, shaped by Liberation Sans): two centred right-to-left elements whose lines are one Hebrew and one Arabic word, and three left-to-right elements at textAlign left and right whose lines embed an Arabic run followed by European digits (which take the Arabic-number level and precede the run visually), a Hebrew run followed by an exclamation mark, and a Hebrew run holding a bracket pair whose parentheses resolve to the run's level and show their mirror glyphs; one line ends in the paragraph separator U+2029. No bundled face maps a Hebrew or Arabic scalar, so every right-to-left run is spec 8.3's deterministic basic-Latin ? from Liberation Sans, one font.missing-glyph per scalar per occurrence in logical order, and the separator is that replacement glyph too (#125); the official export draws the pinned container's system-font fallback for the same scalars (FreeSans and the system Liberation Sans for Hebrew, FreeSerif for Arabic) and FreeSans's blank for the separator. The right-to-left elements are centred and every element's lines begin in one direction because the harness rasterizer resolves the official export's text-anchor without regard to its direction and the official export anchors every right-to-left element with text-anchor end (#168), and because the reference detects the base direction once per element (#166); left- and right-aligned right-to-left elements and direction-mixed elements are evidenced once those are decided. This assignment does not claim all format/profile sub-obligations."
@@ -1603,7 +1603,7 @@
           "case": "focused.bidi-alignment.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bidi-alignment/manifest.json",
-            "sha256": "4097ba07e6dc93b164ca8b0f6ccbb701835c8323f3af70de17aac632e81536da"
+            "sha256": "91eafc233f1d62860bab15b5b8c60ec2ac8d612f440d2396803ee5e30e0d2ab7"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Lay out right-to-left and direction-mixed text at every textAlign as spec 8.3 requires after #166: one Hebrew line at textAlign left, center and right, a right-to-left element (Hebrew first line) whose second line starts with Latin and reads `world 123 <Arabic> Hello` in visual order at the element's level, and a left-to-right element (Latin first line) whose second line starts with Hebrew and reads `123 <Hebrew> world`, all in Excalifont at 20 px and 300 wide so the anchored side of every line is judged. No bundled face maps a Hebrew or Arabic scalar, so every right-to-left run is spec 8.3's deterministic basic-Latin ? from Liberation Sans, one font.missing-glyph per scalar per occurrence in logical order, while the official export draws the pinned container's FreeSans for Hebrew and FreeSerif for Arabic (#124). The direct PNG judges the alignment against the official canvas, which anchors each line physically. The SVG raster dimension cannot: the official exporter writes every right-to-left element with text-anchor end and direction rtl, which usvg resolves without regard to direction, so the left-aligned right-to-left elements land off the canvas under the harness rasterizer (#168), and the case's SVG raster measurement is held as a rasterizer limitation pin; the right-aligned right-to-left element's official SVG overflows in Chromium, the reference authority divergence spec 8.3 records, which that rasterizer does not see. This assignment does not claim all format/profile sub-obligations."
@@ -1618,7 +1618,7 @@
           "case": "focused.bidi-text.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bidi-text/manifest.json",
-            "sha256": "b3fae2e67b6b6bd9f797772f20506f4b801c91a968f1627cb3b49c3500df346a"
+            "sha256": "e03336667d9cd927bfbfd061c3a1bb2855ba9fbd3fd2988634edeb453e3ed03d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Lay out bidirectional text as spec 8.3 requires, in Excalifont and in Helvetica (fontFamily 2, shaped by Liberation Sans): two centred right-to-left elements whose lines are one Hebrew and one Arabic word, and three left-to-right elements at textAlign left and right whose lines embed an Arabic run followed by European digits (which take the Arabic-number level and precede the run visually), a Hebrew run followed by an exclamation mark, and a Hebrew run holding a bracket pair whose parentheses resolve to the run's level and show their mirror glyphs; one line ends in the paragraph separator U+2029. No bundled face maps a Hebrew or Arabic scalar, so every right-to-left run is spec 8.3's deterministic basic-Latin ? from Liberation Sans, one font.missing-glyph per scalar per occurrence in logical order, and the separator is that replacement glyph too (#125); the official export draws the pinned container's system-font fallback for the same scalars (FreeSans and the system Liberation Sans for Hebrew, FreeSerif for Arabic) and FreeSans's blank for the separator. The right-to-left elements are centred and every element's lines begin in one direction because the harness rasterizer resolves the official export's text-anchor without regard to its direction and the official export anchors every right-to-left element with text-anchor end (#168), and because the reference detects the base direction once per element (#166); left- and right-aligned right-to-left elements and direction-mixed elements are evidenced once those are decided. This assignment does not claim all format/profile sub-obligations."
@@ -1633,7 +1633,7 @@
           "case": "focused.text-line-endings.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/text-line-endings/manifest.json",
-            "sha256": "f89817d54875630440b7381c6030613c3ef345196e2a4107d876f6ebef30b41e"
+            "sha256": "13b869185b97607fb3176d64e52b9deaffd4f93cd31b569c520f572d869ef952"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Break text lines where the reference does: element.text is rendered as text.replace(/\\r\\n?/g, \"\\n\").split(\"\\n\"), so a CRLF element and a bare-CR element each lay out two lines exactly as the LF control does, while the stored text and originalText keep their own line-ending bytes. The CR element omits lineHeight so the restored line height (60 / 2 lines / 20 = 1.5) counts the same EOL-normalized lines the layout produces. This assignment does not claim all format/profile sub-obligations."
@@ -1648,7 +1648,7 @@
           "case": "focused.legacy-line-height.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/legacy-line-height/manifest.json",
-            "sha256": "cdbd140c4003a6930631c66bfed580b8b79ece6e70b692185e62b702e3f08e95"
+            "sha256": "3397a5d4b0b4a1b67542742795a37a8532c8ac82a7d7f882dfe13283bd7379f8"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Derive a missing text lineHeight by the pinned restore rule: from the stored height and line count where the element has a height (Helvetica two lines, Cascadia one line, and a bound container label, none of which detect to their family metadata line height), and from the source family's metadata line height where the height is zero (Nunito 1.35 against the Excalifont 1.25 control). This assignment does not claim all format/profile sub-obligations."
@@ -1663,7 +1663,7 @@
           "case": "focused.legacy-line-height.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/legacy-line-height/manifest.json",
-            "sha256": "cdbd140c4003a6930631c66bfed580b8b79ece6e70b692185e62b702e3f08e95"
+            "sha256": "3397a5d4b0b4a1b67542742795a37a8532c8ac82a7d7f882dfe13283bd7379f8"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Derive a missing text lineHeight by the pinned restore rule: from the stored height and line count where the element has a height (Helvetica two lines, Cascadia one line, and a bound container label, none of which detect to their family metadata line height), and from the source family's metadata line height where the height is zero (Nunito 1.35 against the Excalifont 1.25 control). This assignment does not claim all format/profile sub-obligations."
@@ -1678,7 +1678,7 @@
           "case": "focused.bidi-text.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/bidi-text/manifest.json",
-            "sha256": "b3fae2e67b6b6bd9f797772f20506f4b801c91a968f1627cb3b49c3500df346a"
+            "sha256": "e03336667d9cd927bfbfd061c3a1bb2855ba9fbd3fd2988634edeb453e3ed03d"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Lay out bidirectional text as spec 8.3 requires, in Excalifont and in Helvetica (fontFamily 2, shaped by Liberation Sans): two centred right-to-left elements whose lines are one Hebrew and one Arabic word, and three left-to-right elements at textAlign left and right whose lines embed an Arabic run followed by European digits (which take the Arabic-number level and precede the run visually), a Hebrew run followed by an exclamation mark, and a Hebrew run holding a bracket pair whose parentheses resolve to the run's level and show their mirror glyphs; one line ends in the paragraph separator U+2029. No bundled face maps a Hebrew or Arabic scalar, so every right-to-left run is spec 8.3's deterministic basic-Latin ? from Liberation Sans, one font.missing-glyph per scalar per occurrence in logical order, and the separator is that replacement glyph too (#125); the official export draws the pinned container's system-font fallback for the same scalars (FreeSans and the system Liberation Sans for Hebrew, FreeSerif for Arabic) and FreeSans's blank for the separator. The right-to-left elements are centred and every element's lines begin in one direction because the harness rasterizer resolves the official export's text-anchor without regard to its direction and the official export anchors every right-to-left element with text-anchor end (#168), and because the reference detects the base direction once per element (#166); left- and right-aligned right-to-left elements and direction-mixed elements are evidenced once those are decided. This assignment does not claim all format/profile sub-obligations."
@@ -1693,7 +1693,7 @@
           "case": "focused.text-alignment-vertical.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/text-alignment-vertical/manifest.json",
-            "sha256": "cb35e37dc053c44be2dca9609f4adc0e89395c7f3760efa3ada14607883abc99"
+            "sha256": "b5b6f2e572eef1b2ee95cac12fa40351683ec9a261b289b6da90fbb21654cb03"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Place text by its stored fields as the static export does: three standalone Excalifont elements with autoResize false and a width wider than either stored line carry textAlign left, center and right with verticalAlign top, middle and bottom, the middle and bottom ones in a box taller than their two lines, so the export lays out the stored wrapped text (not a re-wrap of originalText to the width), anchors each line on the stored width, and ignores verticalAlign for standalone text; three roughness-0 containers, a rectangle, an ellipse and a diamond, each carry a bound label whose stored coordinates are where the editor's verticalAlign top, middle and bottom and textAlign left, right and center placed it, so a shape container's label paints at its stored coordinates rather than being re-derived from the container. This assignment does not claim all format/profile sub-obligations."
@@ -1708,7 +1708,7 @@
           "case": "focused.text-alignment-vertical.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/text-alignment-vertical/manifest.json",
-            "sha256": "cb35e37dc053c44be2dca9609f4adc0e89395c7f3760efa3ada14607883abc99"
+            "sha256": "b5b6f2e572eef1b2ee95cac12fa40351683ec9a261b289b6da90fbb21654cb03"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Place text by its stored fields as the static export does: three standalone Excalifont elements with autoResize false and a width wider than either stored line carry textAlign left, center and right with verticalAlign top, middle and bottom, the middle and bottom ones in a box taller than their two lines, so the export lays out the stored wrapped text (not a re-wrap of originalText to the width), anchors each line on the stored width, and ignores verticalAlign for standalone text; three roughness-0 containers, a rectangle, an ellipse and a diamond, each carry a bound label whose stored coordinates are where the editor's verticalAlign top, middle and bottom and textAlign left, right and center placed it, so a shape container's label paints at its stored coordinates rather than being re-derived from the container. This assignment does not claim all format/profile sub-obligations."
@@ -1723,7 +1723,7 @@
           "case": "focused.excalifont-text.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/excalifont-text/manifest.json",
-            "sha256": "5b5b333965a1ef6ef433cbed1e8d63bc8e2d53d1993963c796250fd115025f56"
+            "sha256": "cd66e2efe2f6e916d8e4dc8f65f58ec1a760fd67a86480dd6944953a5e1428ec"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Isolate wrapped Excalifont text in official selectable SVG and direct-canvas PNG. This assignment does not claim all format/profile sub-obligations."
@@ -1738,7 +1738,7 @@
           "case": "focused.transform-opacity-groups.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/transform-opacity-groups/manifest.json",
-            "sha256": "c574a56acf81481ab39bd37ea669a74c4d5eee61014f25677c3c31f4df351ef2"
+            "sha256": "c5659be1255467404a44650cfd648a38d3eb3e84914781ee463a4d63da0eed83"
           }
         },
         "rationale": "Primary home for this label; the other listed cases remain secondary interaction/regression evidence. Rotate a rectangle, an ellipse, a diamond, an arrow and a line by 0.3, 1.2 and pi/4 radians, the linear elements and one rectangle with strokeWidth 4 and a dashed or dotted stroke; draw shapes at opacity 30 and 60, one of them rotated as well; two overlapping shapes sharing a groupId, which changes nothing visible; and a rotated rectangle with a link; roughness 0 and solid fills throughout, and the scene envelope set by rectangles so the rotated ellipse, diamond and linear elements, whose reference bounds focused.rotated-shape-bounds.v1 isolates, lie inside it. Exported by default, at scale 2, without the scene background and with zero padding, so the rotation transform, per-element opacity, wide dashed and dotted strokes, the transparent-background export and the padding option are observed against official evidence. This assignment does not claim all format/profile sub-obligations."
@@ -1753,7 +1753,7 @@
           "case": "focused.rotated-rough-linear.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rotated-rough-linear/manifest.json",
-            "sha256": "61cc32a35b986699778b8a249ea6d0576dad9dd33ca467493a595eda7e93025c"
+            "sha256": "70e44849c351084b7845a4f802f903e5d98fc540c52897d2ded89a368c1ba440"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Rotate rough linear elements whose drawn Rough.js outline overshoots their points' box \u2014 a roughness-1 line at 0.4 rad, a roughness-1 two-point arrow with arrow heads at 1.1 rad, a roughness-2 arrow with bar and arrow heads at 0.7 rad, and a roughness-1 elbow arrow at 1.55 rad alone on the scene's left edge so the jitter of the Rough.js linearPath the reference measures its extent with sets the envelope \u2014 beside a roughness-0 line and arrow as controls, so the official SVG's rotation about the points' box centre, the official canvas's rotation about the curve's box centre, and the elbow arrow's jittered extent are each observed against the evidence of their own format. This assignment does not claim all format/profile sub-obligations."
@@ -1768,7 +1768,7 @@
           "case": "focused.rotated-rough-linear.v1",
           "manifest": {
             "path": "tests/conformance/cases/focused/rotated-rough-linear/manifest.json",
-            "sha256": "61cc32a35b986699778b8a249ea6d0576dad9dd33ca467493a595eda7e93025c"
+            "sha256": "70e44849c351084b7845a4f802f903e5d98fc540c52897d2ded89a368c1ba440"
           }
         },
         "rationale": "Sole registered candidate for this scoped label. Rotate rough linear elements whose drawn Rough.js outline overshoots their points' box \u2014 a roughness-1 line at 0.4 rad, a roughness-1 two-point arrow with arrow heads at 1.1 rad, a roughness-2 arrow with bar and arrow heads at 0.7 rad, and a roughness-1 elbow arrow at 1.55 rad alone on the scene's left edge so the jitter of the Rough.js linearPath the reference measures its extent with sets the envelope \u2014 beside a roughness-0 line and arrow as controls, so the official SVG's rotation about the points' box centre, the official canvas's rotation about the curve's box centre, and the elbow arrow's jittered extent are each observed against the evidence of their own format. This assignment does not claim all format/profile sub-obligations."
@@ -2315,7 +2315,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2344,7 +2344,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2373,7 +2373,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2450,7 +2450,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2479,7 +2479,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2508,7 +2508,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2561,7 +2561,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2590,7 +2590,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2619,7 +2619,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2645,7 +2645,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact combined font test now covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175; its 36 affected case approvals and downstream snapshot binding refresh are pending before proposing complete font ownership."
       }
     },
     {
@@ -2653,7 +2653,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact combined font test now covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175; its 36 affected case approvals and downstream snapshot binding refresh are pending before proposing complete font ownership."
       }
     },
     {
@@ -2661,7 +2661,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact combined font test now covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175; its 36 affected case approvals and downstream snapshot binding refresh are pending before proposing complete font ownership."
       }
     },
     {
@@ -2669,7 +2669,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact combined font test now covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175; its 36 affected case approvals and downstream snapshot binding refresh are pending before proposing complete font ownership."
       }
     },
     {
@@ -2677,7 +2677,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact combined font test now covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175; its 36 affected case approvals and downstream snapshot binding refresh are pending before proposing complete font ownership."
       }
     },
     {
@@ -2685,7 +2685,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact combined font test now covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175; its 36 affected case approvals and downstream snapshot binding refresh are pending before proposing complete font ownership."
       }
     },
     {
@@ -2693,7 +2693,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact combined font test now covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175; its 36 affected case approvals and downstream snapshot binding refresh are pending before proposing complete font ownership."
       }
     },
     {
@@ -2701,7 +2701,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact combined font test now covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175; its 36 affected case approvals and downstream snapshot binding refresh are pending before proposing complete font ownership."
       }
     },
     {
@@ -2709,7 +2709,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "Expanded exact font tests cover default-ignorable class endpoints and non-ignorable exclusions, zero-height embeddables, source-text preflight/post-layout omission and cleared fallback-label silence. Registry scope reconciliation is approval-bound to 36 case manifests; generated-label work/geometry and zero-width branches still need complete coverage. See docs/research/font-diagnostic-ownership.md."
+        "reason": "Exact combined font test now covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175; its 36 affected case approvals and downstream snapshot binding refresh are pending before proposing complete font ownership."
       }
     },
     {
@@ -3088,7 +3088,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3117,7 +3117,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3146,7 +3146,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3175,7 +3175,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3204,7 +3204,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3233,7 +3233,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3262,7 +3262,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3291,7 +3291,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3320,7 +3320,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "892e805c62692ac3b928ef6503d9227a70a9cabfb8a5b9f487f568d32dea4c7d"
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",

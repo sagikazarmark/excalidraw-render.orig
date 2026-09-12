@@ -80,6 +80,8 @@ The scene-surface digest is bound by **36 approved focused-case manifests**, the
 
 Generated-label work/geometry rejection and zero-width branches also remain to be combined with the passing matrix. No new owner assignments are made in this follow-up.
 
+Subsequent follow-up: generated-label geometry/work rejection and zero-width assertions are now included and pass. The registry correction and 36 affected case subjects are staged in [the reapproval proposal](font-registry-reapproval.md). Previous approvals were cleared only for those changed subjects. Case approvals and downstream snapshot rebinding now block ownership assignment.
+
 Verification: all 13 `diagnostic_contract` tests pass; ownership validation passes with 137 assigned/excluded and 791 gaps; all ten Dagger conformance/lint checks and all three Dagger workspace test checks pass. The empty-label regression failed before the fix with an extra Liberation diagnostic. `git diff --check` passes and temporary measurement logging was removed.
 
 ## Verification

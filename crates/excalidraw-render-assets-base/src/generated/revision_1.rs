@@ -6579,7 +6579,7 @@ pub static REVISION_1: RevisionCatalog = RevisionCatalog {
         source_commit: "a2ec2889babf7d2295469c6d90ebe77fae57df84",
         npm_integrity: "sha512-6i5Gt7IDTOH//qa0Z315Ly5iVRhjWpu2whrlQFqkuwrkKUWgRsMk0P5qdE7bpyDpai7jeLeWYkyj1eVAfni1lw==",
         reference_profile_digest: "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71",
-        catalog_sha256: "d8e9f04295ef7ba6eedda69b20d9c6b7485322f27be34723439f82cbe6fb0ab5",
+        catalog_sha256: "75509d88b88dd327b1c3a7d798d0559303948b7dd28e33e480ae21ac245dd581",
     catalog_json: include_bytes!("../../catalog/revision-1.json"),
     incorporated_artifacts: &[
         IncorporatedArtifact {
@@ -6599,7 +6599,7 @@ pub static REVISION_1: RevisionCatalog = RevisionCatalog {
         },
         IncorporatedArtifact {
             repository_path: "tests/oracle/scene-surfaces/revision-1.json",
-            sha256: "14309697cdb5bf9ebe660dccf27c4c929c0f5edb7174443dd4f962544fcc4bea",
+            sha256: "579e57f6a10e032ed4f460d3576c9be6bf4e86f595bd6a1acef2232bf22141ce",
             bytes: include_bytes!("../../catalog/incorporated/scene-surface.json"),
         },
         IncorporatedArtifact {

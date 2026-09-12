@@ -18,7 +18,7 @@
       "remaining": "Extend the draft field/label inventory to all diagnostic, codec/profile, exception and interaction rows; choose and approve exactly one primary owner or justified exclusion per row.",
       "evidence": [
         {
-          "source": {"path": "xtask/src/conformance.rs", "sha256": "8f9e6ec90fd590f121a83df7b6000255acd6e2996d00fa4b48d91e9a55d74087"},
+          "source": {"path": "xtask/src/conformance.rs", "sha256": "fff2e0ab6b058dafc01f94c885b90e69e28118788cf57c0073b02adb9b004061"},
           "anchor": "fn verify_case_metadata("
         }
       ]

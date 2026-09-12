@@ -191,6 +191,66 @@ fn font_diagnostics_cover_text_generated_labels_and_silence() {
 
 fn font_omission_and_zero_extent_contract() {
     for format in FORMATS {
+        let embedded = scene(
+            json!([{"id":"embed","type":"embeddable","link":"https://example.com/😀\u{10000}","width":1000,"height":100,"seed":1,"updated":1,"roughness":0}]),
+        );
+        for (limits, code, field, configured, attempted, kind) in [
+            (
+                ResourceLimits::builder()
+                    .max_geometry_segments_per_element(20)
+                    .build()
+                    .unwrap(),
+                "resource.element-complexity-replaced",
+                "max_geometry_segments_per_element",
+                20,
+                716,
+                "count",
+            ),
+            (
+                ResourceLimits::builder()
+                    .max_element_work_units(2000)
+                    .build()
+                    .unwrap(),
+                "resource.element-work-exceeded",
+                "max_element_work_units",
+                2000,
+                25152,
+                "work_units",
+            ),
+        ] {
+            let request = RenderRequest::builder(format)
+                .resource_limits(limits)
+                .build()
+                .unwrap();
+            let row = |value| {
+                expected(
+                    code,
+                    "warning",
+                    json!(["visual"]),
+                    json!("embed"),
+                    "/elements/0",
+                    json!({"kind":"resource_limit","field":field,"configured":configured,"value_kind":kind,"measurement":{"kind":"attempted","value":value},"recovery":"omitted"}),
+                )
+            };
+            let mut rows = vec![row(attempted)];
+            // PNG additionally rejects the remaining outline's pixel work.
+            if format == OutputFormat::Png && kind == "work_units" {
+                rows.push(row(1635904));
+            }
+            assert_report_with_request(&embedded, &request, json!(rows));
+        }
+        let zero_width = scene(
+            json!([{"id":"embed","type":"embeddable","link":"https://example.com/😀\u{10000}","width":0,"height":100,"seed":1,"updated":1,"roughness":0}]),
+        );
+        let rows = if format == OutputFormat::Png {
+            json!([])
+        } else {
+            json!([
+            font_substitution("font.noto-emoji-substituted", "embed", "/elements/0", json!("official.embeddable-offline@sha256:d1d9207be2a4022886b9916ef0068b654c47f64d9ea59cd6d31d6432c5eecb01")),
+            missing_glyph("embed", "/elements/0", 0x10000)
+        ])
+        };
+        assert_report(&zero_width, format, rows);
         // Zero-height PNG embeddables omit their generated label. SVG/PDF
         // still emit it, including its font diagnostics.
         let source = scene(
