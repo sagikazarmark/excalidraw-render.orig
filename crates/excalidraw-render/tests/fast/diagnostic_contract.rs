@@ -176,26 +176,40 @@ fn invalid_payload_field_suppresses_duplicate_asset_failure() {
 #[test]
 fn unsupported_nested_images_report_removed_paths() {
     use base64::Engine;
-    let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="data:image/png;base64,aW52YWxpZA==" width="40" height="30"/><image href="data:image/png;base64,aW52YWxpZA==" width="40" height="30"/></svg>"#;
-    let data = format!(
-        "data:image/svg+xml;base64,{}",
-        base64::engine::general_purpose::STANDARD.encode(svg)
-    );
-    for format in FORMATS {
-        let source = image_scene(
-            json!([image("first", "outer"), image("second", "outer")]),
-            json!({"outer":{"id":"outer","created":1,"mimeType":"image/svg+xml","dataURL":data}}),
+    for (payload, code) in [
+        (
+            "data:image/png;base64,aW52YWxpZA==",
+            "image.unsupported-format",
+        ),
+        ("data:image/png;base64,%%%", "image.decode-failed"),
+        (
+            "data:image/png;base64,iVBORw0KGgppbnZhbGlk",
+            "image.decode-failed",
+        ),
+    ] {
+        let svg = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="{payload}" width="40" height="30"/><image href="{payload}" width="40" height="30"/></svg>"#
         );
-        let rows: Vec<_> = [1,2].into_iter().map(|ordinal| expected("image.unsupported-format", "warning", json!(["visual"]), Value::Null, "/files/outer/dataURL", json!({"kind":"nested_source","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":ordinal,"name":null},{"kind":"attribute","ordinal":0,"name":"href"}]}],"recovery":"removed"}))).collect();
-        assert_report(&source, format, json!(rows));
-        assert_report(
-            &image_scene(
-                json!([]),
+        let data = format!(
+            "data:image/svg+xml;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(svg)
+        );
+        for format in FORMATS {
+            let source = image_scene(
+                json!([image("first", "outer"), image("second", "outer")]),
                 json!({"outer":{"id":"outer","created":1,"mimeType":"image/svg+xml","dataURL":data}}),
-            ),
-            format,
-            json!([]),
-        );
+            );
+            let rows: Vec<_> = [1,2].into_iter().map(|ordinal| expected(code, "warning", json!(["visual"]), Value::Null, "/files/outer/dataURL", json!({"kind":"nested_source","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":ordinal,"name":null},{"kind":"attribute","ordinal":0,"name":"href"}]}],"recovery":"removed"}))).collect();
+            assert_report(&source, format, json!(rows));
+            assert_report(
+                &image_scene(
+                    json!([]),
+                    json!({"outer":{"id":"outer","created":1,"mimeType":"image/svg+xml","dataURL":data}}),
+                ),
+                format,
+                json!([]),
+            );
+        }
     }
 }
 

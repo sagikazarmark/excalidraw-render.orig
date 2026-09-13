@@ -14,7 +14,7 @@ const REPOSITORY_ISSUE_PREFIX: &str =
 const EMPTY_REPORT: &[u8] = br#"{"schema_version":1,"diagnostics":[]}"#;
 const PROFILE_DIGEST: &str = "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71";
 const ASSET_DIGEST: &str = "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a";
-const SURFACE_DIGEST: &str = "579e57f6a10e032ed4f460d3576c9be6bf4e86f595bd6a1acef2232bf22141ce";
+const SURFACE_DIGEST: &str = "ae42d894a5acad8394405f8b1f0b4a2b29fc520506dc320b874512badcd77f3c";
 const FRAME_PROFILE_DIGEST: &str =
     "63bf16ee197e7c6e79f917988e04aafec4c89c39de87b08ad10dd19712cde77e";
 
