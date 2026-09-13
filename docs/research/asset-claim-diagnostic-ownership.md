@@ -1,6 +1,6 @@
 # Asset claim and supplement diagnostic ownership
 
-Base: `e7009e6`. Three supplement-conflict obligations have proposed owners; three media-type obligations remain gaps.
+Initial base: `e7009e6`. Supplement-conflict ownership is scoped-approved; the subsequent media-type completion below adds three proposed owners.
 
 ## Media claims
 
@@ -23,3 +23,15 @@ Verification: all 29 diagnostic-contract tests pass; ownership validation passes
 ## Scoped maintainer approval
 
 The maintainer explicitly approved the three supplement-conflict assignments on 2026-09-13, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5656670825). The approval identifies commit `2b68e411c88ec4eaecf79071e6d241b6fc13c161`, binding the dispositions, selector, source digest and rationales. Media-type ownership remains a gap; the incomplete global ledger retains null approval with 765 gaps.
+
+## Media-type completion
+
+Follow-up base: `7cce93e`. The user explicitly selected preservation of the approved strict scene-MIME domain. Uppercase/parameterized/out-of-domain scene values still receive a repair warning; supplemental claims retain their existing case/parameter-normalized equivalence behavior. No registry or approval-bound evidence change is required.
+
+Successful payload validation now enriches the existing strict-domain diagnostic's `validated_media_type` in place, preserving its owner, pointer, order, message and one diagnostic resource charge. The subsequent exact-claim check recognizes the enriched occurrence, preventing a duplicate. Null/nonstring claims also receive the validated type. If payload validation fails, the type stays null; it is not inferred from an unvalidated claim.
+
+`diagnostic_contract::media_type_contract_in_every_format` is the proposed owner for all three formats. It includes the existing two-field/source/supplemental ordering matrix and adds PNG/JPEG/GIF/WebP/BMP/ICO/SVG validated-kind vectors, invalid/nonstring/empty claims, uppercase/parameterized scene repair, equivalent and absent supplemental silence, unsuccessful payload validation, repeated references, deleted silence and frame standalone/batch equality. Full ordered reports and fresh artifact/report bytes are asserted.
+
+The initial invalid-claim regression failed because validated PNG bytes left a null validated type. After enrichment, both that failure and the duplicate malformed-string warnings are resolved. Counts: **166 proposed owners / 762 gaps**, including **47 diagnostic owners / 75 diagnostic gaps**. The new media-type assignments await scoped approval; global ownership remains pending.
+
+Final verification: all 31 diagnostic-contract tests pass; ownership validation passes; all ten Dagger conformance/lint checks and all three Dagger workspace test checks pass. `git diff --check` passes. Approved registry and snapshot evidence are unchanged.

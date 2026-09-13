@@ -1,7 +1,7 @@
 # Diagnostic/format ownership audit
 #85 — public-facade diagnostic assertions
 
-Reviewed all 122 current diagnostic/format obligations. Including the cycle, font and image follow-ups, 44 now have proposed owners and 78 remain explicit gaps. The global ledger has 163 proposed owners and 765 gaps.
+Reviewed all 122 current diagnostic/format obligations. Including the cycle, font and image follow-ups, 47 now have proposed owners and 75 remain explicit gaps. The global ledger has 166 proposed owners and 762 gaps.
 
 The new `fast/diagnostic_contract.rs` tests author expected machine-readable diagnostic fields independently of the production registry. They compare the complete ordered diagnostic array, exact format/severity/effects/details/recovery/owner/pointer, nonempty messages, and byte-identical serialized reports and artifacts across fresh calls. Message prose is not pinned as a semantic requirement. Image recovery tests cover both saved and error source statuses.
 
@@ -14,7 +14,7 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 | Code | Formats | Status | Owner / remaining work |
 | --- | --- | --- | --- |
 | `asset.malformed-file-record` | pdf, png, svg | owned | malformed_file_contract_in_every_format — record/payload variants, authority/order, first-reference status, narrower-cause suppression and frame replay; see [assessment](image-diagnostic-ownership.md#final-ownership-assessment). |
-| `asset.media-type-mismatch` | pdf, png, svg | gap | Exact valid-domain claim/order/frame tests added and shared-reference duplication fixed. Malformed MIME double emission and strict-domain versus normalized comparison remain; see [assessment](asset-claim-diagnostic-ownership.md). |
+| `asset.media-type-mismatch` | pdf, png, svg | owned | media_type_contract_in_every_format — exact seven-kind claims, strict-domain enrichment, source/supplemental ordering and equivalence, invalid/failed payload handling and frame replay; see [assessment](asset-claim-diagnostic-ownership.md#media-type-completion). |
 | `asset.supplement-conflict` | pdf, png, svg | owned | supplement_conflicts_report_authority_once_in_every_format — exact authority/order/multiplicity, identical/different payloads, malformed scene precedence, silence and frame replay. |
 | `color.invalid` | pdf, png, svg | owned | invalid_colors_substitute_in_member_order_and_valid_colors_are_silent |
 | `compatibility.known-element-replaced` | pdf, png, svg | gap | Current accepted element families render directly; prove reachability or request an evidence-backed exclusion. Existing no-known-fallback tests are not proof of global unreachability. |

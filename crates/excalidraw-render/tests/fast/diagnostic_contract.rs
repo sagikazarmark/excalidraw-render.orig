@@ -10,6 +10,139 @@ use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn media_type_contract_in_every_format() {
+    media_claims_report_each_authoritative_field_once();
+    invalid_media_claims_are_enriched_once_after_validation();
+    use crate::common::codec_fixtures as f;
+    use base64::Engine;
+    let png = f::png_rgba(1, 1, &[[255, 0, 0, 255]]);
+    let payloads=[
+        ("image/png",png.clone()),
+        ("image/jpeg",f::jpeg_rgb(1,1,&[[255,0,0]])),
+        ("image/gif",f::gif(&[f::gif_frame(&[0],1,1,&[255,0,0,0,0,0],None)])),
+        ("image/webp",f::webp_rgba(1,1,&[[255,0,0,255]])),
+        ("image/bmp",f::bmp24(1,1,&[[255,0,0]])),
+        ("image/x-icon",f::ico(&[(1,1,32,png.clone())])),
+        ("image/svg+xml",br#"<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="red"/></svg>"#.to_vec()),
+    ];
+    for (mime, bytes) in payloads {
+        let claim = if mime == "image/png" {
+            "image/jpeg"
+        } else {
+            "image/png"
+        };
+        let data = format!(
+            "data:{claim};base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(bytes)
+        );
+        for format in FORMATS {
+            assert_report(
+                &image_scene(
+                    json!([image("image", "file")]),
+                    json!({"file":{"id":"file","created":1,"mimeType":claim,"dataURL":data}}),
+                ),
+                format,
+                json!([
+                    media_claim_expected("file", "/files/file/dataURL", claim, mime),
+                    media_claim_expected("file", "/files/file/mimeType", claim, mime)
+                ]),
+            );
+        }
+    }
+    for format in FORMATS {
+        for claim in [
+            None,
+            Some("image/png"),
+            Some("IMAGE/PNG"),
+            Some("image/png;foo=bar"),
+        ] {
+            let mut assets = SupplementalAssets::builder();
+            assets = if let Some(claim) = claim {
+                assets.asset_with_media_type("file", png.clone(), claim)
+            } else {
+                assets.asset("file", png.clone())
+            };
+            let request = RenderRequest::builder(format)
+                .supplemental_assets(assets.build().unwrap())
+                .build()
+                .unwrap();
+            assert_report_with_request(
+                &scene(json!([image("image", "file")])),
+                &request,
+                json!([]),
+            );
+        }
+    }
+}
+
+#[test]
+fn invalid_media_claims_are_enriched_once_after_validation() {
+    use base64::Engine;
+    let bytes = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
+    let data = format!(
+        "data:image/png;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(&bytes)
+    );
+    for format in FORMATS {
+        for claim in [
+            Value::Null,
+            json!(false),
+            json!(""),
+            json!("not-a-mime"),
+            json!("IMAGE/PNG"),
+            json!("image/png;foo=bar"),
+        ] {
+            let source = image_scene(
+                json!([image("first", "file"), image("second", "file")]),
+                json!({"file":{"id":"file","created":1,"mimeType":claim,"dataURL":data}}),
+            );
+            let mut row = media_claim_expected("file", "/files/file/mimeType", "", "image/png");
+            row["details"]["claimed_media_type"] = claim.as_str().map_or(Value::Null, |s| json!(s));
+            assert_report(&source, format, json!([row.clone()]));
+            let framed = image_scene(
+                json!([
+                    {"id":"frame","type":"frame","width":100,"height":100,"updated":1},image("first","file"),image("second","file")
+                ]),
+                json!({"file":{"id":"file","created":1,"mimeType":claim,"dataURL":data}}),
+            );
+            assert_frame_reports(&framed, format, &[json!([row])]);
+            let mut deleted = image("deleted", "file");
+            deleted["isDeleted"] = json!(true);
+            assert_report(
+                &image_scene(
+                    json!([deleted]),
+                    json!({"file":{"id":"file","created":1,"mimeType":claim,"dataURL":data}}),
+                ),
+                format,
+                json!([]),
+            );
+        }
+        let bad = image_scene(
+            json!([image("image", "file")]),
+            json!({"file":{"id":"file","created":1,"mimeType":"not-a-mime","dataURL":"data:image/png;base64,aW52YWxpZA=="}}),
+        );
+        let mut invalid =
+            media_claim_expected("file", "/files/file/mimeType", "not-a-mime", "image/png");
+        invalid["details"]["validated_media_type"] = Value::Null;
+        assert_report(
+            &bad,
+            format,
+            json!([
+                image_expected(
+                    "image.unsupported-format",
+                    json!("image"),
+                    "/files/file/dataURL",
+                    "file",
+                    "saved",
+                    format
+                ),
+                invalid
+            ]),
+        );
+    }
+}
+
+#[test]
 fn media_claims_report_each_authoritative_field_once() {
     use base64::Engine;
     let bytes = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);

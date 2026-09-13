@@ -396,6 +396,52 @@ impl ImageResolver {
                 if let Some(tree) = resolution.svg_tree {
                     session.svg_trees.insert(asset.identity, tree);
                 }
+                // Strict-domain normalization already diagnosed malformed scene
+                // MIME values before payload validation. Enrich that occurrence
+                // rather than retaining a second warning (or leaving its type
+                // unknown after successful validation). Its source order and
+                // diagnostic resource charge remain those of normalization.
+                if matches!(authority, asset::Authority::Scene) {
+                    let (pointer, _, _, _) = asset_claim_location(
+                        scene,
+                        request.supplemental_assets(),
+                        file_id,
+                        authority,
+                        "mimeType",
+                    )
+                    .map_err(|_| {
+                        session.memory_failure(
+                            request,
+                            "compatibility_report",
+                            "asset_claim_pointer",
+                        )
+                    })?;
+                    for index in 0..session.report.diagnostics.len() {
+                        let diagnostic = &session.report.diagnostics[index];
+                        if diagnostic.code() != DiagnosticCode::ASSET_MEDIA_TYPE_MISMATCH
+                            || diagnostic.json_pointer() != pointer
+                        {
+                            continue;
+                        }
+                        if matches!(diagnostic.details(), Some(ErrorDetails::Asset { asset_id, validated_media_type: None, .. }) if asset_id == file_id)
+                        {
+                            let validated = try_owned(media_type).map_err(|_| {
+                                session.memory_failure(
+                                    request,
+                                    "compatibility_report",
+                                    "validated_media_type",
+                                )
+                            })?;
+                            if let Some(ErrorDetails::Asset {
+                                validated_media_type,
+                                ..
+                            }) = session.report.diagnostics[index].details_mut()
+                            {
+                                *validated_media_type = Some(validated);
+                            }
+                        }
+                    }
+                }
                 for (claim, field) in [
                     (resolution.claims.mime_type.as_deref(), "mimeType"),
                     (resolution.claims.data_url_media_type.as_deref(), "dataURL"),
