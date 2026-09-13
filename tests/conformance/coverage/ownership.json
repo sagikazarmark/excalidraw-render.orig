@@ -2643,73 +2643,262 @@
     {
       "id": "diagnostic:font.liberation-sans-substituted:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Exact combined font test covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175 and all 36 affected case subjects are approved. Downstream snapshot binding reconciliation remains pending before proposing complete font ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+          },
+          "function": "font_diagnostics_cover_text_generated_labels_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::font_diagnostics_cover_text_generated_labels_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "pdf: Exact informational visual/substituted/null-recipe reports for surviving Helvetica text and compatibility labels; source-order multiplicity and empty/direct-font/deleted/unreciprocated/resource-omitted/chrome silence, including cleared placeholder labels. The exact selector executes the full combined matrix, including fresh report/artifact equality and standalone/batch frame equality."
       }
     },
     {
       "id": "diagnostic:font.liberation-sans-substituted:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Exact combined font test covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175 and all 36 affected case subjects are approved. Downstream snapshot binding reconciliation remains pending before proposing complete font ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+          },
+          "function": "font_diagnostics_cover_text_generated_labels_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::font_diagnostics_cover_text_generated_labels_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "png: Exact informational visual/substituted/null-recipe reports for surviving Helvetica text and compatibility labels; source-order multiplicity and empty/direct-font/deleted/unreciprocated/resource-omitted/chrome silence, including cleared placeholder labels. The exact selector executes the full combined matrix, including fresh report/artifact equality and standalone/batch frame equality."
       }
     },
     {
       "id": "diagnostic:font.liberation-sans-substituted:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Exact combined font test covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175 and all 36 affected case subjects are approved. Downstream snapshot binding reconciliation remains pending before proposing complete font ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+          },
+          "function": "font_diagnostics_cover_text_generated_labels_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::font_diagnostics_cover_text_generated_labels_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "svg: Exact informational visual/substituted/null-recipe reports for surviving Helvetica text and compatibility labels; source-order multiplicity and empty/direct-font/deleted/unreciprocated/resource-omitted/chrome silence, including cleared placeholder labels. The exact selector executes the full combined matrix, including fresh report/artifact equality and standalone/batch frame equality."
       }
     },
     {
       "id": "diagnostic:font.missing-glyph:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Exact combined font test covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175 and all 36 affected case subjects are approved. Downstream snapshot binding reconciliation remains pending before proposing complete font ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+          },
+          "function": "font_diagnostics_cover_text_generated_labels_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::font_diagnostics_cover_text_generated_labels_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "pdf: Exact warning visual/missing_glyph/substituted reports for ordinary text, frame names, embeddables and compatibility labels; repeated codepoints in logical order, frame scope, hidden/truncated/omitted silence, default-ignorable class endpoints and explicit non-ignorable exclusions. The exact selector executes the full combined matrix, including fresh report/artifact equality and standalone/batch frame equality."
       }
     },
     {
       "id": "diagnostic:font.missing-glyph:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Exact combined font test covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175 and all 36 affected case subjects are approved. Downstream snapshot binding reconciliation remains pending before proposing complete font ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+          },
+          "function": "font_diagnostics_cover_text_generated_labels_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::font_diagnostics_cover_text_generated_labels_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "png: Exact warning visual/missing_glyph/substituted reports for ordinary text, frame names, embeddables and compatibility labels; repeated codepoints in logical order, frame scope, hidden/truncated/omitted silence, default-ignorable class endpoints and explicit non-ignorable exclusions. The exact selector executes the full combined matrix, including fresh report/artifact equality and standalone/batch frame equality."
       }
     },
     {
       "id": "diagnostic:font.missing-glyph:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Exact combined font test covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175 and all 36 affected case subjects are approved. Downstream snapshot binding reconciliation remains pending before proposing complete font ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+          },
+          "function": "font_diagnostics_cover_text_generated_labels_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::font_diagnostics_cover_text_generated_labels_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "svg: Exact warning visual/missing_glyph/substituted reports for ordinary text, frame names, embeddables and compatibility labels; repeated codepoints in logical order, frame scope, hidden/truncated/omitted silence, default-ignorable class endpoints and explicit non-ignorable exclusions. The exact selector executes the full combined matrix, including fresh report/artifact equality and standalone/batch frame equality."
       }
     },
     {
       "id": "diagnostic:font.noto-emoji-substituted:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Exact combined font test covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175 and all 36 affected case subjects are approved. Downstream snapshot binding reconciliation remains pending before proposing complete font ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+          },
+          "function": "font_diagnostics_cover_text_generated_labels_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::font_diagnostics_cover_text_generated_labels_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "pdf: Exact informational visual/substituted reports per affected occurrence, multiple emoji counted once, null ordinary-text versus offline-embeddable recipe, frame-scoped ownership and empty/unaffected/deleted/omitted/zero-extent PNG silence. The exact selector executes the full combined matrix, including fresh report/artifact equality and standalone/batch frame equality."
       }
     },
     {
       "id": "diagnostic:font.noto-emoji-substituted:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Exact combined font test covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175 and all 36 affected case subjects are approved. Downstream snapshot binding reconciliation remains pending before proposing complete font ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+          },
+          "function": "font_diagnostics_cover_text_generated_labels_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::font_diagnostics_cover_text_generated_labels_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "png: Exact informational visual/substituted reports per affected occurrence, multiple emoji counted once, null ordinary-text versus offline-embeddable recipe, frame-scoped ownership and empty/unaffected/deleted/omitted/zero-extent PNG silence. The exact selector executes the full combined matrix, including fresh report/artifact equality and standalone/batch frame equality."
       }
     },
     {
       "id": "diagnostic:font.noto-emoji-substituted:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Exact combined font test covers generated-label geometry/work rejection, zero-width/height branches, default-ignorable endpoints and omission silence. Registry wording is reconciled with spec 8.3/#175 and all 36 affected case subjects are approved. Downstream snapshot binding reconciliation remains pending before proposing complete font ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+          },
+          "function": "font_diagnostics_cover_text_generated_labels_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::font_diagnostics_cover_text_generated_labels_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "svg: Exact informational visual/substituted reports per affected occurrence, multiple emoji counted once, null ordinary-text versus offline-embeddable recipe, frame-scoped ownership and empty/unaffected/deleted/omitted/zero-extent PNG silence. The exact selector executes the full combined matrix, including fresh report/artifact equality and standalone/batch frame equality."
       }
     },
     {

@@ -1,7 +1,7 @@
 # Diagnostic/format ownership audit
 #85 — public-facade diagnostic assertions
 
-Reviewed all 122 current diagnostic/format obligations. Including the cycle follow-up, 18 now have proposed owners and 104 remain explicit gaps. The global ledger has 137 proposed owners and 791 gaps.
+Reviewed all 122 current diagnostic/format obligations. Including the cycle and font follow-ups, 27 now have proposed owners and 95 remain explicit gaps. The global ledger has 146 proposed owners and 782 gaps.
 
 The new `fast/diagnostic_contract.rs` tests author expected machine-readable diagnostic fields independently of the production registry. They compare the complete ordered diagnostic array, exact format/severity/effects/details/recovery/owner/pointer, nonempty messages, and byte-identical serialized reports and artifacts across fresh calls. Message prose is not pinned as a semantic requirement. Image recovery tests cover both saved and error source statuses.
 
@@ -22,9 +22,9 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 | `compatibility.unsupported-element-type` | pdf, png, svg | owned | unknown_elements_cover_bounded_placeholders_and_unbounded_omissions |
 | `compatibility.unsupported-property` | pdf, png, svg | owned | unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata |
 | `compatibility.unsupported-property-value` | pdf, png, svg | gap | Field-dependent repaired/ignored/placeholder/omitted/substituted branches and conditional effects span many tests. Enumerate every reachable branch per format before selecting one complete owner. |
-| `font.liberation-sans-substituted` | pdf, png, svg | gap | Exact text/fallback and chrome-silence coverage added; omitted-text diagnostic fixed. Registry scope conflicts with spec 8.3/#175; local-resource branches remain. See [font follow-up](font-diagnostic-ownership.md). |
-| `font.missing-glyph` | pdf, png, svg | gap | Exact scalar reports and truncation silence added; frame emission and soft-hyphen shaping closure fixed and qualified. Full omission/default-ignorable matrices remain. See [font follow-up](font-diagnostic-ownership.md). |
-| `font.noto-emoji-substituted` | pdf, png, svg | gap | Embeddable recipe fixed; exact text/embeddable multiplicity and silence tests added. Registry scope reconciliation and local-omission/zero-size branches remain. See [font follow-up](font-diagnostic-ownership.md). |
+| `font.liberation-sans-substituted` | pdf, png, svg | owned | font_diagnostics_cover_text_generated_labels_and_silence — exact surviving-text/fallback substitution, ordering and chrome/omission silence. See [assessment](font-diagnostic-ownership.md#final-ownership-assessment). |
+| `font.missing-glyph` | pdf, png, svg | owned | font_diagnostics_cover_text_generated_labels_and_silence — text/frame/generated-label scalar reports, logical order, omission/truncation silence and default-ignorable boundaries. |
+| `font.noto-emoji-substituted` | pdf, png, svg | owned | font_diagnostics_cover_text_generated_labels_and_silence — occurrence multiplicity, ordinary/embeddable recipes, frame scope, local-omission and zero-extent branches. |
 | `image.animation-flattened` | pdf, png | gap | APNG/GIF/WebP tests cover flattened default frames, duplicate references and omitted occurrences; consolidate full severity/effects/details/file identity and static/one-frame/unreferenced silence across accepted animated codecs. |
 | `image.decode-failed` | pdf, png, svg | gap | Each accepted decoder has malformed-payload tests. Need an all-decoder exact-format report matrix preserving validated media type, file deduplication, status-selected recipe and silence before assigning. |
 | `image.forbidden-resource` | pdf, png, svg | gap | Existing nested_svg_asset_render tests cover sanitization and reference restrictions. Full nested_source chains, safe-viewport/omission branches and repeated occurrence ordering need a complete exact-field owner. |

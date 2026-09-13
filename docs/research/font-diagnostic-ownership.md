@@ -1,10 +1,10 @@
 # Font diagnostic ownership follow-up
 
-Working-tree follow-up to `4d6fb67`, under #85. The three font codes cover nine diagnostic/format obligations. They remain explicit gaps; passing representative tests are not full ownership approval.
+Follow-ups to `4d6fb67`, under #85. The three font codes cover nine diagnostic/format obligations. All nine now have a proposed executable owner after the fixes, authority reapproval, snapshot reconciliation and final assessment below. Global ownership approval remains pending.
 
-## Authority correction
+## Authority correction history
 
-Spec §8.3, updated by #175, requires Liberation Sans substitution diagnostics for ordinary Helvetica text and compatibility-placeholder labels, but **silence for frame names and embeddable labels**, whose face is renderer-owned chrome. Noto substitution diagnostics apply to ordinary text and embeddable labels. The scene-surface registry still describes affected text/frame/generated-label owners and an embeddable Liberation recipe more broadly. Reconcile that stale registry scope through the authority-update workflow before assigning the affected obligations. This round follows the explicit spec silence rules and does not add chrome substitution diagnostics.
+Spec §8.3, updated by #175, requires Liberation Sans substitution diagnostics for ordinary Helvetica text and compatibility-placeholder labels, but **silence for frame names and embeddable labels**, whose face is renderer-owned chrome. Noto substitution diagnostics apply to ordinary text and embeddable labels. The registry initially described a broader scope; the correction and all 36 affected case subjects are now approved. The tests follow the explicit spec silence rules.
 
 ## Implemented corrections
 
@@ -51,7 +51,7 @@ Verification of the follow-up:
 
 The expanded corpus and both viewer reports have now been regenerated and approved, with matching clean-commit native/browser-WASM qualification and packaged-consumer evidence bound as `aggregated` / `pass`. See [the completed refresh record](soft-hyphen-qualification-refresh.md). The soft-hyphen qualification blocker is resolved.
 
-## Remaining ownership work
+## Work identified at the initial checkpoint
 
 - Reconcile registry wording with §8.3/#175 before assigning broad source scopes.
 - Cover the full default-ignorable boundary classes, including non-ignorable Hangul fillers and paragraph separators; the soft-hyphen fix is qualified and approved.
@@ -93,4 +93,18 @@ Verification: all 13 `diagnostic_contract` tests pass; ownership validation pass
 - `dagger check excalidraw-render:test`: fast, render and doctest checks passed.
 - `git diff --check`: passed. Temporary control-character logging was removed.
 
-These checks validate the implemented fixes and passing matrix, not the documented soft-hyphen reproducer or full font-ownership closure.
+These initial-checkpoint checks preceded the completed qualification, registry and snapshot refreshes described above.
+
+## Final ownership assessment
+
+The exact unconditional selector `diagnostic_contract::font_diagnostics_cover_text_generated_labels_and_silence` runs the combined matrix and its local helpers. Review against the current registry's nine format obligations found the required severity, ordered effects, detail/recovery/recipe fields, source owners, logical scalar order, occurrence multiplicity and silence assertions in that selector. Every authored report comparison checks the complete ordered array, rejecting extra diagnostics; fresh render comparisons include full message/report bytes and artifacts. Frame cases also compare standalone and batch results.
+
+| Code | Evidence within the owner |
+| --- | --- |
+| Liberation Sans substitution | Multiple surviving Helvetica occurrences; direct-family silence; visible compatibility labels; empty/deleted/unreciprocated text; renderer-owned chrome silence; scalar and post-layout rejection; cleared/tiny fallback-label silence |
+| Noto substitution | Multiple emoji count once per affected text/embeddable occurrence; exact null versus offline-embeddable recipe; unaffected/empty/omitted silence; frame selection; generated-label geometry/work rejection and both zero-extent axes |
+| Missing glyph | Repeated scalars in logical rather than numeric order across ordinary text, frame names, embeddables and compatibility labels; hidden/truncated/tiny/omitted silence; default-ignorable class endpoints and Hangul/paragraph-separator exclusions; frame ownership and replay |
+
+Prerequisites are complete: the registry/case subjects are approved, the soft-hyphen fix has approved dual-viewer and native/WASM qualification, and the separately approved native baseline replay matches all 168 expectations. The nine font obligations are now proposed owned. Counts: **27 diagnostic owners / 95 diagnostic gaps; 146 owners / 782 gaps globally**. This assignment does not approve the incomplete global ledger or close #85.
+
+Final checks on the working tree based on `bbb64a9`: the exact combined font test passes; `verify-ownership` validates 928 assignments with 146 assigned/excluded and 782 gaps; `verify-native-baseline` still passes; `dagger check excalidraw-render:conformance:coverage-ownership` passes. Only the nine font dispositions and documentation change in this assignment round; the approved inventory/baseline and test sources retain their digests.
