@@ -10,6 +10,232 @@ use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn media_claims_report_each_authoritative_field_once() {
+    use base64::Engine;
+    let bytes = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    for format in FORMATS {
+        let elements = json!([image("first", "file/~"), image("second", "file/~")]);
+        let source = SceneDocument::parse(format!(r#"{{"type":"excalidraw","version":2,"elements":{elements},"files":{{"file/~":{{"id":"file/~","created":1,"dataURL":"data:image/gif;base64,{encoded}","mimeType":"image/jpeg"}}}},"appState":{{}}}}"#).as_bytes()).unwrap();
+        assert_report(
+            &source,
+            format,
+            json!([
+                media_claim_expected(
+                    "file/~",
+                    "/files/file~1~0/dataURL",
+                    "image/gif",
+                    "image/png"
+                ),
+                media_claim_expected(
+                    "file/~",
+                    "/files/file~1~0/mimeType",
+                    "image/jpeg",
+                    "image/png"
+                )
+            ]),
+        );
+        let files = format!(
+            r#"{{"z/~":{{"id":"z/~","created":1,"mimeType":"image/jpeg","dataURL":"data:image/png;base64,{encoded}"}},"a/~":{{"id":"a/~","created":1,"mimeType":"image/jpeg","dataURL":"data:image/png;base64,{encoded}"}}}}"#
+        );
+        let refs = json!([
+            image("first", "a/~"),
+            image("second", "z/~"),
+            image("again", "a/~")
+        ]);
+        let ordered=SceneDocument::parse(format!(r#"{{"type":"excalidraw","version":2,"elements":{refs},"files":{files},"appState":{{}}}}"#).as_bytes()).unwrap();
+        assert_report(
+            &ordered,
+            format,
+            json!([
+                media_claim_expected("z/~", "/files/z~1~0/mimeType", "image/jpeg", "image/png"),
+                media_claim_expected("a/~", "/files/a~1~0/mimeType", "image/jpeg", "image/png")
+            ]),
+        );
+        let assets = SupplementalAssets::builder()
+            .asset_with_media_type("z/~", bytes.clone(), "image/jpeg")
+            .asset_with_media_type("a/~", bytes.clone(), "image/gif")
+            .build()
+            .unwrap();
+        let request = RenderRequest::builder(format)
+            .supplemental_assets(assets)
+            .build()
+            .unwrap();
+        assert_report_with_request(
+            &scene(json!([
+                image("z", "z/~"),
+                image("a", "a/~"),
+                image("again", "a/~")
+            ])),
+            &request,
+            json!([
+                media_claim_expected("a/~", "", "image/gif", "image/png"),
+                media_claim_expected("z/~", "", "image/jpeg", "image/png")
+            ]),
+        );
+        assert_report_with_request(&scene(json!([])), &request, json!([]));
+        let mut outside = image("outside", "z/~");
+        outside["x"] = json!(500);
+        let framed_supplement = scene(json!([
+            {"id":"frame","type":"frame","width":100,"height":100,"updated":1},image("inside","a/~"),outside
+        ]));
+        let frame_request = FrameRenderRequest::builder(format)
+            .supplemental_assets(
+                SupplementalAssets::builder()
+                    .asset_with_media_type("a/~", bytes.clone(), "image/jpeg")
+                    .asset_with_media_type("z/~", bytes.clone(), "image/jpeg")
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        assert_frame_reports_with_request(
+            &framed_supplement,
+            &frame_request,
+            format,
+            &[json!([media_claim_expected(
+                "a/~",
+                "",
+                "image/jpeg",
+                "image/png"
+            )])],
+        );
+        let mut deleted = image("deleted", "file/~");
+        deleted["isDeleted"] = json!(true);
+        let good_file = json!({"id":"file/~","created":1,"mimeType":"image/png","dataURL":format!("data:image/png;base64,{encoded}")});
+        assert_report(
+            &image_scene(
+                json!([image("good", "file/~")]),
+                json!({"file/~":good_file}),
+            ),
+            format,
+            json!([]),
+        );
+        let bad_file = json!({"id":"file/~","created":1,"mimeType":"image/jpeg","dataURL":format!("data:image/png;base64,{encoded}")});
+        assert_report(
+            &image_scene(json!([deleted]), json!({"file/~":bad_file})),
+            format,
+            json!([]),
+        );
+        let framed = image_scene(
+            json!([
+                {"id":"frame","type":"frame","width":100,"height":100,"updated":1},image("one","file/~"),image("two","file/~")
+            ]),
+            json!({"file/~":bad_file}),
+        );
+        assert_frame_reports(
+            &framed,
+            format,
+            &[json!([media_claim_expected(
+                "file/~",
+                "/files/file~1~0/mimeType",
+                "image/jpeg",
+                "image/png"
+            )])],
+        );
+    }
+}
+
+#[test]
+fn supplement_conflicts_report_authority_once_in_every_format() {
+    image_authority_precedence_and_valid_silence();
+    use base64::Engine;
+    let bytes = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&bytes);
+    for format in FORMATS {
+        for supplied in [bytes.clone(), b"different payload".to_vec()] {
+            let assets = SupplementalAssets::builder()
+                .asset("z/~", supplied.clone())
+                .asset("a/~", supplied)
+                .asset("unused", b"unused".to_vec())
+                .build()
+                .unwrap();
+            let request = RenderRequest::builder(format)
+                .supplemental_assets(assets)
+                .build()
+                .unwrap();
+            let files = format!(
+                r#"{{"z/~":{{"id":"z/~","created":1,"dataURL":"data:image/png;base64,{encoded}"}},"a/~":{{"id":"a/~","created":1,"dataURL":"data:image/png;base64,{encoded}"}},"unused":null}}"#
+            );
+            let elements = json!([
+                image("first", "a/~"),
+                image("second", "z/~"),
+                image("again", "a/~")
+            ]);
+            let source=SceneDocument::parse(format!(r#"{{"type":"excalidraw","version":2,"elements":{elements},"files":{files},"appState":{{}}}}"#).as_bytes()).unwrap();
+            assert_report_with_request(
+                &source,
+                &request,
+                json!([
+                    supplement_expected("z/~", "/files/z~1~0"),
+                    supplement_expected("a/~", "/files/a~1~0")
+                ]),
+            );
+            let plain = Renderer::new()
+                .render(&source, &RenderRequest::builder(format).build().unwrap())
+                .unwrap();
+            let supplemented = Renderer::new().render(&source, &request).unwrap();
+            assert_eq!(plain.artifact().bytes(), supplemented.artifact().bytes());
+            let empty=SceneDocument::parse(format!(r#"{{"type":"excalidraw","version":2,"elements":[],"files":{files},"appState":{{}}}}"#).as_bytes()).unwrap();
+            assert_report_with_request(&empty, &request, json!([]));
+            let mut outside = image("outside", "outside");
+            outside["x"] = json!(500);
+            let framed = image_scene(
+                json!([
+                    {"id":"frame","type":"frame","width":100,"height":100,"updated":1},image("inside","a/~"),outside
+                ]),
+                json!({"a/~":{"id":"a/~","created":1,"dataURL":format!("data:image/png;base64,{encoded}")},"outside":null}),
+            );
+            let frame_request = FrameRenderRequest::builder(format)
+                .supplemental_assets(
+                    SupplementalAssets::builder()
+                        .asset("a/~", bytes.clone())
+                        .asset("outside", bytes.clone())
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            assert_frame_reports_with_request(
+                &framed,
+                &frame_request,
+                format,
+                &[json!([supplement_expected("a/~", "/files/a~1~0")])],
+            );
+            let mut deleted = image("deleted", "a/~");
+            deleted["isDeleted"] = json!(true);
+            assert_report_with_request(
+                &image_scene(json!([deleted]), json!({"a/~":null})),
+                &request,
+                json!([]),
+            );
+        }
+    }
+}
+
+fn supplement_expected(id: &str, pointer: &str) -> Value {
+    expected(
+        "asset.supplement-conflict",
+        "warning",
+        json!(["input_repair"]),
+        Value::Null,
+        pointer,
+        json!({"kind":"asset","asset_id":id,"claimed_media_type":null,"validated_media_type":null,"recovery":"ignored","recipe_id":null}),
+    )
+}
+
+fn media_claim_expected(id: &str, pointer: &str, claimed: &str, validated: &str) -> Value {
+    expected(
+        "asset.media-type-mismatch",
+        "warning",
+        json!(["input_repair"]),
+        Value::Null,
+        pointer,
+        json!({"kind":"asset","asset_id":id,"claimed_media_type":claimed,"validated_media_type":validated,"recovery":"repaired","recipe_id":null}),
+    )
+}
+
+#[test]
 fn animation_flattening_contract_in_every_format() {
     use crate::common::codec_fixtures as f;
     use base64::Engine;
@@ -1789,16 +2015,25 @@ fn frame_opacity_cycle_affects_output_even_when_clipping_is_disabled() {
 }
 
 fn assert_frame_reports(scene: &SceneDocument, format: OutputFormat, expected: &[Value]) {
+    let request = FrameRenderRequest::builder(format).build().unwrap();
+    assert_frame_reports_with_request(scene, &request, format, expected);
+}
+
+fn assert_frame_reports_with_request(
+    scene: &SceneDocument,
+    request: &FrameRenderRequest,
+    format: OutputFormat,
+    expected: &[Value],
+) {
     let renderer = Renderer::new();
     let frames: Vec<_> = scene.frames().collect();
     assert_eq!(frames.len(), expected.len());
-    let request = FrameRenderRequest::builder(format).build().unwrap();
     let mut batch = renderer
-        .render_frames(scene, frames.iter().copied(), &request)
+        .render_frames(scene, frames.iter().copied(), request)
         .unwrap();
     for (frame, expected) in frames.iter().zip(expected) {
-        let first = renderer.render_frame(*frame, &request).unwrap();
-        let second = Renderer::new().render_frame(*frame, &request).unwrap();
+        let first = renderer.render_frame(*frame, request).unwrap();
+        let second = Renderer::new().render_frame(*frame, request).unwrap();
         let item = batch.next().unwrap();
         let replayed = item.result().as_ref().unwrap();
         assert_eq!(first.artifact().bytes(), replayed.artifact().bytes());

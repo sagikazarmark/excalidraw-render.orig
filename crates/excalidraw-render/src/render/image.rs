@@ -14,7 +14,9 @@
 
 use crate::normalization::{NormalizedElement, NormalizedElementKind};
 use crate::resource_accounting::{ResourceContext, ResourceDelta, ResourcePhase};
-use crate::{ErrorDetails, OutputFormat, RenderError, RenderRequest, SceneDocument};
+use crate::{
+    DiagnosticCode, ErrorDetails, OutputFormat, RenderError, RenderRequest, SceneDocument,
+};
 
 use super::diagnostics::{
     diagnostic_uses_non_generic_recovery, image_animation_flattened_diagnostic,
@@ -419,6 +421,20 @@ impl ImageResolver {
                         .map_err(|_| {
                             session.memory_failure(request, "compatibility_report", "asset_pointer")
                         })?;
+                    // Claims belong to the authoritative file/request field,
+                    // not each image that references it. Distinct fields and
+                    // file IDs remain distinct even when their bytes are shared.
+                    if session.report.diagnostics.iter().any(|diagnostic| {
+                        diagnostic.code() == DiagnosticCode::ASSET_MEDIA_TYPE_MISMATCH
+                            && diagnostic.json_pointer() == json_pointer
+                            && matches!(diagnostic.details(), Some(ErrorDetails::Asset {
+                                asset_id, claimed_media_type, validated_media_type, ..
+                            }) if asset_id == file_id
+                                && claimed_media_type.as_deref() == Some(claim)
+                                && validated_media_type.as_deref() == Some(media_type))
+                    }) {
+                        continue;
+                    }
                     let diagnostic = crate::scene_surface::asset_media_type_diagnostic(
                         request.format(),
                         file_id,
