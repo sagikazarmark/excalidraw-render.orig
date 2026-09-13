@@ -75,3 +75,7 @@ The new two-level nested test checks exact path segments and compares PNG bytes 
 No production code or approved evidence changed in this final assignment round. The six assignments are proposals, not global approval. New totals: **155 proposed owners / 773 gaps**, including **36 diagnostic owners / 86 diagnostic gaps**. `image.decode-failed` remains a separate incomplete decoder-matrix obligation despite the nested decode samples reused here.
 
 Final verification: all 25 diagnostic-contract tests pass; ownership validation and approved native baseline verification pass; all ten Dagger conformance/lint checks and the Dagger fast test tier pass. `git diff --check` passes, and temporary ICC probes were removed.
+
+### Scoped maintainer approval
+
+The maintainer explicitly approved the six malformed-file/unsupported-image assignments on 2026-09-13, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5655207357). The approval identifies commit `560955e9908a6dbb1168834da61b556f5ac7c671`, binding the exact dispositions, test selectors, source digest and rationales. The incomplete global ledger retains null approval with 773 gaps; this scoped record does not approve unrelated assignments.
