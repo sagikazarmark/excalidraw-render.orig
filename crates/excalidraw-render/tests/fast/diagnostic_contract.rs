@@ -10,6 +10,146 @@ use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn malformed_record_types_and_invalid_base64_have_exact_reports() {
+    for format in FORMATS {
+        for record in [
+            json!(false),
+            json!(7),
+            json!("bad"),
+            json!([]),
+            json!({"id":"file","created":1,"dataURL":"data:image/png;base64,%%%"}),
+        ] {
+            let source = image_scene(json!([image("image", "file")]), json!({"file":record}));
+            assert_report(
+                &source,
+                format,
+                json!([image_expected(
+                    "asset.malformed-file-record",
+                    if record.is_object() {
+                        json!("image")
+                    } else {
+                        Value::Null
+                    },
+                    if record.is_object() {
+                        "/files/file/dataURL"
+                    } else {
+                        "/files/file"
+                    },
+                    "file",
+                    "saved",
+                    format
+                )]),
+            );
+            assert_report(
+                &image_scene(json!([]), json!({"file":record})),
+                format,
+                json!([]),
+            );
+        }
+    }
+}
+
+#[test]
+fn shared_file_recovery_is_scoped_to_selected_frame_references() {
+    for format in FORMATS {
+        for (record, code, owner, pointer) in [
+            (
+                Value::Null,
+                "asset.malformed-file-record",
+                false,
+                "/files/shared",
+            ),
+            (
+                json!({"id":"shared","created":1}),
+                "asset.malformed-file-record",
+                false,
+                "/files/shared/dataURL",
+            ),
+            (
+                json!({"id":"shared","created":1,"dataURL":"data:image/png;base64,%%%"}),
+                "asset.malformed-file-record",
+                true,
+                "/files/shared/dataURL",
+            ),
+            (
+                json!({"id":"shared","created":1,"dataURL":"data:image/png;base64,aW52YWxpZA=="}),
+                "image.unsupported-format",
+                true,
+                "/files/shared/dataURL",
+            ),
+        ] {
+            let mut saved = image("saved", "shared");
+            let mut error = image("error", "shared");
+            saved["x"] = json!(10);
+            error["x"] = json!(210);
+            error["status"] = json!("error");
+            let source = image_scene(
+                json!([
+                    {"id":"first","type":"frame","width":100,"height":100,"updated":1},
+                    {"id":"second","type":"frame","x":200,"width":100,"height":100,"updated":1},
+                    saved, error
+                ]),
+                json!({"shared":record}),
+            );
+            assert_frame_reports(
+                &source,
+                format,
+                &[
+                    json!([image_expected(
+                        code,
+                        if owner { json!("saved") } else { Value::Null },
+                        pointer,
+                        "shared",
+                        "saved",
+                        format
+                    )]),
+                    json!([image_expected(
+                        code,
+                        if owner { json!("error") } else { Value::Null },
+                        pointer,
+                        "shared",
+                        "error",
+                        format
+                    )]),
+                ],
+            );
+            // Swap source-reference order without changing frame order. Both
+            // cached batch and standalone selection must still use each target.
+            let reversed = image_scene(
+                json!([
+                    {"id":"first","type":"frame","width":100,"height":100,"updated":1},
+                    {"id":"second","type":"frame","x":200,"width":100,"height":100,"updated":1},
+                    error, saved
+                ]),
+                json!({"shared":record}),
+            );
+            assert_frame_reports(
+                &reversed,
+                format,
+                &[
+                    json!([image_expected(
+                        code,
+                        if owner { json!("saved") } else { Value::Null },
+                        pointer,
+                        "shared",
+                        "saved",
+                        format
+                    )]),
+                    json!([image_expected(
+                        code,
+                        if owner { json!("error") } else { Value::Null },
+                        pointer,
+                        "shared",
+                        "error",
+                        format
+                    )]),
+                ],
+            );
+        }
+    }
+}
+
+#[test]
 fn image_authorities_have_exact_ordered_diagnostics() {
     missing_images_report_referring_owners_and_format_specific_recovery();
     malformed_file_records_report_each_authority_once_and_unreferenced_are_silent();

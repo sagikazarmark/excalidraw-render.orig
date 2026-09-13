@@ -275,6 +275,29 @@ impl PendingDiagnostic {
         &self.json_pointer
     }
 
+    /// Re-select a file-level recovery after the frame's referring images are
+    /// known. Preserve the original source pointer, message and ordering data.
+    pub(crate) fn scope_malformed_image_recovery(
+        &mut self,
+        error_status: impl FnOnce(&str) -> bool,
+    ) -> Result<(), TryReserveError> {
+        if self.code != DiagnosticCode::ASSET_MALFORMED_FILE_RECORD {
+            return Ok(());
+        }
+        if let Some(ErrorDetails::Asset { asset_id, .. }) = self.details.as_deref() {
+            let kind = DiagnosticKind::ImageUnavailable {
+                failure: crate::diagnostic_registry::ImageFailure::MalformedFileRecord,
+                asset_id,
+                recovery: crate::diagnostic_registry::ImageRecovery::for_format(
+                    self.format,
+                    error_status(asset_id),
+                ),
+            };
+            self.details = Some(Box::new(kind.into_details()?));
+        }
+        Ok(())
+    }
+
     #[cfg(test)]
     pub(crate) fn effects(&self) -> &[DiagnosticEffect] {
         &self.effects

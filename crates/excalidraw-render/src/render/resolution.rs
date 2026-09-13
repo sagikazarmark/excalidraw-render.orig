@@ -718,6 +718,15 @@ impl RenderSession {
                 normalization
                     .files
                     .retain(|record| file_ids.binary_search(&record.key).is_ok());
+                for index in 0..self.pending_frame_normalization_diagnostics.len() {
+                    self.pending_frame_normalization_diagnostics[index].diagnostic.scope_malformed_image_recovery(|file_id| {
+                        normalization.elements.iter().any(|element| {
+                            matches!(&element.kind, NormalizedElementKind::Image(image)
+                                if image.file_id.as_deref() == Some(file_id)
+                                && image.status == crate::normalization::NormalizedImageStatus::Error)
+                        })
+                    }).map_err(|_| self.memory_failure(request, "frame_selection", "malformed_image_recovery"))?;
+                }
                 self.flush_frame_normalization_diagnostics(
                     request,
                     &diagnostic_sources,

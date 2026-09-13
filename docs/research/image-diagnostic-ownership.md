@@ -23,6 +23,22 @@ One live saved image and one deleted error-status image referenced the same null
 
 Malformed records still need the complete malformed-member matrix, mixed-status live shared-file rules and frame scoping. Unsupported payloads likewise need mixed-status/frame coverage. Both registry entries declare conditional semantic effects for lost nested semantics; establish the reachable nested paths (or an evidence-backed inapplicability argument) before assigning these broader obligations. The passing top-level matrix is partial evidence for those six rows.
 
+## Mixed-status/frame follow-up
+
+The follow-up based on `02153f2` adds exact reports for boolean/number/string/array file records and malformed base64, including unreferenced silence. A two-frame scene shares one file between a saved image in the first frame and an error-status image in the second. Null records, missing payloads, malformed base64 and unsupported payloads are tested in all three formats and both source-reference orders, with standalone/batch equality.
+
+The null-record PNG test failed: whole-scene normalization selected the error recipe even for the frame containing only the saved image. After frame selection, pending malformed-file diagnostics now reselect their typed image recovery from the retained normalized references. Original pointer, owner, message and order metadata are preserved. The same logic applies to replayed batch diagnostics; all new frame tests pass.
+
+### Concrete remaining findings
+
+1. **Null payload overlap.** Render an image referring to `file` with `files: {"file":{"id":"file","created":1,"dataURL":null}}`. Every format emits both `asset.malformed-file-record` (element owner `image`) and `compatibility.unsupported-property-value` (null element owner) at `/files/file/dataURL`. Both claim replacement/omission of the same payload. Resolve narrower-cause suppression and the PNG field recipe before assigning the malformed-file obligations. This output was observed, not installed as an approved expectation.
+2. **Reachable nested contract mismatch.** Use a valid SVG data URL whose body is `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="data:image/png;base64,aW52YWxpZA==" width="40" height="30"/></svg>`. All formats emit `image.unsupported-format` at the outer `/files/file/dataURL`, null element owner, effects `[visual]`, details kind `nested_source`, one asset-chain entry `file/0`, path node ordinal 1 / attribute `href` ordinal 0, recovery `removed`. The registry currently admits only asset details and top-level placeholder/omitted recoveries for this code. Nested malformed base64 instead emits `image.decode-failed` with the same nested path/recovery. Thus nested unsupported behavior is reachable and cannot be dismissed as an exclusion.
+3. **Whole-scene mixed-status policy.** File-classification diagnostics currently select error if any live referring source is error; runtime payload diagnostics select the first referring occurrence. A single file-owned recipe cannot describe two different per-reference recipes without an explicit rule. The new frame tests establish the unambiguous single-status-per-target case; global mixed-status semantics still need a contract decision.
+
+The six broad obligations remain gaps with these concrete reasons. Temporary report probes were removed; no passing expectation endorses the unresolved null/nested output. The global totals stay 149 proposed owners / 779 gaps.
+
+Follow-up verification: all 18 diagnostic-contract tests pass, ownership validation passes, all ten Dagger conformance/lint checks pass, and all three Dagger workspace test checks pass. The previously stale rectangle PDF binding is now approved and its fast check passes. `git diff --check` passes.
+
 Current totals: **149 proposed owners / 779 gaps**, with **30 diagnostic/format owners / 92 diagnostic gaps**. The prior scoped font approval is unaffected; the new missing-image assignments remain proposals and global ownership approval is pending.
 
 ## Verification
