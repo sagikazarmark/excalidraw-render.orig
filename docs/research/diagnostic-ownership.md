@@ -1,7 +1,7 @@
 # Diagnostic/format ownership audit
 #85 — public-facade diagnostic assertions
 
-Reviewed all 122 current diagnostic/format obligations. Including the cycle, font and image follow-ups, 36 now have proposed owners and 86 remain explicit gaps. The global ledger has 155 proposed owners and 773 gaps.
+Reviewed all 122 current diagnostic/format obligations. Including the cycle, font and image follow-ups, 39 now have proposed owners and 83 remain explicit gaps. The global ledger has 158 proposed owners and 770 gaps.
 
 The new `fast/diagnostic_contract.rs` tests author expected machine-readable diagnostic fields independently of the production registry. They compare the complete ordered diagnostic array, exact format/severity/effects/details/recovery/owner/pointer, nonempty messages, and byte-identical serialized reports and artifacts across fresh calls. Message prose is not pinned as a semantic requirement. Image recovery tests cover both saved and error source statuses.
 
@@ -26,7 +26,7 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 | `font.missing-glyph` | pdf, png, svg | owned | font_diagnostics_cover_text_generated_labels_and_silence — text/frame/generated-label scalar reports, logical order, omission/truncation silence and default-ignorable boundaries. |
 | `font.noto-emoji-substituted` | pdf, png, svg | owned | font_diagnostics_cover_text_generated_labels_and_silence — occurrence multiplicity, ordinary/embeddable recipes, frame scope, local-omission and zero-extent branches. |
 | `image.animation-flattened` | pdf, png | gap | APNG/GIF/WebP tests cover flattened default frames, duplicate references and omitted occurrences; consolidate full severity/effects/details/file identity and static/one-frame/unreferenced silence across accepted animated codecs. |
-| `image.decode-failed` | pdf, png, svg | gap | Each accepted decoder has malformed-payload tests. Need an all-decoder exact-format report matrix preserving validated media type, file deduplication, status-selected recipe and silence before assigning. |
+| `image.decode-failed` | pdf, png, svg | owned | decode_failures_cover_every_codec_and_authority — exact seven-codec source/supplemental/nested reports, validated MIME, first-reference status, corruption variants, silence and frame replay. See [decode assessment](decode-diagnostic-ownership.md). |
 | `image.forbidden-resource` | pdf, png, svg | gap | Existing nested_svg_asset_render tests cover sanitization and reference restrictions. Full nested_source chains, safe-viewport/omission branches and repeated occurrence ordering need a complete exact-field owner. |
 | `image.missing-file` | pdf, png, svg | owned | missing_image_contract_in_every_format — exact per-reference reports, missing/null/empty and escaped IDs, saved/error recovery, valid/supplemental/deleted silence and frame scope/replay. |
 | `image.unsafe-svg-content-removed` | pdf, png, svg | gap | Existing nested_svg_asset_render tests cover sanitization and reference restrictions. Full nested_source chains, safe-viewport/omission branches and repeated occurrence ordering need a complete exact-field owner. |

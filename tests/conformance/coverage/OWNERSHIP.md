@@ -18,9 +18,9 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **928** | |
 
-155 primary owners are proposed (118 case labels, the AVIF rejection test and
-36 diagnostic/format obligations). 773 obligations remain explicit gaps.
-The diagnostic audit retains 86 of its 122 obligations as gaps with specific
+158 primary owners are proposed (118 case labels, the AVIF rejection test and
+39 diagnostic/format obligations). 770 obligations remain explicit gaps.
+The diagnostic audit retains 83 of its 122 obligations as gaps with specific
 missing assertions or branches; see [the per-code audit](../../../docs/research/diagnostic-ownership.md).
 These counts are **not a coverage percentage**:
 codec facets still need expansion into the full admitted-profile matrix, and

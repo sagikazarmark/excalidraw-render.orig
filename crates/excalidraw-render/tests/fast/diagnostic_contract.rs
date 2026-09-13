@@ -10,6 +10,257 @@ use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn decode_failures_cover_every_codec_and_authority() {
+    use crate::common::codec_fixtures as fixtures;
+    use base64::Engine;
+    let png = fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
+    let valid = [
+        ("image/png", png.clone(), b"\x89PNG\r\n\x1a\ninvalid".to_vec()),
+        ("image/jpeg", fixtures::jpeg_rgb(1,1,&[[255,0,0]]), b"\xff\xd8\xffinvalid".to_vec()),
+        ("image/gif", fixtures::gif(&[fixtures::gif_frame(&[0],1,1,&[255,0,0,0,0,0],None)]), b"GIF89ainvalid".to_vec()),
+        ("image/webp", fixtures::webp_rgba(1,1,&[[255,0,0,255]]), b"RIFF\0\0\0\0WEBPinvalid".to_vec()),
+        ("image/bmp", fixtures::bmp24(1,1,&[[255,0,0]]), b"BMinvalid".to_vec()),
+        ("image/x-icon", fixtures::ico(&[(1,1,32,png)]), b"\0\0\x01\0invalid".to_vec()),
+        ("image/svg+xml", br#"<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="red"/></svg>"#.to_vec(), b"<svg invalid".to_vec()),
+    ];
+    for (mime, good, bad) in valid {
+        // A second vector reaches beyond the signature: valid PNG checksums
+        // around broken compressed data, or a truncated otherwise-valid file.
+        let mut damaged = good.clone();
+        if mime == "image/png" {
+            fixtures::mutate_first_png_chunk(&mut damaged, *b"IDAT", |data| data[0] ^= 0xff);
+        } else {
+            damaged.truncate(damaged.len().saturating_sub(2));
+        }
+        let damaged_url = format!(
+            "data:{mime};base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(&damaged)
+        );
+        let good_url = format!(
+            "data:{mime};base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(&good)
+        );
+        // Deliberately conflicting claims must not overwrite validated kind.
+        let bad_url = format!(
+            "data:image/png;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(&bad)
+        );
+        for format in FORMATS {
+            assert_report(
+                &image_scene(
+                    json!([image("damaged", "file")]),
+                    json!({"file":{"id":"file","created":1,"dataURL":damaged_url}}),
+                ),
+                format,
+                json!([decode_expected(
+                    "damaged",
+                    "/files/file/dataURL",
+                    "file",
+                    mime,
+                    "saved",
+                    format
+                )]),
+            );
+            let nested_svg = format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="{bad_url}" width="40" height="30"/></svg>"#
+            );
+            let nested_url = format!(
+                "data:image/svg+xml;base64,{}",
+                base64::engine::general_purpose::STANDARD.encode(nested_svg)
+            );
+            assert_report(
+                &image_scene(
+                    json!([image("nested", "outer")]),
+                    json!({"outer":{"id":"outer","created":1,"dataURL":nested_url}}),
+                ),
+                format,
+                json!([expected(
+                    "image.decode-failed",
+                    "warning",
+                    json!(["visual"]),
+                    Value::Null,
+                    "/files/outer/dataURL",
+                    json!({"kind":"nested_source","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":0,"name":"href"}]}],"recovery":"removed"})
+                )]),
+            );
+            for status in ["saved", "error"] {
+                let mut first = image("z-first", "a/~");
+                first["status"] = json!(status);
+                let mut again = first.clone();
+                again["id"] = json!("again");
+                again["status"] = json!(if status == "saved" { "error" } else { "saved" });
+                let mut second = image("a-second", "z/~");
+                second["status"] = json!(status);
+                let elements = json!([first, second, again]);
+                let files = format!(
+                    r#"{{"z/~":{{"id":"z/~","created":1,"mimeType":"image/png","dataURL":"{bad_url}"}},"a/~":{{"id":"a/~","created":1,"mimeType":"image/png","dataURL":"{bad_url}"}}}}"#
+                );
+                let source = SceneDocument::parse(format!(r#"{{"type":"excalidraw","version":2,"elements":{elements},"appState":{{}},"files":{files}}}"#).as_bytes()).unwrap();
+                assert_report(
+                    &source,
+                    format,
+                    json!([
+                        decode_expected(
+                            "a-second",
+                            "/files/z~1~0/dataURL",
+                            "z/~",
+                            mime,
+                            status,
+                            format
+                        ),
+                        decode_expected(
+                            "z-first",
+                            "/files/a~1~0/dataURL",
+                            "a/~",
+                            mime,
+                            status,
+                            format
+                        )
+                    ]),
+                );
+                let request = RenderRequest::builder(format)
+                    .supplemental_assets(
+                        SupplementalAssets::builder()
+                            .asset_with_media_type("z/~", bad.clone(), "image/png")
+                            .asset("a/~", bad.clone())
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                assert_report_with_request(
+                    &scene(elements.clone()),
+                    &request,
+                    json!([
+                        decode_expected("z-first", "", "a/~", mime, status, format),
+                        decode_expected("a-second", "", "z/~", mime, status, format)
+                    ]),
+                );
+                assert_report_with_request(&scene(json!([])), &request, json!([]));
+                let good_scene = image_scene(
+                    json!([first]),
+                    json!({"a/~":{"id":"a/~","created":1,"mimeType":mime,"dataURL":good_url}}),
+                );
+                assert_report(&good_scene, format, json!([]));
+                let good_request = RenderRequest::builder(format)
+                    .supplemental_assets(
+                        SupplementalAssets::builder()
+                            .asset("a/~", good.clone())
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                assert_report_with_request(&scene(json!([first])), &good_request, json!([]));
+                let mut deleted = first.clone();
+                deleted["isDeleted"] = json!(true);
+                assert_report(
+                    &image_scene(
+                        json!([deleted]),
+                        json!({"a/~":{"id":"a/~","created":1,"dataURL":bad_url}}),
+                    ),
+                    format,
+                    json!([]),
+                );
+                let mut outside = again.clone();
+                outside["x"] = json!(500);
+                let frame = image_scene(
+                    json!([
+                        {"id":"frame","type":"frame","width":100,"height":100,"updated":1},first,outside
+                    ]),
+                    json!({"a/~":{"id":"a/~","created":1,"dataURL":bad_url}}),
+                );
+                assert_frame_reports(
+                    &frame,
+                    format,
+                    &[json!([decode_expected(
+                        "z-first",
+                        "/files/a~1~0/dataURL",
+                        "a/~",
+                        mime,
+                        status,
+                        format
+                    )])],
+                );
+            }
+        }
+    }
+    unsupported_nested_images_report_removed_paths();
+    nested_decode_failure_preserves_surrounding_content();
+}
+
+fn nested_decode_failure_preserves_surrounding_content() {
+    use base64::Engine;
+    let wrap = |body: &str| {
+        format!(
+            "data:image/svg+xml;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(body)
+        )
+    };
+    let inner = r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="data:image/png;base64,%%%" width="40" height="30"/><text x="0" y="20">Kept</text></svg>"#;
+    let scene_for = |inner: &str| {
+        let data = wrap(&format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="{}" width="40" height="30"/></svg>"#,
+            wrap(inner)
+        ));
+        image_scene(
+            json!([image("image", "outer")]),
+            json!({"outer":{"id":"outer","created":1,"dataURL":data}}),
+        )
+    };
+    let source = scene_for(inner);
+    let repaired = scene_for(&inner.replace("href=\"data:image/png;base64,%%%\"", ""));
+    for format in FORMATS {
+        assert_report(
+            &source,
+            format,
+            json!([expected(
+                "image.decode-failed",
+                "warning",
+                json!(["visual"]),
+                Value::Null,
+                "/files/outer/dataURL",
+                json!({"kind":"nested_source","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":0,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":0,"name":"href"}]}],"recovery":"removed"})
+            )]),
+        );
+        assert_report(&repaired, format, json!([]));
+    }
+    let request = RenderRequest::builder(OutputFormat::Png).build().unwrap();
+    assert_eq!(
+        Renderer::new()
+            .render(&source, &request)
+            .unwrap()
+            .artifact()
+            .bytes(),
+        Renderer::new()
+            .render(&repaired, &request)
+            .unwrap()
+            .artifact()
+            .bytes()
+    );
+}
+
+fn decode_expected(
+    owner: &str,
+    pointer: &str,
+    id: &str,
+    mime: &str,
+    status: &str,
+    format: OutputFormat,
+) -> Value {
+    let mut row = image_expected(
+        "image.decode-failed",
+        json!(owner),
+        pointer,
+        id,
+        status,
+        format,
+    );
+    row["details"]["validated_media_type"] = json!(mime);
+    row
+}
+
+#[test]
 fn unsupported_image_contract_in_every_format() {
     image_authorities_have_exact_ordered_diagnostics();
     shared_file_recipe_uses_first_participating_reference();
