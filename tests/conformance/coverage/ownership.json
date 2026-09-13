@@ -2238,25 +2238,88 @@
     {
       "id": "diagnostic:asset.malformed-file-record:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "First-reference recovery and narrower-cause handling are tested; the registry amendment admitting nested removal and all 36 affected case subjects are approved. Separate PDF/snapshot rebinding and remaining nested-semantic branch review precede complete ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
+          },
+          "function": "malformed_file_contract_in_every_format",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::malformed_file_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "pdf: Exact non-object/missing/malformed data-URL reports, narrower field suppression, first-reference saved/error recipes, deleted/nonselected/unreferenced silence, source and supplemental authority/order, and frame replay. Payload failures precede semantic admission; nested malformed URLs use decode-failed instead. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
       }
     },
     {
       "id": "diagnostic:asset.malformed-file-record:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "First-reference recovery and narrower-cause handling are tested; the registry amendment admitting nested removal and all 36 affected case subjects are approved. Separate PDF/snapshot rebinding and remaining nested-semantic branch review precede complete ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
+          },
+          "function": "malformed_file_contract_in_every_format",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::malformed_file_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "png: Exact non-object/missing/malformed data-URL reports, narrower field suppression, first-reference saved/error recipes, deleted/nonselected/unreferenced silence, source and supplemental authority/order, and frame replay. Payload failures precede semantic admission; nested malformed URLs use decode-failed instead. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
       }
     },
     {
       "id": "diagnostic:asset.malformed-file-record:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "First-reference recovery and narrower-cause handling are tested; the registry amendment admitting nested removal and all 36 affected case subjects are approved. Separate PDF/snapshot rebinding and remaining nested-semantic branch review precede complete ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
+          },
+          "function": "malformed_file_contract_in_every_format",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::malformed_file_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "svg: Exact non-object/missing/malformed data-URL reports, narrower field suppression, first-reference saved/error recipes, deleted/nonselected/unreferenced silence, source and supplemental authority/order, and frame replay. Payload failures precede semantic admission; nested malformed URLs use decode-failed instead. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
       }
     },
     {
@@ -2315,7 +2378,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2344,7 +2407,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2373,7 +2436,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2450,7 +2513,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2479,7 +2542,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2508,7 +2571,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2561,7 +2624,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2590,7 +2653,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2619,7 +2682,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2648,7 +2711,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2677,7 +2740,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2706,7 +2769,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2735,7 +2798,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2764,7 +2827,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2793,7 +2856,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2822,7 +2885,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2851,7 +2914,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2880,7 +2943,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2973,7 +3036,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -3002,7 +3065,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -3031,7 +3094,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -3079,25 +3142,88 @@
     {
       "id": "diagnostic:image.unsupported-format:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "First-reference recovery and narrower-cause handling are tested; the registry amendment admitting nested removal and all 36 affected case subjects are approved. Separate PDF/snapshot rebinding and remaining nested-semantic branch review precede complete ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
+          },
+          "function": "unsupported_image_contract_in_every_format",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::unsupported_image_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "pdf: Exact top-level and nested reports, source/supplemental authority/order, mixed-status first-reference recipes, frame replay, nested path multiplicity and unreferenced silence; JPEG/WebP profile rejection and SVG pass-through; repaired-document pixels prove surrounding nested text survives. Reviewed unsupported paths reject unaccepted media or raster profiles, not admitted nested text/link semantics. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
       }
     },
     {
       "id": "diagnostic:image.unsupported-format:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "First-reference recovery and narrower-cause handling are tested; the registry amendment admitting nested removal and all 36 affected case subjects are approved. Separate PDF/snapshot rebinding and remaining nested-semantic branch review precede complete ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
+          },
+          "function": "unsupported_image_contract_in_every_format",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::unsupported_image_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "png: Exact top-level and nested reports, source/supplemental authority/order, mixed-status first-reference recipes, frame replay, nested path multiplicity and unreferenced silence; JPEG/WebP profile rejection and SVG pass-through; repaired-document pixels prove surrounding nested text survives. Reviewed unsupported paths reject unaccepted media or raster profiles, not admitted nested text/link semantics. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
       }
     },
     {
       "id": "diagnostic:image.unsupported-format:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "First-reference recovery and narrower-cause handling are tested; the registry amendment admitting nested removal and all 36 affected case subjects are approved. Separate PDF/snapshot rebinding and remaining nested-semantic branch review precede complete ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
+          },
+          "function": "unsupported_image_contract_in_every_format",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::unsupported_image_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "svg: Exact top-level and nested reports, source/supplemental authority/order, mixed-status first-reference recipes, frame replay, nested path multiplicity and unreferenced silence; JPEG/WebP profile rejection and SVG pass-through; repaired-document pixels prove surrounding nested text survives. Reviewed unsupported paths reject unaccepted media or raster profiles, not admitted nested text/link semantics. Complete ordered machine fields and fresh report/artifact equality are asserted by the selected test."
       }
     },
     {
@@ -3340,7 +3466,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3369,7 +3495,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3398,7 +3524,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3427,7 +3553,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3456,7 +3582,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3485,7 +3611,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3514,7 +3640,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3543,7 +3669,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3572,7 +3698,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "c3f852b791109d316017b3dfba7689f21524fe6d009814b088729df0583e0387"
+            "sha256": "e012097be3c7157079151c7f1ee98ab083240fa06c5deaf03b8fb113edfe8f11"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",

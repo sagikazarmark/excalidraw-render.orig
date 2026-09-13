@@ -10,6 +10,160 @@ use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn unsupported_image_contract_in_every_format() {
+    image_authorities_have_exact_ordered_diagnostics();
+    shared_file_recipe_uses_first_participating_reference();
+    shared_file_recovery_is_scoped_to_selected_frame_references();
+    unsupported_nested_images_report_removed_paths();
+    nested_unsupported_recovery_preserves_surrounding_text();
+    invalid_image_profiles_report_unsupported_recovery();
+}
+
+#[test]
+fn malformed_file_contract_in_every_format() {
+    image_authorities_have_exact_ordered_diagnostics();
+    malformed_record_types_and_invalid_base64_have_exact_reports();
+    invalid_payload_field_suppresses_duplicate_asset_failure();
+    shared_file_recipe_uses_first_participating_reference();
+    shared_file_recovery_is_scoped_to_selected_frame_references();
+    deleted_error_image_does_not_select_live_file_recovery_recipe();
+    // Failed data-URL syntax never admits nested content, even when its claim
+    // says SVG. These remain asset details with visual-only effects.
+    for format in FORMATS {
+        for payload in [
+            "data:image/svg+xml,not-base64",
+            "data:image/svg+xml;base64,%%%",
+            "data:image/png;base64,AA=A",
+            "data:image/png;base64,A===",
+        ] {
+            let source = image_scene(
+                json!([image("image", "file")]),
+                json!({"file":{"id":"file","created":1,"dataURL":payload}}),
+            );
+            assert_report(
+                &source,
+                format,
+                json!([image_expected(
+                    "asset.malformed-file-record",
+                    json!("image"),
+                    "/files/file/dataURL",
+                    "file",
+                    "saved",
+                    format
+                )]),
+            );
+        }
+    }
+}
+
+#[test]
+fn nested_unsupported_recovery_preserves_surrounding_text() {
+    use base64::Engine;
+    let inner = r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="data:image/png;base64,aW52YWxpZA==" width="40" height="30"/><text x="0" y="20">Kept</text></svg>"#;
+    let nested = format!(
+        "data:image/svg+xml;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(inner)
+    );
+    let outer = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="{nested}" width="40" height="30"/></svg>"#
+    );
+    let data = format!(
+        "data:image/svg+xml;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(outer)
+    );
+    let source = image_scene(
+        json!([image("image", "outer")]),
+        json!({"outer":{"id":"outer","created":1,"dataURL":data}}),
+    );
+    for format in FORMATS {
+        let diagnostic = expected(
+            "image.unsupported-format",
+            "warning",
+            json!(["visual"]),
+            Value::Null,
+            "/files/outer/dataURL",
+            json!({"kind":"nested_source","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":0,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":0,"name":"href"}]}],"recovery":"removed"}),
+        );
+        assert_report(&source, format, json!([diagnostic]));
+    }
+    // Compare actual pixels with the explicit repaired document. This proves
+    // the sibling text survives rather than merely trusting a visual-only tag.
+    let repaired_inner = inner.replace("href=\"data:image/png;base64,aW52YWxpZA==\"", "");
+    let repaired_nested = format!(
+        "data:image/svg+xml;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(repaired_inner)
+    );
+    let repaired_outer = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="{repaired_nested}" width="40" height="30"/></svg>"#
+    );
+    let repaired_data = format!(
+        "data:image/svg+xml;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(repaired_outer)
+    );
+    let repaired = image_scene(
+        json!([image("image", "outer")]),
+        json!({"outer":{"id":"outer","created":1,"dataURL":repaired_data}}),
+    );
+    let request = RenderRequest::builder(OutputFormat::Png).build().unwrap();
+    let actual = Renderer::new().render(&source, &request).unwrap();
+    let expected = Renderer::new().render(&repaired, &request).unwrap();
+    assert!(expected.report().diagnostics().is_empty());
+    assert_eq!(actual.artifact().bytes(), expected.artifact().bytes());
+}
+
+#[test]
+fn invalid_image_profiles_report_unsupported_recovery() {
+    use base64::Engine;
+    let mut jpeg = Vec::new();
+    jpeg_encoder::Encoder::new(&mut jpeg, 90)
+        .encode(&[255, 0, 0], 1, 1, jpeg_encoder::ColorType::Rgb)
+        .unwrap();
+    let mut payload = b"ICC_PROFILE\0\x01\x01".to_vec();
+    payload.extend_from_slice(b"invalid profile");
+    let mut with_profile = jpeg[..2].to_vec();
+    with_profile.extend_from_slice(&[0xff, 0xe2]);
+    with_profile.extend_from_slice(&((payload.len() + 2) as u16).to_be_bytes());
+    with_profile.extend_from_slice(&payload);
+    with_profile.extend_from_slice(&jpeg[2..]);
+    let webp = crate::common::codec_fixtures::webp_with_metadata(
+        1,
+        1,
+        &[[255, 0, 0, 255]],
+        Some(b"invalid profile".to_vec()),
+        None,
+    );
+    for (mime, bytes) in [("image/jpeg", with_profile), ("image/webp", webp)] {
+        let data = format!(
+            "data:{mime};base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(bytes)
+        );
+        for format in FORMATS {
+            for status in ["saved", "error"] {
+                let mut element = image("image", "file");
+                element["status"] = json!(status);
+                let source = image_scene(
+                    json!([element]),
+                    json!({"file":{"id":"file","created":1,"mimeType":mime,"dataURL":data}}),
+                );
+                let rows = if format == OutputFormat::Svg {
+                    json!([])
+                } else {
+                    json!([image_expected(
+                        "image.unsupported-format",
+                        json!("image"),
+                        "/files/file/dataURL",
+                        "file",
+                        status,
+                        format
+                    )])
+                };
+                assert_report(&source, format, rows);
+            }
+        }
+    }
+}
+
+#[test]
 fn shared_file_recipe_uses_first_participating_reference() {
     for format in FORMATS {
         for first_error in [false, true] {

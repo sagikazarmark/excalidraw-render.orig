@@ -1,7 +1,7 @@
 # Diagnostic/format ownership audit
 #85 — public-facade diagnostic assertions
 
-Reviewed all 122 current diagnostic/format obligations. Including the cycle, font and missing-image follow-ups, 30 now have proposed owners and 92 remain explicit gaps. The global ledger has 149 proposed owners and 779 gaps.
+Reviewed all 122 current diagnostic/format obligations. Including the cycle, font and image follow-ups, 36 now have proposed owners and 86 remain explicit gaps. The global ledger has 155 proposed owners and 773 gaps.
 
 The new `fast/diagnostic_contract.rs` tests author expected machine-readable diagnostic fields independently of the production registry. They compare the complete ordered diagnostic array, exact format/severity/effects/details/recovery/owner/pointer, nonempty messages, and byte-identical serialized reports and artifacts across fresh calls. Message prose is not pinned as a semantic requirement. Image recovery tests cover both saved and error source statuses.
 
@@ -13,7 +13,7 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 
 | Code | Formats | Status | Owner / remaining work |
 | --- | --- | --- | --- |
-| `asset.malformed-file-record` | pdf, png, svg | gap | Exact null/missing-dataURL, escaped-ID, ordering and supplemental-authority tests added; deleted-status recipe contamination fixed. Mixed live statuses, malformed members, frame scope and nested-effect reachability remain. See [image audit](image-diagnostic-ownership.md). |
+| `asset.malformed-file-record` | pdf, png, svg | owned | malformed_file_contract_in_every_format — record/payload variants, authority/order, first-reference status, narrower-cause suppression and frame replay; see [assessment](image-diagnostic-ownership.md#final-ownership-assessment). |
 | `asset.media-type-mismatch` | pdf, png, svg | gap | Existing static PNG/JPEG tests assert precedence and code counts. Complete claimed/validated MIME, authority/file-ID ordering, repair effects and no-conflict silence assertions are still needed across formats. |
 | `asset.supplement-conflict` | pdf, png, svg | gap | Existing static PNG/JPEG tests assert precedence and code counts. Complete claimed/validated MIME, authority/file-ID ordering, repair effects and no-conflict silence assertions are still needed across formats. |
 | `color.invalid` | pdf, png, svg | owned | invalid_colors_substitute_in_member_order_and_valid_colors_are_silent |
@@ -30,7 +30,7 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 | `image.forbidden-resource` | pdf, png, svg | gap | Existing nested_svg_asset_render tests cover sanitization and reference restrictions. Full nested_source chains, safe-viewport/omission branches and repeated occurrence ordering need a complete exact-field owner. |
 | `image.missing-file` | pdf, png, svg | owned | missing_image_contract_in_every_format — exact per-reference reports, missing/null/empty and escaped IDs, saved/error recovery, valid/supplemental/deleted silence and frame scope/replay. |
 | `image.unsafe-svg-content-removed` | pdf, png, svg | gap | Existing nested_svg_asset_render tests cover sanitization and reference restrictions. Full nested_source chains, safe-viewport/omission branches and repeated occurrence ordering need a complete exact-field owner. |
-| `image.unsupported-format` | pdf, png, svg | gap | Exact source/reference order, escaped IDs, root supplemental ownership/order, authority precedence and silence added. Mixed live statuses, frame scope and nested-effect reachability remain. See [image audit](image-diagnostic-ownership.md). |
+| `image.unsupported-format` | pdf, png, svg | owned | unsupported_image_contract_in_every_format — source/supplemental/nested reports, status and frame scope, ICC rejection/pass-through, nested paths and semantic preservation; see [assessment](image-diagnostic-ownership.md#final-ownership-assessment). |
 | `link.unsafe-omitted` | pdf, svg | gap | New exact-report tests cover linked shapes, safe-link silence and PNG silence. Generated-label participation remains unproven by this owner. |
 | `metadata.diagnostic-summary-serialization-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |
 | `metadata.manifest-embedding-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |

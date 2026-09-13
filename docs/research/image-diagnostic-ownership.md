@@ -1,6 +1,6 @@
 # Image diagnostic ownership follow-up
 
-Base: `9eb8059`. Three missing-file format obligations have proposed owners. The six malformed-file/unsupported-format obligations retain specific gaps.
+Initial base: `9eb8059`. After the follow-ups and final assessment below, all nine missing-file/malformed-file/unsupported-format obligations have proposed owners. Global approval remains pending.
 
 ## Exact report coverage
 
@@ -51,3 +51,27 @@ Current totals: **149 proposed owners / 779 gaps**, with **30 diagnostic/format 
 - `dagger check excalidraw-render:test`: render and doctest checks pass. Fast tier: 867 passed, one failed, eight skipped by tier configuration.
 - The sole failure is `pdf_renderer_expectations::focused_pdf_expectations_stay_bound_to_their_case_and_dependencies`: `rectangle-outline/pdf-renderer-expectations.json` still binds case subject `sha256:9744b816d8689d53db597fddc383b784b64dafe5006ab6374642a3328d2cb6ef`, while the reapproved case subject is `sha256:96638d660453deb84fa5f4d1844fc758c2b40c6c1b01450b0a7929455d816dcc`. This is a remaining downstream binding from the font-registry refresh, unrelated to the image change. Its separately approved expectations and dependency descriptors require a reviewed reapproval update; the test and existing signature were not weakened.
 - `git diff --check` passes. Temporary report probes were removed.
+
+## Final ownership assessment
+
+Follow-up base: `5e49bbe`. The approved registry amendment and separately approved PDF/native baseline refreshes resolve the prior authority and binding blockers. Two unconditional fast-test selectors now execute the complete family matrices:
+
+- `diagnostic_contract::malformed_file_contract_in_every_format`
+- `diagnostic_contract::unsupported_image_contract_in_every_format`
+
+Both call same-file helpers for source/supplemental authority and ordering, escaped pointers, multiplicity, first-reference status, target scoping and standalone/batch equality. The malformed-file owner includes invalid record types, missing payloads, data-URL separator/base64 failures, narrower field suppression, and deleted-reference silence. The unsupported owner includes nested paths and both JPEG/WebP invalid-ICC paths: direct SVG preserves those payloads silently, whereas PNG/PDF reject their color profiles with the declared recovery.
+
+### Conditional semantic-effect reachability
+
+The registry's conditional clause is retained. The reviewed paths do not lose admitted nested text/link/animation/vector semantics:
+
+- `asset/payload.rs::scene_payload` returns `Malformed` for unavailable fields, invalid data-URL syntax and failed base64 before creating a payload. Supplemental assets are already byte vectors and cannot take this syntax path. File-record classification likewise precedes payload admission.
+- Nested malformed URLs are converted to `SvgDecodeFailed` in `asset/svg.rs::sanitize_nested_data_image`; they do not emit `asset.malformed-file-record`.
+- `asset.rs::Cache::resolve` dispatches SVG-looking payloads to the sanitizer before raster sniffing. Unknown signatures produce `Unsupported` without admitting nested content. The other reviewed `Unsupported` paths are JPEG/WebP ICC profile parsing, which discard raster color interpretation rather than nested semantic content.
+- In nested SVG, `safe_href` admits data payloads only on `image`/`feImage`; a rejected image reference leaves its containing SVG and siblings intact. Text/link sanitization uses separate removal diagnostics. Recursively propagated unsupported paths retain the same rejected-reference boundary.
+
+The new two-level nested test checks exact path segments and compares PNG bytes against an explicit repaired document with only the failed href removed. The sibling text survives byte-for-byte in the raster. This is an applicability argument and a positive preservation test within the obligations, not a blanket exclusion of nested semantic effects from future renderer paths.
+
+No production code or approved evidence changed in this final assignment round. The six assignments are proposals, not global approval. New totals: **155 proposed owners / 773 gaps**, including **36 diagnostic owners / 86 diagnostic gaps**. `image.decode-failed` remains a separate incomplete decoder-matrix obligation despite the nested decode samples reused here.
+
+Final verification: all 25 diagnostic-contract tests pass; ownership validation and approved native baseline verification pass; all ten Dagger conformance/lint checks and the Dagger fast test tier pass. `git diff --check` passes, and temporary ICC probes were removed.
