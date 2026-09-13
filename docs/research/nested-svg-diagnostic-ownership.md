@@ -20,3 +20,7 @@ New public tests cover direct handler versus foreign-content removal, exact deta
 These tests and fixes are partial progress, not coverage closure. Totals remain **166 proposed owners / 762 gaps**. Approved registry and evidence files are unchanged.
 
 Verification: the exact recursive-handler regression failed before the fixes and passes afterward; all 15 sanitizer unit tests and 34 diagnostic-contract tests pass. Ownership validation passes, as do all ten Dagger conformance/lint checks and all three Dagger workspace checks. `git diff --check` passes and temporary probes are removed.
+
+## Scoped approval of implemented fixes
+
+The maintainer explicitly approved the changes in commit `4a3b15b608022dcb9c7e10917d4cacf3bbc583b8` on 2026-09-13, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5657151285). This approval covers the path/effect fixes and partial test evidence; the six ownership obligations remain gaps and the incomplete global ledger retains null approval.
