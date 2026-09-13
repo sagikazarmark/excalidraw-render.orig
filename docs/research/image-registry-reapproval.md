@@ -63,3 +63,7 @@ The maintainer explicitly approved the exact bundle on 2026-09-13. All 36 indivi
 Inventory and case-owner hashes are refreshed to the approved manifests without changing owner selections or execution cases.
 
 After recording, `verify-ownership` passes with 149 assigned/excluded and 779 gaps, and all eight `dagger check excalidraw-render:conformance` checks pass. `git diff --check` passes.
+
+The separate PDF and snapshot candidates are now collected and compared; see
+[their exact approval subjects](image-registry-binding-refresh.md). All native
+artifact/report bytes and PDF expectation semantics are unchanged.

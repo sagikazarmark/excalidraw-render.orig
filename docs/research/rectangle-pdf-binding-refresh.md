@@ -2,6 +2,10 @@
 
 Base: `3ec1a4d`. Refresh committed as `5328543`. Status: **explicit #44 reapproval recorded**.
 
+This records the preceding font-registry refresh. The later image-registry
+binding-only candidate and its new pending subject are recorded in
+[image-registry-binding-refresh.md](image-registry-binding-refresh.md).
+
 ## Approved subject
 
 `sha256:ad76a6acecc493ef8cd3fb7580be1489c939134c0ecde36fd3547e9398c0a339`

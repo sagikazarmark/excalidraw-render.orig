@@ -185,7 +185,13 @@ until those discrepancies are fixed. See [the findings](../../../docs/research/w
 
 ### Canonical baseline approval and replay
 
-`native-baseline/revision-1.json` contains the approved clean `b419e23` recollection
+`native-baseline/revision-1.json` currently stages the clean `3836a21` recollection
+after image registry reapproval. All 168 artifact/report pairs and 187 blobs
+match the prior baseline exactly; updated input bindings and provenance await
+approval of `sha256:56aa7e51d3990375b31bea1198f2c262871c5a7dbfd59344b2254cdf35c52721`.
+See [the image binding refresh](../../../docs/research/image-registry-binding-refresh.md).
+
+The preceding approved baseline contains the clean `b419e23` recollection
 after the font registry/case-binding reconciliation. All 168 artifact/report
 expectations and 187 blobs are byte-identical to the prior approved baseline;
 input digests and provenance are refreshed. **Reapproved on 2026-09-13** in
