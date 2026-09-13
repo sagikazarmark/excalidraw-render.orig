@@ -1239,6 +1239,9 @@ pub(crate) fn supplement_conflict(
 
 fn referenced_image_has_error_status(scene: &SceneDocument, file_id: &str) -> bool {
     (0..scene.element_occurrence_count()).any(|index| {
+        if scene.element_is_silent(index) {
+            return false;
+        }
         let Some(JsonValue::Object(element)) = scene.element_value(index) else {
             return false;
         };

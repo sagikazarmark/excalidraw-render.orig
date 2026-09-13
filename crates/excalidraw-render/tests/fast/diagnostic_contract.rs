@@ -3,11 +3,296 @@
 //! from the production diagnostic registry.
 use excalidraw_render::{
     FrameOptions, FrameRenderRequest, OutputFormat, RenderOutcome, RenderRequest, Renderer,
-    ResourceLimits, SceneDocument,
+    ResourceLimits, SceneDocument, SupplementalAssets,
 };
 use serde_json::{json, Value};
 
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
+
+#[test]
+fn image_authorities_have_exact_ordered_diagnostics() {
+    missing_images_report_referring_owners_and_format_specific_recovery();
+    malformed_file_records_report_each_authority_once_and_unreferenced_are_silent();
+    unsupported_payloads_report_each_file_once_and_unreferenced_are_silent();
+    image_authority_precedence_and_valid_silence();
+    for format in FORMATS {
+        for status in ["saved", "error"] {
+            let mut a = image("a-ref", "a/~");
+            let mut z = image("z-ref", "z/~");
+            a["status"] = json!(status);
+            z["status"] = json!(status);
+            let mut again = a.clone();
+            again["id"] = json!("again");
+            let elements = json!([a, z, again]);
+            // File-source z,a differs from first-reference and lexical a,z.
+            for (files, code, owner, suffix) in [
+                (
+                    r#"{"z/~":null,"a/~":null,"unused":null}"#,
+                    "asset.malformed-file-record",
+                    false,
+                    "",
+                ),
+                (
+                    r#"{"z/~":{"id":"z/~","created":1},"a/~":{"id":"a/~","created":1},"unused":{}}"#,
+                    "asset.malformed-file-record",
+                    false,
+                    "/dataURL",
+                ),
+                (
+                    r#"{"z/~":{"id":"z/~","created":1,"mimeType":"image/png","dataURL":"data:image/png;base64,aW52YWxpZA=="},"a/~":{"id":"a/~","created":1,"mimeType":"image/png","dataURL":"data:image/png;base64,aW52YWxpZA=="}}"#,
+                    "image.unsupported-format",
+                    true,
+                    "/dataURL",
+                ),
+            ] {
+                let source = SceneDocument::parse(format!(r#"{{"type":"excalidraw","version":2,"elements":{elements},"appState":{{}},"files":{files}}}"#).as_bytes()).unwrap();
+                let rows: Vec<_> = [("z/~", "z-ref", "z~1~0"), ("a/~", "a-ref", "a~1~0")]
+                    .into_iter()
+                    .map(|(id, element, escaped)| {
+                        image_expected(
+                            code,
+                            if owner { json!(element) } else { Value::Null },
+                            &format!("/files/{escaped}{suffix}"),
+                            id,
+                            status,
+                            format,
+                        )
+                    })
+                    .collect();
+                assert_report(&source, format, json!(rows));
+                let empty = SceneDocument::parse(format!(r#"{{"type":"excalidraw","version":2,"elements":[],"appState":{{}},"files":{files}}}"#).as_bytes()).unwrap();
+                assert_report(&empty, format, json!([]));
+            }
+            let assets = SupplementalAssets::builder()
+                .asset_with_media_type("z/~", b"invalid".to_vec(), "image/png")
+                .asset("a/~", b"invalid".to_vec())
+                .asset("unused", b"invalid".to_vec())
+                .build()
+                .unwrap();
+            let request = RenderRequest::builder(format)
+                .supplemental_assets(assets)
+                .build()
+                .unwrap();
+            assert_report_with_request(
+                &image_scene(json!([z, a, again]), json!({})),
+                &request,
+                json!([
+                    image_expected(
+                        "image.unsupported-format",
+                        json!("a-ref"),
+                        "",
+                        "a/~",
+                        status,
+                        format
+                    ),
+                    image_expected(
+                        "image.unsupported-format",
+                        json!("z-ref"),
+                        "",
+                        "z/~",
+                        status,
+                        format
+                    )
+                ]),
+            );
+            assert_report_with_request(&scene(json!([])), &request, json!([]));
+        }
+    }
+}
+
+fn image_authority_precedence_and_valid_silence() {
+    use base64::Engine;
+    let data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+    let png = base64::engine::general_purpose::STANDARD
+        .decode(data.split_once(',').unwrap().1)
+        .unwrap();
+    for format in FORMATS {
+        for status in ["saved", "error"] {
+            let mut element = image("image", "file/~");
+            element["status"] = json!(status);
+            let assets = SupplementalAssets::builder()
+                .asset("file/~", png.clone())
+                .build()
+                .unwrap();
+            let request = RenderRequest::builder(format)
+                .supplemental_assets(assets)
+                .build()
+                .unwrap();
+            assert_report_with_request(
+                &image_scene(json!([element]), json!({})),
+                &request,
+                json!([]),
+            );
+            let valid = image_scene(
+                json!([element]),
+                json!({"file/~":{"id":"file/~","created":1,"mimeType":"image/png","dataURL":data}}),
+            );
+            assert_report(&valid, format, json!([]));
+            let conflict = expected(
+                "asset.supplement-conflict",
+                "warning",
+                json!(["input_repair"]),
+                Value::Null,
+                "/files/file~1~0",
+                json!({"kind":"asset","asset_id":"file/~","claimed_media_type":null,"validated_media_type":null,"recovery":"ignored","recipe_id":null}),
+            );
+            assert_report_with_request(&valid, &request, json!([conflict]));
+            for (record, code, pointer) in [
+                (
+                    Value::Null,
+                    "asset.malformed-file-record",
+                    "/files/file~1~0",
+                ),
+                (
+                    json!({"id":"file/~","created":1}),
+                    "asset.malformed-file-record",
+                    "/files/file~1~0/dataURL",
+                ),
+                (
+                    json!({"id":"file/~","created":1,"dataURL":"data:image/png;base64,aW52YWxpZA=="}),
+                    "image.unsupported-format",
+                    "/files/file~1~0/dataURL",
+                ),
+            ] {
+                let source = image_scene(json!([element]), json!({"file/~":record}));
+                let diagnostic = image_expected(
+                    code,
+                    if code == "asset.malformed-file-record" {
+                        Value::Null
+                    } else {
+                        json!("image")
+                    },
+                    pointer,
+                    "file/~",
+                    status,
+                    format,
+                );
+                let rows = if record.is_null() {
+                    json!([diagnostic, conflict])
+                } else {
+                    json!([conflict, diagnostic])
+                };
+                assert_report_with_request(&source, &request, rows);
+                assert_report_with_request(
+                    &image_scene(json!([]), json!({"file/~":record})),
+                    &request,
+                    json!([]),
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn missing_image_contract_in_every_format() {
+    missing_images_report_referring_owners_and_format_specific_recovery();
+    image_authority_precedence_and_valid_silence();
+    for format in FORMATS {
+        for status in ["saved", "error"] {
+            let mut first = image("z-first", "missing/~");
+            first["status"] = json!(status);
+            let mut second = first.clone();
+            second["id"] = json!("a-second");
+            for file in [None, Some(Value::Null), Some(json!(""))] {
+                let mut no_id = image("no-id", "unused");
+                if let Some(file) = file {
+                    no_id["fileId"] = file;
+                } else {
+                    no_id.as_object_mut().unwrap().remove("fileId");
+                }
+                no_id["status"] = json!(status);
+                assert_report(
+                    &scene(json!([no_id])),
+                    format,
+                    json!([image_expected(
+                        "image.missing-file",
+                        json!("no-id"),
+                        "/elements/0/fileId",
+                        "",
+                        status,
+                        format
+                    )]),
+                );
+            }
+            assert_report(
+                &scene(json!([first, second])),
+                format,
+                json!([
+                    image_expected(
+                        "image.missing-file",
+                        json!("z-first"),
+                        "/elements/0/fileId",
+                        "missing/~",
+                        status,
+                        format
+                    ),
+                    image_expected(
+                        "image.missing-file",
+                        json!("a-second"),
+                        "/elements/1/fileId",
+                        "missing/~",
+                        status,
+                        format
+                    )
+                ]),
+            );
+            let mut outside = image("outside", "missing/~");
+            outside["x"] = json!(1000);
+            let framed = scene(json!([
+                {"id":"frame","type":"frame","width":100,"height":100,"updated":1}, first, outside
+            ]));
+            assert_frame_reports(
+                &framed,
+                format,
+                &[json!([image_expected(
+                    "image.missing-file",
+                    json!("z-first"),
+                    "/elements/1/fileId",
+                    "missing/~",
+                    status,
+                    format
+                )])],
+            );
+        }
+    }
+}
+
+#[test]
+fn deleted_error_image_does_not_select_live_file_recovery_recipe() {
+    let live = image("live", "file");
+    let mut deleted = image("deleted", "file");
+    deleted["status"] = json!("error");
+    deleted["isDeleted"] = json!(true);
+    for format in FORMATS {
+        assert_report(
+            &image_scene(json!([live, deleted]), json!({"file":null})),
+            format,
+            json!([image_expected(
+                "asset.malformed-file-record",
+                Value::Null,
+                "/files/file",
+                "file",
+                "saved",
+                format
+            )]),
+        );
+    }
+}
+
+fn image_expected(
+    code: &str,
+    owner: Value,
+    pointer: &str,
+    id: &str,
+    status: &str,
+    format: OutputFormat,
+) -> Value {
+    let mut details = asset_details(id, Value::Null, Value::Null, format);
+    if status == "error" && format == OutputFormat::Png {
+        details["recipe_id"] = json!("official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9");
+    }
+    expected(code, "warning", json!(["visual"]), owner, pointer, details)
+}
 
 #[test]
 fn font_diagnostics_cover_text_generated_labels_and_silence() {

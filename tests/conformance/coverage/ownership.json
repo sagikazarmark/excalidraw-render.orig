@@ -2240,7 +2240,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "New report tests cover null authoritative records, per-file multiplicity and saved/error status recipes. Missing-dataURL branch, disagreeing file/reference order, escaped IDs and supplemental scope still need complete assertions."
+        "reason": "Exact full reports cover null records and missing-dataURL pointers, escaped IDs, file order opposed to reference order, valid/unreferenced silence, scene authority over supplements and saved/error recipes. Deleted error-status contamination is fixed. Mixed-status live references, malformed member variants, frame scoping and conditional nested-effect reachability still need complete coverage."
       }
     },
     {
@@ -2248,7 +2248,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "New report tests cover null authoritative records, per-file multiplicity and saved/error status recipes. Missing-dataURL branch, disagreeing file/reference order, escaped IDs and supplemental scope still need complete assertions."
+        "reason": "Exact full reports cover null records and missing-dataURL pointers, escaped IDs, file order opposed to reference order, valid/unreferenced silence, scene authority over supplements and saved/error recipes. Deleted error-status contamination is fixed. Mixed-status live references, malformed member variants, frame scoping and conditional nested-effect reachability still need complete coverage."
       }
     },
     {
@@ -2256,7 +2256,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "New report tests cover null authoritative records, per-file multiplicity and saved/error status recipes. Missing-dataURL branch, disagreeing file/reference order, escaped IDs and supplemental scope still need complete assertions."
+        "reason": "Exact full reports cover null records and missing-dataURL pointers, escaped IDs, file order opposed to reference order, valid/unreferenced silence, scene authority over supplements and saved/error recipes. Deleted error-status contamination is fixed. Mixed-status live references, malformed member variants, frame scoping and conditional nested-effect reachability still need complete coverage."
       }
     },
     {
@@ -2315,7 +2315,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2344,7 +2344,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2373,7 +2373,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2450,7 +2450,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2479,7 +2479,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2508,7 +2508,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2561,7 +2561,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2590,7 +2590,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2619,7 +2619,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2648,7 +2648,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2677,7 +2677,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2706,7 +2706,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2735,7 +2735,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2764,7 +2764,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2793,7 +2793,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2822,7 +2822,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2851,7 +2851,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2880,7 +2880,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2968,25 +2968,88 @@
     {
       "id": "diagnostic:image.missing-file:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "New report tests cover two referring owners, saved/error PNG recipes and deleted silence. Missing authority alternatives, escaped file IDs and valid referenced-image silence need complete coverage."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
+          },
+          "function": "missing_image_contract_in_every_format",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::missing_image_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "pdf: Full ordered report assertions cover absent/null/empty and escaped file IDs, per-reference multiplicity/source order, saved/error recipe selection, valid scene/supplemental silence, authoritative malformed/unsupported payload precedence, deleted silence and frame-scoped standalone/batch repeatability."
       }
     },
     {
       "id": "diagnostic:image.missing-file:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "New report tests cover two referring owners, saved/error PNG recipes and deleted silence. Missing authority alternatives, escaped file IDs and valid referenced-image silence need complete coverage."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
+          },
+          "function": "missing_image_contract_in_every_format",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::missing_image_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "png: Full ordered report assertions cover absent/null/empty and escaped file IDs, per-reference multiplicity/source order, saved/error recipe selection, valid scene/supplemental silence, authoritative malformed/unsupported payload precedence, deleted silence and frame-scoped standalone/batch repeatability."
       }
     },
     {
       "id": "diagnostic:image.missing-file:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "New report tests cover two referring owners, saved/error PNG recipes and deleted silence. Missing authority alternatives, escaped file IDs and valid referenced-image silence need complete coverage."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
+          },
+          "function": "missing_image_contract_in_every_format",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "diagnostic_contract::missing_image_contract_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "svg: Full ordered report assertions cover absent/null/empty and escaped file IDs, per-reference multiplicity/source order, saved/error recipe selection, valid scene/supplemental silence, authoritative malformed/unsupported payload precedence, deleted silence and frame-scoped standalone/batch repeatability."
       }
     },
     {
@@ -3018,7 +3081,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "New report tests cover unsupported payloads and saved/error status recipes with per-file multiplicity. Disagreeing file/reference order, escaped IDs and supplemental authority scope remain incomplete."
+        "reason": "Exact reports now cover file-source order versus reference order, escaped IDs, per-file multiplicity, root supplemental pointers with lexical ordering, valid/unreferenced silence, scene authority and saved/error recipes. Mixed-status shared files, frame scoping and conditional nested-effect reachability remain incomplete."
       }
     },
     {
@@ -3026,7 +3089,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "New report tests cover unsupported payloads and saved/error status recipes with per-file multiplicity. Disagreeing file/reference order, escaped IDs and supplemental authority scope remain incomplete."
+        "reason": "Exact reports now cover file-source order versus reference order, escaped IDs, per-file multiplicity, root supplemental pointers with lexical ordering, valid/unreferenced silence, scene authority and saved/error recipes. Mixed-status shared files, frame scoping and conditional nested-effect reachability remain incomplete."
       }
     },
     {
@@ -3034,7 +3097,7 @@
       "disposition": {
         "status": "gap",
         "issue": 85,
-        "reason": "New report tests cover unsupported payloads and saved/error status recipes with per-file multiplicity. Disagreeing file/reference order, escaped IDs and supplemental authority scope remain incomplete."
+        "reason": "Exact reports now cover file-source order versus reference order, escaped IDs, per-file multiplicity, root supplemental pointers with lexical ordering, valid/unreferenced silence, scene authority and saved/error recipes. Mixed-status shared files, frame scoping and conditional nested-effect reachability remain incomplete."
       }
     },
     {
@@ -3277,7 +3340,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3306,7 +3369,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3335,7 +3398,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3364,7 +3427,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3393,7 +3456,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3422,7 +3485,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3451,7 +3514,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3480,7 +3543,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -3509,7 +3572,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "195b6879061b93e0391d17f747cdd1a9cc0983ebe7fdf8800ed89ad1e8acd463"
+            "sha256": "2d54b10c2fde02fabc1f98a63960415dcccfaf28a11956d68838a19df6fce5ec"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
