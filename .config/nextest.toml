@@ -60,5 +60,8 @@ fail-fast = false
 # installs one harness family narrows further by binary, for example
 # `-E 'binary(/^harness_pdf_/)'`.
 [profile.harness]
+# Nested viewer containers exhausted storage when started concurrently. Keep
+# all harness cases, but run one at a time to bound peak container storage.
+test-threads = 1
 default-filter = 'binary(/^harness_/)'
 fail-fast = false
