@@ -34,7 +34,7 @@ The prior geometry probe at limit 10 rejected the outline itself, so it was repl
 - `dagger check excalidraw-render:lint`: formatting and clippy passed.
 - `git diff --check`: passed.
 - Before recording approval, ownership/registered-case gates rejected missing case approvals, as intended. After recording, all eight Dagger conformance checks pass, including catalog, registered cases, inventory and ownership.
-- Native baseline verification rejects its stale inventory binding. Its approved metadata and expected output bytes have not been repinned. After case approval, refresh the inventory and case-owner hashes again, then prepare/review the baseline binding or fresh collection as required by its provenance contract.
+- Native baseline reconciliation has now collected clean `b419e23` packaged results: every artifact/report byte matches the prior baseline. The [new baseline approval subject](font-registry-snapshot-reconciliation.md) binds refreshed input digests and provenance and awaits separate #85 approval.
 
 The ledger retains 137 proposed owners and 791 gaps; the nine font obligations remain gaps pending downstream evidence reconciliation. This proposal does not approve baseline changes or global release closure.
 

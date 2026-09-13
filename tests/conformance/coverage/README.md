@@ -185,9 +185,14 @@ until those discrepancies are fixed. See [the findings](../../../docs/research/w
 
 ### Canonical baseline approval and replay
 
-`native-baseline/revision-1.json` stages the clean `2155a99` collection as
-168 canonical native artifact/report expectations, with content-addressed blobs.
-It was **approved on 2026-09-11** in
+`native-baseline/revision-1.json` currently stages a clean `b419e23` recollection
+after the font registry/case-binding reconciliation. All 168 artifact/report
+expectations and 187 blobs are byte-identical to the prior approved baseline;
+input digests and provenance are refreshed. **Reapproval is pending** for subject
+`sha256:f6e6a9e6a538b60b088038d19586c943b92166a18f5a9dee8a1b68c37984c957`.
+See [the reconciliation record](../../../docs/research/font-registry-snapshot-reconciliation.md).
+
+The original clean `2155a99` collection was **approved on 2026-09-11** in
 [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5641266771),
 subject `sha256:1f11007a925d0aa2f277454c09e411d553e0f6f600c695d0acdb673ccbe4af2c`.
 The subject binds the complete expectation set,
@@ -221,7 +226,7 @@ and compares every key's complete outcome/artifact/report descriptors with the
 approved baseline. Missing cases, byte changes, artifact-to-failure changes and
 report drift fail. New process IDs, candidate commit, and package archive metadata
 are provenance, not output drift. The automatic Dagger check rejects an unapproved
-baseline. After recording this approval through Dagger, the complete native replay
+baseline. After recording the original approval through Dagger, the complete native replay
 passed in 5m32s: all 168 keys match the approved artifact/report expectations
 across two sessions in each of two fresh process orders.
 The working-tree replay verification is recorded in
