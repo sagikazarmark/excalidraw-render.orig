@@ -8,6 +8,7 @@ use crate::{CompatibilityRevision, OutputFormat, RenderError, ResourceLimits};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Removal {
+    pub(crate) slots: Vec<(u64, u64)>,
     pub(crate) node_ordinal: u64,
     pub(crate) attribute_ordinal: Option<u64>,
     pub(crate) name: String,
@@ -126,6 +127,7 @@ fn sanitize_at(
     for instruction in document.descendants().filter_map(|node| node.pi()) {
         if instruction.target != "xml" {
             removals.push(Removal {
+                slots: Vec::new(),
                 node_ordinal: 0,
                 attribute_ordinal: None,
                 name: instruction.target.to_owned(),
@@ -415,6 +417,7 @@ fn remove_dtd_and_entities(text: &str) -> Result<(String, Vec<Removal>), Resolve
         without_dtd.push_str(&text[cursor..start]);
         let end = doctype_end(&text[start..]).ok_or(ResolveError::SvgDecodeFailed)? + start;
         removals.push(Removal {
+            slots: Vec::new(),
             node_ordinal: 0,
             attribute_ordinal: None,
             name: "DOCTYPE".to_owned(),
@@ -441,6 +444,7 @@ fn remove_dtd_and_entities(text: &str) -> Result<(String, Vec<Removal>), Resolve
             sanitized.push_str(&rest[..=end]);
         } else {
             removals.push(Removal {
+                slots: Vec::new(),
                 node_ordinal: 0,
                 attribute_ordinal: None,
                 name: entity.to_owned(),
@@ -511,6 +515,7 @@ fn serialize_node(
     let name = node.tag_name().name();
     if !is_allowed_svg_node(&node) {
         removals.push(Removal {
+            slots: Vec::new(),
             node_ordinal: ordinal,
             attribute_ordinal: None,
             name: name.to_owned(),
@@ -546,10 +551,13 @@ fn serialize_node(
         }
         if unsafe_attribute(name, attribute_name, attribute.namespace(), value) {
             removals.push(Removal {
+                slots: Vec::new(),
                 node_ordinal: ordinal,
                 attribute_ordinal: Some(u64::try_from(attribute_ordinal).unwrap_or(u64::MAX)),
                 name: attribute_name.to_owned(),
-                changes_appearance: attribute_name != "href" && attribute_name != "xlink:href",
+                changes_appearance: !attribute_name.to_ascii_lowercase().starts_with("on")
+                    && attribute_name != "href"
+                    && attribute_name != "xlink:href",
             });
             continue;
         }
@@ -738,7 +746,12 @@ fn sanitize_nested_data_image(
             });
             nested_accounting.total_work_units = total_work_units;
         }
-        removals.extend(nested.removals.iter().cloned());
+        for mut removal in nested.removals.iter().cloned() {
+            removal
+                .slots
+                .insert(0, (slot_node_ordinal, slot_attribute_ordinal));
+            removals.push(removal);
+        }
         for mut failure in nested.failures.iter().cloned() {
             failure
                 .path
@@ -866,6 +879,7 @@ fn sanitize_nested_data_image(
     };
     if claimed_media_type != validated_media_type {
         removals.push(Removal {
+            slots: Vec::new(),
             node_ordinal: 0,
             attribute_ordinal: None,
             name: "media-type".to_owned(),
@@ -1491,8 +1505,8 @@ mod tests {
                 "style"
             ]
         );
-        // Every removal but the external image reference changes appearance;
-        // dropping an href leaves the element in place.
+        // Event handlers never execute in static rendering. Like the retained
+        // element's removed link, they do not change its static geometry.
         assert_eq!(
             sanitized
                 .removals
@@ -1500,7 +1514,7 @@ mod tests {
                 .filter(|removal| !removal.changes_appearance)
                 .map(|removal| removal.name.as_str())
                 .collect::<Vec<_>>(),
-            ["href"]
+            ["onload", "onclick", "href"]
         );
         // Attribute removals name their slot; element removals do not.
         assert!(sanitized.removals[0].attribute_ordinal.is_some());

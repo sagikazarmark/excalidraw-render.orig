@@ -299,16 +299,31 @@ pub(super) fn unsafe_svg_removal_diagnostic(
     removal: &asset::svg::Removal,
 ) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
     let effects: &[DiagnosticEffect] = if removal.changes_appearance {
-        &[DiagnosticEffect::Semantic, DiagnosticEffect::Visual]
+        &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic]
     } else {
         &[DiagnosticEffect::Semantic]
     };
     let mut segments = Vec::new();
-    segments.try_reserve_exact(if removal.attribute_ordinal.is_some() {
-        2
-    } else {
-        1
-    })?;
+    segments.try_reserve_exact(
+        removal.slots.len().saturating_mul(2)
+            + if removal.attribute_ordinal.is_some() {
+                2
+            } else {
+                1
+            },
+    )?;
+    for (node_ordinal, attribute_ordinal) in &removal.slots {
+        segments.push(crate::NestedPathSegment {
+            kind: crate::NestedSegmentKind::Node,
+            ordinal: *node_ordinal,
+            name: None,
+        });
+        segments.push(crate::NestedPathSegment {
+            kind: crate::NestedSegmentKind::Attribute,
+            ordinal: *attribute_ordinal,
+            name: Some(try_owned("href")?),
+        });
+    }
     segments.push(crate::NestedPathSegment {
         kind: crate::NestedSegmentKind::Node,
         ordinal: removal.node_ordinal,

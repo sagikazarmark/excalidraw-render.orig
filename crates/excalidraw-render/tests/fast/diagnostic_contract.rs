@@ -10,6 +10,173 @@ use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn unsafe_svg_removals_have_exact_effects_and_silence() {
+    use base64::Engine;
+    for (body, effects, ordinal, attribute) in [
+        (
+            r#"<rect width="40" height="30" fill="red" onclick="alert(1)"/>"#,
+            json!(["semantic"]),
+            1,
+            Some((3, "onclick")),
+        ),
+        (
+            r#"<foreignObject width="40" height="30"><div xmlns="http://www.w3.org/1999/xhtml">lost</div></foreignObject>"#,
+            json!(["visual", "semantic"]),
+            1,
+            None,
+        ),
+    ] {
+        let data = format!(
+            "data:image/svg+xml;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30">{body}</svg>"#
+            ))
+        );
+        let mut segments = vec![json!({"kind":"node","ordinal":ordinal,"name":null})];
+        if let Some((ordinal, name)) = attribute {
+            segments.push(json!({"kind":"attribute","ordinal":ordinal,"name":name}));
+        }
+        for format in FORMATS {
+            let row = expected(
+                "image.unsafe-svg-content-removed",
+                "warning",
+                effects.clone(),
+                Value::Null,
+                "/files/outer/dataURL",
+                json!({"kind":"nested_source","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":segments}],"recovery":"removed"}),
+            );
+            let file = json!({"id":"outer","created":1,"dataURL":data});
+            assert_report(
+                &image_scene(json!([image("first", "outer")]), json!({"outer":file})),
+                format,
+                json!([row.clone()]),
+            );
+            assert_report(
+                &image_scene(json!([]), json!({"outer":file})),
+                format,
+                json!([]),
+            );
+            let framed = image_scene(
+                json!([
+                    {"id":"frame","type":"frame","width":100,"height":100,"updated":1},image("first","outer")
+                ]),
+                json!({"outer":file}),
+            );
+            assert_frame_reports(&framed, format, &[json!([row])]);
+            let duplicate = image_scene(
+                json!([image("first", "outer"), image("second", "outer")]),
+                json!({"outer":file}),
+            );
+            let row = expected(
+                "image.unsafe-svg-content-removed",
+                "warning",
+                effects.clone(),
+                Value::Null,
+                "/files/outer/dataURL",
+                json!({"kind":"nested_source","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":segments}],"recovery":"removed"}),
+            );
+            assert_report(&duplicate, format, json!([row]));
+        }
+    }
+}
+
+#[test]
+fn forbidden_resource_reports_bounds_selected_recovery() {
+    for format in FORMATS {
+        for bounded in [true, false] {
+            let mut element = image("image", "remote/~");
+            if !bounded {
+                element["width"] = json!(0);
+                element["height"] = json!(0);
+            }
+            let source = image_scene(
+                json!([element]),
+                json!({"remote/~":{"id":"remote/~","created":1,"dataURL":"https://example.invalid/image.png"}}),
+            );
+            assert_report(
+                &source,
+                format,
+                json!([expected(
+                    "image.forbidden-resource",
+                    "warning",
+                    json!(["visual", "semantic"]),
+                    Value::Null,
+                    "/files/remote~1~0/dataURL",
+                    json!({"kind":"asset","asset_id":"remote/~","claimed_media_type":null,"validated_media_type":null,"recovery":if bounded {"placeholder"} else {"omitted"},"recipe_id":if bounded {json!("official.forbidden-resource@sha256:4452f99158233e3703e46dbbb83f6900a894fbceacd3e98b141332d552e22827")}else{Value::Null}})
+                )]),
+            );
+        }
+    }
+}
+
+#[test]
+fn nested_event_handler_removal_keeps_its_full_path_and_semantic_effect() {
+    use base64::Engine;
+    let inner = r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30" fill="red" onclick="alert(1)"/></svg>"#;
+    let inner_url = format!(
+        "data:image/svg+xml;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(inner)
+    );
+    let outer = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="{inner_url}" width="40" height="30"/></svg>"#
+    );
+    let data = format!(
+        "data:image/svg+xml;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(outer)
+    );
+    let source = image_scene(
+        json!([image("image", "outer")]),
+        json!({"outer":{"id":"outer","created":1,"dataURL":data}}),
+    );
+    for format in FORMATS {
+        assert_report(
+            &source,
+            format,
+            json!([expected(
+                "image.unsafe-svg-content-removed",
+                "warning",
+                json!(["semantic"]),
+                Value::Null,
+                "/files/outer/dataURL",
+                json!({"kind":"nested_source","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":0,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":3,"name":"onclick"}]}],"recovery":"removed"})
+            )]),
+        );
+    }
+    let safe_inner = inner.replace(" onclick=\"alert(1)\"", "");
+    let safe_inner_url = format!(
+        "data:image/svg+xml;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(safe_inner)
+    );
+    let safe_outer = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="{safe_inner_url}" width="40" height="30"/></svg>"#
+    );
+    let safe_data = format!(
+        "data:image/svg+xml;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(safe_outer)
+    );
+    let safe = image_scene(
+        json!([image("image", "outer")]),
+        json!({"outer":{"id":"outer","created":1,"dataURL":safe_data}}),
+    );
+    for format in FORMATS {
+        assert_report(&safe, format, json!([]));
+    }
+    let request = RenderRequest::builder(OutputFormat::Png).build().unwrap();
+    assert_eq!(
+        Renderer::new()
+            .render(&source, &request)
+            .unwrap()
+            .artifact()
+            .bytes(),
+        Renderer::new()
+            .render(&safe, &request)
+            .unwrap()
+            .artifact()
+            .bytes()
+    );
+}
+
+#[test]
 fn media_type_contract_in_every_format() {
     media_claims_report_each_authoritative_field_once();
     invalid_media_claims_are_enriched_once_after_validation();
