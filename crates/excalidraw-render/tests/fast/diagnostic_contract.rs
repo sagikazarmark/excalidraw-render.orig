@@ -10,6 +10,196 @@ use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn shared_file_recipe_uses_first_participating_reference() {
+    for format in FORMATS {
+        for first_error in [false, true] {
+            for (record, code, owner, pointer) in [
+                (
+                    Value::Null,
+                    "asset.malformed-file-record",
+                    false,
+                    "/files/shared",
+                ),
+                (
+                    json!({"id":"shared","created":1}),
+                    "asset.malformed-file-record",
+                    false,
+                    "/files/shared/dataURL",
+                ),
+                (
+                    json!({"id":"shared","created":1,"dataURL":"data:image/png;base64,%%%"}),
+                    "asset.malformed-file-record",
+                    true,
+                    "/files/shared/dataURL",
+                ),
+                (
+                    json!({"id":"shared","created":1,"dataURL":"data:image/png;base64,aW52YWxpZA=="}),
+                    "image.unsupported-format",
+                    true,
+                    "/files/shared/dataURL",
+                ),
+            ] {
+                let mut first = image("z-first", "shared");
+                let mut second = image("a-second", "shared");
+                first["status"] = json!(if first_error { "error" } else { "saved" });
+                second["status"] = json!(if first_error { "saved" } else { "error" });
+                second["x"] = json!(50);
+                let expected = json!([image_expected(
+                    code,
+                    if owner { json!("z-first") } else { Value::Null },
+                    pointer,
+                    "shared",
+                    if first_error { "error" } else { "saved" },
+                    format
+                )]);
+                assert_report(
+                    &image_scene(json!([first, second]), json!({"shared":record})),
+                    format,
+                    expected.clone(),
+                );
+                let framed = image_scene(
+                    json!([
+                        {"id":"frame","type":"frame","width":100,"height":100,"updated":1},first,second
+                    ]),
+                    json!({"shared":record}),
+                );
+                assert_frame_reports(&framed, format, &[expected]);
+            }
+        }
+    }
+}
+
+#[test]
+fn invalid_payload_field_suppresses_duplicate_asset_failure() {
+    for format in FORMATS {
+        for value in [Value::Null, json!(false), json!(42), json!([]), json!({})] {
+            let source = image_scene(
+                json!([image("image", "file")]),
+                json!({"file":{"id":"file","created":1,"dataURL":value}}),
+            );
+            assert_report(
+                &source,
+                format,
+                json!([expected(
+                    "compatibility.unsupported-property-value",
+                    "warning",
+                    json!(["visual"]),
+                    Value::Null,
+                    "/files/file/dataURL",
+                    compatibility(if format == OutputFormat::Png {
+                        "placeholder"
+                    } else {
+                        "omitted"
+                    })
+                )]),
+            );
+            // Equal file-ID prefixes must not suppress another payload's failure.
+            let source = image_scene(
+                json!([image("one", "file"), image("two", "file/~")]),
+                json!({
+                    "file":{"id":"file","created":1,"dataURL":value},
+                    "file/~":{"id":"file/~","created":1,"dataURL":"data:image/png;base64,%%%"}
+                }),
+            );
+            assert_report(
+                &source,
+                format,
+                json!([
+                    expected(
+                        "compatibility.unsupported-property-value",
+                        "warning",
+                        json!(["visual"]),
+                        Value::Null,
+                        "/files/file/dataURL",
+                        compatibility(if format == OutputFormat::Png {
+                            "placeholder"
+                        } else {
+                            "omitted"
+                        })
+                    ),
+                    image_expected(
+                        "asset.malformed-file-record",
+                        json!("two"),
+                        "/files/file~1~0/dataURL",
+                        "file/~",
+                        "saved",
+                        format
+                    )
+                ]),
+            );
+        }
+        for status in ["saved", "error"] {
+            let mut first = image("first", "file/~");
+            first["status"] = json!(status);
+            let mut second = first.clone();
+            second["id"] = json!("second");
+            let source = image_scene(
+                json!([first, second]),
+                json!({"file/~":{"id":"file/~","created":1,"dataURL":null}}),
+            );
+            let request = RenderRequest::builder(format).build().unwrap();
+            let actual = Renderer::new().render(&source, &request).unwrap();
+            // Narrower-cause suppression must preserve each source occurrence's
+            // status-selected rendering, not fall back to a generic box.
+            let missing = scene(json!([first, second]));
+            let expected_artifact = Renderer::new().render(&missing, &request).unwrap();
+            assert_eq!(
+                actual.artifact().bytes(),
+                expected_artifact.artifact().bytes()
+            );
+            let framed = image_scene(
+                json!([
+                    {"id":"frame","type":"frame","width":100,"height":100,"updated":1},first,second
+                ]),
+                json!({"file/~":{"id":"file/~","created":1,"dataURL":null}}),
+            );
+            assert_frame_reports(
+                &framed,
+                format,
+                &[json!([expected(
+                    "compatibility.unsupported-property-value",
+                    "warning",
+                    json!(["visual"]),
+                    Value::Null,
+                    "/files/file~1~0/dataURL",
+                    compatibility(if format == OutputFormat::Png {
+                        "placeholder"
+                    } else {
+                        "omitted"
+                    })
+                )])],
+            );
+        }
+    }
+}
+
+#[test]
+fn unsupported_nested_images_report_removed_paths() {
+    use base64::Engine;
+    let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="data:image/png;base64,aW52YWxpZA==" width="40" height="30"/><image href="data:image/png;base64,aW52YWxpZA==" width="40" height="30"/></svg>"#;
+    let data = format!(
+        "data:image/svg+xml;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(svg)
+    );
+    for format in FORMATS {
+        let source = image_scene(
+            json!([image("first", "outer"), image("second", "outer")]),
+            json!({"outer":{"id":"outer","created":1,"mimeType":"image/svg+xml","dataURL":data}}),
+        );
+        let rows: Vec<_> = [1,2].into_iter().map(|ordinal| expected("image.unsupported-format", "warning", json!(["visual"]), Value::Null, "/files/outer/dataURL", json!({"kind":"nested_source","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":ordinal,"name":null},{"kind":"attribute","ordinal":0,"name":"href"}]}],"recovery":"removed"}))).collect();
+        assert_report(&source, format, json!(rows));
+        assert_report(
+            &image_scene(
+                json!([]),
+                json!({"outer":{"id":"outer","created":1,"mimeType":"image/svg+xml","dataURL":data}}),
+            ),
+            format,
+            json!([]),
+        );
+    }
+}
+
+#[test]
 fn malformed_record_types_and_invalid_base64_have_exact_reports() {
     for format in FORMATS {
         for record in [

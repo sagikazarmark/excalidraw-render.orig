@@ -5,7 +5,8 @@ use crate::diagnostic_registry::{
 use crate::normalization::{NormalizedElement, NormalizedElementKind, NormalizedImageStatus};
 use crate::outcome::PendingDiagnostic;
 use crate::{
-    CompatibilityDiagnostic, DiagnosticEffect, ErrorDetails, OutputFormat, ResourceLimits,
+    CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, ErrorDetails, OutputFormat,
+    ResourceLimits,
 };
 
 use super::{asset, pdf, try_owned};
@@ -49,7 +50,8 @@ pub(super) fn diagnostic_uses_non_generic_recovery(
                 NormalizedElementKind::Image(image),
                 Some(ErrorDetails::Asset { asset_id, .. })
             ) if image.file_id.as_deref() == Some(asset_id.as_str())
-        );
+        )
+        || image_payload_field_recovery(source, diagnostic);
     if !applies {
         return false;
     }
@@ -58,6 +60,28 @@ pub(super) fn diagnostic_uses_non_generic_recovery(
         .and_then(ErrorDetails::recipe_id)
         .and_then(FallbackRecipe::from_id);
     recipe != Some(FallbackRecipe::KnownElementUnavailable)
+}
+
+/// A source-owned file field can reject an image payload without carrying
+/// asset-shaped details. Match the exact escaped payload pointer so another
+/// file or an unrelated field cannot suppress this occurrence's failure.
+pub(super) fn image_payload_field_recovery(
+    source: &NormalizedElement,
+    diagnostic: &CompatibilityDiagnostic,
+) -> bool {
+    if diagnostic.code() != DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE
+        || !diagnostic.replaces_element()
+    {
+        return false;
+    }
+    let NormalizedElementKind::Image(image) = &source.kind else {
+        return false;
+    };
+    image.file_id.as_deref().is_some_and(|id| {
+        crate::scene::pointer_child("/files", id)
+            .and_then(|pointer| crate::scene::pointer_child(&pointer, "dataURL"))
+            .is_ok_and(|pointer| diagnostic.json_pointer() == pointer)
+    })
 }
 
 pub(super) fn known_element_replaced_diagnostic(

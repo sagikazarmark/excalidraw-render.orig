@@ -18,7 +18,8 @@ use crate::{ErrorDetails, OutputFormat, RenderError, RenderRequest, SceneDocumen
 
 use super::diagnostics::{
     diagnostic_uses_non_generic_recovery, image_animation_flattened_diagnostic,
-    image_asset_failure_diagnostic, nested_image_failure_diagnostic, unsafe_svg_removal_diagnostic,
+    image_asset_failure_diagnostic, image_payload_field_recovery, nested_image_failure_diagnostic,
+    unsafe_svg_removal_diagnostic,
 };
 use super::resolve::{
     asset_claim_location, asset_failure_location, logical_aligned_bytes, semantic_identity_hex,
@@ -568,11 +569,12 @@ impl ImageResolver {
                 }
                 if !matches!(failure, asset::ResolveError::Missing)
                     && !session.report.diagnostics.iter().any(|diagnostic| {
-                        matches!(
+                        (matches!(
                             diagnostic.details(),
                             Some(ErrorDetails::Asset { asset_id, .. })
                                 if asset_id == file_id
-                        ) && diagnostic.replaces_element()
+                        ) && diagnostic.replaces_element())
+                            || image_payload_field_recovery(&source, diagnostic)
                     })
                 {
                     let (json_pointer, source_order, source_position, local_owner) =

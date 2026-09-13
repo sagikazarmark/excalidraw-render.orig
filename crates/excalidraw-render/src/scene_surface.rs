@@ -1198,7 +1198,7 @@ pub(crate) fn classify_referenced_files(
 
 /// The format recovery of the image elements that refer to the malformed
 /// file record `file_id`: PNG paints the official placeholder (the error one
-/// when a referring image's status is `error`), SVG and PDF omit the image.
+/// when the first participating reference has status `error`), SVG and PDF omit the image.
 fn malformed_file_recovery(
     scene: &SceneDocument,
     file_id: &str,
@@ -1238,17 +1238,17 @@ pub(crate) fn supplement_conflict(
 }
 
 fn referenced_image_has_error_status(scene: &SceneDocument, file_id: &str) -> bool {
-    (0..scene.element_occurrence_count()).any(|index| {
+    (0..scene.element_occurrence_count()).find_map(|index| {
         if scene.element_is_silent(index) {
-            return false;
+            return None;
         }
         let Some(JsonValue::Object(element)) = scene.element_value(index) else {
-            return false;
+            return None;
         };
-        matches!(member_value(element, "type"), Some(JsonValue::String(kind)) if &**kind == "image")
-            && matches!(member_value(element, "fileId"), Some(JsonValue::String(id)) if &**id == file_id)
-            && matches!(member_value(element, "status"), Some(JsonValue::String(status)) if &**status == "error")
-    })
+        (matches!(member_value(element, "type"), Some(JsonValue::String(kind)) if &**kind == "image")
+            && matches!(member_value(element, "fileId"), Some(JsonValue::String(id)) if &**id == file_id))
+            .then(|| matches!(member_value(element, "status"), Some(JsonValue::String(status)) if &**status == "error"))
+    }).unwrap_or(false)
 }
 
 fn referenced_image_has_safe_bounds(scene: &SceneDocument, file_id: &str) -> bool {

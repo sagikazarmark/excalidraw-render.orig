@@ -37,6 +37,8 @@ The null-record PNG test failed: whole-scene normalization selected the error re
 
 The six broad obligations remain gaps with these concrete reasons. Temporary report probes were removed; no passing expectation endorses the unresolved null/nested output. The global totals stay 149 proposed owners / 779 gaps.
 
+Subsequent follow-up: the null-payload overlap is fixed; the user selected first-reference status for shared-file diagnostics and registry alignment for nested removal. Scene/frame tests cover the implemented selection and exact nested paths. See [the decisions and authority proposal](image-diagnostic-decisions.md); full ownership remains pending the registry/evidence amendment and nested-semantic branch review.
+
 Follow-up verification: all 18 diagnostic-contract tests pass, ownership validation passes, all ten Dagger conformance/lint checks pass, and all three Dagger workspace test checks pass. The previously stale rectangle PDF binding is now approved and its fast check passes. `git diff --check` passes.
 
 Current totals: **149 proposed owners / 779 gaps**, with **30 diagnostic/format owners / 92 diagnostic gaps**. The prior scoped font approval is unaffected; the new missing-image assignments remain proposals and global ownership approval is pending.
