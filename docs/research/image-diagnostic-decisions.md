@@ -21,7 +21,7 @@ Nested unsupported-image tests cover two rejected nodes with distinct canonical 
 
 This is a decision/amendment proposal, not a case-approval subject. The active scene-surface authority and its existing approvals have not been rewritten. Applying it requires regenerating catalog/case bindings, preparing the affected case subjects and downstream PDF/snapshot binding refreshes, and obtaining approval of those exact subjects. The existing conditional semantic-effects clause is preserved; tests here establish the visual-only unsupported raster boundary, not every nested semantic-content case. Related nested decode-failure registry scope should be reviewed in the same authority round to avoid another partial schema correction.
 
-Subsequent staging: the amendment and adjacent nested decode-failure rules are now applied with 36 candidate case subjects. See [the reapproval bundle](image-registry-reapproval.md). Original approval records are preserved, and new case approvals remain pending.
+Subsequent staging: the amendment and adjacent nested decode-failure rules are now applied, and all 36 affected case subjects are explicitly approved and recorded. See [the reapproval record](image-registry-reapproval.md). Original approvals are preserved in the bundle; separate PDF and snapshot binding refreshes remain pending.
 
 The six malformed-file/unsupported-format obligations remain explicit gaps pending that authority and remaining branch review. Global ownership stays at 149 proposed owners / 779 gaps.
 

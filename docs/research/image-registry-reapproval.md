@@ -1,6 +1,6 @@
 # Image diagnostic registry amendment: reapproval proposal
 
-Base: `b8b5454`. Status: applied and verified as an unapproved candidate; **36 case reapprovals pending**.
+Base: `b8b5454`. Amendment committed as `600d760`. Status: **all 36 case subjects explicitly approved and recorded**; separate PDF/snapshot binding refreshes remain pending.
 
 Proposal bundle identity (SHA-256 of canonical JSON without its trailing LF):
 
@@ -42,4 +42,24 @@ The incorporated scene-surface artifact, catalog/generated catalog identity, spe
 4. Collect clean-commit native snapshots, compare all outputs with the approved baseline, and prepare the separate #85 baseline subject. Existing baseline bytes and approval remain untouched during this staging round.
 5. Reassess the remaining nested-semantic and member branches before assigning broad diagnostic ownership.
 
-Registered-case and ownership gates are intentionally approval-blocked at this checkpoint. Native baseline binding is stale after the inventory change. Global counts remain **149 proposed owners / 779 gaps**; this proposal does not approve snapshots, PDF expectations or global closure.
+Native baseline binding is stale after the inventory change. Global counts remain **149 proposed owners / 779 gaps**; this approval does not approve snapshots, PDF expectations or global closure.
+
+## Recorded approval
+
+The maintainer explicitly approved the exact bundle on 2026-09-13. All 36 individual subjects were recomputed and matched before recording through `xtask conformance record-approval`. Scoped comments:
+
+- [#103](https://github.com/sagikazarmark/excalidraw-render.orig/issues/103#issuecomment-5654566390)
+- [#152](https://github.com/sagikazarmark/excalidraw-render.orig/issues/152#issuecomment-5654566611)
+- [#153](https://github.com/sagikazarmark/excalidraw-render.orig/issues/153#issuecomment-5654566878)
+- [#121](https://github.com/sagikazarmark/excalidraw-render.orig/issues/121#issuecomment-5654567031)
+- [#58](https://github.com/sagikazarmark/excalidraw-render.orig/issues/58#issuecomment-5654567149)
+- [#112](https://github.com/sagikazarmark/excalidraw-render.orig/issues/112#issuecomment-5654567262)
+- [#124](https://github.com/sagikazarmark/excalidraw-render.orig/issues/124#issuecomment-5654567407)
+- [#32](https://github.com/sagikazarmark/excalidraw-render.orig/issues/32#issuecomment-5654567530)
+- [#177](https://github.com/sagikazarmark/excalidraw-render.orig/issues/177#issuecomment-5654567641)
+- [#137](https://github.com/sagikazarmark/excalidraw-render.orig/issues/137#issuecomment-5654567781)
+- [#110](https://github.com/sagikazarmark/excalidraw-render.orig/issues/110#issuecomment-5654567907)
+
+Inventory and case-owner hashes are refreshed to the approved manifests without changing owner selections or execution cases.
+
+After recording, `verify-ownership` passes with 149 assigned/excluded and 779 gaps, and all eight `dagger check excalidraw-render:conformance` checks pass. `git diff --check` passes.
