@@ -35,3 +35,7 @@ Successful payload validation now enriches the existing strict-domain diagnostic
 The initial invalid-claim regression failed because validated PNG bytes left a null validated type. After enrichment, both that failure and the duplicate malformed-string warnings are resolved. Counts: **166 proposed owners / 762 gaps**, including **47 diagnostic owners / 75 diagnostic gaps**. The new media-type assignments await scoped approval; global ownership remains pending.
 
 Final verification: all 31 diagnostic-contract tests pass; ownership validation passes; all ten Dagger conformance/lint checks and all three Dagger workspace test checks pass. `git diff --check` passes. Approved registry and snapshot evidence are unchanged.
+
+### Scoped media-type approval
+
+The maintainer explicitly approved the reporting changes and three media-type assignments on 2026-09-13, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5656883187). The approval identifies commit `02c247506d6282869b35ff0a1182869ee20ab556`, binding the implementation, dispositions, selector, source digest and rationales. The incomplete global ledger retains null approval with 762 gaps.
