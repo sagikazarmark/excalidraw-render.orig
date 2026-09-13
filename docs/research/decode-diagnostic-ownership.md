@@ -23,3 +23,7 @@ This ownership covers the diagnostic contract across decoder families. It does n
 Counts: **158 proposed owners / 770 gaps**, including **39 diagnostic owners / 83 diagnostic gaps**. The new three assignments await scoped review; global ownership approval remains pending. Production code and approved baseline/inventory bytes are unchanged.
 
 Verification: the exact combined decode selector passes; `verify-ownership` validates 928 assignments with 158 assigned/excluded and 770 gaps; approved native baseline verification passes; all ten Dagger conformance/lint checks and the Dagger fast tier pass. `git diff --check` passes.
+
+## Scoped maintainer approval
+
+The maintainer explicitly approved the three decode-failure assignments on 2026-09-13, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5655872840). The approval identifies commit `8c7e598aa56ed86f125045de08af9d66d955d4d3`, binding the dispositions, selector, source digest and rationales. The incomplete global ledger retains null approval with 770 gaps.
