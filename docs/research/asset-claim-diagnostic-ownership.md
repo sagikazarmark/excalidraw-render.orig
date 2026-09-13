@@ -19,3 +19,7 @@ The current conflict contract diagnoses competing authority whenever a reference
 Counts: **163 proposed owners / 765 gaps**, including **44 diagnostic owners / 78 diagnostic gaps**. The three new assignments await scoped approval. Global ownership remains unapproved.
 
 Verification: all 29 diagnostic-contract tests pass; ownership validation passes; all ten Dagger conformance/lint checks and all three Dagger workspace test checks pass. The shared-reference media test failed before the fix with four diagnostics instead of two. Temporary malformed-domain probes were removed and preserved as findings above. `git diff --check` passes.
+
+## Scoped maintainer approval
+
+The maintainer explicitly approved the three supplement-conflict assignments on 2026-09-13, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5656670825). The approval identifies commit `2b68e411c88ec4eaecf79071e6d241b6fc13c161`, binding the dispositions, selector, source digest and rationales. Media-type ownership remains a gap; the incomplete global ledger retains null approval with 765 gaps.
