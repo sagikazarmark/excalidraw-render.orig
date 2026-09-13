@@ -1,6 +1,6 @@
 # Font registry reconciliation: approval proposal
 
-Base commit: `ea78042`. Reconciliation committed as `2804308`. Status: **all 36 case subjects explicitly approved and recorded**; downstream snapshot reconciliation remains pending.
+Base commit: `ea78042`. Reconciliation committed as `2804308`. Status: **all 36 case subjects explicitly approved and recorded; native snapshot reconciliation approved and replay passing**.
 
 Proposal identity (SHA-256 of canonical JSON without trailing LF):
 
@@ -34,9 +34,9 @@ The prior geometry probe at limit 10 rejected the outline itself, so it was repl
 - `dagger check excalidraw-render:lint`: formatting and clippy passed.
 - `git diff --check`: passed.
 - Before recording approval, ownership/registered-case gates rejected missing case approvals, as intended. After recording, all eight Dagger conformance checks pass, including catalog, registered cases, inventory and ownership.
-- Native baseline reconciliation has now collected clean `b419e23` packaged results: every artifact/report byte matches the prior baseline. The [new baseline approval subject](font-registry-snapshot-reconciliation.md) binds refreshed input digests and provenance and awaits separate #85 approval.
+- Native baseline reconciliation collected clean `b419e23` packaged results: every artifact/report byte matches the prior baseline. The [new baseline subject](font-registry-snapshot-reconciliation.md) was separately approved on #85; canonical packaged replay passes.
 
-The ledger retains 137 proposed owners and 791 gaps; the nine font obligations remain gaps pending downstream evidence reconciliation. This proposal does not approve baseline changes or global release closure.
+The ledger retains 137 proposed owners and 791 gaps; the nine font obligations still need their final ownership assessment and assignment. This case proposal did not approve baseline changes or global release closure; baseline approval was granted separately.
 
 ## Recorded approvals
 

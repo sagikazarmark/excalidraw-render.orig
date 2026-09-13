@@ -185,12 +185,13 @@ until those discrepancies are fixed. See [the findings](../../../docs/research/w
 
 ### Canonical baseline approval and replay
 
-`native-baseline/revision-1.json` currently stages a clean `b419e23` recollection
+`native-baseline/revision-1.json` contains the approved clean `b419e23` recollection
 after the font registry/case-binding reconciliation. All 168 artifact/report
 expectations and 187 blobs are byte-identical to the prior approved baseline;
-input digests and provenance are refreshed. **Reapproval is pending** for subject
+input digests and provenance are refreshed. **Reapproved on 2026-09-13** in
+[#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5652971255) for subject
 `sha256:f6e6a9e6a538b60b088038d19586c943b92166a18f5a9dee8a1b68c37984c957`.
-See [the reconciliation record](../../../docs/research/font-registry-snapshot-reconciliation.md).
+The canonical packaged replay passes. See [the reconciliation record](../../../docs/research/font-registry-snapshot-reconciliation.md).
 
 The original clean `2155a99` collection was **approved on 2026-09-11** in
 [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5641266771),

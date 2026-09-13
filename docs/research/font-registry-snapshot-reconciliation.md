@@ -1,6 +1,6 @@
 # Native snapshot reconciliation after font registry approval
 
-Status: fresh candidate collected and compared; **baseline reapproval pending**.
+Status: **baseline approved and packaged replay passing**.
 
 ## Evidence
 
@@ -18,16 +18,18 @@ Join keys are `(case, variant, export target, format)`, deliberately excluding t
 - All 168 `inputs_sha256` fields change because the inventory now binds the reconciled scene-surface registry, derived catalog and reapproved case manifests.
 - The inventory descriptor and fresh collection/package/compiler provenance are updated through the baseline producer. Collector and producer logic are unchanged.
 
-Only `native-baseline/revision-1.json` and its digest sidecar are replaced with the newly staged candidate. Its approval is null; the previous approval remains in Git history and is not transferred to a new subject.
+Only `native-baseline/revision-1.json` and its digest sidecar were replaced with the newly staged candidate. It was staged with null approval, then explicitly reapproved; the previous approval remains in Git history.
 
-## Requested #85 approval
+## Recorded #85 approval
 
 `sha256:f6e6a9e6a538b60b088038d19586c943b92166a18f5a9dee8a1b68c37984c957`
 
 This is the repository-computed `native-baseline-approval-subject`, covering the refreshed input bindings and clean-commit provenance with unchanged artifact/report expectations. Approval of the 36 case subjects did not approve this separate baseline subject.
 
-After explicit approval, record it using `record-native-baseline-approval`, verify the baseline and replay the collected candidate through `replay-native-snapshots`. Full cross-target equality and global ownership closure remain separate gates; #178 and the broader conformance gaps are not waived.
+The maintainer explicitly approved this subject in the coding session on 2026-09-13. Approval is recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5652971255) and in the baseline through `record-native-baseline-approval` under `sagikazarmark`.
+
+`verify-native-baseline` passes. `dagger check excalidraw-render:packaging:snapshot-replay` passed in 5m45s on the working tree based on `0546304`, freshly collecting packaged output and matching all 168 approved artifact/report expectations. Full cross-target equality and global ownership closure remain separate gates; #178 and the broader conformance gaps are not waived.
 
 ## Checks
 
-The candidate verifier, baseline staging/provenance validation, approval-subject validation and explicit old/new byte comparison pass. `git diff --check` passes. The approved-baseline verifier intentionally rejects the pending approval. Expected output blobs have not been repinned to conceal any renderer drift.
+The candidate verifier, baseline staging/provenance validation, approval validation, explicit old/new byte comparison and canonical packaged replay pass. `git diff --check` passes. Expected output blobs have not been repinned to conceal any renderer drift.
