@@ -14,3 +14,7 @@ A PNG element-work limit omits the occurrence and reports only the resource fail
 No renderer implementation or approved evidence changes are required. The two assignments are proposals, not global approval. Totals: **160 owners / 768 gaps**, including **41 diagnostic owners / 81 diagnostic gaps**.
 
 Verification: the exact animation selector, ownership validation and approved-baseline validation pass. All ten Dagger conformance/lint checks and the Dagger fast tier pass. `git diff --check` passes; temporary resource-report probes were removed.
+
+## Scoped maintainer approval
+
+The maintainer explicitly approved the two PNG/PDF assignments on 2026-09-13, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5656100492). The approval identifies commit `6a5824b4d496098028935c0629b4434804e80d4a`, binding the dispositions, selector, source digest and rationales. The incomplete global ledger retains null approval with 768 gaps.

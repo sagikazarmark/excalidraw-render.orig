@@ -31,6 +31,8 @@ The six malformed-file/unsupported-image assignments also have a
 [scoped maintainer approval](../../../docs/research/image-diagnostic-ownership.md#scoped-maintainer-approval).
 The three decode-failure assignments have a
 [scoped maintainer approval](../../../docs/research/decode-diagnostic-ownership.md#scoped-maintainer-approval).
+The two animation-flattening assignments have a
+[scoped maintainer approval](../../../docs/research/animation-diagnostic-ownership.md#scoped-maintainer-approval).
 The four closure obligations prevent that remaining scope from disappearing
 behind a zero-gap claim for only the current coarse inventory.
 
