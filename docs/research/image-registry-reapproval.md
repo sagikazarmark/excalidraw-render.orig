@@ -1,6 +1,6 @@
 # Image diagnostic registry amendment: reapproval proposal
 
-Base: `b8b5454`. Amendment committed as `600d760`. Status: **all 36 case subjects explicitly approved and recorded**; separate PDF/snapshot binding refreshes remain pending.
+Base: `b8b5454`. Amendment committed as `600d760`. Status: **all 36 case subjects explicitly approved and recorded; separate PDF/snapshot refreshes approved and verified**.
 
 Proposal bundle identity (SHA-256 of canonical JSON without its trailing LF):
 

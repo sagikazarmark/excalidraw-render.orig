@@ -1,7 +1,7 @@
 # Image registry downstream binding refresh
 
 Base and clean tested commit: `3836a21f4fe222327c07bb6a8b23ab0be4c4c6f1`.
-Status: candidates verified; **separate #44 and #85 approvals pending**.
+Candidates committed as `b30412c`. Status: **both approvals recorded; PDF binding and packaged replay passing**.
 
 ## #44: rectangle PDF expectation subject
 
@@ -48,12 +48,20 @@ than transferred from the preceding subject
 The repository `native-baseline-approval-subject` validator confirms the new
 subject above.
 
-## Next steps
+## Recorded approvals and verification
 
-Record explicit approval of each exact subject on its scoped issue, then run
-the unchanged PDF binding test, approved-baseline verification and canonical
-packaged replay. The two approval-dependent checks remain pending until those
-records exist. Case reapproval did not grant these separate approvals.
+The maintainer explicitly approved both exact subjects in the coding session
+on 2026-09-13. Approval records:
+
+- [#44 PDF expectations](https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5654932918)
+- [#85 native baseline](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5654932917)
+
+The unchanged PDF approval/dependency binding test passes, and
+`verify-native-baseline` validates the recorded approval. The canonical
+`dagger check excalidraw-render:packaging:snapshot-replay` passed in 5m9s,
+freshly matching all 168 approved artifact/report expectations on the working
+tree based on `b30412c`. Case reapproval and these downstream approvals are
+separate scoped records.
 
 `git diff --check` passes. Global ownership remains 149 proposed owners / 779
 gaps; this refresh does not waive #178 or the remaining diagnostic branches.

@@ -185,10 +185,12 @@ until those discrepancies are fixed. See [the findings](../../../docs/research/w
 
 ### Canonical baseline approval and replay
 
-`native-baseline/revision-1.json` currently stages the clean `3836a21` recollection
+`native-baseline/revision-1.json` contains the approved clean `3836a21` recollection
 after image registry reapproval. All 168 artifact/report pairs and 187 blobs
-match the prior baseline exactly; updated input bindings and provenance await
-approval of `sha256:56aa7e51d3990375b31bea1198f2c262871c5a7dbfd59344b2254cdf35c52721`.
+match the prior baseline exactly; updated input bindings and provenance were
+approved on 2026-09-13 in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5654932917),
+subject `sha256:56aa7e51d3990375b31bea1198f2c262871c5a7dbfd59344b2254cdf35c52721`.
+Canonical packaged replay passes.
 See [the image binding refresh](../../../docs/research/image-registry-binding-refresh.md).
 
 The preceding approved baseline contains the clean `b419e23` recollection
