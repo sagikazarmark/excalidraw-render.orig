@@ -108,3 +108,7 @@ The exact unconditional selector `diagnostic_contract::font_diagnostics_cover_te
 Prerequisites are complete: the registry/case subjects are approved, the soft-hyphen fix has approved dual-viewer and native/WASM qualification, and the separately approved native baseline replay matches all 168 expectations. The nine font obligations are now proposed owned. Counts: **27 diagnostic owners / 95 diagnostic gaps; 146 owners / 782 gaps globally**. This assignment does not approve the incomplete global ledger or close #85.
 
 Final checks on the working tree based on `bbb64a9`: the exact combined font test passes; `verify-ownership` validates 928 assignments with 146 assigned/excluded and 782 gaps; `verify-native-baseline` still passes; `dagger check excalidraw-render:conformance:coverage-ownership` passes. Only the nine font dispositions and documentation change in this assignment round; the approved inventory/baseline and test sources retain their digests.
+
+### Scoped maintainer approval
+
+The maintainer explicitly approved these nine assignments on 2026-09-13, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5653057971). The approval identifies commit `b9cba674c626f7e4c9284077ad483e14aec25f54`, which binds the exact nine dispositions, test selector, source digest and rationales. It is a scoped review record; the ledger's global approval remains null because 782 obligations remain gaps.

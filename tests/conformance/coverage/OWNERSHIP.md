@@ -25,6 +25,8 @@ missing assertions or branches; see [the per-code audit](../../../docs/research/
 These counts are **not a coverage percentage**:
 codec facets still need expansion into the full admitted-profile matrix, and
 specialized PDF/vector/fuzz owners still need adapters and reviewed mappings.
+The nine font diagnostic assignments have a [scoped maintainer approval](../../../docs/research/font-diagnostic-ownership.md#scoped-maintainer-approval);
+the incomplete global ledger remains pending approval.
 The four closure obligations prevent that remaining scope from disappearing
 behind a zero-gap claim for only the current coarse inventory.
 
