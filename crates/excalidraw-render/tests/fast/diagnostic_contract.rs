@@ -10,6 +10,201 @@ use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn animation_flattening_contract_in_every_format() {
+    use crate::common::codec_fixtures as f;
+    use base64::Engine;
+    let red = [[255, 0, 0, 255]];
+    let blue = [[0, 0, 255, 255]];
+    let palette = [255, 0, 0, 0, 0, 255];
+    let webp_red = f::webp_rgba(1, 1, &red);
+    let webp_blue = f::webp_rgba(1, 1, &blue);
+    let fixtures = [
+        (
+            "image/png",
+            f::apng(&red, &blue),
+            f::apng_with_separate_default(false),
+            f::png_rgba(1, 1, &blue),
+        ),
+        (
+            "image/gif",
+            f::gif(&[
+                f::gif_frame(&[0], 1, 1, &palette, None),
+                f::gif_frame(&[1], 1, 1, &palette, None),
+            ]),
+            f::gif(&[f::gif_frame(&[0], 1, 1, &palette, None)]),
+            f::gif(&[f::gif_frame(&[0], 1, 1, &palette, None)]),
+        ),
+        (
+            "image/webp",
+            f::animated_webp(1, 1, &[(0, 0, webp_red.clone()), (0, 0, webp_blue)]),
+            f::animated_webp(1, 1, &[(0, 0, webp_red.clone())]),
+            webp_red,
+        ),
+    ];
+    for (mime, animated, single, static_bytes) in fixtures {
+        let data_url = |bytes: &[u8]| {
+            format!(
+                "data:{mime};base64,{}",
+                base64::engine::general_purpose::STANDARD.encode(bytes)
+            )
+        };
+        let file = |bytes: &[u8]| json!({"id":"asset/~","created":1,"mimeType":mime,"dataURL":data_url(bytes)});
+        for format in FORMATS {
+            let first = image("z-first", "asset/~");
+            let mut second = image("a-second", "asset/~");
+            second["x"] = json!(50);
+            let mut deleted = image("deleted", "asset/~");
+            deleted["isDeleted"] = json!(true);
+            let rows = if format == OutputFormat::Svg {
+                json!([])
+            } else {
+                json!([
+                    animation_expected("z-first", "/elements/0/fileId", "asset/~", mime),
+                    animation_expected("a-second", "/elements/1/fileId", "asset/~", mime)
+                ])
+            };
+            let source = image_scene(
+                json!([first, second, deleted]),
+                json!({"asset/~":file(&animated)}),
+            );
+            assert_report(&source, format, rows.clone());
+            let request = RenderRequest::builder(format)
+                .supplemental_assets(
+                    SupplementalAssets::builder()
+                        .asset("asset/~", animated.clone())
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            assert_report_with_request(&scene(json!([first, second, deleted])), &request, rows);
+            if format == OutputFormat::Png {
+                let request = RenderRequest::builder(format).build().unwrap();
+                let flattened = Renderer::new()
+                    .render(
+                        &image_scene(json!([first]), json!({"asset/~":file(&animated)})),
+                        &request,
+                    )
+                    .unwrap();
+                let first_frame = f::png_rgba(1, 1, &red);
+                let first_url = format!(
+                    "data:image/png;base64,{}",
+                    base64::engine::general_purpose::STANDARD.encode(first_frame)
+                );
+                let still = image_scene(
+                    json!([first]),
+                    json!({"asset/~":{"id":"asset/~","created":1,"mimeType":"image/png","dataURL":first_url}}),
+                );
+                assert_eq!(
+                    flattened.artifact().bytes(),
+                    Renderer::new()
+                        .render(&still, &request)
+                        .unwrap()
+                        .artifact()
+                        .bytes(),
+                    "{mime} paints frame zero"
+                );
+            }
+            for bytes in [&single, &static_bytes] {
+                assert_report(
+                    &image_scene(json!([first]), json!({"asset/~":file(bytes)})),
+                    format,
+                    json!([]),
+                );
+            }
+            assert_report(
+                &image_scene(json!([deleted]), json!({"asset/~":file(&animated)})),
+                format,
+                json!([]),
+            );
+            assert_report_with_request(&scene(json!([])), &request, json!([]));
+            let mut outside = image("outside", "asset/~");
+            outside["x"] = json!(500);
+            let framed = image_scene(
+                json!([
+                    {"id":"frame","type":"frame","width":100,"height":100,"updated":1},first,second,outside
+                ]),
+                json!({"asset/~":file(&animated)}),
+            );
+            let frame_rows = if format == OutputFormat::Svg {
+                json!([])
+            } else {
+                json!([
+                    animation_expected("z-first", "/elements/1/fileId", "asset/~", mime),
+                    animation_expected("a-second", "/elements/2/fileId", "asset/~", mime)
+                ])
+            };
+            assert_frame_reports(&framed, format, &[frame_rows]);
+            let limited = RenderRequest::builder(format)
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_element_work_units(31)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            let limited_rows = match format {
+                OutputFormat::Svg => json!([]),
+                OutputFormat::Pdf => json!([animation_expected(
+                    "z-first",
+                    "/elements/0/fileId",
+                    "asset/~",
+                    mime
+                )]),
+                OutputFormat::Png => json!([expected(
+                    "resource.element-work-exceeded",
+                    "warning",
+                    json!(["visual"]),
+                    json!("z-first"),
+                    "/elements/0",
+                    json!({"kind":"resource_limit","field":"max_element_work_units","configured":31,"value_kind":"work_units","measurement":{"kind":"attempted","value":28808},"recovery":"omitted"})
+                )]),
+                _ => unreachable!(),
+            };
+            assert_report_with_request(
+                &image_scene(json!([first]), json!({"asset/~":file(&animated)})),
+                &limited,
+                limited_rows,
+            );
+            // An intrinsic failure prevents flattening in either PNG or PDF.
+            let byte_limited = RenderRequest::builder(format)
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_asset_bytes(1)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            assert_report_with_request(
+                &image_scene(json!([first]), json!({"asset/~":file(&animated)})),
+                &byte_limited,
+                json!([expected(
+                    "resource.asset-bytes-exceeded",
+                    "warning",
+                    json!(["visual"]),
+                    json!("z-first"),
+                    "/files/asset~1~0/dataURL",
+                    json!({"kind":"resource_limit","field":"max_asset_bytes","configured":1,"value_kind":"bytes","measurement":{"kind":"attempted","value":animated.len()},"recovery":if format==OutputFormat::Png {"placeholder"} else {"omitted"}})
+                )]),
+            );
+        }
+    }
+}
+
+fn animation_expected(owner: &str, pointer: &str, asset: &str, mime: &str) -> Value {
+    expected(
+        "image.animation-flattened",
+        "info",
+        json!(["visual"]),
+        json!(owner),
+        pointer,
+        json!({"kind":"asset","asset_id":asset,"claimed_media_type":null,"validated_media_type":mime,"recovery":"flattened","recipe_id":null}),
+    )
+}
+
+#[test]
 fn decode_failures_cover_every_codec_and_authority() {
     use crate::common::codec_fixtures as fixtures;
     use base64::Engine;
