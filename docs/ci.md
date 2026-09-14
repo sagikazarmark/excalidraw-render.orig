@@ -101,7 +101,7 @@ Its consistency check does not grant release closure: `conformance verify-closur
 rejects the draft until ownership and canonical snapshot evidence are complete.
 The adjacent global ledger is checked by
 `dagger check excalidraw-render:conformance:coverage-ownership`; its 928 obligations
-have 166 proposed owners and 762 explicit gaps. See
+have 517 proposed owners and 411 explicit gaps. See
 [ownership semantics](../tests/conformance/coverage/OWNERSHIP.md). These counts
 describe assignments, not an approved coverage percentage.
 

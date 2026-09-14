@@ -359,6 +359,27 @@ fn unconditional_test(
     Ok(())
 }
 
+fn test_command(module: &str, function: &str) -> Vec<String> {
+    [
+        "cargo",
+        "test",
+        "--locked",
+        "--release",
+        "-p",
+        "excalidraw-render",
+        "--test",
+        "fast",
+    ]
+    .into_iter()
+    .map(String::from)
+    .chain([
+        format!("{module}::{function}"),
+        "--".into(),
+        "--exact".into(),
+    ])
+    .collect()
+}
+
 fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, String> {
     if ledger.schema != SCHEMA
         || ledger.compatibility_revision != 1
@@ -449,24 +470,7 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
                         let source_text =
                             String::from_utf8(read(&source.path)?).map_err(|e| e.to_string())?;
                         unconditional_test(&source_text, &main, module, function)?;
-                        let args: Vec<String> = [
-                            "cargo",
-                            "test",
-                            "--locked",
-                            "--release",
-                            "-p",
-                            "excalidraw-render",
-                            "--test",
-                            "fast",
-                        ]
-                        .into_iter()
-                        .map(String::from)
-                        .chain([
-                            format!("{module}::{function}"),
-                            "--".into(),
-                            "--exact".into(),
-                        ])
-                        .collect();
+                        let args = test_command(module, function);
                         if command != &args {
                             return Err(
                                 "test owner command does not select its exact executable test"
@@ -536,6 +540,81 @@ pub fn verify_ownership() -> Result<(), String> {
     }
     println!("verified {} ownership assignments: {} assigned/excluded, {gaps} explicit gaps; ledger approval {}",
         ledger.assignments.len(),ledger.assignments.len()-gaps,if ledger.approval.is_null(){"pending"}else{"recorded"});
+    Ok(())
+}
+
+/// Record an explicitly reviewed selection. No inference from field names or
+/// source anchors is allowed; every requested identity must still be a gap.
+pub fn record_test_owner(
+    module: &str,
+    function: &str,
+    rationale: &str,
+    ids: &[String],
+) -> Result<(), String> {
+    let (catalog, mut ledger) = load()?;
+    validate(&catalog, &ledger, false)?;
+    if ids.is_empty() || ids.iter().collect::<BTreeSet<_>>().len() != ids.len() {
+        return Err("select nonempty, unique ownership identities".into());
+    }
+    let owner = Owner::Test {
+        source: descriptor(&format!("crates/excalidraw-render/tests/fast/{module}.rs"))?,
+        function: function.into(),
+        binary: "fast".into(),
+        command: test_command(module, function),
+    };
+    for id in ids {
+        let row = ledger
+            .assignments
+            .iter_mut()
+            .find(|row| &row.id == id)
+            .ok_or_else(|| format!("unknown ownership identity {id}"))?;
+        if !matches!(row.disposition, Disposition::Gap { .. }) {
+            return Err(format!("ownership already assigned: {id}"));
+        }
+        row.disposition = Disposition::Owned {
+            owner: owner.clone(),
+            rationale: rationale.into(),
+        };
+    }
+    validate(&catalog, &ledger, false)?;
+    let mut bytes = serde_json::to_vec_pretty(&ledger).map_err(|e| e.to_string())?;
+    bytes.push(b'\n');
+    fs::write(repo_root().join(LEDGER), bytes).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Refresh a consuming test's live location binding after editing its source.
+/// The selected executable and reviewed rationale are preserved and revalidated.
+pub fn refresh_test_owner_source(module: &str) -> Result<(), String> {
+    let (catalog, mut ledger) = load()?;
+    if !ledger.approval.is_null() {
+        return Err(
+            "approved ownership requires explicit review before refreshing test sources".into(),
+        );
+    }
+    let source = descriptor(&format!("crates/excalidraw-render/tests/fast/{module}.rs"))?;
+    let mut count = 0;
+    for assignment in &mut ledger.assignments {
+        if let Disposition::Owned {
+            owner: Owner::Test {
+                source: existing, ..
+            },
+            ..
+        } = &mut assignment.disposition
+        {
+            if existing.path == source.path {
+                *existing = source.clone();
+                count += 1;
+            }
+        }
+    }
+    if count == 0 {
+        return Err("no existing test owners for source".into());
+    }
+    validate(&catalog, &ledger, false)?;
+    let mut bytes = serde_json::to_vec_pretty(&ledger).map_err(|e| e.to_string())?;
+    bytes.push(b'\n');
+    fs::write(repo_root().join(LEDGER), bytes).map_err(|e| e.to_string())?;
     Ok(())
 }
 

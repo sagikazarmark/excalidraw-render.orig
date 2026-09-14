@@ -88,6 +88,93 @@ impl Drop for Scratch {
 }
 
 #[test]
+fn ownership_recording_rejects_unknown_obligations_without_changing_the_ledger() {
+    let path = root().join("tests/conformance/coverage/ownership.json");
+    let before = fs::read(&path).unwrap();
+    let output = command(&[
+        "conformance",
+        "record-test-owner",
+        "surface_metadata_contract",
+        "editor_state_is_silent_preserved_and_independent_of_scene_and_frame_exports",
+        "Explicit reviewed editor-only surface contract",
+        "surface:unknown:/unknown:svg",
+    ]);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("unknown ownership identity"));
+    assert_eq!(fs::read(path).unwrap(), before);
+}
+
+#[test]
+fn ownership_recording_validates_the_entire_batch_before_writing() {
+    let path = root().join("tests/conformance/coverage/ownership.json");
+    let before = fs::read(&path).unwrap();
+    let ledger: Value = serde_json::from_slice(&before).unwrap();
+    let assignments = ledger["assignments"].as_array().unwrap();
+    let gap = assignments
+        .iter()
+        .find(|row| row["disposition"]["status"] == "gap")
+        .unwrap()["id"]
+        .as_str()
+        .unwrap();
+    let owned = assignments
+        .iter()
+        .find(|row| row["disposition"]["status"] == "owned")
+        .unwrap()["id"]
+        .as_str()
+        .unwrap();
+    for (function, rationale, ids, expected) in [
+        (
+            "scene_metadata_is_preserved_without_changing_static_exports",
+            "reviewed",
+            vec![gap, "unknown"],
+            "unknown ownership",
+        ),
+        (
+            "scene_metadata_is_preserved_without_changing_static_exports",
+            "reviewed",
+            vec![gap, gap],
+            "unique ownership",
+        ),
+        (
+            "scene_metadata_is_preserved_without_changing_static_exports",
+            "reviewed",
+            vec![gap, owned],
+            "already assigned",
+        ),
+        ("no_such_test", "reviewed", vec![gap], "unconditional test"),
+        (
+            "scene_metadata_is_preserved_without_changing_static_exports",
+            " ",
+            vec![gap],
+            "rationale is empty",
+        ),
+        (
+            "scene_metadata_is_preserved_without_changing_static_exports",
+            "reviewed",
+            vec![],
+            "nonempty",
+        ),
+    ] {
+        let mut args = vec![
+            "conformance",
+            "record-test-owner",
+            "surface_metadata_contract",
+            function,
+            rationale,
+        ];
+        args.extend(ids);
+        let output = command(&args);
+        assert!(!output.status.success());
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(expected),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(fs::read(&path).unwrap(), before);
+    }
+}
+
+#[test]
 fn inventory_is_current_and_release_closure_does_not_pass_for_a_draft() {
     assert_success(command(&["conformance", "verify-inventory"]));
     let output = command(&["conformance", "verify-closure"]);

@@ -535,7 +535,7 @@ fn embedded_scene_excludes_supplements_and_keeps_source_spelling() {
         .any(|bytes| bytes == b"caller-only"));
 }
 
-fn extract(format: OutputFormat, artifact: &[u8]) -> (String, Vec<u8>) {
+pub(super) fn extract(format: OutputFormat, artifact: &[u8]) -> (String, Vec<u8>) {
     match format {
         OutputFormat::Svg => extract_svg(artifact),
         OutputFormat::Png => extract_png(artifact),

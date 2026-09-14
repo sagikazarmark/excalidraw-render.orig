@@ -18,8 +18,10 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **928** | |
 
-166 primary owners are proposed (118 case labels, the AVIF rejection test and
-47 diagnostic/format obligations). 762 obligations remain explicit gaps.
+517 primary owners are proposed (118 case labels, the AVIF rejection test,
+47 diagnostic/format obligations and 351 surface-field/format obligations).
+411 obligations remain explicit gaps. The surface assignments are assessed in
+[the surface ownership audit](../../../docs/research/surface-field-ownership.md).
 The diagnostic audit retains 75 of its 122 obligations as gaps with specific
 missing assertions or branches; see [the per-code audit](../../../docs/research/diagnostic-ownership.md).
 These counts are **not a coverage percentage**:
@@ -81,6 +83,10 @@ covers every diagnostic/format/profile obligation introduced by this ledger.
 dagger check excalidraw-render:conformance:coverage-ownership
 dagger api call evidence ownership-catalog --output target/ownership-catalog.json
 cargo run --locked -p xtask -- conformance verify-ownership
+# Record explicit reviewed gap selections; this does not grant approval:
+cargo run --locked -p xtask -- conformance record-test-owner MODULE FUNCTION RATIONALE ID...
+# Refresh consuming-test location hashes in an unapproved ledger after review:
+cargo run --locked -p xtask -- conformance refresh-test-owner-source MODULE
 # Machine-readable all-gap template, for explicit reviewed migrations only:
 cargo run --locked -p xtask -- conformance seed-ownership > target/ownership-template.json
 # Both fail until the ledger is complete (closure also requires approval):
