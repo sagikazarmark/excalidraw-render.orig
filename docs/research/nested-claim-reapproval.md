@@ -48,3 +48,6 @@ The maintainer explicitly approved the implementation and entire bundle on 2026-
 Inventory and owner hashes are refreshed to the approved case manifests. This records the scoped approvals without granting global closure or transferring approval to new downstream PDF/snapshot subjects.
 
 After recording, ownership verification passes (166 assigned/excluded, 762 gaps), all eight Dagger conformance checks pass, and `git diff --check` passes.
+
+The downstream PDF and native baseline candidates are now collected, compared
+and staged with unchanged expected bytes; see [their separate approval subjects](nested-claim-binding-refresh.md).
