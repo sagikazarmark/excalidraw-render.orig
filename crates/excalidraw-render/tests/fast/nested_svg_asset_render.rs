@@ -896,6 +896,29 @@ fn safe_class_styles_preserve_nested_opacity_and_layer_order() {
     assert!(pdf.contains("/ca 0.5"));
 }
 
+/// Existing independent rendering and bounded-admission evidence, selected by
+/// the final nested-resource surface owner through the facade.
+pub(super) fn assert_local_resource_contract() {
+    nested_bmp_preserves_direct_svg_bytes_and_normalizes_png_and_pdf();
+    basic_nested_svg_renders_in_svg_png_and_pdf();
+    unsafe_nested_svg_boundaries_are_removed_before_embedding();
+    same_document_fragments_resolve_without_ambient_resources();
+    cyclic_local_references_are_bounded();
+    nested_svg_node_ceiling_recovers_before_viewer_parsing();
+    nested_data_svg_depth_ceiling_stops_recursive_resolution();
+    nested_svg_sanitizer_is_bounded_by_asset_work();
+    malformed_nested_image_is_removed_without_discarding_valid_siblings();
+    nested_data_resources_participate_in_asset_occurrence_accounting();
+    repeated_nested_occurrences_share_decode_but_not_occurrence_admission();
+    shared_parent_identity_never_bypasses_nested_occurrence_admission();
+    data_images_are_not_admitted_as_link_actions();
+    svg_projection_preserves_sanitized_semantics_and_selectable_text();
+    png_projects_nested_vectors_at_final_device_scale();
+    pdf_projects_nested_text_as_vector_outlines();
+    pdf_rasterizes_an_isolated_effect_closure_with_exact_diagnostics();
+    pdf_forbid_rejects_the_first_effect_closure_without_a_fallback_warning();
+}
+
 fn embedded_svg(artifact: &str) -> String {
     let prefix = "data:image/svg+xml;base64,";
     let start = artifact.find(prefix).expect("nested SVG data URL") + prefix.len();

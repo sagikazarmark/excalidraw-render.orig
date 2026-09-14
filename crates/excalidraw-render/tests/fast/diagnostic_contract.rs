@@ -122,7 +122,7 @@ fn nested_media_claims_keep_recursive_occurrence_identity_and_pixels() {
 }
 
 #[test]
-fn unsafe_svg_categories_follow_static_effects() {
+pub(super) fn unsafe_svg_categories_follow_static_effects() {
     use base64::Engine;
     for (prefix, body, visual, node) in [
         ("<!DOCTYPE svg>", "<rect width=\"40\" height=\"30\"/>", false, 0),
@@ -145,7 +145,7 @@ fn unsafe_svg_categories_follow_static_effects() {
 }
 
 #[test]
-fn unsafe_svg_attributes_and_safe_styles_are_explicit() {
+pub(super) fn unsafe_svg_attributes_and_safe_styles_are_explicit() {
     use base64::Engine;
     let data = |body: &str| {
         format!(
@@ -249,7 +249,7 @@ fn unsafe_svg_attributes_and_safe_styles_are_explicit() {
 }
 
 #[test]
-fn unsafe_nested_siblings_sort_by_full_source_path() {
+pub(super) fn unsafe_nested_siblings_sort_by_full_source_path() {
     use base64::Engine;
     let url = |svg: &str| {
         format!(
@@ -295,7 +295,7 @@ fn unsafe_nested_siblings_sort_by_full_source_path() {
 }
 
 #[test]
-fn nested_failure_and_removal_share_one_source_order() {
+pub(super) fn nested_failure_and_removal_share_one_source_order() {
     use base64::Engine;
     let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="data:image/png;base64,aW52YWxpZA==" width="40" height="30"/><rect onclick="later()" width="40" height="30"/></svg>"#;
     let data = format!(
@@ -340,7 +340,7 @@ fn unsafe_removal_expected(effects: Value, segments: Value) -> Value {
 }
 
 #[test]
-fn unsafe_svg_removals_have_exact_effects_and_silence() {
+pub(super) fn unsafe_svg_removals_have_exact_effects_and_silence() {
     use base64::Engine;
     for (body, effects, ordinal, attribute) in [
         (
@@ -440,7 +440,7 @@ pub(super) fn forbidden_resource_reports_bounds_selected_recovery() {
 }
 
 #[test]
-fn nested_event_handler_removal_keeps_its_full_path_and_semantic_effect() {
+pub(super) fn nested_event_handler_removal_keeps_its_full_path_and_semantic_effect() {
     use base64::Engine;
     let inner = r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30" fill="red" onclick="alert(1)"/></svg>"#;
     let inner_url = format!(
@@ -3290,7 +3290,7 @@ fn local_font_substitution_is_informational_per_occurrence_in_all_formats() {
 }
 
 #[test]
-fn unknown_elements_cover_bounded_placeholders_and_unbounded_omissions() {
+pub(super) fn unknown_elements_cover_bounded_placeholders_and_unbounded_omissions() {
     let bounded = json!({"id":"bounded","type":"future","width":40,"height":40,"updated":1,"future":{"nested":true}});
     let unbounded = json!({"id":"unbounded","type":"future","x":null,"y":null,"width":null,"height":null,"updated":1});
     for format in FORMATS {
@@ -3329,7 +3329,7 @@ fn unknown_elements_cover_bounded_placeholders_and_unbounded_omissions() {
 }
 
 #[test]
-fn malformed_elements_cover_bounded_placeholders_and_unbounded_omissions() {
+pub(super) fn malformed_elements_cover_bounded_placeholders_and_unbounded_omissions() {
     let bounded = json!({"id":"bounded","type":"","width":40,"height":40,"updated":1});
     for format in FORMATS {
         assert_report(

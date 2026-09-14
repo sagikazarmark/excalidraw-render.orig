@@ -25,6 +25,7 @@ mod emoji_fallback_render;
 mod empty_scene_render;
 mod empty_text_line_render;
 mod excalifont_text_render;
+mod final_surface_contract;
 mod font_catalog_render;
 mod frame_clip_accounting;
 mod frame_export;

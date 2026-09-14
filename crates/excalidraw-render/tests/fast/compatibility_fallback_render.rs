@@ -9,7 +9,7 @@ use crate::common::render::render;
 use crate::common::svg::{font_family_attribute, LIBERATION_FAMILIES, NOTO_EMOJI_FAMILIES};
 
 #[test]
-fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
+pub(super) fn unknown_element_renders_the_exact_transformed_svg_placeholder() {
     let scene = SceneDocument::parse(
         br##"{
         "type":"excalidraw",
@@ -296,7 +296,7 @@ fn compatibility_placeholder_preserves_safe_links_only_in_semantic_formats() {
 }
 
 #[test]
-fn pinned_link_sanitizer_preserves_its_safe_canonical_value_and_omits_active_actions() {
+pub(super) fn pinned_link_sanitizer_preserves_its_safe_canonical_value_and_omits_active_actions() {
     for (link, expected) in [
         (
             "  https://example.com/a\\tb  ",
@@ -343,7 +343,7 @@ fn pinned_link_sanitizer_preserves_its_safe_canonical_value_and_omits_active_act
 }
 
 #[test]
-fn supported_linked_elements_keep_navigation_in_semantic_formats() {
+pub(super) fn supported_linked_elements_keep_navigation_in_semantic_formats() {
     let scene = SceneDocument::parse(
         br##"{"type":"excalidraw","version":2,"elements":[{"id":"rectangle","type":"rectangle","x":0,"y":0,"width":120,"height":60,"angle":0,"strokeColor":"#1e1e1e","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"strokeStyle":"solid","roundness":null,"roughness":1,"opacity":100,"seed":1,"isDeleted":false,"groupIds":[],"frameId":null,"boundElements":[],"link":"/docs","version":1,"versionNonce":0,"updated":1,"locked":false}],"appState":{},"files":{}}"##,
     )
@@ -363,7 +363,7 @@ fn supported_linked_elements_keep_navigation_in_semantic_formats() {
 }
 
 #[test]
-fn pdf_link_annotations_are_ordered_from_topmost_to_bottommost() {
+pub(super) fn pdf_link_annotations_are_ordered_from_topmost_to_bottommost() {
     let scene = SceneDocument::parse(
         br##"{"type":"excalidraw","version":2,"elements":[{"id":"bottom","type":"rectangle","x":0,"y":0,"width":120,"height":60,"strokeColor":"#1e1e1e","link":"https://example.com/bottom","seed":1,"updated":1},{"id":"top","type":"rectangle","x":10,"y":10,"width":120,"height":60,"strokeColor":"#1e1e1e","link":"https://example.com/top","seed":2,"updated":2}],"appState":{},"files":{}}"##,
     )

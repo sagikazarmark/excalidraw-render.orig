@@ -18,9 +18,11 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **928** | |
 
-769 primary owners are proposed (118 case labels, the AVIF rejection test,
-53 diagnostic/format obligations and 597 surface-field/format obligations).
-159 obligations remain explicit gaps. Points/freehand/arrow assignments are
+777 primary owners are proposed (118 case labels, the AVIF rejection test,
+53 diagnostic/format obligations and all 605 current surface-field/format obligations).
+151 obligations remain explicit gaps. The last eight surface assignments are
+assessed in [the final surface audit](../../../docs/research/final-surface-ownership.md).
+Points/freehand/arrow assignments are
 assessed in [the point/stroke audit](../../../docs/research/point-stroke-ownership.md).
 Relationship/binding assignments are
 assessed in [the relationship audit](../../../docs/research/relationship-field-ownership.md).
