@@ -792,7 +792,13 @@ fn duplicate_ids_retain_first_occurrence_and_resolve_frame_references() {
             "/elements/1/id",
             "repaired"
         )]);
-        assert_scene(&source, &clean, format, rows.clone());
+        let mut scene_rows = rows.clone();
+        scene_rows[0]["effects"] = if format == OutputFormat::Png {
+            json!(["input_repair", "visual"])
+        } else {
+            json!(["input_repair", "visual", "semantic"])
+        };
+        assert_scene(&source, &clean, format, scene_rows);
         assert_frames(&source, &clean, format, &[json!([]), rows]);
     }
 }

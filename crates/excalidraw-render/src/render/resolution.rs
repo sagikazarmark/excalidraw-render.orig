@@ -90,6 +90,112 @@ struct SceneChrome {
 }
 
 impl RenderSession {
+    fn scope_duplicate_identity_effects(
+        &mut self,
+        scene: &SceneDocument,
+        request: &RenderRequest,
+        normalization: &NormalizationOutcome,
+        relationships: &RelationshipOutcome,
+    ) -> Result<(), RenderError> {
+        let frame_target = matches!(self.target, RenderTarget::Frame(_));
+        let visual_for = |pointer: &str| {
+            let Some(index) = element_owner_index(pointer).and_then(|i| usize::try_from(i).ok())
+            else {
+                return false;
+            };
+            let Some(crate::scene::JsonValue::Object(members)) = scene.element_value(index) else {
+                return false;
+            };
+            let Some(crate::scene::JsonValue::String(original)) =
+                scene::member_value(members, "id")
+            else {
+                return false;
+            };
+            let first = relationships.graph.nodes.iter().find(|node| {
+                node.source_index < index && matches!(scene.element_value(node.source_index), Some(crate::scene::JsonValue::Object(members)) if matches!(scene::member_value(members,"id"),Some(crate::scene::JsonValue::String(id)) if id == original))
+            });
+            let Some(first) = first else {
+                return false;
+            };
+            let graph = &relationships.graph;
+            let element_at = |index| {
+                normalization
+                    .elements
+                    .iter()
+                    .find(|e| e.source.source_index() == index)
+            };
+            let nonempty_text = |element: Option<&NormalizedElement>| {
+                element.is_some_and(|e| matches!(&e.kind, NormalizedElementKind::Text(text) if !text.text.is_empty()))
+            };
+            graph.edges.iter().any(|edge| {
+                let relationships::RelationshipTarget::Element(target) = edge.target else { return false; };
+                let Some(target_node) = graph.nodes.get(target) else { return false; };
+                if target_node.source_index != first.source_index { return false; }
+                let Some(source_node) = graph.nodes.get(edge.source) else { return false; };
+                let source_index = source_node.source_index;
+                let source = element_at(source_index);
+                let fallback = normalization.fallbacks.iter().any(|f| f.source_index == source_index);
+                if source.is_none() && !fallback { return false; }
+                let target = element_at(first.source_index);
+                match edge.kind {
+                    relationships::RelationshipKind::Frame | relationships::RelationshipKind::Clip => {
+                        let paints = source.is_none_or(|e| match &e.kind {
+                            NormalizedElementKind::Text(text) => !text.text.is_empty() &&
+                                !graph.edges.iter().any(|mask| mask.source == edge.source && mask.kind == relationships::RelationshipKind::Mask &&
+                                    matches!(mask.target, relationships::RelationshipTarget::Element(t) if graph.nodes.get(t).is_some_and(|container| !super::bound_text::has_reciprocal_bound_text(container.source_index, source_index, graph)))),
+                            _ => true,
+                        });
+                        target.is_some_and(|e| matches!(e.kind, NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_))) &&
+                            (frame_target || (normalization.frame_rendering.enabled && normalization.frame_rendering.clip && request.frame_options().enabled() && request.frame_options().clip()) || (paints && target.is_some_and(|e| e.opacity != 100.0)))
+                    }
+                    relationships::RelationshipKind::Binding | relationships::RelationshipKind::Mask => {
+                        if frame_target && target.is_some() { return true; }
+                        if edge.json_pointer.ends_with("/containerId") {
+                            // Choosing a nonreciprocal container suppresses text,
+                            // which is itself a visual/semantic consequence.
+                            nonempty_text(source) && target.is_some()
+                        } else if edge.json_pointer.contains("/boundElements/") || edge.json_pointer.contains("/boundElementIds/") {
+                            graph.edges.iter().any(|candidate| {
+                                candidate.kind == relationships::RelationshipKind::Mask &&
+                                    graph.nodes.get(candidate.source).is_some_and(|node| (node.source_index == first.source_index || node.source_index == index) && nonempty_text(element_at(node.source_index))) &&
+                                    matches!(candidate.target, relationships::RelationshipTarget::Element(t) if graph.nodes.get(t).is_some_and(|node| node.source_index == source_index))
+                            })
+                        } else { false }
+                    }
+                    _ => false,
+                }
+            })
+        };
+        for diagnostic in &mut self.report.diagnostics {
+            if diagnostic.code() == crate::DiagnosticCode::NORMALIZATION_DUPLICATE_ELEMENT_ID
+                && diagnostic
+                    .set_identity_effects(visual_for(diagnostic.json_pointer()))
+                    .is_err()
+            {
+                return Err(self.memory_failure(
+                    request,
+                    "compatibility_report",
+                    "duplicate_identity_effects",
+                ));
+            }
+        }
+        for pending in &mut self.pending_frame_normalization_diagnostics {
+            if pending.diagnostic.code()
+                == crate::DiagnosticCode::NORMALIZATION_DUPLICATE_ELEMENT_ID
+                && pending
+                    .diagnostic
+                    .set_identity_effects(visual_for(pending.diagnostic.json_pointer()))
+                    .is_err()
+            {
+                return Err(self.memory_failure(
+                    request,
+                    "compatibility_report",
+                    "duplicate_identity_effects",
+                ));
+            }
+        }
+        Ok(())
+    }
     /// Effects describe channels the repaired source relationship can affect in
     /// this target, rather than the number or kind of its graph projections.
     fn cycle_effects(
@@ -674,7 +780,15 @@ impl RenderSession {
             (normalization, ResolvedRelationships::Live(relationships))
         };
         let (frame_viewport, frame_participating_sources, selected_file_ids) = match self.target {
-            RenderTarget::Scene => (None, None, None),
+            RenderTarget::Scene => {
+                self.scope_duplicate_identity_effects(
+                    scene,
+                    request,
+                    &normalization,
+                    &relationships,
+                )?;
+                (None, None, None)
+            }
             RenderTarget::Frame(target) => {
                 let selection =
                     FrameSelection::compute(&normalization.elements, &relationships.graph, target)
@@ -746,6 +860,12 @@ impl RenderSession {
                             )
                         })?;
                 }
+                self.scope_duplicate_identity_effects(
+                    scene,
+                    request,
+                    &normalization,
+                    &relationships,
+                )?;
                 self.flush_frame_normalization_diagnostics(
                     request,
                     &diagnostic_sources,

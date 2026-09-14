@@ -3673,7 +3673,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "missing_and_invalid_ids_have_exact_recovery_and_target_participation",
           "binary": "fast",
@@ -3702,7 +3702,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "missing_and_invalid_ids_have_exact_recovery_and_target_participation",
           "binary": "fast",
@@ -3731,7 +3731,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "missing_and_invalid_ids_have_exact_recovery_and_target_participation",
           "binary": "fast",
@@ -12920,7 +12920,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "deletion_controls_paint_diagnostics_assets_and_frame_discovery",
           "binary": "fast",
@@ -12949,7 +12949,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "deletion_controls_paint_diagnostics_assets_and_frame_discovery",
           "binary": "fast",
@@ -12978,7 +12978,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "deletion_controls_paint_diagnostics_assets_and_frame_discovery",
           "binary": "fast",
@@ -13326,7 +13326,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "element_timestamps_repair_only_absence_and_preserve_invalid_originals",
           "binary": "fast",
@@ -13355,7 +13355,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "element_timestamps_repair_only_absence_and_preserve_invalid_originals",
           "binary": "fast",
@@ -13384,7 +13384,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "element_timestamps_repair_only_absence_and_preserve_invalid_originals",
           "binary": "fast",
@@ -14994,7 +14994,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "file_timestamps_repair_once_per_authoritative_participating_record",
           "binary": "fast",
@@ -15023,7 +15023,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "file_timestamps_repair_once_per_authoritative_participating_record",
           "binary": "fast",
@@ -15052,7 +15052,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "file_timestamps_repair_once_per_authoritative_participating_record",
           "binary": "fast",
@@ -16512,7 +16512,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -16541,7 +16541,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -16570,7 +16570,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -16599,7 +16599,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -16628,7 +16628,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -16657,7 +16657,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -16686,7 +16686,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -16715,7 +16715,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -16744,7 +16744,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -17034,7 +17034,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -17063,7 +17063,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -17092,7 +17092,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -17121,7 +17121,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -17150,7 +17150,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",
@@ -17179,7 +17179,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
-            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+            "sha256": "74bf6ebda40de0e8086c91805750feb9cba05ea31c20cddbc24b92090f843252"
           },
           "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
           "binary": "fast",

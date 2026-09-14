@@ -236,7 +236,27 @@ pub(crate) struct PendingDiagnostic {
     details: Option<Box<ErrorDetails>>,
 }
 
+fn set_identity_effects(
+    effects: &mut Vec<DiagnosticEffect>,
+    format: OutputFormat,
+    visual: bool,
+) -> Result<(), TryReserveError> {
+    effects.try_reserve(3)?;
+    effects.clear();
+    effects.push(DiagnosticEffect::InputRepair);
+    if visual {
+        effects.push(DiagnosticEffect::Visual);
+        if format != OutputFormat::Png {
+            effects.push(DiagnosticEffect::Semantic);
+        }
+    }
+    Ok(())
+}
+
 impl PendingDiagnostic {
+    pub(crate) fn set_identity_effects(&mut self, visual: bool) -> Result<(), TryReserveError> {
+        set_identity_effects(&mut self.effects, self.format, visual)
+    }
     /// The diagnostic `kind` describes, produced for `format` with the
     /// `effects` the report will list, attributed to `element_id` at the RFC
     /// 6901 `json_pointer`, with the non-normative `message`.
@@ -393,6 +413,9 @@ impl DiagnosticOrder {
 }
 
 impl CompatibilityDiagnostic {
+    pub(crate) fn set_identity_effects(&mut self, visual: bool) -> Result<(), TryReserveError> {
+        set_identity_effects(&mut self.effects, self.format, visual)
+    }
     /// Returns the stable machine-readable diagnostic code.
     pub const fn code(&self) -> DiagnosticCode {
         self.code
