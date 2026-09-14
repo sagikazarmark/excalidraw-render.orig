@@ -1,6 +1,6 @@
 # Nested media-claim diagnostic: implementation and reapproval
 
-Base: `d6ac707`. Status: implemented and tested; **36 case reapprovals pending**.
+Base: `d6ac707`. Implementation committed as `8e82246`. Status: **implementation and all 36 case subjects explicitly approved and recorded**; separate PDF/snapshot refreshes remain pending.
 
 The user selected a new typed nested detail to preserve both source location and MIME values. `nested_asset_claim` carries, in order: asset chain, paths, claimed media type, validated media type and `repaired` recovery. It is emitted under `asset.media-type-mismatch` with `input_repair` effects and no recipe. The path contains every enclosing image node/href pair. Claimed/validated strings are required, since this event occurs only after successful nested validation.
 
@@ -28,3 +28,23 @@ This identifies canonical JSON (without trailing LF) in [nested-claim-reapproval
 After case approval, refresh case-owner/inventory bindings, the separate rectangle PDF expectation subject and the native snapshot baseline using fresh packaged collection and byte comparison. Those approvals are independent. The extended media-type owner candidate calls the nested tests, but its historical scoped approval does not approve the expanded authority by itself.
 
 Global totals remain 166 proposed owners / 762 gaps. Unsafe-content ownership still needs preparse DTD/entity/instruction boundary review; this round does not close those obligations. Approval-dependent case/ownership gates and downstream stale PDF/snapshot bindings remain pending at this staging checkpoint.
+
+## Recorded approval
+
+The maintainer explicitly approved the implementation and entire bundle on 2026-09-14. Each current case subject was recomputed and matched before recording through the ordinary verifier. Scoped comments:
+
+- [#103](https://github.com/sagikazarmark/excalidraw-render.orig/issues/103#issuecomment-5661539427)
+- [#152](https://github.com/sagikazarmark/excalidraw-render.orig/issues/152#issuecomment-5661539892)
+- [#153](https://github.com/sagikazarmark/excalidraw-render.orig/issues/153#issuecomment-5661540449)
+- [#121](https://github.com/sagikazarmark/excalidraw-render.orig/issues/121#issuecomment-5661540804)
+- [#58](https://github.com/sagikazarmark/excalidraw-render.orig/issues/58#issuecomment-5661541021)
+- [#112](https://github.com/sagikazarmark/excalidraw-render.orig/issues/112#issuecomment-5661541293)
+- [#124](https://github.com/sagikazarmark/excalidraw-render.orig/issues/124#issuecomment-5661541531)
+- [#32](https://github.com/sagikazarmark/excalidraw-render.orig/issues/32#issuecomment-5661541783)
+- [#177](https://github.com/sagikazarmark/excalidraw-render.orig/issues/177#issuecomment-5661542011)
+- [#137](https://github.com/sagikazarmark/excalidraw-render.orig/issues/137#issuecomment-5661542268)
+- [#110](https://github.com/sagikazarmark/excalidraw-render.orig/issues/110#issuecomment-5661542536)
+
+Inventory and owner hashes are refreshed to the approved case manifests. This records the scoped approvals without granting global closure or transferring approval to new downstream PDF/snapshot subjects.
+
+After recording, ownership verification passes (166 assigned/excluded, 762 gaps), all eight Dagger conformance checks pass, and `git diff --check` passes.
