@@ -3668,25 +3668,88 @@
     {
       "id": "diagnostic:normalization.missing-element-id:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing normalization tests cover ID repair/rekey behavior, but generated IDs and relation-dependent effects require complete all-format report assertions and exact multiplicity/silence ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "missing_and_invalid_ids_have_exact_recovery_and_target_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::missing_and_invalid_ids_have_exact_recovery_and_target_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed missing-ID diagnostic contract across all traversed families: complete repaired reports with generated owners and expected pointers, exact qualified ID/seed/collision vectors, distinct content/position identities, whitespace/escape invariance, cross-format/fresh-session equality, selected/unselected and deleted silence, direct/lazy frame output and unmodified embedded originals. Duplicate relationship effects remain a separate open obligation."
       }
     },
     {
       "id": "diagnostic:normalization.missing-element-id:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing normalization tests cover ID repair/rekey behavior, but generated IDs and relation-dependent effects require complete all-format report assertions and exact multiplicity/silence ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "missing_and_invalid_ids_have_exact_recovery_and_target_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::missing_and_invalid_ids_have_exact_recovery_and_target_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed missing-ID diagnostic contract across all traversed families: complete repaired reports with generated owners and expected pointers, exact qualified ID/seed/collision vectors, distinct content/position identities, whitespace/escape invariance, cross-format/fresh-session equality, selected/unselected and deleted silence, direct/lazy frame output and unmodified embedded originals. Duplicate relationship effects remain a separate open obligation."
       }
     },
     {
       "id": "diagnostic:normalization.missing-element-id:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing normalization tests cover ID repair/rekey behavior, but generated IDs and relation-dependent effects require complete all-format report assertions and exact multiplicity/silence ownership."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "missing_and_invalid_ids_have_exact_recovery_and_target_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::missing_and_invalid_ids_have_exact_recovery_and_target_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed missing-ID diagnostic contract across all traversed families: complete repaired reports with generated owners and expected pointers, exact qualified ID/seed/collision vectors, distinct content/position identities, whitespace/escape invariance, cross-format/fresh-session equality, selected/unselected and deleted silence, direct/lazy frame output and unmodified embedded originals. Duplicate relationship effects remain a separate open obligation."
       }
     },
     {
@@ -12852,25 +12915,88 @@
     {
       "id": "surface:element.common:/isDeleted:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "deletion_controls_paint_diagnostics_assets_and_frame_discovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::deletion_controls_paint_diagnostics_assets_and_frame_discovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed isDeleted contract: missing/false participate; only true suppresses painting, diagnostics and asset use; invalid JSON values substitute false with complete exact reports. Tests cover all traversed families, deleted unknown/malformed records, frame discovery and selected/unselected direct/lazy rendering; original values remain embedded unchanged."
       }
     },
     {
       "id": "surface:element.common:/isDeleted:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "deletion_controls_paint_diagnostics_assets_and_frame_discovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::deletion_controls_paint_diagnostics_assets_and_frame_discovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed isDeleted contract: missing/false participate; only true suppresses painting, diagnostics and asset use; invalid JSON values substitute false with complete exact reports. Tests cover all traversed families, deleted unknown/malformed records, frame discovery and selected/unselected direct/lazy rendering; original values remain embedded unchanged."
       }
     },
     {
       "id": "surface:element.common:/isDeleted:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "deletion_controls_paint_diagnostics_assets_and_frame_discovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::deletion_controls_paint_diagnostics_assets_and_frame_discovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed isDeleted contract: missing/false participate; only true suppresses painting, diagnostics and asset use; invalid JSON values substitute false with complete exact reports. Tests cover all traversed families, deleted unknown/malformed records, frame discovery and selected/unselected direct/lazy rendering; original values remain embedded unchanged."
       }
     },
     {
@@ -13195,25 +13321,88 @@
     {
       "id": "surface:element.common:/updated:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "element_timestamps_repair_only_absence_and_preserve_invalid_originals",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::element_timestamps_repair_only_absence_and_preserve_invalid_originals",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed element timestamp contract across all traversed families: absence alone reports canonical-zero repair; valid and invalid present JSON values remain silent and nonpainting. Exact owner/pointer/effects/recovery, source preservation, fresh-session equality, selected/unselected frame behavior, lazy replay and deleted silence are checked against explicit clean scenes."
       }
     },
     {
       "id": "surface:element.common:/updated:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "element_timestamps_repair_only_absence_and_preserve_invalid_originals",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::element_timestamps_repair_only_absence_and_preserve_invalid_originals",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed element timestamp contract across all traversed families: absence alone reports canonical-zero repair; valid and invalid present JSON values remain silent and nonpainting. Exact owner/pointer/effects/recovery, source preservation, fresh-session equality, selected/unselected frame behavior, lazy replay and deleted silence are checked against explicit clean scenes."
       }
     },
     {
       "id": "surface:element.common:/updated:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "element_timestamps_repair_only_absence_and_preserve_invalid_originals",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::element_timestamps_repair_only_absence_and_preserve_invalid_originals",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed element timestamp contract across all traversed families: absence alone reports canonical-zero repair; valid and invalid present JSON values remain silent and nonpainting. Exact owner/pointer/effects/recovery, source preservation, fresh-session equality, selected/unselected frame behavior, lazy replay and deleted silence are checked against explicit clean scenes."
       }
     },
     {
@@ -14800,25 +14989,88 @@
     {
       "id": "surface:file_record:/created:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "file_timestamps_repair_once_per_authoritative_participating_record",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::file_timestamps_repair_once_per_authoritative_participating_record",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed created field: absence repairs once per authoritative referenced record despite repeated image references; valid and invalid present values remain silent. Exact escaped file pointer and null owner, artifact invariance, embedded original values, selected/unselected frame scope and deleted/unreferenced silence are checked across formats."
       }
     },
     {
       "id": "surface:file_record:/created:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "file_timestamps_repair_once_per_authoritative_participating_record",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::file_timestamps_repair_once_per_authoritative_participating_record",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed created field: absence repairs once per authoritative referenced record despite repeated image references; valid and invalid present values remain silent. Exact escaped file pointer and null owner, artifact invariance, embedded original values, selected/unselected frame scope and deleted/unreferenced silence are checked across formats."
       }
     },
     {
       "id": "surface:file_record:/created:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "file_timestamps_repair_once_per_authoritative_participating_record",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::file_timestamps_repair_once_per_authoritative_participating_record",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed created field: absence repairs once per authoritative referenced record despite repeated image references; valid and invalid present values remain silent. Exact escaped file pointer and null owner, artifact invariance, embedded original values, selected/unselected frame scope and deleted/unreferenced silence are checked across formats."
       }
     },
     {
@@ -16255,73 +16507,262 @@
     {
       "id": "surface:scene:/appState:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/appState:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/appState:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/elements:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/elements:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/elements:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/files:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/files:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/files:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
@@ -16588,49 +17029,175 @@
     {
       "id": "surface:scene:/type:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/type:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/type:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/version:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/version:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     },
     {
       "id": "surface:scene:/version:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/admission_identity_contract.rs",
+            "sha256": "4e0afd74312523605d4ad20d91aaafb51852cde6e4674ce9c5f2fcefdeaf72e4"
+          },
+          "function": "envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "admission_identity_contract::envelope_fields_admit_only_the_version_two_contract_and_preserve_nested_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed public parser envelope contract: each required member absent or varied across JSON types, exact format-neutral rejection descriptors, integer-token version spellings, schema-order precedence and admitted opaque nested values. Every admitted fixture renders reproducibly and preserves original bytes including malformed/scalar/deleted/unreferenced content in SVG/PNG/PDF."
       }
     }
   ]

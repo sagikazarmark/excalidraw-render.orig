@@ -12,6 +12,7 @@
 #[path = "../common/mod.rs"]
 mod common;
 
+mod admission_identity_contract;
 mod arrow_render;
 mod artifact_metadata;
 mod bound_text_render;

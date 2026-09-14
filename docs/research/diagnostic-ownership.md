@@ -1,7 +1,7 @@
 # Diagnostic/format ownership audit
 #85 — public-facade diagnostic assertions
 
-Reviewed all 122 current diagnostic/format obligations. Including the cycle, font and image follow-ups, 47 now have proposed owners and 75 remain explicit gaps. The global ledger has 166 proposed owners and 762 gaps.
+Reviewed all 122 current diagnostic/format obligations. Including the missing-ID follow-up, 50 now have proposed owners and 72 remain explicit gaps. The global ledger has 544 proposed owners and 384 gaps.
 
 The new `fast/diagnostic_contract.rs` tests author expected machine-readable diagnostic fields independently of the production registry. They compare the complete ordered diagnostic array, exact format/severity/effects/details/recovery/owner/pointer, nonempty messages, and byte-identical serialized reports and artifacts across fresh calls. Message prose is not pinned as a semantic requirement. Image recovery tests cover both saved and error source statuses.
 
@@ -40,7 +40,7 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 | `metadata.scene-embedding-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |
 | `metadata.scene-serialization-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |
 | `normalization.duplicate-element-id` | pdf, png, svg | gap | Existing normalization tests cover ID repair/rekey behavior, but generated IDs and relation-dependent effects require complete all-format report assertions and exact multiplicity/silence ownership. |
-| `normalization.missing-element-id` | pdf, png, svg | gap | Existing normalization tests cover ID repair/rekey behavior, but generated IDs and relation-dependent effects require complete all-format report assertions and exact multiplicity/silence ownership. |
+| `normalization.missing-element-id` | pdf, png, svg | owned | admission_identity_contract::missing_and_invalid_ids_have_exact_recovery_and_target_participation — literal identity vectors, exact reports, all traversed kinds, target/deleted/ignored silence, source preservation and fresh-session/frame replay; see [assessment](admission-identity-ownership.md). |
 | `normalization.missing-timestamp` | pdf, png, svg | owned | missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent |
 | `normalization.relationship-cycle` | pdf, png, svg | owned | relationship_cycle_contract_in_every_format — exact scene/frame reports, mixed reciprocal cycles, fallback participation, channel effects, source ordering and repeatability. |
 | `normalization.zero-rough-seed` | pdf, png, svg | owned | zero_rough_seeds_are_repaired_once_per_participating_shape |
