@@ -13,7 +13,7 @@ use super::{asset, pdf, try_owned};
 
 /// Orders retained diagnostics the way the final report lists them (spec
 /// §11.3): by the source owner that produced them, then the source member
-/// position within that owner, then the pointer, then the code's stable
+/// position within that owner, then the full nested path, pointer and code's stable
 /// spelling, and finally by the order in which they were retained, so equal
 /// keys keep the retention order and the sort is total.
 pub(crate) fn sort_diagnostics(diagnostics: &mut [CompatibilityDiagnostic]) {
@@ -23,6 +23,7 @@ pub(crate) fn sort_diagnostics(diagnostics: &mut [CompatibilityDiagnostic]) {
             .owner_index
             .cmp(&right_order.owner_index)
             .then_with(|| left_order.source_position.cmp(&right_order.source_position))
+            .then_with(|| compare_nested_paths(left, right))
             .then_with(|| left.json_pointer().cmp(right.json_pointer()))
             .then_with(|| left.code().as_str().cmp(right.code().as_str()))
             .then_with(|| {
@@ -31,6 +32,41 @@ pub(crate) fn sort_diagnostics(diagnostics: &mut [CompatibilityDiagnostic]) {
                     .cmp(&right_order.retention_ordinal)
             })
     });
+}
+
+fn compare_nested_paths(
+    left: &CompatibilityDiagnostic,
+    right: &CompatibilityDiagnostic,
+) -> std::cmp::Ordering {
+    fn paths(diagnostic: &CompatibilityDiagnostic) -> &[crate::NestedPath] {
+        match diagnostic.details() {
+            Some(ErrorDetails::NestedSource { paths, .. }) => paths,
+            _ => &[],
+        }
+    }
+    let (left, right) = (paths(left), paths(right));
+    for (left, right) in left.iter().zip(right) {
+        let key = |segment: &crate::NestedPathSegment| {
+            let kind = match segment.kind() {
+                crate::NestedSegmentKind::Node => 0,
+                crate::NestedSegmentKind::Attribute => 1,
+                crate::NestedSegmentKind::CssRule => 2,
+                crate::NestedSegmentKind::CssDeclaration => 3,
+                crate::NestedSegmentKind::ResourceSlot => 4,
+                crate::NestedSegmentKind::EffectInput => 5,
+            };
+            (segment.ordinal(), kind)
+        };
+        let order = left
+            .segments()
+            .iter()
+            .map(key)
+            .cmp(right.segments().iter().map(key));
+        if !order.is_eq() {
+            return order;
+        }
+    }
+    left.len().cmp(&right.len())
 }
 
 /// Whether a retained diagnostic replaced `source` (or the asset it refers

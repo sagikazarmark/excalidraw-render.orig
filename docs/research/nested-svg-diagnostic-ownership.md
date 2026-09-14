@@ -24,3 +24,17 @@ Verification: the exact recursive-handler regression failed before the fixes and
 ## Scoped approval of implemented fixes
 
 The maintainer explicitly approved the changes in commit `4a3b15b608022dcb9c7e10917d4cacf3bbc583b8` on 2026-09-13, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5657151285). This approval covers the path/effect fixes and partial test evidence; the six ownership obligations remain gaps and the incomplete global ledger retains null approval.
+
+## Nested ordering and category follow-up
+
+Base: `fff481b`. An adversarial pair of nested SVG siblings failed: the first child removed local node 3, the second removed local node 0, and the report incorrectly listed the second first. Image diagnostics now retain their actual authoritative field position rather than adding child-local ordinals. Final sorting compares complete nested path segments before pointer/code/retention order, covering both removals and nested image failures. A mixed failure/removal test proves that producer loop order does not override source-path order. Comparison allocates no path copies.
+
+Category tests cover DTD removal, declared entity references, stylesheet processing instructions, scripts, animation, unsafe stylesheet content, foreign namespaces, unsafe style attributes and uppercase event handlers. Safe static CSS with local gradients remains silent. Supplemental paths, repeated references, deleted/unreferenced silence and frame/batch equality are asserted explicitly.
+
+Two effect regressions are fixed: script removal is semantic-only because scripts do not execute in static rendering; removing a resource href changes visual appearance, while removing an action link on `a` is semantic-only. Both tests failed against the previous classifier before the change. Stylesheet processing instructions remain visual-plus-semantic because the omitted stylesheet can affect appearance.
+
+### Remaining ownership blocker
+
+`sanitize_nested_data_image` still appends a `Removal` named `media-type` at node zero whenever the nested data URL's claim differs from the validated type. It preserves and canonicalizes the image payload, yet emits `image.unsafe-svg-content-removed` with removed recovery and semantic effects. Reconcile this claim-repair path with media-type diagnostics and the real nested resource slot before claiming the full unsafe-removal obligation. Preparse DTD/entity/instruction records also use node-zero identity; complete narrowest-boundary semantics need review. No additional obligations are assigned in this round.
+
+Verification: the new ordering and category regressions pass, along with all 15 sanitizer tests and six diagnostic-order unit tests. All ten Dagger conformance/lint checks and all three Dagger workspace test checks pass. Ownership remains 166 assigned/excluded with 762 gaps. `git diff --check` passes.

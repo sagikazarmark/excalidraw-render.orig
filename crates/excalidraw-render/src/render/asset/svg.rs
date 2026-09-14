@@ -519,7 +519,7 @@ fn serialize_node(
             node_ordinal: ordinal,
             attribute_ordinal: None,
             name: name.to_owned(),
-            changes_appearance: true,
+            changes_appearance: name != "script",
         });
         count_descendants(node, node_ordinal);
         return Ok(());
@@ -556,8 +556,7 @@ fn serialize_node(
                 attribute_ordinal: Some(u64::try_from(attribute_ordinal).unwrap_or(u64::MAX)),
                 name: attribute_name.to_owned(),
                 changes_appearance: !attribute_name.to_ascii_lowercase().starts_with("on")
-                    && attribute_name != "href"
-                    && attribute_name != "xlink:href",
+                    && (!matches!(attribute_name, "href" | "xlink:href") || name != "a"),
             });
             continue;
         }
@@ -1505,8 +1504,8 @@ mod tests {
                 "style"
             ]
         );
-        // Event handlers never execute in static rendering. Like the retained
-        // element's removed link, they do not change its static geometry.
+        // Scripts and handlers never execute in static rendering; an image's
+        // removed href does affect appearance, unlike an action link on `a`.
         assert_eq!(
             sanitized
                 .removals
@@ -1514,7 +1513,7 @@ mod tests {
                 .filter(|removal| !removal.changes_appearance)
                 .map(|removal| removal.name.as_str())
                 .collect::<Vec<_>>(),
-            ["onload", "onclick", "href"]
+            ["onload", "onclick", "script"]
         );
         // Attribute removals name their slot; element removals do not.
         assert!(sanitized.removals[0].attribute_ordinal.is_some());

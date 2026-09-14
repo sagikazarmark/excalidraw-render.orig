@@ -348,9 +348,7 @@ impl ImageResolver {
                         DiagnosticOwnership {
                             local_owner: Some(local_owner),
                             source_order: Some(*source_order),
-                            source_position: Some(
-                                source_position.saturating_add(removal.node_ordinal),
-                            ),
+                            source_position: Some(*source_position),
                         },
                     )?;
                 }
@@ -385,10 +383,7 @@ impl ImageResolver {
                         DiagnosticOwnership {
                             local_owner: Some(local_owner),
                             source_order: Some(*source_order),
-                            source_position: Some(
-                                source_position
-                                    .saturating_add(failure.path.first().map_or(0, |slot| slot.0)),
-                            ),
+                            source_position: Some(*source_position),
                         },
                     )?;
                 }
