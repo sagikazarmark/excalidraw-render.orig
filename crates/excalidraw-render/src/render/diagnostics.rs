@@ -42,7 +42,8 @@ fn compare_nested_paths(
         match diagnostic.details() {
             Some(
                 ErrorDetails::NestedSource { paths, .. }
-                | ErrorDetails::NestedAssetClaim { paths, .. },
+                | ErrorDetails::NestedAssetClaim { paths, .. }
+                | ErrorDetails::NestedResourceLimit { paths, .. },
             ) => paths,
             _ => &[],
         }
@@ -454,6 +455,28 @@ pub(super) fn nested_image_failure_diagnostic(
     let mut paths = Vec::new();
     paths.try_reserve_exact(1)?;
     paths.push(crate::NestedPath { segments });
+    if let ImageFailure::LimitCrossed {
+        limit,
+        configured,
+        attempted,
+    } = failure_kind
+    {
+        return PendingDiagnostic::new(
+            DiagnosticKind::NestedResourceLimit {
+                limit,
+                configured,
+                attempted,
+                asset_chain: nested_asset_chain(asset_id)?,
+                paths,
+                recovery: LocalRecovery::placeholder_if(failure.placeholder),
+            },
+            format,
+            &[DiagnosticEffect::Visual],
+            None,
+            json_pointer,
+            "nested resource exceeded its semantic limit",
+        );
+    }
     PendingDiagnostic::new(
         DiagnosticKind::NestedImageRemoved {
             failure: failure_kind,
@@ -900,8 +923,9 @@ mod tests {
     /// failure that removed it, with `nested_source` details in place of the
     /// asset or resource details a scene-level occurrence would carry.
     #[test]
-    fn a_nested_image_failure_keeps_its_code_under_nested_source_details() {
+    fn a_nested_resource_failure_keeps_its_measurement_and_source_details() {
         let failure = asset::svg::Failure {
+            placeholder: false,
             path: vec![(3, 1)],
             error: asset::ResolveError::SvgComplexity { attempted: 9 },
         };
@@ -920,8 +944,8 @@ mod tests {
         assert_eq!(diagnostic.element_id(), None);
         assert!(matches!(
             diagnostic.details(),
-            Some(ErrorDetails::NestedSource {
-                recovery: Recovery::Removed,
+            Some(ErrorDetails::NestedResourceLimit {
+                recovery: Recovery::Omitted,
                 ..
             })
         ));

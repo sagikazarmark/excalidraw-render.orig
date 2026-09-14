@@ -91,7 +91,7 @@ impl ImageResolver {
             pending_asset_working.try_reserve_exact(2).map_err(|_| {
                 session.memory_failure(request, "asset_resolution", "pending_working_records")
             })?;
-            let asset_resolution = self.cache.resolve(
+            let asset_resolution = self.cache.resolve_with_viewport(
                 scene,
                 request.supplemental_assets(),
                 session.profile.compatibility_revision(),
@@ -99,6 +99,7 @@ impl ImageResolver {
                 request.resource_limits(),
                 file_id,
                 authority,
+                Some((source.width, source.height)),
                 |transaction| match transaction {
                     asset::IntrinsicTransaction::PreflightNested {
                         asset_entries,

@@ -388,6 +388,14 @@ pub(crate) enum DiagnosticKind<'a> {
         asset_chain: Vec<AssetChainEntry>,
         paths: Vec<NestedPath>,
     },
+    NestedResourceLimit {
+        limit: LocalLimit,
+        configured: u64,
+        attempted: u64,
+        asset_chain: Vec<AssetChainEntry>,
+        paths: Vec<NestedPath>,
+        recovery: LocalRecovery,
+    },
     /// `link.unsafe-omitted`.
     UnsafeLinkOmitted,
     /// `color.invalid`.
@@ -477,6 +485,7 @@ impl DiagnosticKind<'_> {
             Self::ImageUnavailable { failure, .. } | Self::NestedImageRemoved { failure, .. } => {
                 failure.code()
             }
+            Self::NestedResourceLimit { limit, .. } => limit.code(),
             Self::ForbiddenResource { .. } => DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE,
             Self::AnimationFlattened { .. } => DiagnosticCode::IMAGE_ANIMATION_FLATTENED,
             Self::UnsafeSvgContentRemoved { .. } => {
@@ -608,6 +617,29 @@ impl DiagnosticKind<'_> {
                 asset_chain,
                 paths,
                 recovery: Recovery::Removed,
+            },
+            Self::NestedResourceLimit {
+                limit,
+                configured,
+                attempted,
+                asset_chain,
+                paths,
+                recovery,
+            } => ErrorDetails::NestedResourceLimit {
+                field: limit.field(),
+                configured: ResourceValue::Integer(configured),
+                value_kind: limit.value_kind(),
+                measurement: Measurement::Attempted {
+                    value: ResourceValue::Integer(attempted),
+                },
+                asset_chain,
+                paths,
+                recovery: recovery.recovery(),
+                recipe_id: if recovery == LocalRecovery::Placeholder {
+                    Some(try_owned("official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677")?)
+                } else {
+                    None
+                },
             },
             Self::UnsafeLinkOmitted => compatibility(Recovery::Omitted, None)?,
             Self::InvalidColor | Self::LiberationSansSubstituted | Self::NotoEmojiSubstituted => {

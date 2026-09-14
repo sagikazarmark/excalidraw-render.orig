@@ -509,6 +509,25 @@ pub enum ErrorDetails {
         /// Recovery applied to the nested source.
         recovery: Recovery,
     },
+    /// A measured resource crossing with its exact nested source identity.
+    NestedResourceLimit {
+        /// Canonical limit field and configured ceiling.
+        field: &'static str,
+        /// Configured semantic ceiling.
+        configured: ResourceValue,
+        /// Unit measured by the ceiling.
+        value_kind: ValueKind,
+        /// Attempted or bounded lower-bound measurement.
+        measurement: ResourceMeasurement,
+        /// Enclosing authoritative asset occurrences.
+        asset_chain: Vec<AssetChainEntry>,
+        /// Exact rejected nested resource slot.
+        paths: Vec<NestedPath>,
+        /// Placeholder or omission selected at that slot.
+        recovery: Recovery,
+        /// Manifested nested-resource recipe for a placeholder, otherwise null.
+        recipe_id: Option<String>,
+    },
     /// Identifies a repaired media claim on a nested image reference.
     NestedAssetClaim {
         /// Asset occurrence chain from the scene to the nested source.
@@ -549,6 +568,7 @@ impl ErrorDetails {
             | Self::MissingGlyph { recovery, .. }
             | Self::Metadata { recovery, .. }
             | Self::NestedSource { recovery, .. }
+            | Self::NestedResourceLimit { recovery, .. }
             | Self::NestedAssetClaim { recovery, .. } => Some(*recovery),
             Self::ResourceLimit { recovery, .. } | Self::PdfRasterFallback { recovery, .. } => {
                 *recovery
@@ -565,9 +585,9 @@ impl ErrorDetails {
     /// or asset recovery painted a placeholder.
     pub(crate) fn recipe_id(&self) -> Option<&str> {
         match self {
-            Self::Compatibility { recipe_id, .. } | Self::Asset { recipe_id, .. } => {
-                recipe_id.as_deref()
-            }
+            Self::Compatibility { recipe_id, .. }
+            | Self::Asset { recipe_id, .. }
+            | Self::NestedResourceLimit { recipe_id, .. } => recipe_id.as_deref(),
             Self::ParseLimit { .. }
             | Self::Revision { .. }
             | Self::RequestValue { .. }

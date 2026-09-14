@@ -57,6 +57,7 @@ mod relationship_field_contract;
 mod relationships;
 mod render_request;
 mod resource_accounting;
+mod resource_diagnostic_contract;
 mod rough_fillers_dots_scene;
 mod rough_style_render;
 mod scene_admission;

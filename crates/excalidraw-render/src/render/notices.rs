@@ -11,6 +11,65 @@ pub(super) enum NoticeError {
 }
 
 impl MandatoryNotices {
+    pub(super) fn copy_from(value: &Self) -> Result<Self, NoticeError> {
+        Ok(Self(try_owned(value.as_json())?))
+    }
+    pub(super) fn with_nested_resource(
+        existing: Option<Self>,
+        format: crate::OutputFormat,
+    ) -> Result<Self, NoticeError> {
+        let mut json = existing.map_or_else(|| String::from("[]"), |notice| notice.0);
+        let notices = crate::catalog::fallback_notices(&["nested-resource"], format)
+            .map_err(|_| NoticeError::Memory)?;
+        for notice in notices {
+            // Only our canonical notice writer emits this marker; escaped text
+            // cannot contain it. Merge sorted entries without reparsing JSON or
+            // allocating an unbounded serde tree.
+            const MARKER: &str = "{\"asset_identity\":\"";
+            let mut insertion = json.len().saturating_sub(1);
+            let mut present = false;
+            for (offset, tail) in json.match_indices(MARKER) {
+                let _ = tail;
+                let identity = json[offset + MARKER.len()..]
+                    .split('"')
+                    .next()
+                    .unwrap_or("");
+                if identity == notice.asset_identity {
+                    present = true;
+                    break;
+                }
+                if identity > notice.asset_identity {
+                    insertion = offset;
+                    break;
+                }
+            }
+            if present {
+                continue;
+            }
+            let mut entry = String::new();
+            entry
+                .try_reserve_exact(
+                    notice
+                        .asset_identity
+                        .len()
+                        .saturating_add(notice.text.len().saturating_mul(6))
+                        .saturating_add(64),
+                )
+                .map_err(|_| NoticeError::Memory)?;
+            let append = insertion == json.len() - 1;
+            if append && json.len() > 2 {
+                entry.push(',');
+            }
+            push_notice(&mut entry, &mut "", notice.asset_identity, notice.text);
+            if !append {
+                entry.push(',');
+            }
+            json.try_reserve(entry.len())
+                .map_err(|_| NoticeError::Memory)?;
+            json.insert_str(insertion, &entry);
+        }
+        Ok(Self(json))
+    }
     #[cfg(test)]
     pub(super) fn from_json(json: String) -> Self {
         Self(json)

@@ -323,6 +323,7 @@ pub(super) struct Cache {
 }
 
 impl Cache {
+    #[cfg(test)]
     #[allow(clippy::too_many_arguments)]
     pub(super) fn resolve<F>(
         &mut self,
@@ -333,6 +334,35 @@ impl Cache {
         limits: &ResourceLimits,
         file_id: &str,
         authority: Authority,
+        transact: F,
+    ) -> Result<Resolution, ResolutionFailure>
+    where
+        F: FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+    {
+        self.resolve_with_viewport(
+            scene,
+            supplemental,
+            revision,
+            format,
+            limits,
+            file_id,
+            authority,
+            None,
+            transact,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn resolve_with_viewport<F>(
+        &mut self,
+        scene: &SceneDocument,
+        supplemental: &SupplementalAssets,
+        revision: CompatibilityRevision,
+        format: OutputFormat,
+        limits: &ResourceLimits,
+        file_id: &str,
+        authority: Authority,
+        fallback_dimensions: Option<(f64, f64)>,
         mut transact: F,
     ) -> Result<Resolution, ResolutionFailure>
     where
@@ -353,6 +383,7 @@ impl Cache {
                 file_id,
                 authority,
                 payload,
+                fallback_dimensions,
                 &mut transact,
             );
         }
@@ -666,6 +697,7 @@ impl Cache {
         file_id: &str,
         authority: Authority,
         payload: Payload,
+        fallback_dimensions: Option<(f64, f64)>,
         transact: &mut F,
     ) -> Result<Resolution, ResolutionFailure>
     where
@@ -684,10 +716,16 @@ impl Cache {
                     total_work_units: source_len,
                 })
                 .map_err(ResolutionFailure::Transaction)?;
-                return Err(ResolveError::AssetWork {
-                    attempted: source_len,
-                }
-                .into());
+                return root_svg_limit_recovery(
+                    ResolveError::AssetWork {
+                        attempted: source_len,
+                    },
+                    payload.claims,
+                    fallback_dimensions,
+                    limits,
+                    revision,
+                    transact,
+                );
             }
             let temporary = 1_048_576;
             transact(IntrinsicTransaction::Acquire {
@@ -716,6 +754,21 @@ impl Cache {
                         bytes: temporary,
                     })
                     .map_err(ResolutionFailure::Transaction)?;
+                    if matches!(
+                        error,
+                        ResolveError::SvgComplexity { .. }
+                            | ResolveError::SvgDepth { .. }
+                            | ResolveError::AssetWork { .. }
+                    ) {
+                        return root_svg_limit_recovery(
+                            error,
+                            payload.claims,
+                            fallback_dimensions,
+                            limits,
+                            revision,
+                            transact,
+                        );
+                    }
                     return Err(error.into());
                 }
                 Err(ResolutionFailure::Transaction(error)) => {
@@ -758,6 +811,7 @@ impl Cache {
             .map_err(ResolutionFailure::Transaction)?;
             for admission in &sanitized.nested_admissions {
                 let transaction = match admission {
+                    svg::NestedAdmission::Recovery { .. } => continue,
                     svg::NestedAdmission::Occurrence { asset_bytes } => {
                         IntrinsicTransaction::DiscoverNestedOccurrence {
                             asset_bytes: *asset_bytes,
@@ -789,6 +843,7 @@ impl Cache {
         };
         if self.svg_discovery_owners.insert(file_id.to_owned()) && !discovered_live {
             for admission in &sanitized.nested_admissions {
+                svg::replay_recovery(admission, transact)?;
                 if let svg::NestedAdmission::Occurrence { asset_bytes } = admission {
                     transact(IntrinsicTransaction::DiscoverNestedOccurrence {
                         asset_bytes: *asset_bytes,
@@ -839,6 +894,91 @@ impl Cache {
             },
         })
     }
+}
+
+fn root_svg_limit_recovery(
+    error: ResolveError,
+    claims: Claims,
+    viewport: Option<(f64, f64)>,
+    limits: &ResourceLimits,
+    revision: CompatibilityRevision,
+    transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+) -> Result<Resolution, ResolutionFailure> {
+    use base64::Engine;
+    let url = match viewport {
+        Some((w, h)) => svg::resource_placeholder_url(w, h, limits, revision, 0, transact)?,
+        None => None,
+    };
+    let placeholder = url.is_some();
+    let mut bytes = Vec::new();
+    if let Some(url) = url {
+        let encoded = url
+            .strip_prefix("data:image/svg+xml;base64,")
+            .ok_or(ResolveError::SvgDecodeFailed)?;
+        bytes
+            .try_reserve_exact(encoded.len())
+            .map_err(|_| ResolutionFailure::Memory)?;
+        bytes.resize(encoded.len(), 0);
+        let n = base64::engine::general_purpose::STANDARD
+            .decode_slice(encoded, &mut bytes)
+            .map_err(|_| ResolveError::SvgDecodeFailed)?;
+        bytes.truncate(n);
+    } else {
+        let empty = b"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1\" height=\"1\"/>";
+        bytes
+            .try_reserve_exact(empty.len())
+            .map_err(|_| ResolutionFailure::Memory)?;
+        bytes.extend_from_slice(empty);
+    }
+    let identity = semantic_identity(revision, MediaKind::Svg, &bytes);
+    transact(IntrinsicTransaction::Acquire {
+        event: "nested_recovery_viewer",
+        identity,
+        persistent_working_bytes: 512 + (bytes.len() as u64).div_ceil(64) * 64,
+        temporary_working_bytes: 1_048_576,
+        decoded_pixels: 0,
+        total_work_units: bytes.len() as u64,
+    })
+    .map_err(ResolutionFailure::Transaction)?;
+    let tree = usvg::Tree::from_data(&bytes, &svg::viewer_options()?)
+        .map_err(|_| ResolveError::SvgDecodeFailed)?;
+    transact(IntrinsicTransaction::ReleaseTemporary {
+        event: "nested_recovery_viewer",
+        identity,
+        bytes: 1_048_576,
+    })
+    .map_err(ResolutionFailure::Transaction)?;
+    let mut failures = Vec::new();
+    failures
+        .try_reserve_exact(1)
+        .map_err(|_| ResolutionFailure::Memory)?;
+    failures.push(svg::Failure {
+        path: Vec::new(),
+        error,
+        placeholder,
+    });
+    let bytes = Arc::new(bytes);
+    Ok(Resolution {
+        asset: Arc::new(ResolvedImageAsset {
+            identity,
+            source_bytes: Arc::clone(&bytes),
+            media_type: MediaKind::Svg.media_type(),
+            width: tree.size().to_int_size().width(),
+            height: tree.size().to_int_size().height(),
+            rgba: None,
+            premultiplied_rgba: None,
+            sanitized_svg: Some(bytes),
+            svg_effects: Vec::new(),
+            svg_fallback_pointer: None,
+        }),
+        svg_tree: Some(Arc::new(tree)),
+        claims,
+        animated: false,
+        media_kind: MediaKind::Svg,
+        svg_removals: Vec::new(),
+        svg_failures: failures,
+        svg_media_claims: Vec::new(),
+    })
 }
 
 struct NormalizedNestedRaster {

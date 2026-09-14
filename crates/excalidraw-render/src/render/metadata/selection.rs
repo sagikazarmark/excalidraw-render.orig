@@ -121,6 +121,34 @@ impl RenderSession {
         codec_emission_work: u64,
         mut measure: impl FnMut(&ArtifactMetadata) -> Result<M, FormatEncodeError>,
     ) -> Result<(ArtifactMetadata, M), RenderError> {
+        let nested_notices = if self.report.diagnostics().iter().any(|d| {
+            matches!(
+                d.details(),
+                Some(crate::ErrorDetails::NestedResourceLimit {
+                    recovery: crate::Recovery::Placeholder,
+                    ..
+                })
+            )
+        }) {
+            let existing = mandatory_notices
+                .map(super::super::notices::MandatoryNotices::copy_from)
+                .transpose()
+                .map_err(|_| {
+                    self.memory_failure(request, "artifact_manifest", "nested_resource_notice")
+                })?;
+            Some(
+                super::super::notices::MandatoryNotices::with_nested_resource(
+                    existing,
+                    request.format(),
+                )
+                .map_err(|_| {
+                    self.memory_failure(request, "artifact_manifest", "nested_resource_notice")
+                })?,
+            )
+        } else {
+            None
+        };
+        let mandatory_notices = nested_notices.as_ref().or(mandatory_notices);
         let snapshot = self.report.clone();
         let manifest_target = manifest_target(self.target, scene);
         let requested = MetadataSelection::requested(request);

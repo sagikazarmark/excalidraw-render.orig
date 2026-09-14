@@ -6579,7 +6579,7 @@ pub static REVISION_1: RevisionCatalog = RevisionCatalog {
         source_commit: "a2ec2889babf7d2295469c6d90ebe77fae57df84",
         npm_integrity: "sha512-6i5Gt7IDTOH//qa0Z315Ly5iVRhjWpu2whrlQFqkuwrkKUWgRsMk0P5qdE7bpyDpai7jeLeWYkyj1eVAfni1lw==",
         reference_profile_digest: "sha256:1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71",
-        catalog_sha256: "72d14b904eb904169b97dbb0ee528e8baae4bdb321c48c8a666e81dc77dd9a52",
+        catalog_sha256: "3e687d812d9ba0fa6856aed3a50d6348357c4990c8e99951d5ac7ab30f7f838d",
     catalog_json: include_bytes!("../../catalog/revision-1.json"),
     incorporated_artifacts: &[
         IncorporatedArtifact {
@@ -6599,12 +6599,12 @@ pub static REVISION_1: RevisionCatalog = RevisionCatalog {
         },
         IncorporatedArtifact {
             repository_path: "tests/oracle/scene-surfaces/revision-1.json",
-            sha256: "4cc295860c1627485717ba1292add5ee6c28c7115ffda1019122ffff5d4c46cb",
+            sha256: "93029f2dab63c203dee69da4497ea4c2988a72d73f2a0017e62c529a4caac202",
             bytes: include_bytes!("../../catalog/incorporated/scene-surface.json"),
         },
         IncorporatedArtifact {
             repository_path: "tests/oracle/scene-surfaces/scene-surface-v1.schema.json",
-            sha256: "df77f6d2cfc8dc5f77cfa216170d9adca1d59af00b5a0955f40f640627fd1ddf",
+            sha256: "c8af2987f69e320bbc2673e252284fda77a18ddaf667bf998055c47cd3aa7341",
             bytes: include_bytes!("../../catalog/incorporated/scene-surface.schema.json"),
         },
         IncorporatedArtifact {

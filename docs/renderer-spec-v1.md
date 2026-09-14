@@ -111,7 +111,7 @@ has been published.
 | --- | --- |
 | [Reference profile](../tests/oracle/reference-profiles/revision-1.json) | `1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71` |
 | [Reference asset manifest](../tests/oracle/reference-profiles/revision-1-assets.json) | `02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a` |
-| [Scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json) | `4cc295860c1627485717ba1292add5ee6c28c7115ffda1019122ffff5d4c46cb` |
+| [Scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json) | `93029f2dab63c203dee69da4497ea4c2988a72d73f2a0017e62c529a4caac202` |
 | [Scene-surface schema](../tests/oracle/scene-surfaces/scene-surface-v1.schema.json) | `29871fad7bf7665142c8d625c3715b34603a6369a78ffa7baf96ade66be63362` |
 | [Scene-surface evidence index](../tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json) | `29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb` |
 
@@ -2005,6 +2005,7 @@ members and kinds are invalid.
 {"kind":"svg_font_subset_failure","stage":<svg-font-subset-stage>,"resolved_family":<string>,"asset_identity":<string>}
 {"kind":"metadata","component":<string>,"operation":<string>,"recovery":"metadata_omitted"}
 {"kind":"nested_source","asset_chain":[<asset-chain-entry>],"paths":[<nested-path>],"recovery":<recovery>}
+{"kind":"nested_resource_limit","field":<string>,"configured":<resource-value>,"value_kind":<value-kind>,"measurement":<resource-measurement>,"asset_chain":[<asset-chain-entry>],"paths":[<nested-path>],"recovery":<"placeholder"|"omitted">,"recipe_id":<string|null>}
 {"kind":"nested_asset_claim","asset_chain":[<asset-chain-entry>],"paths":[<nested-path>],"claimed_media_type":<string>,"validated_media_type":<string>,"recovery":"repaired"}
 {"kind":"pdf_raster_fallback","recovery":<"rasterized"|null>,"logical_bounds":<logical-bounds|null>,"pixel_width":<integer|null>,"pixel_height":<integer|null>,"causes":[<nested-path>]}
 {"kind":"cli_argument","argument":<string>,"value":<string|null>}
@@ -2075,7 +2076,7 @@ Detail bindings are fixed, not producer-selected:
 | `link.unsafe-omitted` | `compatibility`; `omitted`; null recipe |
 | `color.invalid` and font substitution | `compatibility`; `substituted` |
 | `font.missing-glyph` | `missing_glyph`; Unicode scalar; `substituted` |
-| Recoverable resource diagnostics | `resource_limit`; exact limit, measurement, and non-null recovery |
+| Recoverable resource diagnostics | `resource_limit` for top-level crossings; `nested_resource_limit` for nested image slots, with exact limit/measurement, full source chain/path, placeholder or omitted recovery and the nested-resource recipe only when painted |
 | Metadata failures | `metadata`; fixed component/operation; `metadata_omitted` |
 | `pdf.raster-fallback` | `pdf_raster_fallback`; `rasterized`; finite bounds, dimensions, causes |
 | CLI argument/path/I/O/delivery codes | Matching `cli_argument`, `cli_path`, `cli_io`, or `delivery` shape |
@@ -2780,6 +2781,16 @@ crossing.
 Codec measurement and retained emission are two semantic passes even when
 physically fused. Dependencies must prove untrusted-dependent loops are bounded
 by prepaid semantic events.
+
+The closed revision-1 nested-resource placeholder uses a conservative dependency
+envelope of 8,192 work units and 8,192 temporary bytes before constructing its
+two fixed Font Awesome paths and data-SVG wrapper. Its generated data URL is a
+request-derived built-in blob (`256 + A(n)`) retained through projection. Each
+rejected occurrence pays this envelope, including cached-parent replay; a local
+asset-work ceiling below the envelope selects omission instead. Root recovery
+viewer preparation additionally admits the generated source byte work, a
+`512 + A(n)` identity record and the 1 MiB sanitizer workspace before parsing.
+These bounded recovery envelopes are semantic constants, not allocator samples.
 
 Raster operations cumulatively charge `P`, `2P`, `4P`, `6P`, `8P`, `12P`,
 `16P`, or `32P` samples for clear, copy, solid background or clip/composite,

@@ -211,6 +211,77 @@ fn peak_working_bytes(trace: &[u8]) -> Option<u64> {
         .max()
 }
 
+#[test]
+fn nested_resource_recovery_replays_cached_descendants_and_frame_traces() {
+    use base64::Engine;
+    let url = |value: &str| {
+        format!(
+            "data:image/svg+xml;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(value)
+        )
+    };
+    let leaf = url(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20"/></svg>"#,
+    );
+    let child = url(&format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><svg><image width="50%" height="50%" href="{leaf}"/></svg></svg>"#
+    ));
+    let parent = url(&format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><image width="40px" height="40px" href="{child}"/><image x="40" width="40" height="40" href="{child}"/></svg>"#
+    ));
+    let outer = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="160" height="80"><image width="80" height="80" href="{parent}"/><image x="80" width="80" height="80" href="{parent}"/></svg>"#
+    );
+    let source = serde_json::json!({"type":"excalidraw","version":2,"elements":[
+        {"id":"frame","type":"frame","width":160,"height":80,"updated":0},
+        {"id":"image","type":"image","width":160,"height":80,"fileId":"asset","updated":0}],
+        "appState":{},"files":{"asset":{"id":"asset","created":0,"dataURL":url(&outer)}}});
+    let scene = SceneDocument::parse(&serde_json::to_vec(&source).unwrap()).unwrap();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let limits = ResourceLimits::builder()
+            .max_nested_asset_depth(2)
+            .build()
+            .unwrap();
+        let frame = scene.frames().next().unwrap();
+        let request = FrameRenderRequest::builder(format)
+            .resource_limits(limits.clone())
+            .build()
+            .unwrap();
+        let (outcome, trace) =
+            render_frame_with_trace(&crate::catalog::REVISION_1, frame, &request, None);
+        let outcome = outcome.unwrap();
+        assert_eq!(outcome.report().diagnostics().len(), 4);
+        for diagnostic in outcome.report().diagnostics() {
+            assert!(matches!(
+                diagnostic.details(),
+                Some(crate::ErrorDetails::NestedResourceLimit {
+                    recovery: crate::Recovery::Placeholder,
+                    ..
+                })
+            ));
+        }
+        let trace: serde_json::Value = serde_json::from_slice(&trace).unwrap();
+        let recoveries: Vec<_> = trace["entries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|e| e["event"] == "nested_resource_placeholder" && e["decision"] == "committed")
+            .collect();
+        assert_eq!(
+            recoveries.len(),
+            4,
+            "every occurrence pays even through two cache levels"
+        );
+        assert_batch_matches_standalone(
+            &scene,
+            frame,
+            format,
+            limits,
+            "nested recovery cache/frame replay",
+        );
+    }
+}
+
 /// The duplicate-ID effect correction happens after relationship resolution.
 /// Crossings before/during/after that boundary must replay the same accumulated
 /// report and ledger, even for a target that excludes the duplicate occurrence.

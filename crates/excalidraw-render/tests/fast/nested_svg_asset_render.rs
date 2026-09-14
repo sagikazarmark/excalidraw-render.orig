@@ -115,7 +115,9 @@ fn nested_svg_node_ceiling_recovers_before_viewer_parsing() {
         DiagnosticCode::RESOURCE_NESTED_SVG_COMPLEXITY_EXCEEDED
     );
     let artifact = std::str::from_utf8(outcome.artifact().bytes()).expect("artifact is UTF-8");
-    assert!(!artifact.contains("data:image/svg+xml;base64,"));
+    let recovered = embedded_svg(artifact);
+    assert!(recovered.contains("#E7E7E7"));
+    assert!(!recovered.contains("#00ff00"));
 }
 
 #[test]

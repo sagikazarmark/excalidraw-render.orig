@@ -19,6 +19,7 @@ pub(crate) struct Removal {
 pub(crate) struct Failure {
     pub(crate) path: Vec<(u64, u64)>,
     pub(crate) error: ResolveError,
+    pub(crate) placeholder: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -63,6 +64,10 @@ pub(super) struct SanitizedSvg {
 
 #[derive(Clone, Debug)]
 pub(super) enum NestedAdmission {
+    Recovery {
+        identity: [u8; 32],
+        retained_bytes: u64,
+    },
     Occurrence {
         asset_bytes: u64,
     },
@@ -592,14 +597,50 @@ fn serialize_node(
             ) {
                 Ok(value) => value,
                 Err(ResolutionFailure::Asset(error)) => {
+                    let resource_limit = matches!(
+                        error,
+                        ResolveError::AssetBytes { .. }
+                            | ResolveError::AssetWork { .. }
+                            | ResolveError::Dimensions { .. }
+                            | ResolveError::Pixels { .. }
+                            | ResolveError::SvgComplexity { .. }
+                            | ResolveError::SvgDepth { .. }
+                    );
+                    let replacement = if resource_limit && name == "image" {
+                        let replacement =
+                            nested_limit_placeholder(node, limits, revision, ordinal, transact)?;
+                        if let Some(url) = &replacement {
+                            nested_accounting
+                                .admissions
+                                .try_reserve(1)
+                                .map_err(|_| ResolutionFailure::Memory)?;
+                            nested_accounting
+                                .admissions
+                                .push(NestedAdmission::Recovery {
+                                    identity: super::semantic_identity(
+                                        revision,
+                                        super::MediaKind::Svg,
+                                        &ordinal.to_le_bytes(),
+                                    ),
+                                    retained_bytes: 256 + (url.len() as u64).div_ceil(64) * 64,
+                                });
+                        }
+                        replacement
+                    } else {
+                        None
+                    };
                     failures.push(Failure {
                         path: vec![(
                             ordinal,
                             u64::try_from(attribute_ordinal).unwrap_or(u64::MAX),
                         )],
                         error,
+                        placeholder: replacement.is_some(),
                     });
-                    continue;
+                    if replacement.is_none() {
+                        continue;
+                    }
+                    replacement
                 }
                 Err(ResolutionFailure::Transaction(error)) => {
                     return Err(ResolutionFailure::Transaction(error));
@@ -648,6 +689,194 @@ fn serialize_node(
     output.push_str("</");
     output.push_str(name);
     output.push('>');
+    Ok(())
+}
+
+/// A stopped nested image retains only its own established finite viewport.
+/// The data SVG contains no resources, so recovery cannot recurse again.
+fn nested_limit_placeholder(
+    node: roxmltree::Node<'_, '_>,
+    limits: &ResourceLimits,
+    revision: CompatibilityRevision,
+    ordinal: u64,
+    transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+) -> Result<Option<String>, ResolutionFailure> {
+    fn length(value: &str, basis: Option<f64>) -> Option<f64> {
+        let value = value.trim();
+        let number = if let Some(percent) = value.strip_suffix('%') {
+            percent.parse::<f64>().ok()? * basis? / 100.0
+        } else {
+            let (raw, multiplier) = [
+                ("px", 1.0),
+                ("in", 96.0),
+                ("cm", 96.0 / 2.54),
+                ("mm", 96.0 / 25.4),
+                ("pt", 96.0 / 72.0),
+                ("pc", 16.0),
+            ]
+            .into_iter()
+            .find_map(|(unit, factor)| value.strip_suffix(unit).map(|raw| (raw, factor)))
+            .unwrap_or((value, 1.0));
+            raw.parse::<f64>().ok()? * multiplier
+        };
+        (number.is_finite() && number.abs() <= f64::from(f32::MAX)).then_some(number)
+    }
+    let mut ancestors = Vec::new();
+    for ancestor in node.ancestors().skip(1).filter(|n| n.has_tag_name("svg")) {
+        ancestors
+            .try_reserve(1)
+            .map_err(|_| ResolutionFailure::Memory)?;
+        ancestors.push(ancestor);
+    }
+    let mut viewport = None;
+    for ancestor in ancestors.into_iter().rev() {
+        let parent = viewport;
+        viewport = None;
+        if let Some(view_box) = ancestor.attribute("viewBox") {
+            let mut values = view_box
+                .split(|c: char| c.is_ascii_whitespace() || c == ',')
+                .filter(|s| !s.is_empty());
+            let _ = values.next();
+            let _ = values.next();
+            viewport = values
+                .next()
+                .and_then(|v| length(v, None))
+                .zip(values.next().and_then(|v| length(v, None)));
+        }
+        if viewport.is_none() {
+            viewport = Some(ancestor.attribute("width").unwrap_or("100%"))
+                .and_then(|v| length(v, parent.map(|v: (f64, f64)| v.0)))
+                .zip(
+                    Some(ancestor.attribute("height").unwrap_or("100%"))
+                        .and_then(|v| length(v, parent.map(|v| v.1))),
+                );
+        }
+    }
+    let x = length(node.attribute("x").unwrap_or("0"), viewport.map(|v| v.0));
+    let y = length(node.attribute("y").unwrap_or("0"), viewport.map(|v| v.1));
+    let width = node
+        .attribute("width")
+        .and_then(|v| length(v, viewport.map(|v| v.0)));
+    let height = node
+        .attribute("height")
+        .and_then(|v| length(v, viewport.map(|v| v.1)));
+    let (Some(x), Some(y), Some(width), Some(height)) = (x, y, width, height) else {
+        return Ok(None);
+    };
+    if width <= 0.0
+        || height <= 0.0
+        || [x, y, width, height, x + width, y + height]
+            .iter()
+            .any(|v| v.abs() > limits.max_coordinate_magnitude())
+    {
+        return Ok(None);
+    }
+    resource_placeholder_url(width, height, limits, revision, ordinal, transact)
+}
+
+pub(super) fn resource_placeholder_url(
+    width: f64,
+    height: f64,
+    limits: &ResourceLimits,
+    revision: CompatibilityRevision,
+    ordinal: u64,
+    transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+) -> Result<Option<String>, ResolutionFailure> {
+    use std::fmt::Write;
+    if !width.is_finite()
+        || !height.is_finite()
+        || width <= 0.0
+        || height <= 0.0
+        || width > limits.max_coordinate_magnitude()
+        || height > limits.max_coordinate_magnitude()
+        || width as f32 <= 0.0
+        || height as f32 <= 0.0
+        || !(width as f32).is_finite()
+        || !(height as f32).is_finite()
+    {
+        return Ok(None);
+    }
+    // The manifested two-glyph fallback has a fixed bounded construction
+    // envelope, shared by no other rejected occurrence.
+    const WORK: u64 = 8192;
+    if WORK > limits.max_asset_work_units() {
+        return Ok(None);
+    }
+    let identity =
+        super::semantic_identity(revision, super::MediaKind::Svg, &ordinal.to_le_bytes());
+    transact(IntrinsicTransaction::Acquire {
+        event: "nested_resource_placeholder",
+        identity,
+        persistent_working_bytes: 0,
+        temporary_working_bytes: 8192,
+        decoded_pixels: 0,
+        total_work_units: WORK,
+    })
+    .map_err(ResolutionFailure::Transaction)?;
+    let size = width.min(height).min((width.min(height) * 0.4).min(100.0));
+    // Exact official image-error recipe; transforms are preserved by the
+    // enclosing source image, and its existing viewport clips this content.
+    let mut svg = String::new();
+    svg.try_reserve_exact(8192)
+        .map_err(|_| ResolutionFailure::Memory)?;
+    write!(svg,r##"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}"><rect width="{width}" height="{height}" fill="#E7E7E7"/><svg x="{}" y="{}" width="{size}" height="{size}" viewBox="0 0 668 668"><path fill="#888" transform="matrix(0.81709 0 0 0.81709 124.825 145.825)" d="M464 448H48c-26.51 0-48-21.49-48-48V112c0-26.51 21.49-48 48-48h416c26.51 0 48 21.49 48 48v288c0 26.51-21.49 48-48 48ZM112 120c-30.928 0-56 25.072-56 56s25.072 56 56 56 56-25.072 56-56-25.072-56-56-56ZM64 384h384V272l-87.515-87.515c-4.686-4.686-12.284-4.686-16.971 0L208 320l-55.515-55.515c-4.686-4.686-12.284-4.686-16.971 0L64 336v48Z"/><path fill="#888" transform="matrix(0.30366 0 0 0.30366 506.822 60.065)" d="M256 8C119.034 8 8 119.033 8 256c0 136.967 111.034 248 248 248s248-111.034 248-248S392.967 8 256 8Zm130.108 117.892c65.448 65.448 70 165.481 20.677 235.637L150.47 105.216c70.204-49.356 170.226-44.735 235.638 20.676ZM125.892 386.108c-65.448-65.448-70-165.481-20.677-235.637L361.53 406.784c-70.203 49.356-170.226 44.736-235.638-20.676Z"/></svg></svg>"##, (width-size)/2.0, (height-size)/2.0).map_err(|_| ResolutionFailure::Memory)?;
+    let mut url = String::new();
+    url.try_reserve_exact(32 + svg.len().div_ceil(3) * 4)
+        .map_err(|_| ResolutionFailure::Memory)?;
+    url.push_str("data:image/svg+xml;base64,");
+    base64::engine::general_purpose::STANDARD.encode_string(svg, &mut url);
+    transact(IntrinsicTransaction::Acquire {
+        event: "nested_resource_placeholder_bytes",
+        identity,
+        persistent_working_bytes: 256 + (url.len() as u64).div_ceil(64) * 64,
+        temporary_working_bytes: 0,
+        decoded_pixels: 0,
+        total_work_units: 0,
+    })
+    .map_err(ResolutionFailure::Transaction)?;
+    transact(IntrinsicTransaction::ReleaseTemporary {
+        event: "nested_resource_placeholder",
+        identity,
+        bytes: 8192,
+    })
+    .map_err(ResolutionFailure::Transaction)?;
+    Ok(Some(url))
+}
+
+pub(super) fn replay_recovery(
+    admission: &NestedAdmission,
+    transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
+) -> Result<(), ResolutionFailure> {
+    if let NestedAdmission::Recovery {
+        identity,
+        retained_bytes,
+    } = admission
+    {
+        transact(IntrinsicTransaction::Acquire {
+            event: "nested_resource_placeholder",
+            identity: *identity,
+            persistent_working_bytes: 0,
+            temporary_working_bytes: 8192,
+            decoded_pixels: 0,
+            total_work_units: 8192,
+        })
+        .map_err(ResolutionFailure::Transaction)?;
+        transact(IntrinsicTransaction::Acquire {
+            event: "nested_resource_placeholder_bytes",
+            identity: *identity,
+            persistent_working_bytes: *retained_bytes,
+            temporary_working_bytes: 0,
+            decoded_pixels: 0,
+            total_work_units: 0,
+        })
+        .map_err(ResolutionFailure::Transaction)?;
+        transact(IntrinsicTransaction::ReleaseTemporary {
+            event: "nested_resource_placeholder",
+            identity: *identity,
+            bytes: 8192,
+        })
+        .map_err(ResolutionFailure::Transaction)?;
+    }
     Ok(())
 }
 
@@ -707,6 +936,14 @@ fn sanitize_nested_data_image(
         let cached = nested_accounting.sanitized_svgs.get(&identity).cloned();
         let (nested, shared) = if let Some(nested) = cached {
             for admission in &nested.nested_admissions {
+                replay_recovery(admission, transact)?;
+                if matches!(admission, NestedAdmission::Recovery { .. }) {
+                    nested_accounting
+                        .admissions
+                        .try_reserve(1)
+                        .map_err(|_| ResolutionFailure::Memory)?;
+                    nested_accounting.admissions.push(admission.clone());
+                }
                 if let NestedAdmission::Occurrence { asset_bytes } = admission {
                     admit_nested_occurrence(*asset_bytes, transact, nested_accounting)?;
                 }
@@ -1374,7 +1611,7 @@ fn escape_attribute(output: &mut String, value: &str) {
     }
 }
 
-fn viewer_options() -> Result<usvg::Options<'static>, ResolveError> {
+pub(super) fn viewer_options() -> Result<usvg::Options<'static>, ResolveError> {
     let excalifont = excalidraw_render_assets_base::load_excalifont_basic_latin_sfnt()
         .map_err(|_| ResolveError::SvgDecodeFailed)?;
     let (_, liberation_sans) = crate::render::text::FallbackFont::load()
