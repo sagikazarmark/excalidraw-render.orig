@@ -8,7 +8,7 @@ use excalidraw_render::{OutputFormat, SceneDocument};
 use crate::common::render::render_artifact;
 
 #[test]
-fn arrow_bound_text_renders_at_the_arrow_midpoint_in_every_format() {
+pub(super) fn arrow_bound_text_renders_at_the_arrow_midpoint_in_every_format() {
     let scene = SceneDocument::parse(br##"{
         "type":"excalidraw","version":2,
         "elements":[

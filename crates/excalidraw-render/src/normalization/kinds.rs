@@ -323,6 +323,18 @@ fn normalize_text(
 ) -> Result<NormalizedText, TryReserveError> {
     let source = context.source;
     let format = context.format;
+    if matches!(source.container_id, SourceField::Invalid) {
+        context.unsupported(
+            "containerId",
+            &[
+                DiagnosticEffect::InputRepair,
+                DiagnosticEffect::Visual,
+                DiagnosticEffect::Semantic,
+            ],
+            Recovery::Substituted,
+            None,
+        )?;
+    }
     if !source_accepts(source.font_size, |value| value > 0.0) {
         context.unsupported(
             "fontSize",
@@ -396,6 +408,14 @@ fn normalize_text(
         (OutputFormat::Svg, SourceField::Missing | SourceField::Invalid) => text,
         (OutputFormat::Png | OutputFormat::Pdf, _) => "",
     };
+    if matches!(source.original_text, SourceField::Invalid) {
+        context.unsupported(
+            "originalText",
+            &[DiagnosticEffect::InputRepair, DiagnosticEffect::Visual],
+            Recovery::Substituted,
+            None,
+        )?;
+    }
     let source_font_size = manifested_value(source.font_size, 20.0, |value| value > 0.0);
     let source_font_family = manifested_value(source.font_family, 5, |value| {
         matches!(value, 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9)

@@ -67,5 +67,6 @@ mod static_jpeg_asset_render;
 mod static_png_asset_render;
 mod static_webp_asset_render;
 mod surface_metadata_contract;
+mod text_field_contract;
 mod text_line_endings_render;
 mod whole_scene_controls;

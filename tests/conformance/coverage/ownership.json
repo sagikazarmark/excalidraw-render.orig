@@ -16048,145 +16048,523 @@
     {
       "id": "surface:element.text:/containerId:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/containerId:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/containerId:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/font:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "legacy_font_overrides_modern_fields_and_invalid_font_falls_back",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::legacy_font_overrides_modern_fields_and_invalid_font_falls_back",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed valid legacy font strings overriding explicit modern size/family, all legacy family names plus unknown/multiword/missing-family fallbacks and numeric exponent syntax. Malformed strings/nonstring values recover to independent modern fields with exact reports; artifacts, preserved original values and direct/lazy frames agree across formats."
       }
     },
     {
       "id": "surface:element.text:/font:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "legacy_font_overrides_modern_fields_and_invalid_font_falls_back",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::legacy_font_overrides_modern_fields_and_invalid_font_falls_back",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed valid legacy font strings overriding explicit modern size/family, all legacy family names plus unknown/multiword/missing-family fallbacks and numeric exponent syntax. Malformed strings/nonstring values recover to independent modern fields with exact reports; artifacts, preserved original values and direct/lazy frames agree across formats."
       }
     },
     {
       "id": "surface:element.text:/font:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "legacy_font_overrides_modern_fields_and_invalid_font_falls_back",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::legacy_font_overrides_modern_fields_and_invalid_font_falls_back",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed valid legacy font strings overriding explicit modern size/family, all legacy family names plus unknown/multiword/missing-family fallbacks and numeric exponent syntax. Malformed strings/nonstring values recover to independent modern fields with exact reports; artifacts, preserved original values and direct/lazy frames agree across formats."
       }
     },
     {
       "id": "surface:element.text:/fontFamily:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/fontFamily:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/fontFamily:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/fontSize:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/fontSize:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/fontSize:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/lineHeight:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "line_height_derives_from_wrapped_lines_or_source_family_metrics",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::line_height_derives_from_wrapped_lines_or_source_family_metrics",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed absent/unusable line-height derivation across all eight source font families, zero/positive/negative heights and LF/CRLF/CR/blank wrapped lines. Explicit independently worked line-height values serve as artifact oracles; complete reports include source-family substitution order, original preservation and selected/lazy/deleted scope."
       }
     },
     {
       "id": "surface:element.text:/lineHeight:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "line_height_derives_from_wrapped_lines_or_source_family_metrics",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::line_height_derives_from_wrapped_lines_or_source_family_metrics",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed absent/unusable line-height derivation across all eight source font families, zero/positive/negative heights and LF/CRLF/CR/blank wrapped lines. Explicit independently worked line-height values serve as artifact oracles; complete reports include source-family substitution order, original preservation and selected/lazy/deleted scope."
       }
     },
     {
       "id": "surface:element.text:/lineHeight:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "line_height_derives_from_wrapped_lines_or_source_family_metrics",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::line_height_derives_from_wrapped_lines_or_source_family_metrics",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed absent/unusable line-height derivation across all eight source font families, zero/positive/negative heights and LF/CRLF/CR/blank wrapped lines. Explicit independently worked line-height values serve as artifact oracles; complete reports include source-family substitution order, original preservation and selected/lazy/deleted scope."
       }
     },
     {
       "id": "surface:element.text:/originalText:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_and_original_text_recover_independently_and_preserve_original_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_and_original_text_recover_independently_and_preserve_original_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed independent text/originalText missing and invalid recovery, empty/multiline/EOL/tab/bidi values with exact diagnostics and preserved originals. PNG/PDF originalText independence and direct SVG subset cmap demand of an extra originalText scalar are checked independently of visible source text; fresh scene and selected/lazy frame results agree."
       }
     },
     {
       "id": "surface:element.text:/originalText:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_and_original_text_recover_independently_and_preserve_original_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_and_original_text_recover_independently_and_preserve_original_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed independent text/originalText missing and invalid recovery, empty/multiline/EOL/tab/bidi values with exact diagnostics and preserved originals. PNG/PDF originalText independence and direct SVG subset cmap demand of an extra originalText scalar are checked independently of visible source text; fresh scene and selected/lazy frame results agree."
       }
     },
     {
       "id": "surface:element.text:/originalText:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_and_original_text_recover_independently_and_preserve_original_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_and_original_text_recover_independently_and_preserve_original_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed independent text/originalText missing and invalid recovery, empty/multiline/EOL/tab/bidi values with exact diagnostics and preserved originals. PNG/PDF originalText independence and direct SVG subset cmap demand of an extra originalText scalar are checked independently of visible source text; fresh scene and selected/lazy frame results agree."
       }
     },
     {
@@ -16279,73 +16657,262 @@
     {
       "id": "surface:element.text:/text:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_and_original_text_recover_independently_and_preserve_original_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_and_original_text_recover_independently_and_preserve_original_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed independent text/originalText missing and invalid recovery, empty/multiline/EOL/tab/bidi values with exact diagnostics and preserved originals. PNG/PDF originalText independence and direct SVG subset cmap demand of an extra originalText scalar are checked independently of visible source text; fresh scene and selected/lazy frame results agree."
       }
     },
     {
       "id": "surface:element.text:/text:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_and_original_text_recover_independently_and_preserve_original_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_and_original_text_recover_independently_and_preserve_original_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed independent text/originalText missing and invalid recovery, empty/multiline/EOL/tab/bidi values with exact diagnostics and preserved originals. PNG/PDF originalText independence and direct SVG subset cmap demand of an extra originalText scalar are checked independently of visible source text; fresh scene and selected/lazy frame results agree."
       }
     },
     {
       "id": "surface:element.text:/text:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_and_original_text_recover_independently_and_preserve_original_values",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_and_original_text_recover_independently_and_preserve_original_values",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed independent text/originalText missing and invalid recovery, empty/multiline/EOL/tab/bidi values with exact diagnostics and preserved originals. PNG/PDF originalText independence and direct SVG subset cmap demand of an extra originalText scalar are checked independently of visible source text; fresh scene and selected/lazy frame results agree."
       }
     },
     {
       "id": "surface:element.text:/textAlign:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/textAlign:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/textAlign:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/verticalAlign:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/verticalAlign:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
       "id": "surface:element.text:/verticalAlign:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/text_field_contract.rs",
+            "sha256": "eebe01235ce9e94827ef0b8ec9729d1c9b5e158d04ca49d7d054147ef680302c"
+          },
+          "function": "text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "text_field_contract::text_size_family_and_alignment_defaults_and_invalid_values_are_exact",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed text font-size/family/alignment/container field defaults and invalid domains with complete source-ordered recovery reports, original preservation and selected/lazy/deleted scope. Positive admitted families, monospaced alignment SVG anchors/PDF glyph positions/PNG ink bounds, reciprocal/nonreciprocal container participation and explicit placement oracles execute in this selector."
       }
     },
     {
