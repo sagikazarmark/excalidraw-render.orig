@@ -794,8 +794,7 @@ fn normalize_scene_impl<E>(
                 | ElementKind::Arrow
                 | ElementKind::Iframe
                 | ElementKind::Embeddable
-        ) && defaulted(source.group_ids, 0).is_some()
-            && !matches!(source.bound_elements, SourceField::Invalid);
+        );
         pending.push(PendingElement {
             source_index: index,
             source,

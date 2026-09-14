@@ -2487,7 +2487,7 @@ fn embeddable_emoji_diagnostics_identify_the_offline_recipe() {
 }
 
 #[test]
-fn relationship_cycle_contract_in_every_format() {
+pub(super) fn relationship_cycle_contract_in_every_format() {
     disabled_frame_cycle_repairs_input_without_claiming_output_effects();
     cycle_effects_follow_text_and_binding_consumers();
     relationship_cycles_report_each_closing_edge_once();

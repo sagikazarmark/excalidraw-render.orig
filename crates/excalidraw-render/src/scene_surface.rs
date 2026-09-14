@@ -718,6 +718,12 @@ fn classify_element_record(
                     diagnostic_limit,
                     diagnostics,
                 )?;
+                // Object records recover at their own member boundary. Only
+                // a malformed array/container uses the parent substitution.
+                if matches!(&member.value, JsonValue::Array(values) if values.iter().all(|v|matches!(v,JsonValue::Object(_))))
+                {
+                    continue;
+                }
             }
             if field_participates(field, format, frame_names)
                 && semantic_path == "/link"
@@ -968,6 +974,12 @@ fn classify_bound_elements(
     let JsonValue::Array(values) = value else {
         return Ok(());
     };
+    if !values
+        .iter()
+        .all(|value| matches!(value, JsonValue::Object(_)))
+    {
+        return Ok(());
+    }
     for (index, value) in values.iter().enumerate() {
         if diagnostics.len() >= diagnostic_limit {
             break;
@@ -984,6 +996,34 @@ fn classify_bound_elements(
         }
         let record_pointer =
             pointer_index(&pointer_child(element_pointer, "boundElements")?, index)?;
+        for (ordinal, key) in ["id", "type"].into_iter().enumerate() {
+            if member_value(members, key).is_none() && diagnostics.len() < diagnostic_limit {
+                let Some(field) =
+                    field_policy(policy, "nested.bound_element", &pointer_child("", key)?)
+                else {
+                    continue;
+                };
+                if let Some(diagnostic) = manifested_field_diagnostic(
+                    &field.invalid,
+                    format,
+                    &pointer_child(&record_pointer, key)?,
+                    element_id,
+                )? {
+                    diagnostics.try_reserve(1)?;
+                    diagnostics.push(SurfaceDiagnostic {
+                        source_order,
+                        source_position: (member_position as u64)
+                            .saturating_mul(u64::from(u32::MAX) + 1)
+                            .saturating_add(
+                                ((index + 1) as u64).saturating_mul(u64::from(u16::MAX) + 1),
+                            )
+                            .saturating_add((members.len() + ordinal + 1) as u64),
+                        local_owner: element_id.map(try_owned).transpose()?,
+                        diagnostic,
+                    });
+                }
+            }
+        }
         for (nested_position, member) in members.iter().enumerate() {
             if diagnostics.len() >= diagnostic_limit {
                 break;

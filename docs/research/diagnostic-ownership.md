@@ -1,7 +1,7 @@
 # Diagnostic/format ownership audit
 #85 — public-facade diagnostic assertions
 
-Reviewed all 122 current diagnostic/format obligations. Including the duplicate-ID follow-up, 53 now have proposed owners and 69 remain explicit gaps. The global ledger has 694 proposed owners and 234 gaps.
+Reviewed all 122 current diagnostic/format obligations. Including the duplicate-ID follow-up, 53 now have proposed owners and 69 remain explicit gaps. The global ledger has 739 proposed owners and 189 gaps.
 
 The new `fast/diagnostic_contract.rs` tests author expected machine-readable diagnostic fields independently of the production registry. They compare the complete ordered diagnostic array, exact format/severity/effects/details/recovery/owner/pointer, nonempty messages, and byte-identical serialized reports and artifacts across fresh calls. Message prose is not pinned as a semantic requirement. Image recovery tests cover both saved and error source statuses.
 

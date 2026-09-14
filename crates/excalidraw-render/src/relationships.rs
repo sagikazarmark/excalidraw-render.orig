@@ -222,6 +222,7 @@ pub(crate) fn resolve<E>(
         let Some(JsonValue::Object(members)) = scene.element_value(node.source_index) else {
             continue;
         };
+        let candidate_start = candidates.len();
         collect_element_candidates(
             members,
             CandidateOwner {
@@ -235,6 +236,28 @@ pub(crate) fn resolve<E>(
             supplemental_assets,
             &mut candidates,
         )?;
+        // Rendering and frame selection must use the same admitted bindings.
+        // Raw source retains malformed records for embedding, not graph edges.
+        if let Some(element) = elements
+            .iter()
+            .find(|e| e.source.source_index() == node.source_index)
+        {
+            if let crate::normalization::NormalizedElementKind::Linear(linear) = &element.kind {
+                let mut at = candidate_start;
+                while at < candidates.len() {
+                    let pointer = &candidates[at].json_pointer;
+                    let omitted = (pointer.ends_with("/startBinding/elementId")
+                        && linear.start_binding.is_none())
+                        || (pointer.ends_with("/endBinding/elementId")
+                            && linear.end_binding.is_none());
+                    if omitted {
+                        candidates.remove(at);
+                    } else {
+                        at += 1;
+                    }
+                }
+            }
+        }
     }
     candidates.sort_unstable_by(|left, right| {
         left.source_order
@@ -557,13 +580,10 @@ fn collect_bound_elements(
     candidates: &mut Vec<Candidate>,
 ) -> Result<(), TryReserveError> {
     if let Some(JsonValue::Array(records)) = member_value(members, "boundElements") {
-        if !records.iter().all(|record| {
-            let JsonValue::Object(record) = record else {
-                return false;
-            };
-            matches!(member_value(record, "id"), Some(JsonValue::String(id)) if !id.is_empty())
-                && matches!(member_value(record, "type"), Some(JsonValue::String(kind)) if matches!(kind.as_ref(), "arrow" | "text"))
-        }) {
+        if !records
+            .iter()
+            .all(|record| matches!(record, JsonValue::Object(_)))
+        {
             return Ok(());
         }
         for (index, record) in records.iter().enumerate() {
@@ -573,6 +593,11 @@ fn collect_bound_elements(
             let Some(JsonValue::String(id)) = member_value(record, "id") else {
                 continue;
             };
+            if id.is_empty()
+                || !matches!(member_value(record,"type"),Some(JsonValue::String(kind)) if matches!(kind.as_ref(),"arrow"|"text"))
+            {
+                continue;
+            }
             push_bound_element_candidate(
                 members,
                 "boundElements",
@@ -583,11 +608,11 @@ fn collect_bound_elements(
                 candidates,
             )?;
         }
-    } else if let Some(JsonValue::Array(ids)) = member_value(members, "boundElementIds") {
-        if !ids
-            .iter()
-            .all(|id| matches!(id, JsonValue::String(id) if !id.is_empty()))
-        {
+    } else if member_value(members, "boundElements").is_none() {
+        let Some(JsonValue::Array(ids)) = member_value(members, "boundElementIds") else {
+            return Ok(());
+        };
+        if !ids.iter().all(|id| matches!(id, JsonValue::String(_))) {
             return Ok(());
         }
         for (index, id) in ids.iter().enumerate() {

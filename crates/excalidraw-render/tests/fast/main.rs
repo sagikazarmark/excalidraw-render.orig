@@ -51,6 +51,7 @@ mod rectangle_pdf_render;
 mod rectangle_png_render;
 mod rectangle_svg_render;
 mod registered_case_determinism;
+mod relationship_field_contract;
 mod relationships;
 mod render_request;
 mod resource_accounting;

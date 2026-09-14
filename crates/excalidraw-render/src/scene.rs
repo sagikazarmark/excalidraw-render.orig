@@ -172,9 +172,7 @@ impl SceneDocument {
             opacity: source_field(element, "opacity", finite_json_number),
             seed: source_field(element, "seed", json_i32),
             is_deleted: source_field(element, "isDeleted", json_bool),
-            group_ids: source_array_len(element, "groupIds", false),
             frame_id: source_nullable_string(element, "frameId"),
-            bound_elements: source_array_len(element, "boundElements", true),
             link: source_nullable_string(element, "link"),
             updated_is_missing: member_value(element, "updated").is_none(),
             points: source_point_array(element, "points"),
@@ -356,9 +354,7 @@ pub(crate) struct ElementSource<'a> {
     pub(crate) opacity: SourceField<f64>,
     pub(crate) seed: SourceField<i32>,
     pub(crate) is_deleted: SourceField<bool>,
-    pub(crate) group_ids: SourceField<usize>,
     pub(crate) frame_id: SourceField<Option<&'a str>>,
-    pub(crate) bound_elements: SourceField<usize>,
     pub(crate) link: SourceField<Option<&'a str>>,
     pub(crate) updated_is_missing: bool,
     pub(crate) points: SourceField<PointArraySource<'a>>,
@@ -487,6 +483,7 @@ impl BindingSource<'_> {
     pub(crate) fn fixed_point(&self) -> SourceField<[f64; 2]> {
         match member_value(self.members, "fixedPoint") {
             None | Some(JsonValue::Null) => SourceField::Missing,
+            Some(JsonValue::Array(values)) if values.len() != 2 => SourceField::Invalid,
             Some(value) => parse_point(value).map_or(SourceField::Invalid, SourceField::Value),
         }
     }
@@ -812,14 +809,6 @@ fn source_nullable_string<'a>(
     source_field(members, key, |value| match value {
         JsonValue::Null => Some(None),
         JsonValue::String(value) => Some(Some(value.as_ref())),
-        _ => None,
-    })
-}
-
-fn source_array_len(members: &[JsonMember], key: &str, accepts_null: bool) -> SourceField<usize> {
-    source_field(members, key, |value| match value {
-        JsonValue::Array(values) => Some(values.len()),
-        JsonValue::Null if accepts_null => Some(0),
         _ => None,
     })
 }

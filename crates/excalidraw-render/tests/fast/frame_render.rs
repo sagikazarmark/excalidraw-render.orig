@@ -180,7 +180,7 @@ pub(super) fn frame_clipping_uses_the_rounded_frame_boundary() {
 }
 
 #[test]
-fn group_membership_preserves_direct_paint_order_in_every_format() {
+pub(super) fn group_membership_preserves_direct_paint_order_in_every_format() {
     let scene = SceneDocument::parse(br##"{
         "type":"excalidraw","version":2,
         "elements":[

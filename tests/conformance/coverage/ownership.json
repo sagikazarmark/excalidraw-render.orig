@@ -2243,7 +2243,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "malformed_file_contract_in_every_format",
           "binary": "fast",
@@ -2272,7 +2272,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "malformed_file_contract_in_every_format",
           "binary": "fast",
@@ -2301,7 +2301,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "malformed_file_contract_in_every_format",
           "binary": "fast",
@@ -2330,7 +2330,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "media_type_contract_in_every_format",
           "binary": "fast",
@@ -2359,7 +2359,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "media_type_contract_in_every_format",
           "binary": "fast",
@@ -2388,7 +2388,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "media_type_contract_in_every_format",
           "binary": "fast",
@@ -2417,7 +2417,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "supplement_conflicts_report_authority_once_in_every_format",
           "binary": "fast",
@@ -2446,7 +2446,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "supplement_conflicts_report_authority_once_in_every_format",
           "binary": "fast",
@@ -2475,7 +2475,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "supplement_conflicts_report_authority_once_in_every_format",
           "binary": "fast",
@@ -2504,7 +2504,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2533,7 +2533,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2562,7 +2562,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2639,7 +2639,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2668,7 +2668,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2697,7 +2697,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2750,7 +2750,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2779,7 +2779,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2808,7 +2808,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2837,7 +2837,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2866,7 +2866,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2895,7 +2895,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2924,7 +2924,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2953,7 +2953,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2982,7 +2982,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -3011,7 +3011,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -3040,7 +3040,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -3069,7 +3069,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -3098,7 +3098,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "animation_flattening_contract_in_every_format",
           "binary": "fast",
@@ -3127,7 +3127,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "animation_flattening_contract_in_every_format",
           "binary": "fast",
@@ -3156,7 +3156,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "decode_failures_cover_every_codec_and_authority",
           "binary": "fast",
@@ -3185,7 +3185,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "decode_failures_cover_every_codec_and_authority",
           "binary": "fast",
@@ -3214,7 +3214,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "decode_failures_cover_every_codec_and_authority",
           "binary": "fast",
@@ -3267,7 +3267,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -3296,7 +3296,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -3325,7 +3325,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -3378,7 +3378,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "unsupported_image_contract_in_every_format",
           "binary": "fast",
@@ -3407,7 +3407,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "unsupported_image_contract_in_every_format",
           "binary": "fast",
@@ -3436,7 +3436,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "unsupported_image_contract_in_every_format",
           "binary": "fast",
@@ -3649,7 +3649,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/duplicate_identity_contract.rs",
-            "sha256": "e271df0611eba62486da933328e10079e94139e9ab77cdf7ccf58aef0250b735"
+            "sha256": "359c7ad070fc9721cb5d98473a21d2bc707133c3ec15e9856378528422393427"
           },
           "function": "identity_and_duplicate_relationship_contract_in_every_format",
           "binary": "fast",
@@ -3678,7 +3678,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/duplicate_identity_contract.rs",
-            "sha256": "e271df0611eba62486da933328e10079e94139e9ab77cdf7ccf58aef0250b735"
+            "sha256": "359c7ad070fc9721cb5d98473a21d2bc707133c3ec15e9856378528422393427"
           },
           "function": "identity_and_duplicate_relationship_contract_in_every_format",
           "binary": "fast",
@@ -3707,7 +3707,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/duplicate_identity_contract.rs",
-            "sha256": "e271df0611eba62486da933328e10079e94139e9ab77cdf7ccf58aef0250b735"
+            "sha256": "359c7ad070fc9721cb5d98473a21d2bc707133c3ec15e9856378528422393427"
           },
           "function": "identity_and_duplicate_relationship_contract_in_every_format",
           "binary": "fast",
@@ -3823,7 +3823,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3852,7 +3852,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3881,7 +3881,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3910,7 +3910,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3939,7 +3939,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3968,7 +3968,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3997,7 +3997,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -4026,7 +4026,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -4055,7 +4055,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "376451ee8047b7df624792b81394d4492e2a92d3702370318e93ba449b8a31f8"
+            "sha256": "242b49f2928572ee930bf897a2a4226d40aac6459fc48cc639612c76a6ba7f95"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -12888,49 +12888,175 @@
     {
       "id": "surface:element.common:/boundElementIds:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:element.common:/boundElementIds:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:element.common:/boundElementIds:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:element.common:/boundElements:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:element.common:/boundElements:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:element.common:/boundElements:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
@@ -13110,49 +13236,175 @@
     {
       "id": "surface:element.common:/frameId:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "grouping_and_frame_membership_default_and_recover_without_replacing_content",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::grouping_and_frame_membership_default_and_recover_without_replacing_content",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed groupIds/frameId missing defaults, malformed JSON/domain recovery and all participating kind families, including image/frame special cases. Exact source-field diagnostics and clean rendering/preserved-source/direct-lazy frame equivalence; valid grouping preserves paint order, inherited frame membership/clipping and cycles use existing independently asserted facade contracts."
       }
     },
     {
       "id": "surface:element.common:/frameId:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "grouping_and_frame_membership_default_and_recover_without_replacing_content",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::grouping_and_frame_membership_default_and_recover_without_replacing_content",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed groupIds/frameId missing defaults, malformed JSON/domain recovery and all participating kind families, including image/frame special cases. Exact source-field diagnostics and clean rendering/preserved-source/direct-lazy frame equivalence; valid grouping preserves paint order, inherited frame membership/clipping and cycles use existing independently asserted facade contracts."
       }
     },
     {
       "id": "surface:element.common:/frameId:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "grouping_and_frame_membership_default_and_recover_without_replacing_content",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::grouping_and_frame_membership_default_and_recover_without_replacing_content",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed groupIds/frameId missing defaults, malformed JSON/domain recovery and all participating kind families, including image/frame special cases. Exact source-field diagnostics and clean rendering/preserved-source/direct-lazy frame equivalence; valid grouping preserves paint order, inherited frame membership/clipping and cycles use existing independently asserted facade contracts."
       }
     },
     {
       "id": "surface:element.common:/groupIds:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "grouping_and_frame_membership_default_and_recover_without_replacing_content",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::grouping_and_frame_membership_default_and_recover_without_replacing_content",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed groupIds/frameId missing defaults, malformed JSON/domain recovery and all participating kind families, including image/frame special cases. Exact source-field diagnostics and clean rendering/preserved-source/direct-lazy frame equivalence; valid grouping preserves paint order, inherited frame membership/clipping and cycles use existing independently asserted facade contracts."
       }
     },
     {
       "id": "surface:element.common:/groupIds:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "grouping_and_frame_membership_default_and_recover_without_replacing_content",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::grouping_and_frame_membership_default_and_recover_without_replacing_content",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed groupIds/frameId missing defaults, malformed JSON/domain recovery and all participating kind families, including image/frame special cases. Exact source-field diagnostics and clean rendering/preserved-source/direct-lazy frame equivalence; valid grouping preserves paint order, inherited frame membership/clipping and cycles use existing independently asserted facade contracts."
       }
     },
     {
       "id": "surface:element.common:/groupIds:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "grouping_and_frame_membership_default_and_recover_without_replacing_content",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::grouping_and_frame_membership_default_and_recover_without_replacing_content",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed groupIds/frameId missing defaults, malformed JSON/domain recovery and all participating kind families, including image/frame special cases. Exact source-field diagnostics and clean rendering/preserved-source/direct-lazy frame equivalence; valid grouping preserves paint order, inherited frame membership/clipping and cycles use existing independently asserted facade contracts."
       }
     },
     {
@@ -13250,7 +13502,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/duplicate_identity_contract.rs",
-            "sha256": "e271df0611eba62486da933328e10079e94139e9ab77cdf7ccf58aef0250b735"
+            "sha256": "359c7ad070fc9721cb5d98473a21d2bc707133c3ec15e9856378528422393427"
           },
           "function": "identity_and_duplicate_relationship_contract_in_every_format",
           "binary": "fast",
@@ -13279,7 +13531,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/duplicate_identity_contract.rs",
-            "sha256": "e271df0611eba62486da933328e10079e94139e9ab77cdf7ccf58aef0250b735"
+            "sha256": "359c7ad070fc9721cb5d98473a21d2bc707133c3ec15e9856378528422393427"
           },
           "function": "identity_and_duplicate_relationship_contract_in_every_format",
           "binary": "fast",
@@ -13308,7 +13560,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/duplicate_identity_contract.rs",
-            "sha256": "e271df0611eba62486da933328e10079e94139e9ab77cdf7ccf58aef0250b735"
+            "sha256": "359c7ad070fc9721cb5d98473a21d2bc707133c3ec15e9856378528422393427"
           },
           "function": "identity_and_duplicate_relationship_contract_in_every_format",
           "binary": "fast",
@@ -15817,25 +16069,88 @@
     {
       "id": "surface:element.linear:/endBinding:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:element.linear:/endBinding:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:element.linear:/endBinding:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
@@ -15952,25 +16267,88 @@
     {
       "id": "surface:element.linear:/startBinding:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:element.linear:/startBinding:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:element.linear:/startBinding:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
@@ -18064,145 +18442,523 @@
     {
       "id": "surface:nested.bound_element:/id:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:nested.bound_element:/id:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:nested.bound_element:/id:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:nested.bound_element:/type:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:nested.bound_element:/type:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:nested.bound_element:/type:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::bound_element_records_and_legacy_ids_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed boundElements/legacy boundElementIds and nested id/type: parent invalid containers substitute once, object members recover at narrow omitted fields, valid siblings survive, modern field presence suppresses legacy migration, empty legacy strings do not discard resolvable siblings. Exact reports, original preservation and observable outside-frame selection plus direct/lazy equality."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/elementId:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/elementId:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/elementId:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/fixedPoint:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "fixed_point_binding_normalization_defaults_center_components_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::fixed_point_binding_normalization_defaults_center_components_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed fixedPoint missing/null silent binding removal, exact two-component finite point domain, malformed container/length/component narrow recovery to [0,0], and near-center migration to 0.5001. Exact reports, original source preservation, clean-scene geometry and direct/lazy/deleted target equality in all formats."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/fixedPoint:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "fixed_point_binding_normalization_defaults_center_components_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::fixed_point_binding_normalization_defaults_center_components_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed fixedPoint missing/null silent binding removal, exact two-component finite point domain, malformed container/length/component narrow recovery to [0,0], and near-center migration to 0.5001. Exact reports, original source preservation, clean-scene geometry and direct/lazy/deleted target equality in all formats."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/fixedPoint:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "fixed_point_binding_normalization_defaults_center_components_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::fixed_point_binding_normalization_defaults_center_components_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed fixedPoint missing/null silent binding removal, exact two-component finite point domain, malformed container/length/component narrow recovery to [0,0], and near-center migration to 0.5001. Exact reports, original source preservation, clean-scene geometry and direct/lazy/deleted target equality in all formats."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/focus:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/focus:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/focus:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/gap:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/gap:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.fixed_point_binding:/gap:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
@@ -19411,73 +20167,262 @@
     {
       "id": "surface:nested.point_binding:/elementId:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.point_binding:/elementId:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.point_binding:/elementId:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.point_binding:/focus:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.point_binding:/focus:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.point_binding:/focus:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.point_binding:/gap:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.point_binding:/gap:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {
       "id": "surface:nested.point_binding:/gap:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/relationship_field_contract.rs",
+            "sha256": "8171331e3337df1ddd345941152f6c7283006853d32f11dc8206f54f32bd8389"
+          },
+          "function": "endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "relationship_field_contract::endpoint_bindings_and_nested_members_recover_at_the_narrowest_boundary",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed start/end bindings for line/arrow/legacy draw and elbow arrows; absent/null, invalid container and nested elementId/focus/gap recovery, falsy focus normalization, retained stored geometry and omitted-binding selection silence. Source preservation, full reports and direct/lazy target equality; existing duplicate-ID/cycle contract runs inside this selector."
       }
     },
     {

@@ -18,9 +18,11 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **928** | |
 
-694 primary owners are proposed (118 case labels, the AVIF rejection test,
-53 diagnostic/format obligations and 522 surface-field/format obligations).
-234 obligations remain explicit gaps. Frame assignments are assessed in
+739 primary owners are proposed (118 case labels, the AVIF rejection test,
+53 diagnostic/format obligations and 567 surface-field/format obligations).
+189 obligations remain explicit gaps. Relationship/binding assignments are
+assessed in [the relationship audit](../../../docs/research/relationship-field-ownership.md).
+Frame assignments are assessed in
 [the frame field audit](../../../docs/research/frame-field-ownership.md).
 Text assignments are assessed in
 [the text field audit](../../../docs/research/text-field-ownership.md).

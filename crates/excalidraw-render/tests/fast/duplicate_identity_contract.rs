@@ -571,7 +571,7 @@ fn duplicate_cycle_order_and_effects_repeat_in_selected_frame() {
 /// module, while all duplicate scenarios run here rather than relying on sibling
 /// tests being selected by an imprecise filter.
 #[test]
-fn identity_and_duplicate_relationship_contract_in_every_format() {
+pub(super) fn identity_and_duplicate_relationship_contract_in_every_format() {
     super::admission_identity_contract::missing_and_invalid_ids_have_exact_recovery_and_target_participation();
     super::admission_identity_contract::duplicate_ids_retain_first_occurrence_and_resolve_frame_references();
     duplicate_frame_identity_reports_the_channels_consuming_disambiguation();
