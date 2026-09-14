@@ -35,7 +35,7 @@ const NAMED_FRAME_SCENE: &[u8] = br##"{
 }"##;
 
 #[test]
-fn frame_name_is_painted_grey_above_the_frame_in_png() {
+pub(super) fn frame_name_is_painted_grey_above_the_frame_in_png() {
     let scene = SceneDocument::parse(NAMED_FRAME_SCENE).expect("named frame is admitted");
     let png = render(&scene, OutputFormat::Png, FrameOptions::default());
     let decoded = decode_png(png.artifact().bytes());
@@ -69,7 +69,7 @@ fn frame_name_is_painted_grey_above_the_frame_in_png() {
 }
 
 #[test]
-fn nested_frames_clip_direct_geometry_in_every_format() {
+pub(super) fn nested_frames_clip_direct_geometry_in_every_format() {
     let scene = SceneDocument::parse(NESTED_FRAME_SCENE).expect("nested frame scene is admitted");
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
@@ -159,7 +159,7 @@ fn frame_outline_opacity_is_dropped_in_svg_and_kept_in_png() {
 }
 
 #[test]
-fn frame_clipping_uses_the_rounded_frame_boundary() {
+pub(super) fn frame_clipping_uses_the_rounded_frame_boundary() {
     let scene = SceneDocument::parse(br##"{
         "type":"excalidraw","version":2,
         "elements":[

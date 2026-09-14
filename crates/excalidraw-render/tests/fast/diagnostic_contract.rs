@@ -2097,7 +2097,7 @@ fn image_expected(
 }
 
 #[test]
-fn font_diagnostics_cover_text_generated_labels_and_silence() {
+pub(super) fn font_diagnostics_cover_text_generated_labels_and_silence() {
     local_font_substitution_is_informational_per_occurrence_in_all_formats();
     embeddable_emoji_diagnostics_identify_the_offline_recipe();
     frame_missing_glyph_reports_follow_visible_names();

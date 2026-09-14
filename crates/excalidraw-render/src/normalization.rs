@@ -725,7 +725,16 @@ fn normalize_scene_impl<E>(
     has_supplemental_file: impl Fn(&str) -> bool,
     mut observe: impl FnMut(NormalizationEvent<'_>) -> Result<(), E>,
 ) -> Result<Option<NormalizationOutcome>, NormalizationError<E>> {
-    let frame_names = requested_frame_names;
+    // Name participation follows both request and persisted scene controls.
+    // Invalid/missing booleans default to true; only explicit false disables.
+    let frame_names = requested_frame_names
+        && match scene.frame_rendering() {
+            SourceField::Value(rendering) => {
+                !matches!(rendering.boolean("enabled"), SourceField::Value(false))
+                    && !matches!(rendering.boolean("name"), SourceField::Value(false))
+            }
+            SourceField::Missing | SourceField::Invalid => true,
+        };
     let view_background_color = manifested_value(
         scene.view_background_color(),
         "#ffffff",
@@ -739,7 +748,7 @@ fn normalize_scene_impl<E>(
         scene,
         policy,
         format,
-        requested_frame_names,
+        frame_names,
         surface_diagnostic_limit,
     )?;
     let mut planned_diagnostic_count = surface.diagnostics.len();

@@ -229,17 +229,11 @@ fn frame_name_diagnostics_follow_the_requested_frame_name_control() {
     let (diagnostics, _) = reported_for(name_only, OutputFormat::Svg, false);
     assert!(diagnostics.is_empty(), "{diagnostics:?}");
 
-    // The request's frame-name control overrides a scene that turned
-    // frame names off: the name is read and its value diagnosed.
+    // Scene and request controls both gate participation: a request cannot
+    // enable name validation when persisted name rendering is disabled.
     let scene_disabled = br##"{"type":"excalidraw","version":2,"elements":[{"id":"frame","type":"frame","width":10,"height":10,"name":3,"seed":1,"updated":1}],"appState":{"frameRendering":{"name":false}},"files":{}}"##;
     let (diagnostics, _) = reported_for(scene_disabled, OutputFormat::Svg, true);
-    assert_eq!(
-        codes_and_pointers(&diagnostics),
-        [(
-            DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE,
-            "/elements/0/name"
-        )]
-    );
+    assert!(diagnostics.is_empty(), "{diagnostics:?}");
 }
 
 #[test]
@@ -512,7 +506,10 @@ fn image_frame_and_frame_rendering_state_is_normalized_without_mutating_source()
     let NormalizedElementKind::MagicFrame(magic) = &normalized.elements[2].kind else {
         panic!("the magic frame retains normalized frame state");
     };
-    assert_eq!(frame.name.as_deref(), Some("Named"));
+    assert_eq!(
+        frame.name, None,
+        "disabled name is retained only in the original scene"
+    );
     assert_eq!(magic.name, None);
     assert_eq!(
         normalized.frame_rendering,

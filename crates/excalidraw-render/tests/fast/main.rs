@@ -28,6 +28,7 @@ mod excalifont_text_render;
 mod font_catalog_render;
 mod frame_clip_accounting;
 mod frame_export;
+mod frame_field_contract;
 mod frame_render;
 mod freedraw_render;
 mod geometry_style_contract;
