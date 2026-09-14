@@ -34,6 +34,7 @@ mod geometry_style_contract;
 mod helvetica_text_render;
 mod image_corner_clip;
 mod image_edge_coverage;
+mod image_field_contract;
 mod image_resampling;
 mod image_viewport_rounding;
 mod license_bundle;

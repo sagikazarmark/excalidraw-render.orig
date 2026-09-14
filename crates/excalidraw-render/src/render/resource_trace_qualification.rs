@@ -13,6 +13,49 @@ pub(crate) fn assert_font_subset_resource_trace_matrix() {
     assert_failure_trace_replay();
 }
 
+#[test]
+fn null_image_identity_releases_normalized_storage_before_encoding() {
+    for field in ["", ",\"fileId\":null", ",\"fileId\":false"] {
+        let source = format!(
+            r#"{{"type":"excalidraw","version":2,"elements":[{{"id":"image","type":"image","width":20,"height":20,"updated":0{field}}}],"appState":{{}},"files":{{}}}}"#
+        );
+        let scene = SceneDocument::parse(source.as_bytes()).unwrap();
+        for format in [OutputFormat::Svg, OutputFormat::Pdf] {
+            let request = RenderRequest::builder(format).build().unwrap();
+            let (result, trace) =
+                render_with_trace(crate::catalog::REVISION_1.profile(), &scene, &request);
+            result.unwrap();
+            let trace: serde_json::Value = serde_json::from_slice(&trace).unwrap();
+            let entries = trace["entries"].as_array().unwrap();
+            let normalized = entries
+                .iter()
+                .find(|e| e["event"] == "normalized_image")
+                .expect("normalized image charge");
+            let bytes = normalized["deltas"]["working_bytes"].as_u64().unwrap();
+            let release = entries
+                .iter()
+                .position(|e| {
+                    e["event"] == "resolved_image_fallback"
+                        && e["decision"] == "released"
+                        && e["deltas"]["working_bytes"].as_u64() == Some(bytes)
+                })
+                .expect("normalized image record must be released");
+            let workspace = entries
+                .iter()
+                .position(|e| {
+                    e["event"]
+                        == if format == OutputFormat::Svg {
+                            "svg_serializer_workspace"
+                        } else {
+                            "pdf_stream_workspace"
+                        }
+                })
+                .unwrap();
+            assert!(release < workspace);
+        }
+    }
+}
+
 fn assert_scene_trace_replay() {
     let scene = SceneDocument::parse(
         br#"{"type":"excalidraw","version":2,"elements":[{"id":"text","type":"text","width":80,"height":30,"fontSize":20,"fontFamily":5,"text":"A","updated":1}],"appState":{},"files":{}}"#,

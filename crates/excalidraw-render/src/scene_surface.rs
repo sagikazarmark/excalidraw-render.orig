@@ -1136,6 +1136,12 @@ pub(crate) fn classify_referenced_files(
             }
             let semantic_path = pointer_child("", &member.key)?;
             if let Some(field) = field_policy(policy, "file_record", &semantic_path) {
+                // File normalization owns both absent and invalid ID repairs.
+                // Reporting present invalid IDs here as well duplicates the
+                // same source-field occurrence and consumes two diagnostics.
+                if semantic_path == "/id" {
+                    continue;
+                }
                 if field.invalid.code.is_some()
                     && !value_matches_domain(&member.value, field.accepted_domain)
                 {

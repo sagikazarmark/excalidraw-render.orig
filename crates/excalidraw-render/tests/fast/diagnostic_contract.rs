@@ -411,7 +411,7 @@ fn unsafe_svg_removals_have_exact_effects_and_silence() {
 }
 
 #[test]
-fn forbidden_resource_reports_bounds_selected_recovery() {
+pub(super) fn forbidden_resource_reports_bounds_selected_recovery() {
     for format in FORMATS {
         for bounded in [true, false] {
             let mut element = image("image", "remote/~");
@@ -507,7 +507,7 @@ fn nested_event_handler_removal_keeps_its_full_path_and_semantic_effect() {
 }
 
 #[test]
-fn media_type_contract_in_every_format() {
+pub(super) fn media_type_contract_in_every_format() {
     nested_media_claim_repair_preserves_types_and_path();
     nested_media_claims_keep_recursive_occurrence_identity_and_pixels();
     media_claims_report_each_authoritative_field_once();
@@ -769,7 +769,7 @@ fn media_claims_report_each_authoritative_field_once() {
 }
 
 #[test]
-fn supplement_conflicts_report_authority_once_in_every_format() {
+pub(super) fn supplement_conflicts_report_authority_once_in_every_format() {
     image_authority_precedence_and_valid_silence();
     use base64::Engine;
     let bytes = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
@@ -1063,7 +1063,7 @@ fn animation_expected(owner: &str, pointer: &str, asset: &str, mime: &str) -> Va
 }
 
 #[test]
-fn decode_failures_cover_every_codec_and_authority() {
+pub(super) fn decode_failures_cover_every_codec_and_authority() {
     use crate::common::codec_fixtures as fixtures;
     use base64::Engine;
     let png = fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
@@ -1314,7 +1314,7 @@ fn decode_expected(
 }
 
 #[test]
-fn unsupported_image_contract_in_every_format() {
+pub(super) fn unsupported_image_contract_in_every_format() {
     image_authorities_have_exact_ordered_diagnostics();
     shared_file_recipe_uses_first_participating_reference();
     shared_file_recovery_is_scoped_to_selected_frame_references();
@@ -1324,7 +1324,7 @@ fn unsupported_image_contract_in_every_format() {
 }
 
 #[test]
-fn malformed_file_contract_in_every_format() {
+pub(super) fn malformed_file_contract_in_every_format() {
     image_authorities_have_exact_ordered_diagnostics();
     malformed_record_types_and_invalid_base64_have_exact_reports();
     invalid_payload_field_suppresses_duplicate_asset_failure();
@@ -1986,7 +1986,7 @@ fn image_authority_precedence_and_valid_silence() {
 }
 
 #[test]
-fn missing_image_contract_in_every_format() {
+pub(super) fn missing_image_contract_in_every_format() {
     missing_images_report_referring_owners_and_format_specific_recovery();
     image_authority_precedence_and_valid_silence();
     for format in FORMATS {

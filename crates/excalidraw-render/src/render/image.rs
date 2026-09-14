@@ -707,17 +707,41 @@ impl ImageResolver {
             }
         }
         if request.format() == OutputFormat::Png
-            && session
-                .report
-                .diagnostics
-                .iter()
-                .any(|diagnostic| diagnostic_uses_non_generic_recovery(&source, diagnostic))
+            && (image.file_id.is_none()
+                || session
+                    .report
+                    .diagnostics
+                    .iter()
+                    .any(|diagnostic| diagnostic_uses_non_generic_recovery(&source, diagnostic)))
         {
             self.fallbacks.try_reserve(1).map_err(|_| {
                 session.memory_failure(request, "asset_resolution", "image_fallbacks")
             })?;
             self.fallbacks
                 .push((source.source.source_index(), image.status));
+            semantic_working.push(SemanticWorkingRecord {
+                source_order: source.source_order,
+                event: "resolved_image_fallback",
+                element_id: Some(try_owned(source.source.id()).map_err(|_| {
+                    session.memory_failure(request, "normalization", "working_record_identity")
+                })?),
+                local_owner: Some(try_owned(source.source.id()).map_err(|_| {
+                    session.memory_failure(request, "normalization", "working_record_owner")
+                })?),
+                json_pointer: try_owned(source.source.pointer()).map_err(|_| {
+                    session.memory_failure(request, "normalization", "working_record_pointer")
+                })?,
+                bytes: source.normalized_working_bytes,
+            });
+            return Ok(ImageDisposition::Outline(source));
+        }
+        // An invalid fileId is normalized to null and already diagnosed at
+        // that field. It has the same format-specific absent-image paint as an
+        // explicit null, rather than replacing the whole image element.
+        if image.file_id.is_none() {
+            semantic_working.try_reserve(1).map_err(|_| {
+                session.memory_failure(request, "asset_resolution", "image_omission")
+            })?;
             semantic_working.push(SemanticWorkingRecord {
                 source_order: source.source_order,
                 event: "resolved_image_fallback",

@@ -2243,7 +2243,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "malformed_file_contract_in_every_format",
           "binary": "fast",
@@ -2272,7 +2272,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "malformed_file_contract_in_every_format",
           "binary": "fast",
@@ -2301,7 +2301,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "malformed_file_contract_in_every_format",
           "binary": "fast",
@@ -2330,7 +2330,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "media_type_contract_in_every_format",
           "binary": "fast",
@@ -2359,7 +2359,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "media_type_contract_in_every_format",
           "binary": "fast",
@@ -2388,7 +2388,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "media_type_contract_in_every_format",
           "binary": "fast",
@@ -2417,7 +2417,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "supplement_conflicts_report_authority_once_in_every_format",
           "binary": "fast",
@@ -2446,7 +2446,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "supplement_conflicts_report_authority_once_in_every_format",
           "binary": "fast",
@@ -2475,7 +2475,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "supplement_conflicts_report_authority_once_in_every_format",
           "binary": "fast",
@@ -2504,7 +2504,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2533,7 +2533,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2562,7 +2562,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "invalid_colors_substitute_in_member_order_and_valid_colors_are_silent",
           "binary": "fast",
@@ -2639,7 +2639,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2668,7 +2668,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2697,7 +2697,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "unknown_elements_cover_bounded_placeholders_and_unbounded_omissions",
           "binary": "fast",
@@ -2750,7 +2750,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2779,7 +2779,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2808,7 +2808,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata",
           "binary": "fast",
@@ -2837,7 +2837,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2866,7 +2866,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2895,7 +2895,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2924,7 +2924,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2953,7 +2953,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -2982,7 +2982,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -3011,7 +3011,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -3040,7 +3040,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -3069,7 +3069,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "font_diagnostics_cover_text_generated_labels_and_silence",
           "binary": "fast",
@@ -3098,7 +3098,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "animation_flattening_contract_in_every_format",
           "binary": "fast",
@@ -3127,7 +3127,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "animation_flattening_contract_in_every_format",
           "binary": "fast",
@@ -3156,7 +3156,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "decode_failures_cover_every_codec_and_authority",
           "binary": "fast",
@@ -3185,7 +3185,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "decode_failures_cover_every_codec_and_authority",
           "binary": "fast",
@@ -3214,7 +3214,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "decode_failures_cover_every_codec_and_authority",
           "binary": "fast",
@@ -3267,7 +3267,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -3296,7 +3296,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -3325,7 +3325,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "missing_image_contract_in_every_format",
           "binary": "fast",
@@ -3378,7 +3378,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "unsupported_image_contract_in_every_format",
           "binary": "fast",
@@ -3407,7 +3407,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "unsupported_image_contract_in_every_format",
           "binary": "fast",
@@ -3436,7 +3436,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "unsupported_image_contract_in_every_format",
           "binary": "fast",
@@ -3823,7 +3823,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3852,7 +3852,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3881,7 +3881,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent",
           "binary": "fast",
@@ -3910,7 +3910,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3939,7 +3939,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3968,7 +3968,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "relationship_cycle_contract_in_every_format",
           "binary": "fast",
@@ -3997,7 +3997,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -4026,7 +4026,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -4055,7 +4055,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/diagnostic_contract.rs",
-            "sha256": "edaab7e007895a3503b63fb227e7e9620f5eb7ae65f2db58c8f95237eaee958f"
+            "sha256": "b4f652f5d5085958e074d4652780f3ad07eaa6907de19b4e58097051ac950b24"
           },
           "function": "zero_rough_seeds_are_repaired_once_per_participating_shape",
           "binary": "fast",
@@ -15145,97 +15145,349 @@
     {
       "id": "surface:element.image:/crop:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:element.image:/crop:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:element.image:/crop:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:element.image:/fileId:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed fileId/status: absent/null/empty/unresolved and invalid IDs, pending/saved/error recovery recipes, scene-over-supplement authority and missing-authority crop silence. Complete exact reports and normalization-to-null artifact equivalence; original values, fresh calls, selected/unselected/deleted and lazy frame behavior. Existing missing-image and supplement-conflict contracts run inside this selector."
       }
     },
     {
       "id": "surface:element.image:/fileId:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed fileId/status: absent/null/empty/unresolved and invalid IDs, pending/saved/error recovery recipes, scene-over-supplement authority and missing-authority crop silence. Complete exact reports and normalization-to-null artifact equivalence; original values, fresh calls, selected/unselected/deleted and lazy frame behavior. Existing missing-image and supplement-conflict contracts run inside this selector."
       }
     },
     {
       "id": "surface:element.image:/fileId:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed fileId/status: absent/null/empty/unresolved and invalid IDs, pending/saved/error recovery recipes, scene-over-supplement authority and missing-authority crop silence. Complete exact reports and normalization-to-null artifact equivalence; original values, fresh calls, selected/unselected/deleted and lazy frame behavior. Existing missing-image and supplement-conflict contracts run inside this selector."
       }
     },
     {
       "id": "surface:element.image:/scale:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "image_scale_and_status_default_recover_and_preserve_valid_payloads",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::image_scale_and_status_default_recover_and_preserve_valid_payloads",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed image scale/status with scene and supplemental payloads: missing defaults, invalid JSON values and scale lengths/components, all valid statuses and four flips. Independent quadrant pixels and SVG/PDF crop/flip transforms establish valid rendering; exact recovery reports, preservation, fresh calls and selected/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:element.image:/scale:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "image_scale_and_status_default_recover_and_preserve_valid_payloads",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::image_scale_and_status_default_recover_and_preserve_valid_payloads",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed image scale/status with scene and supplemental payloads: missing defaults, invalid JSON values and scale lengths/components, all valid statuses and four flips. Independent quadrant pixels and SVG/PDF crop/flip transforms establish valid rendering; exact recovery reports, preservation, fresh calls and selected/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:element.image:/scale:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "image_scale_and_status_default_recover_and_preserve_valid_payloads",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::image_scale_and_status_default_recover_and_preserve_valid_payloads",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed image scale/status with scene and supplemental payloads: missing defaults, invalid JSON values and scale lengths/components, all valid statuses and four flips. Independent quadrant pixels and SVG/PDF crop/flip transforms establish valid rendering; exact recovery reports, preservation, fresh calls and selected/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:element.image:/status:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed fileId/status: absent/null/empty/unresolved and invalid IDs, pending/saved/error recovery recipes, scene-over-supplement authority and missing-authority crop silence. Complete exact reports and normalization-to-null artifact equivalence; original values, fresh calls, selected/unselected/deleted and lazy frame behavior. Existing missing-image and supplement-conflict contracts run inside this selector."
       }
     },
     {
       "id": "surface:element.image:/status:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed fileId/status: absent/null/empty/unresolved and invalid IDs, pending/saved/error recovery recipes, scene-over-supplement authority and missing-authority crop silence. Complete exact reports and normalization-to-null artifact equivalence; original values, fresh calls, selected/unselected/deleted and lazy frame behavior. Existing missing-image and supplement-conflict contracts run inside this selector."
       }
     },
     {
       "id": "surface:element.image:/status:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_id_and_status_cover_missing_invalid_and_authoritative_payloads",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed fileId/status: absent/null/empty/unresolved and invalid IDs, pending/saved/error recovery recipes, scene-over-supplement authority and missing-authority crop silence. Complete exact reports and normalization-to-null artifact equivalence; original values, fresh calls, selected/unselected/deleted and lazy frame behavior. Existing missing-image and supplement-conflict contracts run inside this selector."
       }
     },
     {
@@ -16099,25 +16351,88 @@
     {
       "id": "surface:file_record:/$key:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed map-key and record-ID contracts: exact escaped keys and empty-key authority failure; missing/empty/invalid IDs repair once to map key while valid differing IDs do not redirect lookup. Exact reports and artifact equivalence, preserved original bytes, referenced/unreferenced/deleted and selected/lazy frame behavior."
       }
     },
     {
       "id": "surface:file_record:/$key:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed map-key and record-ID contracts: exact escaped keys and empty-key authority failure; missing/empty/invalid IDs repair once to map key while valid differing IDs do not redirect lookup. Exact reports and artifact equivalence, preserved original bytes, referenced/unreferenced/deleted and selected/lazy frame behavior."
       }
     },
     {
       "id": "surface:file_record:/$key:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed map-key and record-ID contracts: exact escaped keys and empty-key authority failure; missing/empty/invalid IDs repair once to map key while valid differing IDs do not redirect lookup. Exact reports and artifact equivalence, preserved original bytes, referenced/unreferenced/deleted and selected/lazy frame behavior."
       }
     },
     {
@@ -16210,49 +16525,175 @@
     {
       "id": "surface:file_record:/dataURL:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed MIME and payload fields through existing exact seven-codec authority/media/malformed/unsupported/decode/forbidden contracts plus per-field original preservation and scene/frame replay. Invalid claims enrich once after validation; absent/nonstring/non-base64 payloads retain specified narrow recovery and source ownership; unreferenced/deleted/nonselected remain silent. Payload codec-profile qualification remains separately owned."
       }
     },
     {
       "id": "surface:file_record:/dataURL:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed MIME and payload fields through existing exact seven-codec authority/media/malformed/unsupported/decode/forbidden contracts plus per-field original preservation and scene/frame replay. Invalid claims enrich once after validation; absent/nonstring/non-base64 payloads retain specified narrow recovery and source ownership; unreferenced/deleted/nonselected remain silent. Payload codec-profile qualification remains separately owned."
       }
     },
     {
       "id": "surface:file_record:/dataURL:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed MIME and payload fields through existing exact seven-codec authority/media/malformed/unsupported/decode/forbidden contracts plus per-field original preservation and scene/frame replay. Invalid claims enrich once after validation; absent/nonstring/non-base64 payloads retain specified narrow recovery and source ownership; unreferenced/deleted/nonselected remain silent. Payload codec-profile qualification remains separately owned."
       }
     },
     {
       "id": "surface:file_record:/id:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed map-key and record-ID contracts: exact escaped keys and empty-key authority failure; missing/empty/invalid IDs repair once to map key while valid differing IDs do not redirect lookup. Exact reports and artifact equivalence, preserved original bytes, referenced/unreferenced/deleted and selected/lazy frame behavior."
       }
     },
     {
       "id": "surface:file_record:/id:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed map-key and record-ID contracts: exact escaped keys and empty-key authority failure; missing/empty/invalid IDs repair once to map key while valid differing IDs do not redirect lookup. Exact reports and artifact equivalence, preserved original bytes, referenced/unreferenced/deleted and selected/lazy frame behavior."
       }
     },
     {
       "id": "surface:file_record:/id:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::file_keys_and_record_ids_preserve_map_authority_and_repair_only_bad_ids",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed map-key and record-ID contracts: exact escaped keys and empty-key authority failure; missing/empty/invalid IDs repair once to map key while valid differing IDs do not redirect lookup. Exact reports and artifact equivalence, preserved original bytes, referenced/unreferenced/deleted and selected/lazy frame behavior."
       }
     },
     {
@@ -16345,25 +16786,88 @@
     {
       "id": "surface:file_record:/mimeType:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed MIME and payload fields through existing exact seven-codec authority/media/malformed/unsupported/decode/forbidden contracts plus per-field original preservation and scene/frame replay. Invalid claims enrich once after validation; absent/nonstring/non-base64 payloads retain specified narrow recovery and source ownership; unreferenced/deleted/nonselected remain silent. Payload codec-profile qualification remains separately owned."
       }
     },
     {
       "id": "surface:file_record:/mimeType:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed MIME and payload fields through existing exact seven-codec authority/media/malformed/unsupported/decode/forbidden contracts plus per-field original preservation and scene/frame replay. Invalid claims enrich once after validation; absent/nonstring/non-base64 payloads retain specified narrow recovery and source ownership; unreferenced/deleted/nonselected remain silent. Payload codec-profile qualification remains separately owned."
       }
     },
     {
       "id": "surface:file_record:/mimeType:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::payload_and_mime_fields_bind_validation_recovery_and_original_bytes",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed MIME and payload fields through existing exact seven-codec authority/media/malformed/unsupported/decode/forbidden contracts plus per-field original preservation and scene/frame replay. Invalid claims enrich once after validation; absent/nonstring/non-base64 payloads retain specified narrow recovery and source ownership; unreferenced/deleted/nonselected remain silent. Payload codec-profile qualification remains separately owned."
       }
     },
     {
@@ -17305,145 +17809,523 @@
     {
       "id": "surface:nested.image_crop:/height:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/height:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/height:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/naturalHeight:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/naturalHeight:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/naturalHeight:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/naturalWidth:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/naturalWidth:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/naturalWidth:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/width:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/width:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/width:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/x:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/x:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/x:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/y:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/y:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {
       "id": "surface:nested.image_crop:/y:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+            "sha256": "5d21b18cdc8e1ad95334c0e35f4d7615971b636be073fa33324928c5586170a0"
+          },
+          "function": "crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "image_field_contract::crop_members_recover_at_narrow_paths_with_scene_or_supplemental_authority",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed crop container/member contract with scene and supplemental authority: absent/null defaults, invalid container substitution and every missing/invalid nested member disabling crop at its narrow pointer. Exact reports, clean artifact oracles, preserved original values, selected/unselected/deleted and lazy frame behavior. Fractional proportional-coordinate equivalence plus independent PNG pixels and authored SVG viewport/PDF matrices cover valid crop offsets and flips."
       }
     },
     {

@@ -83,7 +83,7 @@ fn an_uncropped_fractional_image_fills_the_rounded_viewport_in_svg_and_pdf_and_t
 }
 
 #[test]
-fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_unrounded_center() {
+pub(super) fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_unrounded_center() {
     // A 2x1 green|red source flipped horizontally into 40.5x40.4. The
     // reference mirrors its `<use>` about `cx = width / 2`, so the rounded
     // viewport lands on [-0.5, 40.5] in element space, not [0, 41].
@@ -135,7 +135,8 @@ fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_unrounded_c
 }
 
 #[test]
-fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewport_and_unrounded_content() {
+pub(super) fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewport_and_unrounded_content(
+) {
     // A 3x2 source cropped to its right 2x2 and flipped on both axes into a
     // 20.5x20.5 element. The reference draws the whole image at its unrounded
     // uncropped 30.75x20.5 under the 10.25 crop offset, through a `<use>`
