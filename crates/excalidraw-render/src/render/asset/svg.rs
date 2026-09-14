@@ -22,6 +22,13 @@ pub(crate) struct Failure {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct MediaClaim {
+    pub(crate) path: Vec<(u64, u64)>,
+    pub(crate) claimed: String,
+    pub(crate) validated: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct EffectCause {
     pub(crate) slots: Vec<(u64, u64)>,
     pub(crate) node_ordinal: u64,
@@ -46,6 +53,7 @@ pub(super) struct SanitizedSvg {
     pub(super) height: u32,
     pub(super) removals: Vec<Removal>,
     pub(super) failures: Vec<Failure>,
+    pub(super) media_claims: Vec<MediaClaim>,
     pub(super) effects: Vec<Effect>,
     pub(super) work_units: u64,
     pub(super) working_bytes: u64,
@@ -123,6 +131,7 @@ fn sanitize_at(
     let text = std::str::from_utf8(bytes).map_err(|_| ResolveError::SvgDecodeFailed)?;
     let (text, mut removals) = remove_dtd_and_entities(text)?;
     let mut failures = Vec::new();
+    let mut media_claims = Vec::new();
     let document = roxmltree::Document::parse(&text).map_err(|_| ResolveError::SvgDecodeFailed)?;
     for instruction in document.descendants().filter_map(|node| node.pi()) {
         if instruction.target != "xml" {
@@ -224,6 +233,7 @@ fn sanitize_at(
         &mut serialized,
         &mut removals,
         &mut failures,
+        &mut media_claims,
         &mut effects,
         limits,
         revision,
@@ -246,6 +256,7 @@ fn sanitize_at(
         height,
         removals,
         failures,
+        media_claims,
         effects,
         work_units,
         working_bytes,
@@ -493,6 +504,7 @@ fn serialize_node(
     output: &mut String,
     removals: &mut Vec<Removal>,
     failures: &mut Vec<Failure>,
+    media_claims: &mut Vec<MediaClaim>,
     effects: &mut Vec<Effect>,
     limits: &ResourceLimits,
     revision: CompatibilityRevision,
@@ -573,6 +585,7 @@ fn serialize_node(
                 pending_rasters,
                 removals,
                 failures,
+                media_claims,
                 effects,
                 transact,
                 nested_accounting,
@@ -619,6 +632,7 @@ fn serialize_node(
                 output,
                 removals,
                 failures,
+                media_claims,
                 effects,
                 limits,
                 revision,
@@ -650,6 +664,7 @@ fn sanitize_nested_data_image(
     pending_rasters: &mut BTreeMap<[u8; 32], Arc<super::NormalizedNestedRaster>>,
     removals: &mut Vec<Removal>,
     failures: &mut Vec<Failure>,
+    media_claims: &mut Vec<MediaClaim>,
     effects: &mut Vec<Effect>,
     transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
     nested_accounting: &mut NestedAccounting,
@@ -756,6 +771,12 @@ fn sanitize_nested_data_image(
                 .path
                 .insert(0, (slot_node_ordinal, slot_attribute_ordinal));
             failures.push(failure);
+        }
+        for mut claim in nested.media_claims.iter().cloned() {
+            claim
+                .path
+                .insert(0, (slot_node_ordinal, slot_attribute_ordinal));
+            media_claims.push(claim);
         }
         for mut effect in nested.effects.iter().cloned() {
             for cause in &mut effect.causes {
@@ -877,12 +898,10 @@ fn sanitize_nested_data_image(
         (emitted_type, canonical_bytes.as_ref().clone())
     };
     if claimed_media_type != validated_media_type {
-        removals.push(Removal {
-            slots: Vec::new(),
-            node_ordinal: 0,
-            attribute_ordinal: None,
-            name: "media-type".to_owned(),
-            changes_appearance: false,
+        media_claims.push(MediaClaim {
+            path: vec![(slot_node_ordinal, slot_attribute_ordinal)],
+            claimed: claimed_media_type.to_owned(),
+            validated: validated_media_type.to_owned(),
         });
     }
     let mut canonical = format!("data:{media_type};base64,");

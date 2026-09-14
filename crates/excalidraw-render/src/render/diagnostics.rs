@@ -40,7 +40,10 @@ fn compare_nested_paths(
 ) -> std::cmp::Ordering {
     fn paths(diagnostic: &CompatibilityDiagnostic) -> &[crate::NestedPath] {
         match diagnostic.details() {
-            Some(ErrorDetails::NestedSource { paths, .. }) => paths,
+            Some(
+                ErrorDetails::NestedSource { paths, .. }
+                | ErrorDetails::NestedAssetClaim { paths, .. },
+            ) => paths,
             _ => &[],
         }
     }
@@ -385,6 +388,44 @@ pub(super) fn unsafe_svg_removal_diagnostic(
         None,
         json_pointer,
         "unsafe nested SVG content was removed before rendering",
+    )
+}
+
+pub(super) fn nested_media_claim_diagnostic(
+    format: OutputFormat,
+    asset_id: &str,
+    pointer: &str,
+    claim: &asset::svg::MediaClaim,
+) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    let mut segments = Vec::new();
+    segments.try_reserve_exact(claim.path.len().saturating_mul(2))?;
+    for (node, attribute) in &claim.path {
+        segments.push(crate::NestedPathSegment {
+            kind: crate::NestedSegmentKind::Node,
+            ordinal: *node,
+            name: None,
+        });
+        segments.push(crate::NestedPathSegment {
+            kind: crate::NestedSegmentKind::Attribute,
+            ordinal: *attribute,
+            name: Some(try_owned("href")?),
+        });
+    }
+    let mut paths = Vec::new();
+    paths.try_reserve_exact(1)?;
+    paths.push(crate::NestedPath { segments });
+    PendingDiagnostic::new(
+        DiagnosticKind::NestedMediaTypeMismatch {
+            asset_chain: nested_asset_chain(asset_id)?,
+            paths,
+            claimed_media_type: try_owned(&claim.claimed)?,
+            validated_media_type: try_owned(&claim.validated)?,
+        },
+        format,
+        &[DiagnosticEffect::InputRepair],
+        None,
+        pointer,
+        "nested image media claim was repaired to the validated payload type",
     )
 }
 

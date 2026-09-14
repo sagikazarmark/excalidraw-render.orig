@@ -10,6 +10,118 @@ use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
 
 #[test]
+fn nested_media_claim_repair_preserves_types_and_path() {
+    use base64::Engine;
+    let png = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&png);
+    let svg = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="data:image/jpeg;base64,{encoded}" width="40" height="30"/></svg>"#
+    );
+    let data = format!(
+        "data:image/svg+xml;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(svg)
+    );
+    let source = image_scene(
+        json!([image("image", "outer")]),
+        json!({"outer":{"id":"outer","created":1,"dataURL":data}}),
+    );
+    for format in FORMATS {
+        assert_report(
+            &source,
+            format,
+            json!([expected(
+                "asset.media-type-mismatch",
+                "warning",
+                json!(["input_repair"]),
+                Value::Null,
+                "/files/outer/dataURL",
+                json!({"kind":"nested_asset_claim","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":0,"name":"href"}]}],"claimed_media_type":"image/jpeg","validated_media_type":"image/png","recovery":"repaired"})
+            )]),
+        );
+    }
+}
+
+#[test]
+fn nested_media_claims_keep_recursive_occurrence_identity_and_pixels() {
+    use base64::Engine;
+    let png = crate::common::codec_fixtures::png_rgba(1, 1, &[[255, 0, 0, 255]]);
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&png);
+    let url = |svg: &str| {
+        format!(
+            "data:image/svg+xml;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(svg)
+        )
+    };
+    let make = |claim: &str| {
+        let child = url(&format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><image href="data:{claim};base64,{encoded}" width="40" height="30"/></svg>"#
+        ));
+        url(&format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="80" height="30"><image href="{child}" width="40" height="30"/><image href="{child}" x="40" width="40" height="30"/></svg>"#
+        ))
+    };
+    let data = make("image/jpeg");
+    let file = json!({"id":"outer","created":1,"dataURL":data});
+    let source = image_scene(
+        json!([image("first", "outer"), image("second", "outer")]),
+        json!({"outer":file}),
+    );
+    let repaired = image_scene(
+        json!([image("first", "outer"), image("second", "outer")]),
+        json!({"outer":{"id":"outer","created":1,"dataURL":make("image/png")}}),
+    );
+    for format in FORMATS {
+        let rows:Vec<_>=[1,2].into_iter().map(|ordinal| expected("asset.media-type-mismatch","warning",json!(["input_repair"]),Value::Null,"/files/outer/dataURL",json!({"kind":"nested_asset_claim","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":ordinal,"name":null},{"kind":"attribute","ordinal":0,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":0,"name":"href"}]}],"claimed_media_type":"image/jpeg","validated_media_type":"image/png","recovery":"repaired"}))).collect();
+        assert_report(&source, format, json!(rows.clone()));
+        assert_report(&repaired, format, json!([]));
+        let request = RenderRequest::builder(format).build().unwrap();
+        assert_eq!(
+            Renderer::new()
+                .render(&source, &request)
+                .unwrap()
+                .artifact()
+                .bytes(),
+            Renderer::new()
+                .render(&repaired, &request)
+                .unwrap()
+                .artifact()
+                .bytes()
+        );
+        let framed = image_scene(
+            json!([
+                {"id":"frame","type":"frame","width":100,"height":100,"updated":1},image("first","outer")
+            ]),
+            json!({"outer":file}),
+        );
+        assert_frame_reports(&framed, format, &[json!(rows.clone())]);
+        let request = RenderRequest::builder(format)
+            .supplemental_assets(
+                SupplementalAssets::builder()
+                    .asset(
+                        "outer",
+                        base64::engine::general_purpose::STANDARD
+                            .decode(data.split_once(',').unwrap().1)
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let mut supplemental = rows;
+        for row in &mut supplemental {
+            row["json_pointer"] = json!("");
+        }
+        assert_report_with_request(
+            &scene(json!([image("first", "outer"), image("second", "outer")])),
+            &request,
+            json!(supplemental),
+        );
+        assert_report_with_request(&scene(json!([])), &request, json!([]));
+    }
+}
+
+#[test]
 fn unsafe_svg_categories_follow_static_effects() {
     use base64::Engine;
     for (prefix, body, visual, node) in [
@@ -396,6 +508,8 @@ fn nested_event_handler_removal_keeps_its_full_path_and_semantic_effect() {
 
 #[test]
 fn media_type_contract_in_every_format() {
+    nested_media_claim_repair_preserves_types_and_path();
+    nested_media_claims_keep_recursive_occurrence_identity_and_pixels();
     media_claims_report_each_authoritative_field_once();
     invalid_media_claims_are_enriched_once_after_validation();
     use crate::common::codec_fixtures as f;

@@ -21,7 +21,7 @@ use crate::{
 use super::diagnostics::{
     diagnostic_uses_non_generic_recovery, image_animation_flattened_diagnostic,
     image_asset_failure_diagnostic, image_payload_field_recovery, nested_image_failure_diagnostic,
-    unsafe_svg_removal_diagnostic,
+    nested_media_claim_diagnostic, unsafe_svg_removal_diagnostic,
 };
 use super::resolve::{
     asset_claim_location, asset_failure_location, logical_aligned_bytes, semantic_identity_hex,
@@ -298,26 +298,28 @@ impl ImageResolver {
             if let Ok(resolution) = asset_resolution {
                 let animated = resolution.animated;
                 let media_type = resolution.media_kind.media_type();
-                let svg_diagnostic_location =
-                    if resolution.svg_removals.is_empty() && resolution.svg_failures.is_empty() {
-                        None
-                    } else {
-                        Some(
-                            asset_failure_location(
-                                scene,
-                                request.supplemental_assets(),
-                                file_id,
-                                authority,
-                            )
-                            .map_err(|_| {
-                                session.memory_failure(
-                                    request,
-                                    "compatibility_report",
-                                    "unsafe_svg_location",
-                                )
-                            })?,
+                let svg_diagnostic_location = if resolution.svg_removals.is_empty()
+                    && resolution.svg_failures.is_empty()
+                    && resolution.svg_media_claims.is_empty()
+                {
+                    None
+                } else {
+                    Some(
+                        asset_failure_location(
+                            scene,
+                            request.supplemental_assets(),
+                            file_id,
+                            authority,
                         )
-                    };
+                        .map_err(|_| {
+                            session.memory_failure(
+                                request,
+                                "compatibility_report",
+                                "unsafe_svg_location",
+                            )
+                        })?,
+                    )
+                };
                 for removal in &resolution.svg_removals {
                     let (json_pointer, source_order, source_position, local_owner) =
                         svg_diagnostic_location.as_ref().ok_or_else(|| {
@@ -379,6 +381,36 @@ impl ImageResolver {
                         request,
                         ResourcePhase::SharedSemanticResolution,
                         "nested_image_failure",
+                        diagnostic,
+                        DiagnosticOwnership {
+                            local_owner: Some(local_owner),
+                            source_order: Some(*source_order),
+                            source_position: Some(*source_position),
+                        },
+                    )?;
+                }
+                for claim in &resolution.svg_media_claims {
+                    let (pointer, source_order, source_position, local_owner) =
+                        svg_diagnostic_location.as_ref().ok_or_else(|| {
+                            session.internal_failure(
+                                request.format(),
+                                "nested media claim lost its source location",
+                                "/files",
+                            )
+                        })?;
+                    let diagnostic =
+                        nested_media_claim_diagnostic(request.format(), file_id, pointer, claim)
+                            .map_err(|_| {
+                                session.memory_failure(
+                                    request,
+                                    "compatibility_report",
+                                    "nested_media_claim",
+                                )
+                            })?;
+                    session.retain_diagnostic_with_owner(
+                        request,
+                        ResourcePhase::SharedSemanticResolution,
+                        "nested_media_claim",
                         diagnostic,
                         DiagnosticOwnership {
                             local_owner: Some(local_owner),

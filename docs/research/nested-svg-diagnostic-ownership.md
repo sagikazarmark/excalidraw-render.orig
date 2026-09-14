@@ -40,3 +40,5 @@ Two effect regressions are fixed: script removal is semantic-only because script
 Verification: the new ordering and category regressions pass, along with all 15 sanitizer tests and six diagnostic-order unit tests. All ten Dagger conformance/lint checks and all three Dagger workspace test checks pass. Ownership remains 166 assigned/excluded with 762 gaps. `git diff --check` passes.
 
 The maintainer explicitly approved this follow-up on 2026-09-14, recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5657363810) against commit `d9901e6f28bf2ff37dafa875b1b972b2375c7572`. The approval covers the fixes and partial test evidence, not complete ownership of the remaining nested SVG obligations.
+
+Next follow-up: the user selected a new typed nested MIME detail. The implementation now separates media repairs from removals and preserves full paths and MIME values; see [the implementation and reapproval subjects](nested-claim-reapproval.md). Preparse boundary identity remains to be reviewed.

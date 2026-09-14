@@ -374,6 +374,13 @@ pub(crate) enum DiagnosticKind<'a> {
         asset_chain: Vec<AssetChainEntry>,
         paths: Vec<NestedPath>,
     },
+    /// A nested data URL's advisory media type repaired after validation.
+    NestedMediaTypeMismatch {
+        asset_chain: Vec<AssetChainEntry>,
+        paths: Vec<NestedPath>,
+        claimed_media_type: String,
+        validated_media_type: String,
+    },
     /// A nested data image removed after local recovery: the failure's code
     /// with `nested_source` details.
     NestedImageRemoved {
@@ -450,6 +457,7 @@ impl DiagnosticKind<'_> {
 
     pub(crate) const fn code(&self) -> DiagnosticCode {
         match self {
+            Self::NestedMediaTypeMismatch { .. } => DiagnosticCode::ASSET_MEDIA_TYPE_MISMATCH,
             Self::MissingElementId => DiagnosticCode::NORMALIZATION_MISSING_ELEMENT_ID,
             Self::DuplicateElementId => DiagnosticCode::NORMALIZATION_DUPLICATE_ELEMENT_ID,
             Self::MissingTimestamp => DiagnosticCode::NORMALIZATION_MISSING_TIMESTAMP,
@@ -505,6 +513,18 @@ impl DiagnosticKind<'_> {
     /// The typed details the code requires.
     pub(crate) fn into_details(self) -> Result<ErrorDetails, TryReserveError> {
         Ok(match self {
+            Self::NestedMediaTypeMismatch {
+                asset_chain,
+                paths,
+                claimed_media_type,
+                validated_media_type,
+            } => ErrorDetails::NestedAssetClaim {
+                asset_chain,
+                paths,
+                claimed_media_type,
+                validated_media_type,
+                recovery: Recovery::Repaired,
+            },
             Self::MissingElementId
             | Self::DuplicateElementId
             | Self::MissingTimestamp

@@ -509,6 +509,19 @@ pub enum ErrorDetails {
         /// Recovery applied to the nested source.
         recovery: Recovery,
     },
+    /// Identifies a repaired media claim on a nested image reference.
+    NestedAssetClaim {
+        /// Asset occurrence chain from the scene to the nested source.
+        asset_chain: Vec<AssetChainEntry>,
+        /// Canonical path to the nested reference whose claim was repaired.
+        paths: Vec<NestedPath>,
+        /// Original media type stated by the nested data URL.
+        claimed_media_type: String,
+        /// Media type validated from the nested payload bytes.
+        validated_media_type: String,
+        /// Required repair recovery; the nested content remains present.
+        recovery: Recovery,
+    },
     /// Describes an emitted or fatal PDF raster fallback closure.
     PdfRasterFallback {
         /// Rasterized for a warning; null for a fatal fallback failure.
@@ -535,7 +548,8 @@ impl ErrorDetails {
             | Self::Asset { recovery, .. }
             | Self::MissingGlyph { recovery, .. }
             | Self::Metadata { recovery, .. }
-            | Self::NestedSource { recovery, .. } => Some(*recovery),
+            | Self::NestedSource { recovery, .. }
+            | Self::NestedAssetClaim { recovery, .. } => Some(*recovery),
             Self::ResourceLimit { recovery, .. } | Self::PdfRasterFallback { recovery, .. } => {
                 *recovery
             }
@@ -563,6 +577,7 @@ impl ErrorDetails {
             | Self::SvgFontSubsetFailure { .. }
             | Self::Metadata { .. }
             | Self::NestedSource { .. }
+            | Self::NestedAssetClaim { .. }
             | Self::PdfRasterFallback { .. } => None,
         }
     }

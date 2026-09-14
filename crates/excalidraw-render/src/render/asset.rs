@@ -247,6 +247,7 @@ pub(super) struct Resolution {
     pub(super) media_kind: MediaKind,
     pub(super) svg_removals: Vec<svg::Removal>,
     pub(super) svg_failures: Vec<svg::Failure>,
+    pub(super) svg_media_claims: Vec<svg::MediaClaim>,
 }
 
 struct ValidatedRaster {
@@ -652,6 +653,7 @@ impl Cache {
             media_kind: validated.media_kind,
             svg_removals: Vec::new(),
             svg_failures: Vec::new(),
+            svg_media_claims: Vec::new(),
         })
     }
 
@@ -827,6 +829,11 @@ impl Cache {
             },
             svg_failures: if report_svg_diagnostics {
                 sanitized.failures.clone()
+            } else {
+                Vec::new()
+            },
+            svg_media_claims: if report_svg_diagnostics {
+                sanitized.media_claims.clone()
             } else {
                 Vec::new()
             },
