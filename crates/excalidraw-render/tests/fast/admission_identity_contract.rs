@@ -774,7 +774,7 @@ fn assert_nonparticipating_identity_boundaries() {
 }
 
 #[test]
-fn duplicate_ids_retain_first_occurrence_and_resolve_frame_references() {
+pub(super) fn duplicate_ids_retain_first_occurrence_and_resolve_frame_references() {
     let source = scene(json!([
         {"id":"frame","type":"frame","width":80,"height":60,"updated":0},
         {"id":"frame","type":"magicframe","x":200,"width":80,"height":60,"updated":0},
@@ -804,7 +804,7 @@ fn duplicate_ids_retain_first_occurrence_and_resolve_frame_references() {
 }
 
 #[test]
-fn missing_and_invalid_ids_have_exact_recovery_and_target_participation() {
+pub(super) fn missing_and_invalid_ids_have_exact_recovery_and_target_participation() {
     assert_nonparticipating_identity_boundaries();
     generated_identity_vectors_and_duplicate_collisions_are_stable();
     let mut ids = std::collections::BTreeSet::new();

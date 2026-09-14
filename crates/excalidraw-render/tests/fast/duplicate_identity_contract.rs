@@ -2,7 +2,7 @@
 //! artifact oracle and independently authored complete diagnostic fields.
 use excalidraw_render::{
     FrameOptions, FrameRenderRequest, MetadataOptions, OutputFormat, RenderOutcome, RenderRequest,
-    Renderer, SceneDocument,
+    Renderer, ResourceLimits, SceneDocument,
 };
 use serde_json::{json, Value};
 
@@ -32,7 +32,11 @@ fn expected_duplicate(format: OutputFormat, id: &str, index: usize, visual: bool
 }
 
 fn assert_report(outcome: &RenderOutcome, rows: Value) {
-    let mut actual = serde_json::to_value(outcome.report()).unwrap();
+    assert_report_value(outcome.report(), rows);
+}
+
+fn assert_report_value(report: &excalidraw_render::CompatibilityReport, rows: Value) {
+    let mut actual = serde_json::to_value(report).unwrap();
     for row in actual["diagnostics"].as_array_mut().unwrap() {
         assert!(row["message"].as_str().is_some_and(|s| !s.is_empty()));
         row.as_object_mut().unwrap().remove("message");
@@ -461,5 +465,252 @@ fn text_loss_and_placeholder_effects_repeat_through_frame_batches() {
                 assert_eq!(first.report(), second.report());
             }
         }
+    }
+}
+
+#[test]
+fn duplicate_and_cycle_repairs_have_independent_effects_and_source_order() {
+    for closed_by_consumer in [true, false] {
+        let mut first = rectangle("duplicate", 5);
+        let second = rectangle("duplicate", 45);
+        let mut consumer = rectangle("consumer", 5);
+        first["frameId"] = json!("consumer");
+        consumer["frameId"] = json!("duplicate");
+        // These frame memberships form a cycle even for non-frame records;
+        // the duplicate repair still precedes the later cycle in source order.
+        let mut elements = vec![first, second, consumer];
+        if !closed_by_consumer {
+            elements.swap(0, 2);
+        }
+        let source = scene(json!(elements));
+        for format in FORMATS {
+            let request = RenderRequest::builder(format).build().unwrap();
+            let result = Renderer::new().render(&parse(&source), &request).unwrap();
+            let duplicates: Vec<_> = result
+                .report()
+                .diagnostics()
+                .iter()
+                .filter(|d| d.code().as_str() == "normalization.duplicate-element-id")
+                .collect();
+            assert_eq!(duplicates.len(), 1);
+            let duplicate = duplicates[0];
+            let duplicate_index = if closed_by_consumer { 1 } else { 2 };
+            let mut cycle = expected_duplicate(
+                format,
+                if closed_by_consumer {
+                    "consumer"
+                } else {
+                    "duplicate"
+                },
+                2,
+                true,
+            );
+            cycle["code"] = json!("normalization.relationship-cycle");
+            cycle["json_pointer"] = json!("/elements/2/frameId");
+            cycle["details"]["recovery"] = json!("removed");
+            if !closed_by_consumer {
+                cycle["element_id"] = json!(duplicate.element_id().unwrap());
+            }
+            let mut rows = vec![expected_duplicate(
+                format,
+                duplicate.element_id().unwrap(),
+                duplicate_index,
+                false,
+            )];
+            if closed_by_consumer {
+                rows.push(cycle);
+            }
+            let rows = json!(rows);
+            assert_report(&result, rows.clone());
+            let mut clean = source.clone();
+            clean["elements"][duplicate_index]["id"] = json!(duplicate.element_id().unwrap());
+            if closed_by_consumer {
+                clean["elements"][2]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("frameId");
+            }
+            assert_scene_equivalence(&source, &clean, &request, rows);
+        }
+    }
+}
+
+#[test]
+fn duplicate_cycle_order_and_effects_repeat_in_selected_frame() {
+    let mut first = rectangle("duplicate", 5);
+    first["frameId"] = json!("consumer");
+    let second = rectangle("duplicate", 45);
+    let mut consumer = rectangle("consumer", 5);
+    consumer["frameId"] = json!("duplicate");
+    let source = scene(json!([
+        {"id":"outer","type":"frame","width":100,"height":80,"updated":0},
+        first, second, consumer
+    ]));
+    for format in FORMATS {
+        let request = RenderRequest::builder(format).build().unwrap();
+        let result = Renderer::new().render(&parse(&source), &request).unwrap();
+        let id = result.report().diagnostics()[0].element_id().unwrap();
+        let mut cycle = expected_duplicate(format, "consumer", 3, true);
+        cycle["code"] = json!("normalization.relationship-cycle");
+        cycle["json_pointer"] = json!("/elements/3/frameId");
+        cycle["details"]["recovery"] = json!("removed");
+        let rows = json!([expected_duplicate(format, id, 2, false), cycle]);
+        assert_report(&result, rows.clone());
+        let mut clean = source.clone();
+        clean["elements"][2]["id"] = json!(id);
+        clean["elements"][3]
+            .as_object_mut()
+            .unwrap()
+            .remove("frameId");
+        assert_frames(&source, &clean, format, &[rows]);
+    }
+}
+
+/// One executable primary owner for the complete identity field contract;
+/// missing/invalid ID recovery and exact hash vectors remain in their focused
+/// module, while all duplicate scenarios run here rather than relying on sibling
+/// tests being selected by an imprecise filter.
+#[test]
+fn identity_and_duplicate_relationship_contract_in_every_format() {
+    super::admission_identity_contract::missing_and_invalid_ids_have_exact_recovery_and_target_participation();
+    super::admission_identity_contract::duplicate_ids_retain_first_occurrence_and_resolve_frame_references();
+    duplicate_frame_identity_reports_the_channels_consuming_disambiguation();
+    endpoint_disambiguation_changes_frame_selection_but_not_stored_scene_geometry();
+    duplicate_bound_container_reports_visual_and_semantic_disambiguation();
+    reverse_bound_text_disambiguation_and_silence_follow_reciprocity();
+    duplicate_occurrences_are_independent_and_preserved_in_source_order();
+    frame_opacity_and_target_scope_select_duplicate_effects();
+    empty_text_does_not_consume_disambiguated_frame_opacity();
+    nonreciprocal_first_container_disambiguation_reports_text_loss();
+    retained_placeholders_consume_disambiguated_frame_opacity();
+    text_loss_and_placeholder_effects_repeat_through_frame_batches();
+    duplicate_and_cycle_repairs_have_independent_effects_and_source_order();
+    duplicate_cycle_order_and_effects_repeat_in_selected_frame();
+    duplicate_reports_survive_diagnostic_and_output_failures_in_scene_and_frames();
+}
+
+#[test]
+fn duplicate_reports_survive_diagnostic_and_output_failures_in_scene_and_frames() {
+    let mut source = duplicate_frame_scene();
+    // A second late repair gives a diagnostic-count crossing after the first
+    // duplicate is retained, before relationships have been resolved.
+    source["elements"][2]
+        .as_object_mut()
+        .unwrap()
+        .remove("updated");
+    let document = parse(&source);
+    for format in FORMATS {
+        let limits = ResourceLimits::builder()
+            .max_diagnostics(1)
+            .build()
+            .unwrap();
+        let request = RenderRequest::builder(format)
+            .resource_limits(limits.clone())
+            .build()
+            .unwrap();
+        let first = Renderer::new().render(&document, &request).unwrap_err();
+        let second = Renderer::new().render(&document, &request).unwrap_err();
+        assert_eq!(first.code().as_str(), "resource.diagnostic-count-exceeded");
+        assert_eq!(first.json_pointer(), "/elements/2/updated");
+        assert_eq!(
+            serde_json::to_vec(&first.descriptor()).unwrap(),
+            serde_json::to_vec(&second.descriptor()).unwrap()
+        );
+        assert_eq!(
+            serde_json::to_vec(first.report()).unwrap(),
+            serde_json::to_vec(second.report()).unwrap()
+        );
+        let diagnostics = first.report().diagnostics();
+        assert_eq!(diagnostics.len(), 1);
+        // No channel has been resolved at this crossing; the accumulated
+        // normalization report truthfully records only the identity repair.
+        assert_report_value(
+            first.report(),
+            json!([expected_duplicate(
+                format,
+                diagnostics[0].element_id().unwrap(),
+                1,
+                false
+            )]),
+        );
+
+        let frame_request = FrameRenderRequest::builder(format)
+            .resource_limits(limits)
+            .build()
+            .unwrap();
+        let renderer = Renderer::new();
+        let frames: Vec<_> = document.frames().collect();
+        let mut batch = renderer
+            .render_frames(&document, frames.iter().copied(), &frame_request)
+            .unwrap();
+        for frame in &frames {
+            // Each independent target has just one of the two repairs.
+            let direct = renderer.render_frame(*frame, &frame_request).unwrap();
+            let replay = batch.next().unwrap().into_result().unwrap();
+            assert_eq!(direct.report(), replay.report());
+            assert_eq!(direct.artifact().bytes(), replay.artifact().bytes());
+            assert_eq!(direct.report().diagnostics().len(), 1);
+        }
+        assert!(batch.next().is_none());
+
+        for frame in &frames {
+            let ordinary = FrameRenderRequest::builder(format).build().unwrap();
+            let baseline = renderer.render_frame(*frame, &ordinary).unwrap();
+            let size = baseline.artifact().bytes().len() as u64;
+            for ceiling in [size - 1, size, size + 1] {
+                let request = FrameRenderRequest::builder(format)
+                    .resource_limits(
+                        ResourceLimits::builder()
+                            .max_output_bytes(ceiling)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                let direct = renderer.render_frame(*frame, &request);
+                let replay = renderer
+                    .render_frames(&document, [*frame], &request)
+                    .unwrap()
+                    .next()
+                    .unwrap()
+                    .into_result();
+                if ceiling < size {
+                    let direct = direct.unwrap_err();
+                    let replay = replay.unwrap_err();
+                    assert_eq!(direct.code().as_str(), "resource.output-bytes-exceeded");
+                    assert_eq!(
+                        serde_json::to_value(direct.descriptor()).unwrap(),
+                        serde_json::to_value(replay.descriptor()).unwrap()
+                    );
+                    assert_eq!(direct.report(), baseline.report());
+                    assert_eq!(direct.report(), replay.report());
+                } else {
+                    let direct = direct.unwrap();
+                    let replay = replay.unwrap();
+                    assert_eq!(direct.artifact().bytes(), baseline.artifact().bytes());
+                    assert_eq!(direct.artifact().bytes(), replay.artifact().bytes());
+                    assert_eq!(direct.report(), baseline.report());
+                }
+            }
+        }
+        let default = RenderRequest::builder(format)
+            .frame_options(FrameOptions::new(true, true, false, false))
+            .build()
+            .unwrap();
+        let baseline = renderer.render(&document, &default).unwrap();
+        let request = RenderRequest::builder(format)
+            .frame_options(FrameOptions::new(true, true, false, false))
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(baseline.artifact().bytes().len() as u64 - 1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let failure = renderer.render(&document, &request).unwrap_err();
+        assert_eq!(failure.code().as_str(), "resource.output-bytes-exceeded");
+        // After relationships resolve, failure retains the enriched report.
+        assert_eq!(failure.report(), baseline.report());
     }
 }

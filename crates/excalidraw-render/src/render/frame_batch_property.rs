@@ -211,6 +211,82 @@ fn peak_working_bytes(trace: &[u8]) -> Option<u64> {
         .max()
 }
 
+/// The duplicate-ID effect correction happens after relationship resolution.
+/// Crossings before/during/after that boundary must replay the same accumulated
+/// report and ledger, even for a target that excludes the duplicate occurrence.
+#[test]
+fn duplicate_identity_cycle_and_resource_boundaries_replay_exact_traces() {
+    let source = br#"{"type":"excalidraw","version":2,"elements":[
+        {"id":"duplicate","type":"frame","width":80,"height":60,"updated":0},
+        {"id":"duplicate","type":"magicframe","x":20,"width":80,"height":60,"updated":0},
+        {"id":"child","type":"rectangle","x":5,"y":5,"width":30,"height":20,"seed":1,"frameId":"duplicate"},
+        {"id":"cycle","type":"rectangle","x":10,"y":10,"width":10,"height":10,"seed":1,"updated":0,"frameId":"cycle"}
+    ],"appState":{},"files":{}}"#;
+    let scene = SceneDocument::parse(source).unwrap();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        for frame in scene.frames().collect::<Vec<_>>().into_iter().rev() {
+            let request = FrameRenderRequest::builder(format).build().unwrap();
+            let (outcome, bytes) =
+                render_frame_with_trace(&crate::catalog::REVISION_1, frame, &request, None);
+            assert!(outcome.is_ok());
+            let trace: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            let mut work_boundaries = std::collections::BTreeSet::new();
+            let mut seen_normalization = false;
+            let mut seen_relationship = false;
+            for entry in trace["entries"].as_array().unwrap() {
+                let event = entry["event"].as_str().unwrap_or_default();
+                if event == "normalization_repair" || event.starts_with("relationship_") {
+                    seen_normalization |= event == "normalization_repair";
+                    seen_relationship |= event.starts_with("relationship_");
+                    work_boundaries.insert(entry["after"]["total_work_units"].as_u64().unwrap());
+                }
+            }
+            assert!(
+                seen_normalization && seen_relationship,
+                "trace must exercise both boundaries"
+            );
+            for n in work_boundaries {
+                for boundary in [n.saturating_sub(1).max(1), n, n + 1] {
+                    let limits = ResourceLimits::builder()
+                        .max_total_work_units(boundary)
+                        .max_element_work_units(boundary)
+                        .max_asset_work_units(boundary)
+                        .build()
+                        .unwrap();
+                    assert_batch_matches_standalone(
+                        &scene,
+                        frame,
+                        format,
+                        limits,
+                        "duplicate/cycle work boundary",
+                    );
+                }
+            }
+            for diagnostics in [1, 2, 3] {
+                assert_batch_matches_standalone(
+                    &scene,
+                    frame,
+                    format,
+                    ResourceLimits::builder()
+                        .max_diagnostics(diagnostics)
+                        .build()
+                        .unwrap(),
+                    "duplicate/cycle diagnostic boundary",
+                );
+            }
+            for limits in limit_ladder(format, frame, "duplicate/cycle") {
+                assert_batch_matches_standalone(
+                    &scene,
+                    frame,
+                    format,
+                    limits,
+                    "duplicate/cycle output and memory boundary",
+                );
+            }
+        }
+    }
+}
+
 /// Builds one scene of frames plus elements distributed over the placement
 /// classes that frame selection distinguishes: inside, crossing, outside, and
 /// bound to a frame by `frameId`.

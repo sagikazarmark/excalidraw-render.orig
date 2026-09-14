@@ -56,6 +56,9 @@ private string-based channel classification remain architecture follow-ups.
 
 ## Ownership status
 
+The following describes the previous checkpoint; the six assignments are now
+completed as recorded below.
+
 The six broad `/id` and duplicate-ID obligations remain explicit gaps. This
 batch improves implementation and evidence, but does not yet establish the full
 cycle-removal interaction and resource-boundary/trace matrix required for those
@@ -79,3 +82,47 @@ ownership. #85 remains open.
 - Two-axis review: unchecked indexing corrected; all demonstrated Spec
   production defects corrected and rechecked. Remaining ownership and repeated
   scan/representation concerns are explicitly retained above.
+
+## Ownership completion
+
+Follow-up base: `3afa93fd51070f5ea340d729266970577f793faa`.
+
+The remaining focused questions are resolved:
+
+- First-occurrence alias resolution can create or avoid a cycle. Authored
+  reports establish duplicate/cycle order, the closing-edge pointer and separate
+  effects, with a clean disambiguated/cycle-free artifact oracle. Selected-frame
+  execution agrees with lazy batch execution.
+- A diagnostic-count failure during normalization retains the input-repair-only
+  report accumulated before relationships resolve. A later output failure
+  retains enriched effects. No future output channels are claimed at the early
+  crossing. Both have repeatable complete serialized reports and descriptors.
+- Per-target diagnostic budgets remain independent. Output N−1/N/N+1 probes
+  verify failure versus success and standalone/lazy equality.
+- `render::frame_batch_property::duplicate_identity_cycle_and_resource_boundaries_replay_exact_traces`
+  uses the existing private trace seam to compare complete cold/prepared traces,
+  outcomes, failure locations and reports at work boundaries around normalization
+  and relationship events, diagnostic ceilings, peak memory and output limits.
+  These are fresh relative comparisons, not historical trace pins (ADR-0002).
+
+The single executable primary owner is
+`duplicate_identity_contract::identity_and_duplicate_relationship_contract_in_every_format`.
+It executes all existing duplicate scenarios, the new cycle/failure contracts,
+and the missing/invalid identity qualification helpers. The admission module is
+independently source-bound by existing owners; the trace test executes in the
+ordinary library test tier. No production change was required in this follow-up.
+
+The six `/id` field and duplicate-ID diagnostic obligations now have owners in
+SVG, PNG and PDF. Totals: **550 assigned / 378 gaps** (227 surface and 151 other).
+The user's continuing approval authorization covers these six selections, whose
+exact executable, source binding and rationale are recorded in the ledger.
+Global coverage closure remains incomplete.
+
+Two-axis review: 0 Spec findings; 0 hard Standards violations and one low-priority
+test-helper duplication suggestion. The Spec review explicitly supports all six
+assignments within the requested cycle/resource scope.
+
+Completion verification: the exact consolidated owner and focused trace test
+pass; workspace/all-target typechecking and all ten canonical Dagger
+conformance/lint checks pass. The final full workspace fast/render/doctest suite
+passed in 13m24s. No snapshot or renderer producer changed in this completion.
