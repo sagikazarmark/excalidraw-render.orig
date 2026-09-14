@@ -1,7 +1,7 @@
 # Nested-claim downstream binding refresh
 
 Clean tested commit: `73a1560c83eafb68914a9ab548532d1099202baa`.
-Status: candidates verified; **separate #44 and #85 approvals pending**.
+Candidates committed as `7612116`. Status: **both approvals recorded; PDF binding and packaged replay passing**.
 
 ## #44 PDF expectation subject
 
@@ -42,12 +42,17 @@ are untouched and approval is null. `native-baseline-approval-subject` validates
 the staged subject. Previous subject:
 `sha256:56aa7e51d3990375b31bea1198f2c262871c5a7dbfd59344b2254cdf35c52721`.
 
-## Next
+## Recorded approvals and checks
 
-Record explicit approval for each exact subject on its scoped issue, then run
-the PDF binding test, approved baseline validation and canonical packaged replay.
-Existing case approval does not grant these separate approvals. Approval-gated
-checks remain pending until recording; `git diff --check` passes.
+The maintainer explicitly approved both exact subjects on 2026-09-14:
+
+- [#44 PDF approval](https://github.com/sagikazarmark/excalidraw-render.orig/issues/44#issuecomment-5662705238)
+- [#85 baseline approval](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5662705380)
+
+The unchanged PDF binding test and `verify-native-baseline` pass after recording.
+`dagger check excalidraw-render:packaging:snapshot-replay` passed in 5m21s on the
+working tree based on `7612116`, freshly matching all 168 expectations. These
+approvals are separate from the case approvals. `git diff --check` passes.
 
 Global ownership remains 166 proposed owners / 762 gaps. #178 and the outstanding
 nested SVG diagnostic coverage are not waived by this binding-only refresh.

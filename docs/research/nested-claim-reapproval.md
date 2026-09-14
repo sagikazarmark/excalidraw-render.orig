@@ -1,6 +1,6 @@
 # Nested media-claim diagnostic: implementation and reapproval
 
-Base: `d6ac707`. Implementation committed as `8e82246`. Status: **implementation and all 36 case subjects explicitly approved and recorded**; separate PDF/snapshot refreshes remain pending.
+Base: `d6ac707`. Implementation committed as `8e82246`. Status: **implementation, all 36 case subjects, and separate PDF/snapshot refreshes approved and verified**.
 
 The user selected a new typed nested detail to preserve both source location and MIME values. `nested_asset_claim` carries, in order: asset chain, paths, claimed media type, validated media type and `repaired` recovery. It is emitted under `asset.media-type-mismatch` with `input_repair` effects and no recipe. The path contains every enclosing image node/href pair. Claimed/validated strings are required, since this event occurs only after successful nested validation.
 

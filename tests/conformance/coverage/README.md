@@ -185,10 +185,12 @@ until those discrepancies are fixed. See [the findings](../../../docs/research/w
 
 ### Canonical baseline approval and replay
 
-`native-baseline/revision-1.json` currently stages the clean `73a1560` recollection
+`native-baseline/revision-1.json` contains the approved clean `73a1560` recollection
 after nested-claim registry reapproval. All 168 artifact/report pairs and 187
 blobs match the prior baseline exactly; refreshed input bindings and provenance
-await approval of `sha256:3296d5a63885e443cd191fcacf6f0924656e81fb434640564a3e753b49b9f890`.
+were approved on 2026-09-14 in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5662705380),
+subject `sha256:3296d5a63885e443cd191fcacf6f0924656e81fb434640564a3e753b49b9f890`.
+Canonical packaged replay passes.
 See [the nested-claim binding refresh](../../../docs/research/nested-claim-binding-refresh.md).
 
 The preceding baseline contains the approved clean `3836a21` recollection
