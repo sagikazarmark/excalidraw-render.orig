@@ -115,9 +115,16 @@ Dispositions are strict tagged objects:
 Approval verification is offline: it checks the exact subject and scoped GitHub
 comment URL syntax, not remote comment existence or authorship. The maintainer's
 recorded decision remains the authority, as in the existing case approval system.
-The narrow test adapter rejects files with attributes other than `#[test]`, and
-conditional or attributed owner module declarations; it is not a general Rust
-parser or substitute for compiled test execution. Live source hashes are excluded
+The test adapter parses Rust syntax and requires exactly one top-level external
+module and one top-level `#[test]` function for the selected owner. Comments,
+strings, nested scopes, conditional/ignored tests, module path redirection and
+unknown attributes at the selected boundaries cannot establish ownership. Doc
+attributes and unrelated test attributes are allowed. This source check does not
+resolve imports or expand macros: imports named `test`, glob imports, item macro
+invocations and macro-use imports in the checked scopes require an explicit
+adapter rather than guessing whether `#[test]` is built-in. The test marker must
+be an outer attribute. These checks do not replace compiled test execution.
+Live source hashes are excluded
 from the final ownership decision subject for test owners, preserving producer-only
 approval scope when unrelated consuming tests change.
 

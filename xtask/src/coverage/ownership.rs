@@ -260,31 +260,100 @@ fn check_evidence(evidence: &Evidence) -> Result<(), String> {
     Ok(())
 }
 
+fn may_import_test_attribute(tree: &syn::UseTree) -> bool {
+    use syn::ext::IdentExt;
+    match tree {
+        syn::UseTree::Path(path) => may_import_test_attribute(&path.tree),
+        syn::UseTree::Name(name) => name.ident.unraw() == "test",
+        syn::UseTree::Rename(rename) => rename.rename.unraw() == "test",
+        syn::UseTree::Glob(_) => true,
+        syn::UseTree::Group(group) => group.items.iter().any(may_import_test_attribute),
+    }
+}
+
+fn check_test_attribute_scope(file: &syn::File) -> Result<(), String> {
+    // This adapter does not resolve imports or expand macros. Reject scopes
+    // that could replace the built-in test attribute instead of guessing.
+    for item in &file.items {
+        let ambiguous = match item {
+            syn::Item::Use(item) => may_import_test_attribute(&item.tree),
+            syn::Item::Macro(item) => item.ident.is_none(),
+            syn::Item::ExternCrate(item) => {
+                item.attrs.iter().any(|a| a.path().is_ident("macro_use"))
+            }
+            syn::Item::Mod(item) => item.attrs.iter().any(|a| a.path().is_ident("macro_use")),
+            _ => false,
+        };
+        if ambiguous {
+            return Err("test owner scope may shadow the built-in test attribute".into());
+        }
+    }
+    Ok(())
+}
+
 fn unconditional_test(
     source: &str,
     main: &str,
     module: &str,
     function: &str,
 ) -> Result<(), String> {
-    // Narrow source adapter, not a Rust parser: reject conditional/ignored or
-    // macro-attributed modules entirely instead of claiming they execute.
-    for line in source.lines().map(str::trim) {
-        if line.starts_with("#[") && line != "#[test]" || line.starts_with("#![") {
-            return Err("test owner contains unsupported attributes (conditional/ignored tests are not owners)".into());
-        }
-    }
-    if main.contains("#[cfg") || main.contains("#![") || main.contains("#[ignore") {
+    // Resolve the actual top-level syntax, not textual anchors in comments,
+    // strings or nested scopes. Unknown attributes fail closed at the selected
+    // module/test boundary; unrelated consuming tests need not share its policy.
+    let main = syn::parse_file(main).map_err(|e| format!("invalid test binary source: {e}"))?;
+    check_test_attribute_scope(&main)?;
+    if main.attrs.iter().any(|attr| !attr.path().is_ident("doc")) {
         return Err("test binary contains conditional attributes".into());
     }
-    let lines: Vec<_> = main.lines().collect();
-    let at = lines
+    let modules: Vec<_> = main
+        .items
         .iter()
-        .position(|l| *l == format!("mod {module};"))
-        .ok_or("test owner module is not compiled")?;
-    if at > 0 && lines[at - 1].trim().starts_with("#[") {
+        .filter_map(|item| match item {
+            syn::Item::Mod(item) if item.ident == module => Some(item),
+            _ => None,
+        })
+        .collect();
+    if modules.len() != 1 || modules[0].content.is_some() {
+        return Err("test owner module is not compiled".into());
+    }
+    if modules[0]
+        .attrs
+        .iter()
+        .any(|attr| !attr.path().is_ident("doc"))
+    {
         return Err("test owner module has unsupported attributes".into());
     }
-    if !source.contains(&format!("#[test]\nfn {function}(")) {
+    let source = syn::parse_file(source).map_err(|e| format!("invalid test owner source: {e}"))?;
+    check_test_attribute_scope(&source)?;
+    if source.attrs.iter().any(|attr| !attr.path().is_ident("doc")) {
+        return Err("test owner source contains unsupported attributes".into());
+    }
+    let functions: Vec<_> = source
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            syn::Item::Fn(item) if item.sig.ident == function => Some(item),
+            _ => None,
+        })
+        .collect();
+    if functions.len() != 1 {
+        return Err("test owner function is not an unconditional test".into());
+    }
+    let attrs = &functions[0].attrs;
+    if attrs
+        .iter()
+        .filter(|attr| {
+            matches!(attr.style, syn::AttrStyle::Outer)
+                && matches!(&attr.meta, syn::Meta::Path(path) if path.is_ident("test"))
+        })
+        .count()
+        != 1
+        || attrs.iter().any(|attr| {
+            !attr.path().is_ident("doc")
+                && !(matches!(attr.style, syn::AttrStyle::Outer)
+                    && matches!(&attr.meta, syn::Meta::Path(path) if path.is_ident("test")))
+        })
+    {
         return Err("test owner function is not an unconditional test".into());
     }
     Ok(())
@@ -374,13 +443,9 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
                         let main =
                             String::from_utf8(read("crates/excalidraw-render/tests/fast/main.rs")?)
                                 .map_err(|e| e.to_string())?;
-                        if !main.lines().any(|l| l == format!("mod {module};")) {
-                            return Err("test owner module is not compiled".into());
+                        if descriptor(&source.path)? != *source {
+                            return Err("stale ownership evidence".into());
                         }
-                        check_evidence(&Evidence {
-                            source: source.clone(),
-                            anchor: format!("#[test]\nfn {function}("),
-                        })?;
                         let source_text =
                             String::from_utf8(read(&source.path)?).map_err(|e| e.to_string())?;
                         unconditional_test(&source_text, &main, module, function)?;
@@ -558,6 +623,49 @@ mod tests {
     }
 
     #[test]
+    fn commented_out_test_is_not_an_executable_owner() {
+        for source in [
+            "/*\n#[test]\nfn example() {}\n*/",
+            "const TEXT: &str = r#\"\n#[test]\nfn example() {}\n\"#;",
+            "mod nested {\n#[test]\nfn example() {}\n}",
+        ] {
+            assert!(unconditional_test(source, "mod sample;", "sample", "example").is_err());
+        }
+    }
+
+    #[test]
+    fn non_compiled_or_redirected_module_is_not_an_executable_owner() {
+        let source = "#[test]\nfn example() {}";
+        for main in [
+            "/*\nmod sample;\n*/",
+            "const TEXT: &str = r#\"\nmod sample;\n\"#;",
+            "mod other {\nmod sample;\n}",
+            "#[cfg(any())]\n\nmod sample;",
+            "#[path = \"other.rs\"]\n// a redirect is not the hashed file\nmod sample;",
+            "#[path = \"other.rs\"]\n\nmod sample;",
+        ] {
+            assert!(
+                unconditional_test(source, main, "sample", "example").is_err(),
+                "accepted noncompiled module: {main}"
+            );
+        }
+    }
+
+    #[test]
+    fn inline_conditional_or_ignored_test_is_not_an_executable_owner() {
+        for source in [
+            "const _: () = (); #[cfg(any())]\n#[test]\nfn example() {}",
+            "const _: () = (); #[ignore]\n#[test]\nfn example() {}",
+            "const _: () = (); #[cfg_attr(test, ignore)]\n#[test]\nfn example() {}",
+        ] {
+            assert!(
+                unconditional_test(source, "mod sample;", "sample", "example").is_err(),
+                "accepted nonexecuting test: {source}"
+            );
+        }
+    }
+
+    #[test]
     fn ignored_and_conditional_owners_are_rejected() {
         let source = "#[test]\nfn example() {}";
         unconditional_test(source, "mod sample;", "sample", "example").unwrap();
@@ -576,6 +684,43 @@ mod tests {
                 "example"
             )
             .is_err());
+        }
+    }
+
+    #[test]
+    fn shadowable_or_inner_test_attributes_do_not_establish_ownership() {
+        for source in [
+            "use custom::discard as test; #[test]\nfn example() {}",
+            "use custom::discard as r#test; #[test]\nfn example() {}",
+            "use custom::r#test; #[test]\nfn example() {}",
+            "use custom::{self, test}; #[test]\nfn example() {}",
+            "use custom::*; #[test]\nfn example() {}",
+            "inject_test_attribute!(); #[test]\nfn example() {}",
+            "fn example() { #![test] }",
+            "#[test] fn example() { #![test] }",
+        ] {
+            assert!(
+                unconditional_test(source, "mod sample;", "sample", "example").is_err(),
+                "accepted {source}"
+            );
+        }
+    }
+
+    #[test]
+    fn owner_selection_uses_syntax_without_restricting_unrelated_tests() {
+        unconditional_test(
+            "//! Module documentation\n#[ignore]\n#[test]\nfn unrelated() {}\n/// Owner documentation\n#[test] pub fn example () {}",
+            "//! Binary documentation\n#[path = \"../common/mod.rs\"] mod common;\n/// Owner module\nmod sample ;",
+            "sample",
+            "example",
+        ).unwrap();
+        for source in [
+            "#![cfg(any())]\n#[test]\nfn example() {}",
+            "#![cfg_attr(test, ignore)]\n#[test]\nfn example() {}",
+            "#[test]\nfn example() {}\n#[test]\nfn example() {}",
+            "#[test = \"invalid\"]\nfn example() {}",
+        ] {
+            assert!(unconditional_test(source, "mod sample;", "sample", "example").is_err());
         }
     }
 
