@@ -18,7 +18,7 @@ const SCENE: &[u8] = br##"{
 }"##;
 
 #[test]
-fn rough_fills_and_stroke_variants_render_directly_in_every_format() {
+pub(super) fn rough_fills_and_stroke_variants_render_directly_in_every_format() {
     let scene = SceneDocument::parse(SCENE).expect("style scene is admitted");
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
@@ -67,7 +67,7 @@ fn rough_fills_and_stroke_variants_render_directly_in_every_format() {
 }
 
 #[test]
-fn dots_dashed_and_zigzag_line_fills_render_undiagnosed_in_every_format() {
+pub(super) fn dots_dashed_and_zigzag_line_fills_render_undiagnosed_in_every_format() {
     // The three fillers ported for #137 render through the same Rough
     // `Drawing` as the other four, so every format paints them and none
     // diagnoses the value; before the port each was substituted by `solid`
@@ -150,7 +150,7 @@ fn dots_dashed_and_zigzag_line_fills_render_undiagnosed_in_every_format() {
 }
 
 #[test]
-fn patterned_curved_boundaries_match_pinned_js_sampling() {
+pub(super) fn patterned_curved_boundaries_match_pinned_js_sampling() {
     let scene = SceneDocument::parse(br##"{
       "type":"excalidraw","version":2,
       "elements":[

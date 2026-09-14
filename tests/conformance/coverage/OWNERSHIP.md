@@ -18,9 +18,11 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **928** | |
 
-550 primary owners are proposed (118 case labels, the AVIF rejection test,
-53 diagnostic/format obligations and 378 surface-field/format obligations).
-378 obligations remain explicit gaps. Duplicate-ID closure is assessed in
+604 primary owners are proposed (118 case labels, the AVIF rejection test,
+53 diagnostic/format obligations and 432 surface-field/format obligations).
+324 obligations remain explicit gaps. Geometry/style/color assignments are
+assessed in [the geometry audit](../../../docs/research/geometry-style-ownership.md).
+Duplicate-ID closure is assessed in
 [the duplicate identity audit](../../../docs/research/duplicate-identity-ownership.md#ownership-completion).
 Admission/identity additions are assessed
 in [the admission audit](../../../docs/research/admission-identity-ownership.md).

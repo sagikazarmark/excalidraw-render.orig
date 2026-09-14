@@ -1093,6 +1093,12 @@ impl PngPlan {
                         source_rect,
                         scale,
                     } => {
+                        // A degenerate destination paints no pixels. Avoid
+                        // inverting its singular transform after a dimension
+                        // default/recovery has legitimately produced zero.
+                        if *width == 0.0 || *height == 0.0 {
+                            continue;
+                        }
                         if source.id().is_empty() || source.pointer().is_empty() {
                             return Err(FormatEncodeError::Encoding(
                                 "PNG image lost its source identity".to_owned(),

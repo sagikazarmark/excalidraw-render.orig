@@ -25,7 +25,7 @@ const COLORED_RECTANGLE: &[u8] = br##"{
 }"##;
 
 #[test]
-fn chromium_css_colors_are_canonicalized_for_every_projection() {
+pub(super) fn chromium_css_colors_are_canonicalized_for_every_projection() {
     let svg = render_source(COLORED_RECTANGLE, OutputFormat::Svg);
     let svg = std::str::from_utf8(svg.artifact().bytes()).expect("SVG is UTF-8");
     assert!(svg.contains("fill=\"#663399\""));
@@ -44,7 +44,7 @@ fn chromium_css_colors_are_canonicalized_for_every_projection() {
 }
 
 #[test]
-fn canonical_color_alpha_is_preserved_by_every_projection() {
+pub(super) fn canonical_color_alpha_is_preserved_by_every_projection() {
     let source = br##"{
         "type":"excalidraw",
         "version":2,
@@ -91,7 +91,7 @@ fn canonical_color_alpha_is_preserved_by_every_projection() {
 }
 
 #[test]
-fn element_opacity_multiplies_color_alpha_in_every_projection() {
+pub(super) fn element_opacity_multiplies_color_alpha_in_every_projection() {
     let source = br##"{
         "type":"excalidraw",
         "version":2,
@@ -142,7 +142,7 @@ fn element_opacity_multiplies_color_alpha_in_every_projection() {
 }
 
 #[test]
-fn dark_mode_lowers_scene_colors_before_every_projection() {
+pub(super) fn dark_mode_lowers_scene_colors_before_every_projection() {
     let source = br##"{
         "type":"excalidraw",
         "version":2,

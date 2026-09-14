@@ -11883,25 +11883,88 @@
     {
       "id": "surface:app_state:/viewBackgroundColor:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "color_fields_have_canonical_values_recovery_and_request_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::color_fields_have_canonical_values_recovery_and_request_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed color contract: field-specific defaults, malformed JSON/CSS repairs and canonical named/hex/functional colors across all kinds; ignored/deleted/selected participation and full preserved originals. Existing independent alpha/dark-mode channel oracles are executed. Global background recovery is checked with embedding and direct/lazy empty and populated frame targets, background inclusion and light/dark requests."
       }
     },
     {
       "id": "surface:app_state:/viewBackgroundColor:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "color_fields_have_canonical_values_recovery_and_request_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::color_fields_have_canonical_values_recovery_and_request_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed color contract: field-specific defaults, malformed JSON/CSS repairs and canonical named/hex/functional colors across all kinds; ignored/deleted/selected participation and full preserved originals. Existing independent alpha/dark-mode channel oracles are executed. Global background recovery is checked with embedding and direct/lazy empty and populated frame targets, background inclusion and light/dark requests."
       }
     },
     {
       "id": "surface:app_state:/viewBackgroundColor:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "color_fields_have_canonical_values_recovery_and_request_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::color_fields_have_canonical_values_recovery_and_request_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed color contract: field-specific defaults, malformed JSON/CSS repairs and canonical named/hex/functional colors across all kinds; ignored/deleted/selected participation and full preserved originals. Existing independent alpha/dark-mode channel oracles are executed. Global background recovery is checked with embedding and direct/lazy empty and populated frame targets, background inclusion and light/dark requests."
       }
     },
     {
@@ -12588,49 +12651,175 @@
     {
       "id": "surface:element.common:/angle:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/angle:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/angle:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/backgroundColor:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "color_fields_have_canonical_values_recovery_and_request_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::color_fields_have_canonical_values_recovery_and_request_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed color contract: field-specific defaults, malformed JSON/CSS repairs and canonical named/hex/functional colors across all kinds; ignored/deleted/selected participation and full preserved originals. Existing independent alpha/dark-mode channel oracles are executed. Global background recovery is checked with embedding and direct/lazy empty and populated frame targets, background inclusion and light/dark requests."
       }
     },
     {
       "id": "surface:element.common:/backgroundColor:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "color_fields_have_canonical_values_recovery_and_request_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::color_fields_have_canonical_values_recovery_and_request_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed color contract: field-specific defaults, malformed JSON/CSS repairs and canonical named/hex/functional colors across all kinds; ignored/deleted/selected participation and full preserved originals. Existing independent alpha/dark-mode channel oracles are executed. Global background recovery is checked with embedding and direct/lazy empty and populated frame targets, background inclusion and light/dark requests."
       }
     },
     {
       "id": "surface:element.common:/backgroundColor:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "color_fields_have_canonical_values_recovery_and_request_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::color_fields_have_canonical_values_recovery_and_request_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed color contract: field-specific defaults, malformed JSON/CSS repairs and canonical named/hex/functional colors across all kinds; ignored/deleted/selected participation and full preserved originals. Existing independent alpha/dark-mode channel oracles are executed. Global background recovery is checked with embedding and direct/lazy empty and populated frame targets, background inclusion and light/dark requests."
       }
     },
     {
@@ -12771,25 +12960,88 @@
     {
       "id": "surface:element.common:/fillStyle:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/fillStyle:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/fillStyle:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
@@ -12843,25 +13095,88 @@
     {
       "id": "surface:element.common:/height:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/height:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/height:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
@@ -13231,193 +13546,697 @@
     {
       "id": "surface:element.common:/opacity:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/opacity:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/opacity:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/roughness:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/roughness:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/roughness:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/roundness:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:element.common:/roundness:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:element.common:/roundness:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:element.common:/seed:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "rough_seed_defaults_zero_repairs_and_invalid_values_are_target_stable",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::rough_seed_defaults_zero_repairs_and_invalid_values_are_target_stable",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed seed default/invalid/zero repair across every kind and ignored namespace, exact diagnostics, independent literal identity-derived zero-seed vector, signed nonzero seeds, preserved originals and selected/lazy/deleted/unselected target equality. Closed freedraw fill ensures seed participates where the stroke alone does not."
       }
     },
     {
       "id": "surface:element.common:/seed:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "rough_seed_defaults_zero_repairs_and_invalid_values_are_target_stable",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::rough_seed_defaults_zero_repairs_and_invalid_values_are_target_stable",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed seed default/invalid/zero repair across every kind and ignored namespace, exact diagnostics, independent literal identity-derived zero-seed vector, signed nonzero seeds, preserved originals and selected/lazy/deleted/unselected target equality. Closed freedraw fill ensures seed participates where the stroke alone does not."
       }
     },
     {
       "id": "surface:element.common:/seed:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "rough_seed_defaults_zero_repairs_and_invalid_values_are_target_stable",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::rough_seed_defaults_zero_repairs_and_invalid_values_are_target_stable",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed seed default/invalid/zero repair across every kind and ignored namespace, exact diagnostics, independent literal identity-derived zero-seed vector, signed nonzero seeds, preserved originals and selected/lazy/deleted/unselected target equality. Closed freedraw fill ensures seed participates where the stroke alone does not."
       }
     },
     {
       "id": "surface:element.common:/strokeColor:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "color_fields_have_canonical_values_recovery_and_request_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::color_fields_have_canonical_values_recovery_and_request_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed color contract: field-specific defaults, malformed JSON/CSS repairs and canonical named/hex/functional colors across all kinds; ignored/deleted/selected participation and full preserved originals. Existing independent alpha/dark-mode channel oracles are executed. Global background recovery is checked with embedding and direct/lazy empty and populated frame targets, background inclusion and light/dark requests."
       }
     },
     {
       "id": "surface:element.common:/strokeColor:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "color_fields_have_canonical_values_recovery_and_request_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::color_fields_have_canonical_values_recovery_and_request_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed color contract: field-specific defaults, malformed JSON/CSS repairs and canonical named/hex/functional colors across all kinds; ignored/deleted/selected participation and full preserved originals. Existing independent alpha/dark-mode channel oracles are executed. Global background recovery is checked with embedding and direct/lazy empty and populated frame targets, background inclusion and light/dark requests."
       }
     },
     {
       "id": "surface:element.common:/strokeColor:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "color_fields_have_canonical_values_recovery_and_request_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::color_fields_have_canonical_values_recovery_and_request_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed color contract: field-specific defaults, malformed JSON/CSS repairs and canonical named/hex/functional colors across all kinds; ignored/deleted/selected participation and full preserved originals. Existing independent alpha/dark-mode channel oracles are executed. Global background recovery is checked with embedding and direct/lazy empty and populated frame targets, background inclusion and light/dark requests."
       }
     },
     {
       "id": "surface:element.common:/strokeSharpness:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:element.common:/strokeSharpness:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:element.common:/strokeSharpness:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:element.common:/strokeStyle:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/strokeStyle:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/strokeStyle:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/strokeWidth:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/strokeWidth:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
       "id": "surface:element.common:/strokeWidth:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "style_domains_default_recover_and_respect_kind_participation",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::style_domains_default_recover_and_respect_kind_participation",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind style domains/defaults/recovery with exact diagnostics and clean-scene artifact oracles, original preservation and target/deleted/ignored silence. Every admitted filler/stroke enum and numerical boundary is exercised. Existing independently pinned Rough.js paths and opacity/color-alpha semantic tests run inside this selector as positive oracles."
       }
     },
     {
@@ -13708,73 +14527,262 @@
     {
       "id": "surface:element.common:/width:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/width:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/width:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/x:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/x:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/x:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/y:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/y:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
       "id": "surface:element.common:/y:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::coordinates_dimensions_and_rotation_have_exact_defaults_and_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed all-kind position/extent/angle contract: absent/default and invalid JSON classes compare exact artifact bytes against explicit repairs, with complete reports, preserved originals, selected/lazy frame equality and deleted/unselected silence. Negative dimensions shift origins except linear kinds whose points own extents; fixed-anchor positive probes establish translation/size/rotation participation."
       }
     },
     {
@@ -16585,49 +17593,175 @@
     {
       "id": "surface:nested.roundness:/type:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:nested.roundness:/type:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:nested.roundness:/type:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:nested.roundness:/value:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:nested.roundness:/value:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
       "id": "surface:nested.roundness:/value:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/geometry_style_contract.rs",
+            "sha256": "4c111bb002415379829829a569d458069dac7d75e28294f5077a09716ef3ed49"
+          },
+          "function": "roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "geometry_style_contract::roundness_and_legacy_sharpness_have_narrow_recovery_and_precedence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed roundness container and nested type/value defaults, all invalid JSON/domain classes with narrow pointers, valid 1/2/3 modes, explicit adaptive radii and proportional clamping. Legacy round/sharp/other strings and explicit-record precedence are checked across kinds, ignored fields, source preservation and frame/deleted/unselected scope; independent pinned curved Rough.js paths run as the positive oracle."
       }
     },
     {
