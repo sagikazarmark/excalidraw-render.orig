@@ -12381,49 +12381,175 @@
     {
       "id": "surface:element.arrow:/elbowed:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed arrowhead/elbow fields: kind-specific missing/null defaults, invalid JSON/enum recovery, both elbow states and every admitted head kind at both ends. Existing qualified arrow path/raster/PDF oracle executes; exact reports, original preservation and fresh/direct/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:element.arrow:/elbowed:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed arrowhead/elbow fields: kind-specific missing/null defaults, invalid JSON/enum recovery, both elbow states and every admitted head kind at both ends. Existing qualified arrow path/raster/PDF oracle executes; exact reports, original preservation and fresh/direct/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:element.arrow:/elbowed:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed arrowhead/elbow fields: kind-specific missing/null defaults, invalid JSON/enum recovery, both elbow states and every admitted head kind at both ends. Existing qualified arrow path/raster/PDF oracle executes; exact reports, original preservation and fresh/direct/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:element.arrow:/endArrowhead:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed arrowhead/elbow fields: kind-specific missing/null defaults, invalid JSON/enum recovery, both elbow states and every admitted head kind at both ends. Existing qualified arrow path/raster/PDF oracle executes; exact reports, original preservation and fresh/direct/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:element.arrow:/endArrowhead:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed arrowhead/elbow fields: kind-specific missing/null defaults, invalid JSON/enum recovery, both elbow states and every admitted head kind at both ends. Existing qualified arrow path/raster/PDF oracle executes; exact reports, original preservation and fresh/direct/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:element.arrow:/endArrowhead:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed arrowhead/elbow fields: kind-specific missing/null defaults, invalid JSON/enum recovery, both elbow states and every admitted head kind at both ends. Existing qualified arrow path/raster/PDF oracle executes; exact reports, original preservation and fresh/direct/lazy/deleted scope are checked."
       }
     },
     {
@@ -12603,25 +12729,88 @@
     {
       "id": "surface:element.arrow:/startArrowhead:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed arrowhead/elbow fields: kind-specific missing/null defaults, invalid JSON/enum recovery, both elbow states and every admitted head kind at both ends. Existing qualified arrow path/raster/PDF oracle executes; exact reports, original preservation and fresh/direct/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:element.arrow:/startArrowhead:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed arrowhead/elbow fields: kind-specific missing/null defaults, invalid JSON/enum recovery, both elbow states and every admitted head kind at both ends. Existing qualified arrow path/raster/PDF oracle executes; exact reports, original preservation and fresh/direct/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:element.arrow:/startArrowhead:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed arrowhead/elbow fields: kind-specific missing/null defaults, invalid JSON/enum recovery, both elbow states and every admitted head kind at both ends. Existing qualified arrow path/raster/PDF oracle executes; exact reports, original preservation and fresh/direct/lazy/deleted scope are checked."
       }
     },
     {
@@ -15364,73 +15553,262 @@
     {
       "id": "surface:element.freedraw:/points:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed freedraw point/pressure/simulation fields: defaults, malformed points, pressure range and source-length rules including malformed-point interactions, actual/simulated behavior and exact qualified perfect-freehand pressure vector. Placeholder grammar and prior fill/stroke oracles execute; reports, preserved originals, fresh calls and selected/lazy/deleted scope agree."
       }
     },
     {
       "id": "surface:element.freedraw:/points:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed freedraw point/pressure/simulation fields: defaults, malformed points, pressure range and source-length rules including malformed-point interactions, actual/simulated behavior and exact qualified perfect-freehand pressure vector. Placeholder grammar and prior fill/stroke oracles execute; reports, preserved originals, fresh calls and selected/lazy/deleted scope agree."
       }
     },
     {
       "id": "surface:element.freedraw:/points:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed freedraw point/pressure/simulation fields: defaults, malformed points, pressure range and source-length rules including malformed-point interactions, actual/simulated behavior and exact qualified perfect-freehand pressure vector. Placeholder grammar and prior fill/stroke oracles execute; reports, preserved originals, fresh calls and selected/lazy/deleted scope agree."
       }
     },
     {
       "id": "surface:element.freedraw:/pressures:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed freedraw point/pressure/simulation fields: defaults, malformed points, pressure range and source-length rules including malformed-point interactions, actual/simulated behavior and exact qualified perfect-freehand pressure vector. Placeholder grammar and prior fill/stroke oracles execute; reports, preserved originals, fresh calls and selected/lazy/deleted scope agree."
       }
     },
     {
       "id": "surface:element.freedraw:/pressures:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed freedraw point/pressure/simulation fields: defaults, malformed points, pressure range and source-length rules including malformed-point interactions, actual/simulated behavior and exact qualified perfect-freehand pressure vector. Placeholder grammar and prior fill/stroke oracles execute; reports, preserved originals, fresh calls and selected/lazy/deleted scope agree."
       }
     },
     {
       "id": "surface:element.freedraw:/pressures:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed freedraw point/pressure/simulation fields: defaults, malformed points, pressure range and source-length rules including malformed-point interactions, actual/simulated behavior and exact qualified perfect-freehand pressure vector. Placeholder grammar and prior fill/stroke oracles execute; reports, preserved originals, fresh calls and selected/lazy/deleted scope agree."
       }
     },
     {
       "id": "surface:element.freedraw:/simulatePressure:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed freedraw point/pressure/simulation fields: defaults, malformed points, pressure range and source-length rules including malformed-point interactions, actual/simulated behavior and exact qualified perfect-freehand pressure vector. Placeholder grammar and prior fill/stroke oracles execute; reports, preserved originals, fresh calls and selected/lazy/deleted scope agree."
       }
     },
     {
       "id": "surface:element.freedraw:/simulatePressure:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed freedraw point/pressure/simulation fields: defaults, malformed points, pressure range and source-length rules including malformed-point interactions, actual/simulated behavior and exact qualified perfect-freehand pressure vector. Placeholder grammar and prior fill/stroke oracles execute; reports, preserved originals, fresh calls and selected/lazy/deleted scope agree."
       }
     },
     {
       "id": "surface:element.freedraw:/simulatePressure:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::freedraw_points_pressure_and_simulation_follow_their_independent_domains",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed freedraw point/pressure/simulation fields: defaults, malformed points, pressure range and source-length rules including malformed-point interactions, actual/simulated behavior and exact qualified perfect-freehand pressure vector. Placeholder grammar and prior fill/stroke oracles execute; reports, preserved originals, fresh calls and selected/lazy/deleted scope agree."
       }
     },
     {
@@ -15871,25 +16249,88 @@
     {
       "id": "surface:element.legacy_draw:/type:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed line/arrow/legacy draw points: absent and short arrays synthesize stored dimensions, invalid containers substitute, valid geometry rebases first point and recomputes extents. Exact reports, original preservation, fresh/direct/lazy/deleted scope and malformed point grammar are exercised. Exact draw-to-line migration matches all artifacts."
       }
     },
     {
       "id": "surface:element.legacy_draw:/type:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed line/arrow/legacy draw points: absent and short arrays synthesize stored dimensions, invalid containers substitute, valid geometry rebases first point and recomputes extents. Exact reports, original preservation, fresh/direct/lazy/deleted scope and malformed point grammar are exercised. Exact draw-to-line migration matches all artifacts."
       }
     },
     {
       "id": "surface:element.legacy_draw:/type:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed line/arrow/legacy draw points: absent and short arrays synthesize stored dimensions, invalid containers substitute, valid geometry rebases first point and recomputes extents. Exact reports, original preservation, fresh/direct/lazy/deleted scope and malformed point grammar are exercised. Exact draw-to-line migration matches all artifacts."
       }
     },
     {
@@ -16243,25 +16684,88 @@
     {
       "id": "surface:element.linear:/points:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed line/arrow/legacy draw points: absent and short arrays synthesize stored dimensions, invalid containers substitute, valid geometry rebases first point and recomputes extents. Exact reports, original preservation, fresh/direct/lazy/deleted scope and malformed point grammar are exercised. Exact draw-to-line migration matches all artifacts."
       }
     },
     {
       "id": "surface:element.linear:/points:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed line/arrow/legacy draw points: absent and short arrays synthesize stored dimensions, invalid containers substitute, valid geometry rebases first point and recomputes extents. Exact reports, original preservation, fresh/direct/lazy/deleted scope and malformed point grammar are exercised. Exact draw-to-line migration matches all artifacts."
       }
     },
     {
       "id": "surface:element.linear:/points:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::linear_points_default_short_geometry_rebase_origin_and_migrate_draw",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed line/arrow/legacy draw points: absent and short arrays synthesize stored dimensions, invalid containers substitute, valid geometry rebases first point and recomputes extents. Exact reports, original preservation, fresh/direct/lazy/deleted scope and malformed point grammar are exercised. Exact draw-to-line migration matches all artifacts."
       }
     },
     {
@@ -20119,49 +20623,175 @@
     {
       "id": "surface:nested.point:/0:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "malformed_point_components_have_narrow_placeholder_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::malformed_point_components_have_narrow_placeholder_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed nested point components across line/arrow/draw/freedraw: absent or invalid components diagnose narrow source locations, known-placeholder grammar is independently asserted in SVG/PNG/PDF, and extra components remain ignored with exact diagnostics. Complete reports, original bytes and standalone/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:nested.point:/0:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "malformed_point_components_have_narrow_placeholder_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::malformed_point_components_have_narrow_placeholder_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed nested point components across line/arrow/draw/freedraw: absent or invalid components diagnose narrow source locations, known-placeholder grammar is independently asserted in SVG/PNG/PDF, and extra components remain ignored with exact diagnostics. Complete reports, original bytes and standalone/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:nested.point:/0:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "malformed_point_components_have_narrow_placeholder_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::malformed_point_components_have_narrow_placeholder_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed nested point components across line/arrow/draw/freedraw: absent or invalid components diagnose narrow source locations, known-placeholder grammar is independently asserted in SVG/PNG/PDF, and extra components remain ignored with exact diagnostics. Complete reports, original bytes and standalone/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:nested.point:/1:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "malformed_point_components_have_narrow_placeholder_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::malformed_point_components_have_narrow_placeholder_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed nested point components across line/arrow/draw/freedraw: absent or invalid components diagnose narrow source locations, known-placeholder grammar is independently asserted in SVG/PNG/PDF, and extra components remain ignored with exact diagnostics. Complete reports, original bytes and standalone/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:nested.point:/1:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "malformed_point_components_have_narrow_placeholder_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::malformed_point_components_have_narrow_placeholder_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed nested point components across line/arrow/draw/freedraw: absent or invalid components diagnose narrow source locations, known-placeholder grammar is independently asserted in SVG/PNG/PDF, and extra components remain ignored with exact diagnostics. Complete reports, original bytes and standalone/lazy/deleted scope are checked."
       }
     },
     {
       "id": "surface:nested.point:/1:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Map field disposition, participation, missing/invalid and value-rule branches to exact-format executable assertions; broad scene coverage alone is insufficient."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/point_stroke_contract.rs",
+            "sha256": "5cbc548456eedef1d1f6a7b3905f3c3528e206d14b864a59d705ce603a30cb7e"
+          },
+          "function": "malformed_point_components_have_narrow_placeholder_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "point_stroke_contract::malformed_point_components_have_narrow_placeholder_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed nested point components across line/arrow/draw/freedraw: absent or invalid components diagnose narrow source locations, known-placeholder grammar is independently asserted in SVG/PNG/PDF, and extra components remain ignored with exact diagnostics. Complete reports, original bytes and standalone/lazy/deleted scope are checked."
       }
     },
     {

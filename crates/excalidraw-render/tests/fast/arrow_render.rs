@@ -23,7 +23,7 @@ const ARROW_SCENE: &[u8] = br##"{
 }"##;
 
 #[test]
-fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
+pub(super) fn admitted_arrows_bindings_elbows_and_arrowheads_render_in_every_format() {
     let scene = SceneDocument::parse(ARROW_SCENE).expect("arrow scene is admitted");
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {

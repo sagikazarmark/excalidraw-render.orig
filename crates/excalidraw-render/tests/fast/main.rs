@@ -47,6 +47,7 @@ mod outcome_contract;
 mod outline_shape_render;
 mod pdf_backend_qualification;
 mod pdf_renderer_expectations;
+mod point_stroke_contract;
 mod rectangle_pdf_render;
 mod rectangle_png_render;
 mod rectangle_svg_render;

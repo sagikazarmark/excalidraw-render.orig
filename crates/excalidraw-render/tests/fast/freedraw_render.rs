@@ -16,7 +16,7 @@ const SIMULATED_PRESSURE_SCENE: &[u8] = br##"{
 }"##;
 
 #[test]
-fn simulated_pressure_freedraw_renders_directly_in_every_format() {
+pub(super) fn simulated_pressure_freedraw_renders_directly_in_every_format() {
     let scene = SceneDocument::parse(SIMULATED_PRESSURE_SCENE).unwrap();
 
     for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
@@ -93,7 +93,7 @@ fn freedraw_geometry_limit_uses_the_exact_generated_command_count() {
 }
 
 #[test]
-fn closed_freedraw_paints_rough_background_before_the_pressure_stroke() {
+pub(super) fn closed_freedraw_paints_rough_background_before_the_pressure_stroke() {
     let scene = SceneDocument::parse(
         br##"{"type":"excalidraw","version":2,"elements":[{"id":"loop","type":"freedraw","width":40,"height":40,"points":[[0,0],[40,0],[40,40],[0,40],[0,0]],"pressures":[],"simulatePressure":true,"strokeColor":"#1971c2","backgroundColor":"#ffec99","fillStyle":"solid","strokeWidth":2,"roughness":1,"seed":23,"updated":1}],"appState":{},"files":{}}"##,
     )
