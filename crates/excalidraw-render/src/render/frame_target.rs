@@ -111,7 +111,7 @@ pub(super) fn frame_participating_sources(
     Ok(selected)
 }
 
-fn normalized_element_aabb(source: &NormalizedElement) -> (f64, f64, f64, f64) {
+pub(super) fn normalized_element_aabb(source: &NormalizedElement) -> (f64, f64, f64, f64) {
     let (local_min_x, local_min_y, local_max_x, local_max_y) = source_layout_bounds(source);
     let center_x = source.x + (local_min_x + local_max_x) / 2.0;
     let center_y = source.y + (local_min_y + local_max_y) / 2.0;

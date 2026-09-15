@@ -1582,11 +1582,15 @@ fn line_intersection(
     let ratio = if denominator == 0.0 {
         0.0
     } else {
-        start_distance / denominator
+        (start_distance / denominator).clamp(0.0, 1.0)
     };
+    // This helper is reached only for an inside/outside transition: the
+    // intersection is a convex combination of the admitted endpoints. Clamp
+    // the final rounding (not the source geometry) to that closed interval so
+    // no clipping pass can manufacture a coordinate beyond its input range.
     (
-        start.0 + (end.0 - start.0) * ratio,
-        start.1 + (end.1 - start.1) * ratio,
+        (start.0 + (end.0 - start.0) * ratio).clamp(start.0.min(end.0), start.0.max(end.0)),
+        (start.1 + (end.1 - start.1) * ratio).clamp(start.1.min(end.1), start.1.max(end.1)),
     )
 }
 
@@ -1612,6 +1616,41 @@ pub(super) fn ecmascript_round(value: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::ecmascript_round;
+
+    #[test]
+    fn clipping_intermediates_remain_in_the_admitted_convex_envelope() {
+        // Includes nearly parallel edges and the hard coordinate maximum.
+        for limit in [1.0, 100.0, 1e12] {
+            for epsilon in [0.0, f64::EPSILON, 0.00001, 0.5] {
+                let mut polygon = vec![
+                    (-limit, -limit),
+                    (limit, -limit),
+                    (limit, limit),
+                    (-limit, limit),
+                ];
+                for clip in [
+                    [
+                        (-limit, -limit * epsilon),
+                        (limit, 0.0),
+                        (limit, limit),
+                        (-limit, limit),
+                    ],
+                    [
+                        (-limit, -limit),
+                        (limit * epsilon, -limit),
+                        (0.0, limit),
+                        (-limit, limit),
+                    ],
+                ] {
+                    polygon = super::clip_convex_polygon(&polygon, &clip).unwrap();
+                    assert!(polygon.iter().all(|(x, y)| x.is_finite()
+                        && y.is_finite()
+                        && x.abs() <= limit
+                        && y.abs() <= limit));
+                }
+            }
+        }
+    }
 
     #[test]
     fn ecmascript_round_carries_ties_up_and_leaves_the_near_half_alone() {

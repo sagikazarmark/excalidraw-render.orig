@@ -18,6 +18,7 @@ mod jpeg;
 mod payload;
 mod png;
 pub(super) mod svg;
+mod svg_coordinates;
 #[cfg(test)]
 mod tests;
 mod webp;
@@ -179,6 +180,7 @@ pub(super) enum ResolveError {
     AssetWork { attempted: u64 },
     SvgComplexity { attempted: u64 },
     SvgDepth { attempted: u64 },
+    Coordinate { value_bits: u64 },
     Memory,
 }
 

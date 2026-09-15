@@ -403,7 +403,7 @@ fn malformed_colors_use_field_specific_substitutions_in_source_order() {
 }
 
 #[test]
-fn non_finite_derived_bounds_use_the_stable_scene_error() {
+fn coordinate_recovery_precedes_scene_extent_overflow() {
     let source = br##"{
         "type":"excalidraw",
         "version":2,
@@ -423,19 +423,21 @@ fn non_finite_derived_bounds_use_the_stable_scene_error() {
     let request = RenderRequest::builder(OutputFormat::Svg)
         .build()
         .expect("default SVG request is valid");
-    let error = Renderer::new()
+    let outcome = Renderer::new()
         .render(&scene, &request)
-        .expect_err("non-finite derived bounds are fatal");
-
-    assert_eq!(error.category(), RenderErrorCategory::Input);
-    assert_eq!(error.code(), ErrorCode::SCENE_UNBOUNDED_GEOMETRY);
-    assert_eq!(error.json_pointer(), "");
-    assert_eq!(error.report().diagnostics().len(), 1);
+        .expect("coordinate rejection removes the source before bounds can overflow");
+    assert_eq!(outcome.report().diagnostics().len(), 1);
+    assert_eq!(
+        outcome.report().diagnostics()[0].code().as_str(),
+        "resource.coordinate-range-exceeded"
+    );
 
     let empty = SceneDocument::parse(
         br#"{"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}}"#,
     )
     .expect("empty scene is admitted");
+    let expected = Renderer::new().render(&empty, &request).unwrap();
+    assert_eq!(outcome.artifact().bytes(), expected.artifact().bytes());
     let request = RenderRequest::builder(OutputFormat::Svg)
         .padding(f64::MAX)
         .build()

@@ -307,6 +307,26 @@ fn rejected_frame_coordinates_replay_identical_failure_and_release_traces() {
 }
 
 #[test]
+fn derived_viewport_crossings_replay_the_same_fatal_trace() {
+    let source = serde_json::json!({"type":"excalidraw","version":2,"elements":[
+        {"id":"bad","type":"frame","x":-40,"y":-40,"width":80,"height":80,"angle":std::f64::consts::FRAC_PI_4,"updated":0}
+    ],"appState":{},"files":{}});
+    let scene = SceneDocument::parse(&serde_json::to_vec(&source).unwrap()).unwrap();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        assert_batch_matches_standalone(
+            &scene,
+            scene.frames().next().unwrap(),
+            format,
+            ResourceLimits::builder()
+                .max_coordinate_magnitude(100.0)
+                .build()
+                .unwrap(),
+            "derived viewport crossing",
+        );
+    }
+}
+
+#[test]
 fn depth_variant_sanitization_shares_raster_validation_work() {
     use base64::Engine;
     let mut png = Vec::new();

@@ -253,8 +253,10 @@ fn sanitize_at(
         nested_accounting,
     )?;
     let options = viewer_options()?;
+    super::svg_coordinates::source(&serialized, limits.max_coordinate_magnitude())?;
     let tree =
         usvg::Tree::from_str(&serialized, &options).map_err(|_| ResolveError::SvgDecodeFailed)?;
+    super::svg_coordinates::tree(&tree, limits.max_coordinate_magnitude())?;
     let size = tree.size().to_int_size();
     let width = size.width();
     let height = size.height();
@@ -608,6 +610,7 @@ fn serialize_node(
                             | ResolveError::Pixels { .. }
                             | ResolveError::SvgComplexity { .. }
                             | ResolveError::SvgDepth { .. }
+                            | ResolveError::Coordinate { .. }
                     );
                     let replacement = if resource_limit && name == "image" {
                         let replacement =
@@ -810,6 +813,9 @@ pub(super) fn resource_placeholder_url(
         || height <= 0.0
         || width > limits.max_coordinate_magnitude()
         || height > limits.max_coordinate_magnitude()
+        // This recipe's nested viewBox is 668 units wide, independent of the
+        // destination. A small clip cannot waive its own coordinate admission.
+        || limits.max_coordinate_magnitude() < 668.0
         || width as f32 <= 0.0
         || height as f32 <= 0.0
         || !(width as f32).is_finite()

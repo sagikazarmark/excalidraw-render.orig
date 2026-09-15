@@ -266,3 +266,15 @@ The full fast/render/doc suite and conformance checks passed; the single Clippy
 loop-style finding was corrected and lint passed. Comprehensive derived control
 point/transform/intermediate admission and coordinate ownership remain unfinished.
 No coordinate assignment is claimed by this checkpoint: totals stay 792/136.
+
+### Derived-coordinate recovery follow-up
+
+The source-only checkpoint is superseded by the admission and recovery work
+documented in [coordinate-admission.md](coordinate-admission.md). It covers
+generated controls and scanlines, source and rotated bounds, export transforms,
+image crops/intrinsic dimensions, text and generated labels, nested SVG paths
+and clip transforms, and the clipping-envelope invariant. Coordinate omissions
+cannot leave unsafe bounds or orphaned text masks. Rejected shaped text retains
+aggregate-fatal preflight, and the CJK trigger is evaluated before recovery.
+The existing source-member diagnostic ordering and fatal frame-target contract
+remain covered alongside derived-bound direct/prepared replay regressions.

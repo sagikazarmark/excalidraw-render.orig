@@ -18,6 +18,10 @@ pub(super) enum GenerationLimit {
 
 #[derive(Debug)]
 pub(super) enum GenerationError {
+    Coordinate {
+        value: f64,
+        geometry_segments: u64,
+    },
     Limit {
         kind: GenerationLimit,
         attempted: u64,
@@ -33,6 +37,7 @@ impl From<TryReserveError> for GenerationError {
 }
 
 pub(super) struct GenerationBudget {
+    coordinate_limit: f64,
     operation_limit: u64,
     operation_limit_kind: GenerationLimit,
     base_work_units: u64,
@@ -62,6 +67,7 @@ impl GenerationBudget {
                 (work_operation_limit, GenerationLimit::WorkUnits)
             };
         Self {
+            coordinate_limit: f64::MAX,
             operation_limit,
             operation_limit_kind,
             base_work_units,
@@ -83,6 +89,32 @@ impl GenerationBudget {
             });
         }
         self.work = work;
+        Ok(())
+    }
+
+    pub(super) fn with_coordinate_limit(mut self, limit: f64) -> Self {
+        self.coordinate_limit = limit;
+        self
+    }
+
+    pub(super) fn coordinate(&self, value: f64) -> Result<(), GenerationError> {
+        super::coordinates::CoordinateRange(self.coordinate_limit)
+            .value(value)
+            .map_err(|value| GenerationError::Coordinate {
+                value,
+                geometry_segments: self.operations,
+            })
+    }
+
+    pub(super) fn point(&self, point: Point) -> Result<(), GenerationError> {
+        self.coordinate(point.x)?;
+        self.coordinate(point.y)
+    }
+
+    fn points(&self, points: &[Point]) -> Result<(), GenerationError> {
+        for point in points {
+            self.point(*point)?;
+        }
         Ok(())
     }
 
@@ -109,6 +141,12 @@ impl GenerationBudget {
         operations: &mut Vec<PathOperation>,
         operation: PathOperation,
     ) -> Result<(), GenerationError> {
+        super::coordinates::CoordinateRange(self.coordinate_limit)
+            .operation(&operation, super::coordinates::IDENTITY)
+            .map_err(|value| GenerationError::Coordinate {
+                value,
+                geometry_segments: self.operations,
+            })?;
         if self.discard_next_move && matches!(operation, PathOperation::Move(_)) {
             self.discard_next_move = false;
             self.work(1)?;
@@ -1105,6 +1143,7 @@ fn smooth_curve(
     operations: &mut Vec<PathOperation>,
     budget: &mut GenerationBudget,
 ) -> Result<(), GenerationError> {
+    budget.points(points)?;
     if points.len() == 3 {
         budget.push_operation(operations, PathOperation::Move(points[1]))?;
         budget.push_operation(
@@ -1613,6 +1652,7 @@ fn fill_polygon(
     random: &mut Random,
     budget: &mut GenerationBudget,
 ) -> Result<Fill, GenerationError> {
+    budget.points(points)?;
     let FillOptions {
         style,
         source_stroke_width: stroke_width,
@@ -1647,6 +1687,7 @@ fn fill_polygon(
     // it to 0.1.
     let hachure_gap = stroke_width * 4.0;
     let gap = hachure_gap.max(0.1);
+    budget.coordinate(gap)?;
     let mut polygon = Vec::new();
     budget.work(u64::try_from(points.len()).unwrap_or(u64::MAX))?;
     polygon.try_reserve_exact(points.len())?;
@@ -2069,6 +2110,7 @@ fn hachure_lines(
     random: &mut Random,
     budget: &mut GenerationBudget,
 ) -> Result<Vec<(Point, Point)>, GenerationError> {
+    budget.coordinate(gap)?;
     let radians = angle.to_radians();
     let (sin, cos) = sin_cos(radians);
     for point in &mut *points {
@@ -2076,6 +2118,7 @@ fn hachure_lines(
             x: point.x * cos - point.y * sin,
             y: point.x * sin + point.y * cos,
         };
+        budget.point(*point)?;
     }
     let mut rotated = Vec::new();
     budget.work(
@@ -2156,6 +2199,8 @@ fn hachure_lines(
                     },
                     -angle,
                 );
+                budget.point(start)?;
+                budget.point(end)?;
                 budget.work(1)?;
                 lines.try_reserve(1)?;
                 lines.push((start, end));
@@ -2172,10 +2217,15 @@ fn hachure_lines(
         y = next_y;
         for edge in &mut active {
             edge.x += step * edge.inverse_slope;
+            // Only active intersections are exposed to the next scanline.
+            if edge.maximum_y > y {
+                budget.coordinate(edge.x)?;
+            }
         }
         iteration = iteration.saturating_add(1);
     }
     rotate_points(points, -angle);
+    budget.points(points)?;
     Ok(lines)
 }
 
@@ -2208,6 +2258,8 @@ fn line(
     operations: &mut Vec<PathOperation>,
     budget: &mut GenerationBudget,
 ) -> Result<(), GenerationError> {
+    budget.point(start)?;
+    budget.point(end)?;
     const MAX_RANDOMNESS_OFFSET: f64 = 2.0;
     const BOWING: f64 = 1.0;
 

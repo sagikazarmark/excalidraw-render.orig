@@ -421,7 +421,9 @@ impl RenderSession {
                 let diagnostic = ElementLocalCrossing {
                     limit: LocalLimit::ElementWorkUnits,
                     configured: ResourceValue::Integer(element_work_limit),
-                    attempted: ResourceValue::Integer(element_work),
+                    attempted: crate::Measurement::Attempted {
+                        value: ResourceValue::Integer(element_work),
+                    },
                     pointer_field: None,
                     message: "outline omitted because its semantic work exceeds its limit",
                 }

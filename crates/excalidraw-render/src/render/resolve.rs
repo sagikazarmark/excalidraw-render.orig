@@ -13,12 +13,13 @@
 //! (ADR-0002), so the element loop's order and every early return are the
 //! contract.
 
+pub(super) mod admission;
 mod bounds;
 mod fallback;
 mod frame;
 mod image;
-mod outline;
-mod text;
+pub(super) mod outline;
+pub(super) mod text;
 
 use bounds::scene_bounds;
 use fallback::{fallback_frame_clip_sources, resolve_fallback};
@@ -26,7 +27,7 @@ use frame::{resolve_frame, resolve_frame_names, semantic_frame_sources};
 use image::resolve_image;
 use outline::resolve_geometry;
 pub(super) use text::live_text_occurrence;
-use text::{cjk_subset_trigger, resolve_fonts, resolve_text};
+use text::{resolve_fonts, resolve_text};
 
 use crate::color::{self, CanonicalColor};
 use crate::diagnostic_registry::{DiagnosticKind, LocalLimit, LocalRecovery};
@@ -60,6 +61,7 @@ use super::{asset, freedraw, notices, rough, try_owned};
 
 #[derive(Debug)]
 pub(super) struct ResolvedScene {
+    pub(super) coordinate_omissions: Vec<admission::CoordinateOmission>,
     pub(super) logical_width: f64,
     pub(super) logical_height: f64,
     pub(super) include_background: bool,
@@ -364,6 +366,43 @@ struct FrameMembership {
     opacity: f64,
 }
 
+pub(super) type EmbeddableLabel = (ResolvedText, CanonicalColor, f64);
+
+#[derive(Default)]
+struct PreparedLabels {
+    embeddables: Vec<(usize, EmbeddableLabel)>,
+    fallbacks: Vec<(usize, ResolvedLabel)>,
+}
+
+impl PreparedLabels {
+    fn check(
+        &self,
+        index: usize,
+        range: super::coordinates::CoordinateRange,
+        transform: ResolvedTransform,
+    ) -> Result<(), f64> {
+        if let Some((_, (text, _, offset))) = self.embeddables.iter().find(|(i, _)| *i == index) {
+            range.offset_text(text, *offset, transform)?;
+        }
+        if let Some((_, label)) = self.fallbacks.iter().find(|(i, _)| *i == index) {
+            range.label(label, transform)?;
+        }
+        Ok(())
+    }
+    fn take_embeddable(&mut self, index: usize) -> Option<EmbeddableLabel> {
+        self.embeddables
+            .iter()
+            .position(|(i, _)| *i == index)
+            .map(|i| self.embeddables.remove(i).1)
+    }
+    fn take_fallback(&mut self, index: usize) -> Option<ResolvedLabel> {
+        self.fallbacks
+            .iter()
+            .position(|(i, _)| *i == index)
+            .map(|i| self.fallbacks.remove(i).1)
+    }
+}
+
 impl ResolvedScene {
     pub(super) fn empty(
         background_color: &str,
@@ -386,6 +425,7 @@ impl ResolvedScene {
             return Err(ResolveSceneError::UnboundedGeometry);
         }
         Ok(Self {
+            coordinate_omissions: Vec::new(),
             logical_width: logical_width.max(1.0),
             logical_height: logical_height.max(1.0),
             include_background: request.include_background(),
@@ -406,12 +446,14 @@ impl ResolvedScene {
     pub(super) fn elements(
         mut outlines: Vec<(NormalizedElement, Option<GeneratedGeometry>)>,
         images: ResolvedImageInputs,
-        fallbacks: Vec<SurfaceFallback>,
+        mut fallbacks: Vec<SurfaceFallback>,
         relationships: &ResolvedRelationshipGraph,
         frame_rendering: EffectiveFrameRendering,
         background_color: &str,
         request: &RenderRequest,
         viewport: Option<FrameViewport>,
+        recoveries: &mut Vec<admission::CoordinateOmission>,
+        cjk_subset_trigger: CjkSubsetTrigger,
     ) -> Result<Option<Self>, ResolveSceneError> {
         if outlines.is_empty() && fallbacks.is_empty() {
             return Ok(None);
@@ -429,7 +471,6 @@ impl ResolvedScene {
             text.y = placement.y;
             text.angle = placement.angle;
         }
-        let bound_text_masks = resolve_bound_text_masks(&outlines, relationships)?;
 
         // The reference synthesizes every frame's name as a text element before
         // it measures the scene, so the names take part in the bounds and are
@@ -455,22 +496,93 @@ impl ResolvedScene {
             Vec::new()
         };
 
-        let Some((min_x, min_y, max_x, max_y)) = scene_bounds(
-            &outlines,
-            &fallbacks,
-            &frame_names,
+        // Shape text once, in source space, before any occurrence can set the
+        // export origin. Rejected layouts remain available for paint-ordered
+        // resource preflight, but cannot displace otherwise valid siblings.
+        let semantic_frames = semantic_frame_sources(&outlines)?;
+        let mut official_fonts = Vec::<OfficialFont>::new();
+        let mut texts = Vec::new();
+        texts.try_reserve(outlines.len())?;
+        let source_context = ResolveContext {
+            request,
+            relationships,
+            frame_rendering,
+            semantic_frames: &semantic_frames,
+            bound_text_masks: &[],
+            background_color: color::parse_css(background_color)
+                .ok_or(ResolveSceneError::InvalidColor)?,
+            cjk_subset_trigger,
+            min_x: request.padding(),
+            min_y: request.padding(),
+        };
+        let mut labels = PreparedLabels::default();
+        labels.embeddables.try_reserve(outlines.len())?;
+        labels.fallbacks.try_reserve(fallbacks.len())?;
+        for (source, geometry) in &outlines {
+            if matches!(source.kind, NormalizedElementKind::Text(_)) {
+                let membership = source_context.frame_membership(source.source.source_index())?;
+                if let Some(text) =
+                    resolve_text(source, &source_context, &mut official_fonts, membership)?
+                {
+                    texts.push(text);
+                }
+            }
+            if let NormalizedElementKind::Embeddable { label, .. } = &source.kind {
+                if geometry.is_some()
+                    && (request.format() != OutputFormat::Png
+                        || source.width != 0.0 && source.height != 0.0)
+                {
+                    labels.embeddables.push((
+                        source.source.source_index(),
+                        outline::resolve_embeddable_label(
+                            source,
+                            label,
+                            &source_context,
+                            &mut official_fonts,
+                        )?,
+                    ));
+                }
+            }
+        }
+        for fallback in &fallbacks {
+            if fallback.paint && !fallback.label.is_empty() {
+                if let Some(label) = fallback_font
+                    .as_ref()
+                    .ok_or(ResolveSceneError::InvalidFallbackFont)?
+                    .resolve(&fallback.label, fallback.width, fallback.height)
+                    .map_err(label_error)?
+                {
+                    labels.fallbacks.push((fallback.source_index, label));
+                }
+            }
+        }
+        let Some((mut min_x, mut min_y, mut max_x, mut max_y)) = admission::admit_layout(
+            &mut outlines,
+            &mut fallbacks,
+            &mut frame_names,
             relationships,
             frame_rendering,
             viewport,
-        ) else {
+            request,
+            recoveries,
+            &mut texts,
+            &images,
+            &mut labels,
+        )?
+        else {
             return Ok(None);
         };
+        let bound_text_masks = resolve_bound_text_masks(&outlines, relationships)?;
         if min_x == f64::INFINITY
             && min_y == f64::INFINITY
             && max_x == f64::NEG_INFINITY
             && max_y == f64::NEG_INFINITY
         {
-            return Self::empty(background_color, request, viewport).map(Some);
+            if texts.is_empty() {
+                return Self::empty(background_color, request, viewport).map(Some);
+            }
+            let extent = (1.0 - request.padding() * 2.0).max(0.0);
+            (min_x, min_y, max_x, max_y) = (0.0, 0.0, extent, extent);
         }
         let logical_width = max_x - min_x + request.padding() * 2.0;
         let logical_height = max_y - min_y + request.padding() * 2.0;
@@ -479,14 +591,17 @@ impl ResolvedScene {
         }
 
         let mut elements = Vec::new();
-        elements.try_reserve_exact(outlines.len().saturating_add(fallbacks.len()))?;
+        elements.try_reserve_exact(
+            outlines
+                .len()
+                .saturating_add(fallbacks.len())
+                .saturating_add(texts.len()),
+        )?;
         let background_color = color::parse_css(background_color)
             .ok_or(ResolveSceneError::InvalidColor)?
             .for_mode(request.color_mode());
         let semantic_frames = semantic_frame_sources(&outlines)?;
         let fallback_frame_clips = fallback_frame_clip_sources(&fallbacks, frame_rendering)?;
-        let mut official_fonts = Vec::<OfficialFont>::new();
-        let cjk_subset_trigger = cjk_subset_trigger(&outlines, relationships);
         let mut has_label = false;
         let context = ResolveContext {
             request,
@@ -501,15 +616,22 @@ impl ResolvedScene {
         };
         for (source, geometry) in outlines {
             let membership = context.frame_membership(source.source.source_index())?;
+            let prepared_label = labels.take_embeddable(source.source.source_index());
             let element = match &source.kind {
                 NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_) => {
                     resolve_frame(source, &context, membership, &mut frame_names)?
                         .map(ResolvedElement::Frame)
                 }
-                NormalizedElementKind::Text(_) => {
-                    resolve_text(source, &context, &mut official_fonts, membership)?
-                        .map(ResolvedElement::Text)
-                }
+                NormalizedElementKind::Text(_) => texts
+                    .iter()
+                    .position(|text| text.source.source_index() == source.source.source_index())
+                    .map(|index| {
+                        let mut text = texts.remove(index);
+                        text.transform = context.box_transform(&source);
+                        text.frame_clips = membership.clips;
+                        text.opacity = source.opacity / 100.0 * membership.opacity;
+                        ResolvedElement::Text(text)
+                    }),
                 NormalizedElementKind::Image(_) => {
                     resolve_image(source, &images, &context, membership)?
                 }
@@ -520,38 +642,77 @@ impl ResolvedScene {
                 | NormalizedElementKind::Freedraw(_)
                 | NormalizedElementKind::Embeddable { .. } => geometry
                     .map(|geometry| {
-                        resolve_geometry(
-                            source,
-                            geometry,
-                            &context,
-                            &mut official_fonts,
-                            membership,
-                        )
+                        resolve_geometry(source, geometry, &context, prepared_label, membership)
                     })
                     .transpose()?,
             };
             let Some(element) = element else {
                 continue;
             };
+            if let Err(value) = super::coordinates::resolved(
+                &element,
+                super::coordinates::CoordinateRange(
+                    request.resource_limits().max_coordinate_magnitude(),
+                ),
+            ) {
+                admission::omit_resolved(&element, value, request, recoveries)?;
+                continue;
+            }
             if let ResolvedElement::Frame(frame) = &element {
                 has_label |= frame.name.is_some();
             }
             elements.push(element);
         }
+        // Only rejected text remains. Accounting observes its geometry before
+        // omitting it, preserving aggregate-fatal precedence and paint order.
+        elements.extend(
+            texts
+                .into_iter()
+                .filter(|text| text.coordinate_failure.is_some())
+                .map(ResolvedElement::Text),
+        );
         for fallback in fallbacks {
             if !fallback.paint {
                 continue;
             }
-            let fallback = resolve_fallback(
-                fallback,
-                &context,
-                fallback_font.as_ref(),
-                &fallback_frame_clips,
-            )?;
-            has_label |= fallback.label.is_some();
-            elements.push(ResolvedElement::Fallback(fallback));
+            let prepared_label = labels.take_fallback(fallback.source_index);
+            let fallback =
+                resolve_fallback(fallback, &context, prepared_label, &fallback_frame_clips)?;
+            let element = ResolvedElement::Fallback(fallback);
+            if let Err(value) = super::coordinates::resolved(
+                &element,
+                super::coordinates::CoordinateRange(
+                    request.resource_limits().max_coordinate_magnitude(),
+                ),
+            ) {
+                admission::omit_resolved(&element, value, request, recoveries)?;
+                continue;
+            }
+            if let ResolvedElement::Fallback(fallback) = &element {
+                has_label |= fallback.label.is_some();
+            }
+            elements.push(element);
         }
         elements.sort_by_key(ResolvedElement::paint_order);
+        // A label omitted after shaping must not leave a hole in its arrow.
+        let mut surviving_containers = Vec::new();
+        surviving_containers.try_reserve(elements.len())?;
+        for element in &elements {
+            if let ResolvedElement::Text(text) = element {
+                if text.coordinate_failure.is_none() {
+                    if let Some(order) = text.container_source_order {
+                        surviving_containers.push(order);
+                    }
+                }
+            }
+        }
+        for element in &mut elements {
+            if let ResolvedElement::Outline(outline) = element {
+                if !surviving_containers.contains(&outline.source_order) {
+                    outline.label_mask = None;
+                }
+            }
+        }
         let (fallback_font_woff2, fallback_font_sfnt) = if has_label {
             fallback_font
                 .map(FallbackFont::into_parts)
@@ -577,6 +738,7 @@ impl ResolvedScene {
             None
         };
         Ok(Some(Self {
+            coordinate_omissions: Vec::new(),
             logical_width,
             logical_height,
             include_background: request.include_background(),
@@ -888,6 +1050,28 @@ pub(super) struct ResolvedImageSourceRect {
     pub(super) height: f64,
 }
 
+impl ResolvedImageSourceRect {
+    pub(super) fn for_image(
+        asset: &ResolvedImageAsset,
+        crop: Option<crate::normalization::NormalizedImageCrop>,
+    ) -> Self {
+        crop.map_or(
+            Self {
+                x: 0.0,
+                y: 0.0,
+                width: f64::from(asset.width),
+                height: f64::from(asset.height),
+            },
+            |crop| Self {
+                x: crop.x * f64::from(asset.width) / crop.natural_width,
+                y: crop.y * f64::from(asset.height) / crop.natural_height,
+                width: crop.width * f64::from(asset.width) / crop.natural_width,
+                height: crop.height * f64::from(asset.height) / crop.natural_height,
+            },
+        )
+    }
+}
+
 #[derive(Debug)]
 pub(super) struct ResolvedTextElement {
     pub(super) source_order: u64,
@@ -900,6 +1084,7 @@ pub(super) struct ResolvedTextElement {
     pub(super) color: CanonicalColor,
     pub(super) opacity: f64,
     pub(super) render: bool,
+    pub(super) coordinate_failure: Option<f64>,
     pub(super) base_element_work_units: u64,
     container_source_order: Option<u64>,
     pub(super) link: Option<String>,
@@ -1118,6 +1303,17 @@ pub(super) struct ResolvedClip {
     pub(super) transform: ResolvedTransform,
 }
 
+pub(super) fn frame_clip_delta(clips: &[ResolvedClip]) -> ResourceDelta {
+    let geometry_segments = clips.iter().fold(0_u64, |sum, clip| {
+        sum.saturating_add(clip.path.operations.len() as u64)
+    });
+    ResourceDelta {
+        geometry_segments,
+        total_work_units: geometry_segments.saturating_mul(32),
+        ..ResourceDelta::default()
+    }
+}
+
 impl ResolvedClip {
     /// The clip one frame applies to its children: the frame's rectangle with
     /// `FRAME_STYLE.radius` corners in a scene export, or the reference's
@@ -1215,7 +1411,7 @@ pub(super) struct ResolvedTransform {
 pub(super) struct ElementLocalCrossing {
     pub(super) limit: LocalLimit,
     pub(super) configured: ResourceValue,
-    pub(super) attempted: ResourceValue,
+    pub(super) attempted: crate::ResourceMeasurement,
     pub(super) pointer_field: Option<&'static str>,
     pub(super) message: &'static str,
 }
@@ -1288,7 +1484,9 @@ pub(super) fn outline_local_crossing(
         return Some(ElementLocalCrossing {
             limit: LocalLimit::GeometrySegmentsPerElement,
             configured: ResourceValue::Integer(geometry_limit),
-            attempted: ResourceValue::Integer(geometry_segments),
+            attempted: crate::Measurement::Attempted {
+                value: ResourceValue::Integer(geometry_segments),
+            },
             pointer_field: None,
             message: "outline omitted because its geometry exceeds its limit",
         });
@@ -1297,7 +1495,9 @@ pub(super) fn outline_local_crossing(
     (element_work_units > work_limit).then_some(ElementLocalCrossing {
         limit: LocalLimit::ElementWorkUnits,
         configured: ResourceValue::Integer(work_limit),
-        attempted: ResourceValue::Integer(element_work_units),
+        attempted: crate::Measurement::Attempted {
+            value: ResourceValue::Integer(element_work_units),
+        },
         pointer_field: None,
         message: "outline omitted because its semantic work exceeds its limit",
     })
@@ -1319,7 +1519,9 @@ pub(super) fn coordinate_local_crossing(
             return Some(ElementLocalCrossing {
                 limit: LocalLimit::CoordinateMagnitude,
                 configured: ResourceValue::Finite(FiniteValue::new(coordinate_limit)?),
-                attempted: ResourceValue::Finite(FiniteValue::new(magnitude)?),
+                attempted: crate::Measurement::Attempted {
+                    value: ResourceValue::Finite(FiniteValue::new(magnitude)?),
+                },
                 pointer_field: Some(pointer_field),
                 message: "outline omitted because a coordinate exceeds its limit",
             });
@@ -1338,7 +1540,9 @@ pub(super) fn coordinate_local_crossing(
                     return Some(ElementLocalCrossing {
                         limit: LocalLimit::CoordinateMagnitude,
                         configured: ResourceValue::Finite(FiniteValue::new(coordinate_limit)?),
-                        attempted: ResourceValue::Finite(FiniteValue::new(magnitude)?),
+                        attempted: crate::Measurement::Attempted {
+                            value: ResourceValue::Finite(FiniteValue::new(magnitude)?),
+                        },
                         pointer_field: Some("points"),
                         message: "outline omitted because a coordinate exceeds its limit",
                     });
@@ -1347,7 +1551,12 @@ pub(super) fn coordinate_local_crossing(
         }
     }
 
-    None
+    super::coordinates::source_derived(
+        source,
+        super::coordinates::CoordinateRange(coordinate_limit),
+    )
+    .err()
+    .map(|value| super::coordinates::crossing(value, request))
 }
 
 pub(super) fn generation_local_crossing(
@@ -1363,14 +1572,18 @@ pub(super) fn generation_local_crossing(
                     .resource_limits()
                     .max_geometry_segments_per_element(),
             )),
-            attempted: ResourceValue::Integer(attempted),
+            attempted: crate::Measurement::Attempted {
+                value: ResourceValue::Integer(attempted),
+            },
             pointer_field: None,
             message: "outline omitted because its geometry exceeds its limit",
         },
         rough::GenerationLimit::WorkUnits => ElementLocalCrossing {
             limit: LocalLimit::ElementWorkUnits,
             configured: ResourceValue::Integer(request.resource_limits().max_element_work_units()),
-            attempted: ResourceValue::Integer(attempted),
+            attempted: crate::Measurement::Attempted {
+                value: ResourceValue::Integer(attempted),
+            },
             pointer_field: None,
             message: "outline omitted because its semantic work exceeds its limit",
         },
@@ -1386,9 +1599,19 @@ pub(super) fn fallback_fits_local_limits(
     limits: &crate::ResourceLimits,
 ) -> bool {
     let coordinate_limit = limits.max_coordinate_magnitude();
-    if [fallback.x, fallback.y, fallback.width, fallback.height]
-        .into_iter()
-        .any(|value| value.abs() > coordinate_limit)
+    if super::coordinates::CoordinateRange(coordinate_limit)
+        .box_at(
+            fallback.width,
+            fallback.height,
+            ResolvedTransform {
+                translation_x: fallback.x,
+                translation_y: fallback.y,
+                angle_radians: fallback.angle,
+                center_x: fallback.width / 2.0,
+                center_y: fallback.height / 2.0,
+            },
+        )
+        .is_err()
     {
         return false;
     }

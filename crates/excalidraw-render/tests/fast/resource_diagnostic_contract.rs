@@ -2005,6 +2005,22 @@ fn local_outline_resource_recovery_reports_exact_crossings() {
                         row["effects"] = json!(["visual", "semantic"]);
                     }
                     rows.push(row);
+                } else if bounded {
+                    // Admitted components can still translate the far edge
+                    // beyond the ceiling: x=21 + width=20 is 41.
+                    let mut row = expected(
+                        "resource.coordinate-range-exceeded",
+                        "max_coordinate_magnitude",
+                        json!(configured),
+                        json!(41),
+                        "coordinate",
+                        "/elements/0",
+                        "omitted",
+                    );
+                    if format != OutputFormat::Png {
+                        row["effects"] = json!(["visual", "semantic"]);
+                    }
+                    rows.push(row);
                 }
                 assert_repeat(&source, &request, json!(rows));
             }

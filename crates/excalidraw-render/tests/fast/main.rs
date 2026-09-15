@@ -18,6 +18,7 @@ mod artifact_metadata;
 mod bound_text_render;
 mod compatibility_fallback_render;
 mod compatibility_identity;
+mod coordinate_recovery;
 mod dark_mode_frame_and_image_render;
 mod diagnostic_contract;
 mod duplicate_identity_contract;

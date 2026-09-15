@@ -6,7 +6,7 @@ use crate::normalization::{NormalizedElement, NormalizedElementKind, NormalizedI
 use crate::outcome::PendingDiagnostic;
 use crate::{
     CompatibilityDiagnostic, DiagnosticCode, DiagnosticEffect, ErrorDetails, OutputFormat,
-    ResourceLimits,
+    ResourceLimits, ResourceValue,
 };
 
 use super::{asset, pdf, try_owned};
@@ -151,10 +151,26 @@ fn image_failure(
     let limit_crossed =
         |limit: LocalLimit, configured: u64, attempted: u64| ImageFailure::LimitCrossed {
             limit,
-            configured,
-            attempted,
+            configured: ResourceValue::Integer(configured),
+            attempted: crate::Measurement::Attempted {
+                value: ResourceValue::Integer(attempted),
+            },
         };
     match failure {
+        asset::ResolveError::Coordinate { value_bits } => (
+            ImageFailure::LimitCrossed {
+                limit: LocalLimit::CoordinateMagnitude,
+                configured: ResourceValue::Finite(
+                    crate::FiniteValue::new(limits.max_coordinate_magnitude())
+                        .expect("admitted limit"),
+                ),
+                attempted: super::coordinates::measurement(
+                    f64::from_bits(value_bits),
+                    limits.max_coordinate_magnitude(),
+                ),
+            },
+            "nested SVG exceeded the coordinate ceiling",
+        ),
         asset::ResolveError::Malformed => (
             ImageFailure::MalformedFileRecord,
             "referenced authoritative file payload was malformed",
@@ -269,6 +285,8 @@ pub(super) fn image_asset_failure_diagnostic(
         failure,
         asset::ResolveError::Dimensions { .. } | asset::ResolveError::Pixels { .. }
     );
+    let coordinate_semantics =
+        matches!(failure, asset::ResolveError::Coordinate { .. }) && format != OutputFormat::Png;
     let (failure, message) = image_failure(failure, limits);
     PendingDiagnostic::new(
         DiagnosticKind::ImageUnavailable {
@@ -277,7 +295,11 @@ pub(super) fn image_asset_failure_diagnostic(
             recovery: ImageRecovery::for_format(format, status == NormalizedImageStatus::Error),
         },
         format,
-        &[DiagnosticEffect::Visual],
+        if coordinate_semantics {
+            &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic]
+        } else {
+            &[DiagnosticEffect::Visual]
+        },
         if intrinsic_raster_limit {
             None
         } else {
@@ -715,7 +737,9 @@ mod tests {
         DiagnosticKind::LocalLimitCrossed {
             limit: LocalLimit::CoordinateMagnitude,
             configured: ResourceValue::Integer(1),
-            attempted: ResourceValue::Integer(2),
+            attempted: crate::Measurement::Attempted {
+                value: ResourceValue::Integer(2),
+            },
             recovery: LocalRecovery::Omitted,
         }
     }

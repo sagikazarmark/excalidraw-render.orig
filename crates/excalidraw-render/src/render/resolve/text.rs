@@ -9,7 +9,6 @@ use crate::relationships::{RelationshipKind, ResolvedRelationshipGraph};
 
 use super::super::bound_text::has_reciprocal_bound_text;
 use super::super::font_demand::ResolvedFont;
-use super::super::geometry::GeneratedGeometry;
 use super::super::text::{
     layout_with_fallbacks, needs_bidi_layout, CjkSubsetTrigger, OfficialFont, ResolvedText,
     TextLayout, EXCALIFONT_FONT_FAMILY,
@@ -48,11 +47,11 @@ pub(in crate::render) fn live_text_occurrence(
 /// non-whitespace scalar of its `originalText`. The outcome is carried on the
 /// resolved scene so glyph selection and the SVG font demand share it, even
 /// when local recovery later omits the occurrence that fired it.
-pub(super) fn cjk_subset_trigger(
-    outlines: &[(NormalizedElement, Option<GeneratedGeometry>)],
+pub(in crate::render) fn cjk_subset_trigger<'a>(
+    sources: impl Iterator<Item = &'a NormalizedElement>,
     relationships: &ResolvedRelationshipGraph,
 ) -> CjkSubsetTrigger {
-    CjkSubsetTrigger::evaluate(outlines.iter().filter_map(|(source, _)| {
+    CjkSubsetTrigger::evaluate(sources.filter_map(|source| {
         let NormalizedElementKind::Text(text_source) = &source.kind else {
             return None;
         };
@@ -120,7 +119,7 @@ pub(super) fn layout_official_text(
 /// container does not bind it back. A bound occurrence carries its container's
 /// source order so it paints right after the container.
 pub(super) fn resolve_text(
-    source: NormalizedElement,
+    source: &NormalizedElement,
     context: &ResolveContext<'_>,
     official_fonts: &mut Vec<OfficialFont>,
     membership: FrameMembership,
@@ -158,10 +157,10 @@ pub(super) fn resolve_text(
         },
         context.cjk_subset_trigger,
     )?;
-    let transform = context.box_transform(&source);
+    let transform = context.box_transform(source);
     Ok(Some(ResolvedTextElement {
         source_order: source.source_order,
-        source: source.source,
+        source: source.source.try_clone()?,
         font_family: text_source.font_family,
         original_text: try_owned(&text_source.original_text)?,
         text: laid_out,
@@ -172,9 +171,10 @@ pub(super) fn resolve_text(
             .for_mode(context.request.color_mode()),
         opacity: source.opacity / 100.0 * membership.opacity,
         render: true,
+        coordinate_failure: None,
         base_element_work_units: 0,
         container_source_order,
-        link: source.link,
+        link: source.link.as_deref().map(try_owned).transpose()?,
         width: source.width,
         height: source.height,
     }))

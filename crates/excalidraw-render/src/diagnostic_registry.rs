@@ -252,8 +252,8 @@ pub(crate) enum ImageFailure {
     /// A local asset ceiling crossed while resolving the payload.
     LimitCrossed {
         limit: LocalLimit,
-        configured: u64,
-        attempted: u64,
+        configured: ResourceValue,
+        attempted: crate::ResourceMeasurement,
     },
 }
 
@@ -390,8 +390,8 @@ pub(crate) enum DiagnosticKind<'a> {
     },
     NestedResourceLimit {
         limit: LocalLimit,
-        configured: u64,
-        attempted: u64,
+        configured: ResourceValue,
+        attempted: crate::ResourceMeasurement,
         asset_chain: Vec<AssetChainEntry>,
         paths: Vec<NestedPath>,
         recovery: LocalRecovery,
@@ -412,7 +412,7 @@ pub(crate) enum DiagnosticKind<'a> {
     LocalLimitCrossed {
         limit: LocalLimit,
         configured: ResourceValue,
-        attempted: ResourceValue,
+        attempted: crate::ResourceMeasurement,
         recovery: LocalRecovery,
     },
     /// `resource.optional-metadata-omitted` after the crossing of `field`.
@@ -576,12 +576,7 @@ impl DiagnosticKind<'_> {
                     },
                 recovery,
                 ..
-            } => resource_limit(
-                limit,
-                ResourceValue::Integer(configured),
-                ResourceValue::Integer(attempted),
-                recovery.local(),
-            ),
+            } => resource_limit(limit, configured, attempted, recovery.local()),
             Self::ImageUnavailable {
                 failure,
                 asset_id,
@@ -627,11 +622,9 @@ impl DiagnosticKind<'_> {
                 recovery,
             } => ErrorDetails::NestedResourceLimit {
                 field: limit.field(),
-                configured: ResourceValue::Integer(configured),
+                configured,
                 value_kind: limit.value_kind(),
-                measurement: Measurement::Attempted {
-                    value: ResourceValue::Integer(attempted),
-                },
+                measurement: attempted,
                 asset_chain,
                 paths,
                 recovery: recovery.recovery(),
@@ -728,14 +721,14 @@ fn asset(
 fn resource_limit(
     limit: LocalLimit,
     configured: ResourceValue,
-    attempted: ResourceValue,
+    attempted: crate::ResourceMeasurement,
     recovery: LocalRecovery,
 ) -> ErrorDetails {
     ErrorDetails::ResourceLimit {
         field: limit.field(),
         configured,
         value_kind: limit.value_kind(),
-        measurement: Measurement::Attempted { value: attempted },
+        measurement: attempted,
         recovery: Some(recovery.recovery()),
     }
 }
@@ -953,8 +946,10 @@ mod tests {
             details(DiagnosticKind::ImageUnavailable {
                 failure: ImageFailure::LimitCrossed {
                     limit: LocalLimit::AssetBytes,
-                    configured: 10,
-                    attempted: 11,
+                    configured: ResourceValue::Integer(10),
+                    attempted: Measurement::Attempted {
+                        value: ResourceValue::Integer(11)
+                    },
                 },
                 asset_id: "asset",
                 recovery: ImageRecovery::for_format(OutputFormat::Svg, true),

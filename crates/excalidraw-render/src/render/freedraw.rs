@@ -108,9 +108,16 @@ pub(super) fn generate(
     }
     budget.work(u64::try_from(input.len()).unwrap_or(u64::MAX))?;
     let size = stroke_width * 4.25;
+    budget.coordinate(size)?;
     let stroke_points = stroke_points(&input, size, false)?;
+    for point in &stroke_points {
+        budget.point(point.point)?;
+    }
     budget.work(u64::try_from(stroke_points.len()).unwrap_or(u64::MAX))?;
     let outline = stroke_outline(&stroke_points, size, freedraw.simulate_pressure, false)?;
+    for point in &outline {
+        budget.point(*point)?;
+    }
     path_from_outline(&outline, budget)
 }
 

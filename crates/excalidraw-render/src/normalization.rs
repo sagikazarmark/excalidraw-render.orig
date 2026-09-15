@@ -195,6 +195,14 @@ pub(crate) struct NormalizedElementSource {
 }
 
 impl NormalizedElementSource {
+    pub(crate) fn try_clone(&self) -> Result<Self, TryReserveError> {
+        Ok(Self {
+            source_index: self.source_index,
+            id: try_owned(&self.id)?,
+            pointer: try_owned(&self.pointer)?,
+            coordinate_positions: self.coordinate_positions,
+        })
+    }
     pub(crate) const fn source_index(&self) -> usize {
         self.source_index
     }

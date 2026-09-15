@@ -82,6 +82,7 @@ struct ResolutionInputs<'p> {
 /// The non-element scene state the assembly phase needs: file records, view
 /// background, effective frame rendering, and the target viewport.
 struct SceneChrome {
+    cjk_subset_trigger: super::text::CjkSubsetTrigger,
     files: Vec<NormalizedFileRecord>,
     view_background_color: String,
     view_background_working_bytes: u64,
@@ -302,6 +303,10 @@ impl RenderSession {
             },
         };
         let chrome = SceneChrome {
+            cjk_subset_trigger: super::resolve::text::cjk_subset_trigger(
+                inputs.normalization.elements.iter(),
+                &inputs.relationships.graph,
+            ),
             files: inputs.normalization.files,
             view_background_color,
             view_background_working_bytes,
@@ -655,7 +660,8 @@ impl RenderSession {
                     ),
                     request.resource_limits().max_element_work_units(),
                     base_element_work_units,
-                );
+                )
+                .with_coordinate_limit(request.resource_limits().max_coordinate_magnitude());
                 let generated = match &source.kind {
                     NormalizedElementKind::Freedraw(freedraw) => {
                         freedraw::generate(freedraw, source.stroke_width, &mut budget).and_then(
@@ -686,6 +692,14 @@ impl RenderSession {
                 };
                 match generated {
                     Ok(geometry) => Some(geometry),
+                    Err(rough::GenerationError::Coordinate {
+                        value,
+                        geometry_segments,
+                    }) => {
+                        rejected_geometry_segments = geometry_segments;
+                        local_crossing = Some(super::coordinates::crossing(value, request));
+                        None
+                    }
                     Err(rough::GenerationError::Memory) => {
                         return Err(self.memory_failure(
                             request,
@@ -759,7 +773,17 @@ impl RenderSession {
                 local_crossing =
                     outline_local_crossing(&source, request, geometry_segments, element_work_units);
             }
+            if local_crossing.is_none() {
+                local_crossing = geometry.as_ref().and_then(|geometry| {
+                    super::coordinates::generated(&source, geometry, request)
+                        .err()
+                        .map(|value| super::coordinates::crossing(value, request))
+                });
+            }
             let include_outline = has_outline && local_crossing.is_none();
+            let rejected = local_crossing.as_ref().is_some_and(|crossing| {
+                crossing.limit == crate::diagnostic_registry::LocalLimit::CoordinateMagnitude
+            });
             let semantic_working_bytes = if let Some(crossing) = local_crossing {
                 self.commit_local_rejection_observation(
                     request,
@@ -840,7 +864,9 @@ impl RenderSession {
                 })?,
                 bytes: semantic_working_bytes,
             });
-            outlines.push((source, include_outline.then_some(geometry).flatten()));
+            if !rejected {
+                outlines.push((source, include_outline.then_some(geometry).flatten()));
+            }
         }
         self.assemble_resolved_scene(
             scene,
@@ -872,19 +898,19 @@ impl RenderSession {
             element_id: Some(try_owned(source.source.id()).map_err(|_| {
                 self.memory_failure(request, "frame_selection", "coordinate_owner")
             })?),
-            json_pointer: crate::scene::pointer_child(
-                source.source.pointer(),
-                crossing.pointer_field.unwrap_or("x"),
-            )
-            .map_err(|_| self.memory_failure(request, "frame_selection", "coordinate_pointer"))?
-            .into_boxed_str(),
+            json_pointer: crossing
+                .pointer_field
+                .map_or_else(
+                    || try_owned(source.source.pointer()),
+                    |field| crate::scene::pointer_child(source.source.pointer(), field),
+                )
+                .map_err(|_| self.memory_failure(request, "frame_selection", "coordinate_pointer"))?
+                .into_boxed_str(),
             details: Some(Box::new(crate::ErrorDetails::ResourceLimit {
                 field: "max_coordinate_magnitude",
                 configured: crossing.configured,
                 value_kind: crate::ValueKind::Coordinate,
-                measurement: crate::ResourceMeasurement::Attempted {
-                    value: crossing.attempted,
-                },
+                measurement: crossing.attempted,
                 recovery: None,
             })),
             report: self.take_report(),
@@ -1333,6 +1359,7 @@ impl RenderSession {
         semantic_working: &mut Vec<SemanticWorkingRecord>,
     ) -> Result<ResolvedScene, RenderError> {
         let SceneChrome {
+            cjk_subset_trigger,
             files: normalized_files,
             view_background_color,
             view_background_working_bytes,
@@ -1382,7 +1409,8 @@ impl RenderSession {
                 )),
             }
         } else {
-            match ResolvedScene::elements(
+            let mut recoveries = Vec::new();
+            let result = ResolvedScene::elements(
                 outlines,
                 images.into_inputs(),
                 fallbacks,
@@ -1391,8 +1419,14 @@ impl RenderSession {
                 &view_background_color,
                 request,
                 frame_viewport,
-            ) {
-                Ok(Some(resolved)) => Ok(resolved),
+                &mut recoveries,
+                cjk_subset_trigger,
+            );
+            match result {
+                Ok(Some(mut resolved)) => {
+                    resolved.coordinate_omissions = recoveries;
+                    Ok(resolved)
+                }
                 Ok(None) => Err(self.internal_failure(
                     request.format(),
                     "outline semantics are outside the implemented focused case",

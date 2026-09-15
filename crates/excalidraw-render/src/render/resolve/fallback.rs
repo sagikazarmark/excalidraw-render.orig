@@ -6,11 +6,9 @@
 use crate::scene_surface::SurfaceFallback;
 
 use super::super::frame_target::EffectiveFrameRendering;
-use super::super::text::FallbackFont;
+use super::super::text::ResolvedLabel;
 use super::super::try_owned;
-use super::{
-    label_error, FallbackSource, ResolveContext, ResolveSceneError, ResolvedClip, ResolvedFallback,
-};
+use super::{FallbackSource, ResolveContext, ResolveSceneError, ResolvedClip, ResolvedFallback};
 
 /// A frame that survives only as a compatibility placeholder, as the clip its
 /// placeholder children resolve against.
@@ -22,6 +20,34 @@ pub(super) struct FallbackFrameClipSource {
     width: f64,
     height: f64,
     angle: f64,
+}
+
+/// Mirrors the two clip-authority branches in `resolve_fallback`: repaired
+/// graph edges for graph members, otherwise the placeholder frame lookup.
+pub(super) fn fallback_parent_index(
+    fallback: &SurfaceFallback,
+    fallbacks: &[SurfaceFallback],
+    relationships: &crate::relationships::ResolvedRelationshipGraph,
+) -> Option<usize> {
+    if let Some(node) = fallback
+        .element_id
+        .as_deref()
+        .and_then(|id| relationships.nodes.iter().find(|node| node.id == id))
+    {
+        return super::super::frame_target::relationship_frame_target(
+            node.source_index,
+            relationships,
+        );
+    }
+    fallback
+        .frame_id
+        .as_deref()
+        .and_then(|id| {
+            fallbacks
+                .iter()
+                .find(|parent| parent.is_frame && parent.element_id.as_deref() == Some(id))
+        })
+        .map(|parent| parent.source_index)
 }
 
 /// The frames that survive only as compatibility placeholders, as the clips
@@ -59,18 +85,9 @@ pub(super) fn fallback_frame_clip_sources(
 pub(super) fn resolve_fallback(
     fallback: SurfaceFallback,
     context: &ResolveContext<'_>,
-    fallback_font: Option<&FallbackFont>,
+    label: Option<ResolvedLabel>,
     fallback_frame_clips: &[FallbackFrameClipSource],
 ) -> Result<ResolvedFallback, ResolveSceneError> {
-    let Some(font) = fallback_font else {
-        return Err(ResolveSceneError::InvalidFallbackFont);
-    };
-    let label = if fallback.label.is_empty() {
-        None
-    } else {
-        font.resolve(&fallback.label, fallback.width, fallback.height)
-            .map_err(label_error)?
-    };
     let source_index = fallback.element_id.as_deref().and_then(|id| {
         context
             .relationships

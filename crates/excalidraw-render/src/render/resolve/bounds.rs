@@ -225,6 +225,20 @@ fn include_element_bounds(
     }
 }
 
+pub(super) fn element_bounds(
+    source: &NormalizedElement,
+    geometry: Option<&GeneratedGeometry>,
+) -> (f64, f64, f64, f64) {
+    let (mut x1, mut y1, mut x2, mut y2) = (
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+    );
+    include_element_bounds(source, geometry, &mut x1, &mut y1, &mut x2, &mut y2);
+    (x1, y1, x2, y2)
+}
+
 /// `getLinearElementRotatedBounds` as the export reaches it: the centre is
 /// that of the element's points' box (`getElementAbsoluteCoords` reads the
 /// points when the shape cache is cold, which it is while `getCanvasSize`

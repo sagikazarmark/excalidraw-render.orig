@@ -76,7 +76,9 @@ impl RenderSession {
                 configured: ResourceValue::Integer(u64::from(
                     request.resource_limits().max_text_scalars_per_element(),
                 )),
-                attempted: ResourceValue::Integer(text_scalars),
+                attempted: crate::Measurement::Attempted {
+                    value: ResourceValue::Integer(text_scalars),
+                },
                 pointer_field: None,
                 message: "text was omitted because it exceeds its scalar limit",
             })
@@ -86,7 +88,9 @@ impl RenderSession {
                 configured: ResourceValue::Integer(
                     request.resource_limits().max_element_work_units(),
                 ),
-                attempted: ResourceValue::Integer(prepaid_work),
+                attempted: crate::Measurement::Attempted {
+                    value: ResourceValue::Integer(prepaid_work),
+                },
                 pointer_field: None,
                 message: "text was omitted before shaping because scalar work exceeds its limit",
             })
@@ -219,28 +223,8 @@ impl RenderSession {
             return Ok(());
         };
         let geometry_segments = label.outline_segments();
-        let glyphs = label.glyph_count();
-        let text_scalars = label.scalar_count;
-        let line_break_steps = label.line_break_steps;
-        let total_work_units = text_scalars
-            .saturating_add(glyphs)
-            .saturating_add(line_break_steps)
-            .saturating_add(geometry_segments)
-            .saturating_mul(32);
-        let total_work_units =
-            total_work_units.saturating_add(label.fallback_probes.saturating_mul(32));
-        let working_bytes = glyphs
-            .saturating_mul(64)
-            .saturating_add(line_break_steps.saturating_mul(32))
-            .saturating_add(label.run_count().saturating_mul(128))
-            .saturating_add(label.fallback_resource_count().saturating_mul(256))
-            .saturating_add(geometry_segments.saturating_mul(64));
-        let delta = ResourceDelta {
-            geometry_segments,
-            working_bytes,
-            total_work_units,
-            ..ResourceDelta::default()
-        };
+        let delta = super::super::resolve::admission::generated_label_delta(label);
+        let total_work_units = delta.total_work_units;
         let context = ResourceContext::new(
             ResourcePhase::SharedSemanticResolution,
             "embeddable_label_layout_and_glyph_geometry",
@@ -269,7 +253,7 @@ impl RenderSession {
                         .resource_limits()
                         .max_geometry_segments_per_element(),
                 )),
-                attempted: ResourceValue::Integer(geometry_segments),
+                attempted: crate::Measurement::Attempted { value: ResourceValue::Integer(geometry_segments) },
                 pointer_field: None,
                 message: "embeddable label was omitted because its glyph outlines exceed the geometry limit",
             })
@@ -283,11 +267,13 @@ impl RenderSession {
                 configured: ResourceValue::Integer(
                     request.resource_limits().max_element_work_units(),
                 ),
-                attempted: ResourceValue::Integer(
-                    outline
-                        .base_element_work_units
-                        .saturating_add(total_work_units),
-                ),
+                attempted: crate::Measurement::Attempted {
+                    value: ResourceValue::Integer(
+                        outline
+                            .base_element_work_units
+                            .saturating_add(total_work_units),
+                    ),
+                },
                 pointer_field: None,
                 message: "embeddable label was omitted because shaping exceeds its work limit",
             })
@@ -460,12 +446,15 @@ impl RenderSession {
                 "/elements",
             ));
         }
-        let local_crossing = if geometry_segments
+        let local_crossing = if let Some(value) = text.coordinate_failure {
+            Some(super::super::coordinates::crossing(value, request))
+        } else if geometry_segments
             > u64::from(
                 request
                     .resource_limits()
                     .max_geometry_segments_per_element(),
-            ) {
+            )
+        {
             Some(ElementLocalCrossing {
                 limit: LocalLimit::GeometrySegmentsPerElement,
                 configured: ResourceValue::Integer(u64::from(
@@ -473,7 +462,9 @@ impl RenderSession {
                         .resource_limits()
                         .max_geometry_segments_per_element(),
                 )),
-                attempted: ResourceValue::Integer(geometry_segments),
+                attempted: crate::Measurement::Attempted {
+                    value: ResourceValue::Integer(geometry_segments),
+                },
                 pointer_field: None,
                 message: "text was omitted because its glyph outlines exceed the geometry limit",
             })
@@ -483,7 +474,9 @@ impl RenderSession {
                 configured: ResourceValue::Integer(
                     request.resource_limits().max_element_work_units(),
                 ),
-                attempted: ResourceValue::Integer(total_work_units),
+                attempted: crate::Measurement::Attempted {
+                    value: ResourceValue::Integer(total_work_units),
+                },
                 pointer_field: None,
                 message: "text was omitted because shaping exceeds its work limit",
             })
@@ -751,7 +744,9 @@ impl RenderSession {
                     configured: ResourceValue::Integer(u64::from(
                         request.resource_limits().max_text_scalars_per_element(),
                     )),
-                    attempted: ResourceValue::Integer(text_scalars),
+                    attempted: crate::Measurement::Attempted {
+                        value: ResourceValue::Integer(text_scalars),
+                    },
                     pointer_field: None,
                     message:
                         "compatibility fallback label omitted because it exceeds the text limit",

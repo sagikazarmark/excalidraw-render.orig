@@ -35,6 +35,27 @@ fn resolve_with(scene: &SceneDocument, request: &RenderRequest) -> ResolvedScene
     resolve_for_test(scene, request).expect("scene resolves")
 }
 
+#[test]
+fn a_coordinate_rejected_occurrence_still_fires_the_cjk_subset_trigger() {
+    let scene = scene(br#"{"type":"excalidraw","version":2,"elements":[
+        {"id":"trigger","type":"text","x":99,"width":2,"height":10,"fontSize":10,"fontFamily":5,"text":"\u4e00","updated":0},
+        {"id":"survivor","type":"text","width":20,"height":10,"fontSize":10,"fontFamily":5,"text":"A","updated":0}
+    ],"appState":{},"files":{}}"#);
+    let request = RenderRequest::builder(OutputFormat::Svg)
+        .padding(0.0)
+        .resource_limits(
+            crate::ResourceLimits::builder()
+                .max_coordinate_magnitude(100.0)
+                .build()
+                .unwrap(),
+        )
+        .build()
+        .unwrap();
+    let resolved = resolve_with(&scene, &request);
+    assert!(resolved.cjk_subset_trigger.selects_xiaolai());
+    assert_eq!(paint_order(&resolved), vec![Some("survivor")]);
+}
+
 /// The resolved elements' ids in paint order.
 fn paint_order(resolved: &ResolvedScene) -> Vec<Option<&str>> {
     (0..resolved.source_count())

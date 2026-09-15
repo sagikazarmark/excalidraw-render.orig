@@ -26,20 +26,7 @@ pub(super) fn resolve_image(
         unreachable!("only image elements reach image resolution");
     };
     if let Some(asset) = images.assets.get(&source.source.source_index()) {
-        let source_rect = image.crop.map_or(
-            ResolvedImageSourceRect {
-                x: 0.0,
-                y: 0.0,
-                width: f64::from(asset.width),
-                height: f64::from(asset.height),
-            },
-            |crop| ResolvedImageSourceRect {
-                x: crop.x * f64::from(asset.width) / crop.natural_width,
-                y: crop.y * f64::from(asset.height) / crop.natural_height,
-                width: crop.width * f64::from(asset.width) / crop.natural_width,
-                height: crop.height * f64::from(asset.height) / crop.natural_height,
-            },
-        );
+        let source_rect = ResolvedImageSourceRect::for_image(asset, image.crop);
         let transform = context.box_transform(&source);
         return Ok(Some(ResolvedElement::Image(ResolvedImage {
             source_order: source.source_order,

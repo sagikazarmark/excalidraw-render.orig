@@ -56,7 +56,7 @@ pub(super) fn resolve_geometry(
     source: NormalizedElement,
     geometry: GeneratedGeometry,
     context: &ResolveContext<'_>,
-    official_fonts: &mut Vec<OfficialFont>,
+    prepared_label: Option<super::EmbeddableLabel>,
     membership: FrameMembership,
 ) -> Result<ResolvedElement, ResolveSceneError> {
     let geometry_work_units = u64::try_from(geometry.operation_count())
@@ -81,7 +81,7 @@ pub(super) fn resolve_geometry(
             rough.drawing,
             common,
             context,
-            official_fonts,
+            prepared_label,
             membership,
         )?)),
         GeneratedGeometry::Freedraw(freedraw) => Ok(ResolvedElement::Freedraw(resolve_freedraw(
@@ -105,7 +105,7 @@ pub(super) fn resolve_geometry(
 /// which PNG and PDF keep. The two coincide at roughness 0, where the curve
 /// has no jitter; freedraw is not a linear element to
 /// `getElementAbsoluteCoords` and every other kind rotates about its box.
-fn rotation_center(
+pub(in crate::render) fn rotation_center(
     source: &NormalizedElement,
     geometry: &GeneratedGeometry,
     format: OutputFormat,
@@ -134,7 +134,7 @@ fn rotation_center(
 /// `IFrame element` — wrapped and laid out in the label font, with its color
 /// (the stroke color, or black over a transparent stroke) and the vertical
 /// offset that centers its line box in the element.
-fn resolve_embeddable_label(
+pub(super) fn resolve_embeddable_label(
     source: &NormalizedElement,
     label: &str,
     context: &ResolveContext<'_>,
@@ -179,22 +179,14 @@ fn resolve_outline(
     drawing: Drawing,
     common: OutlineCommon,
     context: &ResolveContext<'_>,
-    official_fonts: &mut Vec<OfficialFont>,
+    prepared_label: Option<super::EmbeddableLabel>,
     membership: FrameMembership,
 ) -> Result<ResolvedOutline, ResolveSceneError> {
     let source_index = source.source.source_index();
-    let (generated_label, generated_label_color, generated_label_offset_y) =
-        if context.request.format() == OutputFormat::Png
-            && (source.width == 0.0 || source.height == 0.0)
-        {
-            (None, None, 0.0)
-        } else if let NormalizedElementKind::Embeddable { label, .. } = &source.kind {
-            let (laid_out, label_color, offset_y) =
-                resolve_embeddable_label(&source, label, context, official_fonts)?;
-            (Some(laid_out), Some(label_color), offset_y)
-        } else {
-            (None, None, 0.0)
-        };
+    let (generated_label, generated_label_color, generated_label_offset_y) = prepared_label
+        .map_or((None, None, 0.0), |(text, color, offset)| {
+            (Some(text), Some(color), offset)
+        });
     Ok(ResolvedOutline {
         source_order: source.source_order,
         source: source.source,

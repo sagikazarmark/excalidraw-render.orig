@@ -22,6 +22,7 @@ pub(crate) use font_subset_fuzz::{
 };
 #[cfg(all(test, target_arch = "wasm32"))]
 pub(crate) use font_subset_qualification::assert_complete_font_subset_qualification_corpus;
+mod coordinates;
 #[cfg(test)]
 mod frame_batch_property;
 mod frame_target;
