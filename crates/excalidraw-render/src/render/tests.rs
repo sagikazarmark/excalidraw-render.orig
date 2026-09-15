@@ -1981,6 +1981,65 @@ fn required_raster_trace_precedes_projection_work() {
 }
 
 #[test]
+fn optional_metadata_stage_rejection_keeps_only_committed_work() {
+    let source = serde_json::json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{},"source":"x".repeat(100_000)});
+    let scene = SceneDocument::parse(&serde_json::to_vec(&source).unwrap()).unwrap();
+    let profile = crate::catalog::REVISION_1.profile();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        let request = RenderRequest::builder(format)
+            .metadata_options(crate::MetadataOptions::new(true, false, false))
+            .build()
+            .unwrap();
+        let (full, trace) = render_with_trace(profile, &scene, &request);
+        full.unwrap();
+        let trace: serde_json::Value = serde_json::from_slice(&trace).unwrap();
+        let entries = trace["entries"].as_array().unwrap();
+        let generation = entries
+            .iter()
+            .find(|e| {
+                e["event"] == "embedded_scene_metadata_omitted"
+                    && e["deltas"]["total_work_units"].as_u64().unwrap_or(0) > 0
+            })
+            .unwrap();
+        let g = generation["deltas"]["total_work_units"].as_u64().unwrap();
+        let before = generation["before"]["total_work_units"].as_u64().unwrap();
+        for (stage, event, committed) in [
+            (0, "embedded_scene_metadata_omitted", 0),
+            (1, "embedded_scene_metadata_measurement", g),
+        ] {
+            let ceiling = before + (stage + 1) * g - 1;
+            let request = RenderRequest::builder(format)
+                .metadata_options(crate::MetadataOptions::new(true, false, false))
+                .resource_limits(
+                    crate::ResourceLimits::builder()
+                        .max_element_work_units(1)
+                        .max_asset_work_units(1)
+                        .max_total_work_units(ceiling)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            let (outcome, bytes) = render_with_trace(profile, &scene, &request);
+            outcome.unwrap();
+            let limited: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            let entries = limited["entries"].as_array().unwrap();
+            let rejected = entries
+                .iter()
+                .find(|e| e["event"] == event && e["decision"] == "rejected_local")
+                .unwrap();
+            assert_eq!(rejected["before"]["total_work_units"], before + committed);
+            assert_eq!(rejected["after"]["total_work_units"], before + committed);
+            assert!(!entries
+                .iter()
+                .any(|e| e["event"] == "embedded_scene_metadata_retention"));
+            let (_, again) = render_with_trace(profile, &scene, &request);
+            assert_eq!(bytes, again);
+        }
+    }
+}
+
+#[test]
 fn normalization_resource_events_repeat_with_generated_identity_and_source_order() {
     let source = br#"{"type":"excalidraw","version":2,"elements":[{"type":"rectangle","width":180,"height":100,"seed":0}],"appState":{},"files":{}}"#;
     let scene = SceneDocument::parse(source).expect("normalization vector is valid");

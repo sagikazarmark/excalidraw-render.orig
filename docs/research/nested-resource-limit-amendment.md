@@ -213,3 +213,27 @@ Standards review finds no definite violations. Workspace/all-target typechecking
 focused owners, all ten canonical conformance/lint checks and full fast/render/doc
 suite pass (19m47s combined). Current totals: **789 assigned / 139 gaps**;
 **18 of the requested resource assignments remain open**.
+
+## Optional-metadata ownership
+
+The next three assignments select
+`optional_metadata_contract_covers_components_limits_and_frames`, which
+unconditionally runs eight public-facade scenarios. Each optional component has
+exact output boundaries. Work vectors cover generation, measurement and retention;
+scratch vectors cover generation and output-buffer retention. The vectors derive
+canonical scene/zlib/wrapper/manifest lengths and use normative record/work costs.
+PNG prepays 3200 empty-raster units before metadata and reserves the remaining
+1600 emission units with retention.
+
+Ordered multi-component omissions preserve accepted output, continue to later
+components, retain mandatory notices, and keep a nonempty pre-metadata summary
+frozen. Required output and diagnostic budget failures retain exact report
+prefixes. Different frame names yield independent acceptance under one limit,
+with atomic embedded-scene omission and direct/batch artifact/report equality.
+The companion trace regression proves generation/measurement rejection commits
+no rejected delta and preserves only prior work. No production change was needed.
+
+Spec review supports all three assignments; Standards review has no hard
+violations. Focused tests, typechecking, all ten conformance/lint checks and the
+full fast/render/doctest suite pass (19m47s). Current totals: **792 assigned /
+136 gaps**, with **15 resource assignments remaining**.

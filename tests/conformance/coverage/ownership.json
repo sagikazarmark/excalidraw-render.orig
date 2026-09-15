@@ -4212,7 +4212,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "image_dimension_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4241,7 +4241,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "image_dimension_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4270,7 +4270,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "image_dimension_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4299,7 +4299,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "image_pixel_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4328,7 +4328,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "image_pixel_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4357,7 +4357,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "image_pixel_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4386,7 +4386,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4415,7 +4415,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4444,7 +4444,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4473,7 +4473,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
           "binary": "fast",
@@ -4502,7 +4502,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
           "binary": "fast",
@@ -4531,7 +4531,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
           },
           "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
           "binary": "fast",
@@ -4555,25 +4555,88 @@
     {
       "id": "diagnostic:resource.optional-metadata-omitted:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
+          },
+          "function": "optional_metadata_contract_covers_components_limits_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::optional_metadata_contract_covers_components_limits_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered reports for all optional components across output/work/scratch/retention boundaries, priority and continuation, nonempty frozen summary and mandatory notices, fatal required-output/diagnostic budget prefixes, atomic embedded-scene omission, direct/batch frame independence and options-disabled silence."
       }
     },
     {
       "id": "diagnostic:resource.optional-metadata-omitted:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
+          },
+          "function": "optional_metadata_contract_covers_components_limits_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::optional_metadata_contract_covers_components_limits_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered reports for all optional components across output/work/scratch/retention boundaries, priority and continuation, nonempty frozen summary and mandatory notices, fatal required-output/diagnostic budget prefixes, atomic embedded-scene omission, direct/batch frame independence and options-disabled silence."
       }
     },
     {
       "id": "diagnostic:resource.optional-metadata-omitted:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "8a057cf4d629c84d24be028f724dd2bef78e57ce3157c81e9c70b16caa2e5ab0"
+          },
+          "function": "optional_metadata_contract_covers_components_limits_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::optional_metadata_contract_covers_components_limits_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered reports for all optional components across output/work/scratch/retention boundaries, priority and continuation, nonempty frozen summary and mandatory notices, fatal required-output/diagnostic budget prefixes, atomic embedded-scene omission, direct/batch frame independence and options-disabled silence."
       }
     },
     {

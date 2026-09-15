@@ -1312,6 +1312,615 @@ fn optional_metadata_output_boundary_retains_lower_priority_contract() {
 }
 
 #[test]
+fn optional_metadata_components_have_exact_output_boundaries_and_priority() {
+    let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}});
+    for format in FORMATS {
+        let render = |metadata: MetadataOptions| {
+            Renderer::new()
+                .render(
+                    &parse(&source),
+                    &RenderRequest::builder(format)
+                        .metadata_options(metadata)
+                        .build()
+                        .unwrap(),
+                )
+                .unwrap()
+        };
+        let baseline = render(MetadataOptions::new(false, false, false));
+        for options in [
+            MetadataOptions::new(true, false, false),
+            MetadataOptions::new(false, true, false),
+            MetadataOptions::new(false, false, true),
+        ] {
+            let full = render(options.clone());
+            let n = full.artifact().bytes().len() as u64;
+            assert!(n > baseline.artifact().bytes().len() as u64);
+            for configured in [n - 1, n, n + 1] {
+                let request = RenderRequest::builder(format)
+                    .metadata_options(options.clone())
+                    .resource_limits(
+                        ResourceLimits::builder()
+                            .max_output_bytes(configured)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                let rows = if configured < n {
+                    json!([metadata_omission_row("max_output_bytes", configured, n)])
+                } else {
+                    json!([])
+                };
+                let actual = assert_repeat(&source, &request, rows);
+                assert_eq!(
+                    actual.artifact().bytes(),
+                    if configured < n {
+                        baseline.artifact().bytes()
+                    } else {
+                        full.artifact().bytes()
+                    }
+                );
+            }
+        }
+        let provenance = render(MetadataOptions::new(false, true, false));
+        let summary = render(MetadataOptions::new(false, false, true));
+        let limit = summary.artifact().bytes().len() as u64;
+        assert!(provenance.artifact().bytes().len() as u64 > limit);
+        let request = RenderRequest::builder(format)
+            .metadata_options(MetadataOptions::new(false, true, true))
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(limit)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let result = assert_repeat(
+            &source,
+            &request,
+            json!([metadata_omission_row(
+                "max_output_bytes",
+                limit,
+                provenance.artifact().bytes().len() as u64
+            )]),
+        );
+        // Exact equality also proves the frozen summary excludes its own
+        // later omission warning and the refused provenance is absent.
+        assert_eq!(result.artifact().bytes(), summary.artifact().bytes());
+    }
+}
+
+#[test]
+fn metadata_omissions_order_and_required_report_failure_are_exact() {
+    let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}});
+    for format in FORMATS {
+        let render = |options: MetadataOptions| {
+            Renderer::new()
+                .render(
+                    &parse(&source),
+                    &RenderRequest::builder(format)
+                        .metadata_options(options)
+                        .build()
+                        .unwrap(),
+                )
+                .unwrap()
+        };
+        let baseline = render(MetadataOptions::new(false, false, false));
+        let limit = baseline.artifact().bytes().len() as u64;
+        let rows: Vec<_> = [
+            MetadataOptions::new(false, true, false),
+            MetadataOptions::new(false, false, true),
+            MetadataOptions::new(true, false, false),
+        ]
+        .into_iter()
+        .map(|options| {
+            metadata_omission_row(
+                "max_output_bytes",
+                limit,
+                render(options).artifact().bytes().len() as u64,
+            )
+        })
+        .collect();
+        let request = RenderRequest::builder(format)
+            .metadata_options(MetadataOptions::new(true, true, true))
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(limit)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let outcome = assert_repeat(&source, &request, json!(rows));
+        assert_eq!(outcome.artifact().bytes(), baseline.artifact().bytes());
+        let request = RenderRequest::builder(format)
+            .metadata_options(MetadataOptions::new(true, true, true))
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(limit)
+                    .max_diagnostics(1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let error = Renderer::new()
+            .render(&parse(&source), &request)
+            .unwrap_err();
+        assert_eq!(error.code().as_str(), "resource.diagnostic-count-exceeded");
+        let mut actual = serde_json::to_value(error.report()).unwrap();
+        for row in actual["diagnostics"].as_array_mut().unwrap() {
+            assert!(!row["message"].as_str().unwrap().is_empty());
+            row.as_object_mut().unwrap().remove("message");
+        }
+        let mut first = rows[0].clone();
+        first["format"] = json!(format.as_str());
+        assert_eq!(actual, json!({"schema_version":1,"diagnostics":[first]}));
+        let request = RenderRequest::builder(format)
+            .metadata_options(MetadataOptions::new(true, true, true))
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(limit - 1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let error = Renderer::new()
+            .render(&parse(&source), &request)
+            .unwrap_err();
+        assert_eq!(error.code().as_str(), "resource.output-bytes-exceeded");
+        assert!(error.report().is_empty());
+    }
+}
+
+fn metadata_omission_row(field: &str, configured: u64, attempted: u64) -> Value {
+    let mut row = expected(
+        "resource.optional-metadata-omitted",
+        field,
+        json!(configured),
+        json!(attempted),
+        if field == "max_total_work_units" {
+            "work_units"
+        } else {
+            "bytes"
+        },
+        "",
+        "metadata_omitted",
+    );
+    row["element_id"] = Value::Null;
+    row["effects"] = json!(["metadata"]);
+    row
+}
+
+#[test]
+fn optional_metadata_keeps_notices_and_nonempty_frozen_summary() {
+    let source = json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","width":20,"height":20,"fileId":"missing","status":"error","updated":0}],"appState":{},"files":{}});
+    for format in FORMATS {
+        let render = |options: MetadataOptions| {
+            Renderer::new()
+                .render(
+                    &parse(&source),
+                    &RenderRequest::builder(format)
+                        .metadata_options(options)
+                        .build()
+                        .unwrap(),
+                )
+                .unwrap()
+        };
+        let baseline = render(MetadataOptions::new(false, false, false));
+        let provenance = render(MetadataOptions::new(false, true, false));
+        let summary = render(MetadataOptions::new(false, false, true));
+        let limit = summary.artifact().bytes().len() as u64;
+        assert!(provenance.artifact().bytes().len() as u64 > limit);
+        let missing = json!({"code":"image.missing-file","severity":"warning","effects":["visual"],"element_id":"image","json_pointer":"/elements/0/fileId","details":{"kind":"asset","asset_id":"missing","claimed_media_type":null,"validated_media_type":null,"recovery":if format==OutputFormat::Png {"placeholder"} else {"omitted"},"recipe_id":if format==OutputFormat::Png {json!("official.image-error@sha256:f3c63c8600147961d006c0eea92ea6aff87bdc54711a2368af895a78154919e9")} else {Value::Null}}});
+        let request = RenderRequest::builder(format)
+            .metadata_options(MetadataOptions::new(false, true, true))
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(limit)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let result = assert_repeat(
+            &source,
+            &request,
+            json!([
+                missing,
+                metadata_omission_row(
+                    "max_output_bytes",
+                    limit,
+                    provenance.artifact().bytes().len() as u64
+                )
+            ]),
+        );
+        assert_eq!(result.artifact().bytes(), summary.artifact().bytes());
+        // The PNG ordinary error recipe requires notices even without optional
+        // metadata. Exact baseline bytes preserve them when all options fail.
+        let request = RenderRequest::builder(format)
+            .metadata_options(MetadataOptions::new(true, true, true))
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(baseline.artifact().bytes().len() as u64)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let result = Renderer::new().render(&parse(&source), &request).unwrap();
+        assert_eq!(result.artifact().bytes(), baseline.artifact().bytes());
+        assert_eq!(result.report().diagnostics().len(), 4);
+    }
+}
+
+#[test]
+fn optional_metadata_frame_limits_are_independent_and_replayed() {
+    let source = json!({"type":"excalidraw","version":2,"elements":[
+        {"id":"short","type":"frame","name":"A","width":20,"height":20,"updated":0},
+        {"id":"long","type":"frame","name":"B".repeat(500),"x":100,"width":20,"height":20,"updated":0}
+    ],"appState":{},"files":{}});
+    let scene = parse(&source);
+    let frames: Vec<_> = scene.frames().collect();
+    for format in FORMATS {
+        let renderer = Renderer::new();
+        let full_request = FrameRenderRequest::builder(format)
+            .metadata_options(MetadataOptions::new(true, true, true))
+            .build()
+            .unwrap();
+        let full: Vec<_> = frames
+            .iter()
+            .map(|frame| renderer.render_frame(*frame, &full_request).unwrap())
+            .collect();
+        let limit = full[0].artifact().bytes().len() as u64;
+        assert!(full[1].artifact().bytes().len() as u64 > limit);
+        let request = FrameRenderRequest::builder(format)
+            .metadata_options(MetadataOptions::new(true, true, true))
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_output_bytes(limit)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let mut batch = renderer
+            .render_frames(&scene, frames.iter().copied(), &request)
+            .unwrap();
+        for (i, frame) in frames.iter().enumerate() {
+            let actual = renderer.render_frame(*frame, &request).unwrap();
+            let replay = batch.next().unwrap().into_result().unwrap();
+            report(
+                &actual,
+                format,
+                if i == 0 {
+                    json!([])
+                } else {
+                    json!([metadata_omission_row(
+                        "max_output_bytes",
+                        limit,
+                        full[i].artifact().bytes().len() as u64
+                    )])
+                },
+            );
+            assert_eq!(actual.report(), replay.report());
+            assert_eq!(actual.artifact().bytes(), replay.artifact().bytes());
+            let accepted = renderer
+                .render_frame(
+                    *frame,
+                    &FrameRenderRequest::builder(format)
+                        .metadata_options(MetadataOptions::new(i == 0, true, true))
+                        .build()
+                        .unwrap(),
+                )
+                .unwrap();
+            assert_eq!(actual.artifact().bytes(), accepted.artifact().bytes());
+            let silent = renderer
+                .render_frame(
+                    *frame,
+                    &FrameRenderRequest::builder(format)
+                        .resource_limits(
+                            ResourceLimits::builder()
+                                .max_output_bytes(limit)
+                                .build()
+                                .unwrap(),
+                        )
+                        .build()
+                        .unwrap(),
+                )
+                .unwrap();
+            assert!(silent.report().is_empty());
+        }
+    }
+}
+
+#[test]
+fn optional_metadata_contract_covers_components_limits_and_frames() {
+    optional_metadata_output_boundary_retains_lower_priority_contract();
+    optional_metadata_components_have_exact_output_boundaries_and_priority();
+    embedded_scene_scratch_rejection_is_exact_and_keeps_visual_output();
+    optional_metadata_work_crossings_preserve_committed_measurement();
+    embedded_scene_work_rejects_at_each_stage_with_exact_retained_cost();
+    metadata_omissions_order_and_required_report_failure_are_exact();
+    optional_metadata_keeps_notices_and_nonempty_frozen_summary();
+    optional_metadata_frame_limits_are_independent_and_replayed();
+}
+
+#[test]
+fn embedded_scene_scratch_rejection_is_exact_and_keeps_visual_output() {
+    // Enough opaque source to make embedded-scene scratch dominate the
+    // already-admitted raster/PDF workspaces without adding rendered content.
+    let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{},"source":"x".repeat(1_000_000)});
+    let scene_bytes = serde_json::to_vec(&source).unwrap().len() as u64;
+    // Stored zlib: 2-byte header, 5-byte header per 65535-byte block, Adler32.
+    let compressed = scene_bytes + 6 + 5 * scene_bytes.div_ceil(65_535);
+    let align = |n: u64| n.div_ceil(64) * 64;
+    let full_svg = Renderer::new()
+        .render(
+            &parse(&source),
+            &RenderRequest::builder(OutputFormat::Svg)
+                .metadata_options(MetadataOptions::new(true, false, false))
+                .build()
+                .unwrap(),
+        )
+        .unwrap();
+    let svg = std::str::from_utf8(full_svg.artifact().bytes()).unwrap();
+    let document = roxmltree::Document::parse(svg).unwrap();
+    let manifest_len = document
+        .descendants()
+        .find(|n| n.tag_name().name() == "manifest")
+        .unwrap()
+        .text()
+        .unwrap()
+        .len() as u64;
+    let scratch = 512 + align(scene_bytes) + align(compressed) + align(manifest_len) + 1_048_576;
+    for format in FORMATS {
+        let working = 4096
+            + 1024
+            + 128
+            + match format {
+                OutputFormat::Svg => 262144,
+                OutputFormat::Png => 256 + 1600 + 2 * 1_048_576 + 16 * 20,
+                OutputFormat::Pdf => 256 + 1_048_576,
+                _ => unreachable!(),
+            };
+        let n = working + scratch;
+        let baseline = Renderer::new()
+            .render(
+                &parse(&source),
+                &RenderRequest::builder(format).build().unwrap(),
+            )
+            .unwrap();
+        let full = Renderer::new()
+            .render(
+                &parse(&source),
+                &RenderRequest::builder(format)
+                    .metadata_options(MetadataOptions::new(true, false, false))
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        let retained = n + 512 + align(full.artifact().bytes().len() as u64);
+        for configured in [n - 1, n, n + 1, retained - 1, retained, retained + 1] {
+            let request = RenderRequest::builder(format)
+                .metadata_options(MetadataOptions::new(true, false, false))
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_working_bytes(configured)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            let result = assert_repeat(
+                &source,
+                &request,
+                if configured < retained {
+                    json!([metadata_omission_row(
+                        "max_working_bytes",
+                        configured,
+                        if configured < n { n } else { retained }
+                    )])
+                } else {
+                    json!([])
+                },
+            );
+            assert_eq!(
+                result.artifact().bytes(),
+                if configured < retained {
+                    baseline.artifact().bytes()
+                } else {
+                    full.artifact().bytes()
+                }
+            );
+        }
+    }
+}
+
+#[test]
+fn optional_metadata_work_crossings_preserve_committed_measurement() {
+    let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}});
+    for options in [
+        MetadataOptions::new(false, true, false),
+        MetadataOptions::new(false, false, true),
+    ] {
+        let full_svg = Renderer::new()
+            .render(
+                &parse(&source),
+                &RenderRequest::builder(OutputFormat::Svg)
+                    .metadata_options(options.clone())
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        let document =
+            roxmltree::Document::parse(std::str::from_utf8(full_svg.artifact().bytes()).unwrap())
+                .unwrap();
+        let generation = document
+            .descendants()
+            .find(|n| n.tag_name().name() == "manifest")
+            .unwrap()
+            .text()
+            .unwrap()
+            .len() as u64;
+        for format in FORMATS {
+            let baseline = Renderer::new()
+                .render(
+                    &parse(&source),
+                    &RenderRequest::builder(format).build().unwrap(),
+                )
+                .unwrap();
+            let full = Renderer::new()
+                .render(
+                    &parse(&source),
+                    &RenderRequest::builder(format)
+                        .metadata_options(options.clone())
+                        .build()
+                        .unwrap(),
+                )
+                .unwrap();
+            // Empty input:72 source bytes,11 JSON events,5 normalized records,
+            // one plan op. PNG additionally clears/paints/measures 400 pixels.
+            let before =
+                72 + 11 * 8 + 5 * 8 + 8 + if format == OutputFormat::Png { 4800 } else { 0 };
+            let retained = before + 2 * generation + full.artifact().bytes().len() as u64;
+            for configured in [retained - 1, retained, retained + 1] {
+                let request = RenderRequest::builder(format)
+                    .metadata_options(options.clone())
+                    .resource_limits(
+                        ResourceLimits::builder()
+                            .max_element_work_units(1)
+                            .max_asset_work_units(1)
+                            .max_total_work_units(configured)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                let actual = assert_repeat(
+                    &source,
+                    &request,
+                    if configured < retained {
+                        json!([metadata_omission_row(
+                            "max_total_work_units",
+                            configured,
+                            retained
+                        )])
+                    } else {
+                        json!([])
+                    },
+                );
+                assert_eq!(
+                    actual.artifact().bytes(),
+                    if configured < retained {
+                        baseline.artifact().bytes()
+                    } else {
+                        full.artifact().bytes()
+                    }
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn embedded_scene_work_rejects_at_each_stage_with_exact_retained_cost() {
+    let source = json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{},"source":"x".repeat(100_000)});
+    let canonical = serde_json::to_vec(&source).unwrap().len() as u64;
+    let compressed = canonical + 6 + 5 * canonical.div_ceil(65_535);
+    let full_svg = Renderer::new()
+        .render(
+            &parse(&source),
+            &RenderRequest::builder(OutputFormat::Svg)
+                .metadata_options(MetadataOptions::new(true, false, false))
+                .build()
+                .unwrap(),
+        )
+        .unwrap();
+    let svg = std::str::from_utf8(full_svg.artifact().bytes()).unwrap();
+    let document = roxmltree::Document::parse(svg).unwrap();
+    let manifest = document
+        .descendants()
+        .find(|n| n.tag_name().name() == "manifest")
+        .unwrap()
+        .text()
+        .unwrap()
+        .len() as u64;
+    let payload = svg
+        .split_once("<!-- payload-start -->")
+        .unwrap()
+        .1
+        .split_once("<!-- payload-end -->")
+        .unwrap()
+        .0;
+    let wrapper = base64::engine::general_purpose::STANDARD
+        .decode(payload.trim())
+        .unwrap()
+        .len() as u64;
+    let generation = canonical + compressed + wrapper + manifest;
+    for format in FORMATS {
+        let baseline = Renderer::new()
+            .render(
+                &parse(&source),
+                &RenderRequest::builder(format).build().unwrap(),
+            )
+            .unwrap();
+        let full = Renderer::new()
+            .render(
+                &parse(&source),
+                &RenderRequest::builder(format)
+                    .metadata_options(MetadataOptions::new(true, false, false))
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap();
+        // Extra source field adds its key and value to JSON admission; the
+        // preservation-only envelope does not become a rendered record.
+        let before =
+            canonical + 13 * 8 + 5 * 8 + 8 + if format == OutputFormat::Png { 3200 } else { 0 };
+        let stages = [
+            before + generation,
+            before + 2 * generation,
+            before
+                + 2 * generation
+                + full.artifact().bytes().len() as u64
+                + if format == OutputFormat::Png { 1600 } else { 0 },
+        ];
+        for (stage, attempted) in stages.into_iter().enumerate() {
+            let configured = attempted - 1;
+            let request = RenderRequest::builder(format)
+                .metadata_options(MetadataOptions::new(true, false, false))
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_element_work_units(1)
+                        .max_asset_work_units(1)
+                        .max_total_work_units(configured)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            let actual = assert_repeat(
+                &source,
+                &request,
+                json!([metadata_omission_row(
+                    "max_total_work_units",
+                    configured,
+                    attempted
+                )]),
+            );
+            assert_eq!(
+                actual.artifact().bytes(),
+                baseline.artifact().bytes(),
+                "stage {stage}"
+            );
+        }
+    }
+}
+
+#[test]
 fn resource_reports_are_scoped_and_replayed_for_independent_frames() {
     let bytes = crate::common::codec_fixtures::png_rgba(2, 2, &[[255, 0, 0, 255]; 4]);
     let mut source = image_scene(&bytes, "image/png");

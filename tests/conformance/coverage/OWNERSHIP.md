@@ -18,9 +18,11 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **928** | |
 
-789 primary owners are proposed (118 case labels, the AVIF rejection test,
-65 diagnostic/format obligations and all 605 current surface-field/format obligations).
-139 obligations remain explicit gaps. The six raster dimension/pixel assignments are
+792 primary owners are proposed (118 case labels, the AVIF rejection test,
+68 diagnostic/format obligations and all 605 current surface-field/format obligations).
+136 obligations remain explicit gaps. The three optional-metadata assignments are
+assessed in [the resource amendment](../../../docs/research/nested-resource-limit-amendment.md#optional-metadata-ownership).
+The six raster dimension/pixel assignments are
 assessed in [the resource amendment](../../../docs/research/nested-resource-limit-amendment.md#raster-dimension-and-pixel-ownership).
 The three nested-node assignments are
 assessed in [the resource amendment](../../../docs/research/nested-resource-limit-amendment.md#nested-node-ownership).
@@ -46,7 +48,7 @@ Admission/identity additions are assessed
 in [the admission audit](../../../docs/research/admission-identity-ownership.md).
 The earlier surface assignments are assessed in
 [the surface ownership audit](../../../docs/research/surface-field-ownership.md).
-The diagnostic audit retains 57 of its 122 obligations as gaps with specific
+The diagnostic audit retains 54 of its 122 obligations as gaps with specific
 missing assertions or branches; see [the per-code audit](../../../docs/research/diagnostic-ownership.md).
 These counts are **not a coverage percentage**:
 codec facets still need expansion into the full admitted-profile matrix, and
