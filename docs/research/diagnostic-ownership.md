@@ -1,7 +1,7 @@
 # Diagnostic/format ownership audit
 #85 — public-facade diagnostic assertions
 
-Reviewed all 122 current diagnostic/format obligations. Including the nested-depth follow-up, 56 now have proposed owners and 66 remain explicit gaps. The global ledger has 780 proposed owners and 148 gaps.
+Reviewed all 122 current diagnostic/format obligations. Including the nested-depth/node follow-ups, 59 now have proposed owners and 63 remain explicit gaps. The global ledger has 783 proposed owners and 145 gaps.
 
 The new `fast/diagnostic_contract.rs` tests author expected machine-readable diagnostic fields independently of the production registry. They compare the complete ordered diagnostic array, exact format/severity/effects/details/recovery/owner/pointer, nonempty messages, and byte-identical serialized reports and artifacts across fresh calls. Message prose is not pinned as a semantic requirement. Image recovery tests cover both saved and error source statuses.
 
@@ -53,7 +53,7 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 | `resource.image-dimensions-exceeded` | pdf, png, svg | gap | Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing. |
 | `resource.image-pixels-exceeded` | pdf, png, svg | gap | Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing. |
 | `resource.nested-asset-depth-exceeded` | pdf, png, svg | owned | resource_diagnostic_contract::nested_depth_contract_covers_owners_paths_frames_and_silence — exact depth/effect/path/owner reports, boundaries, depth-aware caches, stopped discovery, authority and frame silence, independent manifested placeholder/omission artifacts; see [assessment](nested-resource-limit-amendment.md#nested-depth-ownership). |
-| `resource.nested-svg-complexity-exceeded` | pdf, png, svg | gap | Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing. |
+| `resource.nested-svg-complexity-exceeded` | pdf, png, svg | owned | resource_diagnostic_contract::nested_node_limits_cover_root_and_child_reports_and_silence — exact root/child node and text counts, boundaries, stopped discovery, authority/scope and independent recovery artifacts; see [assessment](nested-resource-limit-amendment.md#nested-node-ownership). |
 | `resource.optional-metadata-omitted` | pdf, png, svg | gap | Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing. |
 
 ## Cycle diagnostic finding

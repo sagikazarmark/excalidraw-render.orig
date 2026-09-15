@@ -4260,7 +4260,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "ca4fd6ee26a82037d1f74b32cf907f9aa7c4db4b1dedbe05de70ad557d60254c"
+            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4289,7 +4289,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "ca4fd6ee26a82037d1f74b32cf907f9aa7c4db4b1dedbe05de70ad557d60254c"
+            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4318,7 +4318,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "ca4fd6ee26a82037d1f74b32cf907f9aa7c4db4b1dedbe05de70ad557d60254c"
+            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4342,25 +4342,88 @@
     {
       "id": "diagnostic:resource.nested-svg-complexity-exceeded:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
+          },
+          "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::nested_node_limits_cover_root_and_child_reports_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact root/child node-limit reports including text/whitespace counts and non-node controls; N-1/N/N+1 boundaries, stopped descendant discovery, bounded/omitted envelope recovery, source/supplemental multi-owner ordering and frame/deleted silence; independent manifested SVG/PNG/PDF recovery artifacts."
       }
     },
     {
       "id": "diagnostic:resource.nested-svg-complexity-exceeded:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
+          },
+          "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::nested_node_limits_cover_root_and_child_reports_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact root/child node-limit reports including text/whitespace counts and non-node controls; N-1/N/N+1 boundaries, stopped descendant discovery, bounded/omitted envelope recovery, source/supplemental multi-owner ordering and frame/deleted silence; independent manifested SVG/PNG/PDF recovery artifacts."
       }
     },
     {
       "id": "diagnostic:resource.nested-svg-complexity-exceeded:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
+          },
+          "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::nested_node_limits_cover_root_and_child_reports_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact root/child node-limit reports including text/whitespace counts and non-node controls; N-1/N/N+1 boundaries, stopped descendant discovery, bounded/omitted envelope recovery, source/supplemental multi-owner ordering and frame/deleted silence; independent manifested SVG/PNG/PDF recovery artifacts."
       }
     },
     {

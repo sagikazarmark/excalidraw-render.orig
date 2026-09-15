@@ -253,7 +253,11 @@ fn nested_depth_contract_covers_owners_paths_frames_and_silence() {
     nested_depth_recovery_envelope_and_owner_order_are_exact();
     nested_depth_placeholder_matches_manifested_geometry_and_local_inheritance();
     nested_depth_stops_discovery_and_ignores_conflicting_payload();
-    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>"#;
+    nested_limit_owner_scope(false);
+}
+
+fn nested_limit_owner_scope(nodes: bool) {
+    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/><rect width="1" height="1"/><rect width="1" height="1"/></svg>"#;
     let child = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/><image width="2" height="2" href="{}"/></svg>"#,
         svg_url(leaf),
@@ -284,13 +288,20 @@ fn nested_depth_contract_covers_owners_paths_frames_and_silence() {
             } else {
                 SupplementalAssets::default()
             };
-            let limits = ResourceLimits::builder()
-                .max_nested_asset_depth(1)
-                .build()
-                .unwrap();
+            let limits = if nodes {
+                ResourceLimits::builder()
+                    .max_nested_svg_nodes(3)
+                    .build()
+                    .unwrap()
+            } else {
+                ResourceLimits::builder()
+                    .max_nested_asset_depth(1)
+                    .build()
+                    .unwrap()
+            };
             let rows: Vec<_> = [1,2].into_iter().map(|ordinal|json!({
-                "code":"resource.nested-asset-depth-exceeded","severity":"warning","effects":if format == OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":if supplemental {""} else {"/files/asset~1~0/dataURL"},
-                "details":{"kind":"nested_resource_limit","field":"max_nested_asset_depth","configured":1,"value_kind":"depth","measurement":{"kind":"attempted","value":2},
+                "code":if nodes {"resource.nested-svg-complexity-exceeded"} else {"resource.nested-asset-depth-exceeded"},"severity":"warning","effects":if format == OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":if supplemental {""} else {"/files/asset~1~0/dataURL"},
+                "details":{"kind":"nested_resource_limit","field":if nodes {"max_nested_svg_nodes"} else {"max_nested_asset_depth"},"configured":if nodes {3} else {1},"value_kind":if nodes {"count"} else {"depth"},"measurement":{"kind":"attempted","value":if nodes {4} else {2}},
                     "asset_chain":[{"asset_id":"asset/~","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"},{"kind":"node","ordinal":ordinal,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":"placeholder","recipe_id":"official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677"}
             })).collect();
             let request = RenderRequest::builder(format)
@@ -387,6 +398,10 @@ fn nested_depth_stops_discovery_and_ignores_conflicting_payload() {
 
 #[test]
 fn nested_depth_placeholder_matches_manifested_geometry_and_local_inheritance() {
+    nested_placeholder_artifact_oracle(false);
+}
+
+fn nested_placeholder_artifact_oracle(nodes: bool) {
     // Independent oracle from the frozen recipe, not the recovery producer.
     let manifest: Value = serde_json::from_str(include_str!(
         "../../../../tests/oracle/scene-surfaces/revision-1.json"
@@ -417,7 +432,10 @@ fn nested_depth_placeholder_matches_manifested_geometry_and_local_inheritance() 
     let replacement = format!(
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="30" height="20" viewBox="0 0 30 20"><rect width="30" height="20" fill="#E7E7E7"/><svg x="11" y="6" width="8" height="8" viewBox="0 0 668 668">{paths}</svg></svg>"##
     );
-    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="30" height="20"><rect width="30" height="20" fill="red"/></svg>"#;
+    let leaf = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="30" height="20">{}</svg>"#,
+        r#"<rect width="30" height="20" fill="red"/>"#.repeat(8)
+    );
     let child = |payload: &str| {
         format!(
             r#"<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40"><defs><clipPath id="cut"><rect x="0" y="0" width="25" height="40"/></clipPath></defs><g clip-path="url(#cut)"><image x="5" y="3" width="30" height="20" transform="translate(2 1)" opacity="0.5" href="{}"/></g><rect x="40" y="5" width="10" height="10" fill="blue"/></svg>"#,
@@ -431,17 +449,22 @@ fn nested_depth_placeholder_matches_manifested_geometry_and_local_inheritance() 
         )
     };
     for format in FORMATS {
-        let mut source = image_scene(parent(leaf).as_bytes(), "image/svg+xml");
+        let mut source = image_scene(parent(&leaf).as_bytes(), "image/svg+xml");
         source["elements"][0]["width"] = json!(60);
         source["elements"][0]["height"] = json!(40);
         let request = RenderRequest::builder(format)
             .padding(0.0)
-            .resource_limits(
+            .resource_limits(if nodes {
+                ResourceLimits::builder()
+                    .max_nested_svg_nodes(7)
+                    .build()
+                    .unwrap()
+            } else {
                 ResourceLimits::builder()
                     .max_nested_asset_depth(1)
                     .build()
-                    .unwrap(),
-            )
+                    .unwrap()
+            })
             .build()
             .unwrap();
         let actual = Renderer::new().render(&parse(&source), &request).unwrap();
@@ -539,7 +562,11 @@ fn nested_depth_placeholder_matches_manifested_geometry_and_local_inheritance() 
 
 #[test]
 fn nested_depth_recovery_envelope_and_owner_order_are_exact() {
-    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>"#;
+    nested_limit_envelope_and_owner_order(false);
+}
+
+fn nested_limit_envelope_and_owner_order(nodes: bool) {
+    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/><rect width="1" height="1"/></svg>"#;
     let child = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
         svg_url(leaf)
@@ -562,7 +589,8 @@ fn nested_depth_recovery_envelope_and_owner_order_are_exact() {
             let request = RenderRequest::builder(format)
                 .resource_limits(
                     ResourceLimits::builder()
-                        .max_nested_asset_depth(1)
+                        .max_nested_asset_depth(if nodes { 3 } else { 1 })
+                        .max_nested_svg_nodes(if nodes { 2 } else { 100_000 })
                         .max_asset_work_units(work)
                         .build()
                         .unwrap(),
@@ -570,8 +598,8 @@ fn nested_depth_recovery_envelope_and_owner_order_are_exact() {
                 .build()
                 .unwrap();
             let rows:Vec<_>=[("a","/files/a/dataURL"),("z/~","/files/z~1~0/dataURL")].into_iter().map(|(id,pointer)|json!({
-                "code":"resource.nested-asset-depth-exceeded","severity":"warning","effects":if format==OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":pointer,
-                "details":{"kind":"nested_resource_limit","field":"max_nested_asset_depth","configured":1,"value_kind":"depth","measurement":{"kind":"attempted","value":2},"asset_chain":[{"asset_id":id,"occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":if work<8192 {"omitted"} else {"placeholder"},"recipe_id":if work<8192 {Value::Null} else {json!("official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677")}}
+                "code":if nodes {"resource.nested-svg-complexity-exceeded"} else {"resource.nested-asset-depth-exceeded"},"severity":"warning","effects":if format==OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":pointer,
+                "details":{"kind":"nested_resource_limit","field":if nodes {"max_nested_svg_nodes"} else {"max_nested_asset_depth"},"configured":if nodes {2} else {1},"value_kind":if nodes {"count"} else {"depth"},"measurement":{"kind":"attempted","value":if nodes {3} else {2}},"asset_chain":[{"asset_id":id,"occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":if work<8192 {"omitted"} else {"placeholder"},"recipe_id":if work<8192 {Value::Null} else {json!("official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677")}}
             })).collect();
             let result = assert_repeat(&source, &request, json!(rows));
             if work < 8192 {
@@ -1134,6 +1162,108 @@ fn nested_placeholder_uses_current_reference_bounds_and_local_omission() {
                         crate::common::pdf_inspect::pdf_text(result.artifact().bytes())
                             .contains("font-awesome")
                     );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn nested_node_limits_cover_root_and_child_reports_and_silence() {
+    nested_node_count_includes_text_and_stops_descendant_discovery();
+    nested_limit_owner_scope(true);
+    nested_placeholder_artifact_oracle(true);
+    nested_limit_envelope_and_owner_order(true);
+    nested_placeholder_uses_current_reference_bounds_and_local_omission();
+    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/><rect width="1" height="1" fill="blue"/></svg>"#;
+    for format in FORMATS {
+        for nested in [false, true] {
+            for bounded in [false, true] {
+                let parent = format!(
+                    r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="{}" height="2" href="{}"/></svg>"#,
+                    u8::from(bounded),
+                    svg_url(leaf)
+                );
+                let mut source = image_scene(
+                    if nested {
+                        parent.as_bytes()
+                    } else {
+                        leaf.as_bytes()
+                    },
+                    "image/svg+xml",
+                );
+                if !nested && !bounded {
+                    source["elements"][0]["width"] = json!(0);
+                }
+                for configured in [2, 3, 4] {
+                    let request = RenderRequest::builder(format)
+                        .resource_limits(
+                            ResourceLimits::builder()
+                                .max_nested_svg_nodes(configured)
+                                .build()
+                                .unwrap(),
+                        )
+                        .build()
+                        .unwrap();
+                    let rows = if configured < 3 {
+                        json!([{
+                            "code":"resource.nested-svg-complexity-exceeded","severity":"warning","effects":if format==OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":"/files/asset~1~0/dataURL",
+                            "details":{"kind":"nested_resource_limit","field":"max_nested_svg_nodes","configured":configured,"value_kind":"count","measurement":{"kind":"attempted","value":3},"asset_chain":[{"asset_id":"asset/~","occurrence":0}],"paths":[{"segments":if nested {json!([{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}])} else {json!([])}}],"recovery":if bounded {"placeholder"} else {"omitted"},"recipe_id":if bounded {json!("official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677")} else {Value::Null}}
+                        }])
+                    } else {
+                        json!([])
+                    };
+                    assert_repeat(&source, &request, rows);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn nested_node_count_includes_text_and_stops_descendant_discovery() {
+    // root + whitespace + desc + its text + trailing whitespace = five nodes.
+    // Neither the comment nor the desc's attribute is a node.
+    let text_svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"> <desc id="description">hello</desc> <!--comment--></svg>"#;
+    let stopped = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect/><image width="2" height="2" href="data:image/png;base64,bm90IGFuIGltYWdl"/></svg>"#;
+    for format in FORMATS {
+        for nested in [false, true] {
+            for (payload, n, discovery) in [(text_svg, 5, false), (stopped, 3, true)] {
+                let parent = format!(
+                    r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+                    svg_url(payload)
+                );
+                let source = image_scene(
+                    if nested {
+                        parent.as_bytes()
+                    } else {
+                        payload.as_bytes()
+                    },
+                    "image/svg+xml",
+                );
+                for configured in [n - 1, n, n + 1] {
+                    if discovery && configured >= n {
+                        continue;
+                    }
+                    let request = RenderRequest::builder(format)
+                        .resource_limits(
+                            ResourceLimits::builder()
+                                .max_nested_svg_nodes(configured)
+                                .max_asset_entries(if nested { 2 } else { 1 })
+                                .build()
+                                .unwrap(),
+                        )
+                        .build()
+                        .unwrap();
+                    let rows = if configured < n {
+                        json!([{
+                            "code":"resource.nested-svg-complexity-exceeded","severity":"warning","effects":if format==OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":"/files/asset~1~0/dataURL",
+                            "details":{"kind":"nested_resource_limit","field":"max_nested_svg_nodes","configured":configured,"value_kind":"count","measurement":{"kind":"attempted","value":n},"asset_chain":[{"asset_id":"asset/~","occurrence":0}],"paths":[{"segments":if nested {json!([{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}])} else {json!([])}}],"recovery":"placeholder","recipe_id":"official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677"}
+                        }])
+                    } else {
+                        json!([])
+                    };
+                    assert_repeat(&source, &request, rows);
                 }
             }
         }

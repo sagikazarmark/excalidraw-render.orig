@@ -169,3 +169,20 @@ Verification: the exact selected owner, workspace/all-target typechecking,
 ownership consistency and all ten canonical conformance/lint checks pass.
 The final full fast/render/doctest suite passes (16m19s). Standards review reports
 no definite violations; fixture duplication and naming remain heuristic notes.
+
+## Nested-node ownership
+
+The next evidence-only follow-up selects
+`resource_diagnostic_contract::nested_node_limits_cover_root_and_child_reports_and_silence`
+for SVG/PNG/PDF `resource.nested-svg-complexity-exceeded`. It runs exact root and
+child boundary reports, finite/unbounded recovery, current-root occurrence bounds,
+the recovery-work envelope, source/supplemental and multiple-owner ordering,
+frame/deleted silence, and the independent manifested artifact oracle.
+
+A five-node fixture independently counts root, whitespace, desc, its text and
+trailing whitespace at limits 4/5/6; comment and attribute controls are not nodes.
+Over-limit root and child SVGs contain another invalid image, with aggregate
+asset-entry ceilings proving node rejection stops discovery before that image.
+The existing depth owner retains its full scenarios through shared test helpers.
+Spec review supports all three node assignments without material missing criteria.
+Current totals: **783 assigned / 145 gaps**; **24 resource assignments remain**.
