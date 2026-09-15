@@ -278,3 +278,12 @@ cannot leave unsafe bounds or orphaned text masks. Rejected shaped text retains
 aggregate-fatal preflight, and the CJK trigger is evaluated before recovery.
 The existing source-member diagnostic ordering and fatal frame-target contract
 remain covered alongside derived-bound direct/prepared replay regressions.
+
+### Resource ownership completion
+
+The final coordinate, asset-byte, asset-work, element-complexity and element-work
+owners are assessed in [resource-diagnostic-ownership.md](resource-diagnostic-ownership.md).
+All 30 resource diagnostic/format obligations now have proposed primary owners;
+the global ledger is **807 assigned / 121 gaps**, pending global approval.
+Native/browser-WASM execution and the remaining #178 equality failures are
+recorded in [resource-recovery-target-evidence.md](resource-recovery-target-evidence.md).

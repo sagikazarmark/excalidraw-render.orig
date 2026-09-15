@@ -4087,121 +4087,436 @@
     {
       "id": "diagnostic:resource.asset-bytes-exceeded:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "asset_byte_contract_covers_admission_authority_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::asset_byte_contract_covers_admission_authority_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered resource-limit reports for byte admission at N-1/N/N+1, source/supplemental authority, repeated references, saved/error recovery, zero-extent and inactive references, diagnostic prefixes, aggregate precedence and direct/prepared frame scope. Nested byte non-crossing is proved by containing-payload size and exercised at child and parent boundaries."
       }
     },
     {
       "id": "diagnostic:resource.asset-bytes-exceeded:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "asset_byte_contract_covers_admission_authority_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::asset_byte_contract_covers_admission_authority_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered resource-limit reports for byte admission at N-1/N/N+1, source/supplemental authority, repeated references, saved/error recovery, zero-extent and inactive references, diagnostic prefixes, aggregate precedence and direct/prepared frame scope. Nested byte non-crossing is proved by containing-payload size and exercised at child and parent boundaries."
       }
     },
     {
       "id": "diagnostic:resource.asset-bytes-exceeded:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "asset_byte_contract_covers_admission_authority_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::asset_byte_contract_covers_admission_authority_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered resource-limit reports for byte admission at N-1/N/N+1, source/supplemental authority, repeated references, saved/error recovery, zero-extent and inactive references, diagnostic prefixes, aggregate precedence and direct/prepared frame scope. Nested byte non-crossing is proved by containing-payload size and exercised at child and parent boundaries."
       }
     },
     {
       "id": "diagnostic:resource.asset-work-exceeded:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "asset_work_contract_covers_intrinsics_nested_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::asset_work_contract_covers_intrinsics_nested_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered reports for validation/normalization and SVG sanitization work boundaries, exact source/supplemental attribution and repeated references, nested raster/SVG paths and conditional effects, 8192-unit placeholder admission versus omission, inactive references, retained prefixes and direct/prepared frame equality."
       }
     },
     {
       "id": "diagnostic:resource.asset-work-exceeded:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "asset_work_contract_covers_intrinsics_nested_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::asset_work_contract_covers_intrinsics_nested_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered reports for validation/normalization and SVG sanitization work boundaries, exact source/supplemental attribution and repeated references, nested raster/SVG paths and conditional effects, 8192-unit placeholder admission versus omission, inactive references, retained prefixes and direct/prepared frame equality."
       }
     },
     {
       "id": "diagnostic:resource.asset-work-exceeded:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "asset_work_contract_covers_intrinsics_nested_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::asset_work_contract_covers_intrinsics_nested_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered reports for validation/normalization and SVG sanitization work boundaries, exact source/supplemental attribution and repeated references, nested raster/SVG paths and conditional effects, 8192-unit placeholder admission versus omission, inactive references, retained prefixes and direct/prepared frame equality."
       }
     },
     {
       "id": "diagnostic:resource.coordinate-range-exceeded:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "coordinate_contract_covers_components_points_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::coordinate_contract_covers_components_points_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete three-format public-facade reports for source components, points and derived coordinates; exact finite and at-least measurements, placeholder/omission recovery, nested source paths and recipe limits, authoritative SVG content, source-order report prefixes, clipping-dependent frame omission, fatal direct/prepared viewports and silence at admitted boundaries."
       }
     },
     {
       "id": "diagnostic:resource.coordinate-range-exceeded:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "coordinate_contract_covers_components_points_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::coordinate_contract_covers_components_points_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete three-format public-facade reports for source components, points and derived coordinates; exact finite and at-least measurements, placeholder/omission recovery, nested source paths and recipe limits, authoritative SVG content, source-order report prefixes, clipping-dependent frame omission, fatal direct/prepared viewports and silence at admitted boundaries."
       }
     },
     {
       "id": "diagnostic:resource.coordinate-range-exceeded:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "coordinate_contract_covers_components_points_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::coordinate_contract_covers_components_points_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete three-format public-facade reports for source components, points and derived coordinates; exact finite and at-least measurements, placeholder/omission recovery, nested source paths and recipe limits, authoritative SVG content, source-order report prefixes, clipping-dependent frame omission, fatal direct/prepared viewports and silence at admitted boundaries."
       }
     },
     {
       "id": "diagnostic:resource.element-complexity-replaced:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "element_complexity_contract_covers_geometry_text_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::element_complexity_contract_covers_geometry_text_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete reports for both geometry-segment and Unicode-scalar fields at N-1/N/N+1, independent font-outline command counts, positive/zero-extent placeholders and omissions, generated-label scalar loss, glyph-layout omission, nonreciprocal text effects, aggregate/local precedence, source order, diagnostic prefixes and direct/prepared frame scope."
       }
     },
     {
       "id": "diagnostic:resource.element-complexity-replaced:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "element_complexity_contract_covers_geometry_text_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::element_complexity_contract_covers_geometry_text_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete reports for both geometry-segment and Unicode-scalar fields at N-1/N/N+1, independent font-outline command counts, positive/zero-extent placeholders and omissions, generated-label scalar loss, glyph-layout omission, nonreciprocal text effects, aggregate/local precedence, source order, diagnostic prefixes and direct/prepared frame scope."
       }
     },
     {
       "id": "diagnostic:resource.element-complexity-replaced:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "element_complexity_contract_covers_geometry_text_recovery_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::element_complexity_contract_covers_geometry_text_recovery_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete reports for both geometry-segment and Unicode-scalar fields at N-1/N/N+1, independent font-outline command counts, positive/zero-extent placeholders and omissions, generated-label scalar loss, glyph-layout omission, nonreciprocal text effects, aggregate/local precedence, source order, diagnostic prefixes and direct/prepared frame scope."
       }
     },
     {
       "id": "diagnostic:resource.element-work-exceeded:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "element_work_contract_covers_generation_shaping_projection_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::element_work_contract_covers_generation_shaping_projection_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered reports for normalization/generation, text preflight/glyph shaping, compatibility-placeholder and PNG projection work; independently derived work/coverage boundaries, phase-specific placeholder then omission reports, empty-content effects, repeated source order, required-report prefixes, frame scope/replay and admitted-boundary silence."
       }
     },
     {
       "id": "diagnostic:resource.element-work-exceeded:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "element_work_contract_covers_generation_shaping_projection_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::element_work_contract_covers_generation_shaping_projection_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered reports for normalization/generation, text preflight/glyph shaping, compatibility-placeholder and PNG projection work; independently derived work/coverage boundaries, phase-specific placeholder then omission reports, empty-content effects, repeated source order, required-report prefixes, frame scope/replay and admitted-boundary silence."
       }
     },
     {
       "id": "diagnostic:resource.element-work-exceeded:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
+          },
+          "function": "element_work_contract_covers_generation_shaping_projection_and_frames",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::element_work_contract_covers_generation_shaping_projection_and_frames",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete ordered reports for normalization/generation, text preflight/glyph shaping, compatibility-placeholder and PNG projection work; independently derived work/coverage boundaries, phase-specific placeholder then omission reports, empty-content effects, repeated source order, required-report prefixes, frame scope/replay and admitted-boundary silence."
       }
     },
     {
@@ -4212,7 +4527,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "image_dimension_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4241,7 +4556,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "image_dimension_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4270,7 +4585,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "image_dimension_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4299,7 +4614,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "image_pixel_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4328,7 +4643,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "image_pixel_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4357,7 +4672,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "image_pixel_contract_covers_codecs_recovery_and_scope",
           "binary": "fast",
@@ -4386,7 +4701,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4415,7 +4730,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4444,7 +4759,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4473,7 +4788,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
           "binary": "fast",
@@ -4502,7 +4817,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
           "binary": "fast",
@@ -4531,7 +4846,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
           "binary": "fast",
@@ -4560,7 +4875,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "optional_metadata_contract_covers_components_limits_and_frames",
           "binary": "fast",
@@ -4589,7 +4904,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "optional_metadata_contract_covers_components_limits_and_frames",
           "binary": "fast",
@@ -4618,7 +4933,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "efddc6525e80016f9c6fae657582d9827259fa70a5c10eea10b717d4ab24a05c"
+            "sha256": "5d5e9baaf29988a08b63def9c9f5d5e4c054947561c65676d88deae3987e415c"
           },
           "function": "optional_metadata_contract_covers_components_limits_and_frames",
           "binary": "fast",

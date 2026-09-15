@@ -52,7 +52,7 @@ fn image_dimension_contract_covers_codecs_recovery_and_scope() {
     raster_side_precedence_and_mixed_reference_recovery();
     raster_limit_contract(RasterLimit::Dimension);
     raster_limit_scope(RasterLimit::Dimension);
-    nested_placeholder_artifact_oracle_for(false, Some(RasterLimit::Dimension));
+    nested_placeholder_artifact_oracle_for(false, Some(RasterLimit::Dimension), None);
     nested_raster_limits_preserve_exact_paths_and_local_recovery();
 }
 
@@ -62,7 +62,7 @@ fn image_pixel_contract_covers_codecs_recovery_and_scope() {
     raster_side_precedence_and_mixed_reference_recovery();
     raster_limit_contract(RasterLimit::Pixels);
     raster_limit_scope(RasterLimit::Pixels);
-    nested_placeholder_artifact_oracle_for(false, Some(RasterLimit::Pixels));
+    nested_placeholder_artifact_oracle_for(false, Some(RasterLimit::Pixels), None);
     nested_raster_limits_preserve_exact_paths_and_local_recovery();
 }
 
@@ -418,7 +418,15 @@ fn image_scene(bytes: &[u8], mime: &str) -> Value {
     "appState":{},"files":{"asset/~":{"id":"asset/~","created":0,"dataURL":format!("data:{mime};base64,{}",base64::engine::general_purpose::STANDARD.encode(bytes))}}})
 }
 fn report(outcome: &RenderOutcome, format: OutputFormat, mut rows: Value) {
-    let mut actual = serde_json::to_value(outcome.report()).unwrap();
+    exact_report(outcome.report(), format, &mut rows);
+}
+
+fn exact_report(
+    report: &excalidraw_render::CompatibilityReport,
+    format: OutputFormat,
+    rows: &mut Value,
+) {
+    let mut actual = serde_json::to_value(report).unwrap();
     for row in actual["diagnostics"].as_array_mut().unwrap() {
         assert!(row["message"].as_str().is_some_and(|s| !s.is_empty()));
         row.as_object_mut().unwrap().remove("message");
@@ -451,6 +459,1277 @@ fn assert_repeat(source: &Value, request: &RenderRequest, rows: Value) -> Render
         serde_json::to_vec(second.report()).unwrap()
     );
     first
+}
+
+// Independent visual oracles use an empty authored text box to retain the
+// canvas footprint, or the specified generic placeholder through an unknown
+// type. Neither invokes the resource rejection being tested.
+fn box_oracle(
+    format: OutputFormat,
+    width: u64,
+    height: u64,
+    padding: f64,
+    placeholder: bool,
+) -> RenderOutcome {
+    let mut source = text_scene("", width);
+    source["elements"][0]["height"] = json!(height);
+    if placeholder {
+        source["elements"][0]["type"] = json!("future");
+    }
+    Renderer::new()
+        .render(
+            &parse(&source),
+            &RenderRequest::builder(format)
+                .padding(padding)
+                .build()
+                .unwrap(),
+        )
+        .unwrap()
+}
+
+fn canonical_nested_svg(text: &str) -> Value {
+    fn node_value(node: roxmltree::Node<'_, '_>) -> Value {
+        let attrs: serde_json::Map<String, Value> = node
+            .attributes()
+            .map(|attribute| {
+                let value = if let Some(encoded) =
+                    attribute.value().strip_prefix("data:image/svg+xml;base64,")
+                {
+                    let bytes = base64::engine::general_purpose::STANDARD
+                        .decode(encoded)
+                        .unwrap();
+                    canonical_nested_svg(std::str::from_utf8(&bytes).unwrap())
+                } else {
+                    json!(attribute.value())
+                };
+                (attribute.name().to_owned(), value)
+            })
+            .collect();
+        json!({"name":node.tag_name().name(),"attributes":attrs,"children":node.children().filter(|node|node.is_element()).map(node_value).collect::<Vec<_>>()})
+    }
+    node_value(roxmltree::Document::parse(text).unwrap().root_element())
+}
+
+fn embedded_svg_tree(bytes: &[u8]) -> Value {
+    let document = roxmltree::Document::parse(std::str::from_utf8(bytes).unwrap()).unwrap();
+    let url = document
+        .descendants()
+        .find(|node| node.has_tag_name("image"))
+        .unwrap()
+        .attribute("href")
+        .unwrap();
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(url.strip_prefix("data:image/svg+xml;base64,").unwrap())
+        .unwrap();
+    canonical_nested_svg(std::str::from_utf8(&bytes).unwrap())
+}
+
+fn pdf_drawing_streams(bytes: &[u8]) -> Vec<String> {
+    crate::common::pdf_inspect::pdf_text(bytes)
+        .split("\nstream\n")
+        .skip(1)
+        .filter_map(|part| {
+            part.split_once("\nendstream")
+                .map(|(body, _)| body.to_owned())
+        })
+        .filter(|body| body.contains(" cm\n") || body.contains(" rg\n"))
+        .collect()
+}
+
+fn assert_nested_artifact_eq(actual: &RenderOutcome, expected: &RenderOutcome) {
+    match actual.artifact().format() {
+        OutputFormat::Svg => assert_eq!(
+            embedded_svg_tree(actual.artifact().bytes()),
+            embedded_svg_tree(expected.artifact().bytes())
+        ),
+        OutputFormat::Png => {
+            let a = crate::common::raster::decode_png(actual.artifact().bytes());
+            let b = crate::common::raster::decode_png(expected.artifact().bytes());
+            assert_eq!((a.width, a.height), (b.width, b.height));
+            assert_eq!(a.rgba, b.rgba);
+        }
+        OutputFormat::Pdf => assert_eq!(
+            pdf_drawing_streams(actual.artifact().bytes()),
+            pdf_drawing_streams(expected.artifact().bytes())
+        ),
+        _ => unreachable!("revision-1 formats"),
+    }
+}
+
+#[derive(Clone, Copy)]
+enum AssetLimit {
+    Bytes,
+    Work,
+}
+
+#[derive(Clone, Copy)]
+enum ExtraNestedOracle {
+    Work,
+    Coordinate,
+}
+
+const PLACEHOLDER_PNG_WORK: u64 = 9 * 32 + 8 + 10 * 10 * 16;
+
+impl AssetLimit {
+    fn contract(self) -> (&'static str, &'static str, &'static str) {
+        match self {
+            Self::Bytes => ("resource.asset-bytes-exceeded", "max_asset_bytes", "bytes"),
+            Self::Work => (
+                "resource.asset-work-exceeded",
+                "max_asset_work_units",
+                "work_units",
+            ),
+        }
+    }
+    fn limits(self, n: u64) -> ResourceLimits {
+        match self {
+            Self::Bytes => ResourceLimits::builder().max_asset_bytes(n),
+            Self::Work => ResourceLimits::builder().max_asset_work_units(n),
+        }
+        .build()
+        .unwrap()
+    }
+}
+
+#[test]
+fn asset_byte_contract_covers_admission_authority_recovery_and_frames() {
+    top_level_asset_resource_boundaries_have_exact_reports_and_authority();
+    resource_reports_are_scoped_and_replayed_for_independent_frames();
+    asset_reference_scope_and_prefix(AssetLimit::Bytes);
+    asset_byte_parent_admission_bounds_every_nested_payload();
+    let bytes = crate::common::codec_fixtures::solid_png(2, 2, [255, 0, 0, 255]);
+    for format in FORMATS {
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_asset_bytes(bytes.len() as u64 - 1)
+                    .max_total_asset_bytes(bytes.len() as u64 - 1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let error = Renderer::new()
+            .render(&parse(&image_scene(&bytes, "image/png")), &request)
+            .unwrap_err();
+        assert_eq!(error.code().as_str(), "resource.total-asset-bytes-exceeded");
+        exact_report(error.report(), format, &mut json!([]));
+    }
+}
+
+#[test]
+fn asset_work_contract_covers_intrinsics_nested_recovery_and_frames() {
+    top_level_svg_work_exhaustion_uses_ordinary_image_recovery();
+    nested_raster_work_rejection_has_exact_measurements_and_recovery_budget();
+    asset_reference_scope_and_prefix(AssetLimit::Work);
+    asset_intrinsic_work_boundaries();
+    nested_svg_work_boundaries();
+    nested_placeholder_artifact_oracle_for(false, None, Some(ExtraNestedOracle::Work));
+    let bytes = crate::common::codec_fixtures::solid_png(2, 2, [255, 0, 0, 255]);
+    for format in FORMATS {
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_asset_work_units(1)
+                    .max_element_work_units(1)
+                    .max_total_work_units(1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let error = Renderer::new()
+            .render(&parse(&image_scene(&bytes, "image/png")), &request)
+            .unwrap_err();
+        assert_eq!(error.code().as_str(), "resource.total-work-exceeded");
+        exact_report(error.report(), format, &mut json!([]));
+    }
+}
+
+fn asset_reference_scope_and_prefix(limit: AssetLimit) {
+    let bytes = crate::common::codec_fixtures::solid_png(2, 2, [255, 0, 0, 255]);
+    let n = bytes.len() as u64;
+    let (code, field, kind) = limit.contract();
+    for format in FORMATS {
+        for supplemental in [false, true] {
+            for bounded in [false, true] {
+                let mut source = json!({"type":"excalidraw","version":2,"elements":[
+                    {"id":"zeta","type":"image","width":if bounded {20}else{0},"height":20,"fileId":"z/~","updated":0},
+                    {"id":"alpha","type":"image","x":30,"width":20,"height":20,"fileId":"a","status":"error","updated":0},
+                    {"id":"repeat","type":"image","x":60,"width":20,"height":20,"fileId":"z/~","updated":0},
+                    {"id":"frame","type":"frame","width":80,"height":40,"updated":0},
+                    {"id":"other","type":"frame","x":200,"width":80,"height":40,"updated":0}
+                ],"appState":{},"files":{}});
+                let url = format!(
+                    "data:image/png;base64,{}",
+                    base64::engine::general_purpose::STANDARD.encode(&bytes)
+                );
+                let mut assets = SupplementalAssets::builder();
+                for id in ["a", "unused", "z/~"] {
+                    if supplemental {
+                        assets = assets.asset(id, bytes.clone());
+                    } else {
+                        source["files"][id] = json!({"id":id,"created":0,"dataURL":url});
+                    }
+                }
+                let assets = assets.build().unwrap();
+                let rows: Vec<_> = [
+                    ("alpha", "/files/a/dataURL"),
+                    ("zeta", "/files/z~1~0/dataURL"),
+                    ("repeat", "/files/z~1~0/dataURL"),
+                ]
+                .into_iter()
+                .map(|(id, pointer)| {
+                    let mut row = expected(
+                        code,
+                        field,
+                        json!(n - 1),
+                        json!(n),
+                        kind,
+                        if supplemental { "" } else { pointer },
+                        if format == OutputFormat::Png {
+                            "placeholder"
+                        } else {
+                            "omitted"
+                        },
+                    );
+                    row["element_id"] = json!(id);
+                    row
+                })
+                .collect();
+                let request = RenderRequest::builder(format)
+                    .supplemental_assets(assets.clone())
+                    .resource_limits(limit.limits(n - 1))
+                    .frame_options(excalidraw_render::FrameOptions::new(
+                        false, false, false, false,
+                    ))
+                    .build()
+                    .unwrap();
+                let actual = assert_repeat(&source, &request, json!(rows));
+                let mut missing = source.clone();
+                missing["files"] = json!({});
+                let expected = Renderer::new()
+                    .render(
+                        &parse(&missing),
+                        &RenderRequest::builder(format)
+                            .frame_options(excalidraw_render::FrameOptions::new(
+                                false, false, false, false,
+                            ))
+                            .build()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                assert_eq!(actual.artifact().bytes(), expected.artifact().bytes());
+                let document = parse(&source);
+                let frame_request = FrameRenderRequest::builder(format)
+                    .supplemental_assets(assets)
+                    .resource_limits(limit.limits(n - 1))
+                    .build()
+                    .unwrap();
+                let frames: Vec<_> = document.frames().collect();
+                let renderer = Renderer::new();
+                let mut batch = renderer
+                    .render_frames(&document, frames.iter().copied(), &frame_request)
+                    .unwrap();
+                for (index, frame) in frames.into_iter().enumerate() {
+                    let direct = renderer.render_frame(frame, &frame_request).unwrap();
+                    let prepared = batch.next().unwrap().into_result().unwrap();
+                    report(
+                        &direct,
+                        format,
+                        if index == 0 { json!(rows) } else { json!([]) },
+                    );
+                    assert_eq!(direct.report(), prepared.report());
+                    assert_eq!(direct.artifact().bytes(), prepared.artifact().bytes());
+                }
+                for index in 0..3 {
+                    source["elements"][index]["isDeleted"] = json!(true);
+                }
+                assert_repeat(&source, &request, json!([]));
+            }
+        }
+        // A later required diagnostic cannot replace the already retained
+        // first reference's resource warning with an empty report.
+        let mut source = image_scene(&bytes, "image/png");
+        source["elements"].as_array_mut().unwrap().push(json!({"id":"second","type":"image","width":20,"height":20,"fileId":"asset/~","updated":0}));
+        let builder = match limit {
+            AssetLimit::Bytes => ResourceLimits::builder().max_asset_bytes(n - 1),
+            AssetLimit::Work => ResourceLimits::builder().max_asset_work_units(n - 1),
+        };
+        let request = RenderRequest::builder(format)
+            .resource_limits(builder.max_diagnostics(1).build().unwrap())
+            .build()
+            .unwrap();
+        let error = Renderer::new()
+            .render(&parse(&source), &request)
+            .unwrap_err();
+        assert_eq!(error.code().as_str(), "resource.diagnostic-count-exceeded");
+        exact_report(
+            error.report(),
+            format,
+            &mut json!([expected(
+                code,
+                field,
+                json!(n - 1),
+                json!(n),
+                kind,
+                "/files/asset~1~0/dataURL",
+                if format == OutputFormat::Png {
+                    "placeholder"
+                } else {
+                    "omitted"
+                }
+            )]),
+        );
+    }
+}
+
+fn asset_byte_parent_admission_bounds_every_nested_payload() {
+    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2"/></svg>"#;
+    for format in FORMATS {
+        for bounded in [false, true] {
+            let parent = format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="{}" height="2" href="{}"/></svg>"#,
+                u8::from(bounded),
+                svg_url(leaf)
+            );
+            let n = parent.len() as u64;
+            // An accepted data child is strictly smaller than its enclosing
+            // parent's payload (base64 expands it). The same local byte cap
+            // therefore rejects the parent first, never this nested slot.
+            assert!(parent.len() > leaf.len() + 1);
+            for configured in [
+                leaf.len() as u64 - 1,
+                leaf.len() as u64,
+                leaf.len() as u64 + 1,
+                n - 1,
+                n,
+                n + 1,
+            ] {
+                let request = RenderRequest::builder(format)
+                    .resource_limits(AssetLimit::Bytes.limits(configured))
+                    .build()
+                    .unwrap();
+                let source = image_scene(parent.as_bytes(), "image/svg+xml");
+                let actual = assert_repeat(
+                    &source,
+                    &request,
+                    if configured < n {
+                        json!([expected(
+                            "resource.asset-bytes-exceeded",
+                            "max_asset_bytes",
+                            json!(configured),
+                            json!(n),
+                            "bytes",
+                            "/files/asset~1~0/dataURL",
+                            if format == OutputFormat::Png {
+                                "placeholder"
+                            } else {
+                                "omitted"
+                            }
+                        )])
+                    } else {
+                        json!([])
+                    },
+                );
+                if configured < n {
+                    let mut missing = source.clone();
+                    missing["files"] = json!({});
+                    let expected = Renderer::new()
+                        .render(
+                            &parse(&missing),
+                            &RenderRequest::builder(format).build().unwrap(),
+                        )
+                        .unwrap();
+                    assert_eq!(actual.artifact().bytes(), expected.artifact().bytes());
+                }
+            }
+        }
+    }
+}
+
+fn asset_intrinsic_work_boundaries() {
+    let bytes = crate::common::codec_fixtures::solid_png(2, 2, [255, 0, 0, 255]);
+    let validation = bytes.len() as u64;
+    // Direct SVG validates the original raster; PNG/PDF select the five
+    // subsequent payload passes and four units per decoded source pixel.
+    for format in FORMATS {
+        let n = if format == OutputFormat::Svg {
+            validation
+        } else {
+            validation * 5 + 4 * 4
+        };
+        for configured in [n - 1, n, n + 1] {
+            let source = image_scene(&bytes, "image/png");
+            let request = RenderRequest::builder(format)
+                .resource_limits(AssetLimit::Work.limits(configured))
+                .build()
+                .unwrap();
+            assert_repeat(
+                &source,
+                &request,
+                if configured < n {
+                    json!([expected(
+                        "resource.asset-work-exceeded",
+                        "max_asset_work_units",
+                        json!(configured),
+                        json!(n),
+                        "work_units",
+                        "/files/asset~1~0/dataURL",
+                        if format == OutputFormat::Png {
+                            "placeholder"
+                        } else {
+                            "omitted"
+                        }
+                    )])
+                } else {
+                    json!([])
+                },
+            );
+        }
+    }
+}
+
+fn nested_svg_work_boundaries() {
+    // 1002 element nodes and five attributes; XML token/node/attribute
+    // multiplicity is (1002+5)+1002+5 = 2014 records, at 16 units each.
+    let child = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2">{}<rect width="2" height="2" fill="red"/></svg>"#,
+        "<g/>".repeat(1000)
+    );
+    let n = child.len() as u64 + 2014 * 16;
+    for format in FORMATS {
+        for nested in [false, true] {
+            for bounded in [false, true] {
+                let parent = format!(
+                    r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="{}" height="2" href="{}"/></svg>"#,
+                    u8::from(bounded),
+                    svg_url(&child)
+                );
+                let mut source = image_scene(
+                    if nested {
+                        parent.as_bytes()
+                    } else {
+                        child.as_bytes()
+                    },
+                    "image/svg+xml",
+                );
+                if !nested && !bounded {
+                    source["elements"][0]["width"] = json!(0);
+                }
+                for configured in [8191, 8192, n - 1, n, n + 1] {
+                    let request = RenderRequest::builder(format)
+                        .resource_limits(AssetLimit::Work.limits(configured))
+                        .build()
+                        .unwrap();
+                    let rows = if configured < n {
+                        json!([if nested {
+                            nested_resource_row(
+                                format,
+                                "resource.asset-work-exceeded",
+                                "max_asset_work_units",
+                                json!(configured),
+                                json!(n),
+                                "work_units",
+                                bounded && configured >= 8192,
+                            )
+                        } else {
+                            expected(
+                                "resource.asset-work-exceeded",
+                                "max_asset_work_units",
+                                json!(configured),
+                                json!(n),
+                                "work_units",
+                                "/files/asset~1~0/dataURL",
+                                if format == OutputFormat::Png {
+                                    "placeholder"
+                                } else {
+                                    "omitted"
+                                },
+                            )
+                        }])
+                    } else {
+                        json!([])
+                    };
+                    let actual = assert_repeat(&source, &request, rows);
+                    if configured < n {
+                        let mut oracle = source.clone();
+                        if nested && (!bounded || configured < 8192) {
+                            let omitted =
+                                parent.replace(&format!(" href=\"{}\"", svg_url(&child)), "");
+                            oracle["files"]["asset/~"]["dataURL"] = json!(svg_url(&omitted));
+                            let expected = Renderer::new()
+                                .render(
+                                    &parse(&oracle),
+                                    &RenderRequest::builder(format).build().unwrap(),
+                                )
+                                .unwrap();
+                            assert_nested_artifact_eq(&actual, &expected);
+                        } else if !nested {
+                            oracle["files"] = json!({});
+                            let expected = Renderer::new()
+                                .render(
+                                    &parse(&oracle),
+                                    &RenderRequest::builder(format).build().unwrap(),
+                                )
+                                .unwrap();
+                            assert_eq!(actual.artifact().bytes(), expected.artifact().bytes());
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn element_scene(kind: &str) -> Value {
+    json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":kind,"width":10,"height":10,"roughness":0,"seed":1,"updated":0}],"appState":{},"files":{}})
+}
+
+#[derive(Clone, Copy)]
+enum ElementLimit {
+    Geometry,
+    Work,
+}
+impl ElementLimit {
+    fn contract(self) -> (&'static str, &'static str, &'static str) {
+        match self {
+            Self::Geometry => (
+                "resource.element-complexity-replaced",
+                "max_geometry_segments_per_element",
+                "count",
+            ),
+            Self::Work => (
+                "resource.element-work-exceeded",
+                "max_element_work_units",
+                "work_units",
+            ),
+        }
+    }
+    fn limits(self, n: u64) -> ResourceLimits {
+        match self {
+            Self::Geometry => ResourceLimits::builder().max_geometry_segments_per_element(n as u32),
+            Self::Work => ResourceLimits::builder().max_element_work_units(n),
+        }
+        .build()
+        .unwrap()
+    }
+    fn full_rectangle(self) -> u64 {
+        match self {
+            Self::Geometry => 16,
+            Self::Work => 640,
+        }
+    }
+}
+
+#[test]
+fn element_complexity_contract_covers_geometry_text_recovery_and_frames() {
+    element_outline_boundaries(ElementLimit::Geometry);
+    element_fallback_boundaries(ElementLimit::Geometry);
+    element_reference_order_and_frames(ElementLimit::Geometry);
+    text_scalar_and_glyph_boundaries();
+    nonreciprocal_bound_text_recovery_does_not_claim_lost_text();
+}
+
+#[test]
+fn element_work_contract_covers_generation_shaping_projection_and_frames() {
+    element_outline_boundaries(ElementLimit::Work);
+    element_fallback_boundaries(ElementLimit::Work);
+    element_reference_order_and_frames(ElementLimit::Work);
+    empty_text_work_recovery_does_not_claim_lost_source_semantics();
+    text_shaping_work_boundaries();
+    png_projection_work_boundaries();
+}
+
+fn element_outline_boundaries(limit: ElementLimit) {
+    let (code, field, kind) = limit.contract();
+    let n = limit.full_rectangle();
+    for format in FORMATS {
+        // PNG also prices the stroked 12x12 coverage box at 16 samples
+        // per pixel. Its placeholder uses a 10x10 box and 9*32+8 base work.
+        let png_work = 640 + 12 * 12 * 16;
+        let final_n = if format == OutputFormat::Png && matches!(limit, ElementLimit::Work) {
+            png_work
+        } else {
+            n
+        };
+        let mut configurations = vec![1, n - 1, n, n + 1];
+        if final_n != n {
+            configurations.extend([final_n - 1, final_n, final_n + 1]);
+        }
+        for configured in configurations {
+            let source = element_scene("rectangle");
+            let request = RenderRequest::builder(format)
+                .resource_limits(limit.limits(configured))
+                .build()
+                .unwrap();
+            let attempted = if configured == 1 {
+                match limit {
+                    ElementLimit::Geometry => 2,
+                    ElementLimit::Work => 128,
+                }
+            } else {
+                n
+            };
+            // Four sides, two strokes, move+cubic = 16 commands. Work is
+            // 14 normalized fields + index + plan at 8, plus 16*32 = 640.
+            let mut row = expected(
+                code,
+                field,
+                json!(configured),
+                json!(attempted),
+                kind,
+                "/elements/0",
+                if configured == 1 {
+                    "omitted"
+                } else {
+                    "placeholder"
+                },
+            );
+            if format != OutputFormat::Png {
+                row["effects"] = json!(["visual", "semantic"]);
+            }
+            let mut rows = if configured < n { vec![row] } else { vec![] };
+            if format == OutputFormat::Png
+                && matches!(limit, ElementLimit::Work)
+                && configured != 1
+                && configured < final_n
+            {
+                rows.push(expected(
+                    code,
+                    field,
+                    json!(configured),
+                    json!(if configured < n {
+                        PLACEHOLDER_PNG_WORK
+                    } else {
+                        png_work
+                    }),
+                    kind,
+                    "/elements/0",
+                    "omitted",
+                ));
+            }
+            let outcome = assert_repeat(&source, &request, json!(rows));
+            if configured < final_n {
+                let placeholder = configured != 1
+                    && !(format == OutputFormat::Png && matches!(limit, ElementLimit::Work));
+                assert_eq!(
+                    outcome.artifact().bytes(),
+                    box_oracle(format, 10, 10, 10.0, placeholder)
+                        .artifact()
+                        .bytes()
+                );
+            }
+            if configured >= final_n {
+                let baseline = Renderer::new()
+                    .render(
+                        &parse(&source),
+                        &RenderRequest::builder(format).build().unwrap(),
+                    )
+                    .unwrap();
+                assert_eq!(outcome.artifact().bytes(), baseline.artifact().bytes());
+            }
+        }
+        if matches!(limit, ElementLimit::Geometry) {
+            // A vertical line has four operations and no positive-width box
+            // for a compatibility placeholder.
+            let mut source = element_scene("line");
+            source["elements"][0]["points"] = json!([[0, 0], [0, 10]]);
+            for configured in [3, 4, 5] {
+                let request = RenderRequest::builder(format)
+                    .resource_limits(limit.limits(configured))
+                    .build()
+                    .unwrap();
+                let mut row = expected(
+                    code,
+                    field,
+                    json!(configured),
+                    json!(4),
+                    kind,
+                    "/elements/0",
+                    "omitted",
+                );
+                if format != OutputFormat::Png {
+                    row["effects"] = json!(["visual", "semantic"]);
+                }
+                let outcome = assert_repeat(
+                    &source,
+                    &request,
+                    if configured < 4 {
+                        json!([row])
+                    } else {
+                        json!([])
+                    },
+                );
+                if configured < 4 {
+                    assert_eq!(
+                        outcome.artifact().bytes(),
+                        box_oracle(format, 0, 10, 10.0, false).artifact().bytes()
+                    );
+                }
+            }
+            let request = RenderRequest::builder(format)
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_geometry_segments_per_element(15)
+                        .max_total_geometry_segments(15)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            let error = Renderer::new()
+                .render(&parse(&element_scene("rectangle")), &request)
+                .unwrap_err();
+            assert_eq!(error.code().as_str(), "resource.total-geometry-exceeded");
+            exact_report(error.report(), format, &mut json!([]));
+            let request = RenderRequest::builder(format)
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_geometry_segments_per_element(15)
+                        .max_element_work_units(639)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            let mut row = expected(
+                code,
+                field,
+                json!(15),
+                json!(16),
+                kind,
+                "/elements/0",
+                "placeholder",
+            );
+            if format != OutputFormat::Png {
+                row["effects"] = json!(["visual", "semantic"]);
+            }
+            let mut rows = vec![row];
+            if format == OutputFormat::Png {
+                rows.push(expected(
+                    "resource.element-work-exceeded",
+                    "max_element_work_units",
+                    json!(639),
+                    json!(PLACEHOLDER_PNG_WORK),
+                    "work_units",
+                    "/elements/0",
+                    "omitted",
+                ));
+            }
+            assert_repeat(&element_scene("rectangle"), &request, json!(rows));
+        } else {
+            let mut empty = element_scene("rectangle");
+            empty["elements"][0]["width"] = json!(0);
+            let request = RenderRequest::builder(format)
+                .resource_limits(limit.limits(1))
+                .build()
+                .unwrap();
+            assert_repeat(
+                &empty,
+                &request,
+                json!([expected(
+                    code,
+                    field,
+                    json!(1),
+                    json!(128),
+                    kind,
+                    "/elements/0",
+                    "omitted"
+                )]),
+            );
+        }
+    }
+}
+
+fn element_fallback_boundaries(limit: ElementLimit) {
+    let (code, field, kind) = limit.contract();
+    let n = match limit {
+        ElementLimit::Geometry => 9,
+        ElementLimit::Work => 9 * 32,
+    };
+    let source = element_scene("future");
+    for format in FORMATS {
+        let final_n = if format == OutputFormat::Png && matches!(limit, ElementLimit::Work) {
+            PLACEHOLDER_PNG_WORK
+        } else {
+            n
+        };
+        let mut configurations = vec![n - 1, n, n + 1];
+        if final_n != n {
+            configurations.extend([final_n - 1, final_n, final_n + 1]);
+        }
+        for configured in configurations {
+            let request = RenderRequest::builder(format)
+                .resource_limits(limit.limits(configured))
+                .build()
+                .unwrap();
+            let mut rows = vec![
+                json!({"code":"compatibility.unsupported-element-type","severity":"warning","effects":["visual","semantic"],"element_id":"image","json_pointer":"/elements/0","details":{"kind":"compatibility","recovery":"placeholder","recipe_id":"renderer.unknown-element.v1"}}),
+            ];
+            if configured < final_n {
+                let mut row = expected(
+                    code,
+                    field,
+                    json!(configured),
+                    json!(if configured < n { n } else { final_n }),
+                    kind,
+                    "/elements/0",
+                    "omitted",
+                );
+                if format != OutputFormat::Png {
+                    row["effects"] = json!(["visual", "semantic"]);
+                }
+                rows.push(row);
+            }
+            let actual = assert_repeat(&source, &request, json!(rows));
+            assert_eq!(
+                actual.artifact().bytes(),
+                box_oracle(format, 10, 10, 10.0, configured >= final_n)
+                    .artifact()
+                    .bytes()
+            );
+        }
+    }
+}
+
+fn element_reference_order_and_frames(limit: ElementLimit) {
+    let (code, field, kind) = limit.contract();
+    let n = limit.full_rectangle();
+    for format in FORMATS {
+        let mut source = element_scene("rectangle");
+        source["elements"][0]["id"] = json!("z");
+        let mut second = source["elements"][0].clone();
+        second["id"] = json!("a");
+        second["x"] = json!(20);
+        source["elements"].as_array_mut().unwrap().push(second);
+        let rows: Vec<_> = ["z", "a"]
+            .into_iter()
+            .enumerate()
+            .flat_map(|(index, id)| {
+                let mut row = expected(
+                    code,
+                    field,
+                    json!(n - 1),
+                    json!(n),
+                    kind,
+                    &format!("/elements/{index}"),
+                    "placeholder",
+                );
+                row["element_id"] = json!(id);
+                if format != OutputFormat::Png {
+                    row["effects"] = json!(["visual", "semantic"]);
+                }
+                let mut rows = vec![row];
+                if format == OutputFormat::Png && matches!(limit, ElementLimit::Work) {
+                    let mut row = expected(
+                        code,
+                        field,
+                        json!(n - 1),
+                        json!(PLACEHOLDER_PNG_WORK),
+                        kind,
+                        &format!("/elements/{index}"),
+                        "omitted",
+                    );
+                    row["element_id"] = json!(id);
+                    rows.push(row);
+                }
+                rows
+            })
+            .collect();
+        let request = RenderRequest::builder(format)
+            .resource_limits(limit.limits(n - 1))
+            .build()
+            .unwrap();
+        assert_repeat(&source, &request, json!(rows));
+        let limits = match limit {
+            ElementLimit::Geometry => {
+                ResourceLimits::builder().max_geometry_segments_per_element((n - 1) as u32)
+            }
+            ElementLimit::Work => ResourceLimits::builder().max_element_work_units(n - 1),
+        }
+        .max_diagnostics(1)
+        .build()
+        .unwrap();
+        let request = RenderRequest::builder(format)
+            .resource_limits(limits)
+            .build()
+            .unwrap();
+        let error = Renderer::new()
+            .render(&parse(&source), &request)
+            .unwrap_err();
+        assert_eq!(error.code().as_str(), "resource.diagnostic-count-exceeded");
+        exact_report(error.report(), format, &mut json!([rows[0]]));
+        source["elements"].as_array_mut().unwrap().extend([
+            json!({"id":"frame","type":"frame","width":40,"height":40,"updated":0}),
+            json!({"id":"other","type":"frame","x":100,"width":40,"height":40,"updated":0}),
+        ]);
+        let document = parse(&source);
+        let frames: Vec<_> = document.frames().collect();
+        let renderer = Renderer::new();
+        let request = FrameRenderRequest::builder(format)
+            .resource_limits(limit.limits(n - 1))
+            .build()
+            .unwrap();
+        let mut batch = renderer
+            .render_frames(&document, frames.iter().copied(), &request)
+            .unwrap();
+        for (index, frame) in frames.into_iter().enumerate() {
+            let direct = renderer.render_frame(frame, &request).unwrap();
+            let prepared = batch.next().unwrap().into_result().unwrap();
+            report(
+                &direct,
+                format,
+                if index == 0 { json!(rows) } else { json!([]) },
+            );
+            assert_eq!(direct.report(), prepared.report());
+            assert_eq!(direct.artifact().bytes(), prepared.artifact().bytes());
+        }
+        source["elements"][0]["isDeleted"] = json!(true);
+        source["elements"][1]["isDeleted"] = json!(true);
+        let request = RenderRequest::builder(format)
+            .resource_limits(limit.limits(n - 1))
+            .frame_options(excalidraw_render::FrameOptions::new(
+                false, false, false, false,
+            ))
+            .build()
+            .unwrap();
+        assert_repeat(&source, &request, json!([]));
+    }
+}
+
+fn text_scene(text: &str, width: u64) -> Value {
+    let mut source = element_scene("text");
+    let element = &mut source["elements"][0];
+    element["text"] = json!(text);
+    element["originalText"] = json!(text);
+    element["fontFamily"] = json!(5);
+    element["fontSize"] = json!(10);
+    element["lineHeight"] = json!(1.25);
+    element["width"] = json!(width);
+    source
+}
+
+// Count the pinned face's A directly through the font outline API, independently
+// of renderer shaping/accounting and without learning the count from a report.
+fn official_a_geometry() -> (u64, u64) {
+    struct Count {
+        commands: u64,
+        bounds: [f64; 4],
+    }
+    impl Count {
+        fn point(&mut self, x: f32, y: f32) {
+            // Excalifont's pinned metadata: 1000 UPEM, ascender 886,
+            // descender -374; size10 in a 12.5-unit line box.
+            let x = f64::from(x) * 0.01;
+            let y = 12.5 / 2.0 + 512.0 * 0.01 / 2.0 - f64::from(y) * 0.01;
+            self.bounds[0] = self.bounds[0].min(x);
+            self.bounds[1] = self.bounds[1].min(y);
+            self.bounds[2] = self.bounds[2].max(x);
+            self.bounds[3] = self.bounds[3].max(y);
+        }
+    }
+    impl rustybuzz::ttf_parser::OutlineBuilder for Count {
+        fn move_to(&mut self, x: f32, y: f32) {
+            self.commands += 1;
+            self.point(x, y);
+        }
+        fn line_to(&mut self, x: f32, y: f32) {
+            self.commands += 1;
+            self.point(x, y);
+        }
+        fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
+            self.commands += 1;
+            self.point(x1, y1);
+            self.point(x, y);
+        }
+        fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
+            self.commands += 1;
+            self.point(x1, y1);
+            self.point(x2, y2);
+            self.point(x, y);
+        }
+        fn close(&mut self) {
+            self.commands += 1;
+        }
+    }
+    let asset = excalidraw_render_assets_base::load_asset(
+        "fonts/Excalifont/Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
+    )
+    .unwrap()
+    .unwrap();
+    let sfnt = wuff::decompress_woff2(asset.bytes()).unwrap();
+    let face = rustybuzz::ttf_parser::Face::parse(&sfnt, 0).unwrap();
+    assert_eq!(face.units_per_em(), 1000);
+    let mut count = Count {
+        commands: 0,
+        bounds: [
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        ],
+    };
+    face.outline_glyph(face.glyph_index('A').unwrap(), &mut count)
+        .unwrap();
+    let area = (count.bounds[2].ceil() - count.bounds[0].floor())
+        * (count.bounds[3].ceil() - count.bounds[1].floor());
+    (count.commands, area as u64)
+}
+
+fn text_scalar_and_glyph_boundaries() {
+    let (glyph_commands, _) = official_a_geometry();
+    for format in FORMATS {
+        for width in [0, 10] {
+            for configured in [1, 2, 3] {
+                let source = text_scene("Aé", width);
+                let request = RenderRequest::builder(format)
+                    .resource_limits(
+                        ResourceLimits::builder()
+                            .max_text_scalars_per_element(configured)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                let mut row = expected(
+                    "resource.element-complexity-replaced",
+                    "max_text_scalars_per_element",
+                    json!(configured),
+                    json!(2),
+                    "count",
+                    "/elements/0",
+                    if width == 0 { "omitted" } else { "placeholder" },
+                );
+                if format != OutputFormat::Png {
+                    row["effects"] = json!(["visual", "semantic"]);
+                }
+                let mut rows = if configured < 2 { vec![row] } else { vec![] };
+                if configured < 2 && width > 0 {
+                    let mut row = expected(
+                        "resource.element-complexity-replaced",
+                        "max_text_scalars_per_element",
+                        json!(configured),
+                        json!("Unavailable: text".chars().count()),
+                        "count",
+                        "/elements/0",
+                        "omitted",
+                    );
+                    if format != OutputFormat::Png {
+                        row["effects"] = json!(["visual", "semantic"]);
+                    }
+                    rows.push(row);
+                }
+                let actual = assert_repeat(&source, &request, json!(rows));
+                if configured < 2 {
+                    let expected = if width == 0 {
+                        let mut empty = source.clone();
+                        empty["elements"] = json!([]);
+                        Renderer::new()
+                            .render(
+                                &parse(&empty),
+                                &RenderRequest::builder(format).build().unwrap(),
+                            )
+                            .unwrap()
+                    } else {
+                        box_oracle(format, 10, 10, 10.0, true)
+                    };
+                    assert_eq!(actual.artifact().bytes(), expected.artifact().bytes());
+                }
+            }
+        }
+        for configured in [glyph_commands - 1, glyph_commands, glyph_commands + 1] {
+            let request = RenderRequest::builder(format)
+                .resource_limits(ElementLimit::Geometry.limits(configured))
+                .build()
+                .unwrap();
+            let mut row = expected(
+                "resource.element-complexity-replaced",
+                "max_geometry_segments_per_element",
+                json!(configured),
+                json!(glyph_commands),
+                "count",
+                "/elements/0",
+                "omitted",
+            );
+            if format != OutputFormat::Png {
+                row["effects"] = json!(["visual", "semantic"]);
+            }
+            let actual = assert_repeat(
+                &text_scene("A", 10),
+                &request,
+                if configured < glyph_commands {
+                    json!([row])
+                } else {
+                    json!([])
+                },
+            );
+            if configured < glyph_commands {
+                assert_eq!(
+                    actual.artifact().bytes(),
+                    box_oracle(format, 10, 10, 10.0, false).artifact().bytes()
+                );
+            }
+        }
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_text_scalars_per_element(1)
+                    .max_total_text_scalars(1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let error = Renderer::new()
+            .render(&parse(&text_scene("AB", 10)), &request)
+            .unwrap_err();
+        assert_eq!(error.code().as_str(), "resource.total-text-exceeded");
+        exact_report(error.report(), format, &mut json!([]));
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_text_scalars_per_element(1)
+                    .max_element_work_units(1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let mut row = expected(
+            "resource.element-complexity-replaced",
+            "max_text_scalars_per_element",
+            json!(1),
+            json!(2),
+            "count",
+            "/elements/0",
+            "omitted",
+        );
+        if format != OutputFormat::Png {
+            row["effects"] = json!(["visual", "semantic"]);
+        }
+        assert_repeat(&text_scene("AB", 10), &request, json!([row]));
+    }
+}
+
+fn text_shaping_work_boundaries() {
+    // One scalar, glyph and line, followed by the pinned face's commands.
+    let (commands, pixel_area) = official_a_geometry();
+    let n = (3 + commands) * 32;
+    for format in FORMATS {
+        let final_n = if format == OutputFormat::Png {
+            n + 8 + pixel_area * 16
+        } else {
+            n
+        };
+        let mut configurations = vec![95, n - 1, n, n + 1];
+        if final_n != n {
+            configurations.extend([final_n - 1, final_n, final_n + 1]);
+        }
+        for configured in configurations {
+            let request = RenderRequest::builder(format)
+                .resource_limits(ElementLimit::Work.limits(configured))
+                .build()
+                .unwrap();
+            let mut row = expected(
+                "resource.element-work-exceeded",
+                "max_element_work_units",
+                json!(configured),
+                json!(if configured == 95 {
+                    96
+                } else if configured < n {
+                    n
+                } else {
+                    final_n
+                }),
+                "work_units",
+                "/elements/0",
+                "omitted",
+            );
+            if format != OutputFormat::Png {
+                row["effects"] = json!(["visual", "semantic"]);
+            }
+            let actual = assert_repeat(
+                &text_scene("A", 10),
+                &request,
+                if configured < final_n {
+                    json!([row])
+                } else {
+                    json!([])
+                },
+            );
+            if configured < final_n {
+                let expected = if configured == 95 {
+                    let mut empty = text_scene("", 10);
+                    empty["elements"] = json!([]);
+                    Renderer::new()
+                        .render(
+                            &parse(&empty),
+                            &RenderRequest::builder(format).build().unwrap(),
+                        )
+                        .unwrap()
+                } else {
+                    box_oracle(format, 10, 10, 10.0, false)
+                };
+                assert_eq!(actual.artifact().bytes(), expected.artifact().bytes());
+            }
+        }
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_geometry_segments_per_element((commands - 1) as u32)
+                    .max_total_geometry_segments(commands - 1)
+                    .max_element_work_units(n - 1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let error = Renderer::new()
+            .render(&parse(&text_scene("A", 10)), &request)
+            .unwrap_err();
+        assert_eq!(error.code().as_str(), "resource.total-geometry-exceeded");
+        exact_report(error.report(), format, &mut json!([]));
+    }
+}
+
+fn png_projection_work_boundaries() {
+    let bytes = crate::common::codec_fixtures::solid_png(1, 1, [255, 0, 0, 255]);
+    let mut source = image_scene(&bytes, "image/png");
+    source["elements"][0]["width"] = json!(1);
+    source["elements"][0]["height"] = json!(1);
+    for format in FORMATS {
+        for configured in [31, 32, 33] {
+            let request = RenderRequest::builder(format)
+                .resource_limits(ElementLimit::Work.limits(configured))
+                .build()
+                .unwrap();
+            let rejected = format == OutputFormat::Png && configured < 32;
+            let actual = assert_repeat(
+                &source,
+                &request,
+                if rejected {
+                    json!([expected(
+                        "resource.element-work-exceeded",
+                        "max_element_work_units",
+                        json!(configured),
+                        json!(32),
+                        "work_units",
+                        "/elements/0",
+                        "omitted"
+                    )])
+                } else {
+                    json!([])
+                },
+            );
+            if rejected {
+                assert_eq!(
+                    actual.artifact().bytes(),
+                    box_oracle(format, 1, 1, 10.0, false).artifact().bytes()
+                );
+            }
+        }
+    }
 }
 
 #[test]
@@ -556,6 +1835,362 @@ fn svg_url(svg: &str) -> String {
         "data:image/svg+xml;base64,{}",
         base64::engine::general_purpose::STANDARD.encode(svg)
     )
+}
+
+fn nested_resource_row(
+    format: OutputFormat,
+    code: &str,
+    field: &str,
+    configured: Value,
+    attempted: Value,
+    kind: &str,
+    placeholder: bool,
+) -> Value {
+    json!({"code":code,"severity":"warning","effects":if format==OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":"/files/asset~1~0/dataURL",
+        "details":{"kind":"nested_resource_limit","field":field,"configured":configured,"value_kind":kind,"measurement":{"kind":"attempted","value":attempted},"asset_chain":[{"asset_id":"asset/~","occurrence":0}],
+        "paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],
+        "recovery":if placeholder {"placeholder"} else {"omitted"},"recipe_id":if placeholder {json!("official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677")} else {Value::Null}}})
+}
+
+fn coordinate_derived_reports_and_boundaries() {
+    for format in FORMATS {
+        for configured in [124, 125, 126] {
+            let source = json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":"rectangle","x":75,"width":50,"height":10,"roughness":0,"seed":1,"updated":0}],"appState":{},"files":{}});
+            let request = RenderRequest::builder(format)
+                .padding(0.0)
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_coordinate_magnitude(f64::from(configured))
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            let mut row = expected(
+                "resource.coordinate-range-exceeded",
+                "max_coordinate_magnitude",
+                json!(configured),
+                json!(125),
+                "coordinate",
+                "/elements/0",
+                "omitted",
+            );
+            if format != OutputFormat::Png {
+                row["effects"] = json!(["visual", "semantic"]);
+            }
+            let actual = assert_repeat(
+                &source,
+                &request,
+                if configured < 125 {
+                    json!([row])
+                } else {
+                    json!([])
+                },
+            );
+            if configured < 125 {
+                let mut empty = source.clone();
+                empty["elements"] = json!([]);
+                assert_eq!(
+                    actual.artifact().bytes(),
+                    Renderer::new()
+                        .render(&parse(&empty), &request)
+                        .unwrap()
+                        .artifact()
+                        .bytes()
+                );
+            }
+        }
+        // The Catmull-Rom control is 100 + (100 - 0)/6, although
+        // normalized endpoints and dimensions are all at most 100.
+        let curve = json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":"line","points":[[0,0],[100,0],[100,10]],"roundness":{"type":2},"roughness":0,"seed":1,"updated":0}],"appState":{},"files":{}});
+        let request = RenderRequest::builder(format)
+            .padding(0.0)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_coordinate_magnitude(100.0)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let mut row = expected(
+            "resource.coordinate-range-exceeded",
+            "max_coordinate_magnitude",
+            json!(100),
+            json!(100.0 + 100.0 / 6.0),
+            "coordinate",
+            "/elements/0",
+            "placeholder",
+        );
+        if format != OutputFormat::Png {
+            row["effects"] = json!(["visual", "semantic"]);
+        }
+        let actual = assert_repeat(&curve, &request, json!([row]));
+        assert_eq!(
+            actual.artifact().bytes(),
+            box_oracle(format, 100, 10, 0.0, true).artifact().bytes()
+        );
+
+        let bytes = crate::common::codec_fixtures::solid_png(1, 1, [255, 0, 0, 255]);
+        for crop_width in [1.0, 1e-320] {
+            let mut source = image_scene(&bytes, "image/png");
+            source["elements"][0]["x"] = json!(0);
+            source["elements"][0]["y"] = json!(0);
+            source["elements"][0]["width"] = json!(10);
+            source["elements"][0]["height"] = json!(10);
+            source["elements"][0]["crop"] = json!({"x":0,"y":0,"width":crop_width,"height":100,"naturalWidth":100,"naturalHeight":100});
+            let mut row = expected(
+                "resource.coordinate-range-exceeded",
+                "max_coordinate_magnitude",
+                json!(100),
+                json!(1000),
+                "coordinate",
+                "/elements/0",
+                "omitted",
+            );
+            if crop_width != 1.0 {
+                row["details"]["measurement"] =
+                    json!({"kind":"at_least","value":100.00000000000001});
+            }
+            let actual = assert_repeat(&source, &request, json!([row]));
+            let mut empty = source.clone();
+            empty["elements"] = json!([]);
+            assert_eq!(
+                actual.artifact().bytes(),
+                Renderer::new()
+                    .render(&parse(&empty), &request)
+                    .unwrap()
+                    .artifact()
+                    .bytes()
+            );
+        }
+    }
+}
+
+fn coordinate_nested_reports_recover_and_order_per_slot() {
+    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><path d="M0 0L2000 0L2000 10Z"/></svg>"#;
+    for format in FORMATS {
+        let overflow = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><path transform="scale(1e308)" d="M2 0L3 0L3 1Z"/></svg>"#;
+        let parent = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+            svg_url(overflow)
+        );
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_coordinate_magnitude(100.0)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let mut row = nested_resource_row(
+            format,
+            "resource.coordinate-range-exceeded",
+            "max_coordinate_magnitude",
+            json!(100),
+            Value::Null,
+            "coordinate",
+            false,
+        );
+        row["details"]["measurement"] = json!({"kind":"at_least","value":100.00000000000001});
+        assert_repeat(
+            &image_scene(parent.as_bytes(), "image/svg+xml"),
+            &request,
+            json!([row]),
+        );
+        for bounded in [false, true] {
+            let parent = format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><image width="{}" height="10" href="{}"/><image width="{}" height="10" href="{}"/></svg>"#,
+                u8::from(bounded),
+                svg_url(leaf),
+                u8::from(bounded),
+                svg_url(leaf)
+            );
+            let source = image_scene(parent.as_bytes(), "image/svg+xml");
+            for configured in [100, 667, 668, 1999, 2000, 2001] {
+                let request = RenderRequest::builder(format)
+                    .padding(0.0)
+                    .resource_limits(
+                        ResourceLimits::builder()
+                            .max_coordinate_magnitude(f64::from(configured))
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                let rows: Vec<_> = if configured < 2000 {
+                    [1, 2]
+                        .into_iter()
+                        .map(|ordinal| {
+                            let mut row = nested_resource_row(
+                                format,
+                                "resource.coordinate-range-exceeded",
+                                "max_coordinate_magnitude",
+                                json!(configured),
+                                json!(2000),
+                                "coordinate",
+                                bounded && configured >= 668,
+                            );
+                            row["details"]["paths"][0]["segments"][0]["ordinal"] = json!(ordinal);
+                            row
+                        })
+                        .collect()
+                } else {
+                    vec![]
+                };
+                let actual = assert_repeat(&source, &request, json!(rows));
+                if configured < 2000 && (!bounded || configured < 668) {
+                    let omitted = parent.replace(&format!(" href=\"{}\"", svg_url(leaf)), "");
+                    let expected = Renderer::new()
+                        .render(
+                            &parse(&image_scene(omitted.as_bytes(), "image/svg+xml")),
+                            &RenderRequest::builder(format).padding(0.0).build().unwrap(),
+                        )
+                        .unwrap();
+                    assert_nested_artifact_eq(&actual, &expected);
+                }
+            }
+        }
+        // Top-level authoritative SVG failure uses ordinary format-specific
+        // image recovery and retains the precise file/supplement location.
+        for supplemental in [false, true] {
+            for status in ["saved", "error"] {
+                let mut source = image_scene(leaf.as_bytes(), "image/svg+xml");
+                source["elements"][0]["status"] = json!(status);
+                let assets = if supplemental {
+                    source["files"] = json!({});
+                    SupplementalAssets::builder()
+                        .asset("asset/~", leaf.as_bytes().to_vec())
+                        .build()
+                        .unwrap()
+                } else {
+                    SupplementalAssets::default()
+                };
+                let request = RenderRequest::builder(format)
+                    .padding(0.0)
+                    .supplemental_assets(assets)
+                    .resource_limits(
+                        ResourceLimits::builder()
+                            .max_coordinate_magnitude(100.0)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                let mut row = expected(
+                    "resource.coordinate-range-exceeded",
+                    "max_coordinate_magnitude",
+                    json!(100),
+                    json!(2000),
+                    "coordinate",
+                    if supplemental {
+                        ""
+                    } else {
+                        "/files/asset~1~0/dataURL"
+                    },
+                    if format == OutputFormat::Png {
+                        "placeholder"
+                    } else {
+                        "omitted"
+                    },
+                );
+                if format != OutputFormat::Png {
+                    row["effects"] = json!(["visual", "semantic"]);
+                }
+                assert_repeat(&source, &request, json!([row]));
+                source["elements"][0]["isDeleted"] = json!(true);
+                assert_repeat(&source, &request, json!([]));
+            }
+        }
+    }
+}
+
+fn coordinate_report_prefix_and_frame_replay() {
+    for format in FORMATS {
+        let source = json!({"type":"excalidraw","version":2,"elements":[
+            {"id":"z","type":"rectangle","x":101,"width":10,"height":10,"roughness":0,"seed":1,"updated":0},
+            {"id":"a","type":"rectangle","x":102,"width":10,"height":10,"roughness":0,"seed":1,"updated":0}],"appState":{},"files":{}});
+        let rows: Vec<_> = [("z", 101), ("a", 102)]
+            .into_iter()
+            .enumerate()
+            .map(|(index, (id, value))| {
+                let mut row = expected(
+                    "resource.coordinate-range-exceeded",
+                    "max_coordinate_magnitude",
+                    json!(100),
+                    json!(value),
+                    "coordinate",
+                    &format!("/elements/{index}/x"),
+                    "omitted",
+                );
+                row["element_id"] = json!(id);
+                if format != OutputFormat::Png {
+                    row["effects"] = json!(["visual", "semantic"]);
+                }
+                row
+            })
+            .collect();
+        let limits = ResourceLimits::builder()
+            .max_coordinate_magnitude(100.0)
+            .build()
+            .unwrap();
+        let request = RenderRequest::builder(format)
+            .resource_limits(limits.clone())
+            .build()
+            .unwrap();
+        assert_repeat(&source, &request, json!(rows));
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_coordinate_magnitude(100.0)
+                    .max_diagnostics(1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let error = Renderer::new()
+            .render(&parse(&source), &request)
+            .unwrap_err();
+        assert_eq!(error.code().as_str(), "resource.diagnostic-count-exceeded");
+        exact_report(error.report(), format, &mut json!([rows[0]]));
+
+        let source = json!({"type":"excalidraw","version":2,"elements":[
+            {"id":"bad","type":"frame","x":75,"width":50,"height":10,"updated":0},
+            {"id":"good","type":"frame","width":10,"height":10,"updated":0}],"appState":{},"files":{}});
+        let scene = parse(&source);
+        let request = FrameRenderRequest::builder(format)
+            .resource_limits(limits)
+            .build()
+            .unwrap();
+        let renderer = Renderer::new();
+        let frames: Vec<_> = scene.frames().collect();
+        let mut batch = renderer
+            .render_frames(&scene, frames.iter().copied(), &request)
+            .unwrap();
+        let direct = renderer.render_frame(frames[0], &request).unwrap_err();
+        let prepared = batch.next().unwrap().into_result().unwrap_err();
+        assert_eq!(direct.code().as_str(), "resource.coordinate-range-exceeded");
+        assert_eq!(
+            direct.category(),
+            excalidraw_render::RenderErrorCategory::ResourceLimit
+        );
+        assert_eq!(direct.element_id(), Some("bad"));
+        assert_eq!(direct.json_pointer(), "/elements/0");
+        assert_eq!(
+            serde_json::to_value(direct.details()).unwrap(),
+            json!({"kind":"resource_limit","field":"max_coordinate_magnitude","configured":100,"value_kind":"coordinate","measurement":{"kind":"attempted","value":125},"recovery":null})
+        );
+        exact_report(direct.report(), format, &mut json!([]));
+        assert_eq!(direct.descriptor(), prepared.descriptor());
+        assert_eq!(direct.report(), prepared.report());
+        let direct = renderer.render_frame(frames[1], &request).unwrap();
+        let prepared = batch.next().unwrap().into_result().unwrap();
+        report(&direct, format, json!([]));
+        assert_eq!(direct.report(), prepared.report());
+        assert_eq!(direct.artifact().bytes(), prepared.artifact().bytes());
+    }
 }
 
 #[test]
@@ -804,10 +2439,14 @@ fn nested_depth_placeholder_matches_manifested_geometry_and_local_inheritance() 
 }
 
 fn nested_placeholder_artifact_oracle(nodes: bool) {
-    nested_placeholder_artifact_oracle_for(nodes, None);
+    nested_placeholder_artifact_oracle_for(nodes, None, None);
 }
 
-fn nested_placeholder_artifact_oracle_for(nodes: bool, raster: Option<RasterLimit>) {
+fn nested_placeholder_artifact_oracle_for(
+    nodes: bool,
+    raster: Option<RasterLimit>,
+    extra: Option<ExtraNestedOracle>,
+) {
     // Independent oracle from the frozen recipe, not the recovery producer.
     let manifest: Value = serde_json::from_str(include_str!(
         "../../../../tests/oracle/scene-surfaces/revision-1.json"
@@ -842,6 +2481,11 @@ fn nested_placeholder_artifact_oracle_for(nodes: bool, raster: Option<RasterLimi
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="30" height="20">{}</svg>"#,
         r#"<rect width="30" height="20" fill="red"/>"#.repeat(8)
     );
+    let leaf=match extra {
+        Some(ExtraNestedOracle::Work)=>format!(r#"<svg xmlns="http://www.w3.org/2000/svg" width="30" height="20">{}<rect width="30" height="20" fill="red"/></svg>"#,"<g/>".repeat(1000)),
+        Some(ExtraNestedOracle::Coordinate)=>r#"<svg xmlns="http://www.w3.org/2000/svg" width="30" height="20"><path d="M0 0L2000 0L2000 20Z" fill="red"/></svg>"#.to_owned(),
+        None=>leaf,
+    };
     let child = |payload: &str| {
         format!(
             r#"<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40"><defs><clipPath id="cut"><rect x="0" y="0" width="25" height="40"/></clipPath></defs><g clip-path="url(#cut)"><image x="5" y="3" width="30" height="20" transform="translate(2 1)" opacity="0.5" href="{}"/></g><rect x="40" y="5" width="10" height="10" fill="blue"/></svg>"#,
@@ -876,7 +2520,18 @@ fn nested_placeholder_artifact_oracle_for(nodes: bool, raster: Option<RasterLimi
         source["elements"][0]["height"] = json!(40);
         let request = RenderRequest::builder(format)
             .padding(0.0)
-            .resource_limits(if let Some(limit) = raster {
+            .resource_limits(if let Some(extra) = extra {
+                match extra {
+                    ExtraNestedOracle::Work => {
+                        ResourceLimits::builder().max_asset_work_units(16384)
+                    }
+                    ExtraNestedOracle::Coordinate => {
+                        ResourceLimits::builder().max_coordinate_magnitude(1000.0)
+                    }
+                }
+                .build()
+                .unwrap()
+            } else if let Some(limit) = raster {
                 limit.limits(limit.contract().2 - 1)
             } else if nodes {
                 ResourceLimits::builder()
@@ -900,81 +2555,24 @@ fn nested_placeholder_artifact_oracle_for(nodes: bool, raster: Option<RasterLimi
             )
             .unwrap();
         assert!(expected.report().is_empty());
+        assert_nested_artifact_eq(&actual, &expected);
         match format {
             OutputFormat::Png => {
                 let a = crate::common::raster::decode_png(actual.artifact().bytes());
-                let b = crate::common::raster::decode_png(expected.artifact().bytes());
-                for y in 0..40 {
-                    for x in 0..60 {
-                        assert_eq!(a.pixel(x, y), b.pixel(x, y), "pixel {x},{y}");
-                    }
-                }
                 assert_eq!(a.pixel(10, 8), [243, 243, 243, 255]);
                 assert_eq!(a.pixel(30, 8), [255, 255, 255, 255]);
                 assert_eq!(a.pixel(45, 8), [0, 0, 255, 255]);
             }
             OutputFormat::Svg => {
-                fn canonical_svg(text: &str) -> Value {
-                    fn node_value(node: roxmltree::Node<'_, '_>) -> Value {
-                        let attrs: serde_json::Map<String, Value> = node
-                            .attributes()
-                            .map(|a| {
-                                let value = if let Some(encoded) =
-                                    a.value().strip_prefix("data:image/svg+xml;base64,")
-                                {
-                                    let bytes = base64::engine::general_purpose::STANDARD
-                                        .decode(encoded)
-                                        .unwrap();
-                                    canonical_svg(std::str::from_utf8(&bytes).unwrap())
-                                } else {
-                                    json!(a.value())
-                                };
-                                (a.name().to_owned(), value)
-                            })
-                            .collect();
-                        json!({"name":node.tag_name().name(),"attributes":attrs,"children":node.children().filter(|n|n.is_element()).map(node_value).collect::<Vec<_>>()})
-                    }
-                    node_value(roxmltree::Document::parse(text).unwrap().root_element())
-                }
-                fn root_image(bytes: &[u8]) -> Value {
-                    let text = std::str::from_utf8(bytes).unwrap();
-                    let document = roxmltree::Document::parse(text).unwrap();
-                    let url = document
-                        .descendants()
-                        .find(|n| n.has_tag_name("image"))
-                        .unwrap()
-                        .attribute("href")
-                        .unwrap();
-                    let bytes = base64::engine::general_purpose::STANDARD
-                        .decode(url.strip_prefix("data:image/svg+xml;base64,").unwrap())
-                        .unwrap();
-                    canonical_svg(std::str::from_utf8(&bytes).unwrap())
-                }
-                assert_eq!(
-                    root_image(actual.artifact().bytes()),
-                    root_image(expected.artifact().bytes())
-                );
                 let text = std::str::from_utf8(actual.artifact().bytes()).unwrap();
                 assert!(text.contains("font-awesome-free-5.15.4/solid/image@"));
                 assert!(text.contains("font-awesome-free-5.15.4/solid/ban@"));
             }
             OutputFormat::Pdf => {
                 let a = crate::common::pdf_inspect::pdf_text(actual.artifact().bytes());
-                let b = crate::common::pdf_inspect::pdf_text(expected.artifact().bytes());
                 // Compare every drawing stream, including form streams, while
                 // retaining separate assertions for mandatory notice metadata.
-                let drawing_streams = |text: &str| {
-                    text.split("\nstream\n")
-                        .skip(1)
-                        .filter_map(|part| {
-                            part.split_once("\nendstream")
-                                .map(|(body, _)| body.to_owned())
-                        })
-                        .filter(|body| body.contains(" cm\n") || body.contains(" rg\n"))
-                        .collect::<Vec<_>>()
-                };
-                assert_eq!(drawing_streams(&a), drawing_streams(&b));
-                assert!(!drawing_streams(&a).is_empty());
+                assert!(!pdf_drawing_streams(actual.artifact().bytes()).is_empty());
                 assert!(!a.contains("/Subtype /Image"));
                 assert!(a.contains("font-awesome-free-5.15.4/solid/image@"));
                 assert!(a.contains("font-awesome-free-5.15.4/solid/ban@"));
@@ -2033,6 +3631,15 @@ fn coordinate_contract_covers_components_points_recovery_and_frames() {
     coordinate_point_recovery_and_component_precedence();
     local_outline_resource_recovery_reports_exact_crossings();
     rejected_empty_content_does_not_claim_lost_link_semantics();
+    coordinate_limits_admit_non_outline_content_before_resolution();
+    invalid_frame_coordinates_omit_dependants_and_fail_the_frame_target();
+    invalid_frame_omission_uses_repaired_active_clipping_dependencies();
+    coordinate_rejected_images_classify_authoritative_vector_content();
+    frame_coordinate_recovery_reconciles_fallback_and_missing_image_reports();
+    coordinate_derived_reports_and_boundaries();
+    coordinate_nested_reports_recover_and_order_per_slot();
+    coordinate_report_prefix_and_frame_replay();
+    nested_placeholder_artifact_oracle_for(false, None, Some(ExtraNestedOracle::Coordinate));
     for format in FORMATS {
         for kind in [
             "rectangle",
@@ -2195,16 +3802,19 @@ fn coordinate_limits_admit_non_outline_content_before_resolution() {
                 )
                 .build()
                 .unwrap();
-            let outcome = Renderer::new().render(&parse(&source), &request).unwrap();
-            let diagnostics = serde_json::to_value(outcome.report()).unwrap();
-            assert_eq!(
-                diagnostics["diagnostics"][0]["code"], "resource.coordinate-range-exceeded",
-                "{kind} {format:?}"
+            let mut row = expected(
+                "resource.coordinate-range-exceeded",
+                "max_coordinate_magnitude",
+                json!(20),
+                json!(21),
+                "coordinate",
+                "/elements/0/x",
+                "omitted",
             );
-            assert_eq!(
-                diagnostics["diagnostics"][0]["details"]["measurement"],
-                json!({"kind":"attempted","value":21})
-            );
+            if kind != "image" && format != OutputFormat::Png {
+                row["effects"] = json!(["visual", "semantic"]);
+            }
+            assert_repeat(&source, &request, json!([row]));
         }
     }
 }
@@ -2279,7 +3889,20 @@ fn invalid_frame_omission_uses_repaired_active_clipping_dependencies() {
             )
             .build()
             .unwrap();
-        let actual = Renderer::new().render(&parse(&source), &request).unwrap();
+        let mut coordinate = expected(
+            "resource.coordinate-range-exceeded",
+            "max_coordinate_magnitude",
+            json!(20),
+            json!(21),
+            "coordinate",
+            "/elements/0/x",
+            "omitted",
+        );
+        coordinate["element_id"] = json!("bad");
+        if format != OutputFormat::Png {
+            coordinate["effects"] = json!(["visual", "semantic"]);
+        }
+        let actual = assert_repeat(&source, &request, json!([coordinate]));
         let mut expected_source = source.clone();
         expected_source["elements"][0]["isDeleted"] = json!(true);
         let expected = Renderer::new()
@@ -2298,6 +3921,9 @@ fn invalid_frame_omission_uses_repaired_active_clipping_dependencies() {
         );
         cycle["elements"][2]["frameId"] = json!("good");
         let request = RenderRequest::builder(format)
+            .frame_options(excalidraw_render::FrameOptions::new(
+                true, true, false, true,
+            ))
             .resource_limits(
                 ResourceLimits::builder()
                     .max_coordinate_magnitude(20.0)
@@ -2306,12 +3932,8 @@ fn invalid_frame_omission_uses_repaired_active_clipping_dependencies() {
             )
             .build()
             .unwrap();
-        let actual = Renderer::new().render(&parse(&cycle), &request).unwrap();
-        assert!(actual
-            .report()
-            .diagnostics()
-            .iter()
-            .any(|d| d.code().as_str() == "resource.coordinate-range-exceeded"));
+        let cycle_row = json!({"code":"normalization.relationship-cycle","severity":"warning","effects":if format==OutputFormat::Png {json!(["input_repair","visual"])}else{json!(["input_repair","visual","semantic"])},"element_id":"good","json_pointer":"/elements/1/frameId","details":{"kind":"compatibility","recovery":"removed","recipe_id":null}});
+        let actual = assert_repeat(&cycle, &request, json!([coordinate, cycle_row]));
         cycle["elements"][0]["isDeleted"] = json!(true);
         cycle["elements"][1]["frameId"] = Value::Null;
         let expected = Renderer::new().render(&parse(&cycle), &request).unwrap();
@@ -2385,28 +4007,53 @@ fn frame_coordinate_recovery_reconciles_fallback_and_missing_image_reports() {
             )
             .build()
             .unwrap();
-        let outcome = Renderer::new().render(&parse(&source), &request).unwrap();
-        let row = outcome
-            .report()
-            .diagnostics()
-            .iter()
-            .find(|d| d.element_id() == Some("fallback"))
-            .unwrap();
+        let mut coordinate = expected(
+            "resource.coordinate-range-exceeded",
+            "max_coordinate_magnitude",
+            json!(20),
+            json!(21),
+            "coordinate",
+            "/elements/0/x",
+            "omitted",
+        );
+        coordinate["element_id"] = json!("bad");
+        if format != OutputFormat::Png {
+            coordinate["effects"] = json!(["visual", "semantic"]);
+        }
+        let actual = assert_repeat(
+            &source,
+            &request,
+            json!([coordinate,{"code":"compatibility.unsupported-element-type","severity":"warning","effects":["visual","semantic"],"element_id":"fallback","json_pointer":"/elements/1","details":{"kind":"compatibility","recovery":"omitted","recipe_id":null}}]),
+        );
+        let mut empty = source.clone();
+        empty["elements"] = json!([]);
         assert_eq!(
-            serde_json::to_value(row.details()).unwrap(),
-            json!({"kind":"compatibility","recovery":"omitted","recipe_id":null})
+            actual.artifact().bytes(),
+            Renderer::new()
+                .render(&parse(&empty), &request)
+                .unwrap()
+                .artifact()
+                .bytes()
         );
         let source = json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","fileId":"absent","link":"https://example.com","x":21,"width":10,"height":10,"updated":0}],"appState":{},"files":{}});
-        let outcome = Renderer::new().render(&parse(&source), &request).unwrap();
-        let row = outcome
-            .report()
-            .diagnostics()
-            .iter()
-            .find(|d| d.code().as_str() == "resource.coordinate-range-exceeded")
-            .unwrap();
+        let missing = json!({"code":"image.missing-file","severity":"warning","effects":["visual"],"element_id":"image","json_pointer":"/elements/0/fileId","details":{"kind":"asset","asset_id":"absent","claimed_media_type":null,"validated_media_type":null,"recovery":if format==OutputFormat::Png {"placeholder"}else{"omitted"},"recipe_id":if format==OutputFormat::Png {json!("official.image@sha256:0a04dbba7ed6a0ce33aa61d9abf02b13685715241022483139b28eb666b8219d")}else{Value::Null}}});
+        let coordinate = expected(
+            "resource.coordinate-range-exceeded",
+            "max_coordinate_magnitude",
+            json!(20),
+            json!(21),
+            "coordinate",
+            "/elements/0/x",
+            "omitted",
+        );
+        let actual = assert_repeat(&source, &request, json!([missing, coordinate]));
         assert_eq!(
-            serde_json::to_value(row).unwrap()["effects"],
-            json!(["visual"])
+            actual.artifact().bytes(),
+            Renderer::new()
+                .render(&parse(&empty), &request)
+                .unwrap()
+                .artifact()
+                .bytes()
         );
     }
 }
