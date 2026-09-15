@@ -7,6 +7,408 @@ use excalidraw_render::{
 };
 use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
+
+#[derive(Clone, Copy)]
+enum RasterLimit {
+    Dimension,
+    Pixels,
+}
+
+impl RasterLimit {
+    fn contract(self) -> (&'static str, &'static str, u64, &'static str) {
+        match self {
+            Self::Dimension => (
+                "resource.image-dimensions-exceeded",
+                "max_raster_dimension",
+                64,
+                "dimension",
+            ),
+            Self::Pixels => (
+                "resource.image-pixels-exceeded",
+                "max_decoded_pixels_per_asset",
+                128,
+                "pixels",
+            ),
+        }
+    }
+
+    fn limits(self, configured: u64) -> ResourceLimits {
+        match self {
+            Self::Dimension => ResourceLimits::builder()
+                .max_raster_dimension(configured as u32)
+                .build()
+                .unwrap(),
+            Self::Pixels => ResourceLimits::builder()
+                .max_decoded_pixels_per_asset(configured)
+                .build()
+                .unwrap(),
+        }
+    }
+}
+
+#[test]
+fn image_dimension_contract_covers_codecs_recovery_and_scope() {
+    raster_limit_suppression_and_recovery_envelope(RasterLimit::Dimension);
+    raster_side_precedence_and_mixed_reference_recovery();
+    raster_limit_contract(RasterLimit::Dimension);
+    raster_limit_scope(RasterLimit::Dimension);
+    nested_placeholder_artifact_oracle_for(false, Some(RasterLimit::Dimension));
+    nested_raster_limits_preserve_exact_paths_and_local_recovery();
+}
+
+#[test]
+fn image_pixel_contract_covers_codecs_recovery_and_scope() {
+    raster_limit_suppression_and_recovery_envelope(RasterLimit::Pixels);
+    raster_side_precedence_and_mixed_reference_recovery();
+    raster_limit_contract(RasterLimit::Pixels);
+    raster_limit_scope(RasterLimit::Pixels);
+    nested_placeholder_artifact_oracle_for(false, Some(RasterLimit::Pixels));
+    nested_raster_limits_preserve_exact_paths_and_local_recovery();
+}
+
+fn raster_limit_suppression_and_recovery_envelope(limit: RasterLimit) {
+    let bytes = crate::common::codec_fixtures::solid_png(64, 2, [255, 0, 0, 255]);
+    let url = format!(
+        "data:image/png;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(&bytes)
+    );
+    let parent = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><image width="20" height="20" href="{url}"/></svg>"#
+    );
+    let (code, field, n, kind) = limit.contract();
+    for format in FORMATS {
+        for work in [8191, 8192, 8193] {
+            let limits = match limit {
+                RasterLimit::Dimension => ResourceLimits::builder()
+                    .max_raster_dimension(63)
+                    .max_asset_work_units(work)
+                    .build()
+                    .unwrap(),
+                RasterLimit::Pixels => ResourceLimits::builder()
+                    .max_decoded_pixels_per_asset(127)
+                    .max_asset_work_units(work)
+                    .build()
+                    .unwrap(),
+            };
+            let source = image_scene(parent.as_bytes(), "image/svg+xml");
+            let request = RenderRequest::builder(format)
+                .padding(0.0)
+                .resource_limits(limits)
+                .build()
+                .unwrap();
+            let rows = if format == OutputFormat::Svg {
+                json!([])
+            } else {
+                json!([{
+                    "code":code,"severity":"warning","effects":["visual"],"element_id":null,"json_pointer":"/files/asset~1~0/dataURL",
+                    "details":{"kind":"nested_resource_limit","field":field,"configured":n-1,"value_kind":kind,"measurement":{"kind":"attempted","value":n},"asset_chain":[{"asset_id":"asset/~","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":if work<8192 {"omitted"} else {"placeholder"},"recipe_id":if work<8192 {Value::Null} else {json!("official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677")}}
+                }])
+            };
+            let result = assert_repeat(&source, &request, rows);
+            if work == 8191 && format != OutputFormat::Svg {
+                let omitted = parent.replace(&format!(" href=\"{url}\""), "");
+                let oracle = image_scene(omitted.as_bytes(), "image/svg+xml");
+                let expected = Renderer::new()
+                    .render(
+                        &parse(&oracle),
+                        &RenderRequest::builder(format).padding(0.0).build().unwrap(),
+                    )
+                    .unwrap();
+                assert_eq!(result.artifact().bytes(), expected.artifact().bytes());
+            }
+        }
+        for nested in [false, true] {
+            let mut source = image_scene(
+                if nested { parent.as_bytes() } else { &bytes },
+                if nested { "image/svg+xml" } else { "image/png" },
+            );
+            source["elements"][0]["isDeleted"] = json!(true);
+            let request = RenderRequest::builder(format)
+                .padding(0.0)
+                .resource_limits(limit.limits(n - 1))
+                .build()
+                .unwrap();
+            assert_repeat(&source, &request, json!([]));
+        }
+        let clean = crate::common::codec_fixtures::solid_png(1, 1, [0, 0, 255, 255]);
+        let source = image_scene(&clean, "image/png");
+        let request = RenderRequest::builder(format)
+            .padding(0.0)
+            .resource_limits(limit.limits(n - 1))
+            .supplemental_assets(
+                SupplementalAssets::builder()
+                    .asset("asset/~", bytes.clone())
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        assert_repeat(
+            &source,
+            &request,
+            json!([{"code":"asset.supplement-conflict","severity":"warning","effects":["input_repair"],"element_id":null,"json_pointer":"/files/asset~1~0","details":{"kind":"asset","asset_id":"asset/~","claimed_media_type":null,"validated_media_type":null,"recovery":"ignored","recipe_id":null}}]),
+        );
+    }
+}
+
+#[test]
+fn raster_side_precedence_and_mixed_reference_recovery() {
+    for format in FORMATS {
+        for (width, height, attempted) in [(2, 64, 64), (64, 128, 64)] {
+            let bytes = crate::common::codec_fixtures::solid_png(width, height, [255, 0, 0, 255]);
+            for nested in [false, true] {
+                let url = format!(
+                    "data:image/png;base64,{}",
+                    base64::engine::general_purpose::STANDARD.encode(&bytes)
+                );
+                let svg = format!(
+                    r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><image width="20" height="20" href="{url}"/></svg>"#
+                );
+                let mut source = image_scene(
+                    if nested { svg.as_bytes() } else { &bytes },
+                    if nested { "image/svg+xml" } else { "image/png" },
+                );
+                let mut second = source["elements"][0].clone();
+                source["elements"][0]["status"] = json!("saved");
+                second["id"] = json!("error");
+                second["x"] = json!(30);
+                second["status"] = json!("error");
+                source["elements"].as_array_mut().unwrap().push(second);
+                let request = RenderRequest::builder(format)
+                    .padding(0.0)
+                    .resource_limits(
+                        ResourceLimits::builder()
+                            .max_raster_dimension(63)
+                            .max_decoded_pixels_per_asset(127)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                let rows = if format == OutputFormat::Svg {
+                    json!([])
+                } else if nested {
+                    json!([{
+                        "code":"resource.image-dimensions-exceeded","severity":"warning","effects":["visual"],"element_id":null,"json_pointer":"/files/asset~1~0/dataURL",
+                        "details":{"kind":"nested_resource_limit","field":"max_raster_dimension","configured":63,"value_kind":"dimension","measurement":{"kind":"attempted","value":attempted},"asset_chain":[{"asset_id":"asset/~","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":"placeholder","recipe_id":"official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677"}
+                    }])
+                } else {
+                    json!([expected(
+                        "resource.image-dimensions-exceeded",
+                        "max_raster_dimension",
+                        json!(63),
+                        json!(attempted),
+                        "dimension",
+                        "/files/asset~1~0/dataURL",
+                        if format == OutputFormat::Png {
+                            "placeholder"
+                        } else {
+                            "omitted"
+                        }
+                    )])
+                };
+                let actual = assert_repeat(&source, &request, rows);
+                if !nested && format != OutputFormat::Svg {
+                    source["files"] = json!({});
+                    let missing = Renderer::new()
+                        .render(
+                            &parse(&source),
+                            &RenderRequest::builder(format).padding(0.0).build().unwrap(),
+                        )
+                        .unwrap();
+                    assert_eq!(
+                        actual.artifact().bytes(),
+                        missing.artifact().bytes(),
+                        "mixed statuses retain independent recovery"
+                    );
+                }
+            }
+        }
+    }
+}
+
+fn raster_limit_scope(limit: RasterLimit) {
+    let bytes = crate::common::codec_fixtures::solid_png(64, 2, [255, 0, 0, 255]);
+    let url = format!(
+        "data:image/png;base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(&bytes)
+    );
+    let parent = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><image width="20" height="20" href="{url}"/></svg>"#
+    );
+    let (code, field, n, kind) = limit.contract();
+    for format in FORMATS {
+        for nested in [false, true] {
+            for supplemental in [false, true] {
+                let payload = if nested {
+                    parent.as_bytes()
+                } else {
+                    bytes.as_slice()
+                };
+                let mut source = json!({"type":"excalidraw","version":2,"elements":[
+                    {"id":"image-z","type":"image","width":20,"height":20,"fileId":"z/~","updated":0},
+                    {"id":"image-a","type":"image","x":25,"width":20,"height":20,"fileId":"a","updated":0},
+                    {"id":"repeat","type":"image","width":20,"height":20,"fileId":"z/~","updated":0}
+                ],"appState":{},"files":{}});
+                let assets = if supplemental {
+                    SupplementalAssets::builder()
+                        .asset("a", payload)
+                        .asset("z/~", payload)
+                        .asset("unused", payload)
+                        .build()
+                        .unwrap()
+                } else {
+                    let media = if nested { "image/svg+xml" } else { "image/png" };
+                    for id in ["a", "z/~", "unused"] {
+                        source["files"][id] = json!({"id":id,"created":0,"dataURL":format!("data:{media};base64,{}",base64::engine::general_purpose::STANDARD.encode(payload))});
+                    }
+                    SupplementalAssets::default()
+                };
+                let rows: Vec<_> = if format == OutputFormat::Svg {
+                    vec![]
+                } else {
+                    [("a","image-a","/files/a/dataURL"),("z/~","image-z","/files/z~1~0/dataURL")].into_iter().map(|(id,element,pointer)| {
+                        if nested {json!({"code":code,"severity":"warning","effects":["visual"],"element_id":null,"json_pointer":if supplemental {""} else {pointer},"details":{"kind":"nested_resource_limit","field":field,"configured":n-1,"value_kind":kind,"measurement":{"kind":"attempted","value":n},"asset_chain":[{"asset_id":id,"occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":"placeholder","recipe_id":"official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677"}})} else {
+                            let mut row=expected(code,field,json!(n-1),json!(n),kind,if supplemental {""} else {pointer},if format==OutputFormat::Png {"placeholder"} else {"omitted"});
+                            let _ = element; row["element_id"]=Value::Null; row
+                        }
+                    }).collect()
+                };
+                let request = RenderRequest::builder(format)
+                    .padding(0.0)
+                    .resource_limits(limit.limits(n - 1))
+                    .supplemental_assets(assets.clone())
+                    .build()
+                    .unwrap();
+                assert_repeat(&source, &request, json!(rows));
+                source["elements"].as_array_mut().unwrap().extend([
+                    json!({"id":"frame","type":"frame","width":50,"height":30,"updated":0}),
+                    json!({"id":"other","type":"frame","x":100,"width":50,"height":30,"updated":0}),
+                ]);
+                let document = parse(&source);
+                let frames: Vec<_> = document.frames().collect();
+                let renderer = Renderer::new();
+                let frame_request = FrameRenderRequest::builder(format)
+                    .resource_limits(limit.limits(n - 1))
+                    .supplemental_assets(assets)
+                    .build()
+                    .unwrap();
+                let mut batch = renderer
+                    .render_frames(&document, frames.iter().copied(), &frame_request)
+                    .unwrap();
+                for (i, frame) in frames.iter().enumerate() {
+                    let direct = renderer.render_frame(*frame, &frame_request).unwrap();
+                    let replay = batch.next().unwrap().into_result().unwrap();
+                    report(
+                        &direct,
+                        format,
+                        if i == 0 { json!(rows) } else { json!([]) },
+                    );
+                    assert_eq!(direct.report(), replay.report());
+                    assert_eq!(direct.artifact().bytes(), replay.artifact().bytes());
+                }
+            }
+        }
+    }
+}
+
+fn raster_limit_contract(limit: RasterLimit) {
+    use crate::common::codec_fixtures as codec;
+    let png = codec::solid_png(64, 2, [255, 0, 0, 255]);
+    let codecs = [
+        ("image/png", png.clone()),
+        ("image/jpeg", codec::jpeg_rgb(64, 2, &[[255, 0, 0]; 128])),
+        (
+            "image/gif",
+            codec::gif(&[codec::gif_frame(
+                &[0; 128],
+                64,
+                2,
+                &codec::RED_BLUE_PALETTE,
+                None,
+            )]),
+        ),
+        (
+            "image/webp",
+            codec::webp_rgba(64, 2, &[[255, 0, 0, 255]; 128]),
+        ),
+        ("image/bmp", codec::bmp24(64, 2, &[[255, 0, 0]; 128])),
+        (
+            "image/x-icon",
+            codec::ico(&[
+                (1, 1, 32, codec::solid_png(1, 1, [0, 0, 255, 255])),
+                (64, 2, 32, png),
+            ]),
+        ),
+    ];
+    let (code, field, n, kind) = limit.contract();
+    for format in FORMATS {
+        for (mime, bytes) in &codecs {
+            for configured in [n - 1, n, n + 1] {
+                for status in ["saved", "error"] {
+                    for supplemental in [false, true] {
+                        let mut source = image_scene(bytes, mime);
+                        source["elements"][0]["status"] = json!(status);
+                        let assets = if supplemental {
+                            source["files"] = json!({});
+                            SupplementalAssets::builder()
+                                .asset("asset/~", bytes.clone())
+                                .build()
+                                .unwrap()
+                        } else {
+                            SupplementalAssets::default()
+                        };
+                        let request = RenderRequest::builder(format)
+                            .padding(0.0)
+                            .supplemental_assets(assets)
+                            .resource_limits(limit.limits(configured))
+                            .build()
+                            .unwrap();
+                        let rejected = configured < n && format != OutputFormat::Svg;
+                        let rows = if rejected {
+                            json!([expected(
+                                code,
+                                field,
+                                json!(configured),
+                                json!(n),
+                                kind,
+                                if supplemental {
+                                    ""
+                                } else {
+                                    "/files/asset~1~0/dataURL"
+                                },
+                                if format == OutputFormat::Png {
+                                    "placeholder"
+                                } else {
+                                    "omitted"
+                                }
+                            )])
+                        } else {
+                            json!([])
+                        };
+                        let result = assert_repeat(&source, &request, rows);
+                        if rejected {
+                            // Ordinary recovery must use the independently tested
+                            // missing-file status recipe, including both PNG icons.
+                            source["files"] = json!({});
+                            let missing = Renderer::new()
+                                .render(
+                                    &parse(&source),
+                                    &RenderRequest::builder(format).padding(0.0).build().unwrap(),
+                                )
+                                .unwrap();
+                            assert_eq!(
+                                result.artifact().bytes(),
+                                missing.artifact().bytes(),
+                                "{mime} {status}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 fn parse(source: &Value) -> SceneDocument {
     SceneDocument::parse(&serde_json::to_vec(source).unwrap()).unwrap()
 }
@@ -35,7 +437,7 @@ fn expected(
     pointer: &str,
     recovery: &str,
 ) -> Value {
-    json!({"code":code,"severity":"warning","effects":["visual"],"element_id":"image","json_pointer":pointer,
+    json!({"code":code,"severity":"warning","effects":["visual"],"element_id":if matches!(code,"resource.image-dimensions-exceeded"|"resource.image-pixels-exceeded") {Value::Null} else {json!("image")},"json_pointer":pointer,
         "details":{"kind":"resource_limit","field":field,"configured":configured,"value_kind":kind,"measurement":{"kind":"attempted","value":attempted},"recovery":recovery}})
 }
 fn assert_repeat(source: &Value, request: &RenderRequest, rows: Value) -> RenderOutcome {
@@ -402,6 +804,10 @@ fn nested_depth_placeholder_matches_manifested_geometry_and_local_inheritance() 
 }
 
 fn nested_placeholder_artifact_oracle(nodes: bool) {
+    nested_placeholder_artifact_oracle_for(nodes, None);
+}
+
+fn nested_placeholder_artifact_oracle_for(nodes: bool, raster: Option<RasterLimit>) {
     // Independent oracle from the frozen recipe, not the recovery producer.
     let manifest: Value = serde_json::from_str(include_str!(
         "../../../../tests/oracle/scene-surfaces/revision-1.json"
@@ -449,12 +855,30 @@ fn nested_placeholder_artifact_oracle(nodes: bool) {
         )
     };
     for format in FORMATS {
+        if raster.is_some() && format == OutputFormat::Svg {
+            continue;
+        }
         let mut source = image_scene(parent(&leaf).as_bytes(), "image/svg+xml");
+        if raster.is_some() {
+            let bytes = crate::common::codec_fixtures::solid_png(64, 2, [255, 0, 0, 255]);
+            let raster_url = format!(
+                "data:image/png;base64,{}",
+                base64::engine::general_purpose::STANDARD.encode(bytes)
+            );
+            let raster_child = child(&leaf).replace(&svg_url(&leaf), &raster_url);
+            let raster_parent = format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40"><image width="60" height="40" href="{}"/></svg>"#,
+                svg_url(&raster_child)
+            );
+            source["files"]["asset/~"]["dataURL"] = json!(svg_url(&raster_parent));
+        }
         source["elements"][0]["width"] = json!(60);
         source["elements"][0]["height"] = json!(40);
         let request = RenderRequest::builder(format)
             .padding(0.0)
-            .resource_limits(if nodes {
+            .resource_limits(if let Some(limit) = raster {
+                limit.limits(limit.contract().2 - 1)
+            } else if nodes {
                 ResourceLimits::builder()
                     .max_nested_svg_nodes(7)
                     .build()

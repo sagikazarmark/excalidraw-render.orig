@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "7d3cb4444092dd69163b1f94e384f8ea6a9a77e8347b91f75bdaa8c3c6dfd8dc",
+  "catalog_sha256": "cb14ec6eeac3572330e0a0cc7a8d10058689a1c7ee0bd34cd95179baea49f271",
   "approval": null,
   "assignments": [
     {
@@ -4207,49 +4207,175 @@
     {
       "id": "diagnostic:resource.image-dimensions-exceeded:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+          },
+          "function": "image_dimension_contract_covers_codecs_recovery_and_scope",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::image_dimension_contract_covers_codecs_recovery_and_scope",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact six-codec top/nested dimension reports, width-before-height/pixel precedence, intrinsic per-file attribution and independent mixed-status recovery; source/supplemental authority, multi-owner order, deletion/conflict/frame silence, boundary and envelope recovery, and independent artifacts."
       }
     },
     {
       "id": "diagnostic:resource.image-dimensions-exceeded:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+          },
+          "function": "image_dimension_contract_covers_codecs_recovery_and_scope",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::image_dimension_contract_covers_codecs_recovery_and_scope",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact six-codec top/nested dimension reports, width-before-height/pixel precedence, intrinsic per-file attribution and independent mixed-status recovery; source/supplemental authority, multi-owner order, deletion/conflict/frame silence, boundary and envelope recovery, and independent artifacts."
       }
     },
     {
       "id": "diagnostic:resource.image-dimensions-exceeded:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+          },
+          "function": "image_dimension_contract_covers_codecs_recovery_and_scope",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::image_dimension_contract_covers_codecs_recovery_and_scope",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact six-codec top/nested dimension reports, width-before-height/pixel precedence, intrinsic per-file attribution and independent mixed-status recovery; source/supplemental authority, multi-owner order, deletion/conflict/frame silence, boundary and envelope recovery, and independent artifacts."
       }
     },
     {
       "id": "diagnostic:resource.image-pixels-exceeded:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+          },
+          "function": "image_pixel_contract_covers_codecs_recovery_and_scope",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::image_pixel_contract_covers_codecs_recovery_and_scope",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact six-codec pixel boundaries and intrinsic per-file attribution, top/nested recovery and dimension precedence; authority and multi-owner/frame scope, passthrough/deleted/conflicting silence, envelope boundaries and independently authored ordinary/nested recovery artifacts."
       }
     },
     {
       "id": "diagnostic:resource.image-pixels-exceeded:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+          },
+          "function": "image_pixel_contract_covers_codecs_recovery_and_scope",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::image_pixel_contract_covers_codecs_recovery_and_scope",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact six-codec pixel boundaries and intrinsic per-file attribution, top/nested recovery and dimension precedence; authority and multi-owner/frame scope, passthrough/deleted/conflicting silence, envelope boundaries and independently authored ordinary/nested recovery artifacts."
       }
     },
     {
       "id": "diagnostic:resource.image-pixels-exceeded:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
+          },
+          "function": "image_pixel_contract_covers_codecs_recovery_and_scope",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::image_pixel_contract_covers_codecs_recovery_and_scope",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact six-codec pixel boundaries and intrinsic per-file attribution, top/nested recovery and dimension precedence; authority and multi-owner/frame scope, passthrough/deleted/conflicting silence, envelope boundaries and independently authored ordinary/nested recovery artifacts."
       }
     },
     {
@@ -4260,7 +4386,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4289,7 +4415,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4318,7 +4444,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
           },
           "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
           "binary": "fast",
@@ -4347,7 +4473,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
           },
           "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
           "binary": "fast",
@@ -4376,7 +4502,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
           },
           "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
           "binary": "fast",
@@ -4405,7 +4531,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
-            "sha256": "e73845f292733efbcc4c92247d30f1ed5bf01bd75cba56a3a648b1ee8cb5a816"
+            "sha256": "da078e5553c5bbf2ea8eca01ce6aa78aa1d548317036c5504710ba3d2490238b"
           },
           "function": "nested_node_limits_cover_root_and_child_reports_and_silence",
           "binary": "fast",

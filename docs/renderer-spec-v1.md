@@ -2282,6 +2282,10 @@ member order, and member before value. Generated events follow their owner at
 the published ordinal. Per-reference asset diagnostics belong to the referring
 element; intrinsic authoritative-asset diagnostics belong to the file record.
 Supplemental request values follow scene file occurrences by file-ID bytes.
+Top-level image-dimension and per-asset decoded-pixel limit diagnostics are
+intrinsic: emit once per authoritative file ID per target, with null
+`element_id`, even when several image elements reference that file. Each
+reference independently keeps its format- and status-selected recovery.
 Root metadata events follow content in provenance, summary, embedded-scene
 order. Report order does not alter semantic-accounting transaction precedence.
 

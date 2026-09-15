@@ -265,6 +265,10 @@ pub(super) fn image_asset_failure_diagnostic(
     status: NormalizedImageStatus,
     limits: &ResourceLimits,
 ) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
+    let intrinsic_raster_limit = matches!(
+        failure,
+        asset::ResolveError::Dimensions { .. } | asset::ResolveError::Pixels { .. }
+    );
     let (failure, message) = image_failure(failure, limits);
     PendingDiagnostic::new(
         DiagnosticKind::ImageUnavailable {
@@ -274,7 +278,11 @@ pub(super) fn image_asset_failure_diagnostic(
         },
         format,
         &[DiagnosticEffect::Visual],
-        Some(element_id),
+        if intrinsic_raster_limit {
+            None
+        } else {
+            Some(element_id)
+        },
         json_pointer,
         message,
     )

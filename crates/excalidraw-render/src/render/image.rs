@@ -54,6 +54,7 @@ pub(super) struct ImageResolver {
     cache: asset::Cache,
     assets: std::collections::BTreeMap<usize, std::sync::Arc<ResolvedImageAsset>>,
     fallbacks: Vec<(usize, crate::normalization::NormalizedImageStatus)>,
+    raster_limit_owners: Vec<String>,
 }
 
 impl ImageResolver {
@@ -63,6 +64,7 @@ impl ImageResolver {
             cache: asset::Cache::default(),
             assets: std::collections::BTreeMap::new(),
             fallbacks: Vec::new(),
+            raster_limit_owners: Vec::new(),
         }
     }
 
@@ -80,6 +82,7 @@ impl ImageResolver {
         let NormalizedElementKind::Image(image) = &source.kind else {
             return Ok(ImageDisposition::Generic(source));
         };
+        let mut raster_limit_recovery = false;
         if let Some(file_id) = image.file_id.as_deref() {
             let authority = self
                 .authorities
@@ -650,6 +653,10 @@ impl ImageResolver {
                 return Ok(ImageDisposition::Outline(source));
             }
             if let Some(failure) = asset_failure {
+                raster_limit_recovery = matches!(
+                    failure,
+                    asset::ResolveError::Dimensions { .. } | asset::ResolveError::Pixels { .. }
+                );
                 if matches!(failure, asset::ResolveError::Memory) {
                     return Err(session.memory_failure(
                         request,
@@ -658,6 +665,11 @@ impl ImageResolver {
                     ));
                 }
                 if !matches!(failure, asset::ResolveError::Missing)
+                    && !(raster_limit_recovery
+                        && self
+                            .raster_limit_owners
+                            .iter()
+                            .any(|owner| owner == file_id))
                     && !session.report.diagnostics.iter().any(|diagnostic| {
                         (matches!(
                             diagnostic.details(),
@@ -704,11 +716,29 @@ impl ImageResolver {
                             source_position: Some(source_position),
                         },
                     )?;
+                    if raster_limit_recovery {
+                        self.raster_limit_owners.try_reserve(1).map_err(|_| {
+                            session.memory_failure(
+                                request,
+                                "compatibility_report",
+                                "raster_limit_owner",
+                            )
+                        })?;
+                        self.raster_limit_owners
+                            .push(try_owned(file_id).map_err(|_| {
+                                session.memory_failure(
+                                    request,
+                                    "compatibility_report",
+                                    "raster_limit_owner",
+                                )
+                            })?);
+                    }
                 }
             }
         }
         if request.format() == OutputFormat::Png
-            && (image.file_id.is_none()
+            && (raster_limit_recovery
+                || image.file_id.is_none()
                 || session
                     .report
                     .diagnostics
@@ -739,7 +769,7 @@ impl ImageResolver {
         // An invalid fileId is normalized to null and already diagnosed at
         // that field. It has the same format-specific absent-image paint as an
         // explicit null, rather than replacing the whole image element.
-        if image.file_id.is_none() {
+        if image.file_id.is_none() || raster_limit_recovery {
             semantic_working.try_reserve(1).map_err(|_| {
                 session.memory_failure(request, "asset_resolution", "image_omission")
             })?;

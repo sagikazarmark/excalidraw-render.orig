@@ -525,10 +525,12 @@ impl Cache {
         } else if let Some(decoded) = self.decoded.get(&identity) {
             Some(Arc::clone(decoded))
         } else {
-            let largest_dimension = u64::from(validated.width.max(validated.height));
-            if largest_dimension > u64::from(limits.max_raster_dimension()) {
+            if let Some(dimension) = [validated.width, validated.height]
+                .into_iter()
+                .find(|side| *side > limits.max_raster_dimension())
+            {
                 return Err(ResolveError::Dimensions {
-                    attempted: largest_dimension,
+                    attempted: u64::from(dimension),
                 }
                 .into());
             }

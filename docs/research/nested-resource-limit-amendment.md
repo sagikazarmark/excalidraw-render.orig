@@ -186,3 +186,30 @@ asset-entry ceilings proving node rejection stops discovery before that image.
 The existing depth owner retains its full scenarios through shared test helpers.
 Spec review supports all three node assignments without material missing criteria.
 Current totals: **783 assigned / 145 gaps**; **24 resource assignments remain**.
+
+## Raster dimension and pixel ownership
+
+The next six assignments select `image_dimension_contract_covers_codecs_recovery_and_scope`
+and `image_pixel_contract_covers_codecs_recovery_and_scope` in the resource contract
+module, each for SVG/PNG/PDF. They cover six codecs (including selected multientry
+ICO dimensions), N-1/N/N+1 limits, saved/error status, source/supplemental authority,
+top/nested and multiple-owner scope, frame replay and deleted/conflict silence.
+SVG passthrough is explicitly silent. Nested 8191/8192/8193 recovery-envelope
+boundaries compare omission against an independently removed slot; placeholder
+geometry reuses the independent manifested SVG/PNG/PDF oracle.
+
+The user explicitly approved **Once per file (Recommended)**: intrinsic top-level
+dimension/pixel failures emit once per authoritative file ID, with null element ID,
+while each reference keeps its own status-selected recovery. A public-facade
+regression failed before implementing this separation. Mixed saved/error references
+now compare against independent ordinary missing-file recovery artifacts.
+
+Another red/green regression established width-before-height precedence for
+simultaneous crossings; top-level and nested resolution previously measured the
+larger side. Side crossings also precede per-asset pixel crossings.
+
+Spec review supports all six assignments and reports no must-fix production issue.
+Standards review finds no definite violations. Workspace/all-target typechecking,
+focused owners, all ten canonical conformance/lint checks and full fast/render/doc
+suite pass (19m47s combined). Current totals: **789 assigned / 139 gaps**;
+**18 of the requested resource assignments remain open**.

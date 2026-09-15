@@ -1118,10 +1118,12 @@ fn sanitize_nested_data_image(
                         .saturating_add(work),
                 })
                 .map_err(ResolutionFailure::Transaction)?;
-                let largest = validated.source_width.max(validated.source_height);
-                if largest > limits.max_raster_dimension() {
+                if let Some(dimension) = [validated.source_width, validated.source_height]
+                    .into_iter()
+                    .find(|side| *side > limits.max_raster_dimension())
+                {
                     return Err(ResolveError::Dimensions {
-                        attempted: u64::from(largest),
+                        attempted: u64::from(dimension),
                     }
                     .into());
                 }
