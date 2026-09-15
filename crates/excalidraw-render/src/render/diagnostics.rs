@@ -471,7 +471,11 @@ pub(super) fn nested_image_failure_diagnostic(
                 recovery: LocalRecovery::placeholder_if(failure.placeholder),
             },
             format,
-            &[DiagnosticEffect::Visual],
+            if failure.may_lose_semantics && format != OutputFormat::Png {
+                &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic]
+            } else {
+                &[DiagnosticEffect::Visual]
+            },
             None,
             json_pointer,
             "nested resource exceeded its semantic limit",
@@ -925,6 +929,7 @@ mod tests {
     #[test]
     fn a_nested_resource_failure_keeps_its_measurement_and_source_details() {
         let failure = asset::svg::Failure {
+            may_lose_semantics: true,
             placeholder: false,
             path: vec![(3, 1)],
             error: asset::ResolveError::SvgComplexity { attempted: 9 },

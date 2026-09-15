@@ -25,6 +25,7 @@ use fallback::{fallback_frame_clip_sources, resolve_fallback};
 use frame::{resolve_frame, resolve_frame_names, semantic_frame_sources};
 use image::resolve_image;
 use outline::resolve_geometry;
+pub(super) use text::live_text_occurrence;
 use text::{cjk_subset_trigger, resolve_fonts, resolve_text};
 
 use crate::color::{self, CanonicalColor};
@@ -1227,7 +1228,13 @@ impl ElementLocalCrossing {
         element_id: Option<&str>,
         element_pointer: &str,
     ) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
-        self.diagnostic_with_recovery(format, element_id, element_pointer, LocalRecovery::Omitted)
+        self.diagnostic_with_recovery(
+            format,
+            element_id,
+            element_pointer,
+            LocalRecovery::Omitted,
+            true,
+        )
     }
 
     pub(super) fn diagnostic_with_recovery(
@@ -1236,6 +1243,7 @@ impl ElementLocalCrossing {
         element_id: Option<&str>,
         element_pointer: &str,
         recovery: LocalRecovery,
+        loses_semantics: bool,
     ) -> Result<PendingDiagnostic, std::collections::TryReserveError> {
         let json_pointer = self.pointer_field.map_or_else(
             || try_owned(element_pointer),
@@ -1249,7 +1257,11 @@ impl ElementLocalCrossing {
                 recovery,
             },
             format,
-            &[DiagnosticEffect::Visual],
+            if loses_semantics && format != OutputFormat::Png {
+                &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic]
+            } else {
+                &[DiagnosticEffect::Visual]
+            },
             element_id,
             &json_pointer,
             self.message,

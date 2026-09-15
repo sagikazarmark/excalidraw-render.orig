@@ -716,16 +716,10 @@ impl Cache {
                     total_work_units: source_len,
                 })
                 .map_err(ResolutionFailure::Transaction)?;
-                return root_svg_limit_recovery(
-                    ResolveError::AssetWork {
-                        attempted: source_len,
-                    },
-                    payload.claims,
-                    fallback_dimensions,
-                    limits,
-                    revision,
-                    transact,
-                );
+                return Err(ResolveError::AssetWork {
+                    attempted: source_len,
+                }
+                .into());
             }
             let temporary = 1_048_576;
             transact(IntrinsicTransaction::Acquire {
@@ -756,9 +750,7 @@ impl Cache {
                     .map_err(ResolutionFailure::Transaction)?;
                     if matches!(
                         error,
-                        ResolveError::SvgComplexity { .. }
-                            | ResolveError::SvgDepth { .. }
-                            | ResolveError::AssetWork { .. }
+                        ResolveError::SvgComplexity { .. } | ResolveError::SvgDepth { .. }
                     ) {
                         return root_svg_limit_recovery(
                             error,
@@ -953,6 +945,7 @@ fn root_svg_limit_recovery(
         .try_reserve_exact(1)
         .map_err(|_| ResolutionFailure::Memory)?;
     failures.push(svg::Failure {
+        may_lose_semantics: true,
         path: Vec::new(),
         error,
         placeholder,

@@ -20,6 +20,7 @@ pub(crate) struct Failure {
     pub(crate) path: Vec<(u64, u64)>,
     pub(crate) error: ResolveError,
     pub(crate) placeholder: bool,
+    pub(crate) may_lose_semantics: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -636,6 +637,8 @@ fn serialize_node(
                         )],
                         error,
                         placeholder: replacement.is_some(),
+                        may_lose_semantics: resource_limit
+                            && rejected_payload_may_have_semantics(value),
                     });
                     if replacement.is_none() {
                         continue;
@@ -690,6 +693,22 @@ fn serialize_node(
     output.push_str(name);
     output.push('>');
     Ok(())
+}
+
+/// Inspect only a fixed prefix: a rejected payload must not be fully decoded
+/// merely to classify its diagnostic. Raster signatures establish visual-only
+/// content; SVG and unidentified content conservatively retain semantic risk.
+/// The untrusted media-type claim never overrides the payload signature.
+fn rejected_payload_may_have_semantics(value: &str) -> bool {
+    let Some((_, encoded)) = value.split_once(";base64,") else {
+        return true;
+    };
+    let prefix = &encoded.as_bytes()[..encoded.len().min(64)];
+    let mut bytes = [0; 48];
+    let Ok(len) = base64::engine::general_purpose::STANDARD.decode_slice(prefix, &mut bytes) else {
+        return true;
+    };
+    super::sniff_media_kind(&bytes[..len]).is_err()
 }
 
 /// A stopped nested image retains only its own established finite viewport.

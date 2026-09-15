@@ -112,7 +112,7 @@ has been published.
 | [Reference profile](../tests/oracle/reference-profiles/revision-1.json) | `1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71` |
 | [Reference asset manifest](../tests/oracle/reference-profiles/revision-1-assets.json) | `02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a` |
 | [Scene-surface manifest](../tests/oracle/scene-surfaces/revision-1.json) | `93029f2dab63c203dee69da4497ea4c2988a72d73f2a0017e62c529a4caac202` |
-| [Scene-surface schema](../tests/oracle/scene-surfaces/scene-surface-v1.schema.json) | `29871fad7bf7665142c8d625c3715b34603a6369a78ffa7baf96ade66be63362` |
+| [Scene-surface schema](../tests/oracle/scene-surfaces/scene-surface-v1.schema.json) | `c8af2987f69e320bbc2673e252284fda77a18ddaf667bf998055c47cd3aa7341` |
 | [Scene-surface evidence index](../tests/oracle/scene-surfaces/evidence/revision-1-harmless-fields.json) | `29984c198c9cb222d2aedbcca053e1829743ad686a09a266fdcdfdb192545aeb` |
 
 Where present, adjacent `.sha256` files contain the authoritative lowercase
@@ -1988,6 +1988,14 @@ Effects are nonempty and ordered `input_repair`, `visual`, `semantic`,
 `metadata`. They respectively mean submitted input was repaired, selected, or ignored,
 appearance may differ, links/text/animation/vector semantics may differ, or
 carried metadata may differ.
+
+For nested resource-limit recovery in SVG/PDF, a rejected SVG payload carries
+`semantic` even when the limit prevents inspecting its text/vector content.
+Classification uses a fixed prefix of at most 48 decoded bytes without parsing
+or fully decoding the rejected payload: a recognized raster signature selects
+visual-only loss; SVG or unidentified content conservatively selects potential
+semantic loss. A media-type claim does not override the signature. PNG adds no
+semantic effect for this recovery. This applies to placeholders and omissions.
 
 Schema-1 `details` is null or exactly one closed object below. Every member is
 required in the displayed order and non-null unless marked nullable. Unknown

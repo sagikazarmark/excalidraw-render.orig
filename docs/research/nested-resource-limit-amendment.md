@@ -52,9 +52,66 @@ identical standalone/prepared-frame artifacts, reports and traces.
 Review found and corrected recovery allocation/accounting, current-owner bounds,
 transitive cache journal replay, viewport defaults and tiny-dimension handling.
 No resource ownership is claimed merely by these initial tests. The full ten-code
-matrix, particularly conditional semantic effects, all local-element branches
+matrix, particularly all local-element branches
 and nested raster limits, remains to be completed before the 30 assignments.
 The global ledger remains 777 assigned / 151 gaps.
 
-Native baseline recollection and final verification follow this implementation
-checkpoint because staging requires a clean named commit.
+## Native baseline refresh
+
+Clean implementation checkpoint: `d96cddd`. Canonical packaged collection passed
+in 4m21s: 168 keys, each rendered twice in separate forward/reverse processes
+(672 renders). Staging verified source archives and Git ancestry.
+
+All 168 artifact/report samples and all 187 blobs (6,146,996 bytes) match the
+previous approved baseline exactly. All 168 input bindings changed. Only the
+baseline metadata and its sidecar were installed; output blobs are unchanged.
+
+Exact subject `sha256:177a9f4a2f901659189dac9b10e6e766e061cee2023024905a860f5bb51783aa`
+was approved under the continuing scoped authorization in
+[#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5671646910).
+`verify-native-baseline` and canonical packaged snapshot replay pass (5m50s).
+This approval does not assign any resource owners or close the remaining gaps.
+
+The implementation's full-suite run passed render and doctest checks, with one
+stale internal diagnostic assertion failing in the fast tier. That assertion
+was corrected in `d96cddd`, and the complete canonical fast tier then passed.
+
+## Follow-up review and semantic effects
+
+Review reproduced top-level SVG work rejection incorrectly selecting nested
+recovery. Both source-byte and sanitizer-record work crossings now use ordinary
+top-level recovery. The public-facade regression first failed, then passed for
+SVG/PDF omission and both PNG source-status recipes, with independent missing-file
+artifact comparisons. The normative schema digest table was also reconciled.
+
+The user selected **Conservative effect (Recommended)** for pre-inspection nested
+SVG rejection. SVG/PDF now add `semantic` for rejected SVG/unknown content;
+recognized raster signatures remain visual-only and claims cannot override bytes.
+A fixed 48-byte decoded prefix bounds classification. PNG remains visual-only.
+The exact depth-report regression failed before implementation and passed after;
+additional tests cover wrong MIME claims, unknown content and both recoveries.
+
+Nested raster dimension/pixel tests cover repeated source slots, exact complete
+ordered reports, N-1/N/N+1 ceilings, bounded/unbounded recovery and SVG passthrough
+silence. Nested raster work tests additionally cover the 8,192-unit recovery
+envelope boundary and exact normalization-work crossings. These focused tests
+extend the evidence but do not yet justify assigning the full resource matrix.
+
+Two suspected accounting violations from Standards review were retracted after
+validation: distinct payload occurrences legitimately share intrinsic work, and
+the deterministic recovery trace identifier does not deduplicate charges. The
+remaining review observations are heuristic duplication/naming improvements.
+
+Local element recovery now adds semantic effects only for participating vector
+content or live ordinary/generated text in SVG/PDF. Empty geometry, empty text
+and nonreciprocal bound text do not claim lost source semantics. Regression tests
+cover degenerate safe/unsafe links, empty-text work ceilings 31/32/33 and rejected
+nonreciprocal text. Existing ordinary/generated text contract expectations were
+updated; their font diagnostics and artifact expectations are unchanged.
+
+Final follow-up review reports no definite remaining defect in these changes.
+All 14 resource-contract tests, existing nested SVG tests and cache/frame trace
+checks pass. Workspace/all-target typechecking and all ten canonical
+conformance/lint checks pass. The complete fast/render/doctest suite passed in
+the 22m56s combined run. Packaged replay in that run correctly refused dirty
+renderer sources; it must run again after this checkpoint is committed.

@@ -2278,6 +2278,11 @@ pub(super) fn font_diagnostics_cover_text_generated_labels_and_silence() {
 
 fn font_omission_and_zero_extent_contract() {
     for format in FORMATS {
+        let resource_effects = if format == OutputFormat::Png {
+            json!(["visual"])
+        } else {
+            json!(["visual", "semantic"])
+        };
         let embedded = scene(
             json!([{"id":"embed","type":"embeddable","link":"https://example.com/😀\u{10000}","width":1000,"height":100,"seed":1,"updated":1,"roughness":0}]),
         );
@@ -2313,7 +2318,7 @@ fn font_omission_and_zero_extent_contract() {
                 expected(
                     code,
                     "warning",
-                    json!(["visual"]),
+                    resource_effects.clone(),
                     json!("embed"),
                     "/elements/0",
                     json!({"kind":"resource_limit","field":field,"configured":configured,"value_kind":kind,"measurement":{"kind":"attempted","value":value},"recovery":"omitted"}),
@@ -2371,7 +2376,7 @@ fn font_omission_and_zero_extent_contract() {
                 expected(
                     "resource.element-complexity-replaced",
                     "warning",
-                    json!(["visual"]),
+                    resource_effects.clone(),
                     json!("text"),
                     "/elements/0",
                     json!({"kind":"resource_limit","field":"max_text_scalars_per_element","configured":1,"value_kind":"count","measurement":{"kind":"attempted","value":2},"recovery":"placeholder"})
@@ -2379,7 +2384,7 @@ fn font_omission_and_zero_extent_contract() {
                 expected(
                     "resource.element-complexity-replaced",
                     "warning",
-                    json!(["visual"]),
+                    resource_effects.clone(),
                     json!("text"),
                     "/elements/0",
                     json!({"kind":"resource_limit","field":"max_text_scalars_per_element","configured":1,"value_kind":"count","measurement":{"kind":"attempted","value":17},"recovery":"omitted"})
@@ -2404,7 +2409,7 @@ fn font_omission_and_zero_extent_contract() {
             json!([expected(
                 "resource.element-complexity-replaced",
                 "warning",
-                json!(["visual"]),
+                resource_effects.clone(),
                 json!("text"),
                 "/elements/0",
                 json!({"kind":"resource_limit","field":"max_geometry_segments_per_element","configured":10,"value_kind":"count","measurement":{"kind":"attempted","value":144},"recovery":"omitted"})

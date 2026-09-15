@@ -26,6 +26,7 @@ impl RenderSession {
     pub(crate) fn preflight_official_text(
         &mut self,
         source: &NormalizedElement,
+        relationships: &crate::relationships::ResolvedRelationshipGraph,
         request: &RenderRequest,
         semantic_working: &mut Vec<SemanticWorkingRecord>,
         fallbacks: &mut Vec<SurfaceFallback>,
@@ -116,6 +117,12 @@ impl RenderSession {
                     Some(source.source.id()),
                     source.source.pointer(),
                     LocalRecovery::placeholder_if(can_replace),
+                    super::super::resolve::live_text_occurrence(
+                        text,
+                        source.source.source_index(),
+                        relationships,
+                    )
+                    .is_some(),
                 )
                 .map_err(|_| {
                     self.memory_failure(request, "compatibility_report", "text_preflight_recovery")

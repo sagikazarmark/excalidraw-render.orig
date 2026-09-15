@@ -185,7 +185,14 @@ until those discrepancies are fixed. See [the findings](../../../docs/research/w
 
 ### Canonical baseline approval and replay
 
-`native-baseline/revision-1.json` contains the approved clean `73a1560` recollection
+`native-baseline/revision-1.json` contains the approved clean `d96cddd` recollection
+after the nested resource-limit amendment. All 168 artifact/report pairs and 187
+blobs match the prior baseline exactly; refreshed input bindings and provenance
+were approved on 2026-09-14 in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5671646910),
+subject `sha256:177a9f4a2f901659189dac9b10e6e766e061cee2023024905a860f5bb51783aa`.
+Canonical packaged replay passes. See [the amendment record](../../../docs/research/nested-resource-limit-amendment.md#native-baseline-refresh).
+
+The preceding baseline contains the approved clean `73a1560` recollection
 after nested-claim registry reapproval. All 168 artifact/report pairs and 187
 blobs match the prior baseline exactly; refreshed input bindings and provenance
 were approved on 2026-09-14 in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5662705380),

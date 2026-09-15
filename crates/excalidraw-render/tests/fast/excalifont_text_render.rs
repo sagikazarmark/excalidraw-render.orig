@@ -208,7 +208,7 @@ fn excalifont_text_limits_recover_at_exact_scalar_and_shaping_work_boundaries() 
             "code":"resource.element-complexity-replaced",
             "severity":"warning",
             "format":"svg",
-            "effects":["visual"],
+            "effects":["visual", "semantic"],
             "element_id":"text",
             "json_pointer":"/elements/0",
             "message":"text was omitted because it exceeds its scalar limit",

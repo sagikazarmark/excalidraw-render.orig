@@ -23,7 +23,7 @@ use super::{
 /// Whether one text element is a live text occurrence, and if so its bound-text
 /// container. Empty text and bound text whose container does not bind it back
 /// are omitted and contribute nothing, neither glyphs nor font demand.
-fn live_text_occurrence(
+pub(in crate::render) fn live_text_occurrence(
     text_source: &NormalizedText,
     source_index: usize,
     relationships: &ResolvedRelationshipGraph,

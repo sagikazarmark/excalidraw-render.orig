@@ -387,6 +387,7 @@ impl RenderSession {
             if matches!(&source.kind, NormalizedElementKind::Text(_)) {
                 if self.preflight_official_text(
                     &source,
+                    &inputs.relationships.graph,
                     request,
                     semantic_working,
                     &mut fallbacks,
@@ -618,6 +619,7 @@ impl RenderSession {
                         Some(source.source.id()),
                         source.source.pointer(),
                         LocalRecovery::placeholder_if(can_replace),
+                        has_outline,
                     )
                     .map_err(|_| {
                         self.memory_failure(request, "compatibility_report", "local_recovery")
