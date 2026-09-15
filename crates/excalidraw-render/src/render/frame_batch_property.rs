@@ -282,6 +282,78 @@ fn nested_resource_recovery_replays_cached_descendants_and_frame_traces() {
     }
 }
 
+#[test]
+fn depth_variant_sanitization_shares_raster_validation_work() {
+    use base64::Engine;
+    let mut png = Vec::new();
+    {
+        let mut encoder = ::png::Encoder::new(&mut png, 1, 1);
+        encoder.set_color(::png::ColorType::Rgba);
+        encoder.set_depth(::png::BitDepth::Eight);
+        encoder
+            .write_header()
+            .unwrap()
+            .write_image_data(&[255, 0, 0, 255])
+            .unwrap();
+    }
+    let url = |svg: &str| {
+        format!(
+            "data:image/svg+xml;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(svg)
+        )
+    };
+    let shared = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="data:image/png;base64,{}"/></svg>"#,
+        base64::engine::general_purpose::STANDARD.encode(&png)
+    );
+    let wrapper = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+        url(&shared)
+    );
+    for deep_first in [false, true] {
+        let (a, b) = if deep_first {
+            (&wrapper, &shared)
+        } else {
+            (&shared, &wrapper)
+        };
+        let outer = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="4" height="2"><image width="2" height="2" href="{}"/><image x="2" width="2" height="2" href="{}"/></svg>"#,
+            url(a),
+            url(b)
+        );
+        let source = serde_json::json!({"type":"excalidraw","version":2,"elements":[{"id":"frame","type":"frame","width":4,"height":2,"updated":0},{"id":"image","type":"image","width":4,"height":2,"fileId":"asset","updated":0}],"appState":{},"files":{"asset":{"id":"asset","created":0,"dataURL":url(&outer)}}});
+        let scene = SceneDocument::parse(&serde_json::to_vec(&source).unwrap()).unwrap();
+        let request = FrameRenderRequest::builder(OutputFormat::Svg)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_nested_asset_depth(3)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let (outcome, trace) = render_frame_with_trace(
+            &crate::catalog::REVISION_1,
+            scene.frames().next().unwrap(),
+            &request,
+            None,
+        );
+        assert!(outcome.unwrap().report().is_empty());
+        let trace: serde_json::Value = serde_json::from_slice(&trace).unwrap();
+        let charges: Vec<_> = trace["entries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|e| e["event"] == "nested_asset_intrinsic_work")
+            .collect();
+        assert_eq!(
+            charges.len(),
+            3,
+            "one work charge each for shared SVG, wrapper SVG and PNG: {trace}"
+        );
+    }
+}
+
 /// The duplicate-ID effect correction happens after relationship resolution.
 /// Crossings before/during/after that boundary must replay the same accumulated
 /// report and ledger, even for a target that excludes the duplicate occurrence.

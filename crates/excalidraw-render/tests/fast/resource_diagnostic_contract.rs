@@ -218,25 +218,165 @@ fn nested_resource_limits_report_the_rejected_source_slot() {
     );
     let source = image_scene(parent.as_bytes(), "image/svg+xml");
     for format in FORMATS {
-        let request = RenderRequest::builder(format)
-            .resource_limits(
-                ResourceLimits::builder()
-                    .max_nested_asset_depth(1)
+        for configured in [1, 2, 3] {
+            let request = RenderRequest::builder(format)
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_nested_asset_depth(configured)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            assert_repeat(
+                &source,
+                &request,
+                if configured == 1 {
+                    json!([{
+                        "code":"resource.nested-asset-depth-exceeded","severity":"warning","effects":if format == OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":"/files/asset~1~0/dataURL",
+                        "details":{"kind":"nested_resource_limit","field":"max_nested_asset_depth","configured":1,"value_kind":"depth","measurement":{"kind":"attempted","value":2},
+                            "asset_chain":[{"asset_id":"asset/~","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":"placeholder","recipe_id":"official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677"}
+                    }])
+                } else {
+                    json!([])
+                },
+            );
+        }
+    }
+}
+
+#[test]
+fn nested_depth_contract_covers_owners_paths_frames_and_silence() {
+    nested_resource_limits_report_the_rejected_source_slot();
+    rejected_nested_payload_effects_follow_signatures_not_media_claims();
+    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>"#;
+    let child = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/><image width="2" height="2" href="{}"/></svg>"#,
+        svg_url(leaf),
+        svg_url(leaf)
+    );
+    let parent = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+        svg_url(&child)
+    );
+    for format in FORMATS {
+        for supplemental in [false, true] {
+            let mut source = image_scene(parent.as_bytes(), "image/svg+xml");
+            // Repeated references discover and diagnose this owner only once.
+            let mut second = source["elements"][0].clone();
+            second["id"] = json!("second");
+            second["x"] = json!(30);
+            source["elements"].as_array_mut().unwrap().push(second);
+            source["elements"].as_array_mut().unwrap().extend([
+                json!({"id":"frame","type":"frame","width":60,"height":40,"updated":0}),
+                json!({"id":"other","type":"frame","x":100,"width":60,"height":40,"updated":0}),
+            ]);
+            let assets = if supplemental {
+                source["files"] = json!({});
+                SupplementalAssets::builder()
+                    .asset("asset/~", parent.as_bytes())
                     .build()
-                    .unwrap(),
-            )
-            .build()
-            .unwrap();
-        let result = Renderer::new().render(&parse(&source), &request).unwrap();
-        report(
-            &result,
-            format,
-            json!([{
-                "code":"resource.nested-asset-depth-exceeded","severity":"warning","effects":if format == OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":"/files/asset~1~0/dataURL",
+                    .unwrap()
+            } else {
+                SupplementalAssets::default()
+            };
+            let limits = ResourceLimits::builder()
+                .max_nested_asset_depth(1)
+                .build()
+                .unwrap();
+            let rows: Vec<_> = [1,2].into_iter().map(|ordinal|json!({
+                "code":"resource.nested-asset-depth-exceeded","severity":"warning","effects":if format == OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":if supplemental {""} else {"/files/asset~1~0/dataURL"},
                 "details":{"kind":"nested_resource_limit","field":"max_nested_asset_depth","configured":1,"value_kind":"depth","measurement":{"kind":"attempted","value":2},
-                    "asset_chain":[{"asset_id":"asset/~","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":"placeholder","recipe_id":"official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677"}
-            }]),
-        );
+                    "asset_chain":[{"asset_id":"asset/~","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"},{"kind":"node","ordinal":ordinal,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":"placeholder","recipe_id":"official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677"}
+            })).collect();
+            let request = RenderRequest::builder(format)
+                .resource_limits(limits.clone())
+                .supplemental_assets(assets.clone())
+                .build()
+                .unwrap();
+            assert_repeat(&source, &request, json!(rows));
+            let frame_request = FrameRenderRequest::builder(format)
+                .resource_limits(limits)
+                .supplemental_assets(assets)
+                .build()
+                .unwrap();
+            let document = parse(&source);
+            let renderer = Renderer::new();
+            let frames: Vec<_> = document.frames().collect();
+            let mut batch = renderer
+                .render_frames(&document, frames.iter().copied(), &frame_request)
+                .unwrap();
+            for (i, frame) in frames.iter().enumerate() {
+                let direct = renderer.render_frame(*frame, &frame_request).unwrap();
+                let replay = batch.next().unwrap().into_result().unwrap();
+                report(
+                    &direct,
+                    format,
+                    if i == 0 { json!(rows) } else { json!([]) },
+                );
+                assert_eq!(direct.report(), replay.report());
+                assert_eq!(direct.artifact().bytes(), replay.artifact().bytes());
+            }
+            for element in &mut source["elements"].as_array_mut().unwrap()[..2] {
+                element["isDeleted"] = json!(true);
+            }
+            assert_repeat(&source, &request, json!([]));
+        }
+    }
+}
+
+#[test]
+fn nested_depth_recovery_depends_on_current_edge_not_cached_parent() {
+    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>"#;
+    let shared = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+        svg_url(leaf)
+    );
+    let wrapper = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+        svg_url(&shared)
+    );
+    for format in FORMATS {
+        for deep_first in [false, true] {
+            let (first, second) = if deep_first {
+                (&wrapper, &shared)
+            } else {
+                (&shared, &wrapper)
+            };
+            let parent = format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="4" height="2"><image width="2" height="2" href="{}"/><image x="2" width="2" height="2" href="{}"/></svg>"#,
+                svg_url(first),
+                svg_url(second)
+            );
+            let mut source = image_scene(parent.as_bytes(), "image/svg+xml");
+            source["elements"][0]["width"] = json!(40);
+            source["elements"][0]["height"] = json!(20);
+            let request = RenderRequest::builder(format)
+                .padding(0.0)
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_nested_asset_depth(2)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            let result = assert_repeat(
+                &source,
+                &request,
+                json!([{
+                    "code":"resource.nested-asset-depth-exceeded","severity":"warning","effects":if format == OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":"/files/asset~1~0/dataURL",
+                    "details":{"kind":"nested_resource_limit","field":"max_nested_asset_depth","configured":2,"value_kind":"depth","measurement":{"kind":"attempted","value":3},
+                        "asset_chain":[{"asset_id":"asset/~","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":if deep_first {1} else {2},"name":null},{"kind":"attribute","ordinal":if deep_first {2} else {3},"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":"placeholder","recipe_id":"official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677"}
+                }]),
+            );
+            if format == OutputFormat::Png {
+                let pixels = crate::common::raster::decode_png(result.artifact().bytes());
+                let (red_x, gray_x) = if deep_first { (25, 5) } else { (5, 25) };
+                assert_eq!(pixels.pixel(red_x, 5), [255, 0, 0, 255]);
+                assert_eq!(pixels.pixel(gray_x, 5), [231, 231, 231, 255]);
+            }
+        }
     }
 }
 

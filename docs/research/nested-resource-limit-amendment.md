@@ -115,3 +115,30 @@ checks pass. Workspace/all-target typechecking and all ten canonical
 conformance/lint checks pass. The complete fast/render/doctest suite passed in
 the 22m56s combined run. Packaged replay in that run correctly refused dirty
 renderer sources; it must run again after this checkpoint is committed.
+
+Checkpoint `b5c4191` passed clean packaged replay in 5m53s; scoped approval is
+recorded in [#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5672655461).
+
+## Depth-sensitive cache follow-up
+
+A proposed depth-owner probe exposed a production defect: the same nested SVG
+sanitized at a shallow depth was reused deeper without enforcing the descendant
+depth ceiling. Reversing discovery order could instead reuse a rejected result
+at a shallower admitted edge. The facade regression failed with no diagnostic
+and now passes both orders in all formats, with independent shallow-red/deep-grey
+PNG pixel assertions.
+
+Sanitized variants are keyed by source identity and current depth. Intrinsic work
+remains shared by source identity through fallibly reserved bookkeeping. Review
+identified duplicate direct-SVG raster validation when rebuilding depth variants;
+a trace regression failed with four admissions instead of the three distinct
+SVG/SVG/PNG identities, and passes after deduplicating validation work. Cached
+recovery occurrences remain separately charged. Follow-up review found no
+remaining definite defect in this correction.
+
+The depth matrix now additionally covers exact N-1/N/N+1 reports, source and
+supplemental authority, multiple nested paths, repeated scene references,
+independent frame scope/batch replay and deleted silence. Full depth ownership
+still needs multi-owner/conflict cases and independent SVG/PDF recovery oracles.
+The full 16-test resource module, typechecking and all 13 canonical full-suite,
+conformance and lint checks pass (20m40s). No new ownership is claimed yet.

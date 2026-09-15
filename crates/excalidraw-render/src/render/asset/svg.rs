@@ -84,7 +84,9 @@ pub(super) enum NestedAdmission {
 #[derive(Default)]
 struct NestedAccounting {
     admissions: Vec<NestedAdmission>,
-    sanitized_svgs: BTreeMap<[u8; 32], Arc<SanitizedSvg>>,
+    // Recovery depends on remaining recursion depth, unlike source identity.
+    sanitized_svgs: BTreeMap<([u8; 32], u32), Arc<SanitizedSvg>>,
+    charged_validation_work: Vec<[u8; 32]>,
     asset_entries: u64,
     asset_bytes: u64,
     decoded_pixels: u64,
@@ -952,7 +954,8 @@ fn sanitize_nested_data_image(
     };
     let (media_type, canonical_bytes) = if looks_like_svg(&bytes) {
         let identity = super::semantic_identity(revision, super::MediaKind::Svg, &bytes);
-        let cached = nested_accounting.sanitized_svgs.get(&identity).cloned();
+        let cache_key = (identity, attempted_depth);
+        let cached = nested_accounting.sanitized_svgs.get(&cache_key).cloned();
         let (nested, shared) = if let Some(nested) = cached {
             for admission in &nested.nested_admissions {
                 replay_recovery(admission, transact)?;
@@ -992,10 +995,19 @@ fn sanitize_nested_data_image(
             let nested = Arc::new(nested);
             nested_accounting
                 .sanitized_svgs
-                .insert(identity, Arc::clone(&nested));
+                .insert(cache_key, Arc::clone(&nested));
             (nested, false)
         };
-        if !shared {
+        if !shared
+            && !nested_accounting
+                .charged_validation_work
+                .contains(&identity)
+        {
+            nested_accounting
+                .charged_validation_work
+                .try_reserve(1)
+                .map_err(|_| ResolutionFailure::Memory)?;
+            nested_accounting.charged_validation_work.push(identity);
             let total_work_units = nested_accounting
                 .total_work_units
                 .saturating_add(nested.work_units);
@@ -1047,25 +1059,36 @@ fn sanitize_nested_data_image(
         let (kind, canonical_bytes) = if format == OutputFormat::Svg {
             let (kind, _, validation_work) = super::validate_nested_raster(&bytes, limits)?;
             let identity = super::semantic_identity(revision, kind, &bytes);
-            let total_work_units = nested_accounting
-                .total_work_units
-                .saturating_add(validation_work);
-            transact(IntrinsicTransaction::PreflightNested {
-                asset_entries: nested_accounting.asset_entries,
-                asset_bytes: nested_accounting.asset_bytes,
-                decoded_pixels: nested_accounting.decoded_pixels,
-                total_work_units: total_work_units.saturating_add(nested_accounting.asset_bytes),
-            })
-            .map_err(ResolutionFailure::Transaction)?;
-            nested_accounting
-                .admissions
-                .try_reserve(1)
-                .map_err(|_| ResolutionFailure::Memory)?;
-            nested_accounting.admissions.push(NestedAdmission::Work {
-                identity,
-                total_work_units: validation_work,
-            });
-            nested_accounting.total_work_units = total_work_units;
+            if !nested_accounting
+                .charged_validation_work
+                .contains(&identity)
+            {
+                nested_accounting
+                    .charged_validation_work
+                    .try_reserve(1)
+                    .map_err(|_| ResolutionFailure::Memory)?;
+                nested_accounting.charged_validation_work.push(identity);
+                let total_work_units = nested_accounting
+                    .total_work_units
+                    .saturating_add(validation_work);
+                transact(IntrinsicTransaction::PreflightNested {
+                    asset_entries: nested_accounting.asset_entries,
+                    asset_bytes: nested_accounting.asset_bytes,
+                    decoded_pixels: nested_accounting.decoded_pixels,
+                    total_work_units: total_work_units
+                        .saturating_add(nested_accounting.asset_bytes),
+                })
+                .map_err(ResolutionFailure::Transaction)?;
+                nested_accounting
+                    .admissions
+                    .try_reserve(1)
+                    .map_err(|_| ResolutionFailure::Memory)?;
+                nested_accounting.admissions.push(NestedAdmission::Work {
+                    identity,
+                    total_work_units: validation_work,
+                });
+                nested_accounting.total_work_units = total_work_units;
+            }
             (kind, Arc::new(bytes.clone()))
         } else {
             let kind = super::sniff_media_kind(&bytes)?;
