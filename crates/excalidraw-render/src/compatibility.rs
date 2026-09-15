@@ -344,6 +344,8 @@ impl ErrorCode {
     pub const RESOURCE_OUTPUT_BYTES_EXCEEDED: Self = Self("resource.output-bytes-exceeded");
     /// Aggregate semantic work exceeds the configured ceiling.
     pub const RESOURCE_TOTAL_WORK_EXCEEDED: Self = Self("resource.total-work-exceeded");
+    /// A selected frame has no viewport within the coordinate ceiling.
+    pub const RESOURCE_COORDINATE_RANGE_EXCEEDED: Self = Self("resource.coordinate-range-exceeded");
     /// A required physical allocation was unavailable.
     pub const RESOURCE_MEMORY_UNAVAILABLE: Self = Self("resource.memory-unavailable");
 

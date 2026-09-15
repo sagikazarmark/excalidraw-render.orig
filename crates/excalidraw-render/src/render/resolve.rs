@@ -1275,6 +1275,38 @@ pub(super) fn outline_local_crossing(
     geometry_segments: u64,
     element_work_units: u64,
 ) -> Option<ElementLocalCrossing> {
+    if let Some(crossing) = coordinate_local_crossing(source, request) {
+        return Some(crossing);
+    }
+
+    let geometry_limit = u64::from(
+        request
+            .resource_limits()
+            .max_geometry_segments_per_element(),
+    );
+    if geometry_segments > geometry_limit {
+        return Some(ElementLocalCrossing {
+            limit: LocalLimit::GeometrySegmentsPerElement,
+            configured: ResourceValue::Integer(geometry_limit),
+            attempted: ResourceValue::Integer(geometry_segments),
+            pointer_field: None,
+            message: "outline omitted because its geometry exceeds its limit",
+        });
+    }
+    let work_limit = request.resource_limits().max_element_work_units();
+    (element_work_units > work_limit).then_some(ElementLocalCrossing {
+        limit: LocalLimit::ElementWorkUnits,
+        configured: ResourceValue::Integer(work_limit),
+        attempted: ResourceValue::Integer(element_work_units),
+        pointer_field: None,
+        message: "outline omitted because its semantic work exceeds its limit",
+    })
+}
+
+pub(super) fn coordinate_local_crossing(
+    source: &NormalizedElement,
+    request: &RenderRequest,
+) -> Option<ElementLocalCrossing> {
     let coordinate_limit = request.resource_limits().max_coordinate_magnitude();
     for (value, pointer_field) in [
         (source.x, "x"),
@@ -1315,29 +1347,7 @@ pub(super) fn outline_local_crossing(
         }
     }
 
-    let geometry_limit = u64::from(
-        request
-            .resource_limits()
-            .max_geometry_segments_per_element(),
-    );
-    if geometry_segments > geometry_limit {
-        return Some(ElementLocalCrossing {
-            limit: LocalLimit::GeometrySegmentsPerElement,
-            configured: ResourceValue::Integer(geometry_limit),
-            attempted: ResourceValue::Integer(geometry_segments),
-            pointer_field: None,
-            message: "outline omitted because its geometry exceeds its limit",
-        });
-    }
-
-    let work_limit = request.resource_limits().max_element_work_units();
-    (element_work_units > work_limit).then_some(ElementLocalCrossing {
-        limit: LocalLimit::ElementWorkUnits,
-        configured: ResourceValue::Integer(work_limit),
-        attempted: ResourceValue::Integer(element_work_units),
-        pointer_field: None,
-        message: "outline omitted because its semantic work exceeds its limit",
-    })
+    None
 }
 
 pub(super) fn generation_local_crossing(

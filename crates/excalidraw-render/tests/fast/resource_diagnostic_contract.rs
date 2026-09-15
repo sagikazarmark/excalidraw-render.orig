@@ -2013,6 +2013,389 @@ fn local_outline_resource_recovery_reports_exact_crossings() {
 }
 
 #[test]
+fn coordinate_contract_covers_components_points_recovery_and_frames() {
+    coordinate_point_recovery_and_component_precedence();
+    local_outline_resource_recovery_reports_exact_crossings();
+    rejected_empty_content_does_not_claim_lost_link_semantics();
+    for format in FORMATS {
+        for kind in [
+            "rectangle",
+            "ellipse",
+            "diamond",
+            "line",
+            "arrow",
+            "freedraw",
+            "embeddable",
+        ] {
+            for field in ["x", "y", "width", "height"] {
+                for sign in [1, -1] {
+                    if sign < 0 && matches!(field, "width" | "height") {
+                        continue;
+                    }
+                    let mut element = json!({"id":"image","type":kind,"x":0,"y":0,"width":10,"height":10,"seed":1,"roughness":0,"updated":0});
+                    if matches!(kind, "line" | "arrow" | "freedraw") {
+                        element["points"] = json!([[0, 0], [10, 10]]);
+                    }
+                    element[field] = json!(21 * sign);
+                    let source = json!({"type":"excalidraw","version":2,"elements":[element],"appState":{},"files":{}});
+                    let request = RenderRequest::builder(format)
+                        .resource_limits(
+                            ResourceLimits::builder()
+                                .max_coordinate_magnitude(20.0)
+                                .build()
+                                .unwrap(),
+                        )
+                        .build()
+                        .unwrap();
+                    let mut row = expected(
+                        "resource.coordinate-range-exceeded",
+                        "max_coordinate_magnitude",
+                        json!(20),
+                        json!(21),
+                        "coordinate",
+                        &format!("/elements/0/{field}"),
+                        "omitted",
+                    );
+                    if format != OutputFormat::Png {
+                        row["effects"] = json!(["visual", "semantic"]);
+                    }
+                    let derived_extent =
+                        matches!(kind, "line" | "arrow") && matches!(field, "width" | "height");
+                    assert_repeat(
+                        &source,
+                        &request,
+                        if derived_extent {
+                            json!([])
+                        } else {
+                            json!([row])
+                        },
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn coordinate_point_recovery_and_component_precedence() {
+    for format in FORMATS {
+        for kind in ["line", "arrow", "freedraw"] {
+            for axis in [0, 1] {
+                let mut point = json!([10, 10]);
+                point[axis] = json!(21);
+                let source = json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":kind,"width":10,"height":10,"points":[[0,0],point],"seed":1,"roughness":0,"updated":0}],"appState":{},"files":{}});
+                let request = RenderRequest::builder(format)
+                    .resource_limits(
+                        ResourceLimits::builder()
+                            .max_coordinate_magnitude(20.0)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                let field = if kind == "freedraw" {
+                    "points"
+                } else if axis == 0 {
+                    "width"
+                } else {
+                    "height"
+                };
+                let recovery = if kind == "freedraw" {
+                    "placeholder"
+                } else {
+                    "omitted"
+                };
+                let mut row = expected(
+                    "resource.coordinate-range-exceeded",
+                    "max_coordinate_magnitude",
+                    json!(20),
+                    json!(21),
+                    "coordinate",
+                    &format!("/elements/0/{field}"),
+                    recovery,
+                );
+                if format != OutputFormat::Png {
+                    row["effects"] = json!(["visual", "semantic"]);
+                }
+                assert_repeat(&source, &request, json!([row]));
+            }
+        }
+        let source = json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":"rectangle","x":21,"y":22,"width":23,"height":24,"seed":1,"updated":0}],"appState":{},"files":{}});
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_coordinate_magnitude(20.0)
+                    .max_geometry_segments_per_element(1)
+                    .max_element_work_units(1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let mut row = expected(
+            "resource.coordinate-range-exceeded",
+            "max_coordinate_magnitude",
+            json!(20),
+            json!(21),
+            "coordinate",
+            "/elements/0/x",
+            "omitted",
+        );
+        if format != OutputFormat::Png {
+            row["effects"] = json!(["visual", "semantic"]);
+        }
+        assert_repeat(&source, &request, json!([row]));
+    }
+}
+
+#[test]
+fn coordinate_limits_admit_non_outline_content_before_resolution() {
+    let bytes = crate::common::codec_fixtures::solid_png(1, 1, [255, 0, 0, 255]);
+    for format in FORMATS {
+        for kind in ["text", "image", "frame", "magicframe"] {
+            let mut element =
+                json!({"id":"image","type":kind,"x":21,"width":10,"height":10,"updated":0});
+            if kind == "text" {
+                element["text"] = json!("A");
+                element["fontFamily"] = json!(5);
+                element["fontSize"] = json!(10);
+            }
+            if kind == "image" {
+                element["fileId"] = json!("asset");
+            }
+            let source = json!({"type":"excalidraw","version":2,"elements":[element],"appState":{},"files":{}});
+            let request = RenderRequest::builder(format)
+                .supplemental_assets(
+                    SupplementalAssets::builder()
+                        .asset("asset", bytes.clone())
+                        .build()
+                        .unwrap(),
+                )
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_coordinate_magnitude(20.0)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            let outcome = Renderer::new().render(&parse(&source), &request).unwrap();
+            let diagnostics = serde_json::to_value(outcome.report()).unwrap();
+            assert_eq!(
+                diagnostics["diagnostics"][0]["code"], "resource.coordinate-range-exceeded",
+                "{kind} {format:?}"
+            );
+            assert_eq!(
+                diagnostics["diagnostics"][0]["details"]["measurement"],
+                json!({"kind":"attempted","value":21})
+            );
+        }
+    }
+}
+
+#[test]
+fn invalid_frame_coordinates_omit_dependants_and_fail_the_frame_target() {
+    for format in FORMATS {
+        for kind in ["frame", "magicframe"] {
+            let source = json!({"type":"excalidraw","version":2,"elements":[
+                {"id":"bad","type":kind,"x":21,"width":10,"height":10,"updated":0},
+                {"id":"child","type":"rectangle","x":0,"width":5,"height":5,"frameId":"bad","seed":1,"updated":0},
+                {"id":"nested","type":"frame","width":5,"height":5,"frameId":"bad","updated":0},
+                {"id":"grandchild","type":"rectangle","width":3,"height":3,"frameId":"nested","seed":1,"updated":0}
+            ],"appState":{},"files":{}});
+            let scene = parse(&source);
+            let limits = ResourceLimits::builder()
+                .max_coordinate_magnitude(20.0)
+                .build()
+                .unwrap();
+            let request = RenderRequest::builder(format)
+                .resource_limits(limits.clone())
+                .build()
+                .unwrap();
+            let mut row = expected(
+                "resource.coordinate-range-exceeded",
+                "max_coordinate_magnitude",
+                json!(20),
+                json!(21),
+                "coordinate",
+                "/elements/0/x",
+                "omitted",
+            );
+            row["element_id"] = json!("bad");
+            if format != OutputFormat::Png {
+                row["effects"] = json!(["visual", "semantic"]);
+            }
+            let outcome = assert_repeat(&source, &request, json!([row]));
+            let empty =
+                json!({"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{}});
+            let baseline = Renderer::new().render(&parse(&empty), &request).unwrap();
+            assert_eq!(outcome.artifact().bytes(), baseline.artifact().bytes());
+            let frame = scene.frames().next().unwrap();
+            let request = FrameRenderRequest::builder(format)
+                .resource_limits(limits)
+                .build()
+                .unwrap();
+            let error = Renderer::new().render_frame(frame, &request).unwrap_err();
+            assert_eq!(error.code().as_str(), "resource.coordinate-range-exceeded");
+            assert_eq!(
+                serde_json::to_value(error.details()).unwrap(),
+                json!({"kind":"resource_limit","field":"max_coordinate_magnitude","configured":20,"value_kind":"coordinate","measurement":{"kind":"attempted","value":21},"recovery":null})
+            );
+        }
+    }
+}
+
+#[test]
+fn invalid_frame_omission_uses_repaired_active_clipping_dependencies() {
+    for format in FORMATS {
+        let source = json!({"type":"excalidraw","version":2,"elements":[
+            {"id":"bad","type":"frame","x":21,"width":10,"height":10,"updated":0},
+            {"id":"child","type":"rectangle","width":5,"height":5,"frameId":"bad","seed":1,"updated":0}
+        ],"appState":{},"files":{}});
+        let options = excalidraw_render::FrameOptions::new(false, false, false, false);
+        let request = RenderRequest::builder(format)
+            .frame_options(options)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_coordinate_magnitude(20.0)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let actual = Renderer::new().render(&parse(&source), &request).unwrap();
+        let mut expected_source = source.clone();
+        expected_source["elements"][0]["isDeleted"] = json!(true);
+        let expected = Renderer::new()
+            .render(&parse(&expected_source), &request)
+            .unwrap();
+        assert_eq!(
+            actual.artifact().bytes(),
+            expected.artifact().bytes(),
+            "disabled clipping must keep child"
+        );
+        let mut cycle = source.clone();
+        cycle["elements"][0]["frameId"] = json!("good");
+        cycle["elements"].as_array_mut().unwrap().insert(
+            1,
+            json!({"id":"good","type":"frame","width":10,"height":10,"frameId":"bad","updated":0}),
+        );
+        cycle["elements"][2]["frameId"] = json!("good");
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_coordinate_magnitude(20.0)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let actual = Renderer::new().render(&parse(&cycle), &request).unwrap();
+        assert!(actual
+            .report()
+            .diagnostics()
+            .iter()
+            .any(|d| d.code().as_str() == "resource.coordinate-range-exceeded"));
+        cycle["elements"][0]["isDeleted"] = json!(true);
+        cycle["elements"][1]["frameId"] = Value::Null;
+        let expected = Renderer::new().render(&parse(&cycle), &request).unwrap();
+        assert_eq!(
+            actual.artifact().bytes(),
+            expected.artifact().bytes(),
+            "removed cycle edge cannot hide good frame"
+        );
+    }
+}
+
+#[test]
+fn coordinate_rejected_images_classify_authoritative_vector_content() {
+    let vector=br#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>"#;
+    let raster = crate::common::codec_fixtures::solid_png(1, 1, [255, 0, 0, 255]);
+    for format in FORMATS {
+        for (bytes, semantic) in [(vector.as_slice(), true), (raster.as_slice(), false)] {
+            for supplemental in [false, true] {
+                let mut source = image_scene(bytes, "image/png");
+                source["elements"][0]["x"] = json!(21);
+                let assets = if supplemental {
+                    source["files"] = json!({});
+                    SupplementalAssets::builder()
+                        .asset("asset/~", bytes)
+                        .build()
+                        .unwrap()
+                } else {
+                    SupplementalAssets::default()
+                };
+                let request = RenderRequest::builder(format)
+                    .supplemental_assets(assets)
+                    .resource_limits(
+                        ResourceLimits::builder()
+                            .max_coordinate_magnitude(20.0)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build()
+                    .unwrap();
+                let mut row = expected(
+                    "resource.coordinate-range-exceeded",
+                    "max_coordinate_magnitude",
+                    json!(20),
+                    json!(21),
+                    "coordinate",
+                    "/elements/0/x",
+                    "omitted",
+                );
+                if semantic && format != OutputFormat::Png {
+                    row["effects"] = json!(["visual", "semantic"]);
+                }
+                assert_repeat(&source, &request, json!([row]));
+            }
+        }
+    }
+}
+
+#[test]
+fn frame_coordinate_recovery_reconciles_fallback_and_missing_image_reports() {
+    for format in FORMATS {
+        let source = json!({"type":"excalidraw","version":2,"elements":[
+            {"id":"bad","type":"frame","x":21,"width":10,"height":10,"updated":0},
+            {"id":"fallback","type":"future","width":5,"height":5,"frameId":"bad","updated":0}
+        ],"appState":{},"files":{}});
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_coordinate_magnitude(20.0)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let outcome = Renderer::new().render(&parse(&source), &request).unwrap();
+        let row = outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .find(|d| d.element_id() == Some("fallback"))
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(row.details()).unwrap(),
+            json!({"kind":"compatibility","recovery":"omitted","recipe_id":null})
+        );
+        let source = json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":"image","fileId":"absent","link":"https://example.com","x":21,"width":10,"height":10,"updated":0}],"appState":{},"files":{}});
+        let outcome = Renderer::new().render(&parse(&source), &request).unwrap();
+        let row = outcome
+            .report()
+            .diagnostics()
+            .iter()
+            .find(|d| d.code().as_str() == "resource.coordinate-range-exceeded")
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(row).unwrap()["effects"],
+            json!(["visual"])
+        );
+    }
+}
+
+#[test]
 fn omitted_vector_content_reports_semantic_loss_only_in_vector_formats() {
     let source = json!({"type":"excalidraw","version":2,"elements":[{"id":"image","type":"rectangle","x":21,"width":20,"height":20,"seed":1,"updated":0}],"appState":{},"files":{}});
     for format in FORMATS {

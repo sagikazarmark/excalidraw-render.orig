@@ -283,6 +283,30 @@ fn nested_resource_recovery_replays_cached_descendants_and_frame_traces() {
 }
 
 #[test]
+fn rejected_frame_coordinates_replay_identical_failure_and_release_traces() {
+    let source = serde_json::json!({"type":"excalidraw","version":2,"elements":[
+        {"id":"bad","type":"frame","x":21,"width":10,"height":10,"updated":0},
+        {"id":"child","type":"rectangle","width":5,"height":5,"frameId":"bad","seed":1,"updated":0},
+        {"id":"good","type":"frame","width":10,"height":10,"updated":0}
+    ],"appState":{},"files":{}});
+    let scene = SceneDocument::parse(&serde_json::to_vec(&source).unwrap()).unwrap();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        for frame in scene.frames() {
+            assert_batch_matches_standalone(
+                &scene,
+                frame,
+                format,
+                ResourceLimits::builder()
+                    .max_coordinate_magnitude(20.0)
+                    .build()
+                    .unwrap(),
+                "coordinate rejected frame",
+            );
+        }
+    }
+}
+
+#[test]
 fn depth_variant_sanitization_shares_raster_validation_work() {
     use base64::Engine;
     let mut png = Vec::new();

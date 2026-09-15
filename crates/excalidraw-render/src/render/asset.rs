@@ -1118,6 +1118,30 @@ fn validate_nested_raster_semantics(
     })
 }
 
+/// Classify a coordinate-rejected image without allocating or decoding its
+/// payload. Scene authority wins even when its record is malformed.
+pub(super) fn rejected_image_may_have_semantics(
+    scene: &SceneDocument,
+    supplemental: &SupplementalAssets,
+    file_id: &str,
+    linked: bool,
+) -> bool {
+    if let Some(record) = (0..scene.file_record_count())
+        .filter_map(|i| scene.file_record_at(i))
+        .find(|r| r.key() == file_id)
+    {
+        return match record.data_url() {
+            crate::scene::SourceField::Value(url) => {
+                linked || svg::rejected_payload_may_have_semantics(url)
+            }
+            _ => false,
+        };
+    }
+    supplemental.get(file_id).is_some_and(|asset| {
+        linked || sniff_media_kind(&asset.bytes()[..asset.bytes().len().min(48)]).is_err()
+    })
+}
+
 fn sniff_media_kind(bytes: &[u8]) -> Result<MediaKind, ResolveError> {
     if bytes.starts_with(PNG_SIGNATURE) {
         Ok(MediaKind::Png)

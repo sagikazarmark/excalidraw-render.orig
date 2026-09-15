@@ -701,7 +701,7 @@ fn serialize_node(
 /// merely to classify its diagnostic. Raster signatures establish visual-only
 /// content; SVG and unidentified content conservatively retain semantic risk.
 /// The untrusted media-type claim never overrides the payload signature.
-fn rejected_payload_may_have_semantics(value: &str) -> bool {
+pub(super) fn rejected_payload_may_have_semantics(value: &str) -> bool {
     let Some((_, encoded)) = value.split_once(";base64,") else {
         return true;
     };

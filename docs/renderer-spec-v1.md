@@ -2201,6 +2201,7 @@ revision 1. Resource failures use these exact code-to-field mappings:
 | `resource.working-bytes-exceeded` | `max_working_bytes` |
 | `resource.output-bytes-exceeded` | `max_output_bytes` |
 | `resource.total-work-exceeded` | `max_total_work_units` |
+| `resource.coordinate-range-exceeded` | `max_coordinate_magnitude`; selected frame viewport only |
 | `resource.memory-unavailable` | no semantic configured/measured value |
 
 CLI-native codes are `cli.invalid-arguments`, `cli.format-required`,
@@ -2579,6 +2580,12 @@ charged against the aggregate only (#159).
 `max_coordinate_magnitude` applies to every normalized coordinate, dimension,
 control point, translated transform coefficient, and intermediate exposed to a
 later semantic operation.
+
+A scene frame outside this ceiling is omitted together with descendants that
+depend on its clipping, so recovery cannot expose formerly clipped content.
+A standalone frame target whose viewport exceeds the ceiling fails with fatal
+`resource.coordinate-range-exceeded`, resource-limit details and null recovery,
+before viewport selection. Its local scene counterpart remains a warning.
 
 ### 13.1 Fixed Parser Envelope
 

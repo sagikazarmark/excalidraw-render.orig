@@ -237,3 +237,32 @@ Spec review supports all three assignments; Standards review has no hard
 violations. Focused tests, typechecking, all ten conformance/lint checks and the
 full fast/render/doctest suite pass (19m47s). Current totals: **792 assigned /
 136 gaps**, with **15 resource assignments remaining**.
+
+## Coordinate admission checkpoint (ownership still open)
+
+The coordinate audit found normalized text, images and frames bypassing the
+outline-only guard. The public-facade regression failed with no diagnostic for
+text at x=21 under limit20. A shared normalized-coordinate check now rejects
+these occurrences before their content-specific resolution.
+
+The user approved scene invalid-frame subtree omission and an explicit fatal
+`resource.coordinate-range-exceeded` for an invalid standalone frame viewport.
+The spec and public error constant record the fatal resource-limit details with
+null recovery. Scene descendants are omitted only through repaired, active frame
+clipping dependencies; cycle-removed edges and disabled clipping do not remove
+unaffected children. Omitted surface fallbacks retain omission diagnostics with
+null recipe, and their existing compatibility-omission accounting applies.
+
+Image semantic effects use bounded authoritative-payload classification so
+unlinked SVG content is not visual-only, while absent linked images do not claim
+lost semantics. Scene authority wins over supplements. Invalid frame checks run
+after journal replay but before viewport selection and do not clone a doomed
+prepared target. Direct/prepared frame outcomes, reports and traces match.
+
+Review reproduced and corrected raw-frame-ID traversal, disabled-clip subtree
+loss, SVG image effects, stale placeholder recipes, and an infallible clone in
+the initial prepared-target guard. Focused regressions and typechecking pass.
+The full fast/render/doc suite and conformance checks passed; the single Clippy
+loop-style finding was corrected and lint passed. Comprehensive derived control
+point/transform/intermediate admission and coordinate ownership remain unfinished.
+No coordinate assignment is claimed by this checkpoint: totals stay 792/136.

@@ -26,9 +26,9 @@ use super::frame_target::{
 use super::geometry::{adjusted_roughness, generate_rough, GeneratedFreedraw, GeneratedGeometry};
 use super::prepared::PreparedFrameRender;
 use super::resolve::{
-    fallback_fits_local_limits, format_error_code, generation_local_crossing,
-    logical_aligned_bytes, outline_local_crossing, relationship_asset_authorities,
-    ResolveSceneError, ResolvedScene, SemanticWorkingRecord,
+    coordinate_local_crossing, fallback_fits_local_limits, format_error_code,
+    generation_local_crossing, logical_aligned_bytes, outline_local_crossing,
+    relationship_asset_authorities, ResolveSceneError, ResolvedScene, SemanticWorkingRecord,
 };
 use super::{
     asset, element_owner_index, freedraw, image, rough, try_owned, DiagnosticOwnership,
@@ -309,12 +309,181 @@ impl RenderSession {
             viewport: inputs.frame_viewport,
         };
         let mut fallbacks = inputs.normalization.fallbacks;
+        // Preserve the invalid frame's clipping boundary by omitting its
+        // dependants too; retaining children would expose unclipped content.
+        let mut rejected_frames = Vec::new();
+        rejected_frames
+            .try_reserve(inputs.normalization.elements.len())
+            .map_err(|_| {
+                self.memory_failure(request, "semantic_geometry", "rejected_frame_coordinates")
+            })?;
+        for source in &inputs.normalization.elements {
+            if matches!(
+                source.kind,
+                NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
+            ) && coordinate_local_crossing(source, request).is_some()
+            {
+                rejected_frames.push(source.source.source_index());
+            }
+        }
+        let clips_active = effective_frame_rendering.enabled && effective_frame_rendering.clip;
+        if clips_active {
+            loop {
+                let before = rejected_frames.len();
+                for source in &inputs.normalization.elements {
+                    if matches!(
+                        source.kind,
+                        NormalizedElementKind::Frame(_) | NormalizedElementKind::MagicFrame(_)
+                    ) && super::frame_target::relationship_frame_target(
+                        source.source.source_index(),
+                        &inputs.relationships.graph,
+                    )
+                    .is_some_and(|index| rejected_frames.contains(&index))
+                        && !rejected_frames.contains(&source.source.source_index())
+                    {
+                        rejected_frames.push(source.source.source_index());
+                    }
+                }
+                if rejected_frames.len() == before {
+                    break;
+                }
+            }
+        }
+        let mut omitted_by_frame = Vec::new();
+        omitted_by_frame
+            .try_reserve(inputs.normalization.elements.len())
+            .map_err(|_| {
+                self.memory_failure(request, "semantic_geometry", "rejected_frame_descendants")
+            })?;
+        for source in &inputs.normalization.elements {
+            if clips_active
+                && super::frame_target::relationship_frame_target(
+                    source.source.source_index(),
+                    &inputs.relationships.graph,
+                )
+                .is_some_and(|index| rejected_frames.contains(&index))
+            {
+                omitted_by_frame.push(source.source.source_index());
+            }
+        }
+        fallbacks.retain(|fallback| {
+            let retained = !clips_active
+                || !super::frame_target::relationship_frame_target(
+                    fallback.source_index,
+                    &inputs.relationships.graph,
+                )
+                .is_some_and(|index| rejected_frames.contains(&index));
+            if !retained {
+                for diagnostic in &mut self.report.diagnostics {
+                    if diagnostic.element_id() == fallback.element_id.as_deref()
+                        && diagnostic.json_pointer() == fallback.json_pointer
+                    {
+                        if let Some(crate::ErrorDetails::Compatibility {
+                            recovery,
+                            recipe_id,
+                        }) = diagnostic.details_mut()
+                        {
+                            if *recovery == crate::Recovery::Placeholder {
+                                *recovery = crate::Recovery::Omitted;
+                                *recipe_id = None;
+                            }
+                        }
+                    }
+                }
+            }
+            retained
+        });
         let mut outlines = Vec::new();
         outlines
             .try_reserve_exact(inputs.normalization.elements.len())
             .map_err(|_| self.memory_failure(request, "normalization", "outline_list"))?;
         for mut source in inputs.normalization.elements {
             debug_assert!(!source.index.is_empty());
+            let frame_omission = omitted_by_frame.contains(&source.source.source_index());
+            let non_outline = matches!(
+                source.kind,
+                NormalizedElementKind::Image(_)
+                    | NormalizedElementKind::Text(_)
+                    | NormalizedElementKind::Frame(_)
+                    | NormalizedElementKind::MagicFrame(_)
+            );
+            let coordinate_crossing = non_outline
+                .then(|| coordinate_local_crossing(&source, request))
+                .flatten();
+            if frame_omission || coordinate_crossing.is_some() {
+                if !frame_omission {
+                    let crossing = coordinate_crossing.unwrap();
+                    let position = crossing
+                        .pointer_field
+                        .map_or(u64::MAX, |field| source.source.coordinate_position(field));
+                    let semantic = match &source.kind {
+                        NormalizedElementKind::Text(text) => super::resolve::live_text_occurrence(
+                            text,
+                            source.source.source_index(),
+                            &inputs.relationships.graph,
+                        )
+                        .is_some(),
+                        NormalizedElementKind::Image(image) => {
+                            image.file_id.as_deref().is_some_and(|id| {
+                                asset::rejected_image_may_have_semantics(
+                                    scene,
+                                    request.supplemental_assets(),
+                                    id,
+                                    source.link.is_some(),
+                                )
+                            })
+                        }
+                        _ => true,
+                    };
+                    let diagnostic = crossing
+                        .diagnostic_with_recovery(
+                            request.format(),
+                            Some(source.source.id()),
+                            source.source.pointer(),
+                            LocalRecovery::Omitted,
+                            semantic,
+                        )
+                        .map_err(|_| {
+                            self.memory_failure(
+                                request,
+                                "compatibility_report",
+                                "coordinate_recovery",
+                            )
+                        })?;
+                    self.retain_diagnostic_with_owner(
+                        request,
+                        ResourcePhase::SharedSemanticResolution,
+                        "coordinate_local_resource_recovery",
+                        diagnostic,
+                        DiagnosticOwnership {
+                            local_owner: Some(source.source.id()),
+                            source_order: Some(source.source_order),
+                            source_position: Some(position),
+                        },
+                    )?;
+                }
+                self.charge_local_omission(
+                    request,
+                    Some(source.source.id()),
+                    source.source.pointer(),
+                    "coordinate_local_omission",
+                )?;
+                semantic_working.push(SemanticWorkingRecord {
+                    source_order: source.source_order,
+                    event: "coordinate_omitted_source",
+                    element_id: Some(try_owned(source.source.id()).map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "coordinate_owner")
+                    })?),
+                    local_owner: Some(try_owned(source.source.id()).map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "coordinate_owner")
+                    })?),
+                    json_pointer: try_owned(source.source.pointer()).map_err(|_| {
+                        self.memory_failure(request, "semantic_geometry", "coordinate_pointer")
+                    })?,
+                    bytes: source.normalized_working_bytes,
+                });
+                continue;
+            }
             if matches!(source.kind, NormalizedElementKind::Image(_)) {
                 match images.resolve_element(self, scene, request, source, semantic_working)? {
                     image::ImageDisposition::Outline(element) => {
@@ -685,6 +854,43 @@ impl RenderSession {
         )
     }
 
+    fn check_frame_coordinate_viewport(
+        &mut self,
+        source: &NormalizedElement,
+        request: &RenderRequest,
+    ) -> Result<(), RenderError> {
+        let Some(crossing) = coordinate_local_crossing(source, request) else {
+            return Ok(());
+        };
+        self.flush_frame_normalization_diagnostics(request, &[source.source.source_index()], &[])?;
+        self.scope_frame_diagnostics(&[source.source.source_index()]);
+        Err(RenderError {
+            category: crate::RenderErrorCategory::ResourceLimit,
+            code: crate::ErrorCode::RESOURCE_COORDINATE_RANGE_EXCEEDED,
+            message: Box::from("selected frame viewport exceeds the coordinate ceiling"),
+            format: request.format(),
+            element_id: Some(try_owned(source.source.id()).map_err(|_| {
+                self.memory_failure(request, "frame_selection", "coordinate_owner")
+            })?),
+            json_pointer: crate::scene::pointer_child(
+                source.source.pointer(),
+                crossing.pointer_field.unwrap_or("x"),
+            )
+            .map_err(|_| self.memory_failure(request, "frame_selection", "coordinate_pointer"))?
+            .into_boxed_str(),
+            details: Some(Box::new(crate::ErrorDetails::ResourceLimit {
+                field: "max_coordinate_magnitude",
+                configured: crossing.configured,
+                value_kind: crate::ValueKind::Coordinate,
+                measurement: crate::ResourceMeasurement::Attempted {
+                    value: crossing.attempted,
+                },
+                recovery: None,
+            })),
+            report: self.take_report(),
+        })
+    }
+
     /// Phase 1: obtains the normalized scene and its relationships — replayed
     /// from the prepared journal or computed live — and applies frame scoping.
     /// Both variation axes (journal-replay vs live, scene vs frame target)
@@ -712,6 +918,14 @@ impl RenderSession {
                 RenderTarget::Frame(target) => target,
                 RenderTarget::Scene => unreachable!("prepared rendering is frame-scoped"),
             };
+            if let Some(source) = prepared
+                .normalization
+                .elements
+                .iter()
+                .find(|source| source.source.source_index() == target.source_index)
+            {
+                self.check_frame_coordinate_viewport(source, request)?;
+            }
             let normalization = prepared
                 .normalization_for_target(target)
                 .map_err(|_| self.memory_failure(request, "frame_selection", "prepared_target"))?;
@@ -792,6 +1006,13 @@ impl RenderSession {
                 (None, None, None)
             }
             RenderTarget::Frame(target) => {
+                if let Some(source) = normalization
+                    .elements
+                    .iter()
+                    .find(|source| source.source.source_index() == target.source_index)
+                {
+                    self.check_frame_coordinate_viewport(source, request)?;
+                }
                 let selection =
                     FrameSelection::compute(&normalization.elements, &relationships.graph, target)
                         .map_err(|_| {
