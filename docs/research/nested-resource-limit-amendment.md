@@ -142,3 +142,30 @@ independent frame scope/batch replay and deleted silence. Full depth ownership
 still needs multi-owner/conflict cases and independent SVG/PDF recovery oracles.
 The full 16-test resource module, typechecking and all 13 canonical full-suite,
 conformance and lint checks pass (20m40s). No new ownership is claimed yet.
+
+## Nested-depth ownership
+
+The subsequent evidence-only follow-up selects
+`resource_diagnostic_contract::nested_depth_contract_covers_owners_paths_frames_and_silence`
+for all three `resource.nested-asset-depth-exceeded` format obligations. It
+unconditionally executes the complete depth, effect, recovery, authority, cache
+and frame contract. Multi-owner file ordering differs from reference ordering;
+unreferenced and conflicting payloads are silent. An additional hidden resource
+beyond the rejected edge proves recursion stops before occurrence admission.
+
+Independent recovery evidence derives the frozen image-error glyph paths from
+the authority manifest and places them in a worked 30x20 viewport (size 8,
+offset 11,6). It compares nested SVG structure, all PNG pixels plus literal
+grey/white/blue samples, and nonempty PDF drawing streams, while checking
+transforms, opacity, clipping, unaffected siblings and mandatory notices. Omission
+matches a separately authored removed-slot scene at the 8191-unit envelope limit.
+Both discovery orders test depth-sensitive cache results.
+
+Spec review supports these three assignments with no materially missing criterion.
+Current totals: **780 assigned / 148 gaps**; **27 of the 30 resource assignments
+remain open**. This selection does not claim completion of the ten-family batch.
+
+Verification: the exact selected owner, workspace/all-target typechecking,
+ownership consistency and all ten canonical conformance/lint checks pass.
+The final full fast/render/doctest suite passes (16m19s). Standards review reports
+no definite violations; fixture duplication and naming remain heuristic notes.

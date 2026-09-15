@@ -4255,25 +4255,88 @@
     {
       "id": "diagnostic:resource.nested-asset-depth-exceeded:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "ca4fd6ee26a82037d1f74b32cf907f9aa7c4db4b1dedbe05de70ad557d60254c"
+          },
+          "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::nested_depth_contract_covers_owners_paths_frames_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact all-format depth reports, conditional effects, paths and multi-owner order; N-1/N/N+1 and recovery-envelope boundaries; depth-aware cache replay; stopped discovery, authority/conflict/deleted/frame silence; independent manifested SVG/PNG/PDF placeholder and omission artifacts with inherited clips, transforms, opacity and notices."
       }
     },
     {
       "id": "diagnostic:resource.nested-asset-depth-exceeded:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "ca4fd6ee26a82037d1f74b32cf907f9aa7c4db4b1dedbe05de70ad557d60254c"
+          },
+          "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::nested_depth_contract_covers_owners_paths_frames_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact all-format depth reports, conditional effects, paths and multi-owner order; N-1/N/N+1 and recovery-envelope boundaries; depth-aware cache replay; stopped discovery, authority/conflict/deleted/frame silence; independent manifested SVG/PNG/PDF placeholder and omission artifacts with inherited clips, transforms, opacity and notices."
       }
     },
     {
       "id": "diagnostic:resource.nested-asset-depth-exceeded:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing resource-limit tests cover selected ceilings and recoveries. Need complete field/configured/measurement/value-kind checks and top-level/nested bounded/unbounded branches with exact per-format occurrence order; do not infer full ownership from one limit crossing."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/resource_diagnostic_contract.rs",
+            "sha256": "ca4fd6ee26a82037d1f74b32cf907f9aa7c4db4b1dedbe05de70ad557d60254c"
+          },
+          "function": "nested_depth_contract_covers_owners_paths_frames_and_silence",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "resource_diagnostic_contract::nested_depth_contract_covers_owners_paths_frames_and_silence",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Exact all-format depth reports, conditional effects, paths and multi-owner order; N-1/N/N+1 and recovery-envelope boundaries; depth-aware cache replay; stopped discovery, authority/conflict/deleted/frame silence; independent manifested SVG/PNG/PDF placeholder and omission artifacts with inherited clips, transforms, opacity and notices."
       }
     },
     {

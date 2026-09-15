@@ -249,6 +249,10 @@ fn nested_resource_limits_report_the_rejected_source_slot() {
 fn nested_depth_contract_covers_owners_paths_frames_and_silence() {
     nested_resource_limits_report_the_rejected_source_slot();
     rejected_nested_payload_effects_follow_signatures_not_media_claims();
+    nested_depth_recovery_depends_on_current_edge_not_cached_parent();
+    nested_depth_recovery_envelope_and_owner_order_are_exact();
+    nested_depth_placeholder_matches_manifested_geometry_and_local_inheritance();
+    nested_depth_stops_discovery_and_ignores_conflicting_payload();
     let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>"#;
     let child = format!(
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/><image width="2" height="2" href="{}"/></svg>"#,
@@ -321,6 +325,271 @@ fn nested_depth_contract_covers_owners_paths_frames_and_silence() {
                 element["isDeleted"] = json!(true);
             }
             assert_repeat(&source, &request, json!([]));
+        }
+    }
+}
+
+#[test]
+fn nested_depth_stops_discovery_and_ignores_conflicting_payload() {
+    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="data:image/png;base64,bm90IGFuIGltYWdl"/></svg>"#;
+    let child = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+        svg_url(leaf)
+    );
+    let parent = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+        svg_url(&child)
+    );
+    for format in FORMATS {
+        let source = image_scene(parent.as_bytes(), "image/svg+xml");
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_nested_asset_depth(1)
+                    .max_asset_entries(3)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        assert_repeat(
+            &source,
+            &request,
+            json!([{
+                "code":"resource.nested-asset-depth-exceeded","severity":"warning","effects":if format==OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":"/files/asset~1~0/dataURL",
+                "details":{"kind":"nested_resource_limit","field":"max_nested_asset_depth","configured":1,"value_kind":"depth","measurement":{"kind":"attempted","value":2},"asset_chain":[{"asset_id":"asset/~","occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":"placeholder","recipe_id":"official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677"}
+            }]),
+        );
+        let clean = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2"/></svg>"#;
+        let source = image_scene(clean.as_bytes(), "image/svg+xml");
+        let request = RenderRequest::builder(format)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_nested_asset_depth(1)
+                    .build()
+                    .unwrap(),
+            )
+            .supplemental_assets(
+                SupplementalAssets::builder()
+                    .asset("asset/~", parent.as_bytes())
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        assert_repeat(
+            &source,
+            &request,
+            json!([{"code":"asset.supplement-conflict","severity":"warning","effects":["input_repair"],"element_id":null,"json_pointer":"/files/asset~1~0","details":{"kind":"asset","asset_id":"asset/~","claimed_media_type":null,"validated_media_type":null,"recovery":"ignored","recipe_id":null}}]),
+        );
+    }
+}
+
+#[test]
+fn nested_depth_placeholder_matches_manifested_geometry_and_local_inheritance() {
+    // Independent oracle from the frozen recipe, not the recovery producer.
+    let manifest: Value = serde_json::from_str(include_str!(
+        "../../../../tests/oracle/scene-surfaces/revision-1.json"
+    ))
+    .unwrap();
+    let recipe = &manifest["fallbackRecipes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["content"]["kind"] == "image-error")
+        .unwrap()["content"];
+    let mut paths = String::new();
+    for path in recipe["glyph"]["paths"].as_array().unwrap() {
+        let matrix = path["transform"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(Value::to_string)
+            .collect::<Vec<_>>()
+            .join(" ");
+        paths.push_str(&format!(
+            r#"<path fill="{}" transform="matrix({matrix})" d="{}"/>"#,
+            path["fill"].as_str().unwrap(),
+            path["d"].as_str().unwrap()
+        ));
+    }
+    // Worked 30x20 viewport: size=8, centred at (11,6), in a 668-unit glyph box.
+    let replacement = format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" width="30" height="20" viewBox="0 0 30 20"><rect width="30" height="20" fill="#E7E7E7"/><svg x="11" y="6" width="8" height="8" viewBox="0 0 668 668">{paths}</svg></svg>"##
+    );
+    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="30" height="20"><rect width="30" height="20" fill="red"/></svg>"#;
+    let child = |payload: &str| {
+        format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40"><defs><clipPath id="cut"><rect x="0" y="0" width="25" height="40"/></clipPath></defs><g clip-path="url(#cut)"><image x="5" y="3" width="30" height="20" transform="translate(2 1)" opacity="0.5" href="{}"/></g><rect x="40" y="5" width="10" height="10" fill="blue"/></svg>"#,
+            svg_url(payload)
+        )
+    };
+    let parent = |payload: &str| {
+        format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40"><image width="60" height="40" href="{}"/></svg>"#,
+            svg_url(&child(payload))
+        )
+    };
+    for format in FORMATS {
+        let mut source = image_scene(parent(leaf).as_bytes(), "image/svg+xml");
+        source["elements"][0]["width"] = json!(60);
+        source["elements"][0]["height"] = json!(40);
+        let request = RenderRequest::builder(format)
+            .padding(0.0)
+            .resource_limits(
+                ResourceLimits::builder()
+                    .max_nested_asset_depth(1)
+                    .build()
+                    .unwrap(),
+            )
+            .build()
+            .unwrap();
+        let actual = Renderer::new().render(&parse(&source), &request).unwrap();
+        source["files"]["asset/~"]["dataURL"] = json!(svg_url(&parent(&replacement)));
+        let expected = Renderer::new()
+            .render(
+                &parse(&source),
+                &RenderRequest::builder(format).padding(0.0).build().unwrap(),
+            )
+            .unwrap();
+        assert!(expected.report().is_empty());
+        match format {
+            OutputFormat::Png => {
+                let a = crate::common::raster::decode_png(actual.artifact().bytes());
+                let b = crate::common::raster::decode_png(expected.artifact().bytes());
+                for y in 0..40 {
+                    for x in 0..60 {
+                        assert_eq!(a.pixel(x, y), b.pixel(x, y), "pixel {x},{y}");
+                    }
+                }
+                assert_eq!(a.pixel(10, 8), [243, 243, 243, 255]);
+                assert_eq!(a.pixel(30, 8), [255, 255, 255, 255]);
+                assert_eq!(a.pixel(45, 8), [0, 0, 255, 255]);
+            }
+            OutputFormat::Svg => {
+                fn canonical_svg(text: &str) -> Value {
+                    fn node_value(node: roxmltree::Node<'_, '_>) -> Value {
+                        let attrs: serde_json::Map<String, Value> = node
+                            .attributes()
+                            .map(|a| {
+                                let value = if let Some(encoded) =
+                                    a.value().strip_prefix("data:image/svg+xml;base64,")
+                                {
+                                    let bytes = base64::engine::general_purpose::STANDARD
+                                        .decode(encoded)
+                                        .unwrap();
+                                    canonical_svg(std::str::from_utf8(&bytes).unwrap())
+                                } else {
+                                    json!(a.value())
+                                };
+                                (a.name().to_owned(), value)
+                            })
+                            .collect();
+                        json!({"name":node.tag_name().name(),"attributes":attrs,"children":node.children().filter(|n|n.is_element()).map(node_value).collect::<Vec<_>>()})
+                    }
+                    node_value(roxmltree::Document::parse(text).unwrap().root_element())
+                }
+                fn root_image(bytes: &[u8]) -> Value {
+                    let text = std::str::from_utf8(bytes).unwrap();
+                    let document = roxmltree::Document::parse(text).unwrap();
+                    let url = document
+                        .descendants()
+                        .find(|n| n.has_tag_name("image"))
+                        .unwrap()
+                        .attribute("href")
+                        .unwrap();
+                    let bytes = base64::engine::general_purpose::STANDARD
+                        .decode(url.strip_prefix("data:image/svg+xml;base64,").unwrap())
+                        .unwrap();
+                    canonical_svg(std::str::from_utf8(&bytes).unwrap())
+                }
+                assert_eq!(
+                    root_image(actual.artifact().bytes()),
+                    root_image(expected.artifact().bytes())
+                );
+                let text = std::str::from_utf8(actual.artifact().bytes()).unwrap();
+                assert!(text.contains("font-awesome-free-5.15.4/solid/image@"));
+                assert!(text.contains("font-awesome-free-5.15.4/solid/ban@"));
+            }
+            OutputFormat::Pdf => {
+                let a = crate::common::pdf_inspect::pdf_text(actual.artifact().bytes());
+                let b = crate::common::pdf_inspect::pdf_text(expected.artifact().bytes());
+                // Compare every drawing stream, including form streams, while
+                // retaining separate assertions for mandatory notice metadata.
+                let drawing_streams = |text: &str| {
+                    text.split("\nstream\n")
+                        .skip(1)
+                        .filter_map(|part| {
+                            part.split_once("\nendstream")
+                                .map(|(body, _)| body.to_owned())
+                        })
+                        .filter(|body| body.contains(" cm\n") || body.contains(" rg\n"))
+                        .collect::<Vec<_>>()
+                };
+                assert_eq!(drawing_streams(&a), drawing_streams(&b));
+                assert!(!drawing_streams(&a).is_empty());
+                assert!(!a.contains("/Subtype /Image"));
+                assert!(a.contains("font-awesome-free-5.15.4/solid/image@"));
+                assert!(a.contains("font-awesome-free-5.15.4/solid/ban@"));
+            }
+            _ => unreachable!("revision-1 formats"),
+        }
+    }
+}
+
+#[test]
+fn nested_depth_recovery_envelope_and_owner_order_are_exact() {
+    let leaf = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>"#;
+    let child = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+        svg_url(leaf)
+    );
+    let parent = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+        svg_url(&child)
+    );
+    let empty_child = r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2"/></svg>"#;
+    let omitted = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><image width="2" height="2" href="{}"/></svg>"#,
+        svg_url(empty_child)
+    );
+    for format in FORMATS {
+        for work in [8191, 8192, 8193] {
+            let source = json!({"type":"excalidraw","version":2,"elements":[
+                {"id":"first","type":"image","width":20,"height":20,"fileId":"z/~","updated":0},
+                {"id":"second","type":"image","x":30,"width":20,"height":20,"fileId":"a","updated":0}
+            ],"appState":{},"files":{"z/~":{"id":"z/~","created":0,"dataURL":svg_url(&parent)},"a":{"id":"a","created":0,"dataURL":svg_url(&parent)},"unused":{"id":"unused","created":0,"dataURL":svg_url(&parent)}}});
+            let request = RenderRequest::builder(format)
+                .resource_limits(
+                    ResourceLimits::builder()
+                        .max_nested_asset_depth(1)
+                        .max_asset_work_units(work)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .unwrap();
+            let rows:Vec<_>=[("a","/files/a/dataURL"),("z/~","/files/z~1~0/dataURL")].into_iter().map(|(id,pointer)|json!({
+                "code":"resource.nested-asset-depth-exceeded","severity":"warning","effects":if format==OutputFormat::Png {json!(["visual"])} else {json!(["visual","semantic"])},"element_id":null,"json_pointer":pointer,
+                "details":{"kind":"nested_resource_limit","field":"max_nested_asset_depth","configured":1,"value_kind":"depth","measurement":{"kind":"attempted","value":2},"asset_chain":[{"asset_id":id,"occurrence":0}],"paths":[{"segments":[{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"},{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":2,"name":"href"}]}],"recovery":if work<8192 {"omitted"} else {"placeholder"},"recipe_id":if work<8192 {Value::Null} else {json!("official.nested-resource@sha256:0fb00e2eda840ab048f9e0fc0698bb4b43d5618d6f67880149ce164412387677")}}
+            })).collect();
+            let result = assert_repeat(&source, &request, json!(rows));
+            if work < 8192 {
+                let mut expected_source = source.clone();
+                for id in ["a", "z/~"] {
+                    expected_source["files"][id]["dataURL"] = json!(svg_url(&omitted));
+                }
+                let expected_result = Renderer::new()
+                    .render(
+                        &parse(&expected_source),
+                        &RenderRequest::builder(format).build().unwrap(),
+                    )
+                    .unwrap();
+                assert_eq!(
+                    result.artifact().bytes(),
+                    expected_result.artifact().bytes()
+                );
+            }
         }
     }
 }
