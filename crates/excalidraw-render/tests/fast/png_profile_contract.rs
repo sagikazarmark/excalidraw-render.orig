@@ -14,6 +14,9 @@ enum Container {
 }
 
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
+// An odd phase distinguishes frame zero even for one-bit gray/indexed samples.
+// Higher-depth layouts also distinguish this default from animation frame one.
+const SEPARATE_DEFAULT_PHASE: usize = 3;
 const LAYOUTS: &[(&str, u8, u8)] = &[
     ("gray1", 0, 1),
     ("gray2", 0, 2),
@@ -145,7 +148,7 @@ fn paeth(a: u8, b: u8, c: u8) -> u8 {
         c
     }
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct Vector<'a> {
     color: u8,
     depth: u8,
@@ -288,7 +291,7 @@ impl Vector<'_> {
             );
             let mut sequence = 0_u32;
             if container == Container::SeparateDefault {
-                chunk(&mut bytes, *b"IDAT", &compressed(2));
+                chunk(&mut bytes, *b"IDAT", &compressed(SEPARATE_DEFAULT_PHASE));
             }
             for frame in 0..2 {
                 let control = crate::common::codec_fixtures::apng_frame_control(
@@ -311,11 +314,11 @@ impl Vector<'_> {
         chunk(&mut bytes, *b"IEND", &[]);
         bytes
     }
-    fn expected(self) -> Vec<u8> {
+    fn expected(self, phase: usize) -> Vec<u8> {
         (0..self.height)
             .flat_map(|y| {
                 (0..self.width)
-                    .flat_map(move |x| sample(self.color, self.depth, self.alpha, x, y, 0).1)
+                    .flat_map(move |x| sample(self.color, self.depth, self.alpha, x, y, phase).1)
             })
             .collect()
     }
@@ -499,7 +502,7 @@ fn pdf_sample_oracle_rejects_detached_or_wrongly_bound_planes() {
         )
         .unwrap();
     let original = pdf_objects(outcome.artifact().bytes());
-    let expected = vector.expected();
+    let expected = vector.expected(0);
     assert_pdf_objects(&original, 9, 9, &expected);
     let page_id = *original
         .iter()
@@ -538,7 +541,21 @@ fn pdf_sample_oracle_rejects_detached_or_wrongly_bound_planes() {
 }
 fn check(vector: Vector<'_>, container: Container) {
     let bytes = vector.bytes(container);
-    let expected = vector.expected();
+    let expected = vector.expected(0);
+    if container != Container::Static {
+        assert_ne!(
+            expected,
+            vector.expected(1),
+            "later animation frame must distinguish frame-zero selection: {vector:?}"
+        );
+    }
+    if container == Container::SeparateDefault {
+        assert_ne!(
+            expected,
+            vector.expected(SEPARATE_DEFAULT_PHASE),
+            "separate default must distinguish frame-zero selection: {vector:?}"
+        );
+    }
     let scene = document(&bytes, vector.width, vector.height);
     for format in FORMATS {
         let request = RenderRequest::builder(format)
@@ -629,44 +646,16 @@ fn inventory_guard() {
         json!(["static", "apng-included-default", "apng-separate-default"])
     );
 }
-#[test]
-fn static_sample_matrix_covers_all_declared_layouts() {
-    inventory_guard();
-    for &(_, color, depth) in LAYOUTS {
-        for &alpha in transparency(color) {
-            for interlaced in [false, true] {
-                for filter in 0..=4 {
-                    for (width, height) in [(1, 1), (9, 9)] {
-                        check(
-                            Vector {
-                                color,
-                                depth,
-                                alpha,
-                                interlaced,
-                                width,
-                                height,
-                                filter,
-                            },
-                            Container::Static,
-                        );
-                    }
-                }
-            }
-        }
-    }
-}
-#[test]
-fn apng_rgba_matrix_covers_both_default_image_layouts() {
-    inventory_guard();
-    for container in [Container::IncludedDefault, Container::SeparateDefault] {
+fn check_layout(color: u8, depth: u8, container: Container) {
+    for &alpha in transparency(color) {
         for interlaced in [false, true] {
             for filter in 0..=4 {
                 for (width, height) in [(1, 1), (9, 9)] {
                     check(
                         Vector {
-                            color: 6,
-                            depth: 8,
-                            alpha: "intrinsic",
+                            color,
+                            depth,
+                            alpha,
                             interlaced,
                             width,
                             height,
@@ -675,6 +664,31 @@ fn apng_rgba_matrix_covers_both_default_image_layouts() {
                         container,
                     );
                 }
+            }
+        }
+    }
+}
+#[test]
+fn static_sample_matrix_covers_all_declared_layouts() {
+    inventory_guard();
+    for &(_, color, depth) in LAYOUTS {
+        check_layout(color, depth, Container::Static);
+    }
+}
+#[test]
+fn apng_rgba_matrix_covers_both_default_image_layouts() {
+    inventory_guard();
+    for container in [Container::IncludedDefault, Container::SeparateDefault] {
+        check_layout(6, 8, container);
+    }
+}
+#[test]
+fn apng_non_rgba8_matrix_covers_both_default_image_layouts() {
+    inventory_guard();
+    for container in [Container::IncludedDefault, Container::SeparateDefault] {
+        for &(_, color, depth) in LAYOUTS {
+            if (color, depth) != (6, 8) {
+                check_layout(color, depth, container);
             }
         }
     }
