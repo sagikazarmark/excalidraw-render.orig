@@ -50,67 +50,71 @@ impl RenderSession {
                 self.memory_failure(request, "format_planning", "pdf_raster_fallback_surfaces")
             })?;
         for closure in plan.raster_closures() {
-            let pixels = closure.pixel_width.saturating_mul(closure.pixel_height);
-            let limits = request.resource_limits();
-            let delta = ResourceDelta {
-                rasterized_pixels: pixels,
-                total_work_units: pixels,
-                ..ResourceDelta::default()
-            };
-            let context = ResourceContext::new(
-                ResourcePhase::ProjectionAndFallback,
-                "pdf_raster_fallback",
-                &closure.json_pointer,
-            )
-            .with_element_id(Some(&closure.element_id))
-            .with_local_owner(Some(&closure.element_id));
-            if self.meter.would_cross_fatal(delta) {
-                self.transact(request, context, delta)?;
-                return Err(self.internal_failure(
-                    request.format(),
-                    "fatal PDF fallback preflight committed unexpectedly",
-                    "/elements",
-                ));
-            }
-            if closure.pixel_width > u64::from(limits.max_raster_dimension())
-                || closure.pixel_height > u64::from(limits.max_raster_dimension())
-            {
-                self.preflight_local_rejection(request, context, delta)?;
-                return Err(self.pdf_raster_surface_failure(
-                    request,
-                    closure,
-                    "max_raster_dimension",
-                    u64::from(limits.max_raster_dimension()),
-                    closure.pixel_width.max(closure.pixel_height),
-                    ValueKind::Dimension,
-                ));
-            }
-            if pixels > limits.max_raster_surface_pixels() {
-                self.preflight_local_rejection(request, context, delta)?;
-                return Err(self.pdf_raster_surface_failure(
-                    request,
-                    closure,
-                    "max_raster_surface_pixels",
-                    limits.max_raster_surface_pixels(),
-                    pixels,
-                    ValueKind::Pixels,
-                ));
-            }
-            self.transact(request, context, delta)?;
-            let bytes = 256_u64.saturating_add(pixels.saturating_mul(4));
-            self.acquire_working(
-                request,
-                ResourceContext::new(
+            let mut closure_bytes = 0_u64;
+            for (width, height) in closure.surface_dimensions() {
+                let pixels = width.saturating_mul(height);
+                let limits = request.resource_limits();
+                let delta = ResourceDelta {
+                    rasterized_pixels: pixels,
+                    total_work_units: pixels,
+                    ..ResourceDelta::default()
+                };
+                let context = ResourceContext::new(
                     ResourcePhase::ProjectionAndFallback,
-                    "pdf_raster_fallback_surface",
+                    "pdf_raster_fallback",
                     &closure.json_pointer,
                 )
                 .with_element_id(Some(&closure.element_id))
-                .with_local_owner(Some(&closure.element_id))
-                .with_record(ResourceRecordKind::RasterColorSurface),
-                bytes,
-            )?;
-            surface_working.push(bytes);
+                .with_local_owner(Some(&closure.element_id));
+                if self.meter.would_cross_fatal(delta) {
+                    self.transact(request, context, delta)?;
+                    return Err(self.internal_failure(
+                        request.format(),
+                        "fatal PDF fallback preflight committed unexpectedly",
+                        "/elements",
+                    ));
+                }
+                if width > u64::from(limits.max_raster_dimension())
+                    || height > u64::from(limits.max_raster_dimension())
+                {
+                    self.preflight_local_rejection(request, context, delta)?;
+                    return Err(self.pdf_raster_surface_failure(
+                        request,
+                        closure,
+                        "max_raster_dimension",
+                        u64::from(limits.max_raster_dimension()),
+                        width.max(height),
+                        ValueKind::Dimension,
+                    ));
+                }
+                if pixels > limits.max_raster_surface_pixels() {
+                    self.preflight_local_rejection(request, context, delta)?;
+                    return Err(self.pdf_raster_surface_failure(
+                        request,
+                        closure,
+                        "max_raster_surface_pixels",
+                        limits.max_raster_surface_pixels(),
+                        pixels,
+                        ValueKind::Pixels,
+                    ));
+                }
+                self.transact(request, context, delta)?;
+                let bytes = 256_u64.saturating_add(pixels.saturating_mul(4));
+                self.acquire_working(
+                    request,
+                    ResourceContext::new(
+                        ResourcePhase::ProjectionAndFallback,
+                        "pdf_raster_fallback_surface",
+                        &closure.json_pointer,
+                    )
+                    .with_element_id(Some(&closure.element_id))
+                    .with_local_owner(Some(&closure.element_id))
+                    .with_record(ResourceRecordKind::RasterColorSurface),
+                    bytes,
+                )?;
+                closure_bytes = closure_bytes.saturating_add(bytes);
+            }
+            surface_working.push(closure_bytes);
         }
         for closure in plan.raster_closures() {
             let diagnostic = pdf_raster_fallback_diagnostic(closure).map_err(|_| {

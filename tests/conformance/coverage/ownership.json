@@ -4373,9 +4373,30 @@
     {
       "id": "diagnostic:pdf.raster-fallback:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Existing PDF fallback tests cover isolated closure and forbid behavior; consolidate exact affected IDs, bounds, reason/family details and source order for all fallback families."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/pdf_raster_fallback_contract.rs",
+            "sha256": "6995b678c1bfa84657783cc2a0f8291225c3f118ae7de6679e514418849cdfea"
+          },
+          "function": "raster_fallback_contract_covers_families_occurrences_geometry_and_failures",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "pdf_raster_fallback_contract::raster_fallback_contract_covers_families_occurrences_geometry_and_failures",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Complete authored PDF reports cover pixel-domain families, CSS/inline provenance, authority, nested and reused occurrences, merged dependencies, source ordering, frame replay and silence. Independent raster-plane oracles verify admitted input/output grids, crop, scale, rotation, tiny geometry, transformed and repeating resources; full Forbid/unisolatable failures and diagnostic prefixes are asserted. Existing qualified artifact and viewer/structural gates remain valid."
       }
     },
     {

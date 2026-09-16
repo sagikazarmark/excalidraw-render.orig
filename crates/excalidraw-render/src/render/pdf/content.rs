@@ -7,7 +7,6 @@
 //! transparency-group form when they carry opacity.
 
 use std::fmt::Write as _;
-use std::sync::Arc;
 
 use crate::color::CanonicalColor;
 use crate::portable_math::sin_cos;
@@ -556,6 +555,7 @@ impl PdfPlan {
                     content.push_str("Q\n");
                 }
                 PdfElementKind::Image {
+                    source_order: _,
                     source,
                     asset,
                     dark_mode_filter: _,
@@ -576,7 +576,7 @@ impl PdfPlan {
                                 if asset.svg_effects.is_empty() {
                                     candidate.asset.identity == asset.identity
                                 } else {
-                                    Arc::ptr_eq(&candidate.asset, asset)
+                                    candidate.source_index == source.source_index()
                                 }
                             }),
                         )

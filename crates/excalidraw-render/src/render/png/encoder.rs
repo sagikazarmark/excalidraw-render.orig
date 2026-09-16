@@ -38,7 +38,7 @@ pub(crate) struct PngIdatStream {
 }
 
 /// Validates the raster against its dimensions and deflates its scanlines.
-pub(super) fn compress_rgba(
+pub(in crate::render) fn compress_rgba(
     width: u32,
     height: u32,
     rgba: &[u8],
@@ -379,7 +379,9 @@ fn apply_scanline_filter(
     }
 }
 
-pub(super) fn canonicalize_straight_alpha(rgba: &mut [u8]) -> Result<(), FormatEncodeError> {
+pub(in crate::render) fn canonicalize_straight_alpha(
+    rgba: &mut [u8],
+) -> Result<(), FormatEncodeError> {
     for pixel in rgba.as_chunks_mut::<4>().0 {
         let (channels, alpha) = pixel.split_at_mut(3);
         let alpha = alpha.first().copied().ok_or_else(|| {

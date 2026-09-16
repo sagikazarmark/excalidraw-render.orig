@@ -16,7 +16,9 @@
 mod content;
 mod fonts;
 mod nested_svg;
+mod raster;
 mod raster_preflight;
+mod raster_svg;
 mod streams;
 
 use fonts::embedded_font_name;
@@ -98,6 +100,7 @@ pub(super) struct PdfPlan {
     svg_trees: SvgTreeCache,
     elements: Vec<PdfElement>,
     raster_closures: Vec<PdfRasterClosure>,
+    svg_resources: Vec<PdfSvgResource>,
 }
 
 /// One raster image XObject: an asset embedded once however many elements
@@ -111,6 +114,8 @@ struct PdfImageResource {
 
 #[derive(Debug)]
 pub(super) struct PdfRasterClosure {
+    pub(super) source_index: usize,
+    raster: raster::RasterPlacement,
     pub(super) element_id: String,
     pub(super) json_pointer: String,
     pub(super) source_order: u64,
@@ -122,10 +127,24 @@ pub(super) struct PdfRasterClosure {
     pub(super) unisolatable: bool,
 }
 
+impl PdfRasterClosure {
+    fn shares_input_grid(&self) -> bool {
+        self.raster.input_x == self.raster.output_x
+            && self.raster.input_y == self.raster.output_y
+            && self.raster.input_width == self.pixel_width
+            && self.raster.input_height == self.pixel_height
+    }
+    fn surface_dimensions(&self) -> impl Iterator<Item = (u64, u64)> {
+        std::iter::once((self.raster.input_width, self.raster.input_height))
+            .chain((!self.shares_input_grid()).then_some((self.pixel_width, self.pixel_height)))
+    }
+}
+
 #[derive(Debug)]
 struct PdfSvgResource {
     asset: Arc<ResolvedImageAsset>,
-    raster_scale: f64,
+    source_index: usize,
+    prepared: Option<raster::PreparedSvg>,
 }
 
 /// One PDF plan element: the shared header in logical units, projected to
@@ -169,6 +188,7 @@ enum PdfElementKind {
         color: CanonicalColor,
     },
     Image {
+        source_order: u64,
         source: NormalizedElementSource,
         asset: Arc<ResolvedImageAsset>,
         /// The dark-mode filter official SVG applies to this image, which PDF
@@ -225,6 +245,7 @@ impl PdfPlan {
                 subject: "pdf_elements",
             })?;
         for element in scene.elements {
+            let source_order = element.source_order();
             match element {
                 ResolvedElement::Outline(outline) => {
                     if outline.source.id().is_empty() {
@@ -322,6 +343,7 @@ impl PdfPlan {
                         width: image.width,
                         height: image.height,
                         kind: PdfElementKind::Image {
+                            source_order,
                             source: image.source,
                             asset: image.asset,
                             dark_mode_filter: image.dark_mode_filter,
@@ -349,14 +371,7 @@ impl PdfPlan {
                 }
             }
         }
-        let raster_closures = collect_raster_closures(
-            &elements,
-            svg_trees,
-            scale,
-            scene.logical_width,
-            scene.logical_height,
-        )?;
-        Ok(Self {
+        let mut plan = Self {
             logical_width: scene.logical_width,
             logical_height: scene.logical_height,
             scale,
@@ -370,8 +385,18 @@ impl PdfPlan {
             fallback_font_sfnt: scene.fallback_font_sfnt,
             official_fonts: scene.official_fonts,
             elements,
-            raster_closures,
-        })
+            raster_closures: Vec::new(),
+            svg_resources: Vec::new(),
+        };
+        plan.svg_resources = plan.build_svg_resources()?;
+        plan.raster_closures = collect_raster_closures(
+            &plan.elements,
+            &plan.svg_resources,
+            scale,
+            plan.logical_width,
+            plan.logical_height,
+        )?;
+        Ok(plan)
     }
 
     pub(super) fn raster_closures(&self) -> &[PdfRasterClosure] {
@@ -390,8 +415,8 @@ impl PdfPlan {
     pub(super) fn encode(&self) -> Result<Vec<u8>, FormatEncodeError> {
         let opacity_resources = self.opacity_resources()?;
         let image_resources = self.image_resources()?;
-        let svg_resources = self.svg_resources()?;
-        let raw_svg_chunks = svg_chunks(&svg_resources, &self.svg_trees)?;
+        let svg_resources = &self.svg_resources;
+        let raw_svg_chunks = svg_chunks(svg_resources, &self.svg_trees, &self.raster_closures)?;
         let fallback_mappings = self.fallback_glyph_mappings()?;
         let official_mappings = self.official_glyph_mappings()?;
         // Every renderer-written stream is deflated before the output buffer
@@ -403,7 +428,7 @@ impl PdfPlan {
             self.encode_content(
                 &opacity_resources,
                 &image_resources,
-                &svg_resources,
+                svg_resources,
                 &fallback_mappings,
                 &official_mappings,
             )?
@@ -1173,7 +1198,7 @@ impl PdfPlan {
         Ok(resources)
     }
 
-    fn svg_resources(&self) -> Result<Vec<PdfSvgResource>, FormatEncodeError> {
+    fn build_svg_resources(&self) -> Result<Vec<PdfSvgResource>, FormatEncodeError> {
         let mut resources = Vec::new();
         resources
             .try_reserve_exact(self.elements.len())
@@ -1182,30 +1207,35 @@ impl PdfPlan {
                 subject: "pdf_svg_resources",
             })?;
         for element in &self.elements {
-            let PdfElementKind::Image { asset, .. } = &element.kind else {
+            let PdfElementKind::Image { asset, source, .. } = &element.kind else {
                 continue;
             };
             if asset.sanitized_svg.is_none() {
                 continue;
             }
-            let has_effects = !asset.svg_effects.is_empty();
+            let tree = self
+                .svg_trees
+                .get(&asset.identity)
+                .ok_or_else(pdf_size_error)?;
+            let has_effects = !asset.svg_effects.is_empty() || !tree.filters().is_empty();
             if resources.iter().any(|candidate: &PdfSvgResource| {
                 if has_effects {
-                    Arc::ptr_eq(&candidate.asset, asset)
+                    candidate.source_index == source.source_index()
                 } else {
                     candidate.asset.identity == asset.identity
                 }
             }) {
                 continue;
             }
-            let raster_scale = if has_effects {
-                (width_scale(element) * self.scale).max(1.0)
+            let prepared = if has_effects {
+                Some(raster::PreparedSvg::new(tree)?)
             } else {
-                1.0
+                None
             };
             resources.push(PdfSvgResource {
                 asset: Arc::clone(asset),
-                raster_scale,
+                source_index: source.source_index(),
+                prepared,
             });
         }
         resources.sort_by_key(|resource| resource.asset.identity);
@@ -1580,24 +1610,6 @@ fn begin_object(
 
 fn pdf_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("PDF plan exceeds serializer capacity".to_owned())
-}
-
-fn width_scale(element: &PdfElement) -> f64 {
-    let PdfElementKind::Image {
-        asset, source_rect, ..
-    } = &element.kind
-    else {
-        return 1.0;
-    };
-    let source_width = source_rect
-        .width
-        .min(f64::from(asset.width))
-        .max(f64::EPSILON);
-    let source_height = source_rect
-        .height
-        .min(f64::from(asset.height))
-        .max(f64::EPSILON);
-    (element.width / source_width).max(element.height / source_height)
 }
 
 /// The rectangle of the element's space the reference leaves visible, as

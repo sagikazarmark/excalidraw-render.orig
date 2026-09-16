@@ -18,6 +18,12 @@ The selected boundary is therefore:
   effects are admitted only as isolated closures; ordinary content is never
   broadened into raster fallback.
 
+The closure plan also drives rasterization and embedding (ADR-0009). The PDF
+adapter renders admitted input/output grids before invoking svg2pdf, whose input
+then contains native content and already-rendered closure PNGs. The internal
+normalized-SVG serializer, occurrence-local pattern/mask expansion, and redundant
+image-wrapper compaction must be qualified together when either dependency moves.
+
 `project-operations.excalidraw` and its structural expectation gate the complete
 native matrix through qpdf. Every image is explicitly classified as source
 content. `isolated-fallback-structure.json` separately classifies the exact

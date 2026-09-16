@@ -18,9 +18,11 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **928** | |
 
-821 primary owners are proposed (118 case labels, the AVIF rejection test,
-97 diagnostic/format obligations and all 605 current surface-field/format obligations).
-107 obligations remain explicit gaps. The six compatibility-recovery assignments
+822 primary owners are proposed (118 case labels, the AVIF rejection test,
+98 diagnostic/format obligations and all 605 current surface-field/format obligations).
+106 obligations remain explicit gaps. The PDF raster-fallback assignment and
+shared-plan adapter are assessed in [the PDF audit](../../../docs/research/pdf-raster-fallback-ownership.md).
+The six compatibility-recovery assignments
 are assessed in [the compatibility audit](../../../docs/research/compatibility-recovery-ownership.md);
 the three generic-fallback entries await explicit exclusion approval bound to
 [the reachability proof](../../../docs/research/known-element-replacement-reachability.md).
@@ -60,7 +62,7 @@ Admission/identity additions are assessed
 in [the admission audit](../../../docs/research/admission-identity-ownership.md).
 The earlier surface assignments are assessed in
 [the surface ownership audit](../../../docs/research/surface-field-ownership.md).
-The diagnostic audit retains 25 of its 122 obligations as gaps with specific
+The diagnostic audit retains 24 of its 122 obligations as gaps with specific
 missing assertions or branches; see [the per-code audit](../../../docs/research/diagnostic-ownership.md).
 These counts are **not a coverage percentage**:
 codec facets still need expansion into the full admitted-profile matrix, and

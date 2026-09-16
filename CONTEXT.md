@@ -120,6 +120,18 @@ _Avoid_: Nonempty output, any valid image
 A PDF static export that preserves ordinary Excalidraw geometry as PDF vectors and text as selectable text. Inherently raster source content remains raster; any additional rasterization is diagnosed and limited to the smallest unsupported nested-image or effect subtree.
 _Avoid_: PDF screenshot, all-vector PDF
 
+**PDF raster closure**:
+The smallest isolated nested-SVG effect occurrence that requires pixel-domain rendering, together with its dependent inputs and source causes. Appearance-equivalent native ancestor operations remain outside it.
+_Avoid_: Rasterized element, page raster
+
+**Closure input grid**:
+The admitted device-pixel region needed to evaluate a PDF raster closure without losing its filter inputs or effect bleed. It can exceed the region visible after cropping and clipping.
+_Avoid_: Uncharged scratch surface, source image size
+
+**Closure output grid**:
+The clipped, floor/ceil-aligned final-device region emitted for a PDF raster closure. Its pixel dimensions are the dimensions reported for that occurrence.
+_Avoid_: Estimated raster dimensions, backend-selected bounds
+
 **Ordinary scene text**:
 The authored text of a live source text element that survives local recovery and participates in one static-export target, canonically taken from its compatibility-normalized `originalText`. Omitted text, renderer-generated labels, and text inside nested SVG images are not ordinary scene text.
 _Avoid_: Rendered text, all SVG text

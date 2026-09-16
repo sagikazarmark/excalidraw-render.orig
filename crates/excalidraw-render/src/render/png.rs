@@ -19,13 +19,14 @@ mod encoder;
 mod paint;
 
 pub(super) use encoder::PngIdatStream;
+pub(super) use encoder::{canonicalize_straight_alpha, compress_rgba};
 
 use coverage::{
     conservative_coverage_area, conservative_fallback_coverage_area,
     conservative_freedraw_coverage_area, conservative_text_coverage_area, fallback_coverage_bounds,
     frame_clip_coverage_area, frame_clip_coverage_bounds, label_mask_coverage_area,
 };
-use encoder::{canonicalize_straight_alpha, compress_rgba, png_size_error};
+use encoder::png_size_error;
 use paint::{
     apply_theme_filter, downsample_rgba, fallback_paths, finite_f32, label_path,
     paint_rough_drawing, solid_paint, svg_path, tiny_skia_freedraw_path, tiny_skia_path,

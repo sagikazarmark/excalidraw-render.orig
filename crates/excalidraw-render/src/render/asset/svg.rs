@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+mod css;
 use std::sync::Arc;
 
 use base64::Engine as _;
@@ -32,6 +33,7 @@ pub(crate) struct MediaClaim {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct EffectCause {
+    pub(crate) css: Option<(u64, u64)>,
     pub(crate) slots: Vec<(u64, u64)>,
     pub(crate) node_ordinal: u64,
     pub(crate) attribute: Option<(u64, String)>,
@@ -174,7 +176,7 @@ fn sanitize_at(
     {
         return Err(ResolveError::SvgDecodeFailed.into());
     }
-    let mut effects = discover_effects(&document, &source_nodes);
+    let css = css::Sheet::new(&document, &source_nodes, format)?;
     let nodes = if source_nodes.is_empty() {
         document
             .descendants()
@@ -211,7 +213,9 @@ fn sanitize_at(
         .saturating_add(u64::try_from(attributes).unwrap_or(u64::MAX))
         .saturating_add(u64::try_from(local_references).unwrap_or(u64::MAX));
     let source_len = u64::try_from(bytes.len()).unwrap_or(u64::MAX);
-    let work_units = source_len.saturating_add(semantic_records.saturating_mul(16));
+    let work_units = source_len
+        .saturating_add(semantic_records.saturating_mul(16))
+        .saturating_add(css.work_units(&document));
     if work_units > limits.max_asset_work_units() {
         if depth != 0 {
             transact(IntrinsicTransaction::PreflightNested {
@@ -253,12 +257,15 @@ fn sanitize_at(
             .saturating_mul(64),
         );
     let mut serialized = String::new();
+    let css = css.resolve(&document)?;
+    let mut effects = discover_effects(&document, &source_nodes, &css);
     let mut node_ordinal = 0;
     serialize_node(
         root,
         true,
         &mut node_ordinal,
         &source_nodes,
+        &css,
         &mut serialized,
         &mut removals,
         &mut failures,
@@ -708,6 +715,7 @@ fn serialize_node(
     is_root: bool,
     node_ordinal: &mut u64,
     source_nodes: &[SourceNode],
+    css: &css::Resolved,
     output: &mut String,
     removals: &mut Vec<Removal>,
     failures: &mut Vec<Failure>,
@@ -761,7 +769,8 @@ fn serialize_node(
         output.push_str(" xmlns=\"http://www.w3.org/2000/svg\"");
     }
     if format == OutputFormat::Pdf
-        && filter_reference(node).is_some()
+        && (filter_reference(node).is_some()
+            || css.get(node).is_some_and(|(_, filter)| filter.is_some()))
         && node.attribute("id").is_none()
     {
         output.push_str(" id=\"__excalidraw_effect_");
@@ -910,6 +919,9 @@ fn serialize_node(
         } else {
             None
         };
+        if css.enabled && attribute_name == "style" {
+            continue;
+        }
         let value = nested_value.as_deref().unwrap_or(value);
         write_attribute(
             output,
@@ -920,6 +932,19 @@ fn serialize_node(
             },
             value,
         )?;
+    }
+    if let Some((style, _)) = css.get(node) {
+        if !style.is_empty() {
+            write_attribute(output, "style", style)?;
+        }
+    }
+    if css.enabled && name == "style" {
+        output
+            .try_reserve(2)
+            .map_err(|_| ResolutionFailure::Memory)?;
+        output.push_str("/>");
+        count_descendants(node, node_ordinal);
+        return Ok(());
     }
     output
         .try_reserve(1)
@@ -932,6 +957,7 @@ fn serialize_node(
                 false,
                 node_ordinal,
                 source_nodes,
+                css,
                 output,
                 removals,
                 failures,
@@ -1617,16 +1643,32 @@ fn unsafe_attribute(element_name: &str, name: &str, namespace: Option<&str>, val
 fn discover_effects(
     document: &roxmltree::Document<'_>,
     source_nodes: &[SourceNode],
+    css: &css::Resolved,
 ) -> Vec<Effect> {
     let mut effects = Vec::new();
     for node in document.descendants().filter(|node| node.is_element()) {
-        let Some((attribute_ordinal, attribute_name, filter_value)) = filter_reference(node) else {
+        let direct = if css.enabled {
+            None
+        } else {
+            filter_reference(node).map(|(ordinal, name, value)| css::Filter {
+                attribute: Some((ordinal, name)),
+                value,
+                css: None,
+            })
+        };
+        let reference = if css.enabled {
+            css.get(node).and_then(|(_, filter)| filter)
+        } else {
+            direct.as_ref()
+        };
+        let Some(reference) = reference else {
             continue;
         };
-        let Some(filter_id) = local_url_target(&filter_value) else {
+        let filter_value = &reference.value;
+        let Some(filter_id) = local_url_target(filter_value) else {
             continue;
         };
-        let Some(filter) = referenced_filter(node, &filter_value) else {
+        let Some(filter) = referenced_filter(node, filter_value) else {
             continue;
         };
         let primitives = filter
@@ -1644,17 +1686,28 @@ fn discover_effects(
         let node_ordinal = source_node_ordinal(document, source_nodes, node);
         let mut causes = Vec::new();
         causes.push(EffectCause {
+            css: None,
             slots: Vec::new(),
             node_ordinal,
-            attribute: Some((
-                u64::try_from(attribute_ordinal).unwrap_or(u64::MAX),
-                attribute_name,
-            )),
+            attribute: reference
+                .attribute
+                .as_ref()
+                .map(|(ordinal, name)| (*ordinal as u64, name.clone())),
             effect_input: false,
         });
+        if let Some((style, rule, declaration)) = reference.css {
+            causes.push(EffectCause {
+                slots: Vec::new(),
+                node_ordinal: style,
+                attribute: None,
+                effect_input: false,
+                css: Some((rule, declaration)),
+            });
+        }
         for primitive in &primitives {
             let primitive_ordinal = source_node_ordinal(document, source_nodes, *primitive);
             causes.push(EffectCause {
+                css: None,
                 slots: Vec::new(),
                 node_ordinal: primitive_ordinal,
                 attribute: None,
@@ -1663,6 +1716,7 @@ fn discover_effects(
             for (attribute_ordinal, attribute) in primitive.attributes().enumerate() {
                 if matches!(attribute.name(), "in" | "in2") {
                     causes.push(EffectCause {
+                        css: None,
                         slots: Vec::new(),
                         node_ordinal: primitive_ordinal,
                         attribute: Some((
