@@ -15,7 +15,7 @@ use crate::normalization::NormalizedElementSource;
 use super::super::geometry::{
     Path, PathOperation, Point, FRAME_OUTLINE_STROKE_WIDTH, FRAME_RADIUS,
 };
-use super::super::metadata::ArtifactMetadata;
+use super::super::metadata::{operation, ArtifactMetadata, Stage};
 use super::super::number_format::{ecmascript_number, push_rough_number, push_svg_number};
 use super::super::resolve::{
     decoration_fill_color, decoration_stroke_style, ResolvedClip, StrokeStyle,
@@ -336,17 +336,23 @@ impl SvgPlan {
         let manifest = self.metadata.as_ref().and_then(ArtifactMetadata::manifest);
         svg.push_str("<!-- svg-source:excalidraw --><metadata>");
         if let Some(wrapper) = scene_wrapper {
-            svg.push_str(concat!(
-                "<!-- payload-type:application/vnd.excalidraw+json -->",
-                "<!-- payload-version:2 --><!-- payload-start -->"
-            ));
-            push_base64(svg, wrapper)?;
-            svg.push_str("<!-- payload-end -->");
+            operation(Stage::SceneEmbedding, || {
+                svg.push_str(concat!(
+                    "<!-- payload-type:application/vnd.excalidraw+json -->",
+                    "<!-- payload-version:2 --><!-- payload-start -->"
+                ));
+                push_base64(svg, wrapper)?;
+                svg.push_str("<!-- payload-end -->");
+                Ok(())
+            })?;
         }
         if let Some(manifest) = manifest {
-            svg.push_str("<excalidraw-render:manifest xmlns:excalidraw-render=\"urn:excalidraw-render:artifact-manifest:1\">");
-            push_escaped_text(svg, manifest);
-            svg.push_str("</excalidraw-render:manifest>");
+            operation(Stage::ManifestEmbedding, || {
+                svg.push_str("<excalidraw-render:manifest xmlns:excalidraw-render=\"urn:excalidraw-render:artifact-manifest:1\">");
+                push_escaped_text(svg, manifest);
+                svg.push_str("</excalidraw-render:manifest>");
+                Ok(())
+            })?;
         }
         svg.push_str("</metadata><defs>");
         for clip in frame_clip_definitions(&self.elements)? {

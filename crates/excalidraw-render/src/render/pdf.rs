@@ -30,7 +30,6 @@ use std::sync::Arc;
 
 use sha2::{Digest as _, Sha256};
 
-use crate::diagnostic_registry::MetadataFailure;
 use crate::normalization::NormalizedElementSource;
 use crate::portable_math::{cube, sin_cos};
 use crate::{
@@ -449,12 +448,21 @@ impl PdfPlan {
             .and_then(ArtifactMetadata::manifest)
             .map(xmp_metadata)
             .transpose()
-            .map_err(|_| FormatEncodeError::Metadata(MetadataFailure::ManifestEmbedding))?;
+            .map_err(|error| {
+                super::metadata::metadata_failure(
+                    error,
+                    crate::diagnostic_registry::MetadataFailure::ManifestEmbedding,
+                )
+            })?;
         let embedded_scene = self
             .metadata
             .as_ref()
             .and_then(ArtifactMetadata::canonical_scene)
-            .map(|scene| deflate_stream(scene, "pdf_embedded_scene_stream"))
+            .map(|scene| {
+                super::metadata::operation(super::metadata::Stage::PdfSceneCompression, || {
+                    deflate_stream(scene, "pdf_embedded_scene_stream")
+                })
+            })
             .transpose()?;
         let attachment_object_count = usize::from(embedded_scene.is_some()) * 2;
         let mut link_count = 0_usize;
@@ -812,37 +820,43 @@ impl PdfPlan {
             .map_err(write_error)?;
         }
         if let (Some(metadata_object), Some(xmp)) = (metadata_object, xmp.as_ref()) {
-            begin_object(&mut pdf, &mut offsets, metadata_object)?;
-            write!(
-                pdf,
-                "<<\n/Type /Metadata\n/Subtype /XML\n/Length {}\n>>\nstream\n",
-                xmp.len()
-            )
-            .map_err(write_error)?;
-            pdf.extend_from_slice(xmp.as_bytes());
-            pdf.extend_from_slice(b"\nendstream\nendobj\n");
+            super::metadata::operation(super::metadata::Stage::ManifestEmbedding, || {
+                begin_object(&mut pdf, &mut offsets, metadata_object)?;
+                write!(
+                    pdf,
+                    "<<\n/Type /Metadata\n/Subtype /XML\n/Length {}\n>>\nstream\n",
+                    xmp.len()
+                )
+                .map_err(write_error)?;
+                pdf.extend_from_slice(xmp.as_bytes());
+                pdf.extend_from_slice(b"\nendstream\nendobj\n");
+                Ok(())
+            })?;
         }
         if let (Some(scene), Some(filespec)) = (embedded_scene.as_ref(), attachment_filespec_object)
         {
-            write_flate_stream_object(
-                &mut pdf,
-                &mut offsets,
-                first_attachment_object,
-                "/Type /EmbeddedFile\n/Subtype /application#2Fvnd.excalidraw+json\n",
-                scene,
-            )?;
+            super::metadata::operation(super::metadata::Stage::SceneEmbedding, || {
+                write_flate_stream_object(
+                    &mut pdf,
+                    &mut offsets,
+                    first_attachment_object,
+                    "/Type /EmbeddedFile\n/Subtype /application#2Fvnd.excalidraw+json\n",
+                    scene,
+                )?;
 
-            begin_object(&mut pdf, &mut offsets, filespec)?;
-            write!(
-                pdf,
-                concat!(
-                    "<<\n/Type /Filespec\n/F (scene.excalidraw)\n/UF (scene.excalidraw)\n",
-                    "/AFRelationship /Data\n/Desc (Canonical Excalidraw scene)\n",
-                    "/EF << /F {} 0 R /UF {} 0 R >>\n>>\nendobj\n"
-                ),
-                first_attachment_object, first_attachment_object
-            )
-            .map_err(write_error)?;
+                begin_object(&mut pdf, &mut offsets, filespec)?;
+                write!(
+                    pdf,
+                    concat!(
+                        "<<\n/Type /Filespec\n/F (scene.excalidraw)\n/UF (scene.excalidraw)\n",
+                        "/AFRelationship /Data\n/Desc (Canonical Excalidraw scene)\n",
+                        "/EF << /F {} 0 R /UF {} 0 R >>\n>>\nendobj\n"
+                    ),
+                    first_attachment_object, first_attachment_object
+                )
+                .map_err(write_error)?;
+                Ok(())
+            })?;
         }
         let mut link_index = 0_usize;
         for element in self.elements.iter().rev() {

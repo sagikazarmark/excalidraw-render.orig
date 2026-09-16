@@ -100,6 +100,22 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             let rationale = required_arg(&mut args, "reviewed rationale")?;
             coverage::record_test_owner(&module, &function, &rationale, &args.collect::<Vec<_>>())?;
         }
+        Some("record-library-test-owner") => {
+            let module = required_arg(&mut args, "library test module")?;
+            let function = required_arg(&mut args, "test function")?;
+            let rationale = required_arg(&mut args, "reviewed rationale")?;
+            coverage::record_library_test_owner(
+                &module,
+                &function,
+                &rationale,
+                &args.collect::<Vec<_>>(),
+            )?;
+        }
+        Some("refresh-library-test-owner-source") => {
+            let module = required_arg(&mut args, "library test module")?;
+            no_more_args(args)?;
+            coverage::refresh_library_test_owner_source(&module)?;
+        }
         Some("refresh-test-owner-source") => {
             let module = required_arg(&mut args, "test module")?;
             no_more_args(args)?;
@@ -392,7 +408,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
         "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
-        "conformance <inventory|ownership-catalog|seed-ownership|verify-ownership|record-test-owner|refresh-test-owner-source|ownership-approval-subject|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
+        "conformance <inventory|ownership-catalog|seed-ownership|verify-ownership|record-test-owner|record-library-test-owner|refresh-test-owner-source|refresh-library-test-owner-source|ownership-approval-subject|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"

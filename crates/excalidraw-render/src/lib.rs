@@ -11,6 +11,8 @@ mod compatibility;
 mod diagnostic_registry;
 mod font_metadata;
 mod frame;
+#[cfg(test)]
+mod metadata_failure_contract;
 mod normalization;
 mod outcome;
 mod portable_math;

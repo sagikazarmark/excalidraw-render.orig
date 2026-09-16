@@ -18,14 +18,18 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **928** | |
 
-822 primary owners are proposed (118 case labels, the AVIF rejection test,
-98 diagnostic/format obligations and all 605 current surface-field/format obligations).
-106 obligations remain explicit gaps. The PDF raster-fallback assignment and
+843 primary owners are proposed (118 case labels, the AVIF rejection test,
+119 diagnostic/format obligations and all 605 current surface-field/format obligations).
+Three generic-fallback entries have approved exclusions, giving **846
+assigned/excluded and 82 explicit gaps**. The 21 metadata failure assignments use
+the explicit library-test adapter and are assessed in [the metadata audit](../../../docs/research/metadata-failure-ownership.md).
+The PDF raster-fallback assignment and
 shared-plan adapter are assessed in [the PDF audit](../../../docs/research/pdf-raster-fallback-ownership.md).
 The six compatibility-recovery assignments
 are assessed in [the compatibility audit](../../../docs/research/compatibility-recovery-ownership.md);
-the three generic-fallback entries await explicit exclusion approval bound to
-[the reachability proof](../../../docs/research/known-element-replacement-reachability.md).
+the three generic-fallback exclusions bind
+[the reachability proof](../../../docs/research/known-element-replacement-reachability.md)
+under [scoped #85 approval](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166).
 The eight nested SVG/link diagnostic
 assignments are assessed in [the SVG/link audit](../../../docs/research/svg-link-diagnostic-ownership.md).
 All 30 resource diagnostic/format obligations
@@ -62,8 +66,8 @@ Admission/identity additions are assessed
 in [the admission audit](../../../docs/research/admission-identity-ownership.md).
 The earlier surface assignments are assessed in
 [the surface ownership audit](../../../docs/research/surface-field-ownership.md).
-The diagnostic audit retains 24 of its 122 obligations as gaps with specific
-missing assertions or branches; see [the per-code audit](../../../docs/research/diagnostic-ownership.md).
+All 122 current diagnostic/format obligations have a disposition: 119 proposed
+test owners and three approved exclusions; see [the per-code audit](../../../docs/research/diagnostic-ownership.md).
 These counts are **not a coverage percentage**:
 codec facets still need expansion into the full admitted-profile matrix, and
 specialized PDF/vector/fuzz owners still need adapters and reviewed mappings.
@@ -127,6 +131,9 @@ cargo run --locked -p xtask -- conformance verify-ownership
 cargo run --locked -p xtask -- conformance record-test-owner MODULE FUNCTION RATIONALE ID...
 # Refresh consuming-test location hashes in an unapproved ledger after review:
 cargo run --locked -p xtask -- conformance refresh-test-owner-source MODULE
+# Explicit root library tests using private test-only operation seams:
+cargo run --locked -p xtask -- conformance record-library-test-owner MODULE FUNCTION RATIONALE ID...
+cargo run --locked -p xtask -- conformance refresh-library-test-owner-source MODULE
 # Machine-readable all-gap template, for explicit reviewed migrations only:
 cargo run --locked -p xtask -- conformance seed-ownership > target/ownership-template.json
 # Both fail until the ledger is complete (closure also requires approval):
@@ -148,15 +155,25 @@ Dispositions are strict tagged objects:
 - `owned` test adapter: an exact non-ignored `#[test]` function in a compiled
   renderer `fast` integration-test module, source digest, binary and complete
   `cargo test --locked --release -p excalidraw-render --test fast MODULE::TEST -- --exact`
-  argument list. V1 deliberately rejects other layouts until an explicit adapter
-  validates their executable selection. Anchors establish executable presence;
+  argument list. Other layouts require an explicit adapter that validates their
+  executable selection. Anchors establish executable presence;
   the ordinary test tier executes them, and maintainer review establishes whether
   the assertions actually meet the named criterion.
+- `owned` library-test adapter: `kind: test`, `binary: lib`, a root renderer
+  `src/MODULE.rs` registered exactly as `#[cfg(test)] mod MODULE;` in `src/lib.rs`,
+  a source digest, and the exact
+  `cargo test --locked --release -p excalidraw-render --lib MODULE::TEST -- --exact`
+  command. Selected functions are unconditional built-in tests without ignore or
+  feature/target guards. Parsed Cargo manifests must retain the standard library
+  test harness, default library path and explicit workspace membership without
+  exclusions. Disabled, redirected and procedural-macro targets are rejected.
+  This adapter supports private operation-failure contracts while keeping test
+  controls out of the production API; see [ADR-0010](../../../docs/adr/0010-test-metadata-operation-failures-through-private-library-seams.md).
 - `gap`: positive issue number and a concrete reason. Always blocks closure.
 - `excluded`: reason, digest-bound proof source/anchor and an existing explicit
   #85 approval binding the canonical exclusion subject (obligation + reason +
-  proof). No exclusions have been granted by this implementation. Difficulty or
-  missing evidence is a gap, not an exclusion.
+  proof). The three generic-fallback exclusions have the scoped approval linked
+  above. Difficulty or missing evidence is a gap, not an exclusion.
 
 Approval verification is offline: it checks the exact subject and scoped GitHub
 comment URL syntax, not remote comment existence or authorship. The maintainer's

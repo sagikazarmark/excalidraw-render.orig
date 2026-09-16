@@ -275,12 +275,13 @@ impl ImageFailure {
 
 /// An optional artifact-metadata operation that failed and was omitted. Each
 /// variant fixes the `metadata.*` code and the component/operation pair spec
-/// section 11.3 binds to it; the three `metadata.*` codes no variant names
-/// (provenance, diagnostic-summary and embedded-scene serialization) are
-/// registered but never produced, because the manifest serializes those
-/// components together and reports a failure as the manifest's.
+/// section 11.3 binds to it. A containing manifest operation preserves a more
+/// specific component failure rather than relabeling it as manifest failure.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum MetadataFailure {
+    ProvenanceSerialization,
+    DiagnosticSummarySerialization,
+    SceneSerialization,
     SceneCompression,
     SceneEmbedding,
     ManifestSerialization,
@@ -290,6 +291,13 @@ pub(crate) enum MetadataFailure {
 impl MetadataFailure {
     pub(crate) const fn code(self) -> DiagnosticCode {
         match self {
+            Self::ProvenanceSerialization => {
+                DiagnosticCode::METADATA_PROVENANCE_SERIALIZATION_FAILED
+            }
+            Self::DiagnosticSummarySerialization => {
+                DiagnosticCode::METADATA_DIAGNOSTIC_SUMMARY_SERIALIZATION_FAILED
+            }
+            Self::SceneSerialization => DiagnosticCode::METADATA_SCENE_SERIALIZATION_FAILED,
             Self::SceneCompression => DiagnosticCode::METADATA_SCENE_COMPRESSION_FAILED,
             Self::SceneEmbedding => DiagnosticCode::METADATA_SCENE_EMBEDDING_FAILED,
             Self::ManifestSerialization => DiagnosticCode::METADATA_MANIFEST_SERIALIZATION_FAILED,
@@ -299,7 +307,11 @@ impl MetadataFailure {
 
     pub(crate) const fn component(self) -> MetadataComponent {
         match self {
-            Self::SceneCompression | Self::SceneEmbedding => MetadataComponent::EmbeddedScene,
+            Self::ProvenanceSerialization => MetadataComponent::Provenance,
+            Self::DiagnosticSummarySerialization => MetadataComponent::DiagnosticSummary,
+            Self::SceneSerialization | Self::SceneCompression | Self::SceneEmbedding => {
+                MetadataComponent::EmbeddedScene
+            }
             Self::ManifestSerialization | Self::ManifestEmbedding => MetadataComponent::Manifest,
         }
     }
@@ -308,7 +320,10 @@ impl MetadataFailure {
         match self {
             Self::SceneCompression => MetadataOperation::Compression,
             Self::SceneEmbedding | Self::ManifestEmbedding => MetadataOperation::Embedding,
-            Self::ManifestSerialization => MetadataOperation::Serialization,
+            Self::ProvenanceSerialization
+            | Self::DiagnosticSummarySerialization
+            | Self::SceneSerialization
+            | Self::ManifestSerialization => MetadataOperation::Serialization,
         }
     }
 }

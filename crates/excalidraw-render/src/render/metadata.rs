@@ -1,4 +1,6 @@
 mod selection;
+#[cfg(test)]
+pub(crate) mod test_faults;
 
 use std::fmt::Write as _;
 
@@ -10,6 +12,44 @@ use crate::{
 };
 
 use super::FormatEncodeError;
+
+/// The real fallible metadata operation, including the carrier-specific sites.
+/// Error classification lives here; test builds can refuse an operation at the
+/// same seam after its work, without constructing a diagnostic themselves.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum Stage {
+    ProvenanceSerialization,
+    DiagnosticSummarySerialization,
+    SceneSerialization,
+    SceneCompression,
+    PdfSceneCompression,
+    SceneWrapper,
+    ManifestSerialization,
+    SceneEmbedding,
+    ManifestEmbedding,
+}
+impl Stage {
+    fn failure(self) -> MetadataFailure {
+        match self {
+            Self::ProvenanceSerialization => MetadataFailure::ProvenanceSerialization,
+            Self::DiagnosticSummarySerialization => MetadataFailure::DiagnosticSummarySerialization,
+            Self::SceneSerialization => MetadataFailure::SceneSerialization,
+            Self::SceneCompression | Self::PdfSceneCompression => MetadataFailure::SceneCompression,
+            Self::SceneWrapper | Self::SceneEmbedding => MetadataFailure::SceneEmbedding,
+            Self::ManifestSerialization => MetadataFailure::ManifestSerialization,
+            Self::ManifestEmbedding => MetadataFailure::ManifestEmbedding,
+        }
+    }
+}
+pub(crate) fn operation<T>(
+    stage: Stage,
+    action: impl FnOnce() -> Result<T, FormatEncodeError>,
+) -> Result<T, FormatEncodeError> {
+    let result = action();
+    #[cfg(test)]
+    let result = result.and_then(|value| test_faults::after(stage).map(|()| value));
+    result.map_err(|error| metadata_failure(error, stage.failure()))
+}
 
 #[derive(Clone, Copy)]
 pub(super) enum ManifestTarget<'a> {
@@ -82,16 +122,19 @@ impl ArtifactMetadata {
     ) -> Result<Self, FormatEncodeError> {
         let canonical = selection
             .embedded_scene
-            .then(|| scene_document.canonicalized_original_bytes())
-            .transpose()
-            .map_err(|_| memory("canonical_original_scene"))?;
+            .then(|| {
+                operation(Stage::SceneSerialization, || {
+                    scene_document
+                        .canonicalized_original_bytes()
+                        .map_err(|_| memory("canonical_original_scene"))
+                })
+            })
+            .transpose()?;
         let scene_digest = canonical.as_deref().map(sha256_string).transpose()?;
         let scene = canonical
             .map(|canonical| {
-                let compressed = stored_zlib(&canonical)
-                    .map_err(|error| metadata_failure(error, MetadataFailure::SceneCompression))?;
-                let wrapper = scene_wrapper(&compressed)
-                    .map_err(|error| metadata_failure(error, MetadataFailure::SceneEmbedding))?;
+                let compressed = operation(Stage::SceneCompression, || stored_zlib(&canonical))?;
+                let wrapper = operation(Stage::SceneWrapper, || scene_wrapper(&compressed))?;
                 Ok(EmbeddedScene {
                     canonical,
                     wrapper,
@@ -106,17 +149,18 @@ impl ArtifactMetadata {
             || mandatory_notices.is_some();
         let manifest = has_manifest
             .then(|| {
-                manifest_json(
-                    profile,
-                    report,
-                    notices,
-                    scene_digest.as_deref(),
-                    selection,
-                    target,
-                )
+                operation(Stage::ManifestSerialization, || {
+                    manifest_json(
+                        profile,
+                        report,
+                        notices,
+                        scene_digest.as_deref(),
+                        selection,
+                        target,
+                    )
+                })
             })
-            .transpose()
-            .map_err(|error| metadata_failure(error, MetadataFailure::ManifestSerialization))?;
+            .transpose()?;
         let metadata = Self { manifest, scene };
         #[cfg(debug_assertions)]
         debug_assert_eq!(
@@ -434,19 +478,17 @@ fn manifest_json(
     selection: MetadataSelection,
     target: ManifestTarget<'_>,
 ) -> Result<String, FormatEncodeError> {
-    let diagnostic_capacity = report
-        .diagnostics()
-        .iter()
-        .try_fold(0_usize, |total, diagnostic| {
-            total
-                .checked_add(diagnostic.code().as_str().len())
-                .and_then(|total| total.checked_add(64))
-        })
-        .ok_or_else(metadata_size_error)?;
-    let capacity = 1_024_usize
-        .checked_add(notices.len())
-        .and_then(|capacity| capacity.checked_add(diagnostic_capacity))
-        .ok_or_else(metadata_size_error)?;
+    // Include escaped frame names as well as every selected component so none
+    // of the following pushes can grow the string through an infallible path.
+    let capacity = usize::try_from(manifest_json_len(
+        profile,
+        report,
+        notices,
+        scene_digest.is_some(),
+        selection,
+        target,
+    ))
+    .map_err(|_| metadata_size_error())?;
     let mut manifest = String::new();
     manifest
         .try_reserve_exact(capacity)
@@ -471,22 +513,27 @@ fn manifest_json(
         }
     }
     if selection.provenance {
-        manifest.push_str("{\"renderer_version\":\"");
-        manifest.push_str(env!("CARGO_PKG_VERSION"));
-        manifest.push_str("\",\"compatibility_revision\":");
-        write!(manifest, "{}", profile.compatibility_revision().get())
-            .map_err(|_| metadata_size_error())?;
-        manifest.push_str(",\"excalidraw_release\":\"");
-        manifest.push_str(profile.excalidraw_release());
-        manifest.push_str("\",\"reference_profile_digest\":\"");
-        manifest.push_str(profile.profile_digest());
-        manifest.push_str("\"}");
+        operation(Stage::ProvenanceSerialization, || {
+            manifest.push_str("{\"renderer_version\":\"");
+            manifest.push_str(env!("CARGO_PKG_VERSION"));
+            manifest.push_str("\",\"compatibility_revision\":");
+            write!(manifest, "{}", profile.compatibility_revision().get())
+                .map_err(|_| metadata_size_error())?;
+            manifest.push_str(",\"excalidraw_release\":\"");
+            manifest.push_str(profile.excalidraw_release());
+            manifest.push_str("\",\"reference_profile_digest\":\"");
+            manifest.push_str(profile.profile_digest());
+            manifest.push_str("\"}");
+            Ok(())
+        })?;
     } else {
         manifest.push_str("null");
     }
     manifest.push_str(",\"diagnostic_summary\":");
     if selection.diagnostic_summary {
-        push_diagnostic_summary(&mut manifest, report)?;
+        operation(Stage::DiagnosticSummarySerialization, || {
+            push_diagnostic_summary(&mut manifest, report)
+        })?;
     } else {
         manifest.push_str("null");
     }
@@ -674,14 +721,15 @@ fn metadata_size_error() -> FormatEncodeError {
     FormatEncodeError::Encoding("artifact metadata size exceeds the supported range".to_owned())
 }
 
-fn metadata_failure(error: FormatEncodeError, failure: MetadataFailure) -> FormatEncodeError {
+pub(super) fn metadata_failure(
+    error: FormatEncodeError,
+    failure: MetadataFailure,
+) -> FormatEncodeError {
     match error {
-        FormatEncodeError::MemoryUnavailable { .. } | FormatEncodeError::SvgFontSubset { .. } => {
-            error
-        }
-        FormatEncodeError::Encoding(_) | FormatEncodeError::Metadata(_) => {
-            FormatEncodeError::Metadata(failure)
-        }
+        FormatEncodeError::MemoryUnavailable { .. }
+        | FormatEncodeError::SvgFontSubset { .. }
+        | FormatEncodeError::Metadata(_) => error,
+        FormatEncodeError::Encoding(_) => FormatEncodeError::Metadata(failure),
     }
 }
 

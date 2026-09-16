@@ -30,6 +30,8 @@ mod freedraw;
 mod geometry;
 mod image;
 mod metadata;
+#[cfg(test)]
+pub(crate) use metadata::{test_faults, Stage as MetadataStage};
 mod notices;
 mod number_format;
 mod pdf;

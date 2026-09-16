@@ -17,7 +17,7 @@ use super::super::diagnostics::{
     metadata_failure_diagnostic, optional_metadata_omitted_diagnostic,
 };
 use super::super::resolve::artifact_retention_delta;
-use super::super::{notices, FormatEncodeError, RenderSession, RenderTarget};
+use super::super::{notices, DiagnosticOwnership, FormatEncodeError, RenderSession, RenderTarget};
 use super::{ArtifactMetadata, ManifestTarget, MetadataEstimate, MetadataSelection};
 
 fn manifest_target<'a>(target: RenderTarget, scene: &'a SceneDocument) -> ManifestTarget<'a> {
@@ -199,6 +199,8 @@ impl RenderSession {
             }
             self.transact(request, baseline_context, baseline_delta)?;
         }
+        #[cfg(test)]
+        let _baseline_fault_context = super::test_faults::context(manifest_target, accepted);
         let baseline = ArtifactMetadata::build(
             scene,
             self.profile,
@@ -286,17 +288,15 @@ impl RenderSession {
                 generation_delta,
             ) {
                 let diagnostic = self.optional_metadata_omitted(request, crossing)?;
-                self.retain_diagnostic(
-                    request,
-                    ResourcePhase::Metadata,
-                    component.event(),
-                    diagnostic,
-                )?;
+                self.retain_metadata_diagnostic(request, component, component.event(), diagnostic)?;
                 continue;
             }
             let generation_context =
                 ResourceContext::new(ResourcePhase::Metadata, component.event(), "");
             self.transact(request, generation_context, generation_delta)?;
+            #[cfg(test)]
+            let _candidate_fault_context =
+                super::test_faults::context(manifest_target, candidate_selection);
             let candidate = match ArtifactMetadata::build(
                 scene,
                 self.profile,
@@ -325,9 +325,9 @@ impl RenderSession {
                             ));
                         }
                         let diagnostic = self.metadata_omitted(request, failure)?;
-                        self.retain_diagnostic(
+                        self.retain_metadata_diagnostic(
                             request,
-                            ResourcePhase::Metadata,
+                            component,
                             "artifact_manifest_metadata_omitted",
                             diagnostic,
                         )?;
@@ -337,9 +337,9 @@ impl RenderSession {
                         return Ok((empty, artifact));
                     }
                     let diagnostic = self.metadata_omitted(request, failure)?;
-                    self.retain_diagnostic(
+                    self.retain_metadata_diagnostic(
                         request,
-                        ResourcePhase::Metadata,
+                        component,
                         component.event(),
                         diagnostic,
                     )?;
@@ -360,12 +360,7 @@ impl RenderSession {
             ) {
                 self.release_working(request, generation_context, scratch_bytes)?;
                 let diagnostic = self.optional_metadata_omitted(request, crossing)?;
-                self.retain_diagnostic(
-                    request,
-                    ResourcePhase::Metadata,
-                    component.event(),
-                    diagnostic,
-                )?;
+                self.retain_metadata_diagnostic(request, component, component.event(), diagnostic)?;
                 continue;
             }
             self.transact(
@@ -395,9 +390,9 @@ impl RenderSession {
                             ));
                         }
                         let diagnostic = self.metadata_omitted(request, failure)?;
-                        self.retain_diagnostic(
+                        self.retain_metadata_diagnostic(
                             request,
-                            ResourcePhase::Metadata,
+                            component,
                             "artifact_manifest_metadata_omitted",
                             diagnostic,
                         )?;
@@ -407,9 +402,9 @@ impl RenderSession {
                         return Ok((empty, artifact));
                     }
                     let diagnostic = self.metadata_omitted(request, failure)?;
-                    self.retain_diagnostic(
+                    self.retain_metadata_diagnostic(
                         request,
-                        ResourcePhase::Metadata,
+                        component,
                         component.event(),
                         diagnostic,
                     )?;
@@ -440,12 +435,7 @@ impl RenderSession {
             ) {
                 self.release_working(request, generation_context, scratch_bytes)?;
                 let diagnostic = self.optional_metadata_omitted(request, crossing)?;
-                self.retain_diagnostic(
-                    request,
-                    ResourcePhase::Metadata,
-                    component.event(),
-                    diagnostic,
-                )?;
+                self.retain_metadata_diagnostic(request, component, component.event(), diagnostic)?;
             } else {
                 self.release_working(request, generation_context, scratch_bytes)?;
                 accepted = candidate_selection;
@@ -456,6 +446,33 @@ impl RenderSession {
         }
 
         Ok((accepted_metadata, accepted_artifact))
+    }
+
+    fn retain_metadata_diagnostic(
+        &mut self,
+        request: &RenderRequest,
+        component: OptionalMetadataComponent,
+        event: &'static str,
+        diagnostic: PendingDiagnostic,
+    ) -> Result<(), RenderError> {
+        // Root metadata events have semantic component order, not lexical code
+        // order (which would put diagnostic-summary before provenance).
+        let position = match component {
+            OptionalMetadataComponent::Provenance => 0,
+            OptionalMetadataComponent::DiagnosticSummary => 1,
+            OptionalMetadataComponent::EmbeddedScene => 2,
+        };
+        self.retain_diagnostic_with_owner(
+            request,
+            ResourcePhase::Metadata,
+            event,
+            diagnostic,
+            DiagnosticOwnership {
+                local_owner: None,
+                source_order: None,
+                source_position: Some(position),
+            },
+        )
     }
 
     /// The `resource.optional-metadata-omitted` diagnostic for `crossing`,

@@ -20,8 +20,8 @@ const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"
 mod ownership;
 mod snapshots;
 pub use ownership::{
-    ownership_catalog, ownership_subject, record_test_owner, refresh_test_owner_source,
-    seed_ownership, verify_ownership,
+    ownership_catalog, ownership_subject, record_library_test_owner, record_test_owner,
+    refresh_library_test_owner_source, refresh_test_owner_source, seed_ownership, verify_ownership,
 };
 mod traces;
 pub use snapshots::{

@@ -2586,25 +2586,61 @@
     {
       "id": "diagnostic:compatibility.known-element-replaced:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Current revision-1 dispatch is unreachable by docs/research/known-element-replacement-reachability.md, supported by exact narrower-cause guards. Explicit digest-bound #85 exclusion approval is still required; absence tests alone do not grant exclusion."
+        "status": "excluded",
+        "reason": "The current revision-1 supported-kind dispatch cannot emit this generic diagnostic; unavailable geometry and image failures retain narrower replacement causes. See the reviewed control-flow proof and its invalidation conditions.",
+        "proof": {
+          "source": {
+            "path": "docs/research/known-element-replacement-reachability.md",
+            "sha256": "ff81adaf36f6f2f09ce298ba33307e8d82ad1a93c812096ebb1e0e96044a8226"
+          },
+          "anchor": "## Revision-1 reachability conclusion"
+        },
+        "approval": {
+          "approved_by": "sagikazarmark",
+          "approved_at": "2026-09-16",
+          "approval_subject_sha256": "sha256:09f7fa37c60a486122398bd73fc125bf7d1d90701802b4223ef33375d35877d1",
+          "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166"
+        }
       }
     },
     {
       "id": "diagnostic:compatibility.known-element-replaced:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Current revision-1 dispatch is unreachable by docs/research/known-element-replacement-reachability.md, supported by exact narrower-cause guards. Explicit digest-bound #85 exclusion approval is still required; absence tests alone do not grant exclusion."
+        "status": "excluded",
+        "reason": "The current revision-1 supported-kind dispatch cannot emit this generic diagnostic; unavailable geometry and image failures retain narrower replacement causes. See the reviewed control-flow proof and its invalidation conditions.",
+        "proof": {
+          "source": {
+            "path": "docs/research/known-element-replacement-reachability.md",
+            "sha256": "ff81adaf36f6f2f09ce298ba33307e8d82ad1a93c812096ebb1e0e96044a8226"
+          },
+          "anchor": "## Revision-1 reachability conclusion"
+        },
+        "approval": {
+          "approved_by": "sagikazarmark",
+          "approved_at": "2026-09-16",
+          "approval_subject_sha256": "sha256:2a2ec2b1b8f34d58a024436b0bc1071e5e9261928b8f58b1fe8c2e0accbd5f97",
+          "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166"
+        }
       }
     },
     {
       "id": "diagnostic:compatibility.known-element-replaced:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Current revision-1 dispatch is unreachable by docs/research/known-element-replacement-reachability.md, supported by exact narrower-cause guards. Explicit digest-bound #85 exclusion approval is still required; absence tests alone do not grant exclusion."
+        "status": "excluded",
+        "reason": "The current revision-1 supported-kind dispatch cannot emit this generic diagnostic; unavailable geometry and image failures retain narrower replacement causes. See the reviewed control-flow proof and its invalidation conditions.",
+        "proof": {
+          "source": {
+            "path": "docs/research/known-element-replacement-reachability.md",
+            "sha256": "ff81adaf36f6f2f09ce298ba33307e8d82ad1a93c812096ebb1e0e96044a8226"
+          },
+          "anchor": "## Revision-1 reachability conclusion"
+        },
+        "approval": {
+          "approved_by": "sagikazarmark",
+          "approved_at": "2026-09-16",
+          "approval_subject_sha256": "sha256:707ec4c5b195ba59dc1771f799a8f84e75c8ac7b6ad3f20b58a4e38e0a7f9b3b",
+          "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166"
+        }
       }
     },
     {
@@ -3770,169 +3806,589 @@
     {
       "id": "diagnostic:metadata.diagnostic-summary-serialization-failed:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.diagnostic-summary-serialization-failed:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.diagnostic-summary-serialization-failed:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.manifest-embedding-failed:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.manifest-embedding-failed:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.manifest-embedding-failed:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.manifest-serialization-failed:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.manifest-serialization-failed:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.manifest-serialization-failed:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.provenance-serialization-failed:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.provenance-serialization-failed:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.provenance-serialization-failed:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.scene-compression-failed:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.scene-compression-failed:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.scene-compression-failed:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.scene-embedding-failed:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.scene-embedding-failed:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.scene-embedding-failed:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.scene-serialization-failed:pdf",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.scene-serialization-failed:png",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {
       "id": "diagnostic:metadata.scene-serialization-failed:svg",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/src/metadata_failure_contract.rs",
+            "sha256": "080957df24baeab21678e8ed3cea0808ea90ee261a458941d7084972054ee236"
+          },
+          "function": "metadata_failures_have_exact_recovery_in_every_format",
+          "binary": "lib",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--lib",
+            "metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Public Renderer scene/frame operations execute deterministic test-only refusals at real metadata serialization, compression, wrapper, and format-carrier sites. Independently authored complete reports and healthy-request artifact oracles cover component-local recovery, frozen summaries, mandatory notices, late manifest loss, physical-memory fatality, resource preemption, diagnostic prefixes, frame replay, and thread/unwind isolation across SVG/PNG/PDF."
       }
     },
     {

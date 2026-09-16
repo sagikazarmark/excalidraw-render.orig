@@ -72,9 +72,9 @@ Exact payload reports/artifacts cover slash, tilde, Unicode and suffix-like IDs.
 
 The current generic diagnostic is unreachable by the argument and executable
 guards in [known-element-replacement-reachability.md](known-element-replacement-reachability.md).
-Its three entries need explicit, digest-bound #85 exclusion approval. They must
-remain gaps until that approval is available; a negative test is not substituted
-for an exclusion.
+Its three entries received explicit, digest-bound [#85 exclusion approval](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166)
+on 2026-09-16. The approval binds the control-flow proof and exact per-format
+subjects below; negative tests alone are not substituted for an exclusion.
 
 This assessment concerns diagnostic ownership. The metadata failure-injection,
 PDF fallback, codec/profile, interaction, and global release-closure work remains
@@ -82,9 +82,10 @@ separately tracked.
 
 ## Ownership checkpoint
 
-Six diagnostic/format entries have proposed test owners: **821 assigned, 107
-gaps** globally; **97 of 122** diagnostic/format entries assigned. The three
-generic-fallback entries remain gaps pending digest-bound approval.
+At this implementation checkpoint, six diagnostic/format entries gained proposed
+test owners: **821 assigned, 107 gaps** globally; **97 of 122** diagnostic/format
+entries assigned. The three generic-fallback entries were then gaps pending
+approval. Their later approval is recorded below.
 
 ## Verification
 
@@ -116,11 +117,15 @@ Using Rust 1.97.1 explicitly on the working tree based on `fc62016`:
 - `git diff --check` passed. No native/WASM execution equality is claimed for
   these runtime changes; the separate #178 evidence remains the prior checkpoint.
 
-## Pending exclusion approval subjects
+<a id="pending-exclusion-approval-subjects"></a>
 
-These are **proposals**, not approvals or ledger exclusions. Each requires an
-explicit maintainer decision in a #85 issue comment, binding its subject below.
-The proof descriptor is:
+## Exclusion approval subjects
+
+**Approved by sagikazarmark on 2026-09-16**, following explicit authorization in
+the implementation session. The scoped decision is recorded in
+[#85](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166).
+All three current subjects were recomputed and matched these previously recorded
+proposals before approval was applied. The approved proof descriptor is:
 
 ```json
 {
@@ -132,7 +137,7 @@ The proof descriptor is:
 }
 ```
 
-Exact proposed reason for each format:
+Exact approved reason for each format:
 
 > The current revision-1 supported-kind dispatch cannot emit this generic diagnostic; unavailable geometry and image failures retain narrower replacement causes. See the reviewed control-flow proof and its invalidation conditions.
 
@@ -148,5 +153,8 @@ The subjects use `xtask`'s exclusion formula: canonical JSON of schema
 The current rows bind scene-surface manifest SHA-256
 `93029f2dab63c203dee69da4497ea4c2988a72d73f2a0017e62c529a4caac202` at
 `/registryMappings/9/formatRules/{format}`. Recompute subjects if any bound input
-changes. Only after approval may those three gap dispositions become excluded;
-that would produce **824 assigned/excluded and 104 gaps**, not global closure.
+changes. The three dispositions are now approved exclusions. Following the later
+PDF and metadata ownership work, current totals are **843 owned plus 3 approved
+exclusions: 846 assigned/excluded and 82 gaps**. All 122 current diagnostic/format
+entries have an owner or approved exclusion. Global ledger approval and release
+closure remain pending.

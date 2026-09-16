@@ -1,7 +1,7 @@
 # Diagnostic/format ownership audit
 #85 — public-facade diagnostic assertions
 
-Reviewed all 122 current diagnostic/format obligations. Including PDF raster fallback, 98 now have proposed owners and 24 remain explicit gaps. The global ledger has 822 proposed owners and 106 gaps. The PDF assignment is assessed in [pdf-raster-fallback-ownership.md](pdf-raster-fallback-ownership.md); the six compatibility assignments in [compatibility-recovery-ownership.md](compatibility-recovery-ownership.md); the final 15 resource assignments in [resource-diagnostic-ownership.md](resource-diagnostic-ownership.md); and the eight nested SVG/link assignments in [svg-link-diagnostic-ownership.md](svg-link-diagnostic-ownership.md).
+Reviewed all 122 current diagnostic/format obligations: 119 have proposed owners and three have approved generic-fallback exclusions. The global ledger has 843 proposed owners plus three approved exclusions, totaling 846 assigned/excluded and 82 gaps. The 21 metadata assignments are assessed in [metadata-failure-ownership.md](metadata-failure-ownership.md); the PDF assignment in [pdf-raster-fallback-ownership.md](pdf-raster-fallback-ownership.md); the six compatibility assignments and scoped exclusion approval in [compatibility-recovery-ownership.md](compatibility-recovery-ownership.md); the final 15 resource assignments in [resource-diagnostic-ownership.md](resource-diagnostic-ownership.md); and the eight nested SVG/link assignments in [svg-link-diagnostic-ownership.md](svg-link-diagnostic-ownership.md).
 
 The new `fast/diagnostic_contract.rs` tests author expected machine-readable diagnostic fields independently of the production registry. They compare the complete ordered diagnostic array, exact format/severity/effects/details/recovery/owner/pointer, nonempty messages, and byte-identical serialized reports and artifacts across fresh calls. Message prose is not pinned as a semantic requirement. Image recovery tests cover both saved and error source statuses.
 
@@ -17,7 +17,7 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 | `asset.media-type-mismatch` | pdf, png, svg | owned | media_type_contract_in_every_format — exact seven-kind claims, strict-domain enrichment, source/supplemental ordering and equivalence, invalid/failed payload handling and frame replay; see [assessment](asset-claim-diagnostic-ownership.md#media-type-completion). |
 | `asset.supplement-conflict` | pdf, png, svg | owned | supplement_conflicts_report_authority_once_in_every_format — exact authority/order/multiplicity, identical/different payloads, malformed scene precedence, silence and frame replay. |
 | `color.invalid` | pdf, png, svg | owned | invalid_colors_substitute_in_member_order_and_valid_colors_are_silent |
-| `compatibility.known-element-replaced` | pdf, png, svg | gap | Current dispatch is unreachable by the [control-flow proof](known-element-replacement-reachability.md), supported by exact narrower-cause guards. Explicit digest-bound #85 exclusion approval is still required. |
+| `compatibility.known-element-replaced` | pdf, png, svg | excluded | Current dispatch is unreachable by the [control-flow proof](known-element-replacement-reachability.md), supported by exact narrower-cause guards. Digest-bound [#85 approval](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166) covers all three exclusions. |
 | `compatibility.malformed-element` | pdf, png, svg | owned | compatibility_recovery_contract::malformed_element_contract_covers_recovery_and_semantic_loss — complete reports, bounds/omission, safe-link loss including rejected frames, PNG silence, authored transform/opacity/clip artifacts, source preservation and frame replay. |
 | `compatibility.unsupported-element-type` | pdf, png, svg | owned | unknown_elements_cover_bounded_placeholders_and_unbounded_omissions |
 | `compatibility.unsupported-property` | pdf, png, svg | owned | unknown_properties_report_each_source_subtree_and_ignore_opaque_metadata |
@@ -32,13 +32,13 @@ Existing emoji and missing-glyph tests compare full registered ordinary-text rep
 | `image.unsafe-svg-content-removed` | pdf, png, svg | owned | svg_link_diagnostic_contract::unsafe_svg_contract_in_every_format — complete unsafe-boundary/effect/path reports, exact entity source locations, repeated identities, authority/frame scope, clean artifact oracles and source preservation. |
 | `image.unsupported-format` | pdf, png, svg | owned | unsupported_image_contract_in_every_format — source/supplemental/nested reports, status and frame scope, ICC rejection/pass-through, nested paths and semantic preservation; see [assessment](image-diagnostic-ownership.md#final-ownership-assessment). |
 | `link.unsafe-omitted` | pdf, svg | owned | svg_link_diagnostic_contract::unsafe_link_contract_in_semantic_formats — ordinary/fallback/generated-label participation, full reports, safe canonicalization and PNG silence, independent paint/no-navigation checks, source order, frame replay and preservation. |
-| `metadata.diagnostic-summary-serialization-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |
-| `metadata.manifest-embedding-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |
-| `metadata.manifest-serialization-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |
-| `metadata.provenance-serialization-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |
-| `metadata.scene-compression-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |
-| `metadata.scene-embedding-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |
-| `metadata.scene-serialization-failed` | pdf, png, svg | gap | Production failure path needs deterministic injection through a supported test-only seam plus exact all-field format/operation/recovery assertions. Existing internal metadata tests cover selected failure stages but v1 ownership admits fast integration tests only. |
+| `metadata.diagnostic-summary-serialization-failed` | pdf, png, svg | owned | metadata_failure_contract::metadata_failures_have_exact_recovery_in_every_format — exact operation-fault reports, summary-only omission, frozen pre-metadata snapshot, later-component continuation and frame replay; see [assessment](metadata-failure-ownership.md). |
+| `metadata.manifest-embedding-failed` | pdf, png, svg | owned | Same library selector — real format-carrier refusals, complete optional-metadata loss, early/late required-notice fatality and physical-memory classification. |
+| `metadata.manifest-serialization-failed` | pdf, png, svg | owned | Same library selector — combined-manifest failures including prepared scene payload, required notices, exact ordering and retained failure prefixes. |
+| `metadata.provenance-serialization-failed` | pdf, png, svg | owned | Same library selector — component-local recovery, independently rendered artifact controls, semantic priority and later summary/scene survival. |
+| `metadata.scene-compression-failed` | pdf, png, svg | owned | Same library selector — shared wrapper compression and PDF carrier compression sites, whole-scene omission, unaffected metadata/notices and resource-preemption silence. |
+| `metadata.scene-embedding-failed` | pdf, png, svg | owned | Same library selector — shared wrapper and all format-specific carrier sites, no partial payload, exact reports and direct/prepared frame scope. |
+| `metadata.scene-serialization-failed` | pdf, png, svg | owned | Same library selector — canonical-scene operation refusal, complete scene omission, preserved earlier components, disabled-operation silence and fatal allocation refusal. |
 | `normalization.duplicate-element-id` | pdf, png, svg | owned | duplicate_identity_contract::identity_and_duplicate_relationship_contract_in_every_format — first-alias/rekey behavior, conditional effects, cycles, target silence, preservation and stage-appropriate failure reports; companion cold/prepared trace boundaries pass. See [completion](duplicate-identity-ownership.md#ownership-completion). |
 | `normalization.missing-element-id` | pdf, png, svg | owned | admission_identity_contract::missing_and_invalid_ids_have_exact_recovery_and_target_participation — literal identity vectors, exact reports, all traversed kinds, target/deleted/ignored silence, source preservation and fresh-session/frame replay; see [assessment](admission-identity-ownership.md). |
 | `normalization.missing-timestamp` | pdf, png, svg | owned | missing_timestamps_are_repaired_in_source_order_and_valid_or_deleted_are_silent |
@@ -195,11 +195,11 @@ Verification for the consolidated owner:
 
 ### Remaining diagnostic work
 
-- Complete generated-ID/rekey contracts.
-- Enumerate unsupported-property-value recovery branches and known-element fallback reachability.
-- Complete authority/media/decoder/nested-resource and animation matrices.
-- Cover frame/generated font substitutions and every PDF fallback detail family.
-- Add exact metadata failure injection owners and complete resource-limit recovery branches.
+- Re-review the approved generic-fallback exclusions if their proof or bound
+  obligations change; the approval subjects and invalidation conditions are
+  recorded in the compatibility recovery assessment.
+- Complete the separate codec/profile, tolerance-exception, interaction and
+  release-closure obligations before requesting global ledger approval.
 
 The ledger remains unapproved and incomplete. These mappings do not close #85 or waive upstream-blocked #178.
 

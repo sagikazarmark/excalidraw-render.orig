@@ -297,6 +297,16 @@ fn unconditional_test(
     module: &str,
     function: &str,
 ) -> Result<(), String> {
+    executable_test(source, main, module, function, false)
+}
+
+fn executable_test(
+    source: &str,
+    main: &str,
+    module: &str,
+    function: &str,
+    library: bool,
+) -> Result<(), String> {
     // Resolve the actual top-level syntax, not textual anchors in comments,
     // strings or nested scopes. Unknown attributes fail closed at the selected
     // module/test boundary; unrelated consuming tests need not share its policy.
@@ -316,10 +326,25 @@ fn unconditional_test(
     if modules.len() != 1 || modules[0].content.is_some() {
         return Err("test owner module is not compiled".into());
     }
+    let test_cfg = |attr: &syn::Attribute| {
+        matches!(attr.style, syn::AttrStyle::Outer)
+            && attr.path().is_ident("cfg")
+            && attr.parse_args::<syn::Ident>().is_ok_and(|id| id == "test")
+    };
+    if library
+        && modules[0]
+            .attrs
+            .iter()
+            .filter(|attr| test_cfg(attr))
+            .count()
+            != 1
+    {
+        return Err("library test owner module must use exactly cfg(test)".into());
+    }
     if modules[0]
         .attrs
         .iter()
-        .any(|attr| !attr.path().is_ident("doc"))
+        .any(|attr| !attr.path().is_ident("doc") && !(library && test_cfg(attr)))
     {
         return Err("test owner module has unsupported attributes".into());
     }
@@ -359,25 +384,85 @@ fn unconditional_test(
     Ok(())
 }
 
+#[cfg(test)]
 fn test_command(module: &str, function: &str) -> Vec<String> {
-    [
+    owner_test_command("fast", module, function)
+}
+fn owner_test_command(binary: &str, module: &str, function: &str) -> Vec<String> {
+    let mut args: Vec<_> = [
         "cargo",
         "test",
         "--locked",
         "--release",
         "-p",
         "excalidraw-render",
-        "--test",
-        "fast",
     ]
     .into_iter()
     .map(String::from)
-    .chain([
+    .collect();
+    if binary == "lib" {
+        args.push("--lib".into());
+    } else {
+        args.extend(["--test".into(), "fast".into()]);
+    }
+    args.extend([
         format!("{module}::{function}"),
         "--".into(),
         "--exact".into(),
-    ])
-    .collect()
+    ]);
+    args
+}
+
+/// This adapter deliberately supports the repository's default library target
+/// and explicit workspace membership, not arbitrary Cargo target redirection.
+fn library_layout(package: &str, workspace: &str) -> Result<(), String> {
+    let package: toml::Value =
+        toml::from_str(package).map_err(|e| format!("invalid renderer manifest: {e}"))?;
+    let workspace: toml::Value =
+        toml::from_str(workspace).map_err(|e| format!("invalid workspace manifest: {e}"))?;
+    let lib = package.get("lib");
+    if package
+        .get("package")
+        .and_then(|p| p.get("name"))
+        .and_then(toml::Value::as_str)
+        != Some("excalidraw-render")
+        || package
+            .get("package")
+            .and_then(|p| p.get("autolib"))
+            .and_then(toml::Value::as_bool)
+            == Some(false)
+        || lib.is_some_and(|l| l.as_table().is_none())
+        || lib
+            .and_then(|l| l.get("path"))
+            .is_some_and(|p| p.as_str() != Some("src/lib.rs"))
+        || ["test", "harness"].iter().any(|key| {
+            lib.and_then(|l| l.get(key))
+                .is_some_and(|v| v.as_bool() != Some(true))
+        })
+        || lib
+            .and_then(|l| l.get("proc-macro"))
+            .is_some_and(|v| v.as_bool() != Some(false))
+    {
+        return Err("unsupported library test target layout".into());
+    }
+    let workspace = workspace
+        .get("workspace")
+        .ok_or("missing workspace target layout")?;
+    if workspace.get("exclude").is_some()
+        || !workspace
+            .get("members")
+            .and_then(toml::Value::as_array)
+            .is_some_and(|members| {
+                members
+                    .iter()
+                    .any(|m| m.as_str() == Some("crates/excalidraw-render"))
+            })
+    {
+        return Err(
+            "library test target requires explicit, unexcluded workspace membership".into(),
+        );
+    }
+    Ok(())
 }
 
 fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, String> {
@@ -443,13 +528,30 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
                         if !valid_name(function) || !valid_name(binary) {
                             return Err("invalid test owner selector".into());
                         }
-                        // Only existing integration-test modules in the renderer's
-                        // auto-discovered fast binary are admitted by v1.
-                        let prefix = "crates/excalidraw-render/tests/fast/";
-                        if !source.path.starts_with(prefix)
-                            || !source.path.ends_with(".rs")
-                            || binary != "fast"
-                        {
+                        let (prefix, entry, library) = match binary.as_str() {
+                            "fast" => (
+                                "crates/excalidraw-render/tests/fast/",
+                                "crates/excalidraw-render/tests/fast/main.rs",
+                                false,
+                            ),
+                            "lib" => {
+                                library_layout(
+                                    &String::from_utf8(read(
+                                        "crates/excalidraw-render/Cargo.toml",
+                                    )?)
+                                    .map_err(|e| e.to_string())?,
+                                    &String::from_utf8(read("Cargo.toml")?)
+                                        .map_err(|e| e.to_string())?,
+                                )?;
+                                (
+                                    "crates/excalidraw-render/src/",
+                                    "crates/excalidraw-render/src/lib.rs",
+                                    true,
+                                )
+                            }
+                            _ => return Err("unsupported executable owner path/binary".into()),
+                        };
+                        if !source.path.starts_with(prefix) || !source.path.ends_with(".rs") {
                             return Err("unsupported executable owner path/binary".into());
                         }
                         let module = source
@@ -461,16 +563,18 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
                         if !valid_name(module) {
                             return Err("nested test module must have an explicit adapter".into());
                         }
-                        let main =
-                            String::from_utf8(read("crates/excalidraw-render/tests/fast/main.rs")?)
-                                .map_err(|e| e.to_string())?;
+                        let main = String::from_utf8(read(entry)?).map_err(|e| e.to_string())?;
                         if descriptor(&source.path)? != *source {
                             return Err("stale ownership evidence".into());
                         }
                         let source_text =
                             String::from_utf8(read(&source.path)?).map_err(|e| e.to_string())?;
-                        unconditional_test(&source_text, &main, module, function)?;
-                        let args = test_command(module, function);
+                        if library {
+                            executable_test(&source_text, &main, module, function, true)?;
+                        } else {
+                            unconditional_test(&source_text, &main, module, function)?;
+                        }
+                        let args = owner_test_command(binary, module, function);
                         if command != &args {
                             return Err(
                                 "test owner command does not select its exact executable test"
@@ -551,16 +655,36 @@ pub fn record_test_owner(
     rationale: &str,
     ids: &[String],
 ) -> Result<(), String> {
+    record_owner("fast", module, function, rationale, ids)
+}
+pub fn record_library_test_owner(
+    module: &str,
+    function: &str,
+    rationale: &str,
+    ids: &[String],
+) -> Result<(), String> {
+    record_owner("lib", module, function, rationale, ids)
+}
+fn record_owner(
+    binary: &str,
+    module: &str,
+    function: &str,
+    rationale: &str,
+    ids: &[String],
+) -> Result<(), String> {
     let (catalog, mut ledger) = load()?;
     validate(&catalog, &ledger, false)?;
     if ids.is_empty() || ids.iter().collect::<BTreeSet<_>>().len() != ids.len() {
         return Err("select nonempty, unique ownership identities".into());
     }
     let owner = Owner::Test {
-        source: descriptor(&format!("crates/excalidraw-render/tests/fast/{module}.rs"))?,
+        source: descriptor(&format!(
+            "crates/excalidraw-render/{}/{module}.rs",
+            if binary == "lib" { "src" } else { "tests/fast" }
+        ))?,
         function: function.into(),
-        binary: "fast".into(),
-        command: test_command(module, function),
+        binary: binary.into(),
+        command: owner_test_command(binary, module, function),
     };
     for id in ids {
         let row = ledger
@@ -586,13 +710,22 @@ pub fn record_test_owner(
 /// Refresh a consuming test's live location binding after editing its source.
 /// The selected executable and reviewed rationale are preserved and revalidated.
 pub fn refresh_test_owner_source(module: &str) -> Result<(), String> {
+    refresh_owner_source("fast", module)
+}
+pub fn refresh_library_test_owner_source(module: &str) -> Result<(), String> {
+    refresh_owner_source("lib", module)
+}
+fn refresh_owner_source(binary: &str, module: &str) -> Result<(), String> {
     let (catalog, mut ledger) = load()?;
     if !ledger.approval.is_null() {
         return Err(
             "approved ownership requires explicit review before refreshing test sources".into(),
         );
     }
-    let source = descriptor(&format!("crates/excalidraw-render/tests/fast/{module}.rs"))?;
+    let source = descriptor(&format!(
+        "crates/excalidraw-render/{}/{module}.rs",
+        if binary == "lib" { "src" } else { "tests/fast" }
+    ))?;
     let mut count = 0;
     for assignment in &mut ledger.assignments {
         if let Disposition::Owned {
@@ -638,6 +771,125 @@ pub(super) fn verify_closed() -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn library_adapter_requires_a_real_unconditional_library_test() {
+        let main = "#[cfg(test)] mod sample;";
+        let source = "#[test] fn example() {}";
+        executable_test(source, main, "sample", "example", true).unwrap();
+        for main in [
+            "mod sample;",
+            "#[cfg(feature=\"hidden\")] mod sample;",
+            "#[cfg(all(test, unix))] mod sample;",
+            "#[cfg(test)] #[path=\"elsewhere.rs\"] mod sample;",
+            "#[cfg(test)] mod sample {}",
+            "#[cfg(test)] #[cfg(test)] mod sample;",
+        ] {
+            assert!(
+                executable_test(source, main, "sample", "example", true).is_err(),
+                "{main}"
+            );
+        }
+        for source in [
+            "// #[test] fn example() {}",
+            "#[ignore] #[test] fn example() {}",
+            "#[cfg(test)] #[test] fn example() {}",
+            "use custom::*; #[test] fn example() {}",
+            "#[test] fn example() {} #[test] fn example() {}",
+        ] {
+            assert!(
+                executable_test(source, main, "sample", "example", true).is_err(),
+                "{source}"
+            );
+        }
+        assert_ne!(
+            owner_test_command("lib", "sample", "example"),
+            test_command("sample", "example")
+        );
+        assert_eq!(
+            owner_test_command("lib", "sample", "example"),
+            [
+                "cargo",
+                "test",
+                "--locked",
+                "--release",
+                "-p",
+                "excalidraw-render",
+                "--lib",
+                "sample::example",
+                "--",
+                "--exact"
+            ]
+        );
+    }
+
+    #[test]
+    fn library_adapter_rejects_disabled_redirected_and_custom_harness_targets() {
+        let package = "[package]\nname='excalidraw-render'\n";
+        let workspace = "[workspace]\nmembers=['crates/excalidraw-render']\n";
+        library_layout(package, workspace).unwrap();
+        library_layout(
+            &format!("{package}[lib]\npath='src/lib.rs'\ntest=true\nharness=true\n"),
+            workspace,
+        )
+        .unwrap();
+        for suffix in [
+            "autolib=false\n",
+            "[lib]\npath='src/other.rs'\n",
+            "[lib]\ntest=false\n",
+            "[lib]\nharness=false\n",
+            "[lib]\nproc-macro=true\n",
+            "[[lib]]\npath='src/lib.rs'\n",
+        ] {
+            assert!(
+                library_layout(&format!("{package}{suffix}"), workspace).is_err(),
+                "{suffix}"
+            );
+        }
+        for workspace in ["[workspace]\nmembers=['elsewhere']","[workspace]\nmembers=['crates/*']","[workspace]\nmembers=['crates/excalidraw-render']\nexclude=['crates/excalidraw-render']"] {
+            assert!(library_layout(package,workspace).is_err());
+        }
+    }
+
+    #[test]
+    fn library_owner_binds_source_digest_and_exact_executable_command() {
+        let (catalog, mut ledger) = fixture();
+        let module = "metadata_failure_contract";
+        let function = "metadata_failures_have_exact_recovery_in_every_format";
+        ledger.assignments[0].disposition = Disposition::Owned {
+            owner: Owner::Test {
+                source: descriptor("crates/excalidraw-render/src/metadata_failure_contract.rs")
+                    .unwrap(),
+                function: function.into(),
+                binary: "lib".into(),
+                command: owner_test_command("lib", module, function),
+            },
+            rationale: "reviewed fault contract".into(),
+        };
+        assert_eq!(validate(&catalog, &ledger, false).unwrap(), 0);
+        let mut stale = ledger.clone();
+        if let Disposition::Owned {
+            owner: Owner::Test { source, .. },
+            ..
+        } = &mut stale.assignments[0].disposition
+        {
+            source.sha256 = "0".repeat(64);
+        }
+        assert!(validate(&catalog, &stale, false)
+            .unwrap_err()
+            .contains("stale ownership evidence"));
+        let mut redirected = ledger.clone();
+        if let Disposition::Owned {
+            owner: Owner::Test { command, .. },
+            ..
+        } = &mut redirected.assignments[0].disposition
+        {
+            *command = test_command(module, function);
+        }
+        assert!(validate(&catalog, &redirected, false)
+            .unwrap_err()
+            .contains("exact executable test"));
+    }
 
     fn fixture() -> (Catalog, Ledger) {
         let row = Obligation {
