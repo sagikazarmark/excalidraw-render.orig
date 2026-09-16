@@ -1118,6 +1118,11 @@ fn normalize_scene_impl<E>(
         memory_at_source!(used_ids.try_reserve(1));
         used_ids.push(memory_at_source!(try_owned(&id)));
 
+        if width == 0.0 || height == 0.0 {
+            for (_, diagnostic) in &mut element_diagnostics {
+                memory_at_source!(diagnostic.omit_unbounded_known_element_fallback());
+            }
+        }
         element_diagnostics.sort_by(|(left_position, left), (right_position, right)| {
             left_position
                 .cmp(right_position)

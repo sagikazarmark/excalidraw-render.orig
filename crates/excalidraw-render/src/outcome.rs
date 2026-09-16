@@ -254,6 +254,23 @@ fn set_identity_effects(
 }
 
 impl PendingDiagnostic {
+    pub(crate) fn omit_unbounded_known_element_fallback(&mut self) -> Result<(), TryReserveError> {
+        if self.code != DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE {
+            return Ok(());
+        }
+        if let Some(details) = self.details.as_deref_mut() {
+            if matches!(details, ErrorDetails::Compatibility { recovery:crate::Recovery::Placeholder, recipe_id:Some(recipe) }
+                if recipe==crate::diagnostic_registry::FallbackRecipe::KnownElementUnavailable.id())
+            {
+                *details = DiagnosticKind::UnsupportedPropertyValue {
+                    recovery: crate::Recovery::Omitted,
+                    recipe: None,
+                }
+                .into_details()?;
+            }
+        }
+        Ok(())
+    }
     pub(crate) fn set_identity_effects(&mut self, visual: bool) -> Result<(), TryReserveError> {
         set_identity_effects(&mut self.effects, self.format, visual)
     }
@@ -434,6 +451,28 @@ impl DiagnosticOrder {
 }
 
 impl CompatibilityDiagnostic {
+    /// A rejected parent frame removes this placeholder and its surviving link.
+    pub(crate) fn omit_surface_fallback(&mut self, has_link: bool) -> Result<(), TryReserveError> {
+        if let Some(ErrorDetails::Compatibility {
+            recovery,
+            recipe_id,
+        }) = self.details.as_deref_mut()
+        {
+            if *recovery == crate::Recovery::Placeholder {
+                if self.code == DiagnosticCode::COMPATIBILITY_MALFORMED_ELEMENT
+                    && has_link
+                    && self.format != OutputFormat::Png
+                    && !self.effects.contains(&DiagnosticEffect::Semantic)
+                {
+                    self.effects.try_reserve(1)?;
+                    self.effects.push(DiagnosticEffect::Semantic);
+                }
+                *recovery = crate::Recovery::Omitted;
+                *recipe_id = None;
+            }
+        }
+        Ok(())
+    }
     pub(crate) fn set_forbidden_resource_recovery(
         &mut self,
         paints: bool,
@@ -512,11 +551,9 @@ impl CompatibilityDiagnostic {
         self.order.attribution = DiagnosticAttribution::Target;
     }
 
-    /// Whether the diagnosed occurrence was replaced by a compatibility
-    /// placeholder or omitted, so the element it names is not drawn as its
-    /// source describes: a visual effect with a placeholder or omission
-    /// recovery.
-    pub(crate) fn replaces_element(&self) -> bool {
+    /// Whether the diagnosed occurrence has visual placeholder/omission
+    /// recovery. A field occurrence need not replace its entire source element.
+    pub(crate) fn replaces_occurrence(&self) -> bool {
         self.effects.contains(&DiagnosticEffect::Visual)
             && matches!(
                 self.details().and_then(ErrorDetails::recovery),

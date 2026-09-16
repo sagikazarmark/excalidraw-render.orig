@@ -5,6 +5,12 @@ use excalidraw_render::{
 };
 use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
+pub(super) fn unsupported_value_contract() {
+    linear_points_default_short_geometry_rebase_origin_and_migrate_draw();
+    arrowheads_and_elbows_have_exact_defaults_recovery_and_valid_geometry();
+    freedraw_points_pressure_and_simulation_follow_their_independent_domains();
+    malformed_points_keep_pressure_length_based_on_source_occurrences();
+}
 fn scene(kind: &str) -> Value {
     json!({"type":"excalidraw","version":2,"elements":[
     {"id":"frame","type":"frame","width":100,"height":80,"updated":0},

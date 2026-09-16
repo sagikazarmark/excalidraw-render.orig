@@ -73,14 +73,12 @@ fn compare_nested_paths(
     left.len().cmp(&right.len())
 }
 
-/// Whether a retained diagnostic replaced `source` (or the asset it refers
-/// to) with something other than the generic known-element box: an official
-/// placeholder, or an omission.
-pub(super) fn diagnostic_uses_non_generic_recovery(
+/// Whether recovery replaces this entire source, rather than just one field.
+pub(super) fn diagnostic_replaces_source(
     source: &NormalizedElement,
     diagnostic: &CompatibilityDiagnostic,
 ) -> bool {
-    if !diagnostic.replaces_element() {
+    if !diagnostic.replaces_occurrence() {
         return false;
     }
     let applies = diagnostic.element_id() == Some(source.source.id())
@@ -93,6 +91,33 @@ pub(super) fn diagnostic_uses_non_generic_recovery(
         )
         || image_payload_field_recovery(source, diagnostic);
     if !applies {
+        return false;
+    }
+    if diagnostic.code() == DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE
+        && diagnostic.details().and_then(ErrorDetails::recovery) == Some(crate::Recovery::Omitted)
+    {
+        // Invalid bindings/crop members omit a field, not its owner. Only the
+        // points subtree can omit an unavailable linear/freehand element;
+        // an authoritative file payload omission replaces its image occurrence.
+        return image_payload_field_recovery(source, diagnostic)
+            || matches!(
+                source.kind,
+                NormalizedElementKind::Linear(_) | NormalizedElementKind::Freedraw(_)
+            ) && diagnostic
+                .json_pointer()
+                .strip_prefix(source.source.pointer())
+                .is_some_and(|field| field == "/points" || field.starts_with("/points/"));
+    }
+    true
+}
+
+/// Whether a retained diagnostic replaced `source` (or its asset) with an
+/// official placeholder or omission, rather than the generic known-element box.
+pub(super) fn diagnostic_uses_non_generic_recovery(
+    source: &NormalizedElement,
+    diagnostic: &CompatibilityDiagnostic,
+) -> bool {
+    if !diagnostic_replaces_source(source, diagnostic) {
         return false;
     }
     let recipe = diagnostic
@@ -110,17 +135,29 @@ pub(super) fn image_payload_field_recovery(
     diagnostic: &CompatibilityDiagnostic,
 ) -> bool {
     if diagnostic.code() != DiagnosticCode::COMPATIBILITY_UNSUPPORTED_PROPERTY_VALUE
-        || !diagnostic.replaces_element()
+        || !diagnostic.replaces_occurrence()
     {
         return false;
     }
     let NormalizedElementKind::Image(image) = &source.kind else {
         return false;
     };
+    let Some(escaped_id) = diagnostic
+        .json_pointer()
+        .strip_prefix("/files/")
+        .and_then(|pointer| pointer.strip_suffix("/dataURL"))
+    else {
+        return false;
+    };
     image.file_id.as_deref().is_some_and(|id| {
-        crate::scene::pointer_child("/files", id)
-            .and_then(|pointer| crate::scene::pointer_child(&pointer, "dataURL"))
-            .is_ok_and(|pointer| diagnostic.json_pointer() == pointer)
+        // Compare the RFC 6901 spelling without allocating. Allocation refusal
+        // must never masquerade as a missing cause and enable generic recovery.
+        let mut encoded = escaped_id.bytes();
+        id.bytes().all(|byte| match byte {
+            b'~' => encoded.next() == Some(b'~') && encoded.next() == Some(b'0'),
+            b'/' => encoded.next() == Some(b'~') && encoded.next() == Some(b'1'),
+            _ => encoded.next() == Some(byte),
+        }) && encoded.next().is_none()
     })
 }
 

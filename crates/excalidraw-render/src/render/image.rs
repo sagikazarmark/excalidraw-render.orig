@@ -732,7 +732,7 @@ impl ImageResolver {
                             diagnostic.details(),
                             Some(ErrorDetails::Asset { asset_id, .. })
                                 if asset_id == file_id
-                        ) && diagnostic.replaces_element())
+                        ) && diagnostic.replaces_occurrence())
                             || image_payload_field_recovery(&source, diagnostic)
                     })
                 {

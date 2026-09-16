@@ -6,6 +6,12 @@ use excalidraw_render::{
 };
 use serde_json::{json, Value};
 const FORMATS: [OutputFormat; 3] = [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf];
+pub(super) fn unsupported_value_contract() {
+    text_size_family_and_alignment_defaults_and_invalid_values_are_exact();
+    text_and_original_text_recover_independently_and_preserve_original_values();
+    line_height_derives_from_wrapped_lines_or_source_family_metrics();
+    legacy_font_overrides_modern_fields_and_invalid_font_falls_back();
+}
 fn scene() -> Value {
     json!({"type":"excalidraw","version":2,"elements":[
     {"id":"frame","type":"frame","width":120,"height":100,"updated":0},

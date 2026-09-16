@@ -17,7 +17,7 @@ use crate::scene_surface::SurfaceFallback;
 use crate::{OutputFormat, RenderError, RenderRequest, SceneDocument};
 
 use super::diagnostics::{
-    diagnostic_uses_non_generic_recovery, known_element_fallback,
+    diagnostic_replaces_source, diagnostic_uses_non_generic_recovery, known_element_fallback,
     known_element_replaced_diagnostic, relationship_cycle_diagnostic,
 };
 use super::frame_target::{
@@ -371,33 +371,32 @@ impl RenderSession {
                 omitted_by_frame.push(source.source.source_index());
             }
         }
-        fallbacks.retain(|fallback| {
-            let retained = !clips_active
+        let keep_fallback = |fallback: &SurfaceFallback| {
+            !clips_active
                 || !super::frame_target::relationship_frame_target(
                     fallback.source_index,
                     &inputs.relationships.graph,
                 )
-                .is_some_and(|index| rejected_frames.contains(&index));
-            if !retained {
-                for diagnostic in &mut self.report.diagnostics {
-                    if diagnostic.element_id() == fallback.element_id.as_deref()
-                        && diagnostic.json_pointer() == fallback.json_pointer
-                    {
-                        if let Some(crate::ErrorDetails::Compatibility {
-                            recovery,
-                            recipe_id,
-                        }) = diagnostic.details_mut()
+                .is_some_and(|index| rejected_frames.contains(&index))
+        };
+        fallbacks
+            .iter()
+            .try_for_each(|fallback| {
+                if !keep_fallback(fallback) {
+                    for diagnostic in &mut self.report.diagnostics {
+                        if diagnostic.element_id() == fallback.element_id.as_deref()
+                            && diagnostic.json_pointer() == fallback.json_pointer
                         {
-                            if *recovery == crate::Recovery::Placeholder {
-                                *recovery = crate::Recovery::Omitted;
-                                *recipe_id = None;
-                            }
+                            diagnostic.omit_surface_fallback(fallback.link.is_some())?;
                         }
                     }
                 }
-            }
-            retained
-        });
+                Ok(())
+            })
+            .map_err(|_: std::collections::TryReserveError| {
+                self.memory_failure(request, "compatibility_report", "frame_fallback_omission")
+            })?;
+        fallbacks.retain(keep_fallback);
         let mut outlines = Vec::new();
         outlines
             .try_reserve_exact(inputs.normalization.elements.len())
@@ -575,11 +574,12 @@ impl RenderSession {
                     self.report.diagnostics.iter().any(|diagnostic| {
                         diagnostic_uses_non_generic_recovery(&source, diagnostic)
                     });
-                if !self.report.diagnostics.iter().any(|diagnostic| {
-                    diagnostic_uses_non_generic_recovery(&source, diagnostic)
-                        || diagnostic.element_id() == Some(source.source.id())
-                            && diagnostic.replaces_element()
-                }) {
+                if !self
+                    .report
+                    .diagnostics
+                    .iter()
+                    .any(|diagnostic| diagnostic_replaces_source(&source, diagnostic))
+                {
                     let diagnostic = known_element_replaced_diagnostic(
                         request.format(),
                         source.source.id(),

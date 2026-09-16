@@ -332,9 +332,19 @@ pub(crate) fn classify(
                 fallback_label("Unsupported: ", kind)?,
             )
         } else {
+            // A link is a recoverable common semantic channel even when the
+            // type discriminator is malformed. A bounded placeholder keeps it;
+            // omission loses it in the formats that expose navigation.
+            let loses_link = bounds.is_none()
+                && format != OutputFormat::Png
+                && fallback_link(members)?.is_some();
             (
                 DiagnosticKind::MalformedElement(recovery),
-                &[DiagnosticEffect::Visual][..],
+                if loses_link {
+                    &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic][..]
+                } else {
+                    &[DiagnosticEffect::Visual][..]
+                },
                 "malformed element used the revision-1 element fallback",
                 try_owned("Malformed element")?,
             )
