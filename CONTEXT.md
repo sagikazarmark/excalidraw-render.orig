@@ -244,6 +244,14 @@ _Avoid_: Missing content, generic error box
 The versioned collection of focused, real-world, adversarial, and regression scene documents used to judge parity with the reference renderer.
 _Avoid_: Golden tests, fixture folder
 
+**Codec profile obligation**:
+A revision-scoped requirement to characterize a raster input class and its format-specific interpretation or rejection. A family-level facet can contain many such obligations and does not establish complete codec coverage by itself.
+_Avoid_: Reference profile (the renderer/environment identity), codec support (when naming one input class)
+
+**Sample-vector cell**:
+A specified combination of raster container, channel layout, sample depth, transparency and interlace behavior, with an explicit numeric scope for its authored sample vectors. A cell qualified on 8-bit-lattice anchors does not establish non-lattice 16-bit precision or tagged-color interpretation.
+_Avoid_: Fully qualified image profile, codec completion
+
 **Semantic resource accounting**:
 A compatibility-revision-specific ledger that charges canonical scene, asset, geometry, text, pixel, work, output, diagnostic, and logical-live-record events rather than implementation allocations, passes, caches, or backend operations. The same scene document, export target, request, compatibility revision, and limits have the same ledger and resource outcome across conforming implementations and targets; each target in a frame export batch has an independent ledger.
 _Avoid_: Allocator accounting, backend work metering

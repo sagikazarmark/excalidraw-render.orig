@@ -2,6 +2,7 @@
 //! selecting ownership never silently regenerates approved renderer snapshots.
 use super::*;
 use crate::conformance::verify_approval_for_issue;
+mod png_profiles;
 
 const POLICY: &str = "tests/conformance/coverage/ownership-policy.json";
 const LEDGER: &str = "tests/conformance/coverage/ownership.json";
@@ -98,10 +99,13 @@ fn nonempty(value: &str) -> bool {
 
 fn catalog() -> Result<Catalog, String> {
     let inventory = load_inventory()?;
-    let policy: Policy = parse(&read(POLICY)?)?;
+    let mut policy: Policy = parse(&read(POLICY)?)?;
     if policy.schema != "excalidraw-render/coverage-ownership-policy/v1" {
         return Err("invalid ownership policy schema".into());
     }
+    policy
+        .rows
+        .extend(png_profiles::rows(&read(png_profiles::PATH)?)?);
     let surface: Value = parse(&read(SURFACE)?)?;
     let surface_descriptor = descriptor(SURFACE)?;
     let mut obligations = Vec::new();
@@ -142,6 +146,7 @@ fn catalog() -> Result<Catalog, String> {
         descriptor(INVENTORY)?,
         surface_descriptor,
         descriptor(POLICY)?,
+        descriptor(png_profiles::PATH)?,
         descriptor("docs/renderer-spec-v1.md")?,
     ];
     for case in array(&registry, "cases")? {
@@ -636,6 +641,87 @@ fn load() -> Result<(Catalog, Ledger), String> {
     Ok((catalog()?, parse(&read(LEDGER)?)?))
 }
 
+/// An append-only inventory expansion: the prior catalog is authenticated by
+/// the existing ledger, every prior obligation/disposition is preserved, and
+/// new obligations enter only as explicit gaps. Assignment remains a separate
+/// reviewed operation.
+fn extended_ledger(
+    before: &Catalog,
+    after: &Catalog,
+    ledger: &Ledger,
+    issue: u64,
+    reason: &str,
+) -> Result<Ledger, String> {
+    if !ledger.approval.is_null() {
+        return Err(
+            "approved ownership requires a new reviewed decision, not an inventory extension"
+                .into(),
+        );
+    }
+    if issue == 0 || !nonempty(reason) {
+        return Err("inventory extension requires an issue and concrete gap reason".into());
+    }
+    if before.schema != "excalidraw-render/coverage-obligations/v1" || after.schema != before.schema
+    {
+        return Err("invalid extension catalog schema".into());
+    }
+    validate(before, ledger, false)?;
+    let previous: BTreeMap<_, _> = before
+        .obligations
+        .iter()
+        .map(|r| (r.id.as_str(), r))
+        .collect();
+    let current: BTreeMap<_, _> = after
+        .obligations
+        .iter()
+        .map(|r| (r.id.as_str(), r))
+        .collect();
+    for (id, row) in &previous {
+        if current.get(id) != Some(row) {
+            return Err(format!(
+                "inventory extension changed or removed existing obligation: {id}"
+            ));
+        }
+    }
+    let additions: Vec<_> = after
+        .obligations
+        .iter()
+        .filter(|r| !previous.contains_key(r.id.as_str()))
+        .collect();
+    if additions.is_empty() {
+        return Err("inventory extension has no new obligations".into());
+    }
+    let mut extended = ledger.clone();
+    for row in additions {
+        extended.assignments.push(Assignment {
+            id: row.id.clone(),
+            disposition: Disposition::Gap {
+                issue,
+                reason: reason.into(),
+            },
+        });
+    }
+    extended.assignments.sort_by(|a, b| a.id.cmp(&b.id));
+    extended.catalog_sha256 = digest(after)?;
+    validate(after, &extended, false)?;
+    Ok(extended)
+}
+
+pub fn extend_ownership(previous_catalog: &str, issue: u64, reason: &str) -> Result<(), String> {
+    let (current, ledger) = load()?;
+    let previous: Catalog = parse(&fs::read(previous_catalog).map_err(|e| e.to_string())?)?;
+    let extended = extended_ledger(&previous, &current, &ledger, issue, reason)?;
+    let mut bytes = serde_json::to_vec_pretty(&extended).map_err(|e| e.to_string())?;
+    bytes.push(b'\n');
+    fs::write(repo_root().join(LEDGER), bytes).map_err(|e| e.to_string())?;
+    println!(
+        "extended ownership inventory: preserved {} dispositions, added {} explicit gaps",
+        ledger.assignments.len(),
+        extended.assignments.len() - ledger.assignments.len()
+    );
+    Ok(())
+}
+
 pub fn verify_ownership() -> Result<(), String> {
     let (catalog, ledger) = load()?;
     let gaps = validate(&catalog, &ledger, false)?;
@@ -771,6 +857,92 @@ pub(super) fn verify_closed() -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn inventory_extension_preserves_dispositions_and_only_adds_gaps() {
+        let (before, ledger) = fixture();
+        let mut after = before.clone();
+        let mut row = before.obligations[0].clone();
+        row.id = "new-profile".into();
+        after.obligations.push(row);
+        let extended = extended_ledger(
+            &before,
+            &after,
+            &ledger,
+            85,
+            "independent profile vector missing",
+        )
+        .unwrap();
+        assert_eq!(extended.assignments.len(), 2);
+        let original = extended
+            .assignments
+            .iter()
+            .find(|r| r.id == ledger.assignments[0].id)
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(original).unwrap(),
+            serde_json::to_value(&ledger.assignments[0]).unwrap()
+        );
+        assert_eq!(validate(&after, &extended, false).unwrap(), 2);
+        assert!(extended.approval.is_null());
+        assert!(extended_ledger(&before, &before, &ledger, 85, "gap").is_err());
+        let mut changed = after.clone();
+        changed.obligations[0].criterion.push_str(" widened");
+        assert!(extended_ledger(&before, &changed, &ledger, 85, "gap")
+            .unwrap_err()
+            .contains("changed or removed"));
+        let mut removed = after.clone();
+        removed.obligations.remove(0);
+        assert!(extended_ledger(&before, &removed, &ledger, 85, "gap").is_err());
+        let mut stale = before.clone();
+        stale.obligations[0].criterion.push_str(" forged");
+        assert!(extended_ledger(&stale, &after, &ledger, 85, "gap").is_err());
+        let mut approved = ledger.clone();
+        approved.approval = json!({"existing":"approval"});
+        assert!(extended_ledger(&before, &after, &approved, 85, "gap").is_err());
+    }
+
+    #[test]
+    fn inventory_extension_preserves_live_owners_and_approved_exclusions() {
+        let (before, ledger) = load().unwrap();
+        let mut after = before.clone();
+        let mut row = before
+            .obligations
+            .iter()
+            .find(|r| r.id == "codec:png:malformed")
+            .unwrap()
+            .clone();
+        row.id = "codec:png:test-only-extension".into();
+        after.obligations.push(row);
+        let extended = extended_ledger(
+            &before,
+            &after,
+            &ledger,
+            85,
+            "test-only missing profile evidence",
+        )
+        .unwrap();
+        let indexed: BTreeMap<_, _> = extended
+            .assignments
+            .iter()
+            .map(|row| (&row.id, row))
+            .collect();
+        assert!(ledger
+            .assignments
+            .iter()
+            .any(|r| matches!(r.disposition, Disposition::Excluded { .. })));
+        assert!(ledger
+            .assignments
+            .iter()
+            .any(|r| matches!(r.disposition, Disposition::Owned { .. })));
+        for original in &ledger.assignments {
+            assert_eq!(
+                serde_json::to_value(original).unwrap(),
+                serde_json::to_value(indexed[&original.id]).unwrap()
+            );
+        }
+        assert_eq!(extended.assignments.len(), ledger.assignments.len() + 1);
+    }
 
     #[test]
     fn library_adapter_requires_a_real_unconditional_library_test() {

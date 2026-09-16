@@ -13,15 +13,19 @@ coverage is complete or the chosen primary owners have received human approval.
 | Surface field × applicable format | 605 | `fieldDispositions[].scope.formats` |
 | Diagnostic × declared format rule | 122 | `registryMappings[].formatRules` |
 | Manifest tolerance-exception scopes | 24 | Case + variant + format + region |
-| Codec/profile facets | 51 | Explicit spec-anchored `ownership-policy.json` |
+| Codec/profile obligations | 999 | 51 base facets plus 948 PNG/APNG inventory obligations |
 | Interactions | 4 | Explicit spec-anchored policy |
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
-| **Total** | **928** | |
+| **Total** | **1,876** | |
 
-843 primary owners are proposed (118 case labels, the AVIF rejection test,
-119 diagnostic/format obligations and all 605 current surface-field/format obligations).
-Three generic-fallback entries have approved exclusions, giving **846
-assigned/excluded and 82 explicit gaps**. The 21 metadata failure assignments use
+907 primary owners are proposed (118 case labels, the AVIF rejection test,
+119 diagnostic/format obligations, all 605 current surface-field/format obligations,
+and 64 PNG/APNG sample-vector cells). Three generic-fallback entries have approved
+exclusions. The PNG/APNG inventory expansion preserved all 928 prior dispositions
+and added 948 obligations; its first tranche assigns 60 static and four RGBA8 APNG
+cells. Current totals are **910 assigned/excluded and 966 gaps**. See
+[the PNG/APNG inventory assessment](../../../docs/research/png-profile-ownership.md).
+The 21 metadata failure assignments use
 the explicit library-test adapter and are assessed in [the metadata audit](../../../docs/research/metadata-failure-ownership.md).
 The PDF raster-fallback assignment and
 shared-plan adapter are assessed in [the PDF audit](../../../docs/research/pdf-raster-fallback-ownership.md).
@@ -134,6 +138,9 @@ cargo run --locked -p xtask -- conformance refresh-test-owner-source MODULE
 # Explicit root library tests using private test-only operation seams:
 cargo run --locked -p xtask -- conformance record-library-test-owner MODULE FUNCTION RATIONALE ID...
 cargo run --locked -p xtask -- conformance refresh-library-test-owner-source MODULE
+# Capture the old catalog before editing inventory inputs, then extend only:
+# cargo run --locked -p xtask -- conformance ownership-catalog > target/old-catalog.json
+cargo run --locked -p xtask -- conformance extend-ownership target/old-catalog.json ISSUE REASON
 # Machine-readable all-gap template, for explicit reviewed migrations only:
 cargo run --locked -p xtask -- conformance seed-ownership > target/ownership-template.json
 # Both fail until the ledger is complete (closure also requires approval):
@@ -147,6 +154,18 @@ must have exactly one row for every identity: no omitted gaps, unknown identitie
 duplicates, stale catalog bindings, or silently selected candidates. Policy rows
 must refer to an actual current spec anchor. Required base codec facets and
 closure milestones cannot be removed without a code change as well.
+
+`png-profiles.json` adds explicit PNG/APNG sample, cICP and orientation axes and
+remaining qualification rows. Its descriptor is part of the catalog digest.
+Sample-cell evidence is limited to the declared untagged 8-bit-lattice scope;
+non-lattice precision, color interpretation and axis composition are distinct
+requirements. See [the inventory assessment](../../../docs/research/png-profile-ownership.md).
+
+`extend-ownership` authenticates a captured prior catalog against the existing
+ledger, refuses changes/removals to any prior obligation, preserves all prior
+dispositions, and adds new rows only as issue-linked gaps. It refuses an approved
+global ledger. This is an append-only reviewed inventory migration, not a stale
+digest override, automatic owner selection, or approval refresh.
 
 Dispositions are strict tagged objects:
 
