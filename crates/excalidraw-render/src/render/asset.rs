@@ -165,6 +165,7 @@ pub(super) enum Authority {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum ResolveError {
     Missing,
+    Forbidden,
     Malformed,
     Unsupported,
     DecodeFailed,
@@ -370,13 +371,29 @@ impl Cache {
     where
         F: FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
     {
-        let payload = payload(
+        let payload = match payload(
             scene,
             supplemental,
             file_id,
             authority,
             limits.max_asset_bytes(),
-        )?;
+        ) {
+            Ok(payload) => payload,
+            Err(ResolveError::Forbidden) => {
+                return root_svg_recovery(
+                    ResolveError::Forbidden,
+                    Claims {
+                        mime_type: None,
+                        data_url_media_type: None,
+                    },
+                    fallback_dimensions,
+                    limits,
+                    revision,
+                    &mut transact,
+                )
+            }
+            Err(error) => return Err(error.into()),
+        };
         if svg::looks_like_svg(&payload.bytes) {
             return self.resolve_svg(
                 revision,
@@ -756,7 +773,7 @@ impl Cache {
                         error,
                         ResolveError::SvgComplexity { .. } | ResolveError::SvgDepth { .. }
                     ) {
-                        return root_svg_limit_recovery(
+                        return root_svg_recovery(
                             error,
                             payload.claims,
                             fallback_dimensions,
@@ -892,7 +909,7 @@ impl Cache {
     }
 }
 
-fn root_svg_limit_recovery(
+fn root_svg_recovery(
     error: ResolveError,
     claims: Claims,
     viewport: Option<(f64, f64)>,

@@ -128,7 +128,19 @@ impl RenderSession {
                     recovery: crate::Recovery::Placeholder,
                     ..
                 })
-            )
+            ) || (d.code() == crate::DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE
+                && matches!(
+                    d.details(),
+                    Some(
+                        crate::ErrorDetails::Asset {
+                            recovery: crate::Recovery::Placeholder,
+                            ..
+                        } | crate::ErrorDetails::NestedSource {
+                            recovery: crate::Recovery::Placeholder,
+                            ..
+                        }
+                    )
+                ))
         }) {
             let existing = mandatory_notices
                 .map(super::super::notices::MandatoryNotices::copy_from)
@@ -137,7 +149,7 @@ impl RenderSession {
                     self.memory_failure(request, "artifact_manifest", "nested_resource_notice")
                 })?;
             Some(
-                super::super::notices::MandatoryNotices::with_nested_resource(
+                super::super::notices::MandatoryNotices::with_error_image_recipe(
                     existing,
                     request.format(),
                 )

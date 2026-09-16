@@ -18,9 +18,11 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **928** | |
 
-807 primary owners are proposed (118 case labels, the AVIF rejection test,
-83 diagnostic/format obligations and all 605 current surface-field/format obligations).
-121 obligations remain explicit gaps. All 30 resource diagnostic/format obligations
+815 primary owners are proposed (118 case labels, the AVIF rejection test,
+91 diagnostic/format obligations and all 605 current surface-field/format obligations).
+113 obligations remain explicit gaps. The eight nested SVG/link diagnostic
+assignments are assessed in [the SVG/link audit](../../../docs/research/svg-link-diagnostic-ownership.md).
+All 30 resource diagnostic/format obligations
 now have proposed owners; the final 15 are assessed in
 [resource diagnostic completion](../../../docs/research/resource-diagnostic-ownership.md).
 Native and browser-WASM execution is recorded in
@@ -54,7 +56,7 @@ Admission/identity additions are assessed
 in [the admission audit](../../../docs/research/admission-identity-ownership.md).
 The earlier surface assignments are assessed in
 [the surface ownership audit](../../../docs/research/surface-field-ownership.md).
-The diagnostic audit retains 39 of its 122 obligations as gaps with specific
+The diagnostic audit retains 31 of its 122 obligations as gaps with specific
 missing assertions or branches; see [the per-code audit](../../../docs/research/diagnostic-ownership.md).
 These counts are **not a coverage percentage**:
 codec facets still need expansion into the full admitted-profile matrix, and

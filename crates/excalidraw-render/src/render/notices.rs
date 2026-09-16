@@ -14,7 +14,9 @@ impl MandatoryNotices {
     pub(super) fn copy_from(value: &Self) -> Result<Self, NoticeError> {
         Ok(Self(try_owned(value.as_json())?))
     }
-    pub(super) fn with_nested_resource(
+    /// Nested-limit and forbidden-reference recipes share the error-image
+    /// glyphs and their two Font Awesome notices.
+    pub(super) fn with_error_image_recipe(
         existing: Option<Self>,
         format: crate::OutputFormat,
     ) -> Result<Self, NoticeError> {

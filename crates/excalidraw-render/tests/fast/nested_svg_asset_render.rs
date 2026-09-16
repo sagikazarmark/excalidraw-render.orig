@@ -79,13 +79,16 @@ fn unsafe_nested_svg_boundaries_are_removed_before_embedding() {
     assert!(sanitized.contains("<rect"));
     assert_eq!(outcome.report().diagnostics().len(), 7);
     assert!(outcome.report().diagnostics().iter().all(|diagnostic| {
-        diagnostic.code() == DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED
-            && diagnostic.element_id().is_none()
+        matches!(
+            diagnostic.code(),
+            DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED
+                | DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE
+        ) && diagnostic.element_id().is_none()
             && diagnostic.json_pointer() == "/files/asset/dataURL"
             && matches!(
                 diagnostic.details(),
                 Some(ErrorDetails::NestedSource {
-                    recovery: Recovery::Removed,
+                    recovery: Recovery::Removed | Recovery::Placeholder,
                     ..
                 })
             )

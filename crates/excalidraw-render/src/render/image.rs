@@ -55,6 +55,7 @@ pub(super) struct ImageResolver {
     assets: std::collections::BTreeMap<usize, std::sync::Arc<ResolvedImageAsset>>,
     fallbacks: Vec<(usize, crate::normalization::NormalizedImageStatus)>,
     raster_limit_owners: Vec<String>,
+    forbidden_owners: Vec<(String, bool)>,
 }
 
 impl ImageResolver {
@@ -65,6 +66,7 @@ impl ImageResolver {
             assets: std::collections::BTreeMap::new(),
             fallbacks: Vec::new(),
             raster_limit_owners: Vec::new(),
+            forbidden_owners: Vec::new(),
         }
     }
 
@@ -76,7 +78,7 @@ impl ImageResolver {
         session: &mut RenderSession,
         scene: &SceneDocument,
         request: &RenderRequest,
-        source: NormalizedElement,
+        mut source: NormalizedElement,
         semantic_working: &mut Vec<SemanticWorkingRecord>,
     ) -> Result<ImageDisposition, RenderError> {
         let NormalizedElementKind::Image(image) = &source.kind else {
@@ -300,6 +302,9 @@ impl ImageResolver {
             semantic_working.append(&mut pending_asset_working);
             let asset_failure = asset_resolution.as_ref().err().copied();
             if let Ok(resolution) = asset_resolution {
+                let forbidden_root = resolution.svg_failures.iter().any(|failure| {
+                    failure.error == asset::ResolveError::Forbidden && failure.path.is_empty()
+                });
                 let animated = resolution.animated;
                 let media_type = resolution.media_kind.media_type();
                 let svg_diagnostic_location = if resolution.svg_removals.is_empty()
@@ -359,6 +364,49 @@ impl ImageResolver {
                     )?;
                 }
                 for failure in &resolution.svg_failures {
+                    if failure.error == asset::ResolveError::Forbidden && failure.path.is_empty() {
+                        // One file diagnostic, but each selected reference gets
+                        // its own viewport. Aggregate only actual target-local
+                        // replacements, not deleted or out-of-target bounds.
+                        let existing = self
+                            .forbidden_owners
+                            .iter()
+                            .position(|(id, _)| id == file_id);
+                        let paints = failure.placeholder
+                            || existing.is_some_and(|i| self.forbidden_owners[i].1);
+                        let update=if let Some(diagnostic) = session.report.diagnostics.iter_mut().find(|d| d.code() == DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE && matches!(d.details(),Some(ErrorDetails::Asset {asset_id,..}) if asset_id == file_id)) {
+                            diagnostic.set_forbidden_resource_recovery(paints)
+                        }else{Ok(())};
+                        update.map_err(|_| {
+                            session.memory_failure(
+                                request,
+                                "compatibility_report",
+                                "forbidden_recipe",
+                            )
+                        })?;
+                        if let Some(i) = existing {
+                            self.forbidden_owners[i].1 = paints;
+                        } else {
+                            self.forbidden_owners.try_reserve(1).map_err(|_| {
+                                session.memory_failure(
+                                    request,
+                                    "asset_resolution",
+                                    "forbidden_owner",
+                                )
+                            })?;
+                            self.forbidden_owners.push((
+                                try_owned(file_id).map_err(|_| {
+                                    session.memory_failure(
+                                        request,
+                                        "asset_resolution",
+                                        "forbidden_owner",
+                                    )
+                                })?,
+                                paints,
+                            ));
+                        }
+                        continue;
+                    }
                     let (json_pointer, source_order, source_position, local_owner) =
                         svg_diagnostic_location.as_ref().ok_or_else(|| {
                             session.internal_failure(
@@ -432,7 +480,7 @@ impl ImageResolver {
                 // rather than retaining a second warning (or leaving its type
                 // unknown after successful validation). Its source order and
                 // diagnostic resource charge remain those of normalization.
-                if matches!(authority, asset::Authority::Scene) {
+                if !forbidden_root && matches!(authority, asset::Authority::Scene) {
                     let (pointer, _, _, _) = asset_claim_location(
                         scene,
                         request.supplemental_assets(),
@@ -633,6 +681,15 @@ impl ImageResolver {
                                 source_position: Some(u64::MAX),
                             },
                         )?;
+                    }
+                }
+                if forbidden_root {
+                    // The replacement already fills the normalized local
+                    // viewport. A crop of the unavailable payload must not
+                    // crop the new recipe a second time; flips, rotation and
+                    // existing corner/frame clips still apply to that viewport.
+                    if let NormalizedElementKind::Image(image) = &mut source.kind {
+                        image.crop = None;
                     }
                 }
                 self.assets.insert(source.source.source_index(), asset);

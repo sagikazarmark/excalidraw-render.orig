@@ -131,7 +131,7 @@ pub(super) fn unsafe_svg_categories_follow_static_effects() {
         ("", "<animate attributeName=\"opacity\" values=\"0;1\"/>", true, 1),
         ("", "<style>@import url(https://example.invalid/style.css); rect {fill:red}</style><rect width=\"40\" height=\"30\"/>", true, 1),
         ("", "<rect xmlns=\"https://example.invalid/ns\" width=\"40\" height=\"30\"/>", true, 1),
-        ("<!DOCTYPE svg [<!ENTITY label 'hidden'>]>", "<text y=\"20\">A&label;B</text>", true, 0),
+        ("<!DOCTYPE svg [<!ENTITY label 'hidden'>]>", "<text y=\"20\">A&label;B</text>", true, 2),
     ] {
         let svg=format!(r#"{prefix}<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30">{body}</svg>"#);
         let data=format!("data:image/svg+xml;base64,{}",base64::engine::general_purpose::STANDARD.encode(svg));
@@ -196,7 +196,18 @@ pub(super) fn unsafe_svg_attributes_and_safe_styles_are_explicit() {
         ] {
             let payload = data(body);
             let segments = json!([{"kind":"node","ordinal":1,"name":null},{"kind":"attribute","ordinal":0,"name":name}]);
-            let row = unsafe_removal_expected(effects, segments);
+            let row = if body.starts_with("<image") {
+                expected(
+                    "image.forbidden-resource",
+                    "warning",
+                    effects,
+                    Value::Null,
+                    "/files/outer/dataURL",
+                    json!({"kind":"nested_source","asset_chain":[{"asset_id":"outer","occurrence":0}],"paths":[{"segments":segments}],"recovery":"placeholder"}),
+                )
+            } else {
+                unsafe_removal_expected(effects, segments)
+            };
             let bytes = base64::engine::general_purpose::STANDARD
                 .decode(payload.split_once(',').unwrap().1)
                 .unwrap();

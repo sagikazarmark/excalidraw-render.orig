@@ -1082,6 +1082,10 @@ impl RenderSession {
                     .files
                     .retain(|record| file_ids.binary_search(&record.key).is_ok());
                 for index in 0..self.pending_frame_normalization_diagnostics.len() {
+                    self.pending_frame_normalization_diagnostics[index].diagnostic.scope_forbidden_resource_recovery(|file_id| {
+                        normalization.elements.iter().any(|source| matches!(&source.kind,NormalizedElementKind::Image(image)
+                            if image.file_id.as_deref()==Some(file_id) && source.width>0.0 && source.height>0.0))
+                    }).map_err(|_| self.memory_failure(request,"frame_selection","forbidden_resource_recovery"))?;
                     self.pending_frame_normalization_diagnostics[index]
                         .diagnostic
                         .scope_malformed_image_recovery(|file_id| {

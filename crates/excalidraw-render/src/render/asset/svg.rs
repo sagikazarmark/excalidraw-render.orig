@@ -137,17 +137,33 @@ fn sanitize_at(
     nested_accounting: &mut NestedAccounting,
 ) -> Result<SanitizedSvg, ResolutionFailure> {
     let text = std::str::from_utf8(bytes).map_err(|_| ResolveError::SvgDecodeFailed)?;
-    let (text, mut removals) = remove_dtd_and_entities(text)?;
+    let SvgSource {
+        text,
+        mut removals,
+        source_nodes,
+    } = remove_dtd_and_entities(text)?;
     let mut failures = Vec::new();
     let mut media_claims = Vec::new();
     let document = roxmltree::Document::parse(&text).map_err(|_| ResolveError::SvgDecodeFailed)?;
-    for instruction in document.descendants().filter_map(|node| node.pi()) {
+    for node in document.descendants().filter(|node| node.pi().is_some()) {
+        let Some(instruction) = node.pi() else {
+            continue;
+        };
         if instruction.target != "xml" {
+            removals
+                .try_reserve(1)
+                .map_err(|_| ResolutionFailure::Memory)?;
             removals.push(Removal {
                 slots: Vec::new(),
-                node_ordinal: 0,
+                node_ordinal: source_node_ordinal(
+                    &document,
+                    &source_nodes,
+                    node.parent()
+                        .filter(|n| n.is_element())
+                        .unwrap_or(document.root_element()),
+                ),
                 attribute_ordinal: None,
-                name: instruction.target.to_owned(),
+                name: super::try_owned(instruction.target)?,
                 changes_appearance: true,
             });
         }
@@ -158,11 +174,15 @@ fn sanitize_at(
     {
         return Err(ResolveError::SvgDecodeFailed.into());
     }
-    let mut effects = discover_effects(&document);
-    let nodes = document
-        .descendants()
-        .filter(|node| node.is_element() || node.is_text())
-        .count();
+    let mut effects = discover_effects(&document, &source_nodes);
+    let nodes = if source_nodes.is_empty() {
+        document
+            .descendants()
+            .filter(|node| node.is_element() || node.is_text())
+            .count()
+    } else {
+        source_nodes.len()
+    };
     if nodes > usize::try_from(limits.max_nested_svg_nodes()).unwrap_or(usize::MAX) {
         return Err(ResolveError::SvgComplexity {
             attempted: u64::try_from(nodes).unwrap_or(u64::MAX),
@@ -238,6 +258,7 @@ fn sanitize_at(
         root,
         true,
         &mut node_ordinal,
+        &source_nodes,
         &mut serialized,
         &mut removals,
         &mut failures,
@@ -429,53 +450,228 @@ fn allowed_static_style_property(property: &str) -> bool {
     )
 }
 
-fn remove_dtd_and_entities(text: &str) -> Result<(String, Vec<Removal>), ResolveError> {
-    let mut without_dtd = String::new();
-    let mut removals = Vec::new();
-    let mut cursor = 0;
-    while let Some(relative) = text[cursor..].find("<!DOCTYPE") {
-        let start = cursor + relative;
-        without_dtd.push_str(&text[cursor..start]);
-        let end = doctype_end(&text[start..]).ok_or(ResolveError::SvgDecodeFailed)? + start;
-        removals.push(Removal {
-            slots: Vec::new(),
-            node_ordinal: 0,
-            attribute_ordinal: None,
-            name: "DOCTYPE".to_owned(),
-            changes_appearance: false,
-        });
-        cursor = end;
-    }
-    without_dtd.push_str(&text[cursor..]);
+struct SvgSource {
+    text: String,
+    removals: Vec<Removal>,
+    source_nodes: Vec<SourceNode>,
+}
+struct SourceNode {
+    offset: usize,
+    end: usize,
+    text: bool,
+    ordinal: u64,
+}
 
-    let mut sanitized = String::new();
-    let mut rest = without_dtd.as_str();
-    while let Some(start) = rest.find('&') {
-        sanitized.push_str(&rest[..start]);
-        rest = &rest[start..];
-        let Some(end) = rest.find(';') else {
-            sanitized.push('&');
-            rest = &rest[1..];
-            continue;
-        };
-        let entity = &rest[1..end];
-        if matches!(entity, "amp" | "lt" | "gt" | "quot" | "apos")
-            || entity.strip_prefix('#').is_some_and(valid_numeric_entity)
-        {
-            sanitized.push_str(&rest[..=end]);
-        } else {
-            removals.push(Removal {
-                slots: Vec::new(),
-                node_ordinal: 0,
-                attribute_ordinal: None,
-                name: entity.to_owned(),
-                changes_appearance: true,
-            });
+/// Unknown entities become one temporary space solely in a location document,
+/// so even an entity-only text node keeps its source ordinal. A second, clean
+/// document drives semantic operations; no marker is ever serialized or painted.
+fn remove_dtd_and_entities(text: &str) -> Result<SvgSource, ResolveError> {
+    let mut located = String::new();
+    located
+        .try_reserve_exact(text.len())
+        .map_err(|_| ResolveError::Memory)?;
+    let mut removals = Vec::new();
+    let mut entities = Vec::new();
+    let (mut cursor, mut in_tag, mut quote) = (0, false, None);
+    while cursor < text.len() {
+        let rest = &text[cursor..];
+        if !in_tag {
+            let opaque = [("<!--", "-->"), ("<![CDATA[", "]]>"), ("<?", "?>")]
+                .into_iter()
+                .find(|(open, _)| rest.starts_with(open));
+            if let Some((open, close)) = opaque {
+                let end = open.len()
+                    + rest[open.len()..]
+                        .find(close)
+                        .ok_or(ResolveError::SvgDecodeFailed)?
+                    + close.len();
+                located.push_str(&rest[..end]);
+                cursor += end;
+                continue;
+            }
+            if rest.starts_with("<!DOCTYPE") {
+                let end = doctype_end(rest).ok_or(ResolveError::SvgDecodeFailed)?;
+                removals.try_reserve(1).map_err(|_| ResolveError::Memory)?;
+                removals.push(Removal {
+                    slots: Vec::new(),
+                    node_ordinal: 0,
+                    attribute_ordinal: None,
+                    name: super::try_owned("DOCTYPE")?,
+                    changes_appearance: false,
+                });
+                cursor += end;
+                continue;
+            }
         }
-        rest = &rest[end + 1..];
+        if rest.starts_with('&') && (!in_tag || quote.is_some()) {
+            let end = rest.as_bytes()[1..]
+                .iter()
+                .position(|b| {
+                    b.is_ascii_whitespace() || matches!(b, b';' | b'<' | b'>' | b'&' | b'"' | b'\'')
+                })
+                .map(|index| index + 1)
+                .filter(|index| rest.as_bytes()[*index] == b';');
+            if let Some(end) = end {
+                let entity = &rest[1..end];
+                let bounded_name = !entity.is_empty()
+                    && !entity.bytes().any(|b| {
+                        b.is_ascii_whitespace() || matches!(b, b'<' | b'>' | b'&' | b'"' | b'\'')
+                    });
+                if bounded_name
+                    && !matches!(entity, "amp" | "lt" | "gt" | "quot" | "apos")
+                    && !entity.strip_prefix('#').is_some_and(valid_numeric_entity)
+                {
+                    entities.try_reserve(1).map_err(|_| ResolveError::Memory)?;
+                    removals.try_reserve(1).map_err(|_| ResolveError::Memory)?;
+                    entities.push((removals.len(), located.len()));
+                    removals.push(Removal {
+                        slots: Vec::new(),
+                        node_ordinal: 0,
+                        attribute_ordinal: None,
+                        name: super::try_owned(entity)?,
+                        changes_appearance: true,
+                    });
+                    located.push(' ');
+                    cursor += end + 1;
+                    continue;
+                }
+            }
+        }
+        let ch = rest.chars().next().ok_or(ResolveError::SvgDecodeFailed)?;
+        if in_tag {
+            if quote == Some(ch) {
+                quote = None;
+            } else if quote.is_none() && matches!(ch, '\'' | '"') {
+                quote = Some(ch);
+            } else if quote.is_none() && ch == '>' {
+                in_tag = false;
+            }
+        } else if ch == '<' {
+            in_tag = true;
+        }
+        located.push(ch);
+        cursor += ch.len_utf8();
     }
-    sanitized.push_str(rest);
-    Ok((sanitized, removals))
+    if entities.is_empty() {
+        return Ok(SvgSource {
+            text: located,
+            removals,
+            source_nodes: Vec::new(),
+        });
+    }
+    let mut source_nodes = Vec::new();
+    {
+        let document =
+            roxmltree::Document::parse(&located).map_err(|_| ResolveError::SvgDecodeFailed)?;
+        source_nodes
+            .try_reserve_exact(
+                document
+                    .descendants()
+                    .filter(|n| n.is_element() || n.is_text())
+                    .count(),
+            )
+            .map_err(|_| ResolveError::Memory)?;
+        for (ordinal, node) in document
+            .descendants()
+            .filter(|n| n.is_element() || n.is_text())
+            .enumerate()
+        {
+            let offset = node.range().start;
+            let removed = entities.partition_point(|(_, position)| *position < offset);
+            let mut own_range = node.range();
+            if node.is_element() {
+                own_range.end = node
+                    .first_child()
+                    .map_or(own_range.end, |child| child.range().start);
+            } else {
+                // roxmltree coalesces adjacent CDATA/text but retains only the
+                // first token's range. Its complete lexical text span ends at
+                // the next sibling, or the end of its parent when it is last.
+                own_range.end = node
+                    .next_sibling()
+                    .map(|next| next.range().start)
+                    .or_else(|| node.parent().map(|parent| parent.range().end))
+                    .unwrap_or(own_range.end);
+            }
+            let end =
+                own_range.end - entities.partition_point(|(_, position)| *position < own_range.end);
+            source_nodes.push(SourceNode {
+                offset: offset - removed,
+                end,
+                text: node.is_text(),
+                ordinal: ordinal as u64,
+            });
+            let visual = !node
+                .ancestors()
+                .any(|ancestor| ancestor.has_tag_name("script"));
+            locate_entities(
+                own_range,
+                ordinal as u64,
+                None,
+                visual,
+                &entities,
+                &mut removals,
+            )?;
+            for (attribute_ordinal, attribute) in node.attributes().enumerate() {
+                let visual = !attribute
+                    .name()
+                    .as_bytes()
+                    .get(..2)
+                    .is_some_and(|prefix| prefix.eq_ignore_ascii_case(b"on"))
+                    && !(attribute.name() == "href" && node.has_tag_name("a"));
+                locate_entities(
+                    attribute.range_value(),
+                    ordinal as u64,
+                    Some((attribute_ordinal as u64, attribute.name())),
+                    visual,
+                    &entities,
+                    &mut removals,
+                )?;
+            }
+        }
+    }
+    source_nodes.sort_unstable_by_key(|n| (n.offset, n.text, n.ordinal));
+    let mut clean = String::new();
+    clean
+        .try_reserve_exact(located.len())
+        .map_err(|_| ResolveError::Memory)?;
+    let mut start = 0;
+    for (_, offset) in entities {
+        clean.push_str(&located[start..offset]);
+        start = offset + 1;
+    }
+    clean.push_str(&located[start..]);
+    Ok(SvgSource {
+        text: clean,
+        removals,
+        source_nodes,
+    })
+}
+
+fn locate_entities(
+    range: std::ops::Range<usize>,
+    node: u64,
+    attribute: Option<(u64, &str)>,
+    visual: bool,
+    entities: &[(usize, usize)],
+    removals: &mut [Removal],
+) -> Result<(), ResolveError> {
+    let start = entities.partition_point(|(_, position)| *position < range.start);
+    for (index, _) in entities[start..]
+        .iter()
+        .take_while(|(_, position)| *position < range.end)
+    {
+        let removal = removals
+            .get_mut(*index)
+            .ok_or(ResolveError::SvgDecodeFailed)?;
+        removal.node_ordinal = node;
+        removal.attribute_ordinal = attribute.map(|(ordinal, _)| ordinal);
+        removal.changes_appearance = visual;
+        if let Some((_, name)) = attribute {
+            removal.name = super::try_owned(name)?;
+        }
+    }
+    Ok(())
 }
 
 fn doctype_end(doctype: &str) -> Option<usize> {
@@ -511,6 +707,7 @@ fn serialize_node(
     node: roxmltree::Node<'_, '_>,
     is_root: bool,
     node_ordinal: &mut u64,
+    source_nodes: &[SourceNode],
     output: &mut String,
     removals: &mut Vec<Removal>,
     failures: &mut Vec<Failure>,
@@ -525,9 +722,14 @@ fn serialize_node(
     transact: &mut dyn FnMut(IntrinsicTransaction) -> Result<(), RenderError>,
     nested_accounting: &mut NestedAccounting,
 ) -> Result<(), ResolutionFailure> {
-    let ordinal = *node_ordinal;
-    *node_ordinal = node_ordinal.saturating_add(1);
+    let ordinal = if source_nodes.is_empty() {
+        *node_ordinal
+    } else {
+        source_node_ordinal(node.document(), source_nodes, node)
+    };
+    *node_ordinal = ordinal.saturating_add(1);
     if node.is_text() {
+        reserve_escaped(output, node.text().unwrap_or_default(), 0)?;
         escape_text(output, node.text().unwrap_or_default());
         return Ok(());
     }
@@ -536,17 +738,23 @@ fn serialize_node(
     }
     let name = node.tag_name().name();
     if !is_allowed_svg_node(&node) {
+        removals
+            .try_reserve(1)
+            .map_err(|_| ResolutionFailure::Memory)?;
         removals.push(Removal {
             slots: Vec::new(),
             node_ordinal: ordinal,
             attribute_ordinal: None,
-            name: name.to_owned(),
+            name: super::try_owned(name)?,
             changes_appearance: name != "script",
         });
         count_descendants(node, node_ordinal);
         return Ok(());
     }
 
+    output
+        .try_reserve(name.len().saturating_add(128))
+        .map_err(|_| ResolutionFailure::Memory)?;
     output.push('<');
     output.push_str(name);
     if is_root {
@@ -565,18 +773,73 @@ fn serialize_node(
         output.push_str(&ordinal.to_string());
         output.push('"');
     }
+    // SVG 2 href takes precedence over its SVG 1.1 xlink alias, regardless of
+    // attribute order. Only the effective reference can be resolved/recovered.
+    let effective_href = node
+        .attributes()
+        .position(|a| a.name() == "href" && a.namespace().is_none())
+        .or_else(|| {
+            node.attributes().position(|a| {
+                a.name() == "href" && a.namespace() == Some("http://www.w3.org/1999/xlink")
+            })
+        });
     for (attribute_ordinal, attribute) in node.attributes().enumerate() {
         let attribute_name = attribute.name();
         let value = attribute.value();
+        if attribute_name == "href"
+            && matches!(
+                attribute.namespace(),
+                None | Some("http://www.w3.org/1999/xlink")
+            )
+            && Some(attribute_ordinal) != effective_href
+        {
+            continue;
+        }
         if attribute_name == "filter" && filter_reference_is_noop(node, value) {
             continue;
         }
         if unsafe_attribute(name, attribute_name, attribute.namespace(), value) {
+            if name != "a"
+                && matches!(attribute_name, "href" | "xlink:href")
+                && matches!(
+                    attribute.namespace(),
+                    None | Some("http://www.w3.org/1999/xlink")
+                )
+            {
+                let replacement = if name == "image" {
+                    nested_limit_placeholder(node, limits, revision, ordinal, transact)?
+                } else {
+                    None
+                };
+                if let Some(url) = &replacement {
+                    remember_recovery(url, ordinal, revision, nested_accounting)?;
+                }
+                failures
+                    .try_reserve(1)
+                    .map_err(|_| ResolutionFailure::Memory)?;
+                let mut path = Vec::new();
+                path.try_reserve_exact(1)
+                    .map_err(|_| ResolutionFailure::Memory)?;
+                path.push((ordinal, attribute_ordinal as u64));
+                failures.push(Failure {
+                    path,
+                    error: ResolveError::Forbidden,
+                    placeholder: replacement.is_some(),
+                    may_lose_semantics: true,
+                });
+                if let Some(url) = replacement {
+                    write_attribute(output, "href", &url)?;
+                }
+                continue;
+            }
+            removals
+                .try_reserve(1)
+                .map_err(|_| ResolutionFailure::Memory)?;
             removals.push(Removal {
                 slots: Vec::new(),
                 node_ordinal: ordinal,
                 attribute_ordinal: Some(u64::try_from(attribute_ordinal).unwrap_or(u64::MAX)),
-                name: attribute_name.to_owned(),
+                name: super::try_owned(attribute_name)?,
                 changes_appearance: !attribute_name.to_ascii_lowercase().starts_with("on")
                     && (!matches!(attribute_name, "href" | "xlink:href") || name != "a"),
             });
@@ -616,20 +879,7 @@ fn serialize_node(
                         let replacement =
                             nested_limit_placeholder(node, limits, revision, ordinal, transact)?;
                         if let Some(url) = &replacement {
-                            nested_accounting
-                                .admissions
-                                .try_reserve(1)
-                                .map_err(|_| ResolutionFailure::Memory)?;
-                            nested_accounting
-                                .admissions
-                                .push(NestedAdmission::Recovery {
-                                    identity: super::semantic_identity(
-                                        revision,
-                                        super::MediaKind::Svg,
-                                        &ordinal.to_le_bytes(),
-                                    ),
-                                    retained_bytes: 256 + (url.len() as u64).div_ceil(64) * 64,
-                                });
+                            remember_recovery(url, ordinal, revision, nested_accounting)?;
                         }
                         replacement
                     } else {
@@ -661,16 +911,19 @@ fn serialize_node(
             None
         };
         let value = nested_value.as_deref().unwrap_or(value);
-        output.push(' ');
-        if attribute.namespace() == Some("http://www.w3.org/1999/xlink") {
-            output.push_str("href");
-        } else {
-            output.push_str(attribute_name);
-        }
-        output.push_str("=\"");
-        escape_attribute(output, value);
-        output.push('"');
+        write_attribute(
+            output,
+            if attribute.namespace() == Some("http://www.w3.org/1999/xlink") {
+                "href"
+            } else {
+                attribute_name
+            },
+            value,
+        )?;
     }
+    output
+        .try_reserve(1)
+        .map_err(|_| ResolutionFailure::Memory)?;
     output.push('>');
     for child in node.children() {
         if child.is_element() || child.is_text() {
@@ -678,6 +931,7 @@ fn serialize_node(
                 child,
                 false,
                 node_ordinal,
+                source_nodes,
                 output,
                 removals,
                 failures,
@@ -694,9 +948,53 @@ fn serialize_node(
             )?;
         }
     }
+    output
+        .try_reserve(name.len().saturating_add(3))
+        .map_err(|_| ResolutionFailure::Memory)?;
     output.push_str("</");
     output.push_str(name);
     output.push('>');
+    Ok(())
+}
+
+fn reserve_escaped(
+    output: &mut String,
+    value: &str,
+    overhead: usize,
+) -> Result<(), ResolutionFailure> {
+    let size = value
+        .len()
+        .checked_mul(6)
+        .and_then(|n| n.checked_add(overhead))
+        .ok_or(ResolutionFailure::Memory)?;
+    output
+        .try_reserve(size)
+        .map_err(|_| ResolutionFailure::Memory)
+}
+fn write_attribute(output: &mut String, name: &str, value: &str) -> Result<(), ResolutionFailure> {
+    reserve_escaped(output, value, name.len().saturating_add(4))?;
+    output.push(' ');
+    output.push_str(name);
+    output.push_str("=\"");
+    escape_attribute(output, value);
+    output.push('"');
+    Ok(())
+}
+
+fn remember_recovery(
+    url: &str,
+    ordinal: u64,
+    revision: CompatibilityRevision,
+    accounting: &mut NestedAccounting,
+) -> Result<(), ResolutionFailure> {
+    accounting
+        .admissions
+        .try_reserve(1)
+        .map_err(|_| ResolutionFailure::Memory)?;
+    accounting.admissions.push(NestedAdmission::Recovery {
+        identity: super::semantic_identity(revision, super::MediaKind::Svg, &ordinal.to_le_bytes()),
+        retained_bytes: 256 + (url.len() as u64).div_ceil(64) * 64,
+    });
     Ok(())
 }
 
@@ -1316,7 +1614,10 @@ fn unsafe_attribute(element_name: &str, name: &str, namespace: Option<&str>, val
         || contains_nonlocal_url(&lowercase)
 }
 
-fn discover_effects(document: &roxmltree::Document<'_>) -> Vec<Effect> {
+fn discover_effects(
+    document: &roxmltree::Document<'_>,
+    source_nodes: &[SourceNode],
+) -> Vec<Effect> {
     let mut effects = Vec::new();
     for node in document.descendants().filter(|node| node.is_element()) {
         let Some((attribute_ordinal, attribute_name, filter_value)) = filter_reference(node) else {
@@ -1340,7 +1641,7 @@ fn discover_effects(document: &roxmltree::Document<'_>) -> Vec<Effect> {
         {
             continue;
         }
-        let node_ordinal = source_node_ordinal(document, node);
+        let node_ordinal = source_node_ordinal(document, source_nodes, node);
         let mut causes = Vec::new();
         causes.push(EffectCause {
             slots: Vec::new(),
@@ -1352,7 +1653,7 @@ fn discover_effects(document: &roxmltree::Document<'_>) -> Vec<Effect> {
             effect_input: false,
         });
         for primitive in &primitives {
-            let primitive_ordinal = source_node_ordinal(document, *primitive);
+            let primitive_ordinal = source_node_ordinal(document, source_nodes, *primitive);
             causes.push(EffectCause {
                 slots: Vec::new(),
                 node_ordinal: primitive_ordinal,
@@ -1392,7 +1693,7 @@ fn discover_effects(document: &roxmltree::Document<'_>) -> Vec<Effect> {
                 .unwrap_or_else(|| {
                     format!(
                         "__excalidraw_filter_result_{}",
-                        source_node_ordinal(document, primitives[0])
+                        source_node_ordinal(document, source_nodes, primitives[0])
                     )
                 }),
             causes,
@@ -1551,7 +1852,27 @@ fn source_shape_bounds(node: roxmltree::Node<'_, '_>) -> Option<(f64, f64, f64, 
     }
 }
 
-fn source_node_ordinal(document: &roxmltree::Document<'_>, target: roxmltree::Node<'_, '_>) -> u64 {
+fn source_node_ordinal(
+    document: &roxmltree::Document<'_>,
+    source_nodes: &[SourceNode],
+    target: roxmltree::Node<'_, '_>,
+) -> u64 {
+    if !source_nodes.is_empty() {
+        if target.is_text() {
+            let position = target.range().start;
+            let end = source_nodes.partition_point(|node| node.offset <= position);
+            return source_nodes[..end]
+                .last()
+                .filter(|node| node.text && position < node.end)
+                .map_or(u64::MAX, |node| node.ordinal);
+        }
+        let key = (target.range().start, target.is_text());
+        let index = source_nodes.partition_point(|node| (node.offset, node.text) < key);
+        return source_nodes
+            .get(index)
+            .filter(|node| (node.offset, node.text) == key)
+            .map_or(u64::MAX, |node| node.ordinal);
+    }
     document
         .descendants()
         .filter(|node| node.is_element() || node.is_text())
@@ -1806,12 +2127,14 @@ mod tests {
                 "script",
                 "animate",
                 "foreignObject",
-                "href",
                 "style"
             ]
         );
-        // Scripts and handlers never execute in static rendering; an image's
-        // removed href does affect appearance, unlike an action link on `a`.
+        assert_eq!(sanitized.failures.len(), 1);
+        assert_eq!(sanitized.failures[0].error, ResolveError::Forbidden);
+        assert!(sanitized.failures[0].placeholder);
+        // Scripts and handlers never execute in static rendering. The rejected
+        // image href has a separate resource replacement, not an unsafe boundary.
         assert_eq!(
             sanitized
                 .removals
@@ -1883,7 +2206,21 @@ mod tests {
         assert!(!text.contains("javascript:"));
         assert_eq!(text.matches(r##"href="#tile""##).count(), 2, "{text}");
         assert!(text.contains(r##"fill="url(#paint)""##));
-        assert_eq!(removal_names(&sanitized), ["href", "href", "href"]);
+        assert_eq!(removal_names(&sanitized), ["href"]);
+        assert_eq!(sanitized.failures.len(), 2);
+        assert!(sanitized
+            .failures
+            .iter()
+            .all(|failure| failure.error == ResolveError::Forbidden));
+        assert!(!sanitized.failures[0].placeholder);
+        assert!(sanitized.failures[1].placeholder);
+        assert!(
+            !sanitized
+                .nested_admissions
+                .iter()
+                .any(|event| matches!(event, NestedAdmission::Occurrence { .. })),
+            "non-local references admit no fetched payload bytes"
+        );
         // xlink:href is lowered to a plain href on the way out.
         assert!(!text.contains("xlink:href"));
     }

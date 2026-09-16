@@ -1076,7 +1076,7 @@ mod payload_authority {
     }
 
     #[test]
-    fn a_record_without_a_decodable_data_url_is_malformed() {
+    fn malformed_payloads_and_forbidden_locations_have_distinct_recovery() {
         let null_record = SceneDocument::parse(
             br#"{"type":"excalidraw","version":2,"elements":[],"appState":{},"files":{"asset":null}}"#,
         )
@@ -1094,7 +1094,7 @@ mod payload_authority {
         )
         .expect("scene is admitted");
 
-        for scene in [null_record, bad_base64, no_scheme] {
+        for scene in [null_record, bad_base64] {
             assert_eq!(
                 asset_error(resolve_authority(
                     &scene,
@@ -1104,6 +1104,15 @@ mod payload_authority {
                 ResolveError::Malformed
             );
         }
+        let rejected =
+            resolve_authority(&no_scheme, &SupplementalAssets::default(), Authority::Scene)
+                .unwrap();
+        assert_eq!(rejected.svg_failures.len(), 1);
+        assert_eq!(rejected.svg_failures[0].error, ResolveError::Forbidden);
+        assert!(
+            !rejected.svg_failures[0].placeholder,
+            "the cache-only call supplies no safe viewport"
+        );
     }
 }
 

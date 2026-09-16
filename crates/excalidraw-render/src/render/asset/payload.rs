@@ -62,6 +62,9 @@ fn scene_payload(
     let SourceField::Value(data_url) = record.data_url() else {
         return Err(ResolveError::Malformed);
     };
+    if !data_url.starts_with("data:") {
+        return Err(ResolveError::Forbidden);
+    }
     let (media_type, encoded) = split_data_url(data_url).ok_or(ResolveError::Malformed)?;
     let (attempted, valid) = decoded_prefix(encoded);
     if attempted > max_asset_bytes {

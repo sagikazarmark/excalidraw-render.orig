@@ -240,6 +240,7 @@ impl LocalLimit {
 /// reported with `asset`, `resource_limit` or `nested_source` details.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum ImageFailure {
+    ForbiddenResource,
     /// `image.missing-file`: the referring element has no authoritative payload.
     MissingFile,
     /// `asset.malformed-file-record`.
@@ -248,7 +249,9 @@ pub(crate) enum ImageFailure {
     UnsupportedFormat,
     /// `image.decode-failed` for a payload the asset cache sniffed as
     /// `media_type`.
-    DecodeFailed { media_type: &'static str },
+    DecodeFailed {
+        media_type: &'static str,
+    },
     /// A local asset ceiling crossed while resolving the payload.
     LimitCrossed {
         limit: LocalLimit,
@@ -260,6 +263,7 @@ pub(crate) enum ImageFailure {
 impl ImageFailure {
     pub(crate) const fn code(self) -> DiagnosticCode {
         match self {
+            Self::ForbiddenResource => DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE,
             Self::MissingFile => DiagnosticCode::IMAGE_MISSING_FILE,
             Self::MalformedFileRecord => DiagnosticCode::ASSET_MALFORMED_FILE_RECORD,
             Self::UnsupportedFormat => DiagnosticCode::IMAGE_UNSUPPORTED_FORMAT,
@@ -374,6 +378,11 @@ pub(crate) enum DiagnosticKind<'a> {
         asset_chain: Vec<AssetChainEntry>,
         paths: Vec<NestedPath>,
     },
+    NestedForbiddenResource {
+        asset_chain: Vec<AssetChainEntry>,
+        paths: Vec<NestedPath>,
+        recovery: LocalRecovery,
+    },
     /// A nested data URL's advisory media type repaired after validation.
     NestedMediaTypeMismatch {
         asset_chain: Vec<AssetChainEntry>,
@@ -486,7 +495,9 @@ impl DiagnosticKind<'_> {
                 failure.code()
             }
             Self::NestedResourceLimit { limit, .. } => limit.code(),
-            Self::ForbiddenResource { .. } => DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE,
+            Self::ForbiddenResource { .. } | Self::NestedForbiddenResource { .. } => {
+                DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE
+            }
             Self::AnimationFlattened { .. } => DiagnosticCode::IMAGE_ANIMATION_FLATTENED,
             Self::UnsafeSvgContentRemoved { .. } => {
                 DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED
@@ -587,6 +598,7 @@ impl DiagnosticKind<'_> {
                 match failure {
                     ImageFailure::DecodeFailed { media_type } => Some(media_type),
                     ImageFailure::MissingFile
+                    | ImageFailure::ForbiddenResource
                     | ImageFailure::MalformedFileRecord
                     | ImageFailure::UnsupportedFormat
                     | ImageFailure::LimitCrossed { .. } => None,
@@ -612,6 +624,15 @@ impl DiagnosticKind<'_> {
                 asset_chain,
                 paths,
                 recovery: Recovery::Removed,
+            },
+            Self::NestedForbiddenResource {
+                asset_chain,
+                paths,
+                recovery,
+            } => ErrorDetails::NestedSource {
+                asset_chain,
+                paths,
+                recovery: recovery.recovery(),
             },
             Self::NestedResourceLimit {
                 limit,

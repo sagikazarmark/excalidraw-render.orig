@@ -318,6 +318,27 @@ impl PendingDiagnostic {
         Ok(())
     }
 
+    pub(crate) fn scope_forbidden_resource_recovery(
+        &mut self,
+        has_viewport: impl FnOnce(&str) -> bool,
+    ) -> Result<(), TryReserveError> {
+        if self.code != DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE {
+            return Ok(());
+        }
+        if let Some(details) = self.details.as_deref_mut() {
+            if let ErrorDetails::Asset { asset_id, .. } = details {
+                let kind = DiagnosticKind::ForbiddenResource {
+                    asset_id,
+                    recovery: crate::diagnostic_registry::LocalRecovery::placeholder_if(
+                        has_viewport(asset_id),
+                    ),
+                };
+                *details = kind.into_details()?;
+            }
+        }
+        Ok(())
+    }
+
     #[cfg(test)]
     pub(crate) fn effects(&self) -> &[DiagnosticEffect] {
         &self.effects
@@ -413,6 +434,23 @@ impl DiagnosticOrder {
 }
 
 impl CompatibilityDiagnostic {
+    pub(crate) fn set_forbidden_resource_recovery(
+        &mut self,
+        paints: bool,
+    ) -> Result<(), TryReserveError> {
+        if self.code == DiagnosticCode::IMAGE_FORBIDDEN_RESOURCE {
+            if let Some(details) = self.details.as_deref_mut() {
+                if let ErrorDetails::Asset { asset_id, .. } = details {
+                    *details = DiagnosticKind::ForbiddenResource {
+                        asset_id,
+                        recovery: crate::diagnostic_registry::LocalRecovery::placeholder_if(paints),
+                    }
+                    .into_details()?;
+                }
+            }
+        }
+        Ok(())
+    }
     pub(crate) fn set_identity_effects(&mut self, visual: bool) -> Result<(), TryReserveError> {
         set_identity_effects(&mut self.effects, self.format, visual)
     }

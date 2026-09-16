@@ -157,6 +157,10 @@ fn image_failure(
             },
         };
     match failure {
+        asset::ResolveError::Forbidden => (
+            ImageFailure::ForbiddenResource,
+            "non-local resource was rejected without fetching",
+        ),
         asset::ResolveError::Coordinate { value_bits } => (
             ImageFailure::LimitCrossed {
                 limit: LocalLimit::CoordinateMagnitude,
@@ -485,6 +489,20 @@ pub(super) fn nested_image_failure_diagnostic(
     let mut paths = Vec::new();
     paths.try_reserve_exact(1)?;
     paths.push(crate::NestedPath { segments });
+    if failure.error == asset::ResolveError::Forbidden {
+        return PendingDiagnostic::new(
+            DiagnosticKind::NestedForbiddenResource {
+                asset_chain: nested_asset_chain(asset_id)?,
+                paths,
+                recovery: LocalRecovery::placeholder_if(failure.placeholder),
+            },
+            format,
+            &[DiagnosticEffect::Visual, DiagnosticEffect::Semantic],
+            None,
+            json_pointer,
+            "non-local nested resource was rejected without fetching",
+        );
+    }
     if let ImageFailure::LimitCrossed {
         limit,
         configured,

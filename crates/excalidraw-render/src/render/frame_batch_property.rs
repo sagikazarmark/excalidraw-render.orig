@@ -327,6 +327,98 @@ fn derived_viewport_crossings_replay_the_same_fatal_trace() {
 }
 
 #[test]
+fn forbidden_resource_recovery_replays_target_local_bounds_and_traces() {
+    let source = serde_json::json!({"type":"excalidraw","version":2,"elements":[
+        {"id":"zero","type":"image","width":0,"height":0,"fileId":"outer","updated":1},
+        {"id":"bounded","type":"image","x":110,"width":30,"height":20,"fileId":"outer","updated":1},
+        {"id":"first","type":"frame","width":80,"height":60,"updated":1},
+        {"id":"second","type":"frame","x":100,"width":80,"height":60,"updated":1}
+    ],"appState":{},"files":{"outer":{"id":"outer","created":1,"dataURL":"https://example.invalid/image.png"}}});
+    let scene = SceneDocument::parse(&serde_json::to_vec(&source).unwrap()).unwrap();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        for frame in scene.frames() {
+            assert_batch_matches_standalone(
+                &scene,
+                frame,
+                format,
+                ResourceLimits::default(),
+                "forbidden resource target-local recovery",
+            );
+        }
+    }
+}
+
+#[test]
+fn forbidden_nested_recovery_replays_cached_descendant_work() {
+    use base64::Engine;
+    let url = |text: &str| {
+        format!(
+            "data:image/svg+xml;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(text)
+        )
+    };
+    let leaf = url(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><image width="20" height="20" href="https://example.invalid/unfetched"/></svg>"#,
+    );
+    let parent = url(&format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><image width="20" height="20" href="{leaf}"/><image x="20" width="20" height="20" href="{leaf}"/></svg>"#
+    ));
+    let outer = url(&format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" width="80" height="20"><image width="40" height="20" href="{parent}"/><image x="40" width="40" height="20" href="{parent}"/></svg>"#
+    ));
+    let source = serde_json::json!({"type":"excalidraw","version":2,"elements":[
+        {"id":"frame","type":"frame","width":80,"height":20,"updated":1},
+        {"id":"image","type":"image","width":80,"height":20,"fileId":"outer","updated":1}
+    ],"appState":{},"files":{"outer":{"id":"outer","created":1,"dataURL":outer}}});
+    let scene = SceneDocument::parse(&serde_json::to_vec(&source).unwrap()).unwrap();
+    for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+        for work in [8191, 8192] {
+            let limits = ResourceLimits::builder()
+                .max_asset_work_units(work)
+                .build()
+                .unwrap();
+            let request = FrameRenderRequest::builder(format)
+                .resource_limits(limits.clone())
+                .build()
+                .unwrap();
+            let frame = scene.frames().next().unwrap();
+            let (outcome, trace) =
+                render_frame_with_trace(&crate::catalog::REVISION_1, frame, &request, None);
+            let outcome = outcome.unwrap();
+            assert_eq!(outcome.report().diagnostics().len(), 4);
+            for diagnostic in outcome.report().diagnostics() {
+                assert_eq!(diagnostic.code().as_str(), "image.forbidden-resource");
+                assert!(
+                    matches!(diagnostic.details(),Some(crate::ErrorDetails::NestedSource {recovery,..}) if *recovery==if work==8192 {crate::Recovery::Placeholder}else{crate::Recovery::Omitted})
+                );
+            }
+            let trace: serde_json::Value = serde_json::from_slice(&trace).unwrap();
+            let count = trace["entries"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|entry| {
+                    entry["event"] == "nested_resource_placeholder"
+                        && entry["decision"] == "committed"
+                })
+                .count();
+            assert_eq!(
+                count,
+                if work == 8192 { 4 } else { 0 },
+                "cached descendants each replay their own recovery"
+            );
+            assert_batch_matches_standalone(
+                &scene,
+                frame,
+                format,
+                limits,
+                "forbidden nested cached recovery",
+            );
+        }
+    }
+}
+
+#[test]
 fn depth_variant_sanitization_shares_raster_validation_work() {
     use base64::Engine;
     let mut png = Vec::new();
