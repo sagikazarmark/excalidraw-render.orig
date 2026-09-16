@@ -43,7 +43,9 @@ The sample matrix covers all fifteen legal PNG color-type/bit-depth pairs:
 Sixteen-bit sample cells deliberately use byte-replicated 8-bit-lattice values.
 Those exact sample anchors do not characterize low-byte precision, byte-order
 discrimination, reduction thresholds, or 16-bit transparency-key aliasing. Those
-requirements remain separate gaps rather than being claimed by symmetric samples.
+requirements are separate obligations rather than being claimed by symmetric
+samples. They now have reference-backed owners in the
+[precision/alpha qualification](png-precision-ownership.md).
 
 ## Existing implementation and evidence map
 
@@ -53,7 +55,7 @@ full profile matrix and forbids using missing evidence as an exclusion.
 | Area | Implementation / existing evidence | Remaining qualification |
 | --- | --- | --- |
 | PNG headers, CRC and chunk order | `render/asset/png.rs::{read_png_ihdr,validate_static_png}`; `asset/tests.rs::png_codec`; decode diagnostic contracts | Systematic forbidden IHDR and malformed ancillary/container classes |
-| Sample expansion and Adam7 | `png 0.17.16`, `decode_static_png`; previous facade fixtures mostly RGBA8 | New manual sample vectors below; non-lattice precision remains open |
+| Sample expansion and Adam7 | `png 0.17.16`, `decode_static_png`; manual sample matrices below and subsequent [precision/alpha vectors](png-precision-ownership.md) | Profile-axis composition and canonical-viewer qualification beyond the recorded scopes |
 | Color interpretation | `asset/color.rs::prepare_png_color_normalization` selects cICP, ICC, sRGB, then gAMA/cHRM; the codec tests contain selected gray vectors | Individual recognized cICP combinations, ICC model/curve/LUT admission, precedence, gamut and transfer vectors |
 | HDR/gain maps | Selected PQ gray and SDR-base `gmAP`/`gdAT` examples in `asset/tests.rs` | Full reference tone-map and gain-map behavior; preserving/ignoring ancillary chunks does not prove interpretation |
 | Orientation | `asset/color.rs::{exif_orientation,orient_rgba}`; eight quadrant permutations and selected before/after-IDAT examples | Non-square vectors, both TIFF orders, all positions and malformed/duplicate metadata policy |
@@ -188,12 +190,13 @@ hard breaches or actionable smell findings. The new selector owns the 116 cells;
 the existing selectors keep the 60 static and four RGBA8 APNG cells, with their
 test-source bindings refreshed after review.
 
-All **180** declared sample-vector cells now have proposed owners. Global totals
-are **1,026 assigned/excluded and 850 gaps** (1,023 proposed owners plus three
+All **180** declared sample-vector cells now have proposed owners. The APNG
+completion checkpoint was **1,026 assigned/excluded and 850 gaps** (1,023 proposed owners plus three
 approved exclusions). The inventory and its catalog digest are unchanged.
-Non-lattice precision, APNG control/subframe/malformed classes, color/ICC/HDR,
-orientation, composition, umbrella facets and release closure retain their
-separate gaps.
+Non-lattice precision and alpha now have subsequent
+[reference-backed owners](png-precision-ownership.md). APNG control/subframe/malformed
+classes, color/ICC/HDR, orientation, composition, umbrella facets and release
+closure retain their separate gaps.
 
 ### APNG completion verification
 

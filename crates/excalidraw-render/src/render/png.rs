@@ -28,9 +28,10 @@ use coverage::{
 };
 use encoder::png_size_error;
 use paint::{
-    apply_theme_filter, downsample_rgba, fallback_paths, finite_f32, label_path,
-    paint_rough_drawing, solid_paint, svg_path, tiny_skia_freedraw_path, tiny_skia_path,
-    PaintMasks, OFFICIAL_IMAGE_ERROR_BAN_PATH, OFFICIAL_IMAGE_ERROR_PATH, OFFICIAL_IMAGE_PATH,
+    apply_theme_filter, composite_unmasked_raster_blocks, downsample_rgba, fallback_paths,
+    finite_f32, label_path, paint_rough_drawing, solid_paint, svg_path, tiny_skia_freedraw_path,
+    tiny_skia_path, PaintMasks, OFFICIAL_IMAGE_ERROR_BAN_PATH, OFFICIAL_IMAGE_ERROR_PATH,
+    OFFICIAL_IMAGE_PATH,
 };
 
 use std::sync::Arc;
@@ -1314,6 +1315,25 @@ impl PngPlan {
                                     Transform::identity(),
                                     None,
                                 );
+                                let integer_blit = sampling_transform.sx == 1.0
+                                    && sampling_transform.sy == 1.0
+                                    && sampling_transform.kx == 0.0
+                                    && sampling_transform.ky == 0.0
+                                    && sampling_transform.tx.fract() == 0.0
+                                    && sampling_transform.ty.fract() == 0.0;
+                                if integer_blit
+                                    && image_paint.opacity == 1.0
+                                    && paint_mask.is_none()
+                                {
+                                    composite_unmasked_raster_blocks(
+                                        &mut surface,
+                                        &layer,
+                                        rect.left,
+                                        rect.top,
+                                        SUBPIXEL_SCALE,
+                                    )?;
+                                    continue;
+                                }
                                 let scaled = |edge: u32| {
                                     finite_f32(
                                         f64::from(edge) * f64::from(SUBPIXEL_SCALE),

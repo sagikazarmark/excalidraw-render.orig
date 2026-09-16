@@ -56,6 +56,55 @@ pub mod wasm_tests {
     wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
 
     #[wasm_bindgen_test]
+    fn png_precision_reference_in_wasm() {
+        use base64::Engine as _;
+        use sha2::{Digest, Sha256};
+        let bytes = include_bytes!("../../../tests/oracle/png-precision/reference.json");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            "8400494ec5f6e744b00e175db6931aff33c2a659dc57c3b3ab62646da0cf83e5"
+        );
+        let evidence: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+        let decode_png = |bytes: &[u8]| {
+            let mut reader = png::Decoder::new(std::io::Cursor::new(bytes))
+                .read_info()
+                .unwrap();
+            let mut rgba = vec![0; reader.output_buffer_size()];
+            let info = reader.next_frame(&mut rgba).unwrap();
+            assert_eq!(info.color_type, png::ColorType::Rgba);
+            assert_eq!(info.bit_depth, png::BitDepth::Eight);
+            rgba.truncate(info.buffer_size());
+            (info.width, info.height, rgba)
+        };
+        for row in evidence["cases"].as_array().unwrap() {
+            let scene =
+                crate::SceneDocument::parse(&serde_json::to_vec(&row["scene"]).unwrap()).unwrap();
+            let request = crate::RenderRequest::builder(crate::OutputFormat::Png)
+                .padding(0.0)
+                .include_background(row["options"]["exportBackground"].as_bool().unwrap())
+                .build()
+                .unwrap();
+            let first = crate::Renderer::new().render(&scene, &request).unwrap();
+            let second = crate::Renderer::new().render(&scene, &request).unwrap();
+            assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+            assert_eq!(first.report(), second.report());
+            assert_eq!(
+                serde_json::to_value(first.report()).unwrap(),
+                serde_json::json!({"schema_version":1,"diagnostics":[]})
+            );
+            let expected = base64::engine::general_purpose::STANDARD
+                .decode(row["png_base64"].as_str().unwrap())
+                .unwrap();
+            assert_eq!(
+                decode_png(first.artifact().bytes()),
+                decode_png(&expected),
+                "{}",
+                row["id"]
+            );
+        }
+    }
+
+    #[wasm_bindgen_test]
     fn complete_font_subset_qualification_corpus_in_wasm() {
         crate::render::assert_complete_font_subset_qualification_corpus();
     }

@@ -476,8 +476,20 @@ fn assert_pdf_objects(
         );
     }
 }
-fn assert_pdf_pixels(bytes: &[u8], width: usize, height: usize, expected: &[u8]) {
+pub(super) fn assert_pdf_pixels(bytes: &[u8], width: usize, height: usize, expected: &[u8]) {
     assert_pdf_objects(&pdf_objects(bytes), width, height, expected);
+}
+pub(super) fn assert_untagged_png(output: &[u8]) {
+    let mut cursor = 8;
+    while cursor < output.len() {
+        let length = u32::from_be_bytes(output[cursor..cursor + 4].try_into().unwrap()) as usize;
+        assert!(matches!(
+            &output[cursor + 4..cursor + 8],
+            b"IHDR" | b"IDAT" | b"IEND"
+        ));
+        cursor += length + 12;
+    }
+    assert_eq!(cursor, output.len());
 }
 #[test]
 fn pdf_sample_oracle_rejects_detached_or_wrongly_bound_planes() {
@@ -608,17 +620,7 @@ fn check(vector: Vector<'_>, container: Container) {
                     (vector.width, vector.height)
                 );
                 assert_eq!(decoded.rgba, expected);
-                let output = first.artifact().bytes();
-                let mut cursor = 8;
-                while cursor < output.len() {
-                    let length =
-                        u32::from_be_bytes(output[cursor..cursor + 4].try_into().unwrap()) as usize;
-                    assert!(matches!(
-                        &output[cursor + 4..cursor + 8],
-                        b"IHDR" | b"IDAT" | b"IEND"
-                    ));
-                    cursor += length + 12;
-                }
+                assert_untagged_png(first.artifact().bytes());
             }
             OutputFormat::Pdf => assert_pdf_pixels(
                 first.artifact().bytes(),

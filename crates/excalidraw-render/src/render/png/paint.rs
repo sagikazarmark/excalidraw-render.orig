@@ -21,6 +21,44 @@ use super::coverage::frame_clip_coverage_bounds;
 use super::encoder::png_size_error;
 use super::{frame_clip_set_key, PngElement, PngFrameClip, PngLabelMask};
 
+/// The canvas's unmasked N32 image blit: the already-resampled device pixel
+/// fills one supersample block, using its byte source-over arithmetic. Keeping
+/// the destination product at /256 (truncated) matters over nonwhite content.
+pub(super) fn composite_unmasked_raster_blocks(
+    surface: &mut PixmapMut<'_>,
+    layer: &Pixmap,
+    left: u32,
+    top: u32,
+    scale: u32,
+) -> Result<(), FormatEncodeError> {
+    let width = surface.width() as usize;
+    let scale = scale as usize;
+    let layer_width = layer.width() as usize;
+    let data = surface.data_mut();
+    for (y, row) in layer.data().chunks_exact(layer_width * 4).enumerate() {
+        for sub_y in 0..scale {
+            let start = (((top as usize + y) * scale + sub_y) * width + left as usize * scale) * 4;
+            let target = data
+                .get_mut(start..start + layer_width * scale * 4)
+                .ok_or_else(|| {
+                    FormatEncodeError::Encoding(
+                        "PNG raster block bounds invariant failed".to_owned(),
+                    )
+                })?;
+            for (source, block) in row.chunks_exact(4).zip(target.chunks_exact_mut(scale * 4)) {
+                let inverse = 256 - u16::from(source[3]);
+                for pixel in block.chunks_exact_mut(4) {
+                    for (destination, source) in pixel.iter_mut().zip(source) {
+                        *destination =
+                            (u16::from(*source) + ((u16::from(*destination) * inverse) >> 8)) as u8;
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn downsample_rgba(
     source: &[u8],
     source_width: u32,

@@ -80,6 +80,8 @@ fn checked(source: &Value, request: &RenderRequest, expected: Value) -> RenderOu
 }
 
 struct ImagePlane {
+    object: usize,
+    soft_mask: Option<usize>,
     width: usize,
     height: usize,
     gray: bool,
@@ -108,6 +110,18 @@ fn image_planes(pdf: &[u8]) -> Vec<ImagePlane> {
             assert!(header.contains("/BitsPerComponent 8"));
             assert!(!header.contains("/DecodeParms"));
             planes.push(ImagePlane {
+                object: header
+                    .rsplit_once(" 0 obj\n")
+                    .unwrap()
+                    .0
+                    .split_whitespace()
+                    .last()
+                    .unwrap()
+                    .parse()
+                    .unwrap(),
+                soft_mask: header
+                    .rsplit_once("/SMask ")
+                    .map(|(_, tail)| tail.split_whitespace().next().unwrap().parse().unwrap()),
                 width: integer("/Width "),
                 height: integer("/Height "),
                 gray: header.contains("/ColorSpace /DeviceGray"),
@@ -190,6 +204,7 @@ fn failure(source: &Value, request: &RenderRequest, code: &str, first: &Value, p
 
 #[test]
 fn raster_fallback_contract_covers_families_occurrences_geometry_and_failures() {
+    partial_alpha_closure_preserves_straight_samples_and_attached_mask();
     every_effect_family_has_an_exact_report_and_isolated_artifact();
     occurrence_order_and_merged_causes_are_exact();
     noops_and_native_content_are_silent_under_forbid();
@@ -205,6 +220,32 @@ fn raster_fallback_contract_covers_families_occurrences_geometry_and_failures() 
     rotated_closure_uses_the_final_device_grid();
     cropped_repeating_patterns_keep_their_complete_tile();
     inline_filter_cascade_has_exact_provenance_without_a_stylesheet();
+}
+
+#[test]
+fn partial_alpha_closure_preserves_straight_samples_and_attached_mask() {
+    let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="linear" slope="0.5"/></feComponentTransfer></filter></defs><rect width="20" height="10" fill="#03fcdb" fill-opacity="0.047058823529411764" filter="url(#effect)"/></svg>"##;
+    let expected = row(
+        "image",
+        "/files/asset~1~0/dataURL",
+        [10.0, 10.0, 20.0, 10.0],
+        [20, 10],
+        causes(5, 4, &[3]),
+    );
+    let outcome = checked(&source(svg), &request(), json!([expected]));
+    let planes = image_planes(outcome.artifact().bytes());
+    assert_eq!(planes.len(), 2);
+    let rgb = planes.iter().find(|plane| !plane.gray).unwrap();
+    let alpha = planes.iter().find(|plane| plane.gray).unwrap();
+    assert_eq!(
+        (rgb.width, rgb.height, alpha.width, alpha.height),
+        (20, 10, 20, 10)
+    );
+    assert_eq!(rgb.soft_mask, Some(alpha.object));
+    // Authored constant field: after the alpha-halving effect, premultiplied
+    // [0, 6, 5, 6] converts to the reference-qualified straight sample below.
+    assert_eq!(alpha.bytes, vec![6; 200]);
+    assert_eq!(rgb.bytes, [0, 255, 212].repeat(200));
 }
 
 #[test]

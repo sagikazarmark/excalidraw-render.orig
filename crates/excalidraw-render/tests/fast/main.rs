@@ -51,6 +51,7 @@ mod outline_shape_render;
 mod pdf_backend_qualification;
 mod pdf_raster_fallback_contract;
 mod pdf_renderer_expectations;
+mod png_precision_contract;
 mod png_profile_contract;
 mod point_stroke_contract;
 mod rectangle_pdf_render;

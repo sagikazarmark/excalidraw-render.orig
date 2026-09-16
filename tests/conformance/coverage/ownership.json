@@ -2110,17 +2110,59 @@
     {
       "id": "codec:png:alpha:16bit-transparency-key",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_precision_contract.rs",
+            "sha256": "5abb6818e89c75dac10d5267ad48f6efcd222628d76900f19f0f7a4c0791b2cd"
+          },
+          "function": "sixteen_bit_transparency_keys_compare_before_reduction",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_precision_contract::sixteen_bit_transparency_keys_compare_before_reduction",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed full-width grayscale/RGB transparency-key contract: endpoint/asymmetric keys, exact and same-high-byte near matches including each RGB channel; pinned official PNG, independent PDF samples/masks, untouched SVG and complete silent repeated facade outcomes. Valid 16-bit tRNS components cannot encode out-of-range numeric keys; lower-depth range and malformed-length cases remain the malformed palette/tRNS obligation. See docs/research/png-precision-ownership.md#transparency-key-range-applicability."
       }
     },
     {
       "id": "codec:png:alpha:premultiplication-rounding",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_precision_contract.rs",
+            "sha256": "5abb6818e89c75dac10d5267ad48f6efcd222628d76900f19f0f7a4c0791b2cd"
+          },
+          "function": "alpha_rounding_and_compositing_match_pinned_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_precision_contract::alpha_rounding_and_compositing_match_pinned_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed exhaustive 8-bit channel/alpha pairs and gray-alpha/RGBA boundary strips against official direct PNG on transparent, white and colored backgrounds; independently authored PDF straight samples and attached masks, untouched SVG bytes, complete reports and fresh-session equality. Pins float32 unpremultiplication and byte source-over for integral unit-scale unmasked full-opacity images. Other compositing interactions retain separate scope. See docs/research/png-precision-ownership.md."
       }
     },
     {
@@ -8310,9 +8352,30 @@
     {
       "id": "codec:png:precision:16bit",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_precision_contract.rs",
+            "sha256": "5abb6818e89c75dac10d5267ad48f6efcd222628d76900f19f0f7a4c0791b2cd"
+          },
+          "function": "sixteen_bit_precision_matches_pinned_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_precision_contract::sixteen_bit_precision_matches_pinned_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed pinned-reference precision contract: all 65536 grayscale words and asymmetric threshold/alpha vectors across all four legal 16-bit layouts and untagged/sRGB/linear-gAMA transfer paths; exact official PNG pixels, independently authored straight PDF samples with attached masks, unchanged SVG bytes, complete silent reports and fresh sessions. Broader ICC/cICP/HDR and axis composition retain separate obligations. See docs/research/png-precision-ownership.md."
       }
     },
     {
@@ -8323,7 +8386,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8352,7 +8415,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8381,7 +8444,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8410,7 +8473,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8439,7 +8502,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8468,7 +8531,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8497,7 +8560,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8526,7 +8589,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8555,7 +8618,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8584,7 +8647,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8613,7 +8676,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8642,7 +8705,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8671,7 +8734,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8700,7 +8763,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8729,7 +8792,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8758,7 +8821,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8787,7 +8850,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8816,7 +8879,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8845,7 +8908,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8874,7 +8937,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8903,7 +8966,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8932,7 +8995,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8961,7 +9024,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8990,7 +9053,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9019,7 +9082,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9048,7 +9111,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9077,7 +9140,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9106,7 +9169,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9135,7 +9198,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9164,7 +9227,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9193,7 +9256,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9222,7 +9285,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9251,7 +9314,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9280,7 +9343,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9309,7 +9372,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9338,7 +9401,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9367,7 +9430,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9396,7 +9459,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9425,7 +9488,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9454,7 +9517,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9483,7 +9546,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9512,7 +9575,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9541,7 +9604,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9570,7 +9633,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9599,7 +9662,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9628,7 +9691,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9657,7 +9720,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9686,7 +9749,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9715,7 +9778,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9744,7 +9807,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9773,7 +9836,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9802,7 +9865,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9831,7 +9894,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9860,7 +9923,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9889,7 +9952,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9918,7 +9981,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9947,7 +10010,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9976,7 +10039,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10005,7 +10068,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_rgba_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10034,7 +10097,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_rgba_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10063,7 +10126,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10092,7 +10155,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10121,7 +10184,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10150,7 +10213,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10179,7 +10242,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10208,7 +10271,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10237,7 +10300,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10266,7 +10329,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10295,7 +10358,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10324,7 +10387,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10353,7 +10416,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10382,7 +10445,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10411,7 +10474,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10440,7 +10503,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10469,7 +10532,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10498,7 +10561,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10527,7 +10590,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10556,7 +10619,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10585,7 +10648,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10614,7 +10677,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10643,7 +10706,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10672,7 +10735,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10701,7 +10764,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10730,7 +10793,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10759,7 +10822,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10788,7 +10851,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10817,7 +10880,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10846,7 +10909,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10875,7 +10938,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10904,7 +10967,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10933,7 +10996,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10962,7 +11025,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10991,7 +11054,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11020,7 +11083,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11049,7 +11112,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11078,7 +11141,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11107,7 +11170,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11136,7 +11199,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11165,7 +11228,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11194,7 +11257,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11223,7 +11286,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11252,7 +11315,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11281,7 +11344,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11310,7 +11373,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11339,7 +11402,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11368,7 +11431,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11397,7 +11460,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11426,7 +11489,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11455,7 +11518,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11484,7 +11547,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11513,7 +11576,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11542,7 +11605,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11571,7 +11634,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11600,7 +11663,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11629,7 +11692,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11658,7 +11721,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11687,7 +11750,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11716,7 +11779,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11745,7 +11808,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_rgba_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11774,7 +11837,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "apng_rgba_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11803,7 +11866,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -11832,7 +11895,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -11861,7 +11924,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -11890,7 +11953,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -11919,7 +11982,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -11948,7 +12011,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -11977,7 +12040,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12006,7 +12069,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12035,7 +12098,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12064,7 +12127,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12093,7 +12156,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12122,7 +12185,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12151,7 +12214,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12180,7 +12243,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12209,7 +12272,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12238,7 +12301,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12267,7 +12330,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12296,7 +12359,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12325,7 +12388,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12354,7 +12417,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12383,7 +12446,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12412,7 +12475,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12441,7 +12504,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12470,7 +12533,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12499,7 +12562,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12528,7 +12591,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12557,7 +12620,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12586,7 +12649,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12615,7 +12678,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12644,7 +12707,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12673,7 +12736,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12702,7 +12765,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12731,7 +12794,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12760,7 +12823,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12789,7 +12852,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12818,7 +12881,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12847,7 +12910,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12876,7 +12939,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12905,7 +12968,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12934,7 +12997,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12963,7 +13026,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12992,7 +13055,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13021,7 +13084,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13050,7 +13113,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13079,7 +13142,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13108,7 +13171,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13137,7 +13200,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13166,7 +13229,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13195,7 +13258,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13224,7 +13287,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13253,7 +13316,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13282,7 +13345,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13311,7 +13374,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13340,7 +13403,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13369,7 +13432,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13398,7 +13461,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13427,7 +13490,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13456,7 +13519,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13485,7 +13548,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13514,7 +13577,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "2b6ccb598a16d0266291f6eb3566fc729efdbe1370b47ef948e3ed977f6985e3"
+            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -16198,7 +16261,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/pdf_raster_fallback_contract.rs",
-            "sha256": "6995b678c1bfa84657783cc2a0f8291225c3f118ae7de6679e514418849cdfea"
+            "sha256": "951a8b37c02dfa67dedca3359ee72bdab0672572f9638f4c22cfe16396dad00e"
           },
           "function": "raster_fallback_contract_covers_families_occurrences_geometry_and_failures",
           "binary": "fast",

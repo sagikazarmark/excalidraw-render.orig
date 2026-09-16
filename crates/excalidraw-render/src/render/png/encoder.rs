@@ -387,18 +387,20 @@ pub(in crate::render) fn canonicalize_straight_alpha(
         let alpha = alpha.first().copied().ok_or_else(|| {
             FormatEncodeError::Encoding("PNG alpha layout invariant failed".to_owned())
         })?;
-        let alpha = u32::from(alpha);
         if alpha == 0 {
             channels.fill(0);
             continue;
         }
+        // Match the canvas's float32 load/unpremultiply/store sequence, including
+        // its rounded reciprocal of 255. Rearranging this as channel*255/alpha
+        // changes half-way results (the exhaustive reference grid pins both
+        // 5/6 -> 212 and 3/10 -> 77). Keep the operation order; an approximate
+        // reciprocal or fused operation would change this contract.
+        let unit = 1.0_f32 / 255.0;
+        let inverse_alpha = 1.0_f32 / (f32::from(alpha) * unit);
         for channel in channels {
-            let straight = (u32::from(*channel) * 255 + alpha / 2) / alpha;
-            *channel = u8::try_from(straight.min(255)).map_err(|_| {
-                FormatEncodeError::Encoding(
-                    "PNG straight-alpha channel invariant failed".to_owned(),
-                )
-            })?;
+            let normalized = f32::from(*channel) * unit;
+            *channel = ((normalized * inverse_alpha) * 255.0).round_ties_even() as u8;
         }
     }
     Ok(())
