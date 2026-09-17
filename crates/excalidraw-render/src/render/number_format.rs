@@ -2,8 +2,8 @@
 //! so a reviewer can compare them:
 //!
 //! - `push_rough_number`: Rough.js's path serialization, a fixed two-decimal
-//!   spelling with trailing zeros and a vanishing sign dropped, computed
-//!   exactly from the double's bits so ties round the way `toFixed(2)` does.
+//!   spelling with trailing zeros and a vanishing sign dropped, using the
+//!   pinned ECMAScript formatter's `toFixed(2)` rounding.
 //!   Both the SVG and the PDF backend spell Rough path coordinates with it.
 //! - `ecmascript_number`: ECMAScript `Number#toString`, the shortest
 //!   round-trip digits with exponent notation from 1e21 and below 1e-6 and an
@@ -26,96 +26,29 @@ pub(super) fn push_rough_number(
     output: &mut (impl std::fmt::Write + ?Sized),
     value: f64,
 ) -> Result<(), FormatEncodeError> {
-    let (negative, units) = fixed_two_decimal_units(value)?;
-    if negative && units != 0 {
-        output.write_char('-').map_err(|_| {
-            FormatEncodeError::Encoding("failed to write Rough path sign".to_owned())
-        })?;
-    }
-    let whole = units / 100;
-    let fraction = units % 100;
-    write!(output, "{whole}")
-        .map_err(|_| FormatEncodeError::Encoding("failed to write Rough path number".to_owned()))?;
-    if fraction != 0 {
-        output.write_char('.').map_err(|_| {
-            FormatEncodeError::Encoding("failed to write Rough path decimal point".to_owned())
-        })?;
-        if fraction % 10 == 0 {
-            write!(output, "{}", fraction / 10)
-        } else {
-            write!(output, "{fraction:02}")
-        }
-        .map_err(|_| {
-            FormatEncodeError::Encoding("failed to write Rough path fraction".to_owned())
-        })?;
-    }
-    Ok(())
-}
-
-fn fixed_two_decimal_units(value: f64) -> Result<(bool, u128), FormatEncodeError> {
     if !value.is_finite() || value.abs() >= 1e21 {
         return Err(FormatEncodeError::Encoding(
             "Rough path number is outside fixed-decimal range".to_owned(),
         ));
     }
-    let bits = value.to_bits();
-    let negative = bits >> 63 != 0;
-    let exponent_bits = ((bits >> 52) & 0x7ff) as i32;
-    let fraction = bits & ((1_u64 << 52) - 1);
-    if exponent_bits == 0 && fraction == 0 {
-        return Ok((false, 0));
-    }
-    let (significand, exponent) = if exponent_bits == 0 {
-        (u128::from(fraction), -1074)
-    } else {
-        (
-            u128::from(fraction | (1_u64 << 52)),
-            exponent_bits - 1023 - 52,
-        )
-    };
-    let scaled = significand.checked_mul(100).ok_or_else(number_error)?;
-    let units = if exponent >= 0 {
-        scaled
-            .checked_shl(u32::try_from(exponent).map_err(|_| number_error())?)
-            .ok_or_else(number_error)?
-    } else {
-        let denominator_shift = exponent.unsigned_abs();
-        if denominator_shift >= 128 {
-            0
-        } else {
-            let denominator = 1_u128 << denominator_shift;
-            let quotient = scaled / denominator;
-            let remainder = scaled % denominator;
-            quotient + u128::from(remainder >= denominator - remainder)
-        }
-    };
-    Ok((negative, units))
+    let mut buffer = ryu_js::Buffer::new();
+    // Below 1e21 toFixed always includes the two fractional digits, so trimming
+    // stops at the decimal point and cannot consume zeros in the integer part.
+    let token = buffer.format_to_fixed(value, 2);
+    let token = token.trim_end_matches('0').trim_end_matches('.');
+    let token = if token == "-0" { "0" } else { token };
+    output
+        .write_str(token)
+        .map_err(|_| FormatEncodeError::Encoding("failed to write Rough path number".to_owned()))
 }
 
-fn number_error() -> FormatEncodeError {
-    FormatEncodeError::Encoding("Rough path number exceeds serializer capacity".to_owned())
-}
-
-pub(super) fn ecmascript_number(value: f64) -> String {
-    if value == 0.0 {
-        return "0".to_owned();
+pub(super) fn ecmascript_number(value: f64) -> Result<String, FormatEncodeError> {
+    if !value.is_finite() {
+        return Err(FormatEncodeError::Encoding(
+            "ECMAScript number must be finite".to_owned(),
+        ));
     }
-    let magnitude = value.abs();
-    if !(1e-6..1e21).contains(&magnitude) {
-        let token = format!("{value:e}");
-        if let Some(exponent) = token.find('e') {
-            if !token[exponent + 1..].starts_with('-') {
-                let mut javascript = String::with_capacity(token.len() + 1);
-                javascript.push_str(&token[..=exponent]);
-                javascript.push('+');
-                javascript.push_str(&token[exponent + 1..]);
-                return javascript;
-            }
-        }
-        token
-    } else {
-        value.to_string()
-    }
+    Ok(ryu_js::Buffer::new().format_finite(value).to_owned())
 }
 
 pub(super) fn push_svg_number<W: std::fmt::Write + ?Sized>(
@@ -248,19 +181,69 @@ mod tests {
 
     #[test]
     fn ecmascript_numbers_spell_like_number_to_string() {
-        assert_eq!(ecmascript_number(0.0), "0");
-        assert_eq!(ecmascript_number(-0.0), "0");
-        assert_eq!(ecmascript_number(1.5), "1.5");
-        assert_eq!(ecmascript_number(0.1 + 0.2), "0.30000000000000004");
+        assert_eq!(ecmascript_number(0.0).unwrap(), "0");
+        assert_eq!(ecmascript_number(-0.0).unwrap(), "0");
+        assert_eq!(ecmascript_number(1.5).unwrap(), "1.5");
+        assert_eq!(ecmascript_number(0.1 + 0.2).unwrap(), "0.30000000000000004");
         // Exponent notation begins at 1e21 and below 1e-6, with an explicit
         // plus sign on positive exponents.
-        assert_eq!(ecmascript_number(1e21), "1e+21");
+        assert_eq!(ecmascript_number(1e21).unwrap(), "1e+21");
         assert_eq!(
-            ecmascript_number(123_456_789_012_345_680_000.0),
+            ecmascript_number(123_456_789_012_345_680_000.0).unwrap(),
             "123456789012345680000"
         );
-        assert_eq!(ecmascript_number(1e-7), "1e-7");
-        assert_eq!(ecmascript_number(0.000_001), "0.000001");
+        assert_eq!(ecmascript_number(1e-7).unwrap(), "1e-7");
+        assert_eq!(ecmascript_number(0.000_001).unwrap(), "0.000001");
+    }
+
+    #[test]
+    fn ecmascript_spelling_matches_pinned_chromium_vectors() {
+        let corpus: serde_json::Value = serde_json::from_str(include_str!(
+            "../../tests/fixtures/number-format-vectors.json"
+        ))
+        .unwrap();
+        for vector in corpus["vectors"].as_array().unwrap() {
+            let bits = u64::from_str_radix(vector["bits"].as_str().unwrap(), 16).unwrap();
+            let value = f64::from_bits(bits);
+            if let Some(expected) = vector["shortest"].as_str() {
+                assert_eq!(ecmascript_number(value).unwrap(), expected, "{vector}");
+            } else {
+                assert!(ecmascript_number(value).is_err(), "{vector}");
+            }
+        }
+    }
+
+    #[test]
+    fn rough_fixed_decimals_match_pinned_chromium_vectors() {
+        let corpus: serde_json::Value = serde_json::from_str(include_str!(
+            "../../tests/fixtures/number-format-vectors.json"
+        ))
+        .unwrap();
+        for vector in corpus["vectors"].as_array().unwrap() {
+            let bits = u64::from_str_radix(vector["bits"].as_str().unwrap(), 16).unwrap();
+            let value = f64::from_bits(bits);
+            if let Some(expected) = vector["rough"].as_str() {
+                assert_eq!(rough(value), expected, "{vector}");
+                assert_eq!(
+                    ryu_js::Buffer::new().format_to_fixed(value, 2),
+                    vector["fixed"].as_str().unwrap(),
+                    "{vector}"
+                );
+            } else {
+                let mut output = String::from("unchanged");
+                assert!(push_rough_number(&mut output, value).is_err(), "{vector}");
+                assert_eq!(output, "unchanged");
+            }
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    mod wasm_tests {
+        #[wasm_bindgen_test::wasm_bindgen_test]
+        fn number_formatting_matches_pinned_chromium_vectors() {
+            super::ecmascript_spelling_matches_pinned_chromium_vectors();
+            super::rough_fixed_decimals_match_pinned_chromium_vectors();
+        }
     }
 
     #[test]

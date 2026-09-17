@@ -39,6 +39,7 @@ pdf-writer.workspace = true
 resvg.workspace = true
 roxmltree.workspace = true
 rustybuzz.workspace = true
+ryu-js.workspace = true
 # The layout validator retains the traversal API removed from the newer
 # read-fonts used by skera/write-fonts; it parses the same sfnt bytes separately.
 read-fonts.workspace = true

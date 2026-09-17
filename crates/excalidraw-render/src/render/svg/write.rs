@@ -1289,7 +1289,7 @@ fn push_freedraw_number(output: &mut String, value: f64) -> Result<(), FormatEnc
             "SVG freedraw path contains a non-finite coordinate".to_owned(),
         ));
     }
-    let token = ecmascript_number(value);
+    let token = ecmascript_number(value)?;
     let Some(decimal) = token.find('.') else {
         output.push_str(&token);
         return Ok(());

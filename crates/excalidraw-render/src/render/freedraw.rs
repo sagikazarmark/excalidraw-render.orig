@@ -528,7 +528,7 @@ fn push_reduced_number(output: &mut String, value: f64) -> Result<(), FormatEnco
             "freedraw path contains a non-finite coordinate".to_owned(),
         ));
     }
-    let token = ecmascript_number(value);
+    let token = ecmascript_number(value)?;
     if let Some(decimal) = token.find('.') {
         let exponent = token[decimal + 1..]
             .find(['e', 'E'])
