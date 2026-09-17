@@ -412,20 +412,8 @@ fn append_chunk(output: &mut Vec<u8>, kind: [u8; 4], data: &[u8]) -> Result<(), 
     let crc_start = output.len();
     output.extend_from_slice(&kind);
     output.extend_from_slice(data);
-    output.extend_from_slice(&crc32(&output[crc_start..]).to_be_bytes());
+    output.extend_from_slice(&crc32fast::hash(&output[crc_start..]).to_be_bytes());
     Ok(())
-}
-
-fn crc32(bytes: &[u8]) -> u32 {
-    let mut crc = u32::MAX;
-    for byte in bytes {
-        crc ^= u32::from(*byte);
-        for _ in 0..8 {
-            let mask = 0_u32.wrapping_sub(crc & 1);
-            crc = (crc >> 1) ^ (0xedb8_8320 & mask);
-        }
-    }
-    !crc
 }
 
 pub(super) fn png_size_error() -> FormatEncodeError {
