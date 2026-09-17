@@ -103,10 +103,12 @@ breaches; its native/WASM test-harness duplication note is nonblocking. The two
 harnesses share the same digest-bound reference record, with native-only source
 file/SVG/PDF checks and a separate browser-worker PNG consumer.
 
-The three owners are recorded. Current ledger totals are **1,029 assigned/excluded
+The three owners are recorded. The precision checkpoint totals were **1,029 assigned/excluded
 and 847 gaps** (1,026 proposed owners and three approved exclusions). Existing
 PNG/APNG and PDF-fallback selectors retain their assignments with reviewed source
 bindings refreshed; the catalog and approved exclusion subjects remain valid.
+Subsequent [SDR color qualification](png-sdr-color-ownership.md) adds 67 owners;
+current totals are tracked in the global ownership audit.
 
 ### Verification checkpoint
 

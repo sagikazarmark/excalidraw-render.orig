@@ -2784,17 +2784,59 @@
     {
       "id": "codec:png:cicp:rgba16:p12:t13:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p12:t13:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -2880,49 +2922,175 @@
     {
       "id": "codec:png:cicp:rgba16:p12:t1:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p12:t1:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p12:t4:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p12:t4:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p12:t5:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p12:t5:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -2960,17 +3128,59 @@
     {
       "id": "codec:png:cicp:rgba16:p12:t8:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p12:t8:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -3040,17 +3250,59 @@
     {
       "id": "codec:png:cicp:rgba16:p1:t13:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p1:t13:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -3136,49 +3388,175 @@
     {
       "id": "codec:png:cicp:rgba16:p1:t1:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p1:t1:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p1:t4:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p1:t4:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p1:t5:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p1:t5:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -3216,17 +3594,59 @@
     {
       "id": "codec:png:cicp:rgba16:p1:t8:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p1:t8:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -4832,17 +5252,59 @@
     {
       "id": "codec:png:cicp:rgba16:p9:t13:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p9:t13:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -4928,49 +5390,175 @@
     {
       "id": "codec:png:cicp:rgba16:p9:t1:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p9:t1:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p9:t4:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p9:t4:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p9:t5:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p9:t5:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -5008,17 +5596,59 @@
     {
       "id": "codec:png:cicp:rgba16:p9:t8:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba16:p9:t8:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -5600,17 +6230,59 @@
     {
       "id": "codec:png:cicp:rgba8:p12:t13:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p12:t13:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -5696,49 +6368,175 @@
     {
       "id": "codec:png:cicp:rgba8:p12:t1:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p12:t1:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p12:t4:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p12:t4:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p12:t5:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p12:t5:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -5776,17 +6574,59 @@
     {
       "id": "codec:png:cicp:rgba8:p12:t8:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p12:t8:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -5856,17 +6696,59 @@
     {
       "id": "codec:png:cicp:rgba8:p1:t13:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p1:t13:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -5952,49 +6834,175 @@
     {
       "id": "codec:png:cicp:rgba8:p1:t1:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p1:t1:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p1:t4:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p1:t4:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p1:t5:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p1:t5:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -6032,17 +7040,59 @@
     {
       "id": "codec:png:cicp:rgba8:p1:t8:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p1:t8:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -7648,17 +8698,59 @@
     {
       "id": "codec:png:cicp:rgba8:p9:t13:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p9:t13:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -7744,49 +8836,175 @@
     {
       "id": "codec:png:cicp:rgba8:p9:t1:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p9:t1:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p9:t4:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p9:t4:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p9:t5:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p9:t5:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -7824,17 +9042,59 @@
     {
       "id": "codec:png:cicp:rgba8:p9:t8:r0",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:cicp:rgba8:p9:t8:r1",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "sdr_cicp_candidates_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::sdr_cicp_candidates_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed concrete SDR cICP cell against pinned official reference: exact admitted layout, transfer/range interpretation, alpha and transparent-zero behavior, SVG source bytes, PDF straight samples with attached masks, complete reports and fresh sessions. Exact semantic anchors plus maintainer-selected canonical Geometry/image budgets; range-zero cells characterize ignored signaling, not narrow-range conversion support. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -7864,41 +9124,146 @@
     {
       "id": "codec:png:color:chrm",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "chromaticities_and_recovery_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::chromaticities_and_recovery_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed sRGB/P3 primaries, D65/D50 whites, absent/explicit gamma, degenerate/out-of-domain recovery; reference-only discrimination rejects a wrong white point under the unchanged canonical budget. Exact reports/alpha/source bytes, PDF resource/mask bindings and fresh sessions accompany appearance gates. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:color:gama-linear",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "linear_gamma_matches_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::linear_gamma_matches_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed linear-gamma ramps/endpoints in gray-alpha/RGBA8/16, exact transfer anchors and alpha, canonical Geometry/image budgets selected by the maintainer, independent opaque PDF companions with bound masks, SVG source preservation and repeatability. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:color:gama-nonlinear",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "nonlinear_gamma_and_recovery_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::nonlinear_gamma_and_recovery_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed nonlinear/neutral-window/extreme/zero/malformed gamma matrix, exact boundary and transfer anchors, canonical reference appearance, exact alpha/reports and independent recovery artifacts across formats and fresh sessions. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:color:precedence",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "metadata_precedence_and_recovery_match_the_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::metadata_precedence_and_recovery_match_the_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed cICP/ICC/sRGB/gAMA/cHRM conflicts, ignored narrow-range cICP with lower metadata, malformed higher/lower signals, duplicates and late chunks; discriminator pairs reject wrong cHRM selection. Exact identity/alpha/reports/recovery/source bytes and canonical appearance with fresh sessions. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:color:srgb-intents",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "srgb_intents_and_recovery_match_the_contract",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::srgb_intents_and_recovery_match_the_contract",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed sRGB intent/missing/invalid/duplicate matrix across gray-alpha/RGBA and 8/16-bit layouts; exact identity and source-byte gates, complete recovery reports and controls, fresh sessions and bound official reference evidence. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -8232,17 +9597,59 @@
     {
       "id": "codec:png:icc:rgb-v2-matrix-trc",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "rgb_icc_v2_matrix_profiles_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::rgb_icc_v2_matrix_profiles_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed authored ICC v2 RGB matrix/TRC profiles with linear/nonlinear gamma and P3 gamut across gray-alpha/RGBA8/16; independent opaque reference companions for PDF, canonical appearance, exact alpha/reports/SVG bytes and fresh sessions. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
       "id": "codec:png:icc:rgb-v4-matrix-trc",
       "disposition": {
-        "status": "gap",
-        "issue": 85,
-        "reason": "PNG/APNG profile cell lacks a reviewed exact owner and independent format-specific evidence; existing family examples alone do not qualify this combination. See docs/research/png-profile-ownership.md."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/png_color_contract.rs",
+            "sha256": "3df0f1db054c22e96217f82637e94ba1db3042842001b29bf68f82eba864b1a2"
+          },
+          "function": "rgb_icc_v4_parametric_profiles_match_the_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "png_color_contract::rgb_icc_v4_parametric_profiles_match_the_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Reviewed authored ICC v4 RGB parametric curve types 0-4, sRGB/P3 gamut, linear/nonlinear transfer and unknown-curve recovery; exact near-black anchors and alpha/reports/source preservation, canonical reference appearance, bound PDF planes and repeated sessions. See docs/research/png-sdr-color-ownership.md."
       }
     },
     {
@@ -8386,7 +9793,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8415,7 +9822,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8444,7 +9851,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8473,7 +9880,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8502,7 +9909,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8531,7 +9938,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8560,7 +9967,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8589,7 +9996,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8618,7 +10025,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8647,7 +10054,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8676,7 +10083,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8705,7 +10112,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8734,7 +10141,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8763,7 +10170,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8792,7 +10199,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8821,7 +10228,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8850,7 +10257,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8879,7 +10286,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8908,7 +10315,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8937,7 +10344,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8966,7 +10373,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -8995,7 +10402,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9024,7 +10431,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9053,7 +10460,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9082,7 +10489,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9111,7 +10518,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9140,7 +10547,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9169,7 +10576,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9198,7 +10605,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9227,7 +10634,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9256,7 +10663,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9285,7 +10692,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9314,7 +10721,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9343,7 +10750,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9372,7 +10779,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9401,7 +10808,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9430,7 +10837,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9459,7 +10866,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9488,7 +10895,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9517,7 +10924,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9546,7 +10953,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9575,7 +10982,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9604,7 +11011,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9633,7 +11040,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9662,7 +11069,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9691,7 +11098,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9720,7 +11127,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9749,7 +11156,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9778,7 +11185,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9807,7 +11214,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9836,7 +11243,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9865,7 +11272,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9894,7 +11301,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9923,7 +11330,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9952,7 +11359,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -9981,7 +11388,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10010,7 +11417,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10039,7 +11446,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10068,7 +11475,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_rgba_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10097,7 +11504,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_rgba_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10126,7 +11533,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10155,7 +11562,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10184,7 +11591,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10213,7 +11620,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10242,7 +11649,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10271,7 +11678,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10300,7 +11707,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10329,7 +11736,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10358,7 +11765,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10387,7 +11794,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10416,7 +11823,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10445,7 +11852,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10474,7 +11881,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10503,7 +11910,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10532,7 +11939,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10561,7 +11968,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10590,7 +11997,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10619,7 +12026,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10648,7 +12055,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10677,7 +12084,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10706,7 +12113,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10735,7 +12142,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10764,7 +12171,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10793,7 +12200,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10822,7 +12229,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10851,7 +12258,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10880,7 +12287,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10909,7 +12316,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10938,7 +12345,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10967,7 +12374,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -10996,7 +12403,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11025,7 +12432,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11054,7 +12461,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11083,7 +12490,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11112,7 +12519,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11141,7 +12548,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11170,7 +12577,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11199,7 +12606,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11228,7 +12635,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11257,7 +12664,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11286,7 +12693,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11315,7 +12722,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11344,7 +12751,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11373,7 +12780,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11402,7 +12809,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11431,7 +12838,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11460,7 +12867,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11489,7 +12896,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11518,7 +12925,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11547,7 +12954,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11576,7 +12983,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11605,7 +13012,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11634,7 +13041,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11663,7 +13070,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11692,7 +13099,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11721,7 +13128,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11750,7 +13157,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11779,7 +13186,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_non_rgba8_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11808,7 +13215,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_rgba_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11837,7 +13244,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "apng_rgba_matrix_covers_both_default_image_layouts",
           "binary": "fast",
@@ -11866,7 +13273,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -11895,7 +13302,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -11924,7 +13331,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -11953,7 +13360,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -11982,7 +13389,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12011,7 +13418,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12040,7 +13447,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12069,7 +13476,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12098,7 +13505,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12127,7 +13534,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12156,7 +13563,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12185,7 +13592,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12214,7 +13621,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12243,7 +13650,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12272,7 +13679,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12301,7 +13708,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12330,7 +13737,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12359,7 +13766,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12388,7 +13795,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12417,7 +13824,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12446,7 +13853,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12475,7 +13882,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12504,7 +13911,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12533,7 +13940,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12562,7 +13969,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12591,7 +13998,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12620,7 +14027,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12649,7 +14056,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12678,7 +14085,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12707,7 +14114,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12736,7 +14143,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12765,7 +14172,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12794,7 +14201,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12823,7 +14230,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12852,7 +14259,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12881,7 +14288,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12910,7 +14317,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12939,7 +14346,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12968,7 +14375,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -12997,7 +14404,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13026,7 +14433,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13055,7 +14462,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13084,7 +14491,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13113,7 +14520,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13142,7 +14549,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13171,7 +14578,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13200,7 +14607,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13229,7 +14636,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13258,7 +14665,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13287,7 +14694,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13316,7 +14723,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13345,7 +14752,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13374,7 +14781,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13403,7 +14810,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13432,7 +14839,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13461,7 +14868,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13490,7 +14897,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13519,7 +14926,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13548,7 +14955,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",
@@ -13577,7 +14984,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/png_profile_contract.rs",
-            "sha256": "a97a9b7197677c6d089e21cce40997b46d888bff5f7fe9d1f2f14dad918f8514"
+            "sha256": "da451cfa18b65d9f448692a629916bf1e41c21928056ce1815a94b406bb57d74"
           },
           "function": "static_sample_matrix_covers_all_declared_layouts",
           "binary": "fast",

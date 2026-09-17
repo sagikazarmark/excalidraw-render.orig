@@ -396,12 +396,7 @@ fn pdf_reference(dictionary: &str, key: &str) -> usize {
     assert_eq!(&tokens[i + 2..i + 4], ["0", "R"]);
     tokens[i + 1].parse().unwrap()
 }
-fn assert_pdf_objects(
-    objects: &BTreeMap<usize, PdfObject>,
-    width: usize,
-    height: usize,
-    expected: &[u8],
-) {
+fn pdf_image_pixels(objects: &BTreeMap<usize, PdfObject>, width: usize, height: usize) -> Vec<u8> {
     let pages: Vec<_> = objects
         .values()
         .filter(|o| o.dictionary.contains("/Type /Page\n"))
@@ -458,23 +453,33 @@ fn assert_pdf_objects(
         pdf_reference(&intent.dictionary, "/DestOutputProfile"),
         profile_id
     );
-    let colors: Vec<_> = expected
-        .chunks_exact(4)
-        .flat_map(|p| p[..3].iter().copied())
-        .collect();
-    let alphas: Vec<_> = expected.chunks_exact(4).map(|p| p[3]).collect();
-    assert_eq!(rgb.stream.as_ref().unwrap(), &colors);
-    if pdf_tokens(&rgb.dictionary).contains(&"/SMask") {
+    let colors = rgb.stream.as_ref().unwrap();
+    assert_eq!(colors.len(), width * height * 3);
+    let alphas = if pdf_tokens(&rgb.dictionary).contains(&"/SMask") {
         let alpha = &objects[&pdf_reference(&rgb.dictionary, "/SMask")];
         plane(alpha);
         assert_eq!(pdf_value(&alpha.dictionary, "/ColorSpace"), "/DeviceGray");
-        assert_eq!(alpha.stream.as_ref().unwrap(), &alphas);
+        alpha.stream.as_ref().unwrap().clone()
     } else {
-        assert!(
-            alphas.iter().all(|&a| a == 255),
-            "nonopaque image lost its attached soft mask"
-        );
-    }
+        vec![255; width * height]
+    };
+    assert_eq!(alphas.len(), width * height);
+    colors
+        .chunks_exact(3)
+        .zip(alphas)
+        .flat_map(|(rgb, a)| [rgb[0], rgb[1], rgb[2], a])
+        .collect()
+}
+fn assert_pdf_objects(
+    objects: &BTreeMap<usize, PdfObject>,
+    width: usize,
+    height: usize,
+    expected: &[u8],
+) {
+    assert_eq!(pdf_image_pixels(objects, width, height), expected);
+}
+pub(super) fn pdf_rgba(bytes: &[u8], width: usize, height: usize) -> Vec<u8> {
+    pdf_image_pixels(&pdf_objects(bytes), width, height)
 }
 pub(super) fn assert_pdf_pixels(bytes: &[u8], width: usize, height: usize, expected: &[u8]) {
     assert_pdf_objects(&pdf_objects(bytes), width, height, expected);

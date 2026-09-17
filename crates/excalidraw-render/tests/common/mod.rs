@@ -15,6 +15,7 @@ pub mod image_scene;
 pub mod parse_limits;
 pub mod pdf_harness;
 pub mod pdf_inspect;
+pub mod png_color_reference;
 pub mod raster;
 pub mod registered_cases;
 pub mod render;

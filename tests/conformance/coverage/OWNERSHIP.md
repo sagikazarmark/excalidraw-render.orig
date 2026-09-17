@@ -18,15 +18,17 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **1,876** | |
 
-1,026 primary owners are proposed (118 case labels, the AVIF rejection test,
+1,093 primary owners are proposed (118 case labels, the AVIF rejection test,
 119 diagnostic/format obligations, all 605 current surface-field/format obligations,
-all 180 PNG/APNG sample-vector cells and three PNG precision/alpha obligations).
+all 180 PNG/APNG sample-vector cells, three PNG precision/alpha obligations,
+seven SDR metadata/profile obligations and 60 SDR cICP cells).
 Three generic-fallback entries have approved
 exclusions. The PNG/APNG inventory expansion preserved all 928 prior dispositions
 and added 948 obligations; the sample tranches assign 60 static and 120 APNG
 cells, including the final 116 non-RGBA8 APNG cells. The reference-backed
 [precision/alpha tranche](../../../docs/research/png-precision-ownership.md) adds
-three owners. Current totals are **1,029 assigned/excluded and 847 gaps**. See
+three owners. The [SDR color tranche](../../../docs/research/png-sdr-color-ownership.md)
+adds 67 more. Current totals are **1,096 assigned/excluded and 780 gaps**. See
 [the PNG/APNG inventory assessment](../../../docs/research/png-profile-ownership.md).
 The 21 metadata failure assignments use
 the explicit library-test adapter and are assessed in [the metadata audit](../../../docs/research/metadata-failure-ownership.md).

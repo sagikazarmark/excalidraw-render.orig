@@ -1,0 +1,15 @@
+{
+  "schema": "excalidraw-render/png-color-inputs/v1",
+  "visual_class": "geometry-image",
+  "ramp": [0, 1, 2, 8, 16, 32, 64, 96, 127, 128, 160, 192, 224, 254, 255],
+  "alpha": [0, 85, 128, 255],
+  "layouts": [{"color_type":4,"depth":8},{"color_type":4,"depth":16},{"color_type":6,"depth":8},{"color_type":6,"depth":16}],
+  "cicp_primaries": [1, 9, 12],
+  "cicp_transfers": [1, 4, 5, 8, 13],
+  "cicp_ranges": [0, 1],
+  "srgb_chromaticities": [31270,32900,64000,33000,30000,60000,15000,6000],
+  "d50_chromaticities": [34567,35850,64000,33000,30000,60000,15000,6000],
+  "p3_chromaticities": [31270,32900,68000,32000,26500,69000,15000,6000],
+  "decode_failures": ["srgb-4","srgb-255","srgb-duplicate","gama-short","gama-duplicate","duplicate-cicp","duplicate-chrm","late-gama","late-srgb","late-icc","late-cicp","late-chrm"],
+  "unsupported_colors": ["gama-0","chrm-zero-45455","chrm-zero-100000","chrm-out-of-range-45455","chrm-out-of-range-100000","icc-v4-unknown-curve","invalid-cicp-over-icc","invalid-icc-over-srgb"]
+}

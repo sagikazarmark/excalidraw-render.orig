@@ -15,6 +15,9 @@ mod frame;
 mod metadata_failure_contract;
 mod normalization;
 mod outcome;
+#[cfg(all(test, target_arch = "wasm32"))]
+#[path = "../tests/common/png_color_reference.rs"]
+mod png_color_reference;
 mod portable_math;
 mod relationships;
 mod render;
@@ -54,6 +57,52 @@ pub mod wasm_tests {
     use wasm_bindgen_test::wasm_bindgen_test;
 
     wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
+
+    #[wasm_bindgen_test]
+    fn png_sdr_color_reference_in_wasm() {
+        let evidence = crate::png_color_reference::evidence();
+        for row in evidence["cases"].as_array().unwrap() {
+            let scene =
+                crate::SceneDocument::parse(&serde_json::to_vec(&row["scene"]).unwrap()).unwrap();
+            let request = crate::RenderRequest::builder(crate::OutputFormat::Png)
+                .padding(0.0)
+                .include_background(false)
+                .build()
+                .unwrap();
+            let first = crate::Renderer::new().render(&scene, &request).unwrap();
+            let second = crate::Renderer::new().render(&scene, &request).unwrap();
+            assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+            assert_eq!(
+                serde_json::to_vec(first.report()).unwrap(),
+                serde_json::to_vec(second.report()).unwrap()
+            );
+            crate::png_color_reference::report(
+                row,
+                "png",
+                serde_json::to_value(first.report()).unwrap(),
+            );
+            if crate::png_color_reference::recovery(row, "png").is_some() {
+                let mut control = row["scene"].clone();
+                control["files"] = serde_json::json!({});
+                let control =
+                    crate::SceneDocument::parse(&serde_json::to_vec(&control).unwrap()).unwrap();
+                assert_eq!(
+                    first.artifact().bytes(),
+                    crate::Renderer::new()
+                        .render(&control, &request)
+                        .unwrap()
+                        .artifact()
+                        .bytes()
+                );
+            } else {
+                crate::png_color_reference::appearance(
+                    row,
+                    crate::png_color_reference::png(first.artifact().bytes()),
+                    false,
+                );
+            }
+        }
+    }
 
     #[wasm_bindgen_test]
     fn png_precision_reference_in_wasm() {

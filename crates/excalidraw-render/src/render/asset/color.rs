@@ -10,8 +10,8 @@ use std::io::Cursor;
 use std::sync::Arc;
 
 use moxcms::{
-    curve_from_gamma, Chromaticity, CicpColorPrimaries, CicpProfile, ColorPrimaries, ColorProfile,
-    Layout, MatrixCoefficients, ToneReprCurve, TransferCharacteristics, TransformOptions, XyY,
+    Chromaticity, CicpColorPrimaries, CicpProfile, ColorPrimaries, ColorProfile, Layout,
+    MatrixCoefficients, ToneReprCurve, TransferCharacteristics, TransformOptions, XyY,
 };
 
 use super::png::PngSemantics;
@@ -57,17 +57,30 @@ pub(super) fn normalize_rgba(
         ColorNormalization::Profile(profile) => {
             let srgb = ColorProfile::new_srgb();
             let transform = profile
-                .create_transform_8bit(
+                .create_transform_16bit(
                     Layout::Rgba,
                     &srgb,
                     Layout::Rgba,
                     TransformOptions::default(),
                 )
                 .map_err(|_| ResolveError::Unsupported)?;
-            let source = try_copy(rgba)?;
-            transform
-                .transform(&source, rgba)
-                .map_err(|_| ResolveError::Unsupported)
+            // The 8-bit executor's 4096-entry output curve loses near-black
+            // samples even in identity transforms. Use its higher-resolution
+            // path and quantize once, with bounded scratch independent of size.
+            let mut source = [0_u16; 1024];
+            let mut output = [0_u16; 1024];
+            for block in rgba.chunks_mut(source.len()) {
+                for (target, value) in source.iter_mut().zip(block.iter()) {
+                    *target = u16::from(*value) * 257;
+                }
+                transform
+                    .transform(&source[..block.len()], &mut output[..block.len()])
+                    .map_err(|_| ResolveError::Unsupported)?;
+                for (target, value) in block.iter_mut().zip(output.iter()) {
+                    *target = ((u32::from(*value) * 255 + 32767) / 65535) as u8;
+                }
+            }
+            Ok(())
         }
     }
 }
@@ -188,7 +201,15 @@ pub(super) fn prepare_png_color_normalization(
     semantics: &PngSemantics,
     workspace_bytes: u64,
 ) -> Result<ColorNormalization, ResolveError> {
-    if let Some(cicp) = semantics.cicp {
+    // The pinned SkPngRustCodec cannot construct a narrow-range RGB space and
+    // continues with the lower-priority metadata instead.
+    if let Some(cicp) = semantics.cicp.filter(|cicp| cicp[3] != 0) {
+        if cicp == [1, 13, 0, 1] {
+            return Ok(ColorNormalization::None);
+        }
+        if cicp == [1, 8, 0, 1] {
+            return Ok(ColorNormalization::LinearSrgb);
+        }
         return cicp_color_profile(cicp)
             .map(Box::new)
             .map(ColorNormalization::Profile);
@@ -223,12 +244,22 @@ fn cicp_color_profile(cicp: [u8; 4]) -> Result<ColorProfile, ResolveError> {
     {
         return Err(ResolveError::Unsupported);
     }
-    Ok(ColorProfile::new_from_cicp(CicpProfile {
+    let mut profile = ColorProfile::new_from_cicp(CicpProfile {
         color_primaries,
         transfer_characteristics,
         matrix_coefficients,
         full_range: cicp[3] == 1,
-    }))
+    });
+    // SkNamedTransferFn follows H.273's reference EOTF (BT.1886 gamma 2.4),
+    // rather than inverting the camera OETF for these display-referred codes.
+    if matches!(cicp[1], 1 | 6 | 11 | 14 | 15) {
+        profile.cicp = None;
+        let curve = ToneReprCurve::Parametric(vec![2.4]);
+        profile.red_trc = Some(curve.clone());
+        profile.green_trc = Some(curve.clone());
+        profile.blue_trc = Some(curve);
+    }
+    Ok(profile)
 }
 
 fn png_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, ResolveError> {
@@ -241,7 +272,17 @@ fn png_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, Resolve
     if info.srgb.is_some() {
         return Ok(ColorNormalization::None);
     }
-    if info.source_gamma.is_none() && info.source_chromaticities.is_none() {
+    // The reference intentionally does not guess a transfer function from
+    // chromaticities alone (SkPngRustCodec::CreateColorProfile).
+    if info.source_gamma.is_none() {
+        return Ok(ColorNormalization::None);
+    }
+    if info.source_chromaticities.is_none()
+        && info.source_gamma.is_some_and(|gamma| {
+            let neutral = gamma.into_value() * 2.2;
+            neutral > 0.95 && neutral < 1.05
+        })
+    {
         return Ok(ColorNormalization::None);
     }
     if info.source_chromaticities.is_none()
@@ -255,6 +296,17 @@ fn png_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, Resolve
     let mut profile = ColorProfile::new_srgb();
     profile.cicp = None;
     if let Some(chromaticities) = info.source_chromaticities {
+        let valid = [
+            chromaticities.white,
+            chromaticities.red,
+            chromaticities.green,
+            chromaticities.blue,
+        ]
+        .into_iter()
+        .all(|(x, y)| u64::from(x.into_scaled()) + u64::from(y.into_scaled()) <= 100_000);
+        if !valid {
+            return Err(ResolveError::Unsupported);
+        }
         let value = |scaled: png::ScaledFloat| f64::from(scaled.into_scaled()) / 100_000.0;
         profile.update_rgb_colorimetry(
             XyY::new(
@@ -283,7 +335,10 @@ fn png_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, Resolve
         if gamma <= 0.0 {
             return Err(ResolveError::Unsupported);
         }
-        let curve: ToneReprCurve = curve_from_gamma(1.0 / gamma);
+        // curve_from_gamma stores an ICC u8Fixed8 exponent, which saturates
+        // above 255.996 and rounds tiny exponents to zero. gAMA has a much
+        // wider domain; retain the actual power in a parametric curve.
+        let curve = ToneReprCurve::Parametric(vec![1.0 / gamma]);
         profile.red_trc = Some(curve.clone());
         profile.green_trc = Some(curve.clone());
         profile.blue_trc = Some(curve);
