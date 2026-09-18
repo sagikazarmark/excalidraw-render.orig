@@ -113,9 +113,46 @@ on 2026-09-18, recorded in
 [#99](https://github.com/sagikazarmark/excalidraw-render.orig/issues/99#issuecomment-5732225713).
 Only the `font_subset.rs` implementation descriptor changes in the subject.
 The release manifest binds the renewed approval. Its old supported-target
-aggregate is retired pending fresh committed-revision executions, rather than
-relabeling a report produced for the earlier approval.
+aggregate was retired before fresh executions, rather than relabeling a report
+produced for the earlier approval.
 
 The parallel `/code-review` axes found no standards violations or implementation
 defects; the spec axis identified this evidence renewal as the remaining gate.
 Workspace/all-target Clippy with warnings denied, formatting and diff checks pass.
+
+## Committed-revision evidence
+
+Both supported targets executed again on
+`777c33a10d14f3a5f9e3b97e7e3cca8b216bee46`, which contains the implementation
+and renewed approval. Native renderer library qualification passed **392 tests**
+(five intentionally ignored); browser font qualification passed **9 tests**.
+The optimized test-profile settings above apply to these runs too.
+The existing xtask materializer and aggregator generated and compared their
+reports, again agreeing with the unchanged committed 984/1211 measurement.
+
+| Evidence | SHA-256 |
+| --- | --- |
+| Supported-target aggregate | `cc1bc9dfe1fc01672e4bcf248d05d85ccca4a0ecd418a384b5acf38ebf181d9f` |
+| Native report | `ac85fa59bdb55fb2a1ba7f392d7f71c7ed84ca5965aaf6ac28f3148fe5a2b1f9` |
+| Browser-WASM report | `5ec9d9e3238639efc0960709313d6bbc74f47a8239279130fdfb1a94013443fe` |
+
+[The #101 attestation](https://github.com/sagikazarmark/excalidraw-render.orig/issues/101#issuecomment-5732400822)
+records exact execution scope and tool identities. The aggregate is copied
+verbatim into the repository through `record-svg-font-subset-target-aggregate`;
+release evidence is **aggregated / pass**. Both `verify-svg-font-subsets` and
+`verify-svg-font-subset-release` pass with the renewed binding.
+
+Final full-workspace verification on Rust 1.97.1:
+
+```sh
+cargo test --locked --workspace --features excalidraw-render/release-qualification \
+  --no-fail-fast -- --nocapture
+```
+
+**1119 passed, 0 failed, 16 explicitly ignored**, including the complete
+qualification corpus, frame-batch property test, 535 renderer integration tests,
+all parity/limit tests, CLI and xtask tests, and doc-test targets. The first
+attempt reached the command harness's ten-minute timeout during integration
+tests; the completed rerun used background execution and finished successfully.
+Both review axes also checked the final approval/aggregate delta and found no
+remaining findings. Local execution logs are under `/tmp/opencode/182-*.log`.
