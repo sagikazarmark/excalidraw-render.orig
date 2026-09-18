@@ -7,10 +7,8 @@ use std::io::Cursor;
 
 use image_webp::{DecodingError as WebPDecodingError, WebPDecoder};
 
-use super::color::{
-    exif_orientation, finish_rgba, normalize_rgba, orient_rgba, oriented_dimensions,
-    ColorNormalization,
-};
+use super::color::{finish_rgba, normalize_rgba, ColorNormalization};
+use super::orientation::{exif_orientation, orient_rgba, oriented_dimensions};
 use super::{decoder_workspace_bytes, DecodedRaster, ResolveError};
 
 pub(super) const WEBP_RIFF_SIGNATURE: &[u8; 4] = b"RIFF";

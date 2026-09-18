@@ -6,8 +6,8 @@ pub fn parse(value: &str) -> Option<[u8; 4]> {
 pub fn forward(kind: &str, rgb: [u8; 3]) -> [f64; 3] {
     let c = CanonicalColor::from_rgb8(rgb[0], rgb[1], rgb[2]);
     match kind {
-        "xyz" => srgb_to_xyz_d65(c),
-        "lab" => srgb_to_lab(c),
+        "xyz" => srgb_to_xyz_d65(c.rgb_f64()),
+        "lab" => srgb_to_lab_d50(c.rgb_f64()),
         "oklab" => color_mix_components(ColorMixSpace::Oklab, c),
         _ => panic!("unknown forward operation"),
     }

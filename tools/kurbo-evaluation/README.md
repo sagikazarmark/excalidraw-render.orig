@@ -42,15 +42,17 @@ with debug assertions and overflow checks enabled.
 
 ## What runs
 
-`build.rs` extracts the actual production primitives, path traversal, and three
-generic bounds helpers between explicit source boundaries. The numeric candidate
-uses the same traversal and the 14-line `adapter.rs`. The small arithmetic
-helpers in the probe reproduce `square(x) = x*x` and `cube(x) = x*x*x`.
+`build.rs` extracts the actual production primitives and path traversal from
+`render/geometry.rs` and compiles the complete private `render/geometry/cubic.rs`
+module. The numeric candidate uses the same traversal and union policy with
+`adapter.rs` in place of that module. Both modules take four points and return
+`(min_x, min_y, max_x, max_y)`. The small arithmetic helpers in the probe reproduce
+`square(x) = x*x` and `cube(x) = x*x*x`.
 
 `run.py` creates a temporary workspace shell, copies the renderer, and links its
-unchanged sibling crates. In candidate mode it replaces only the generic-helper
-region in this copy with **the same adapter** and adds its dependency edge. It
-preserves the original source separately for the numeric comparison. The real
+unchanged sibling crates. In candidate mode it replaces only `geometry/cubic.rs`
+in this copy with **the same adapter** and adds its dependency edge. It preserves
+the original module separately for the numeric comparison. The real
 renderer tree and reference geometry are never edited by this experiment.
 
 The lock was seeded from the production lock. All registry package identities

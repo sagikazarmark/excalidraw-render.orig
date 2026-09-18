@@ -1,33 +1,37 @@
 use std::{env, fs, path::PathBuf};
 
 fn main() {
-    // The runner preserves the original next to the patched staged source.
     let geometry = "../../crates/excalidraw-render/src/render/geometry.rs";
-    let original = format!("{geometry}.original");
+    let cubic = "../../crates/excalidraw-render/src/render/geometry/cubic.rs";
+    // The runner preserves the original module next to the staged candidate.
+    let original = format!("{cubic}.original");
     let source_path = if std::path::Path::new(&original).exists() {
         original.as_str()
     } else {
-        geometry
+        cubic
     };
+    println!("cargo:rerun-if-changed={geometry}");
+    println!("cargo:rerun-if-changed={cubic}");
     println!("cargo:rerun-if-changed={source_path}");
     println!("cargo:rerun-if-changed=adapter.rs");
     println!("cargo:rerun-if-env-changed=KURBO_EXPECTED");
     println!("cargo:rerun-if-env-changed=KURBO_RECORD");
-    let source = fs::read_to_string(source_path).unwrap();
+    let source = fs::read_to_string(geometry).unwrap();
     let start = source
         .find("#[derive(Clone, Copy, Debug, PartialEq)]")
         .unwrap();
     let end = source.find("pub(super) enum GeneratedGeometry").unwrap();
-    let original = &source[start..end];
-    let seam = original.find("fn include_cubic_bounds(").unwrap();
-    let candidate = format!(
-        "{}{}",
-        &original[..seam],
-        fs::read_to_string("adapter.rs").unwrap()
-    );
+    let traversal = &source[start..end];
     let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    fs::write(out.join("current.rs"), original).unwrap();
-    fs::write(out.join("candidate.rs"), candidate).unwrap();
+    for (mode, module) in [("current", source_path), ("candidate", "adapter.rs")] {
+        let module_path = out.join(format!("{mode}-cubic.rs"));
+        fs::copy(module, &module_path).unwrap();
+        fs::write(
+            out.join(format!("{mode}.rs")),
+            format!("#[path = {module_path:?}]\nmod cubic;\n{traversal}"),
+        )
+        .unwrap();
+    }
     let expected = env::var("KURBO_EXPECTED").expect("use run.py to select the observation");
     println!("cargo:rerun-if-changed={expected}");
     fs::write(out.join("expected.json"), fs::read(expected).unwrap()).unwrap();

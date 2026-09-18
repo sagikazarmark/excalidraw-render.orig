@@ -64,19 +64,20 @@ for r in native["artifacts"]:
 divergent = [r for r in reference["rows"] if r["canvas"] != r["svg"]]
 lines += ["", f"Canvas/SVG pixels differ on {len(divergent)}/{len(refs)} unique reference probes.", "", "These comparisons retain exact channels. At low alpha, raster unpremultiplication", "can differ from canonical unpremultiplied RGB; inspect the swatch PNG center", "pixels in the observation JSON instead of treating this table as a tolerance gate.", ""]
 
-# Literal non-test source-line accounting for the evaluated substitution, not a
-# prediction that a production PR can delete all conversion/mixing code.
+# Literal source-line accounting for the current production arrangement of the
+# evaluated substitution, not a prediction of net code savings from a library.
 source = (root / "crates/excalidraw-render/src/color.rs").read_text().split("#[cfg(test)]\nmod tests")[0]
+kernel = (root / "crates/excalidraw-render/src/color/conversion.rs").read_text()
 def function(name):
-    start = source.index(f"fn {name}(")
-    end = source.index("\n}\n", start) + 3
-    return source[start:end]
-names = ["decode_srgb", "encode_srgb", "adapt_d50_to_d65", "adapt_d65_to_d50", "srgb_to_xyz_d65", "srgb_to_lab", "canonical_lab_color"]
+    start = kernel.index(f"fn {name}(")
+    end = kernel.index("\n}\n", start) + 3
+    return kernel[start:end]
+names = ["decode_srgb", "encode_srgb", "adapt_d50_to_d65", "adapt_d65_to_d50", "srgb_to_xyz_d65", "srgb_to_lab_d50", "lab_d50_to_srgb", "xyz_d65_to_linear_srgb"]
 replaced = sum(len(function(n).splitlines()) for n in names)
-lines += ["## Source-line accounting", "", f"Seven replaced functions: {replaced} original lines (including signatures).", "", "| Function | Original lines |", "| --- | ---: |"]
+lines += ["## Source-line accounting", "", f"Eight replaced numeric functions: {replaced} production lines (including signatures).", "", "| Function | Production lines |", "| --- | ---: |"]
 for name in names:
     lines.append(f"| `{name}` | {len(function(name).splitlines())} |")
-lines += ["", f"Original non-test color module: {len(source.splitlines())} lines.", f"Shared two-candidate adapter: {len((here / 'src/adapter.rs').read_text().splitlines())} lines.", "", "Also replaced: color()'s XYZ-to-linear-sRGB matrix block and rectangular Oklab", "mix conversion arms. Wide-RGB matrices/transfers, polar conversions, CSS admission,", "missing components, alpha, gamut mapping, mix arithmetic and final quantization remain.", ""]
+lines += ["", f"Non-test color policy module: {len(source.splitlines())} lines.", f"Numeric conversion module: {len(kernel.splitlines())} lines.", f"Shared two-candidate adapter: {len((here / 'src/adapter.rs').read_text().splitlines())} lines.", "", "Also replaced: rectangular Oklab mix conversion arms. Wide-RGB matrices/transfers,", "polar conversions, CSS admission, missing components, alpha, gamut mapping,", "mix arithmetic and final quantization remain.", ""]
 matrix = "\n".join(lines)
 if args.record:
     (here / "matrix.md").write_text(matrix)

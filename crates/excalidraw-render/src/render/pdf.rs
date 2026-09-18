@@ -11,6 +11,7 @@
 //! `nested_svg` the raster-closure analysis over sanitized `usvg` trees and
 //! the bounded svg2pdf adapter that renumbers and canonicalizes its chunks,
 //! `streams` the one Flate configuration every renderer-written stream takes,
+//! `writer` the checked byte sink, object/stream framing and finalization,
 //! and `raster_preflight` the session's admission of those closures.
 
 mod content;
@@ -20,15 +21,14 @@ mod raster;
 mod raster_preflight;
 mod raster_svg;
 mod streams;
+mod writer;
 
 use fonts::embedded_font_name;
-use nested_svg::{append_chunk, collect_raster_closures, renumber_svg_chunks, svg_chunks};
-use streams::{deflate_stream, write_flate_stream_object};
+use nested_svg::{collect_raster_closures, renumber_svg_chunks, svg_chunks};
+use streams::deflate_stream;
+use writer::{Object, StreamEncoding, Writer};
 
-use std::io::Write as _;
 use std::sync::Arc;
-
-use sha2::{Digest as _, Sha256};
 
 use crate::normalization::NormalizedElementSource;
 use crate::portable_math::{cube, sin_cos};
@@ -419,9 +419,9 @@ impl PdfPlan {
         let fallback_mappings = self.fallback_glyph_mappings()?;
         let official_mappings = self.official_glyph_mappings()?;
         // Every renderer-written stream is deflated before the output buffer
-        // is sized (ADR-0008), so the exact artifact size is known before the
-        // one fallible output allocation, as the PNG encoder knows its IDAT
-        // (ADR-0004). The deflated streams are transients of the §13.2 PDF
+        // is sized (ADR-0008). This capacity estimate includes the exact stream
+        // lengths; the writer also checks any growth beyond its allowances.
+        // The deflated streams are transients of the §13.2 PDF
         // stream workspace; each is dropped with the encoder.
         let content = deflate_stream(
             self.encode_content(
@@ -658,204 +658,171 @@ impl PdfPlan {
                     .and_then(|extra| capacity.checked_add(extra))
             })
             .ok_or_else(pdf_size_error)?;
-        let mut pdf = Vec::new();
-        pdf.try_reserve_exact(output_capacity).map_err(|_| {
-            FormatEncodeError::MemoryUnavailable {
-                subject_kind: "artifact",
-                subject: "pdf_output",
-            }
-        })?;
-        pdf.extend_from_slice(b"%PDF-1.7\n%\x80\x80\x80\x80\n\n");
-        let mut offsets = Vec::new();
-        offsets.try_reserve_exact(object_count).map_err(|_| {
-            FormatEncodeError::MemoryUnavailable {
-                subject_kind: "format_workspace",
-                subject: "pdf_object_offsets",
-            }
-        })?;
-        offsets.resize(object_count, 0);
+        let mut pdf = Writer::new(output_capacity, object_count)?;
 
-        begin_object(&mut pdf, &mut offsets, 1)?;
-        write!(
-            pdf,
-            "<<\n/Type /Catalog\n/Pages 2 0 R\n/OutputIntents [{OUTPUT_INTENT_OBJECT} 0 R]\n"
-        )
-        .map_err(write_error)?;
-        if let Some(metadata_object) = metadata_object {
-            writeln!(pdf, "/Metadata {metadata_object} 0 R").map_err(write_error)?;
-        }
-        if let Some(filespec) = attachment_filespec_object {
-            writeln!(
+        pdf.object(1, |pdf| {
+            write!(
                 pdf,
-                "/Names << /EmbeddedFiles << /Names [(scene.excalidraw) {filespec} 0 R] >> >>\n/AF [{filespec} 0 R]"
-            )
-            .map_err(write_error)?;
-        }
-        pdf.extend_from_slice(b">>\nendobj\n");
+                "<<\n/Type /Catalog\n/Pages 2 0 R\n/OutputIntents [{OUTPUT_INTENT_OBJECT} 0 R]\n"
+            )?;
+            if let Some(metadata_object) = metadata_object {
+                writeln!(pdf, "/Metadata {metadata_object} 0 R")?;
+            }
+            if let Some(filespec) = attachment_filespec_object {
+                writeln!(
+                    pdf,
+                    "/Names << /EmbeddedFiles << /Names [(scene.excalidraw) {filespec} 0 R] >> >>\n/AF [{filespec} 0 R]"
+                )?;
+            }
+            pdf.bytes(b">>\n")
+        })?;
 
-        begin_object(&mut pdf, &mut offsets, 2)?;
-        pdf.extend_from_slice(b"<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n");
+        pdf.object(2, |pdf| {
+            pdf.bytes(b"<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\n")
+        })?;
 
-        begin_object(&mut pdf, &mut offsets, 3)?;
-        write!(
-            pdf,
-            concat!(
-                "<<\n/Type /Page\n/Parent 2 0 R\n",
-                "/MediaBox [0 0 {} {}]\n",
-                "/CropBox [0 0 {} {}]\n",
-                "/Resources <<\n/ColorSpace << /CS1 [/ICCBased 5 0 R] >>\n"
-            ),
-            page_width, page_height, page_width, page_height,
-        )
-        .map_err(write_error)?;
-        if !opacity_resources.is_empty() {
-            pdf.extend_from_slice(b"/ExtGState <<");
-            for index in 0..opacity_resources.len() {
-                write!(
-                    pdf,
-                    " /GS{} {} 0 R",
-                    index + 1,
-                    checked_object(FIRST_EXT_GSTATE_OBJECT, index, 1)?
-                )
-                .map_err(write_error)?;
+        pdf.object(3, |pdf| {
+            write!(
+                pdf,
+                concat!(
+                    "<<\n/Type /Page\n/Parent 2 0 R\n",
+                    "/MediaBox [0 0 {} {}]\n",
+                    "/CropBox [0 0 {} {}]\n",
+                    "/Resources <<\n/ColorSpace << /CS1 [/ICCBased 5 0 R] >>\n"
+                ),
+                page_width, page_height, page_width, page_height,
+            )?;
+            if !opacity_resources.is_empty() {
+                pdf.bytes(b"/ExtGState <<")?;
+                for index in 0..opacity_resources.len() {
+                    write!(
+                        pdf,
+                        " /GS{} {} 0 R",
+                        index + 1,
+                        checked_object(FIRST_EXT_GSTATE_OBJECT, index, 1)?
+                    )?;
+                }
+                pdf.bytes(b" >>\n")?;
             }
-            pdf.extend_from_slice(b" >>\n");
-        }
-        if !fallback_forms.is_empty() || !image_resources.is_empty() || !svg_chunks.is_empty() {
-            pdf.extend_from_slice(b"/XObject <<");
-            for index in 0..fallback_forms.len() {
-                write!(
-                    pdf,
-                    " /FB{} {} 0 R",
-                    index + 1,
-                    checked_object(first_fallback_form_object, index, 1)?
-                )
-                .map_err(write_error)?;
+            if !fallback_forms.is_empty() || !image_resources.is_empty() || !svg_chunks.is_empty() {
+                pdf.bytes(b"/XObject <<")?;
+                for index in 0..fallback_forms.len() {
+                    write!(
+                        pdf,
+                        " /FB{} {} 0 R",
+                        index + 1,
+                        checked_object(first_fallback_form_object, index, 1)?
+                    )?;
+                }
+                for index in 0..image_resources.len() {
+                    write!(
+                        pdf,
+                        " /Im{} {} 0 R",
+                        index,
+                        checked_object(first_image_object, index, 2)?
+                    )?;
+                }
+                for (index, resource) in svg_chunks.iter().enumerate() {
+                    write!(pdf, " /Svg{index} {} 0 R", resource.root.get())?;
+                }
+                pdf.bytes(b" >>\n")?;
             }
-            for index in 0..image_resources.len() {
-                write!(
-                    pdf,
-                    " /Im{} {} 0 R",
-                    index,
-                    checked_object(first_image_object, index, 2)?
-                )
-                .map_err(write_error)?;
-            }
-            for (index, resource) in svg_chunks.iter().enumerate() {
-                write!(pdf, " /Svg{index} {} 0 R", resource.root.get()).map_err(write_error)?;
-            }
-            pdf.extend_from_slice(b" >>\n");
-        }
-        if let Some(fallback_font_object) = fallback_font_object {
-            write!(pdf, "/Font << /F1 {fallback_font_object} 0 R").map_err(write_error)?;
-            if let Some(official_font_object) = official_font_object {
+            if let Some(fallback_font_object) = fallback_font_object {
+                write!(pdf, "/Font << /F1 {fallback_font_object} 0 R")?;
+                if let Some(official_font_object) = official_font_object {
+                    for index in 0..self.official_fonts.len() {
+                        write!(
+                            pdf,
+                            " /F{} {} 0 R",
+                            index + 2,
+                            checked_object(official_font_object, index, 6)?
+                        )?;
+                    }
+                }
+                pdf.bytes(b" >>\n")?;
+            } else if let Some(official_font_object) = official_font_object {
+                pdf.bytes(b"/Font <<")?;
                 for index in 0..self.official_fonts.len() {
                     write!(
                         pdf,
                         " /F{} {} 0 R",
                         index + 2,
                         checked_object(official_font_object, index, 6)?
-                    )
-                    .map_err(write_error)?;
+                    )?;
                 }
+                pdf.bytes(b" >>\n")?;
             }
-            pdf.extend_from_slice(b" >>\n");
-        } else if let Some(official_font_object) = official_font_object {
-            pdf.extend_from_slice(b"/Font <<");
-            for index in 0..self.official_fonts.len() {
-                write!(
-                    pdf,
-                    " /F{} {} 0 R",
-                    index + 2,
-                    checked_object(official_font_object, index, 6)?
-                )
-                .map_err(write_error)?;
+            pdf.bytes(b">>\n")?;
+            if link_count != 0 {
+                pdf.bytes(b"/Annots [")?;
+                for index in 0..link_count {
+                    write!(pdf, " {} 0 R", checked_object(first_link_object, index, 1)?)?;
+                }
+                pdf.bytes(b" ]\n")?;
             }
-            pdf.extend_from_slice(b" >>\n");
-        }
-        pdf.extend_from_slice(b">>\n");
-        if link_count != 0 {
-            pdf.extend_from_slice(b"/Annots [");
-            for index in 0..link_count {
-                write!(pdf, " {} 0 R", checked_object(first_link_object, index, 1)?)
-                    .map_err(write_error)?;
-            }
-            pdf.extend_from_slice(b" ]\n");
-        }
-        pdf.extend_from_slice(b"/Contents 4 0 R\n>>\nendobj\n");
+            pdf.bytes(b"/Contents 4 0 R\n>>\n")
+        })?;
 
-        write_flate_stream_object(&mut pdf, &mut offsets, 4, "", &content)?;
+        pdf.flate_stream(4, "", &content)?;
 
-        write_flate_stream_object(
-            &mut pdf,
-            &mut offsets,
+        pdf.flate_stream(
             ICC_PROFILE_OBJECT,
             "/N 3\n/Alternate /DeviceRGB\n",
             &srgb_icc_profile,
         )?;
 
-        begin_object(&mut pdf, &mut offsets, OUTPUT_INTENT_OBJECT)?;
-        write!(
-            pdf,
-            concat!(
-                "<<\n/Type /OutputIntent\n/S /GTS_PDFA1\n",
-                "/OutputConditionIdentifier (sRGB)\n",
-                "/Info (excalidraw-render project sRGB)\n",
-                "/DestOutputProfile 5 0 R\n>>\nendobj\n"
+        pdf.object(OUTPUT_INTENT_OBJECT, |pdf| {
+            write!(
+                pdf,
+                concat!(
+                    "<<\n/Type /OutputIntent\n/S /GTS_PDFA1\n",
+                    "/OutputConditionIdentifier (sRGB)\n",
+                    "/Info (excalidraw-render project sRGB)\n",
+                    "/DestOutputProfile 5 0 R\n>>\n"
+                )
             )
-        )
-        .map_err(write_error)?;
+        })?;
 
         for (index, opacity) in opacity_resources.iter().copied().enumerate() {
             let opacity = format_pdf_number(opacity, "PDF opacity")?;
-            begin_object(
-                &mut pdf,
-                &mut offsets,
-                checked_object(FIRST_EXT_GSTATE_OBJECT, index, 1)?,
-            )?;
-            write!(
-                pdf,
-                "<<\n/Type /ExtGState\n/CA {opacity}\n/ca {opacity}\n/BM /Normal\n>>\nendobj\n"
-            )
-            .map_err(write_error)?;
+            pdf.object(checked_object(FIRST_EXT_GSTATE_OBJECT, index, 1)?, |pdf| {
+                write!(
+                    pdf,
+                    "<<\n/Type /ExtGState\n/CA {opacity}\n/ca {opacity}\n/BM /Normal\n>>\n"
+                )
+            })?;
         }
         if let (Some(metadata_object), Some(xmp)) = (metadata_object, xmp.as_ref()) {
             super::metadata::operation(super::metadata::Stage::ManifestEmbedding, || {
-                begin_object(&mut pdf, &mut offsets, metadata_object)?;
-                write!(
-                    pdf,
-                    "<<\n/Type /Metadata\n/Subtype /XML\n/Length {}\n>>\nstream\n",
-                    xmp.len()
+                pdf.stream(
+                    metadata_object,
+                    StreamEncoding::Stored,
+                    xmp.as_bytes(),
+                    |pdf| pdf.bytes(b"/Type /Metadata\n/Subtype /XML\n"),
+                    format_args!(""),
                 )
-                .map_err(write_error)?;
-                pdf.extend_from_slice(xmp.as_bytes());
-                pdf.extend_from_slice(b"\nendstream\nendobj\n");
-                Ok(())
             })?;
         }
         if let (Some(scene), Some(filespec)) = (embedded_scene.as_ref(), attachment_filespec_object)
         {
             super::metadata::operation(super::metadata::Stage::SceneEmbedding, || {
-                write_flate_stream_object(
-                    &mut pdf,
-                    &mut offsets,
+                pdf.flate_stream(
                     first_attachment_object,
                     "/Type /EmbeddedFile\n/Subtype /application#2Fvnd.excalidraw+json\n",
                     scene,
                 )?;
 
-                begin_object(&mut pdf, &mut offsets, filespec)?;
-                write!(
-                    pdf,
-                    concat!(
-                        "<<\n/Type /Filespec\n/F (scene.excalidraw)\n/UF (scene.excalidraw)\n",
-                        "/AFRelationship /Data\n/Desc (Canonical Excalidraw scene)\n",
-                        "/EF << /F {} 0 R /UF {} 0 R >>\n>>\nendobj\n"
-                    ),
-                    first_attachment_object, first_attachment_object
-                )
-                .map_err(write_error)?;
-                Ok(())
+                pdf.object(filespec, |pdf| {
+                    write!(
+                        pdf,
+                        concat!(
+                            "<<\n/Type /Filespec\n/F (scene.excalidraw)\n/UF (scene.excalidraw)\n",
+                            "/AFRelationship /Data\n/Desc (Canonical Excalidraw scene)\n",
+                            "/EF << /F {} 0 R /UF {} 0 R >>\n>>\n"
+                        ),
+                        first_attachment_object, first_attachment_object
+                    )
+                })
             })?;
         }
         let mut link_index = 0_usize;
@@ -877,8 +844,7 @@ impl PdfPlan {
             let object = first_link_object
                 .checked_add(link_index)
                 .ok_or_else(pdf_size_error)?;
-            begin_object(&mut pdf, &mut offsets, object)?;
-            self.write_link_annotation(&mut pdf, link, element)?;
+            pdf.object(object, |pdf| self.write_link_annotation(pdf, link, element))?;
             link_index = link_index.saturating_add(1);
         }
         for (index, form) in fallback_forms.iter().enumerate() {
@@ -895,26 +861,23 @@ impl PdfPlan {
                 })
                 .nth(index)
                 .ok_or_else(pdf_size_error)?;
-            begin_object(&mut pdf, &mut offsets, object)?;
-            pdf.extend_from_slice(b"<<\n/Type /XObject\n/Subtype /Form\n/FormType 1\n/BBox [0 0 ");
-            push_pdf_vec_number(&mut pdf, fallback.0, "PDF fallback form width")?;
-            pdf.push(b' ');
-            push_pdf_vec_number(&mut pdf, fallback.1, "PDF fallback form height")?;
-            pdf.extend_from_slice(b"]\n/Resources << /ColorSpace << /CS1 [/ICCBased 5 0 R] >>");
-            if let Some(font_object) = fallback_font_object {
-                write!(pdf, " /Font << /F1 {font_object} 0 R >>").map_err(write_error)?;
-            }
-            write!(
-                pdf,
-                concat!(
-                    " >>\n/Group << /S /Transparency /I true /CS /DeviceRGB >>\n",
-                    "/Filter /FlateDecode\n/Length {}\n>>\nstream\n"
-                ),
-                form.len()
-            )
-            .map_err(write_error)?;
-            pdf.extend_from_slice(form);
-            pdf.extend_from_slice(b"\nendstream\nendobj\n");
+            pdf.stream(
+                object,
+                StreamEncoding::Flate,
+                form,
+                |pdf| {
+                    pdf.bytes(b"/Type /XObject\n/Subtype /Form\n/FormType 1\n/BBox [0 0 ")?;
+                    push_pdf_number(pdf, fallback.0, "PDF fallback form width")?;
+                    pdf.byte(b' ')?;
+                    push_pdf_number(pdf, fallback.1, "PDF fallback form height")?;
+                    pdf.bytes(b"]\n/Resources << /ColorSpace << /CS1 [/ICCBased 5 0 R] >>")?;
+                    if let Some(font_object) = fallback_font_object {
+                        write!(pdf, " /Font << /F1 {font_object} 0 R >>")?;
+                    }
+                    pdf.bytes(b" >>\n/Group << /S /Transparency /I true /CS /DeviceRGB >>\n")
+                },
+                format_args!(""),
+            )?;
         }
         if let (Some(font_object), Some(font), Some(program)) = (
             fallback_font_object,
@@ -923,7 +886,6 @@ impl PdfPlan {
         ) {
             self.write_font_objects(
                 &mut pdf,
-                &mut offsets,
                 font_object,
                 font,
                 program,
@@ -936,7 +898,6 @@ impl PdfPlan {
             for (index, font) in self.official_fonts.iter().enumerate() {
                 self.write_font_objects(
                     &mut pdf,
-                    &mut offsets,
                     checked_object(first_object, index, 6)?,
                     &font.sfnt,
                     &official_font_programs[index],
@@ -952,9 +913,7 @@ impl PdfPlan {
             let asset = &resource.asset;
             let image_object = checked_object(first_image_object, index, 2)?;
             let mask_object = image_object.checked_add(1).ok_or_else(pdf_size_error)?;
-            write_flate_stream_object(
-                &mut pdf,
-                &mut offsets,
+            pdf.flate_stream(
                 image_object,
                 &format!(
                     concat!(
@@ -965,9 +924,7 @@ impl PdfPlan {
                 ),
                 rgb,
             )?;
-            write_flate_stream_object(
-                &mut pdf,
-                &mut offsets,
+            pdf.flate_stream(
                 mask_object,
                 &format!(
                     concat!(
@@ -980,39 +937,14 @@ impl PdfPlan {
             )?;
         }
         for resource in &svg_chunks {
-            append_chunk(&mut pdf, &mut offsets, resource)?;
-        }
-
-        let xref_offset = pdf.len();
-        write!(pdf, "xref\n0 {}\n0000000000 65535 f\r\n", object_count + 1).map_err(write_error)?;
-        for offset in &offsets {
-            writeln!(pdf, "{offset:010} 00000 n\r").map_err(write_error)?;
-        }
-        // The file identifier is a pure function of the bytes before it: the
-        // first 16 bytes of the SHA-256 over everything written so far, the
-        // objects and the cross-reference table, spelled as one uppercase hex
-        // string and repeated, since a first revision's two entries are the
-        // same identifier (ADR-0008). No timestamp or random input is involved,
-        // so identical artifacts carry identical identifiers.
-        let mut file_identifier = String::new();
-        for byte in &Sha256::digest(&pdf)[..16] {
-            std::fmt::Write::write_fmt(&mut file_identifier, format_args!("{byte:02X}")).map_err(
-                |_| FormatEncodeError::Encoding("failed to encode PDF file identifier".to_owned()),
+            pdf.import_chunk(
+                &resource.bytes,
+                &resource.object_offsets,
+                usize::try_from(resource.root.get()).map_err(|_| pdf_size_error())?,
             )?;
         }
-        write!(
-            pdf,
-            concat!(
-                "trailer\n<<\n/Size {}\n/Root 1 0 R\n/ID [<{}> <{}>]\n>>\n",
-                "startxref\n{}\n%%EOF"
-            ),
-            object_count + 1,
-            file_identifier,
-            file_identifier,
-            xref_offset
-        )
-        .map_err(write_error)?;
-        Ok(pdf)
+
+        pdf.finish()
     }
 
     pub(super) fn source_count(&self) -> usize {
@@ -1036,7 +968,7 @@ impl PdfPlan {
     /// hit rectangle in page space.
     fn write_link_annotation(
         &self,
-        pdf: &mut Vec<u8>,
+        pdf: &mut Object<'_>,
         link: &str,
         element: &PdfElement,
     ) -> Result<(), FormatEncodeError> {
@@ -1072,25 +1004,25 @@ impl PdfPlan {
             .map(|point| point.1)
             .fold(f64::NEG_INFINITY, f64::max);
 
-        pdf.extend_from_slice(b"<<\n/Type /Annot\n/Subtype /Link\n/Rect [");
-        push_pdf_vec_number(pdf, min_x, "PDF link rectangle x minimum")?;
-        pdf.push(b' ');
-        push_pdf_vec_number(pdf, min_y, "PDF link rectangle y minimum")?;
-        pdf.push(b' ');
-        push_pdf_vec_number(pdf, max_x, "PDF link rectangle x maximum")?;
-        pdf.push(b' ');
-        push_pdf_vec_number(pdf, max_y, "PDF link rectangle y maximum")?;
-        pdf.extend_from_slice(b"]\n/QuadPoints [");
+        pdf.bytes(b"<<\n/Type /Annot\n/Subtype /Link\n/Rect [")?;
+        push_pdf_number(pdf, min_x, "PDF link rectangle x minimum")?;
+        pdf.byte(b' ')?;
+        push_pdf_number(pdf, min_y, "PDF link rectangle y minimum")?;
+        pdf.byte(b' ')?;
+        push_pdf_number(pdf, max_x, "PDF link rectangle x maximum")?;
+        pdf.byte(b' ')?;
+        push_pdf_number(pdf, max_y, "PDF link rectangle y maximum")?;
+        pdf.bytes(b"]\n/QuadPoints [")?;
         let mut first = true;
         let mut write_quadrilateral = |quadrilateral: [(f64, f64); 4]| {
             for (x, y) in quadrilateral {
                 if !first {
-                    pdf.push(b' ');
+                    pdf.byte(b' ')?;
                 }
                 first = false;
-                push_pdf_vec_number(pdf, x, "PDF link quadrilateral x")?;
-                pdf.push(b' ');
-                push_pdf_vec_number(pdf, y, "PDF link quadrilateral y")?;
+                push_pdf_number(pdf, x, "PDF link quadrilateral x")?;
+                pdf.byte(b' ')?;
+                push_pdf_number(pdf, y, "PDF link quadrilateral y")?;
             }
             Ok::<(), FormatEncodeError>(())
         };
@@ -1106,10 +1038,9 @@ impl PdfPlan {
                 ])?;
             }
         }
-        pdf.extend_from_slice(b"]\n/Border [0 0 0]\n/A <<\n/S /URI\n/URI (");
-        push_pdf_link(pdf, link);
-        pdf.extend_from_slice(b")\n>>\n>>\nendobj\n");
-        Ok(())
+        pdf.bytes(b"]\n/Border [0 0 0]\n/A <<\n/S /URI\n/URI (")?;
+        push_pdf_link(pdf, link)?;
+        pdf.bytes(b")\n>>\n>>\n")
     }
 
     fn opacity_resources(&self) -> Result<Vec<f64>, FormatEncodeError> {
@@ -1577,49 +1508,40 @@ fn xmp_metadata(manifest: &str) -> Result<String, FormatEncodeError> {
     Ok(xmp)
 }
 
-fn push_pdf_vec_number(
-    output: &mut Vec<u8>,
+fn push_pdf_number(
+    output: &mut Object<'_>,
     value: f64,
     subject: &str,
 ) -> Result<(), FormatEncodeError> {
     let number = format_pdf_number(value, subject)?;
-    output.extend_from_slice(number.as_bytes());
+    output.bytes(number.as_bytes())
+}
+
+fn push_pdf_literal_string(output: &mut Object<'_>, value: &str) -> Result<(), FormatEncodeError> {
+    for byte in value.bytes() {
+        match byte {
+            b'(' => output.bytes(b"\\("),
+            b')' => output.bytes(b"\\)"),
+            b'\\' => output.bytes(b"\\\\"),
+            byte => output.byte(byte),
+        }?;
+    }
     Ok(())
 }
 
-fn push_pdf_literal_string(output: &mut Vec<u8>, value: &str) {
-    for byte in value.bytes() {
-        match byte {
-            b'(' => output.extend_from_slice(b"\\("),
-            b')' => output.extend_from_slice(b"\\)"),
-            b'\\' => output.extend_from_slice(b"\\\\"),
-            byte => output.push(byte),
-        }
-    }
-}
-
-fn push_pdf_link(output: &mut Vec<u8>, link: &str) {
+fn push_pdf_link(output: &mut Object<'_>, link: &str) -> Result<(), FormatEncodeError> {
     let path_end = link.find(['/', '?', '#']).unwrap_or(link.len());
     let has_scheme = link
         .find(':')
         .is_some_and(|scheme_end| scheme_end < path_end);
     if !has_scheme {
         if link.starts_with('/') {
-            output.extend_from_slice(b"http://reference.invalid");
+            output.bytes(b"http://reference.invalid")?;
         } else {
-            output.extend_from_slice(b"http://reference.invalid/");
+            output.bytes(b"http://reference.invalid/")?;
         }
     }
-    push_pdf_literal_string(output, link);
-}
-
-fn begin_object(
-    output: &mut Vec<u8>,
-    offsets: &mut [usize],
-    id: usize,
-) -> Result<(), FormatEncodeError> {
-    offsets[id - 1] = output.len();
-    writeln!(output, "{id} 0 obj").map_err(write_error)
+    push_pdf_literal_string(output, link)
 }
 
 fn pdf_size_error() -> FormatEncodeError {
@@ -1673,8 +1595,4 @@ fn point_dimension(logical: f64) -> Result<f64, FormatEncodeError> {
         ));
     }
     Ok(points)
-}
-
-fn write_error(_: std::io::Error) -> FormatEncodeError {
-    FormatEncodeError::Encoding("failed to encode PDF bytes".to_owned())
 }

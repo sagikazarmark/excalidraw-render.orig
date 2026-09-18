@@ -3,7 +3,7 @@ use std::{env, fs, path::PathBuf};
 fn main() {
     // Compile the real private reader, not a manually maintained copy. Fail if
     // the seam moves. BMP is included directly with #[path] in lib.rs.
-    let source = "../../crates/excalidraw-render/src/render/asset/color.rs";
+    let source = "../../crates/excalidraw-render/src/render/asset/orientation.rs";
     println!("cargo:rerun-if-changed={source}");
     let source = fs::read_to_string(source).unwrap();
     let start = source.find("pub(super) fn exif_orientation(").unwrap();

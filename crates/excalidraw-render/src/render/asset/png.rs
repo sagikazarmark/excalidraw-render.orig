@@ -6,10 +6,8 @@
 
 use std::io::Cursor;
 
-use super::color::{
-    exif_orientation, finish_rgba, normalize_rgba, orient_rgba, oriented_dimensions,
-    ColorNormalization,
-};
+use super::color::{finish_rgba, normalize_rgba, ColorNormalization};
+use super::orientation::{exif_orientation, orient_rgba, oriented_dimensions};
 use super::{DecodedRaster, ResolveError};
 
 pub(super) const PNG_SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";

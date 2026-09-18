@@ -44,13 +44,21 @@ Resolved feature trees and the browser log are saved under `target/color-evaluat
 
 ## What is compared
 
-`build.rs` includes the actual non-test `color.rs` three times, appending private
-measurement hooks. It replaces seven generic conversion functions, the XYZ→linear
-sRGB edge in `color()`, and the rectangular Oklab mix conversion arms in two copies.
+`build.rs` compiles the actual non-test `color.rs` and its private
+`color/conversion.rs` module three times, appending private measurement hooks.
+It inlines the numeric module into each generated copy and replaces eight numeric
+functions (including the XYZ→linear sRGB edge used by `color()`) and the rectangular
+Oklab mix conversion arms in two copies.
 `src/adapter.rs` is the entire candidate conversion adapter. Alpha never enters it.
-The original Lab inverse is also lifted before its f32/gamut boundary for raw
-numeric comparison. Existing `portable_math.rs` and `css_syntax.rs` are compiled
-directly; the extracted module uses a local two-variant ColorMode stand-in.
+Raw Lab inverse comparison calls the production numeric function directly, before
+the caller's unchanged f32/gamut boundary. Existing `portable_math.rs` and
+`css_syntax.rs` are compiled directly; the extracted module uses a local
+two-variant ColorMode stand-in.
+
+The module extraction preserves the original evaluation's substitution boundaries
+and exact observations. `compare.py` accounts for the current two-file source
+layout; the recommendation's original source-line counts describe the evaluated
+commit above. Observation JSON files are unchanged by the extraction.
 
 The substitution preserves parser admission and f32 number tokens, system colors,
 missing components, nested canonical stop quantization, f64 mix weights and alpha,

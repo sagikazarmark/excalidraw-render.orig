@@ -50,12 +50,9 @@ with tempfile.TemporaryDirectory(prefix="kurbo-evaluation-", dir=root / "target"
     probe = stage / "tools" / "kurbo-evaluation"
     shutil.copytree(here, probe, ignore=shutil.ignore_patterns("target", "__pycache__"))
     if args.candidate:
-        geometry = stage / "crates/excalidraw-render/src/render/geometry.rs"
-        original = geometry.read_text()
-        geometry.with_suffix(".rs.original").write_text(original)
-        start = original.index("fn include_cubic_bounds(")
-        end = original.index("pub(super) enum GeneratedGeometry", start)
-        geometry.write_text(original[:start] + (here / "adapter.rs").read_text() + "\n" + original[end:])
+        cubic = stage / "crates/excalidraw-render/src/render/geometry/cubic.rs"
+        shutil.copyfile(cubic, cubic.with_suffix(".rs.original"))
+        shutil.copyfile(here / "adapter.rs", cubic)
         manifest = stage / "crates/excalidraw-render/Cargo.toml"
         text = manifest.read_text().replace("[dependencies]\n", '[dependencies]\nkurbo = { version = "=0.11.3", default-features = false, features = ["libm"] }\n')
         manifest.write_text(text)

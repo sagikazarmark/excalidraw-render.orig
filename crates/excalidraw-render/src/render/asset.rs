@@ -7,14 +7,16 @@
 //! raster drive and the color-normalization selection), and the thin adapters
 //! over the `bmp` and `ico` format modules. `payload` fetches the bytes from a
 //! scene file record or a supplemental asset, `png`, `jpeg`, `gif` and `webp`
-//! validate and decode their formats, `color` normalizes decoded pixels to
-//! upright straight and premultiplied sRGB, and `svg` sanitizes nested SVG.
+//! validate and decode their formats, `orientation` reads TIFF orientation and
+//! stands decoded pixels upright, `color` normalizes them to straight and
+//! premultiplied sRGB, and `svg` sanitizes nested SVG.
 
 mod bmp;
 mod color;
 mod gif;
 mod ico;
 mod jpeg;
+mod orientation;
 mod payload;
 mod png;
 pub(super) mod svg;

@@ -15,10 +15,9 @@ mod portable_math;
 #[allow(dead_code, unused_imports)]
 mod current {
     include!(concat!(env!("OUT_DIR"), "/current.rs"));
-    include!(concat!(env!("OUT_DIR"), "/raw_lab.rs"));
     pub fn inverse(kind: &str, v: [f64; 3]) -> [f64; 3] {
         match kind {
-            "lab-inverse" => raw_lab(v),
+            "lab-inverse" => lab_d50_to_srgb(v),
             "oklab-inverse" => {
                 let c =
                     csscolorparser::Color::from_oklaba(v[0] as f32, v[1] as f32, v[2] as f32, 1.0);

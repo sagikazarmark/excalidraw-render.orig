@@ -8,14 +8,14 @@
 //! `/BaseFont`.
 
 use std::fmt::Write as _;
-use std::io::Write as _;
 
 use excalidraw_render_assets_base::AssetRecord;
 
 use super::super::text::{ResolvedGlyph, ResolvedLabel};
 use super::super::FormatEncodeError;
-use super::streams::{deflate_stream, write_flate_stream_object};
-use super::{begin_object, pdf_size_error, write_error, PdfElementKind, PdfPlan};
+use super::streams::deflate_stream;
+use super::writer::{StreamEncoding, Writer};
+use super::{pdf_size_error, PdfElementKind, PdfPlan};
 
 #[derive(Debug)]
 pub(super) struct PdfGlyphMapping {
@@ -82,8 +82,7 @@ impl PdfPlan {
     #[allow(clippy::too_many_arguments)]
     pub(super) fn write_font_objects(
         &self,
-        pdf: &mut Vec<u8>,
-        offsets: &mut [usize],
+        pdf: &mut Writer,
         font_object: usize,
         font: &[u8],
         program: &[u8],
@@ -103,70 +102,67 @@ impl PdfPlan {
         let metric = |value: i16| i64::from(value) * 1_000 / units_per_em;
         let bbox = face.global_bounding_box();
 
-        begin_object(pdf, offsets, font_object)?;
-        write!(
-            pdf,
-            concat!(
-                "<<\n/Type /Font\n/Subtype /Type0\n/BaseFont /{}\n",
-                "/Encoding /Identity-H\n/DescendantFonts [{} 0 R]\n",
-                "/ToUnicode {} 0 R\n>>\nendobj\n"
-            ),
-            base_font, cid_font_object, to_unicode_object,
-        )
-        .map_err(write_error)?;
+        pdf.object(font_object, |pdf| {
+            write!(
+                pdf,
+                concat!(
+                    "<<\n/Type /Font\n/Subtype /Type0\n/BaseFont /{}\n",
+                    "/Encoding /Identity-H\n/DescendantFonts [{} 0 R]\n",
+                    "/ToUnicode {} 0 R\n>>\n"
+                ),
+                base_font, cid_font_object, to_unicode_object,
+            )
+        })?;
 
-        begin_object(pdf, offsets, cid_font_object)?;
-        write!(
-            pdf,
-            concat!(
-                "<<\n/Type /Font\n/Subtype /CIDFontType2\n/BaseFont /{}\n",
-                "/CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >>\n",
-                "/FontDescriptor {} 0 R\n/CIDToGIDMap {} 0 R\n/DW 1000\n/W ["
-            ),
-            base_font, descriptor_object, cid_to_gid_object,
-        )
-        .map_err(write_error)?;
-        for mapping in mappings {
-            write!(pdf, " {} [{}]", mapping.code, mapping.advance_1000).map_err(write_error)?;
-        }
-        pdf.extend_from_slice(b" ]\n>>\nendobj\n");
+        pdf.object(cid_font_object, |pdf| {
+            write!(
+                pdf,
+                concat!(
+                    "<<\n/Type /Font\n/Subtype /CIDFontType2\n/BaseFont /{}\n",
+                    "/CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >>\n",
+                    "/FontDescriptor {} 0 R\n/CIDToGIDMap {} 0 R\n/DW 1000\n/W ["
+                ),
+                base_font, descriptor_object, cid_to_gid_object,
+            )?;
+            for mapping in mappings {
+                write!(pdf, " {} [{}]", mapping.code, mapping.advance_1000)?;
+            }
+            pdf.bytes(b" ]\n>>\n")
+        })?;
 
-        begin_object(pdf, offsets, descriptor_object)?;
-        write!(
-            pdf,
-            concat!(
-                "<<\n/Type /FontDescriptor\n/FontName /{}\n/Flags 32\n",
-                "/FontBBox [{} {} {} {}]\n/ItalicAngle 0\n/Ascent {}\n/Descent {}\n",
-                "/CapHeight {}\n/StemV 80\n/FontFile2 {} 0 R\n>>\nendobj\n"
-            ),
-            base_font,
-            i64::from(bbox.x_min) * 1_000 / units_per_em,
-            i64::from(bbox.y_min) * 1_000 / units_per_em,
-            i64::from(bbox.x_max) * 1_000 / units_per_em,
-            i64::from(bbox.y_max) * 1_000 / units_per_em,
-            metric(face.ascender()),
-            metric(face.descender()),
-            metric(face.capital_height().unwrap_or(face.ascender())),
+        pdf.object(descriptor_object, |pdf| {
+            write!(
+                pdf,
+                concat!(
+                    "<<\n/Type /FontDescriptor\n/FontName /{}\n/Flags 32\n",
+                    "/FontBBox [{} {} {} {}]\n/ItalicAngle 0\n/Ascent {}\n/Descent {}\n",
+                    "/CapHeight {}\n/StemV 80\n/FontFile2 {} 0 R\n>>\n"
+                ),
+                base_font,
+                i64::from(bbox.x_min) * 1_000 / units_per_em,
+                i64::from(bbox.y_min) * 1_000 / units_per_em,
+                i64::from(bbox.x_max) * 1_000 / units_per_em,
+                i64::from(bbox.y_max) * 1_000 / units_per_em,
+                metric(face.ascender()),
+                metric(face.descender()),
+                metric(face.capital_height().unwrap_or(face.ascender())),
+                font_file_object,
+            )
+        })?;
+
+        pdf.stream(
             font_file_object,
-        )
-        .map_err(write_error)?;
-
-        begin_object(pdf, offsets, font_file_object)?;
-        write!(
-            pdf,
-            "<<\n/Filter /FlateDecode\n/Length {}\n/Length1 {}\n>>\nstream\n",
-            program.len(),
-            font.len()
-        )
-        .map_err(write_error)?;
-        pdf.extend_from_slice(program);
-        pdf.extend_from_slice(b"\nendstream\nendobj\n");
+            StreamEncoding::Flate,
+            program,
+            |_| Ok(()),
+            format_args!("/Length1 {}\n", font.len()),
+        )?;
 
         let cmap = deflate_stream(
             to_unicode_cmap(mappings, cmap_name)?.as_bytes(),
             "pdf_to_unicode_stream",
         )?;
-        write_flate_stream_object(pdf, offsets, to_unicode_object, "", &cmap)?;
+        pdf.flate_stream(to_unicode_object, "", &cmap)?;
 
         let map_length = mappings.last().map_or(2_usize, |mapping| {
             usize::from(mapping.code)
@@ -188,7 +184,7 @@ impl PdfPlan {
             cid_to_gid[offset + 1] = low;
         }
         let cid_to_gid = deflate_stream(&cid_to_gid, "pdf_cid_to_gid_stream")?;
-        write_flate_stream_object(pdf, offsets, cid_to_gid_object, "", &cid_to_gid)?;
+        pdf.flate_stream(cid_to_gid_object, "", &cid_to_gid)?;
         Ok(())
     }
 

@@ -2,13 +2,15 @@
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
-mod current {
-    fn square(x: f64) -> f64 {
+mod portable_math {
+    pub(crate) fn square(x: f64) -> f64 {
         x * x
     }
-    fn cube(x: f64) -> f64 {
+    pub(crate) fn cube(x: f64) -> f64 {
         x * x * x
     }
+}
+mod current {
     include!(concat!(env!("OUT_DIR"), "/current.rs"));
 }
 mod candidate {

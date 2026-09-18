@@ -10,9 +10,8 @@ use zune_jpeg::zune_core::colorspace::ColorSpace;
 use zune_jpeg::zune_core::options::DecoderOptions;
 use zune_jpeg::JpegDecoder;
 
-use super::color::{
-    exif_orientation, orient_rgba, oriented_dimensions, ColorNormalization, LINEAR_TO_SRGB,
-};
+use super::color::{ColorNormalization, LINEAR_TO_SRGB};
+use super::orientation::{exif_orientation, orient_rgba, oriented_dimensions};
 use super::{try_copy, DecodedRaster, ResolveError};
 
 pub(super) const JPEG_SIGNATURE: &[u8; 3] = b"\xff\xd8\xff";

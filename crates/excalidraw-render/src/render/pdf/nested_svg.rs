@@ -38,7 +38,7 @@ pub(super) struct PdfSvgChunk {
     pub(super) chunk: pdf_writer::Chunk,
     pub(super) root: pdf_writer::Ref,
     pub(super) bytes: Vec<u8>,
-    object_offsets: Vec<(usize, usize)>,
+    pub(super) object_offsets: Vec<(usize, usize)>,
     adapted: bool,
 }
 
@@ -670,20 +670,6 @@ pub(super) fn renumber_svg_chunks(
         });
     }
     Ok(renumbered)
-}
-
-pub(super) fn append_chunk(
-    pdf: &mut Vec<u8>,
-    offsets: &mut [usize],
-    resource: &PdfSvgChunk,
-) -> Result<(), FormatEncodeError> {
-    for &(object, position) in &resource.object_offsets {
-        let index = object.checked_sub(1).ok_or_else(pdf_size_error)?;
-        *offsets.get_mut(index).ok_or_else(pdf_size_error)? =
-            pdf.len().checked_add(position).ok_or_else(pdf_size_error)?;
-    }
-    pdf.extend_from_slice(&resource.bytes);
-    Ok(())
 }
 
 #[allow(clippy::type_complexity)]

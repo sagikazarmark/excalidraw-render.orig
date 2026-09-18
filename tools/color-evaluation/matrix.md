@@ -115,21 +115,23 @@ pixels in the observation JSON instead of treating this table as a tolerance gat
 
 ## Source-line accounting
 
-Seven replaced functions: 91 original lines (including signatures).
+Eight replaced numeric functions: 96 production lines (including signatures).
 
-| Function | Original lines |
+| Function | Production lines |
 | --- | ---: |
 | `decode_srgb` | 7 |
 | `encode_srgb` | 7 |
 | `adapt_d50_to_d65` | 10 |
 | `adapt_d65_to_d50` | 10 |
 | `srgb_to_xyz_d65` | 10 |
-| `srgb_to_lab` | 16 |
-| `canonical_lab_color` | 31 |
+| `srgb_to_lab_d50` | 16 |
+| `lab_d50_to_srgb` | 26 |
+| `xyz_d65_to_linear_srgb` | 10 |
 
-Original non-test color module: 1083 lines.
+Non-test color policy module: 885 lines.
+Numeric conversion module: 257 lines.
 Shared two-candidate adapter: 85 lines.
 
-Also replaced: color()'s XYZ-to-linear-sRGB matrix block and rectangular Oklab
-mix conversion arms. Wide-RGB matrices/transfers, polar conversions, CSS admission,
-missing components, alpha, gamut mapping, mix arithmetic and final quantization remain.
+Also replaced: rectangular Oklab mix conversion arms. Wide-RGB matrices/transfers,
+polar conversions, CSS admission, missing components, alpha, gamut mapping,
+mix arithmetic and final quantization remain.

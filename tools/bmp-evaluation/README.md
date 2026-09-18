@@ -11,6 +11,7 @@ From the repository root, with Rust 1.97.1, its `wasm32-unknown-unknown` standar
 library, and wasm-bindgen-test-runner 0.2.126 installed:
 
 ```sh
+export PATH="$(dirname "$(rustup which --toolchain 1.97.1 rustc)"):$PATH"
 export RUSTC="$(rustup which --toolchain 1.97.1 rustc)"
 export RUSTDOC="$(rustup which --toolchain 1.97.1 rustdoc)"
 rustup run 1.97.1 cargo test --locked --offline \
@@ -46,9 +47,10 @@ constructor/limits probes, and 20 artifact length/SHA-256 pairs. Both target
 tests compare the entire report. With no arguments the executable prints it.
 
 `current_bmp` includes the production file directly. The build script extracts
-only the production `exif_orientation` function between explicit function
-boundaries, tracking that source as a rebuild input. There is no copied decoder
-implementation to maintain. The PNG bridge is only a way to exercise candidate
+only the production `exif_orientation` function from
+`crates/excalidraw-render/src/render/asset/orientation.rs` between explicit
+function boundaries, tracking that source as a rebuild input. There is no copied
+decoder implementation to maintain. The PNG bridge is only a way to exercise candidate
 pixels through the public PNG/PDF renderer; it is not the proposed production
 adapter or a semantic-resource-accounting equivalence test.
 
