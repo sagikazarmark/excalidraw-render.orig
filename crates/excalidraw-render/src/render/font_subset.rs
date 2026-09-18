@@ -7,11 +7,15 @@ use std::sync::Arc;
 use write_fonts::from_obj::FromTableRef;
 use write_fonts::read::{
     collections::IntSet,
-    tables::glyf::CurvePoint,
+    tables::{
+        glyf::CurvePoint,
+        name::{Name, NameRecord},
+    },
     types::{GlyphId, NameId, Tag},
-    FontRef, TableProvider,
+    FontData, FontRead, FontRef, Offset, TableProvider,
 };
 use write_fonts::tables::glyf::{Contour, GlyfLocaBuilder, Glyph, SimpleGlyph};
+use write_fonts::types::FixedSize;
 use write_fonts::FontBuilder;
 
 const SUBSET_FLAGS: SubsetFlags = SubsetFlags::SUBSET_FLAGS_DEFAULT;
@@ -393,6 +397,10 @@ fn rewrite_names(sfnt: &[u8], alias: &str, identity: &str) -> Result<Vec<u8>, Er
         };
         records.push((name_id, bytes));
     }
+    // write-fonts 0.53's NameRecord stores strings, not raw bytes. Its reader
+    // conversion replaces malformed UTF-16 and drops odd trailing bytes; using
+    // it here would change preserved legal records. Keep bounded raw writing
+    // through FontBuilder (evaluation: docs/research/fontations-name-tables.md).
     let count = u16::try_from(records.len()).map_err(|_| Error {
         stage: crate::SvgFontSubsetStage::Sfnt,
     })?;
@@ -464,21 +472,30 @@ fn rewrite_names(sfnt: &[u8], alias: &str, identity: &str) -> Result<Vec<u8>, Er
 }
 
 fn english_name(table: &[u8], name_id: u16) -> Option<&[u8]> {
-    let count = usize::from(u16::from_be_bytes(table.get(2..4)?.try_into().ok()?));
-    let strings = usize::from(u16::from_be_bytes(table.get(4..6)?.try_into().ok()?));
-    for index in 0..count {
-        let start = 6_usize.checked_add(index.checked_mul(12)?)?;
-        let record = table.get(start..start.checked_add(12)?)?;
-        let platform = u16::from_be_bytes(record.get(0..2)?.try_into().ok()?);
-        let language = u16::from_be_bytes(record.get(4..6)?.try_into().ok()?);
-        let candidate_id = u16::from_be_bytes(record.get(6..8)?.try_into().ok()?);
-        if platform != 3 || language != 0x0409 || candidate_id != name_id {
+    let data = FontData::new(table);
+    let name = Name::read(data).ok()?;
+    // Read one typed record at a time: Name::name_record() returns an empty
+    // slice when *any* declared record is truncated. Our first-match policy
+    // still accepts an earlier complete record in that case. The range is
+    // bounded by the u16 count and Fontations' fixed-size record layout.
+    for offset in name
+        .name_record_byte_range()
+        .step_by(NameRecord::RAW_BYTE_LEN)
+    {
+        let record = data.read_ref_at::<NameRecord>(offset).ok()?;
+        if record.platform_id() != 3
+            || record.language_id() != 0x0409
+            || record.name_id() != NameId::new(name_id)
+        {
             continue;
         }
-        let length = usize::from(u16::from_be_bytes(record.get(8..10)?.try_into().ok()?));
-        let offset = usize::from(u16::from_be_bytes(record.get(10..12)?.try_into().ok()?));
-        let value_start = strings.checked_add(offset)?;
-        return table.get(value_start..value_start.checked_add(length)?);
+        // Encoding ID deliberately does not participate in selection. Preserve
+        // the bytes, including malformed UTF-16, rather than NameString::chars.
+        // Slice against the original table: string_data() defaults an invalid
+        // storage offset to empty data, conflating it with a valid empty name.
+        let start = usize::from(name.storage_offset())
+            .checked_add(record.string_offset().non_null().unwrap_or(0))?;
+        return table.get(start..start.checked_add(usize::from(record.length()))?);
     }
     None
 }
@@ -1290,6 +1307,230 @@ fn table_checksum(data: &[u8], zero_adjustment: bool) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn name_fixture(records: &[([u16; 4], &[u8])]) -> Vec<u8> {
+        let mut table = Vec::new();
+        for value in [0, records.len() as u16, (6 + records.len() * 12) as u16] {
+            table.extend_from_slice(&value.to_be_bytes());
+        }
+        let mut offset = 0_u16;
+        for (keys, bytes) in records {
+            for value in keys.iter().copied().chain([bytes.len() as u16, offset]) {
+                table.extend_from_slice(&value.to_be_bytes());
+            }
+            offset += bytes.len() as u16;
+        }
+        for (_, bytes) in records {
+            table.extend_from_slice(bytes);
+        }
+        table
+    }
+
+    fn font_with_names(table: Vec<u8>) -> Vec<u8> {
+        let mut builder = FontBuilder::new();
+        builder.add_raw(Tag::new(b"name"), table);
+        builder.build()
+    }
+
+    fn validation_names(legal: &[u8]) -> Vec<u8> {
+        let names = [
+            (0, legal.to_vec()),
+            (1, utf16be("Test")),
+            (2, utf16be("Regular")),
+            (
+                3,
+                utf16be("excalidraw-render;Test;0123456789abcdef0123456789abcdef"),
+            ),
+            (4, utf16be("Test Regular 0123456789abcdef0123456789abcdef")),
+            (6, utf16be("Test-Regular-0123456789abcdef0123456789abcdef")),
+        ];
+        name_fixture(
+            &names
+                .iter()
+                .map(|(id, bytes)| ([3, 1, 0x0409, *id], bytes.as_slice()))
+                .collect::<Vec<_>>(),
+        )
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    fn name_validation_preserves_a_complete_match_before_truncated_records() {
+        let mut source = name_fixture(&[([3, 1, 0x0409, 0], &[0xd8, 0x00])]);
+        // The declared second record is absent; the first legal record is complete.
+        source[2..4].copy_from_slice(&2_u16.to_be_bytes());
+        let source = font_with_names(source);
+        let changed = font_with_names(validation_names(&[0xff, 0xfd]));
+        assert_eq!(
+            validate_names(
+                &source,
+                &changed,
+                "Test",
+                "0123456789abcdef0123456789abcdef"
+            )
+            .expect_err("a complete legal record must not be silently omitted")
+            .stage,
+            crate::SvgFontSubsetStage::Validate
+        );
+        let preserved = font_with_names(validation_names(&[0xd8, 0x00]));
+        validate_names(
+            &source,
+            &preserved,
+            "Test",
+            "0123456789abcdef0123456789abcdef",
+        )
+        .expect("raw unpaired surrogate remains intact");
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    fn name_validation_keeps_first_english_windows_bytes_without_decoding() {
+        for encoding in [0, 1, 2, 10, u16::MAX] {
+            for legal in [&[0xd8, 0x00][..], &[0xdc, 0x00], &[0x00, 0x41, 0xff], &[]] {
+                let source = font_with_names(name_fixture(&[
+                    ([0, 1, 0x0409, 0], &[0x00, 0x55]),
+                    ([3, 1, 0x0411, 0], &[0x00, 0x4a]),
+                    ([3, encoding, 0x0409, 0], legal),
+                    ([3, 1, 0x0409, 0], &[0x00, 0x42]),
+                ]));
+                let preserved = font_with_names(validation_names(legal));
+                validate_names(
+                    &source,
+                    &preserved,
+                    "Test",
+                    "0123456789abcdef0123456789abcdef",
+                )
+                .expect("first matching record is preserved irrespective of encoding");
+                let changed = font_with_names(validation_names(&[0x00, 0x42]));
+                assert_eq!(
+                    validate_names(
+                        &source,
+                        &changed,
+                        "Test",
+                        "0123456789abcdef0123456789abcdef"
+                    )
+                    .expect_err("a later duplicate cannot replace the first match")
+                    .stage,
+                    crate::SvgFontSubsetStage::Validate
+                );
+            }
+        }
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    fn name_validation_does_not_skip_an_unreadable_first_match() {
+        let mut out_of_bounds = name_fixture(&[
+            ([3, 1, 0x0409, 0], &[0x00, 0x41]),
+            ([3, 1, 0x0409, 0], &[0x00, 0x42]),
+        ]);
+        out_of_bounds[16..18].copy_from_slice(&u16::MAX.to_be_bytes());
+        let mut invalid_empty_storage = name_fixture(&[([3, 1, 0x0409, 0], &[])]);
+        invalid_empty_storage[4..6].copy_from_slice(&u16::MAX.to_be_bytes());
+        for table in [vec![], vec![0; 5], out_of_bounds, invalid_empty_storage] {
+            let source = font_with_names(table);
+            let subset = font_with_names(validation_names(&[0x00, 0x43]));
+            validate_names(&source, &subset, "Test", "0123456789abcdef0123456789abcdef")
+                .expect("unreadable source record is absent, not a later or empty record");
+        }
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    fn derived_names_preserve_raw_legal_records_and_selected_ids() {
+        let asset = excalidraw_render_assets_base::load_asset(
+            "fonts/Liberation/LiberationSans-Regular.woff2",
+        )
+        .unwrap()
+        .unwrap();
+        let sfnt = wuff::decompress_woff2(asset.bytes()).unwrap();
+        let mut builder = FontBuilder::new();
+        builder.add_raw(
+            Tag::new(b"name"),
+            name_fixture(&[
+                ([3, 1, 0x0409, 0], &[0xd8, 0x00]),
+                ([3, 1, 0x0409, 5], &[0x00, 0x56]),
+                ([3, 1, 0x0409, 7], &[0x00, 0x58]),
+                ([3, 1, 0x0409, 13], &[0x00, 0x41, 0xff]),
+                ([3, 1, 0x0409, 14], &[0xdc, 0x00]),
+            ]),
+        );
+        builder.copy_missing_tables(FontRef::new(&sfnt).unwrap());
+        let derived = derive(
+            &builder.build(),
+            SourceContainer::Sfnt,
+            &[u32::from('A')],
+            "ExcalidrawRender-9",
+            &"0".repeat(64),
+        )
+        .expect("raw legal bytes survive the complete derivation");
+        let sfnt = wuff::decompress_woff2(&derived.woff2).unwrap();
+        let font = FontRef::new(&sfnt).unwrap();
+        let name = font.name().unwrap();
+        assert_eq!(
+            name.name_record()
+                .iter()
+                .map(|record| record.name_id().to_u16())
+                .collect::<Vec<_>>(),
+            [0, 1, 2, 3, 4, 5, 6, 13, 14]
+        );
+        for record in name.name_record() {
+            assert_eq!(
+                (
+                    record.platform_id(),
+                    record.encoding_id(),
+                    record.language_id()
+                ),
+                (3, 1, 0x0409)
+            );
+        }
+        for (id, expected) in [
+            (0, &[0xd8, 0x00][..]),
+            (5, &[0x00, 0x56]),
+            (13, &[0x00, 0x41, 0xff]),
+            (14, &[0xdc, 0x00]),
+        ] {
+            let record = name
+                .name_record()
+                .iter()
+                .find(|record| record.name_id() == NameId::new(id))
+                .unwrap();
+            let start = record.string_offset().non_null().unwrap_or(0);
+            assert_eq!(
+                &name.string_data().as_bytes()[start..start + usize::from(record.length())],
+                expected
+            );
+        }
+    }
+
+    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    fn derived_names_reject_unrepresentable_lengths_and_offsets_at_sfnt_stage() {
+        let asset = excalidraw_render_assets_base::load_asset(
+            "fonts/Liberation/LiberationSans-Regular.woff2",
+        )
+        .unwrap()
+        .unwrap();
+        // Individual UTF-16 byte length, supplementary-plane length, then
+        // cumulative storage offset overflow while individual strings fit u16.
+        for alias in [
+            "A".repeat(32768),
+            "\u{1f600}".repeat(16384),
+            "A".repeat(20000),
+        ] {
+            assert_eq!(
+                derive(
+                    asset.bytes(),
+                    SourceContainer::Woff2,
+                    &[u32::from('A')],
+                    &alias,
+                    &"0".repeat(64)
+                )
+                .expect_err("name storage fields must fit u16")
+                .stage,
+                crate::SvgFontSubsetStage::Sfnt
+            );
+        }
+    }
 
     #[test]
     fn manifested_zero_subset_flags_disable_every_skera_option() {
