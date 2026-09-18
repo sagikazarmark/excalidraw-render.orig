@@ -1,0 +1,2101 @@
+{
+  "color_space": "srgb",
+  "rows": [
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "css": "  red  ",
+      "svg": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "css": "Canvas",
+      "svg": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        65,
+        198,
+        204
+      ],
+      "css": "Highlight",
+      "svg": [
+        0,
+        65,
+        198,
+        204
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        30,
+        30,
+        30,
+        255
+      ],
+      "css": "RGB(30 30 30)",
+      "svg": [
+        30,
+        30,
+        30,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        48,
+        255,
+        255
+      ],
+      "css": "color(a98-rgb -0.5 0.2 1.2)",
+      "svg": [
+        0,
+        48,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "css": "color(a98-rgb 0 0 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        4,
+        0,
+        131,
+        255
+      ],
+      "css": "color(a98-rgb 0.04045 0.0031308 0.5)",
+      "svg": [
+        4,
+        0,
+        131,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "css": "color(a98-rgb 1 1 1)",
+      "svg": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        59,
+        255,
+        255
+      ],
+      "css": "color(display-p3 -0.5 0.2 1.2)",
+      "svg": [
+        0,
+        59,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "css": "color(display-p3 0 0 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        12,
+        0,
+        133,
+        255
+      ],
+      "css": "color(display-p3 0.04045 0.0031308 0.5)",
+      "svg": [
+        12,
+        0,
+        133,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "css": "color(display-p3 1 0 0)",
+      "svg": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "css": "color(display-p3 1 1 1)",
+      "svg": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": false,
+      "canvas": null,
+      "css": "color(invalid 1 1 1)",
+      "svg": null
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        101,
+        255,
+        255
+      ],
+      "css": "color(prophoto-rgb -0.5 0.2 1.2)",
+      "svg": [
+        0,
+        101,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "css": "color(prophoto-rgb 0 0 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        156,
+        255
+      ],
+      "css": "color(prophoto-rgb 0.04045 0.0031308 0.5)",
+      "svg": [
+        0,
+        0,
+        156,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "css": "color(prophoto-rgb 1 1 1)",
+      "svg": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        81,
+        255,
+        255
+      ],
+      "css": "color(rec2020 -0.5 0.2 1.2)",
+      "svg": [
+        0,
+        81,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "css": "color(rec2020 0 0 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        147,
+        255
+      ],
+      "css": "color(rec2020 0.04045 0.0031308 0.5)",
+      "svg": [
+        0,
+        0,
+        147,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "css": "color(rec2020 1 1 1)",
+      "svg": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        51,
+        255,
+        255
+      ],
+      "css": "color(srgb -0.5 0.2 1.2)",
+      "svg": [
+        0,
+        51,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "css": "color(srgb 0 0 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        10,
+        1,
+        128,
+        255
+      ],
+      "css": "color(srgb 0.04045 0.0031308 0.5)",
+      "svg": [
+        10,
+        1,
+        128,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        64,
+        0,
+        191,
+        255
+      ],
+      "css": "color(srgb 0.25 0 0.75)",
+      "svg": [
+        64,
+        0,
+        191,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "css": "color(srgb 1 1 1)",
+      "svg": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color(srgb none 0.2 0.3 / none)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        124,
+        255,
+        255
+      ],
+      "css": "color(srgb-linear -0.5 0.2 1.2)",
+      "svg": [
+        0,
+        124,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "css": "color(srgb-linear 0 0 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        57,
+        10,
+        188,
+        255
+      ],
+      "css": "color(srgb-linear 0.04045 0.0031308 0.5)",
+      "svg": [
+        57,
+        10,
+        188,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        128,
+        128,
+        128,
+        255
+      ],
+      "css": "color(srgb-linear 0.21586050011389926 0.21586050011389926 0.21586050011389926)",
+      "svg": [
+        128,
+        128,
+        128,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "css": "color(srgb-linear 1 1 1)",
+      "svg": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        245,
+        255,
+        255
+      ],
+      "css": "color(xyz-d50 -0.5 0.2 1.2)",
+      "svg": [
+        0,
+        245,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "css": "color(xyz-d50 0 0 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        219,
+        255
+      ],
+      "css": "color(xyz-d50 0.04045 0.0031308 0.5)",
+      "svg": [
+        0,
+        0,
+        219,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        252,
+        255,
+        255
+      ],
+      "css": "color(xyz-d50 1 1 1)",
+      "svg": [
+        255,
+        252,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        245,
+        255,
+        255
+      ],
+      "css": "color(xyz-d65 -0.5 0.2 1.2)",
+      "svg": [
+        0,
+        245,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "css": "color(xyz-d65 0 0 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        192,
+        255
+      ],
+      "css": "color(xyz-d65 0.04045 0.0031308 0.5)",
+      "svg": [
+        0,
+        0,
+        192,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        249,
+        244,
+        255
+      ],
+      "css": "color(xyz-d65 1 1 1)",
+      "svg": [
+        255,
+        249,
+        244,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        64,
+        0,
+        191,
+        255
+      ],
+      "css": "color-mix(IN SRGB, red 25%, blue)",
+      "svg": [
+        64,
+        0,
+        191,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "css": "color-mix(in a98-rgb, red, blue)",
+      "svg": [
+        128,
+        0,
+        128,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        248,
+        39
+      ],
+      "css": "color-mix(in a98-rgb, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        0,
+        0,
+        248,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in a98-rgb, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        128,
+        10,
+        145,
+        255
+      ],
+      "css": "color-mix(in display-p3, red, blue)",
+      "svg": [
+        128,
+        10,
+        145,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        255,
+        39
+      ],
+      "css": "color-mix(in display-p3, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        0,
+        0,
+        255,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in display-p3, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        255,
+        0,
+        255
+      ],
+      "css": "color-mix(in hsl longer hue, red, blue)",
+      "svg": [
+        0,
+        255,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        0,
+        255,
+        255
+      ],
+      "css": "color-mix(in hsl, red, blue)",
+      "svg": [
+        255,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        203,
+        0,
+        255,
+        39
+      ],
+      "css": "color-mix(in hsl, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        203,
+        0,
+        255,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in hsl, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        0,
+        255,
+        255
+      ],
+      "css": "color-mix(in hwb, red, blue)",
+      "svg": [
+        255,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        203,
+        0,
+        255,
+        39
+      ],
+      "css": "color-mix(in hwb, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        203,
+        0,
+        255,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in hwb, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        193,
+        0,
+        136,
+        255
+      ],
+      "css": "color-mix(in lab, red, blue)",
+      "svg": [
+        193,
+        0,
+        136,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        20,
+        0,
+        248,
+        39
+      ],
+      "css": "color-mix(in lab, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        20,
+        0,
+        248,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in lab, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        245,
+        0,
+        134,
+        255
+      ],
+      "css": "color-mix(in lch, red, blue)",
+      "svg": [
+        245,
+        0,
+        134,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        203,
+        0,
+        137,
+        39
+      ],
+      "css": "color-mix(in lch, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        203,
+        0,
+        137,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in lch, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        140,
+        83,
+        162,
+        255
+      ],
+      "css": "color-mix(in oklab, red, blue)",
+      "svg": [
+        140,
+        83,
+        162,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        7,
+        255,
+        39
+      ],
+      "css": "color-mix(in oklab, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        0,
+        7,
+        255,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in oklab, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        186,
+        0,
+        194,
+        255
+      ],
+      "css": "color-mix(in oklch, red, blue)",
+      "svg": [
+        186,
+        0,
+        194,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        144,
+        0,
+        196,
+        39
+      ],
+      "css": "color-mix(in oklch, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        144,
+        0,
+        196,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in oklch, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        186,
+        3,
+        157,
+        255
+      ],
+      "css": "color-mix(in prophoto-rgb, red, blue)",
+      "svg": [
+        186,
+        3,
+        157,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        13,
+        0,
+        255,
+        39
+      ],
+      "css": "color-mix(in prophoto-rgb, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        13,
+        0,
+        255,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in prophoto-rgb, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        162,
+        19,
+        147,
+        255
+      ],
+      "css": "color-mix(in rec2020, red, blue)",
+      "svg": [
+        162,
+        19,
+        147,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        7,
+        0,
+        255,
+        39
+      ],
+      "css": "color-mix(in rec2020, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        7,
+        0,
+        255,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in rec2020, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        128,
+        255
+      ],
+      "css": "color-mix(in srgb, currentcolor/*(,)*/, blue)",
+      "svg": [
+        0,
+        0,
+        128,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        128,
+        255
+      ],
+      "css": "color-mix(in srgb, currentcolor/*,*/, blue)",
+      "svg": [
+        0,
+        0,
+        128,
+        255
+      ]
+    },
+    {
+      "admitted": false,
+      "canvas": null,
+      "css": "color-mix(in srgb, red 0%, blue 0%)",
+      "svg": null
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "css": "color-mix(in srgb, red 49.9999999%, blue)",
+      "svg": [
+        128,
+        0,
+        128,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "css": "color-mix(in srgb, red 50.0000001%, blue)",
+      "svg": [
+        128,
+        0,
+        128,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        64,
+        0,
+        191,
+        255
+      ],
+      "css": "color-mix(in srgb, red calc(25%), blue)",
+      "svg": [
+        64,
+        0,
+        191,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "css": "color-mix(in srgb, red, blue",
+      "svg": [
+        128,
+        0,
+        128,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "css": "color-mix(in srgb, red, blue)",
+      "svg": [
+        128,
+        0,
+        128,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        255,
+        39
+      ],
+      "css": "color-mix(in srgb, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        0,
+        0,
+        255,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in srgb, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        1,
+        1,
+        1,
+        255
+      ],
+      "css": "color-mix(in srgb-linear, black 99.98482365082256%, white)",
+      "svg": [
+        1,
+        1,
+        1,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        188,
+        0,
+        188,
+        255
+      ],
+      "css": "color-mix(in srgb-linear, red, blue)",
+      "svg": [
+        188,
+        0,
+        188,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        13,
+        0,
+        255,
+        39
+      ],
+      "css": "color-mix(in srgb-linear, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        13,
+        0,
+        255,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in srgb-linear, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        188,
+        0,
+        188,
+        255
+      ],
+      "css": "color-mix(in xyz, red, blue)",
+      "svg": [
+        188,
+        0,
+        188,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        188,
+        0,
+        188,
+        255
+      ],
+      "css": "color-mix(in xyz-d50, red, blue)",
+      "svg": [
+        188,
+        0,
+        188,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        13,
+        0,
+        255,
+        39
+      ],
+      "css": "color-mix(in xyz-d50, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        13,
+        0,
+        255,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in xyz-d50, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        188,
+        0,
+        188,
+        255
+      ],
+      "css": "color-mix(in xyz-d65, red, blue)",
+      "svg": [
+        188,
+        0,
+        188,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        13,
+        0,
+        255,
+        39
+      ],
+      "css": "color-mix(in xyz-d65, rgb(255 0 0 / .004) 20%, rgb(0 0 255 / .5) 30%)",
+      "svg": [
+        13,
+        0,
+        255,
+        39
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "color-mix(in xyz-d65, rgb(255 0 0 / 0), rgb(0 0 255 / 0))",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "css": "currentcolor",
+      "svg": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        255,
+        0,
+        128
+      ],
+      "css": "hwb(120 0% 0% / .5)",
+      "svg": [
+        0,
+        255,
+        0,
+        128
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(0 0 0 / 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(0 0 0 / 0.0019607842)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "css": "lab(0 0 0 / 0.0019607844)",
+      "svg": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        128
+      ],
+      "css": "lab(0 0 0 / 0.5)",
+      "svg": [
+        0,
+        0,
+        0,
+        128
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        255
+      ],
+      "css": "lab(0 0 0 / 1)",
+      "svg": [
+        0,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(100 0 0 / 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(100 0 0 / 0.0019607842)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(100 0 0 / 0.0019607844)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        253,
+        255,
+        255,
+        128
+      ],
+      "css": "lab(100 0 0 / 0.5)",
+      "svg": [
+        253,
+        255,
+        255,
+        128
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "css": "lab(100 0 0 / 1)",
+      "svg": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(50 -125 125 / 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(50 -125 125 / 0.0019607842)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "css": "lab(50 -125 125 / 0.0019607844)",
+      "svg": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        153,
+        0,
+        128
+      ],
+      "css": "lab(50 -125 125 / 0.5)",
+      "svg": [
+        0,
+        153,
+        0,
+        128
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        154,
+        0,
+        255
+      ],
+      "css": "lab(50 -125 125 / 1)",
+      "svg": [
+        0,
+        154,
+        0,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(50 .01 -.01 / 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(50 .01 -.01 / 0.0019607842)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "css": "lab(50 .01 -.01 / 0.0019607844)",
+      "svg": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        120,
+        120,
+        120,
+        128
+      ],
+      "css": "lab(50 .01 -.01 / 0.5)",
+      "svg": [
+        120,
+        120,
+        120,
+        128
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        119,
+        119,
+        119,
+        255
+      ],
+      "css": "lab(50 .01 -.01 / 1)",
+      "svg": [
+        119,
+        119,
+        119,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(50 125 -125 / 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(50 125 -125 / 0.0019607842)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(50 125 -125 / 0.0019607844)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        213,
+        0,
+        255,
+        128
+      ],
+      "css": "lab(50 125 -125 / 0.5)",
+      "svg": [
+        213,
+        0,
+        255,
+        128
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        214,
+        0,
+        255,
+        255
+      ],
+      "css": "lab(50 125 -125 / 1)",
+      "svg": [
+        214,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        119,
+        119,
+        119,
+        255
+      ],
+      "css": "lab(50% 0 0)",
+      "svg": [
+        119,
+        119,
+        119,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        118,
+        147,
+        0,
+        154
+      ],
+      "css": "lab(57.068703370168805 -25.89630411239341 105.43433617567644 / 0.6023601510096341)",
+      "svg": [
+        118,
+        147,
+        0,
+        154
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        153,
+        204,
+        0,
+        5
+      ],
+      "css": "lab(75.42136115953326 -33.40447955997661 72.98849639482796 / 0.01893811230547726)",
+      "svg": [
+        153,
+        204,
+        0,
+        5
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(8 0 0 / 0)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(8 0 0 / 0.0019607842)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "css": "lab(8 0 0 / 0.0019607844)",
+      "svg": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        24,
+        24,
+        24,
+        128
+      ],
+      "css": "lab(8 0 0 / 0.5)",
+      "svg": [
+        24,
+        24,
+        24,
+        128
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        24,
+        24,
+        24,
+        255
+      ],
+      "css": "lab(8 0 0 / 1)",
+      "svg": [
+        24,
+        24,
+        24,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "css": "lab(none none none / none)",
+      "svg": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        99,
+        99,
+        99,
+        255
+      ],
+      "css": "oklab(50% 0 0)",
+      "svg": [
+        99,
+        99,
+        99,
+        255
+      ]
+    },
+    {
+      "admitted": true,
+      "canvas": [
+        102,
+        51,
+        153,
+        255
+      ],
+      "css": "rebeccapurple",
+      "svg": [
+        102,
+        51,
+        153,
+        255
+      ]
+    }
+  ],
+  "versions": [
+    "Google Chrome for Testing 149.0.7827.55",
+    "ChromeDriver 149.0.7827.55 (3188f8a607ae7e067593be8aab7f02d2451fec07-refs/branch-heads/7827@{#1982})"
+  ]
+}
