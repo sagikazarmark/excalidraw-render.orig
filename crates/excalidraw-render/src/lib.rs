@@ -8,6 +8,7 @@
 mod catalog;
 mod color;
 mod compatibility;
+mod css_syntax;
 mod diagnostic_registry;
 mod font_metadata;
 mod frame;

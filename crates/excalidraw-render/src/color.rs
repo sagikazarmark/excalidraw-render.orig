@@ -1,6 +1,6 @@
 use std::fmt;
 
-use cssparser::{color::PredefinedColorSpace, Parser, ParserInput};
+use cssparser::{color::PredefinedColorSpace, Delimiter, ParseError, Parser, ParserInput, Token};
 use cssparser_color::Color as ParsedColor;
 
 use crate::portable_math::{atan2, cbrt, cos, hypot, powf, sin, square};
@@ -370,8 +370,58 @@ enum HueInterpolation {
 }
 
 fn parse_color_mix(value: &str, depth: u32) -> Option<CanonicalColor> {
-    let body = function_body(value, "color-mix")?;
-    let [interpolation, first, second] = split_color_mix_body(body)?;
+    let [interpolation, first, second] = color_mix_parts(value)?;
+    mix_colors(interpolation, first, second, depth)
+}
+
+fn color_mix_parts(value: &str) -> Option<[&str; 3]> {
+    if value.contains("/*") || !crate::css_syntax::fits_inline_block_stack(value) {
+        // Comments were visible to the old delimiter grammar. Preserve that
+        // unusual policy instead of letting opaque comment tokens widen it.
+        let body = value.get("color-mix(".len()..)?.strip_suffix(')')?;
+        let ([Some(first), Some(second)], _) = compatibility_color_boundaries(body)? else {
+            return None;
+        };
+        return Some([
+            &body[..first],
+            &body[first + 1..second],
+            &body[second + 1..],
+        ]);
+    }
+    let mut input = ParserInput::new(value);
+    let mut parser = Parser::new(&mut input);
+    parser.expect_function_matching("color-mix").ok()?;
+    let ([interpolation, first, second], end) = parser
+        .parse_nested_block(|body| {
+            // The grammar has exactly three parts: never allocate a comma list.
+            let mut parts = [""; 3];
+            for (index, part) in parts.iter_mut().enumerate() {
+                *part = body.parse_until_before(Delimiter::Comma, |part| {
+                    let start = part.position();
+                    color_tokens(part, 0)?;
+                    Ok(part.slice_from(start))
+                })?;
+                if index != 2 {
+                    body.expect_comma()?;
+                }
+            }
+            Ok((parts, body.position()))
+        })
+        .ok()?;
+    // cssparser recovers an EOF-closed function; this contract requires ')'.
+    if parser.slice(end..parser.position()) != ")" {
+        return None;
+    }
+    parser.expect_exhausted().ok()?;
+    Some([interpolation, first, second])
+}
+
+fn mix_colors(
+    interpolation: &str,
+    first: &str,
+    second: &str,
+    depth: u32,
+) -> Option<CanonicalColor> {
     let mut interpolation = interpolation.split_ascii_whitespace();
     if !interpolation.next()?.eq_ignore_ascii_case("in") {
         return None;
@@ -470,9 +520,16 @@ fn parse_color_mix(value: &str, depth: u32) -> Option<CanonicalColor> {
 
 fn color_mix_stop(value: &str, depth: u32) -> Option<(CanonicalColor, Option<f64>)> {
     let value = value.trim();
-    let split = last_top_level_whitespace(value);
+    let split = if value.contains("/*") || !crate::css_syntax::fits_inline_block_stack(value) {
+        compatibility_color_boundaries(value)?.1
+    } else {
+        let mut input = ParserInput::new(value);
+        color_tokens(&mut Parser::new(&mut input), 0).ok()?
+    };
     if let Some(split) = split {
         if let Some(weight) = value[split..].trim().strip_suffix('%') {
+            // Keep the original number token, not cssparser's f32 percentage.
+            // Rust also historically admits `25.%`; retain that spelling here.
             let weight = weight.parse::<f64>().ok()? / 100.0;
             if !(0.0..=1.0).contains(&weight) {
                 return None;
@@ -486,40 +543,70 @@ fn color_mix_stop(value: &str, depth: u32) -> Option<(CanonicalColor, Option<f64
     Some((parse_css_at_depth(value, depth.checked_add(1)?)?, None))
 }
 
-fn function_body<'a>(value: &'a str, expected: &str) -> Option<&'a str> {
-    let open = value.find('(')?;
-    if !value[..open].trim().eq_ignore_ascii_case(expected) || !value.ends_with(')') {
-        return None;
+/// Consume bounded component values, retaining the last top-level whitespace
+/// position for the historical weight grammar. Work is linear per invocation;
+/// mix evaluation makes at most MAX_COLOR_NESTING_DEPTH + 1 such passes.
+fn color_tokens<'i>(
+    parser: &mut Parser<'i, '_>,
+    depth: u32,
+) -> Result<Option<usize>, ParseError<'i, ()>> {
+    // A deepest admitted stop may itself be rgb()/color(), hence the extra level.
+    if depth > MAX_COLOR_NESTING_DEPTH + 1 {
+        return Err(parser.new_custom_error(()));
     }
-    Some(&value[open + 1..value.len() - 1])
+    let start = parser.position();
+    let mut whitespace = None;
+    loop {
+        let Ok(token) = parser.next_including_whitespace_and_comments() else {
+            return Ok(whitespace);
+        };
+        match token {
+            Token::Function(_) | Token::ParenthesisBlock => {
+                let body_start = parser.position();
+                let end = parser.parse_nested_block(|body| {
+                    color_tokens(body, depth + 1)?;
+                    Ok(body.position())
+                })?;
+                if parser.slice(end..parser.position()) != ")" {
+                    return Err(parser.new_custom_error(()));
+                }
+                debug_assert!(parser.position() > body_start);
+            }
+            Token::WhiteSpace(_) => {
+                whitespace = Some(parser.slice(start..parser.position()).len() - 1);
+            }
+            Token::SquareBracketBlock | Token::CurlyBracketBlock | Token::QuotedString(_) => {
+                return Err(parser.new_custom_error(()));
+            }
+            token if token.is_parse_error() => return Err(parser.new_custom_error(())),
+            _ => {}
+        }
+    }
 }
 
-fn split_color_mix_body(value: &str) -> Option<[&str; 3]> {
+/// Residual scan for comments and values outside the inline-tokenizer guard.
+/// In particular,
+/// `currentcolor/*(,)*/` was admitted but `currentcolor/*,*/` was not. No CSS
+/// tokenizer exposes delimiters inside comments as grammar tokens. Two comma
+/// slots and a checked depth retain the original allocation-free work bound.
+fn compatibility_color_boundaries(value: &str) -> Option<([Option<usize>; 2], Option<usize>)> {
+    let mut commas = [None; 2];
+    let mut comma_count = 0;
+    let mut whitespace = None;
     let mut depth = 0_u32;
-    let mut start = 0;
-    let mut first = None;
-    let mut second = None;
     for (index, character) in value.char_indices() {
         match character {
             '(' => depth = depth.checked_add(1)?,
             ')' => depth = depth.checked_sub(1)?,
             ',' if depth == 0 => {
-                if first.is_none() {
-                    first = Some(&value[start..index]);
-                } else if second.is_none() {
-                    second = Some(&value[start..index]);
-                } else {
-                    return None;
-                }
-                start = index + character.len_utf8();
+                *commas.get_mut(comma_count)? = Some(index);
+                comma_count += 1;
             }
+            c if c.is_ascii_whitespace() && depth == 0 => whitespace = Some(index),
             _ => {}
         }
     }
-    if depth != 0 {
-        return None;
-    }
-    Some([first?, second?, &value[start..]])
+    (depth == 0).then_some((commas, whitespace))
 }
 
 fn css_color(color: CanonicalColor) -> csscolorparser::Color {
@@ -874,20 +961,6 @@ fn map_srgb_gamut(color: csscolorparser::Color) -> csscolorparser::Color {
     csscolorparser::Color::from_oklcha(lightness, chroma, hue, alpha)
 }
 
-fn last_top_level_whitespace(value: &str) -> Option<usize> {
-    let mut depth = 0_u32;
-    let mut split = None;
-    for (index, character) in value.char_indices() {
-        match character {
-            '(' => depth = depth.checked_add(1)?,
-            ')' => depth = depth.checked_sub(1)?,
-            _ if character.is_ascii_whitespace() && depth == 0 => split = Some(index),
-            _ => {}
-        }
-    }
-    (depth == 0).then_some(split).flatten()
-}
-
 fn decode_srgb(component: f64) -> f64 {
     if component.abs() <= 0.040_45 {
         component / 12.92
@@ -1138,7 +1211,8 @@ mod tests {
     /// `color-mix` nests to the depth the renderer bounds, 128 stops deep,
     /// and one level deeper is refused rather than recursed into, so an
     /// adversarial `viewBackgroundColor` cannot exhaust the stack.
-    #[test]
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    #[cfg_attr(not(target_arch = "wasm32"), test)]
     fn nested_color_mix_is_bounded() {
         let nested = |depth: usize| {
             let mut color = String::from("red");
@@ -1151,6 +1225,49 @@ mod tests {
         assert!(parse_css(&nested(128)).is_some(), "128 levels are admitted");
         assert_eq!(parse_css(&nested(129)), None, "129 levels are refused");
         assert_eq!(parse_css(&nested(130)), None);
+    }
+
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    #[cfg_attr(not(target_arch = "wasm32"), test)]
+    fn color_mix_preserves_nested_syntax_and_double_precision_weights() {
+        for (value, expected) in [
+            ("color-mix(in srgb, rgb(255, 0, 0) 25%, blue)", "#4000bf"),
+            (
+                "color-mix(in srgb, color-mix(in srgb, red, blue), blue)",
+                "#4000c0",
+            ),
+            // Rounding these weights to f32 moves a channel across its half-byte.
+            ("color-mix(in srgb, red 49.9999999%, blue)", "#7f0080"),
+            ("color-mix(in srgb, red 50.0000001%, blue)", "#80007f"),
+            ("color-mix(in srgb, red +2.5e1%, blue)", "#4000bf"),
+            // Rust's historical f64 weight spelling, not a CSS percentage token.
+            ("color-mix(in srgb, red 25.%, blue)", "#4000bf"),
+            ("color-mix(in srgb, currentcolor/*(,)*/, blue)", "#000080"),
+            (
+                "color-mix(in srgb, currentcolor/*(*/ /*)*/, blue)",
+                "#000080",
+            ),
+        ] {
+            assert_eq!(hex_of(value).as_deref(), Some(expected), "{value}");
+        }
+        for value in [
+            "color-mix(in srgb, red, blue",
+            "color-mix(in srgb, rgb(255, 0, 0, blue)",
+            "color-mix(in srgb, red, rgb(0, 0, 255)",
+            "color-mix(in srgb, red, blue))",
+            "color-mix(in srgb, red, blue, green)",
+            "color-mix(in srgb, 'red, blue', green)",
+            "color-mix(in srgb, red 25% 25%, blue)",
+            "color-mix(in srgb, red25%, blue)",
+            "color-mix(in srgb, red\u{b}25%, blue)",
+            "color-mix(in srgb, red calc(25%), blue)",
+            "color-mix(in/**/ srgb, red, blue)",
+            "color-mix(in srgb, currentcolor/*,*/, blue)",
+            "color-mix(in srgb, red NaN%, blue)",
+            r"color-mix(in s\72gb, red, blue)",
+        ] {
+            assert_eq!(parse_css(value), None, "{value}");
+        }
     }
 
     /// Alpha survives parsing in the 8-bit precision the encoders read: the

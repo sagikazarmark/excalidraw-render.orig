@@ -901,6 +901,165 @@ fn safe_class_styles_preserve_nested_opacity_and_layer_order() {
     assert!(pdf.contains("/ca 0.5"));
 }
 
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn stylesheet_token_boundaries_preserve_admission_and_removal_sources() {
+    for (style, admitted) in [
+        ("rect {fill:rgb(255, 0, 0);opacity:50%}", true),
+        (r#"[class="a,b"] {fill:red}"#, true),
+        (r#"rect {font-family:"a:b,c";fill:red}"#, true),
+        // Admission historically leaves invalid property values to usvg.
+        ("rect {fill:unknown(nested(1, 2));opacity:1}", true),
+        ("rect {fill:rgb(1, 2, 3}", true),
+        (r#"rect {font-family:"unclosed}"#, true),
+        (r#"rect {font-family:"a;fill:red"}"#, true),
+        ("rect {fill:red", false),
+        ("rect {fill:red}}", false),
+        ("rect {fill:{red}}", false),
+        (r#"[class="a:b"] {fill:red}"#, false),
+        (r#"rect {font-family:"a;b";fill:red}"#, false),
+        (r#"rect {font-family:"a}b";fill:red}"#, false),
+        ("@media all {rect {fill:red}}", false),
+        (r"rect {f\69ll:red}", false),
+        ("rect {/* comment */fill:red}", false),
+        ("rect {unknown:red}", false),
+        ("rect {fill:url(https://example.invalid/paint)}", false),
+        ("rect {fill:}", false),
+    ] {
+        let nested = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><style>{style}</style><rect width="20" height="10"/></svg>"#
+        );
+        let scene = nested_svg_scene(nested.as_bytes(), 20, 10);
+        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+            let request = RenderRequest::builder(format).build().unwrap();
+            let outcome = Renderer::new().render(&scene, &request).unwrap();
+            let diagnostics = outcome.report().diagnostics();
+            if admitted {
+                assert!(
+                    diagnostics.is_empty(),
+                    "{style:?} / {format:?}: {diagnostics:?}"
+                );
+            } else {
+                assert_eq!(diagnostics.len(), 1, "{style:?} / {format:?}");
+                let diagnostic = &diagnostics[0];
+                assert_eq!(
+                    diagnostic.code(),
+                    DiagnosticCode::IMAGE_UNSAFE_SVG_CONTENT_REMOVED
+                );
+                assert_eq!(diagnostic.json_pointer(), "/files/asset/dataURL");
+                let Some(ErrorDetails::NestedSource {
+                    paths, recovery, ..
+                }) = diagnostic.details()
+                else {
+                    panic!("style removal has source provenance");
+                };
+                assert_eq!(*recovery, Recovery::Removed);
+                assert_eq!(
+                    serde_json::to_value(paths).unwrap(),
+                    serde_json::json!([
+                        {"segments":[{"kind":"node","ordinal":1,"name":null}]}
+                    ])
+                );
+            }
+            if format == OutputFormat::Svg {
+                let svg = embedded_svg(std::str::from_utf8(outcome.artifact().bytes()).unwrap());
+                assert_eq!(svg.contains("<style>"), admitted, "{style:?}");
+            }
+        }
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn stylesheet_uninterpreted_depth_preserves_asset_work_admission() {
+    // Deep uninterpreted values and many rules after an unclosed value retain
+    // their original admission without recursive or quadratic boundary work.
+    for style in [
+        format!(
+            "rect {{fill:{}red{}}}",
+            "unknown(".repeat(1024),
+            ")".repeat(1024)
+        ),
+        format!("rect {{fill:unknown(}}{}", "rect {opacity:1}".repeat(1024)),
+    ] {
+        let nested = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><style>{style}</style><rect width="20" height="10"/></svg>"#
+        );
+        let scene = nested_svg_scene(nested.as_bytes(), 20, 10);
+        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+            let request = RenderRequest::builder(format).build().unwrap();
+            let outcome = Renderer::new().render(&scene, &request).unwrap();
+            assert!(outcome.report().diagnostics().is_empty());
+            let limits = ResourceLimits::builder()
+                .max_asset_work_units(nested.len() as u64 - 1)
+                .build()
+                .unwrap();
+            let request = RenderRequest::builder(format)
+                .resource_limits(limits)
+                .build()
+                .unwrap();
+            let outcome = Renderer::new().render(&scene, &request).unwrap();
+            assert_eq!(
+                outcome.report().diagnostics()[0].code(),
+                DiagnosticCode::RESOURCE_ASSET_WORK_EXCEEDED
+            );
+        }
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+#[cfg_attr(not(target_arch = "wasm32"), test)]
+fn stylesheet_token_boundaries_retain_cascade_and_exact_effect_sources() {
+    use serde_json::json;
+    let styled = r##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><style>[class="unused,a"] {font-family:"family:part,tail";fill:rgb(255,0,0)} .fx, rect.fx {fill:#00ff00;filter:url(#effect)} [id] {opacity:0}</style><defs><filter id="effect" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" class="fx"/></svg>"##;
+    let scene = nested_svg_scene(styled.as_bytes(), 20, 10);
+    let request = RenderRequest::builder(OutputFormat::Pdf).build().unwrap();
+    let outcome = Renderer::new().render(&scene, &request).unwrap();
+    let [diagnostic] = outcome.report().diagnostics() else {
+        panic!("one stylesheet effect");
+    };
+    assert_eq!(diagnostic.code(), DiagnosticCode::PDF_RASTER_FALLBACK);
+    assert_eq!(diagnostic.json_pointer(), "/files/asset/dataURL");
+    let mut details = json!({
+        "kind":"pdf_raster_fallback", "recovery":"rasterized",
+        "logical_bounds":{"x":10,"y":10,"width":20,"height":10},
+        "pixel_width":20,"pixel_height":10,
+        "causes":[
+            {"segments":[{"kind":"node","ordinal":6,"name":null}]},
+            {"segments":[{"kind":"node","ordinal":1,"name":null},
+                {"kind":"css_rule","ordinal":1,"name":null},
+                {"kind":"css_declaration","ordinal":1,"name":"filter"}]},
+            {"segments":[{"kind":"node","ordinal":5,"name":null}]}
+        ]
+    });
+    assert_eq!(serde_json::to_value(diagnostic.details()).unwrap(), details);
+    assert!(pdf_text(outcome.artifact().bytes()).contains("/Subtype /Image"));
+    let forbid = RenderRequest::builder(OutputFormat::Pdf)
+        .pdf_options(PdfOptions::new(PdfRasterFallback::Forbid))
+        .build()
+        .unwrap();
+    let error = Renderer::new().render(&scene, &forbid).unwrap_err();
+    assert_eq!(error.code(), ErrorCode::PDF_RASTER_FALLBACK_FORBIDDEN);
+    assert_eq!(error.json_pointer(), "/files/asset/dataURL");
+    details["recovery"] = json!(null);
+    assert_eq!(serde_json::to_value(error.details()).unwrap(), details);
+    assert!(error.report().diagnostics().is_empty());
+
+    // Independently authored presentation attributes paint the same pixels.
+    let presentation = br##"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><defs><filter id="effect" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="1"/></filter></defs><rect width="20" height="10" fill="#00ff00" filter="url(#effect)"/></svg>"##;
+    assert_eq!(
+        render_artifact(&scene, OutputFormat::Png),
+        render_artifact(&nested_svg_scene(presentation, 20, 10), OutputFormat::Png)
+    );
+
+    // EM SPACE belongs to the selector identifier, not CSS whitespace.
+    let unmatched = styled.replace(".fx, rect.fx", "\u{2003}rect");
+    let outcome = Renderer::new()
+        .render(&nested_svg_scene(unmatched.as_bytes(), 20, 10), &forbid)
+        .unwrap();
+    assert!(outcome.report().diagnostics().is_empty());
+}
+
 /// Existing independent rendering and bounded-admission evidence, selected by
 /// the final nested-resource surface owner through the facade.
 pub(super) fn assert_local_resource_contract() {

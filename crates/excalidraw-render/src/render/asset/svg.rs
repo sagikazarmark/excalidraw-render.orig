@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 mod css;
+mod stylesheet;
 use std::sync::Arc;
 
 use base64::Engine as _;
@@ -359,40 +360,7 @@ fn safe_static_stylesheet(stylesheet: &str) -> bool {
         return false;
     }
 
-    let mut rest = stylesheet.trim();
-    while !rest.is_empty() {
-        let Some((selector, after_selector)) = rest.split_once('{') else {
-            return false;
-        };
-        let Some((declarations, after_declarations)) = after_selector.split_once('}') else {
-            return false;
-        };
-        if selector.trim().is_empty() || selector.contains([':', '}']) || declarations.contains('{')
-        {
-            return false;
-        }
-        for declaration in declarations.split(';') {
-            let declaration = declaration.trim();
-            if declaration.is_empty() {
-                continue;
-            }
-            let Some((property, value)) = declaration.split_once(':') else {
-                return false;
-            };
-            let property = property.trim();
-            if property.is_empty()
-                || !property
-                    .bytes()
-                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
-                || !allowed_static_style_property(property)
-                || value.trim().is_empty()
-            {
-                return false;
-            }
-        }
-        rest = after_declarations.trim();
-    }
-    true
+    stylesheet::Rules::new(stylesheet).all(|rule| rule.is_ok_and(|rule| rule.admitted()))
 }
 
 fn allowed_static_style_property(property: &str) -> bool {

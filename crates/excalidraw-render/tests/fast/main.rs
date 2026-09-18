@@ -9,6 +9,11 @@
 //! Run one module's tests with `cargo nextest run -E 'test(/^arrow_render::/)'`
 //! or `cargo test --test fast arrow_render::`.
 
+#[cfg(target_arch = "wasm32")]
+mod browser {
+    wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_dedicated_worker);
+}
+
 #[path = "../common/mod.rs"]
 mod common;
 

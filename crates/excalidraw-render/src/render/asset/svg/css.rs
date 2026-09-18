@@ -49,8 +49,10 @@ impl<'a> Sheet<'a> {
                 && safe_static_style_node(*n)
                 && n.attribute("type").is_none_or(|t| t == "text/css")
         }) {
-            for (ordinal, block) in node.text().unwrap_or("").split_inclusive('}').enumerate() {
-                let sheet = simplecss::StyleSheet::parse(block);
+            for (ordinal, block) in stylesheet::Rules::new(node.text().unwrap_or("")).enumerate() {
+                // Admission used these same source-preserving rule boundaries.
+                let block = block.map_err(|_| ResolveError::SvgDecodeFailed)?;
+                let sheet = simplecss::StyleSheet::parse(block.source);
                 rules
                     .try_reserve(sheet.rules.len())
                     .map_err(|_| ResolutionFailure::Memory)?;
