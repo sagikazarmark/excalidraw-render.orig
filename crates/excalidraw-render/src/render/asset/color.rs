@@ -20,6 +20,7 @@ pub(super) enum ColorNormalization {
     None,
     LinearSrgb,
     Profile(Box<ColorProfile>),
+    Hdr(Box<super::hdr::Hdr>),
 }
 
 pub(super) const LINEAR_TO_SRGB: [u8; 256] = [
@@ -44,6 +45,9 @@ pub(super) fn normalize_rgba(
     color_normalization: ColorNormalization,
 ) -> Result<(), ResolveError> {
     match color_normalization {
+        // PNG's HDR decoder must retain source precision and derive the
+        // straight and draw-time premultiplied projections together.
+        ColorNormalization::Hdr(_) => Err(ResolveError::Unsupported),
         ColorNormalization::None => Ok(()),
         ColorNormalization::LinearSrgb => {
             for pixel in rgba.as_chunks_mut::<4>().0 {
@@ -125,9 +129,12 @@ pub(super) fn prepare_png_color_normalization(
         if cicp == [1, 8, 0, 1] {
             return Ok(ColorNormalization::LinearSrgb);
         }
-        return cicp_color_profile(cicp)
-            .map(Box::new)
-            .map(ColorNormalization::Profile);
+        let profile = cicp_color_profile(cicp)?;
+        return Ok(if matches!(cicp[1], 16 | 18) {
+            ColorNormalization::Hdr(Box::new(super::hdr::Hdr::new(&profile, cicp[1] == 18)))
+        } else {
+            ColorNormalization::Profile(Box::new(profile))
+        });
     }
     let mut decoder = png::Decoder::new(Cursor::new(bytes));
     decoder.set_limits(png::Limits {

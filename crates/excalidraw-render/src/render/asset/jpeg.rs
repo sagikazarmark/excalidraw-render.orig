@@ -239,6 +239,7 @@ pub(super) fn decode_static_jpeg(
             _ => return Err(ResolveError::Unsupported),
         },
         ColorNormalization::None | ColorNormalization::LinearSrgb => ColorSpace::RGB,
+        ColorNormalization::Hdr(_) => return Err(ResolveError::Unsupported),
     };
     let mut decoder = jpeg_decoder(bytes);
     decoder.set_options((*decoder.options()).jpeg_set_out_colorspace(source_color_space));

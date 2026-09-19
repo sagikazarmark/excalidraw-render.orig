@@ -62,6 +62,21 @@ pub(crate) fn powf(base: f64, exponent: f64) -> f64 {
     libm::pow(base, exponent)
 }
 
+/// Natural exponential, used by the HLG inverse transfer function.
+pub(crate) fn exp(value: f64) -> f64 {
+    libm::exp(value)
+}
+
+/// Base-two exponential, used to apply HDR tone-map log gain.
+pub(crate) fn exp2(value: f64) -> f64 {
+    libm::exp2(value)
+}
+
+/// Base-two logarithm, used to construct HDR tone-map gain curves.
+pub(crate) fn log2(value: f64) -> f64 {
+    libm::log2(value)
+}
+
 /// Euclidean length of the vector `(x, y)`.
 pub(crate) fn hypot(x: f64, y: f64) -> f64 {
     libm::hypot(x, y)

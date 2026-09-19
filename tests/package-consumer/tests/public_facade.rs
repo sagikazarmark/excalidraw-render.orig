@@ -18,7 +18,7 @@ const EXPECTED_REPORT: &[u8] =
         "../../conformance/cases/focused/rectangle-outline/expected-report-svg.json"
     );
 const LICENSE_BUNDLE_SHA256: &str =
-    "a3236318603e4035951ad166ad827ef9fd3a98d9eeae9996e804aa6048d20077";
+    "cadd243b2228954efb8f61f62d492bcde65a23f8e7e96a2db5a6cc42ce78a9f2";
 const FALLBACK_SCENE: &[u8] = br#"{"type":"excalidraw","version":2,"elements":[{"id":"future","type":"future","x":0,"y":0,"width":200,"height":60,"angle":0.2,"opacity":40,"updated":1},null],"appState":{},"files":{}}"#;
 const TEXT_SCENE: &[u8] =
     include_bytes!("../../conformance/cases/focused/excalifont-text/scene.excalidraw");

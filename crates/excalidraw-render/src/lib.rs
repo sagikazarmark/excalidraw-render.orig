@@ -61,7 +61,15 @@ pub mod wasm_tests {
 
     #[wasm_bindgen_test]
     fn png_sdr_color_reference_in_wasm() {
-        let evidence = crate::png_color_reference::evidence();
+        png_color_cases_in_wasm(crate::png_color_reference::evidence());
+    }
+
+    #[wasm_bindgen_test]
+    fn png_gain_map_reference_in_wasm() {
+        png_color_cases_in_wasm(crate::png_color_reference::gain_map_evidence());
+    }
+
+    fn png_color_cases_in_wasm(evidence: serde_json::Value) {
         for row in evidence["cases"].as_array().unwrap() {
             let scene =
                 crate::SceneDocument::parse(&serde_json::to_vec(&row["scene"]).unwrap()).unwrap();
@@ -84,6 +92,7 @@ pub mod wasm_tests {
             );
             if let Some(equivalent) = crate::png_color_reference::bt1886_equivalent(&evidence, row)
                 .or_else(|| crate::png_color_reference::ignored_cicp_equivalent(&evidence, row))
+                .or_else(|| crate::png_color_reference::gain_map_equivalent(&evidence, row))
             {
                 let scene =
                     crate::SceneDocument::parse(&serde_json::to_vec(&equivalent["scene"]).unwrap())

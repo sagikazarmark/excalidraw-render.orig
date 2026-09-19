@@ -220,6 +220,11 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
                 break;
             }
             b"IEND" => return Err(ResolveError::DecodeFailed),
+            // Chromium149 selects SkPngRustCodec, which does not expose PNG
+            // gain maps. gmAP/gdAT are ignored signaling: validate their outer
+            // container/CRC, but neither parse nor decode nested gdAT payloads.
+            // The selected base still undergoes cICP/ICC/legacy interpretation.
+            b"gmAP" | b"gdAT" => {}
             _ if chunk_type[0].is_ascii_uppercase() => {
                 return Err(ResolveError::DecodeFailed);
             }
@@ -281,6 +286,9 @@ pub(super) fn decode_static_png(
     color_normalization: ColorNormalization,
     orientation: Option<u8>,
 ) -> Result<DecodedRaster, ResolveError> {
+    if let ColorNormalization::Hdr(hdr) = color_normalization {
+        return decode_hdr_png(bytes, pixels, &hdr, orientation);
+    }
     let mut decoder = png::Decoder::new(Cursor::new(bytes));
     decoder.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
     let logical_bytes = pixels
@@ -387,6 +395,142 @@ pub(super) fn decode_static_png(
         )?;
     }
     finish_rgba(rgba)
+}
+
+fn decode_hdr_png(
+    bytes: &[u8],
+    pixels: u64,
+    hdr: &super::hdr::Hdr,
+    orientation: Option<u8>,
+) -> Result<DecodedRaster, ResolveError> {
+    let mut decoder = png::Decoder::new(Cursor::new(bytes));
+    decoder.set_transformations(png::Transformations::EXPAND);
+    decoder.set_limits(png::Limits {
+        bytes: usize::try_from(
+            pixels
+                .checked_mul(8)
+                .and_then(|v| v.checked_add(1_048_576))
+                .ok_or(ResolveError::Memory)?,
+        )
+        .map_err(|_| ResolveError::Memory)?,
+    });
+    let mut reader = decoder
+        .read_info()
+        .map_err(|_| ResolveError::DecodeFailed)?;
+    if reader.info().animation_control.is_some() && reader.info().frame_control.is_none() {
+        reader
+            .next_frame_info()
+            .map_err(|_| ResolveError::DecodeFailed)?;
+    }
+    let (color_type, bit_depth) = reader.output_color_type();
+    let (width, height) = (reader.info().width, reader.info().height);
+    let frame = reader.info().frame_control;
+    let size = usize::try_from(pixels.checked_mul(4).ok_or(ResolveError::Memory)?)
+        .map_err(|_| ResolveError::Memory)?;
+    let mut rgba = Vec::new();
+    rgba.try_reserve_exact(size)
+        .map_err(|_| ResolveError::Memory)?;
+    rgba.resize(size, 0);
+    let mut premultiplied = super::try_copy(&rgba)?;
+    let sample_bytes = if bit_depth == png::BitDepth::Sixteen {
+        2
+    } else {
+        1
+    };
+    let channels = match color_type {
+        png::ColorType::Grayscale => 1,
+        png::ColorType::GrayscaleAlpha => 2,
+        png::ColorType::Rgb => 3,
+        png::ColorType::Rgba => 4,
+        png::ColorType::Indexed => return Err(ResolveError::DecodeFailed),
+    };
+    let (x, y) = frame.map_or((0, 0), |f| (f.x_offset, f.y_offset));
+    let stride = (width as usize)
+        .checked_mul(4)
+        .ok_or(ResolveError::Memory)?;
+    let origin = (y as usize)
+        .checked_mul(stride)
+        .and_then(|v| v.checked_add(x as usize * 4))
+        .ok_or(ResolveError::Memory)?;
+    // Preserve all source bits without an image-sized 16-bit intermediate.
+    // Two projected rows plus the decoder's rows fit the existing bounded
+    // decoder workspace; the only full-size outputs are the usual two planes.
+    let row_size = frame.map_or(width, |f| f.width) as usize * 4;
+    let mut straight_row = Vec::new();
+    straight_row
+        .try_reserve_exact(row_size)
+        .map_err(|_| ResolveError::Memory)?;
+    let mut premul_row = Vec::new();
+    premul_row
+        .try_reserve_exact(row_size)
+        .map_err(|_| ResolveError::Memory)?;
+    let mut line = 0_usize;
+    while let Some(row) = reader
+        .next_interlaced_row()
+        .map_err(|_| ResolveError::DecodeFailed)?
+    {
+        straight_row.clear();
+        premul_row.clear();
+        for pixel in row.data().chunks_exact(channels * sample_bytes) {
+            let sample = |c| {
+                if sample_bytes == 2 {
+                    f64::from(u16::from_be_bytes([pixel[c * 2], pixel[c * 2 + 1]])) / 65535.0
+                } else {
+                    f64::from(pixel[c]) / 255.0
+                }
+            };
+            let rgb = if channels <= 2 {
+                [sample(0); 3]
+            } else {
+                [sample(0), sample(1), sample(2)]
+            };
+            let alpha = if channels == 2 || channels == 4 {
+                sample(channels - 1)
+            } else {
+                1.0
+            };
+            let (straight, premul) = hdr.project_pixel(rgb, alpha)?;
+            straight_row.extend_from_slice(&straight);
+            premul_row.extend_from_slice(&premul);
+        }
+        match row.interlace() {
+            png::InterlaceInfo::Adam7(info) => {
+                png::expand_interlaced_row(&mut rgba[origin..], stride, &straight_row, info, 32);
+                png::expand_interlaced_row(
+                    &mut premultiplied[origin..],
+                    stride,
+                    &premul_row,
+                    info,
+                    32,
+                );
+            }
+            png::InterlaceInfo::Null(_) => {
+                let start = line
+                    .checked_mul(stride)
+                    .and_then(|v| v.checked_add(origin))
+                    .ok_or(ResolveError::Memory)?;
+                let end = start
+                    .checked_add(straight_row.len())
+                    .ok_or(ResolveError::Memory)?;
+                rgba.get_mut(start..end)
+                    .ok_or(ResolveError::DecodeFailed)?
+                    .copy_from_slice(&straight_row);
+                premultiplied
+                    .get_mut(start..end)
+                    .ok_or(ResolveError::DecodeFailed)?
+                    .copy_from_slice(&premul_row);
+                line = line.checked_add(1).ok_or(ResolveError::Memory)?;
+            }
+        }
+    }
+    if let Some(orientation) = orientation {
+        rgba = orient_rgba(&rgba, width, height, orientation)?;
+        premultiplied = orient_rgba(&premultiplied, width, height, orientation)?;
+    }
+    Ok(DecodedRaster {
+        rgba: std::sync::Arc::new(rgba),
+        premultiplied_rgba: std::sync::Arc::new(premultiplied),
+    })
 }
 
 pub(super) fn encode_normalized_png(

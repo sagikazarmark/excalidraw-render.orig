@@ -11,19 +11,19 @@ pub const REFERENCE: &[u8] = include_bytes!(concat!(
 pub fn evidence() -> Value {
     assert_eq!(
         format!("{:x}", Sha256::digest(REFERENCE)),
-        "9c53ba1857d7e6406863200a685e9078e68e109569fed9c96bbcc1bcfb9c95ad"
+        "2aae93308b4289d3374ec92e960e756106af621f9bfc64e4b29314f5162857d0"
     );
     let record: Value = serde_json::from_slice(REFERENCE).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
     assert_eq!(record["visual_class"], "geometry-image");
-    assert_eq!(record["cases"].as_array().unwrap().len(), 896);
+    assert_eq!(record["cases"].as_array().unwrap().len(), 984);
     let rows = record["cases"].as_array().unwrap();
     let ids: std::collections::BTreeSet<_> =
         rows.iter().map(|r| r["id"].as_str().unwrap()).collect();
     assert_eq!(ids.len(), rows.len());
     let mut expected = std::collections::BTreeSet::new();
     for p in [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22] {
-        for t in [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17] {
+        for t in [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] {
             for r in [0, 1] {
                 for depth in [8, 16] {
                     expected.insert(format!("cicp-p{p}-t{t}-r{r}-c6-d{depth}"));
@@ -39,6 +39,7 @@ pub fn evidence() -> Value {
     assert_eq!(actual, expected);
     transfer_equivalence_and_discrimination(&record);
     remaining_transfer_discrimination(&record);
+    hdr_transfer_discrimination(&record);
     record
 }
 
@@ -50,7 +51,7 @@ pub fn ignored_cicp_equivalent<'a>(record: &'a Value, row: &Value) -> Option<&'a
     }
     let cicp = &row["tags"][0]["data"];
     let transfer = cicp[1].as_u64().unwrap();
-    if !matches!(transfer, 9 | 10 | 12) && !(matches!(transfer, 7 | 17) && cicp[3] == 0) {
+    if !matches!(transfer, 9 | 10 | 12) && !(matches!(transfer, 7 | 16 | 17 | 18) && cicp[3] == 0) {
         return None;
     }
     let id = format!("untagged-c6-d{}", row["layout"]["depth"]);
@@ -84,7 +85,7 @@ fn remaining_transfer_discrimination(record: &Value) {
             }
         }
     }
-    assert_eq!(count, 176);
+    assert_eq!(count, 220);
     for (transfer, neutral) in [(7, 141), (17, 118)] {
         for depth in [8, 16] {
             let right = format!("cicp-p1-t{transfer}-r1-c6-d{depth}");
@@ -115,6 +116,162 @@ fn remaining_transfer_discrimination(record: &Value) {
             }
         }
     }
+}
+
+fn hdr_transfer_discrimination(record: &Value) {
+    let rows = record["cases"].as_array().unwrap();
+    for (transfer, neutral) in [(16, 132), (18, 99)] {
+        for depth in [8, 16] {
+            let id = format!("cicp-p1-t{transfer}-r1-c6-d{depth}");
+            let row = rows.iter().find(|r| r["id"] == id).unwrap();
+            let opaque = png(&base64(&row["reference"]["opaque_png"]));
+            assert_eq!(
+                &opaque.rgba()[99 * 4..100 * 4],
+                &[neutral, neutral, neutral, 255]
+            );
+            for wrong in [1, 8, 13, if transfer == 16 { 18 } else { 16 }] {
+                let other = format!("cicp-p1-t{wrong}-r1-c6-d{depth}");
+                let other = rows.iter().find(|r| r["id"] == other).unwrap();
+                assert!(
+                    !compare(
+                        &png(&base64(&row["reference"]["png"])),
+                        &png(&base64(&other["reference"]["png"])),
+                        VisualClass::GeometryImage,
+                        &[],
+                        ComparisonMode::Canonical
+                    )
+                    .unwrap()
+                    .passed(),
+                    "{id} does not distinguish transfer {wrong}"
+                );
+            }
+        }
+    }
+}
+
+pub fn gain_map_evidence() -> Value {
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/oracle/png-color/gain-map-reference.json"
+    ));
+    assert_eq!(
+        format!("{:x}", Sha256::digest(bytes)),
+        "dee2a45432ce2a4e211d1e51e8e80f571bfd8f90221c7bf85153b57df88714ad"
+    );
+    let record: Value = serde_json::from_slice(bytes).unwrap();
+    assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
+    assert_eq!(record["visual_class"], "geometry-image");
+    let rows = record["cases"].as_array().unwrap();
+    assert_eq!(rows.len(), 108);
+    let ids: std::collections::BTreeSet<_> =
+        rows.iter().map(|r| r["id"].as_str().unwrap()).collect();
+    assert_eq!(ids.len(), 108);
+    let names = [
+        "absent",
+        "sdr-black",
+        "sdr-white",
+        "sdr-checker",
+        "hdr-black",
+        "hdr-white",
+        "hdr-checker",
+        "multichannel",
+        "alternate-space",
+        "metadata-only",
+        "payload-only",
+        "empty-metadata",
+        "short-metadata",
+        "future-version",
+        "missing-inner-metadata",
+        "truncated-inner-metadata",
+        "zero-denominator",
+        "zero-gamma",
+        "duplicate-metadata",
+        "duplicate-payload",
+        "empty-payload",
+        "non-png-payload",
+        "truncated-payload",
+        "bad-inner-crc",
+        "huge-inner-dimensions",
+        "recursive-payload",
+        "split-payload",
+        "late-payload",
+        "bad-outer-crc",
+        "pq",
+        "hlg",
+        "pq-over-all",
+        "hlg-over-all",
+        "pq-narrow-icc",
+        "hlg-narrow-legacy",
+        "icc-over-srgb",
+        "srgb-over-legacy",
+        "chrm-legacy",
+        "invalid-cicp",
+        "invalid-icc",
+        "duplicate-cicp",
+        "invalid-legacy",
+    ];
+    let expected: std::collections::BTreeSet<_> = names
+        .iter()
+        .flat_map(|name| [8, 16].map(|d| format!("gain-{name}-c6-d{d}")))
+        .collect();
+    let actual: std::collections::BTreeSet<_> = rows
+        .iter()
+        .filter(|r| r["group"] == "gain-map")
+        .map(|r| r["id"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(actual, expected);
+    let colors = evidence();
+    for row in rows {
+        if row["group"] == "gain-map-controls" {
+            let original = colors["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|r| r["id"] == row["id"])
+                .unwrap();
+            let mut restored = row.clone();
+            restored["group"] = original["group"].clone();
+            assert_eq!(
+                &restored, original,
+                "supplement changed its independent base control"
+            );
+        }
+        if let Some(control) = gain_map_equivalent(&record, row) {
+            for kind in ["png", "opaque_png"] {
+                assert_eq!(
+                    row["reference"][kind], control["reference"][kind],
+                    "{} {kind} base selection",
+                    row["id"]
+                );
+            }
+        }
+    }
+    // With an HDR base and max gain 16, a white gain map would divide linear
+    // neutral 128 by 16 for SDR (~31). The observed 128 rules that path out;
+    // the selected Rust PNG decoder ignores gmAP/gdAT, even for an HDR base.
+    for depth in [8, 16] {
+        for name in ["sdr-white", "hdr-white", "hdr-black", "hdr-checker"] {
+            let id = format!("gain-{name}-c6-d{depth}");
+            let row = rows.iter().find(|r| r["id"] == id).unwrap();
+            let image = png(&base64(&row["reference"]["opaque_png"]));
+            assert_eq!(&image.rgba()[99 * 4..100 * 4], &[128, 128, 128, 255]);
+        }
+    }
+    record
+}
+
+pub fn gain_map_equivalent<'a>(record: &'a Value, row: &Value) -> Option<&'a Value> {
+    if row["group"] != "gain-map" || row["expected_outcome"] != "accepted" {
+        return None;
+    }
+    Some(
+        record["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == row["control_id"])
+            .unwrap(),
+    )
 }
 
 /// The four newly qualified H.273 codes select the same reference EOTF as
@@ -282,6 +439,8 @@ pub fn appearance(row: &Value, actual: CanonicalRgba8, pdf: bool) {
             if let Some(neutral) = match cicp[1].as_u64().unwrap() {
                 7 => Some(141),
                 17 => Some(118),
+                16 => Some(132),
+                18 => Some(99),
                 _ => None,
             } {
                 assert_eq!(

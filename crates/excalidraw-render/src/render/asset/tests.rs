@@ -258,7 +258,7 @@ mod png_codec {
             &[(*b"cICP", vec![9, 16, 0, 1])],
         );
 
-        assert_eq!(only_pixel(&decode("image/png", &pq)), [24, 24, 24, 255]);
+        assert_eq!(only_pixel(&decode("image/png", &pq)), [132, 132, 132, 255]);
     }
 
     #[test]

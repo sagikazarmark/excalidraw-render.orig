@@ -14,6 +14,7 @@
 mod bmp;
 mod color;
 mod gif;
+mod hdr;
 mod ico;
 mod jpeg;
 mod orientation;

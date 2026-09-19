@@ -1,4 +1,4 @@
-//! SDR metadata contracts: canonical visual budgets plus independent exact
+//! PNG color contracts: canonical visual budgets plus independent exact
 //! semantic anchors, complete reports, source preservation and recovery.
 use crate::common::png_color_reference as reference;
 use base64::Engine as _;
@@ -49,7 +49,7 @@ fn check_group(group: &str, count: usize) {
         }
         // H.273 defines primary codes 6 and 7 as equivalent, unlike the
         // distinct white points of cinema-P3 (11) and display-P3 (12).
-        for transfer in [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17] {
+        for transfer in [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18] {
             assert_eq!(
                 reference_image(&format!("cicp-p6-t{transfer}-r1")),
                 reference_image(&format!("cicp-p7-t{transfer}-r1"))
@@ -57,6 +57,10 @@ fn check_group(group: &str, count: usize) {
         }
     }
     assert_eq!(evidence["sources"].as_array().unwrap().len(), 6);
+    check_rows(&evidence, group, count);
+}
+
+fn check_rows(evidence: &serde_json::Value, group: &str, count: usize) {
     for source in evidence["sources"].as_array().unwrap() {
         let bytes =
             std::fs::read(crate::common::repository_root().join(source["path"].as_str().unwrap()))
@@ -96,8 +100,9 @@ fn check_group(group: &str, count: usize) {
                 serde_json::to_value(first.report()).unwrap(),
             );
             if format != OutputFormat::Svg {
-                if let Some(equivalent) = reference::bt1886_equivalent(&evidence, row)
-                    .or_else(|| reference::ignored_cicp_equivalent(&evidence, row))
+                if let Some(equivalent) = reference::bt1886_equivalent(evidence, row)
+                    .or_else(|| reference::ignored_cicp_equivalent(evidence, row))
+                    .or_else(|| reference::gain_map_equivalent(evidence, row))
                 {
                     let scene =
                         SceneDocument::parse(&serde_json::to_vec(&equivalent["scene"]).unwrap())
@@ -195,7 +200,226 @@ fn sdr_cicp_candidates_match_the_reference() {
     bt1886_transfer_exact_anchors();
     remaining_transfer_exact_anchors();
     ignored_transfer_metadata_anchors();
-    check_group("cicp", 616);
+    hdr_transfer_exact_anchors();
+    check_group("cicp", 704);
+}
+
+#[test]
+fn hdr_transfer_exact_anchors() {
+    // Independently calculated BT.2100 -> 203-nit reference white -> SDR
+    // RWTMO (gain 1/2 below its knee) -> sRGB. Full white exercises the cap.
+    for (transfer, anchors) in [
+        (
+            16,
+            [(0, 0), (8, 0), (32, 5), (64, 30), (128, 132), (255, 255)],
+        ),
+        (
+            18,
+            [(0, 0), (8, 1), (32, 14), (64, 43), (128, 99), (255, 255)],
+        ),
+    ] {
+        for (input, output) in anchors {
+            assert_eq!(
+                pixel(&[(*b"cICP", vec![1, transfer, 0, 1])], input),
+                [output, output, output, 255]
+            );
+        }
+        assert_eq!(
+            pixel(&[(*b"cICP", vec![9, transfer, 0, 0])], 128),
+            [128, 128, 128, 255]
+        );
+        assert_eq!(
+            pixel(
+                &[
+                    (*b"cICP", vec![9, transfer, 0, 0]),
+                    (*b"gAMA", 100000_u32.to_be_bytes().to_vec())
+                ],
+                128
+            ),
+            [188, 188, 188, 255]
+        );
+    }
+    // Negative luminance under D50-adapted XYZ needs Skia's signed OOTF.
+    assert_eq!(
+        pixel_rgb(&[(*b"cICP", vec![10, 18, 0, 1])], [255, 16, 16]),
+        [0, 255, 0, 255]
+    );
+}
+
+#[test]
+fn hdr_adam7_preserves_reference_samples() {
+    use crate::common::codec_fixtures::append_png_chunk as chunk;
+    let evidence = reference::evidence();
+    for (primary, transfer) in [(9, 16), (10, 18)] {
+        for depth in [8, 16] {
+            let id = format!("cicp-p{primary}-t{transfer}-r1-c6-d{depth}");
+            let row = evidence["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|r| r["id"] == id)
+                .unwrap();
+            let original = reference::base64(&row["png"]);
+            let mut reader = png::Decoder::new(std::io::Cursor::new(&original))
+                .read_info()
+                .unwrap();
+            let mut samples = vec![0; reader.output_buffer_size()];
+            reader.next_frame(&mut samples).unwrap();
+            let bpp = 4 * depth / 8;
+            let mut scanlines = Vec::new();
+            for (x0, y0, dx, dy) in [
+                (0, 0, 8, 8),
+                (4, 0, 8, 8),
+                (0, 4, 4, 8),
+                (2, 0, 4, 4),
+                (0, 2, 2, 4),
+                (1, 0, 2, 2),
+                (0, 1, 1, 2),
+            ] {
+                for y in (y0..15).step_by(dy) {
+                    scanlines.push(0);
+                    for x in (x0..15).step_by(dx) {
+                        let at = (y * 15 + x) * bpp;
+                        scanlines.extend_from_slice(&samples[at..at + bpp]);
+                    }
+                }
+            }
+            let mut source = original[..8].to_vec();
+            let mut header = original[16..29].to_vec();
+            header[12] = 1;
+            chunk(&mut source, *b"IHDR", &header);
+            chunk(&mut source, *b"cICP", &[primary, transfer, 0, 1]);
+            chunk(
+                &mut source,
+                *b"IDAT",
+                &miniz_oxide::deflate::compress_to_vec_zlib(&scanlines, 6),
+            );
+            chunk(&mut source, *b"IEND", &[]);
+            let mut scene = row["scene"].clone();
+            scene["files"]["asset"]["dataURL"] = json!(format!(
+                "data:image/png;base64,{}",
+                base64::engine::general_purpose::STANDARD.encode(source)
+            ));
+            let scene = SceneDocument::parse(&serde_json::to_vec(&scene).unwrap()).unwrap();
+            for format in [OutputFormat::Png, OutputFormat::Pdf] {
+                let result = Renderer::new()
+                    .render(
+                        &scene,
+                        &RenderRequest::builder(format)
+                            .padding(0.0)
+                            .include_background(false)
+                            .build()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                reference::report(
+                    row,
+                    format.as_str(),
+                    serde_json::to_value(result.report()).unwrap(),
+                );
+                let actual = if format == OutputFormat::Png {
+                    reference::png(result.artifact().bytes())
+                } else {
+                    CanonicalRgba8::new(
+                        15,
+                        15,
+                        super::png_profile_contract::pdf_rgba(result.artifact().bytes(), 15, 15),
+                    )
+                    .unwrap()
+                };
+                reference::appearance(row, actual, format == OutputFormat::Pdf);
+            }
+        }
+    }
+}
+
+#[test]
+fn gain_map_base_admission_and_precedence_match_the_reference() {
+    exact_transfer_and_metadata_anchors();
+    hdr_transfer_exact_anchors();
+    let evidence = reference::gain_map_evidence();
+    assert_eq!(evidence["sources"].as_array().unwrap().len(), 8);
+    check_rows(&evidence, "gain-map-controls", 24);
+    check_rows(&evidence, "gain-map", 84);
+    gain_map_payload_resource_boundaries();
+}
+
+#[test]
+fn gain_map_payload_resource_boundaries() {
+    use excalidraw_render::ResourceLimits;
+    let evidence = reference::gain_map_evidence();
+    for name in [
+        "huge-inner-dimensions",
+        "recursive-payload",
+        "bad-inner-crc",
+    ] {
+        let id = format!("gain-{name}-c6-d8");
+        let row = evidence["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == id)
+            .unwrap();
+        let bytes = reference::base64(&row["png"]).len() as u64;
+        let source = SceneDocument::parse(&serde_json::to_vec(&row["scene"]).unwrap()).unwrap();
+        for format in [OutputFormat::Svg, OutputFormat::Png, OutputFormat::Pdf] {
+            for admitted in [true, false] {
+                let configured = bytes - u64::from(!admitted);
+                let limits = ResourceLimits::builder()
+                    .max_asset_bytes(configured)
+                    .max_nested_asset_depth(1)
+                    .max_raster_dimension(15)
+                    .max_decoded_pixels_per_asset(225)
+                    .build()
+                    .unwrap();
+                let request = RenderRequest::builder(format)
+                    .padding(0.0)
+                    .include_background(false)
+                    .resource_limits(limits)
+                    .build()
+                    .unwrap();
+                let first = Renderer::new().render(&source, &request).unwrap();
+                let second = Renderer::new().render(&source, &request).unwrap();
+                assert_eq!(first.artifact().bytes(), second.artifact().bytes());
+                assert_eq!(first.report(), second.report());
+                let mut actual = serde_json::to_value(first.report()).unwrap();
+                for diagnostic in actual["diagnostics"].as_array_mut().unwrap() {
+                    assert!(!diagnostic["message"].as_str().unwrap().is_empty());
+                    diagnostic.as_object_mut().unwrap().remove("message");
+                }
+                let diagnostics = if admitted {
+                    json!([])
+                } else {
+                    json!([{
+                        "code":"resource.asset-bytes-exceeded","severity":"warning","format":format.as_str(),"effects":["visual"],
+                        "element_id":"image","json_pointer":"/files/asset/dataURL",
+                        "details":{"kind":"resource_limit","field":"max_asset_bytes","configured":configured,"value_kind":"bytes","measurement":{"kind":"attempted","value":bytes},"recovery":if format==OutputFormat::Png {"placeholder"} else {"omitted"}}
+                    }])
+                };
+                assert_eq!(
+                    actual,
+                    json!({"schema_version":1,"diagnostics":diagnostics}),
+                    "{id} {format:?}"
+                );
+                let mut control = row["scene"].clone();
+                if !admitted {
+                    control["files"] = json!({});
+                }
+                let control = SceneDocument::parse(&serde_json::to_vec(&control).unwrap()).unwrap();
+                let control = Renderer::new()
+                    .render(
+                        &control,
+                        &RenderRequest::builder(format)
+                            .padding(0.0)
+                            .include_background(false)
+                            .build()
+                            .unwrap(),
+                    )
+                    .unwrap();
+                assert_eq!(first.artifact().bytes(), control.artifact().bytes());
+            }
+        }
+    }
 }
 
 #[test]
@@ -371,7 +595,7 @@ fn exact_transfer_and_metadata_anchors() {
             "{:x}",
             Sha256::digest(include_bytes!("../common/png_color_reference.rs"))
         ),
-        "94b651e477d35ca0e938b0720eed6a85ea0dfe0405f50aaaa6bae1a54aee8259"
+        "e779eadd553a42a007c792e71f3053bc617588c7e8736cab0b572c15f77c8fa0"
     );
     let evidence = reference::evidence();
     let icc = evidence["cases"]

@@ -266,3 +266,15 @@ in 933.12 seconds. All 37 registered conformance cases, the 168-execution invent
 and ownership validation passed before the stage commit.
 Global ownership remains incomplete and unapproved,
 **#178 remains open**, and PQ/HLG and subsequent stages remain separate work.
+
+## Stage 3 — PQ/HLG and PNG gain maps
+
+The [Stage 3 audit](png-hdr-gain-map-ownership.md) records the subsequent 88
+PQ/HLG cells, bringing this cICP selection to **704**, and three PNG gain-map
+obligations. The main record now contains **984 cases**, preserving all 896
+Stage 2 cases exactly. A separately bound supplemental producer captures **108
+gain-map/control cases** without changing the frozen color fixture builder or
+collector. Current ownership is **1,743 assigned/excluded and 133 gaps**; global
+approval and full-workspace testing remain separate. Parent Spec review approved
+all 91 Stage 3 assignments; its Standards corrections and the license-consumer
+binding refresh are recorded in the Stage 3 audit.

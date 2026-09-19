@@ -72,7 +72,7 @@
         {
           "source": {
             "path": "tests/package-consumer/tests/public_facade.rs",
-            "sha256": "0d8983c3d21c3d1d8fca49b68fca9ac2e77f0157b17be0d41cc28511b5e21937"
+            "sha256": "bee1e60b4121cc220eef1299c1a0718c6976fb9ab07dde0ebbf888a16d4a4aed"
           },
           "anchor": "fn packaged_public_facade_preserves_artifact_byte_stability()"
         }
@@ -86,7 +86,7 @@
         {
           "source": {
             "path": "tests/package-consumer/tests/public_facade.rs",
-            "sha256": "0d8983c3d21c3d1d8fca49b68fca9ac2e77f0157b17be0d41cc28511b5e21937"
+            "sha256": "bee1e60b4121cc220eef1299c1a0718c6976fb9ab07dde0ebbf888a16d4a4aed"
           },
           "anchor": "let mut reverse_round ="
         }
@@ -114,7 +114,7 @@
         {
           "source": {
             "path": "tests/package-consumer/tests/public_facade.rs",
-            "sha256": "0d8983c3d21c3d1d8fca49b68fca9ac2e77f0157b17be0d41cc28511b5e21937"
+            "sha256": "bee1e60b4121cc220eef1299c1a0718c6976fb9ab07dde0ebbf888a16d4a4aed"
           },
           "anchor": "fn packaged_public_facade_renders_discovered_frames_directly_and_lazily()"
         }

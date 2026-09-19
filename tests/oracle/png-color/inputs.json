@@ -5,7 +5,7 @@
   "alpha": [0, 85, 128, 255],
   "layouts": [{"color_type":4,"depth":8},{"color_type":4,"depth":16},{"color_type":6,"depth":8},{"color_type":6,"depth":16}],
   "cicp_primaries": [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22],
-  "cicp_transfers": [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17],
+  "cicp_transfers": [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
   "cicp_ranges": [0, 1],
   "srgb_chromaticities": [31270,32900,64000,33000,30000,60000,15000,6000],
   "d50_chromaticities": [34567,35850,64000,33000,30000,60000,15000,6000],

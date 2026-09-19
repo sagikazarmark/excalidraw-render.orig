@@ -160,6 +160,7 @@ const LICENSE_PARTS: &[(&str, &str)] = &[
     ("SIL Open Font License 1.1", "OFL-1.1.txt"),
     ("Creative Commons Attribution 4.0", "CC-BY-4.0.txt"),
     ("Font Awesome Free notice", "font-awesome-NOTICE.txt"),
+    ("Skia HDR tone-mapping adaptation", "skia-BSD-3-Clause.txt"),
 ];
 
 const EXACT_LICENSE_SOURCES: &[(&str, &str, &str)] = &[

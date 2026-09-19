@@ -18,10 +18,11 @@ coverage is complete or the chosen primary owners have received human approval.
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
 | **Total** | **1,876** | |
 
-1,649 primary owners are proposed (118 case labels, the AVIF rejection test,
+1,740 primary owners are proposed (118 case labels, the AVIF rejection test,
 119 diagnostic/format obligations, all 605 current surface-field/format obligations,
 all 180 PNG/APNG sample-vector cells, three PNG precision/alpha obligations,
-seven SDR metadata/profile obligations and 616 non-PQ/HLG cICP cells).
+seven SDR metadata/profile obligations, all 704 enumerated cICP cells and three
+PNG gain-map obligations).
 Three generic-fallback entries have approved
 exclusions. The PNG/APNG inventory expansion preserved all 928 prior dispositions
 and added 948 obligations; the sample tranches assign 60 static and 120 APNG
@@ -31,8 +32,11 @@ three owners. The [SDR color tranche](../../../docs/research/png-sdr-color-owner
 adds 67 more, and the [remaining-primary extension](../../../docs/research/png-cicp-primary-ownership.md)
 adds another 160. The [BT.1886 transfer stage](../../../docs/research/png-cicp-transfer-ownership.md)
 adds 176; its [remaining non-PQ/HLG stage](../../../docs/research/png-cicp-transfer-ownership.md#stage-2--remaining-non-pqhlg-transfers)
-adds 220. Current totals are **1,652 assigned/excluded and 224 gaps**, including
-the remaining **88 PQ/HLG cICP cells**. See
+adds 220. The [Stage 3 HDR/gain-map qualification](../../../docs/research/png-hdr-gain-map-ownership.md)
+adds the remaining 88 PQ/HLG cells and the three PNG gain-map obligations.
+Current totals are **1,743 assigned/excluded and 133 gaps**. The cICP product
+and pinned decoder's ignored PNG gain signaling are characterized; broader HDR
+metadata, ICC families, profile-axis composition and umbrella facets remain gaps. See
 [the PNG/APNG inventory assessment](../../../docs/research/png-profile-ownership.md).
 The 21 metadata failure assignments use
 the explicit library-test adapter and are assessed in [the metadata audit](../../../docs/research/metadata-failure-ownership.md).
@@ -99,8 +103,13 @@ The three media-type assignments have a
 The four closure obligations prevent that remaining scope from disappearing
 behind a zero-gap claim for only the current coarse inventory.
 
-The execution inventory and native baseline are unchanged. This ledger references
-them but does not replace their approval subjects or rerender their evidence.
+The execution rows and native baseline are unchanged. Stage 3's reviewed Skia
+attribution correction refreshes three license-consumer source anchors in the
+inventory and consequently this ledger's catalog binding; all execution keys,
+criteria and ownership dispositions are preserved. The native baseline still
+binds the old inventory descriptor and needs parent clean-commit collection and
+reapproval; see the [review correction audit](../../../docs/research/png-hdr-gain-map-ownership.md#parent-review-corrections-and-adaptation-provenance).
+This ledger does not replace baseline approval subjects or rerender their evidence.
 Existing local `role: primary` labels remain intact in approved case manifests;
 they are candidates here, and only this proposed global selection chooses a
 single primary home for each scoped label. Other candidates stay secondary evidence.

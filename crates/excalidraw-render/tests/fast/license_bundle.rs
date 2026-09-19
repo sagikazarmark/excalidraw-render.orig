@@ -2,7 +2,7 @@ use excalidraw_render::license_bundle;
 use sha2::{Digest, Sha256};
 
 const LICENSE_BUNDLE_SHA256: &str =
-    "a3236318603e4035951ad166ad827ef9fd3a98d9eeae9996e804aa6048d20077";
+    "cadd243b2228954efb8f61f62d492bcde65a23f8e7e96a2db5a6cc42ce78a9f2";
 
 #[test]
 fn public_license_bundle_returns_the_complete_static_utf8_bundle() {
@@ -20,6 +20,9 @@ fn public_license_bundle_returns_the_complete_static_utf8_bundle() {
     assert!(bundle.contains("Font Awesome Free 5.15.4 by @fontawesome"));
     assert!(bundle.contains("Excalifont and Virgil provenance is retained together"));
     assert!(bundle.contains("Copyright (c) 2020 LXGW"));
+    assert!(bundle.contains(include_str!(
+        "../../../excalidraw-render-assets-base/license-parts/skia-BSD-3-Clause.txt"
+    )));
     assert!(bundle.ends_with('\n'));
     assert_eq!(
         format!("{:x}", Sha256::digest(bundle.as_bytes())),
