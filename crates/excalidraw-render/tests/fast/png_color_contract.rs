@@ -49,7 +49,7 @@ fn check_group(group: &str, count: usize) {
         }
         // H.273 defines primary codes 6 and 7 as equivalent, unlike the
         // distinct white points of cinema-P3 (11) and display-P3 (12).
-        for transfer in [1, 4, 5, 6, 8, 11, 13, 14, 15] {
+        for transfer in [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17] {
             assert_eq!(
                 reference_image(&format!("cicp-p6-t{transfer}-r1")),
                 reference_image(&format!("cicp-p7-t{transfer}-r1"))
@@ -96,7 +96,9 @@ fn check_group(group: &str, count: usize) {
                 serde_json::to_value(first.report()).unwrap(),
             );
             if format != OutputFormat::Svg {
-                if let Some(equivalent) = reference::bt1886_equivalent(&evidence, row) {
+                if let Some(equivalent) = reference::bt1886_equivalent(&evidence, row)
+                    .or_else(|| reference::ignored_cicp_equivalent(&evidence, row))
+                {
                     let scene =
                         SceneDocument::parse(&serde_json::to_vec(&equivalent["scene"]).unwrap())
                             .unwrap();
@@ -104,7 +106,7 @@ fn check_group(group: &str, count: usize) {
                     assert_eq!(
                         first.artifact().bytes(),
                         control.artifact().bytes(),
-                        "{} {format:?} exact BT.1886 equivalence",
+                        "{} {format:?} exact metadata equivalence",
                         row["id"]
                     );
                     assert_eq!(first.report(), control.report());
@@ -191,7 +193,76 @@ fn metadata_precedence_and_recovery_match_the_contract() {
 fn sdr_cicp_candidates_match_the_reference() {
     primary_space_exact_anchors();
     bt1886_transfer_exact_anchors();
-    check_group("cicp", 396);
+    remaining_transfer_exact_anchors();
+    ignored_transfer_metadata_anchors();
+    check_group("cicp", 616);
+}
+
+#[test]
+fn remaining_transfer_exact_anchors() {
+    // Independent SMPTE240 and cinema EOTF -> sRGB calculations. Include
+    // the SMPTE240 toe on both sides and cinema's scale/clipping, not just
+    // an undifferentiated gamma or the already-qualified BT.1886 mapping.
+    for (transfer, anchors) in [
+        (7, [(8, 22), (23, 41), (24, 42), (128, 141), (255, 255)]),
+        (17, [(8, 0), (23, 7), (24, 8), (128, 118), (255, 255)]),
+    ] {
+        for (input, output) in anchors {
+            assert_eq!(
+                pixel(&[(*b"cICP", vec![1, transfer, 0, 1])], input),
+                [output, output, output, 255],
+                "transfer {transfer}, input {input}"
+            );
+        }
+        assert_eq!(
+            pixel(&[(*b"cICP", vec![1, transfer, 0, 0])], 128),
+            [128, 128, 128, 255]
+        );
+        assert_eq!(
+            pixel(
+                &[
+                    (*b"cICP", vec![1, transfer, 0, 0]),
+                    (*b"gAMA", 100000_u32.to_be_bytes().to_vec())
+                ],
+                128
+            ),
+            [188, 188, 188, 255]
+        );
+    }
+}
+
+#[test]
+fn ignored_transfer_metadata_anchors() {
+    // SkColorSpace::MakeCICP does not support these valid H.273 codes.
+    // SkPngRustCodec falls through; this is not logarithmic conversion or
+    // unsupported-format recovery. A non-sRGB primary must also be ignored.
+    for transfer in [9, 10, 12] {
+        for range in [0, 1] {
+            let cicp = (*b"cICP", vec![9, transfer, 0, range]);
+            assert_eq!(
+                pixel(std::slice::from_ref(&cicp), 128),
+                [128, 128, 128, 255]
+            );
+            assert_eq!(
+                pixel(
+                    &[cicp.clone(), (*b"gAMA", 100000_u32.to_be_bytes().to_vec())],
+                    128
+                ),
+                [188, 188, 188, 255]
+            );
+            assert_eq!(
+                pixel(
+                    &[
+                        cicp,
+                        (*b"sRGB", vec![0]),
+                        (*b"gAMA", 100000_u32.to_be_bytes().to_vec())
+                    ],
+                    128
+                ),
+                [128, 128, 128, 255]
+            );
+        }
+    }
 }
 
 #[test]
@@ -300,7 +371,7 @@ fn exact_transfer_and_metadata_anchors() {
             "{:x}",
             Sha256::digest(include_bytes!("../common/png_color_reference.rs"))
         ),
-        "c292fb168ab9ae601bad794f61c62adbb8cded281f7a63148a1568a88e9c5c00"
+        "94b651e477d35ca0e938b0720eed6a85ea0dfe0405f50aaaa6bae1a54aee8259"
     );
     let evidence = reference::evidence();
     let icc = evidence["cases"]

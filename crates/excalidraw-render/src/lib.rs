@@ -83,6 +83,7 @@ pub mod wasm_tests {
                 serde_json::to_value(first.report()).unwrap(),
             );
             if let Some(equivalent) = crate::png_color_reference::bt1886_equivalent(&evidence, row)
+                .or_else(|| crate::png_color_reference::ignored_cicp_equivalent(&evidence, row))
             {
                 let scene =
                     crate::SceneDocument::parse(&serde_json::to_vec(&equivalent["scene"]).unwrap())
@@ -91,7 +92,7 @@ pub mod wasm_tests {
                 assert_eq!(
                     first.artifact().bytes(),
                     control.artifact().bytes(),
-                    "{} exact BT.1886 equivalence",
+                    "{} exact metadata equivalence",
                     row["id"]
                 );
                 assert_eq!(first.report(), control.report());

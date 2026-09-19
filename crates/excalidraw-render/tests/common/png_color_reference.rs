@@ -11,19 +11,19 @@ pub const REFERENCE: &[u8] = include_bytes!(concat!(
 pub fn evidence() -> Value {
     assert_eq!(
         format!("{:x}", Sha256::digest(REFERENCE)),
-        "30a754e614199e6fdb325613af4802ba489f386ce899e5503641489730371555"
+        "9c53ba1857d7e6406863200a685e9078e68e109569fed9c96bbcc1bcfb9c95ad"
     );
     let record: Value = serde_json::from_slice(REFERENCE).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
     assert_eq!(record["visual_class"], "geometry-image");
-    assert_eq!(record["cases"].as_array().unwrap().len(), 676);
+    assert_eq!(record["cases"].as_array().unwrap().len(), 896);
     let rows = record["cases"].as_array().unwrap();
     let ids: std::collections::BTreeSet<_> =
         rows.iter().map(|r| r["id"].as_str().unwrap()).collect();
     assert_eq!(ids.len(), rows.len());
     let mut expected = std::collections::BTreeSet::new();
     for p in [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22] {
-        for t in [1, 4, 5, 6, 8, 11, 13, 14, 15] {
+        for t in [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17] {
             for r in [0, 1] {
                 for depth in [8, 16] {
                     expected.insert(format!("cicp-p{p}-t{t}-r{r}-c6-d{depth}"));
@@ -38,7 +38,83 @@ pub fn evidence() -> Value {
         .collect();
     assert_eq!(actual, expected);
     transfer_equivalence_and_discrimination(&record);
+    remaining_transfer_discrimination(&record);
     record
+}
+
+/// Valid stage-2 signaling which the pinned decoder ignores. These source
+/// fields have no lower metadata, so they must match the untagged control.
+pub fn ignored_cicp_equivalent<'a>(record: &'a Value, row: &Value) -> Option<&'a Value> {
+    if row["group"] != "cicp" {
+        return None;
+    }
+    let cicp = &row["tags"][0]["data"];
+    let transfer = cicp[1].as_u64().unwrap();
+    if !matches!(transfer, 9 | 10 | 12) && !(matches!(transfer, 7 | 17) && cicp[3] == 0) {
+        return None;
+    }
+    let id = format!("untagged-c6-d{}", row["layout"]["depth"]);
+    Some(
+        record["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == id)
+            .unwrap(),
+    )
+}
+
+fn remaining_transfer_discrimination(record: &Value) {
+    let rows = record["cases"].as_array().unwrap();
+    let image = |id: &str, kind: &str| {
+        let row = rows.iter().find(|r| r["id"] == id).unwrap();
+        png(&base64(&row["reference"][kind]))
+    };
+    let mut count = 0;
+    for row in rows {
+        if let Some(control) = ignored_cicp_equivalent(record, row) {
+            count += 1;
+            for kind in ["png", "opaque_png"] {
+                assert_eq!(
+                    image(row["id"].as_str().unwrap(), kind),
+                    image(control["id"].as_str().unwrap(), kind),
+                    "{} {kind} ignored signaling",
+                    row["id"]
+                );
+            }
+        }
+    }
+    assert_eq!(count, 176);
+    for (transfer, neutral) in [(7, 141), (17, 118)] {
+        for depth in [8, 16] {
+            let right = format!("cicp-p1-t{transfer}-r1-c6-d{depth}");
+            // Independently calculated EOTF -> sRGB at the authored neutral
+            // (9,6) sample: SMPTE240's piecewise curve, and (52.37/48)*V^2.6.
+            let opaque = image(&right, "opaque_png");
+            assert_eq!(
+                &opaque.rgba()[99 * 4..100 * 4],
+                &[neutral, neutral, neutral, 255]
+            );
+            for wrong in [1, 4, 5, 8, 13, if transfer == 7 { 17 } else { 7 }] {
+                // Cinema and BT.1886 fields fall inside the canonical budget;
+                // their distinct neutral values are pinned exactly above and
+                // on facade output below instead of tightening that budget.
+                if transfer == 17 && wrong == 1 {
+                    continue;
+                }
+                let wrong = format!("cicp-p1-t{wrong}-r1-c6-d{depth}");
+                let result = compare(
+                    &image(&right, "png"),
+                    &image(&wrong, "png"),
+                    VisualClass::GeometryImage,
+                    &[],
+                    ComparisonMode::Canonical,
+                )
+                .unwrap();
+                assert!(!result.passed(), "{right} does not discriminate {wrong}");
+            }
+        }
+    }
 }
 
 /// The four newly qualified H.273 codes select the same reference EOTF as
@@ -166,6 +242,10 @@ pub fn report(row: &Value, format: &str, mut actual: Value) {
 }
 fn identity(row: &Value) -> bool {
     let signal = row["signal"].as_str().unwrap();
+    if row["group"] == "cicp" && matches!(row["tags"][0]["data"][1].as_u64().unwrap(), 9 | 10 | 12)
+    {
+        return true;
+    }
     matches!(
         signal,
         "untagged"
@@ -196,6 +276,23 @@ pub fn appearance(row: &Value, actual: CanonicalRgba8, pdf: bool) {
         )
     );
     assert_eq!(row["reference"]["admitted"], true);
+    if row["group"] == "cicp" {
+        let cicp = &row["tags"][0]["data"];
+        if cicp[0] == 1 && cicp[3] == 1 {
+            if let Some(neutral) = match cicp[1].as_u64().unwrap() {
+                7 => Some(141),
+                17 => Some(118),
+                _ => None,
+            } {
+                assert_eq!(
+                    &actual.rgba()[99 * 4..100 * 4],
+                    &[neutral, neutral, neutral, 255],
+                    "{} exact transfer anchor",
+                    row["id"]
+                );
+            }
+        }
+    }
     let expected = png(&base64(
         &row["reference"][if pdf { "opaque_png" } else { "png" }],
     ));

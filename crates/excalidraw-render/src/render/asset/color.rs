@@ -108,9 +108,17 @@ pub(super) fn prepare_png_color_normalization(
     semantics: &PngSemantics,
     workspace_bytes: u64,
 ) -> Result<ColorNormalization, ResolveError> {
-    // The pinned SkPngRustCodec cannot construct a narrow-range RGB space and
-    // continues with the lower-priority metadata instead.
-    if let Some(cicp) = semantics.cicp.filter(|cicp| cicp[3] != 0) {
+    // The pinned SkPngRustCodec cannot construct a narrow-range RGB space or
+    // interpret transfer codes 9, 10, 12 and continues with lower metadata.
+    // Limit the latter fallback to valid RGB signaling; malformed metadata
+    // retains the project's declared strict unsupported-color recovery.
+    if let Some(cicp) = semantics.cicp.filter(|cicp| {
+        let ignored_transfer = matches!(cicp[0], 1 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 22)
+            && matches!(cicp[1], 9 | 10 | 12)
+            && cicp[2] == 0
+            && cicp[3] == 1;
+        cicp[3] != 0 && !ignored_transfer
+    }) {
         if cicp == [1, 13, 0, 1] {
             return Ok(ColorNormalization::None);
         }
