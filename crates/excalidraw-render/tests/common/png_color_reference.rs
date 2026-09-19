@@ -11,19 +11,19 @@ pub const REFERENCE: &[u8] = include_bytes!(concat!(
 pub fn evidence() -> Value {
     assert_eq!(
         format!("{:x}", Sha256::digest(REFERENCE)),
-        "285e8a10eb2ad47c74f7f12ff1b0f130621a41d6eea0d6f68fd47412f5d14629"
+        "30a754e614199e6fdb325613af4802ba489f386ce899e5503641489730371555"
     );
     let record: Value = serde_json::from_slice(REFERENCE).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
     assert_eq!(record["visual_class"], "geometry-image");
-    assert_eq!(record["cases"].as_array().unwrap().len(), 500);
+    assert_eq!(record["cases"].as_array().unwrap().len(), 676);
     let rows = record["cases"].as_array().unwrap();
     let ids: std::collections::BTreeSet<_> =
         rows.iter().map(|r| r["id"].as_str().unwrap()).collect();
     assert_eq!(ids.len(), rows.len());
     let mut expected = std::collections::BTreeSet::new();
     for p in [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22] {
-        for t in [1, 4, 5, 8, 13] {
+        for t in [1, 4, 5, 6, 8, 11, 13, 14, 15] {
             for r in [0, 1] {
                 for depth in [8, 16] {
                     expected.insert(format!("cicp-p{p}-t{t}-r{r}-c6-d{depth}"));
@@ -37,7 +37,85 @@ pub fn evidence() -> Value {
         .map(|r| r["id"].as_str().unwrap().to_owned())
         .collect();
     assert_eq!(actual, expected);
+    transfer_equivalence_and_discrimination(&record);
     record
+}
+
+/// The four newly qualified H.273 codes select the same reference EOTF as
+/// transfer 1. Keep this equivalence exact on both reference and facade output.
+pub fn bt1886_equivalent<'a>(record: &'a Value, row: &Value) -> Option<&'a Value> {
+    if row["group"] != "cicp" {
+        return None;
+    }
+    let cicp = &row["tags"][0]["data"];
+    if !matches!(cicp[1].as_u64().unwrap(), 6 | 11 | 14 | 15) {
+        return None;
+    }
+    let id = format!(
+        "cicp-p{}-t1-r{}-c6-d{}",
+        cicp[0], cicp[3], row["layout"]["depth"]
+    );
+    Some(
+        record["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == id)
+            .unwrap(),
+    )
+}
+
+fn transfer_equivalence_and_discrimination(record: &Value) {
+    let rows = record["cases"].as_array().unwrap();
+    let image = |id: &str, kind: &str| {
+        let row = rows.iter().find(|r| r["id"] == id).unwrap();
+        png(&base64(&row["reference"][kind]))
+    };
+    let mut count = 0;
+    for row in rows {
+        let Some(equivalent) = bt1886_equivalent(record, row) else {
+            continue;
+        };
+        count += 1;
+        for kind in ["png", "opaque_png"] {
+            assert_eq!(
+                row["reference"][kind], equivalent["reference"][kind],
+                "{} {kind} BT.1886",
+                row["id"]
+            );
+            if row["tags"][0]["data"][3] == 0 {
+                let id = format!("untagged-c6-d{}", row["layout"]["depth"]);
+                assert_eq!(
+                    image(row["id"].as_str().unwrap(), kind),
+                    image(&id, kind),
+                    "{} range fallback",
+                    row["id"]
+                );
+            }
+        }
+    }
+    assert_eq!(count, 176);
+    for transfer in [6, 11, 14, 15] {
+        for depth in [8, 16] {
+            let right = format!("cicp-p1-t{transfer}-r1-c6-d{depth}");
+            // The authored (9,6) neutral sample distinguishes BT.1886 from
+            // sRGB identity (128), linear (188), and the inverse camera OETF.
+            let opaque = image(&right, "opaque_png");
+            assert_eq!(&opaque.rgba()[99 * 4..100 * 4], &[121, 121, 121, 255]);
+            for wrong in [4, 5, 8, 13] {
+                let wrong = format!("cicp-p1-t{wrong}-r1-c6-d{depth}");
+                let result = compare(
+                    &image(&right, "png"),
+                    &image(&wrong, "png"),
+                    VisualClass::GeometryImage,
+                    &[],
+                    ComparisonMode::Canonical,
+                )
+                .unwrap();
+                assert!(!result.passed(), "{right} does not discriminate {wrong}");
+            }
+        }
+    }
 }
 pub fn base64(value: &Value) -> Vec<u8> {
     base64::engine::general_purpose::STANDARD

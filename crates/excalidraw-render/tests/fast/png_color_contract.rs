@@ -49,7 +49,7 @@ fn check_group(group: &str, count: usize) {
         }
         // H.273 defines primary codes 6 and 7 as equivalent, unlike the
         // distinct white points of cinema-P3 (11) and display-P3 (12).
-        for transfer in [1, 4, 5, 8, 13] {
+        for transfer in [1, 4, 5, 6, 8, 11, 13, 14, 15] {
             assert_eq!(
                 reference_image(&format!("cicp-p6-t{transfer}-r1")),
                 reference_image(&format!("cicp-p7-t{transfer}-r1"))
@@ -95,6 +95,21 @@ fn check_group(group: &str, count: usize) {
                 format.as_str(),
                 serde_json::to_value(first.report()).unwrap(),
             );
+            if format != OutputFormat::Svg {
+                if let Some(equivalent) = reference::bt1886_equivalent(&evidence, row) {
+                    let scene =
+                        SceneDocument::parse(&serde_json::to_vec(&equivalent["scene"]).unwrap())
+                            .unwrap();
+                    let control = Renderer::new().render(&scene, &request).unwrap();
+                    assert_eq!(
+                        first.artifact().bytes(),
+                        control.artifact().bytes(),
+                        "{} {format:?} exact BT.1886 equivalence",
+                        row["id"]
+                    );
+                    assert_eq!(first.report(), control.report());
+                }
+            }
             if reference::recovery(row, format.as_str()).is_some() {
                 let mut removed = row["scene"].clone();
                 removed["files"] = json!({});
@@ -175,7 +190,44 @@ fn metadata_precedence_and_recovery_match_the_contract() {
 #[test]
 fn sdr_cicp_candidates_match_the_reference() {
     primary_space_exact_anchors();
-    check_group("cicp", 220);
+    bt1886_transfer_exact_anchors();
+    check_group("cicp", 396);
+}
+
+#[test]
+fn bt1886_transfer_exact_anchors() {
+    // Independently authored neutral anchors, corroborated by the collected
+    // field in the shared helper. Range zero falls through to lower metadata.
+    for transfer in [6, 11, 14, 15] {
+        assert_eq!(
+            pixel(&[(*b"cICP", vec![1, transfer, 0, 1])], 128),
+            [121, 121, 121, 255]
+        );
+        assert_eq!(
+            pixel(&[(*b"cICP", vec![1, transfer, 0, 0])], 128),
+            [128, 128, 128, 255]
+        );
+        assert_eq!(
+            pixel(
+                &[
+                    (*b"cICP", vec![1, transfer, 0, 0]),
+                    (*b"gAMA", 100000_u32.to_be_bytes().to_vec())
+                ],
+                128
+            ),
+            [188, 188, 188, 255]
+        );
+        assert_eq!(
+            pixel(
+                &[
+                    (*b"cICP", vec![1, transfer, 0, 1]),
+                    (*b"gAMA", 100000_u32.to_be_bytes().to_vec())
+                ],
+                128
+            ),
+            [121, 121, 121, 255]
+        );
+    }
 }
 
 #[test]
@@ -248,7 +300,7 @@ fn exact_transfer_and_metadata_anchors() {
             "{:x}",
             Sha256::digest(include_bytes!("../common/png_color_reference.rs"))
         ),
-        "6c7401880aceab56b742f313a1f2b2ba681d22a06508c3fab61432816fb925ce"
+        "c292fb168ab9ae601bad794f61c62adbb8cded281f7a63148a1568a88e9c5c00"
     );
     let evidence = reference::evidence();
     let icc = evidence["cases"]

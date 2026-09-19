@@ -82,6 +82,20 @@ pub mod wasm_tests {
                 "png",
                 serde_json::to_value(first.report()).unwrap(),
             );
+            if let Some(equivalent) = crate::png_color_reference::bt1886_equivalent(&evidence, row)
+            {
+                let scene =
+                    crate::SceneDocument::parse(&serde_json::to_vec(&equivalent["scene"]).unwrap())
+                        .unwrap();
+                let control = crate::Renderer::new().render(&scene, &request).unwrap();
+                assert_eq!(
+                    first.artifact().bytes(),
+                    control.artifact().bytes(),
+                    "{} exact BT.1886 equivalence",
+                    row["id"]
+                );
+                assert_eq!(first.report(), control.report());
+            }
             if crate::png_color_reference::recovery(row, "png").is_some() {
                 let mut control = row["scene"].clone();
                 control["files"] = serde_json::json!({});
