@@ -2,6 +2,11 @@
 
 Base: `a9bac8be3caea91c25fbda4d467349f01e750969`.
 
+This records the initial SDR tranche. The subsequent
+[remaining-primary extension](png-cicp-primary-ownership.md) preserves all 340
+cases below and adds 160, bringing the current record to 500 cases and the cICP
+selection to 220 cells. `verify` now reproduces that extended record.
+
 ## Judgment and reference evidence
 
 The maintainer explicitly selected **Canonical image budgets (Recommended)** in
@@ -21,7 +26,7 @@ rasters directly; it does not resize reference artifacts.
 signals and exact rejected-input classes. `png-color-fixtures.mjs` writes PNG
 chunks, samples and minimal RGB ICC profiles directly. An opaque companion for
 each source measures straight color independently of partial-alpha quantization.
-The resulting **340 cases** have complete scene/request inputs, official PNG
+The initial **340 cases** have complete scene/request inputs, official PNG
 bytes, opaque-companion PNG bytes and official SVG digests.
 
 Collection uses the immutable official Excalidraw v0.18.1 wrapper and exact-pinned
@@ -38,7 +43,7 @@ bash tools/reference-oracle/run-png-color.sh generate
 bash tools/reference-oracle/run-png-color.sh verify
 ```
 
-Generation refuses an existing record. The complete record digest is
+Generation refuses an existing record. The initial complete record digest was
 `402845da735653bfbaf00e76f80726425f0cc84446c0ad4fbfd21f095127494c`.
 
 ## Recorded ownership scope
@@ -57,7 +62,7 @@ Generation refuses an existing record. The complete record digest is
 The recorded selection is seven existing metadata/profile obligations plus
 **60 concrete cICP cells**. The range-zero cells characterize the reference's
 ignored cICP signaling, rather than asserting narrow-range color conversion.
-The other 644 cICP cells, broad ICC/LUT/model families, HDR/gain maps and profile
+At this checkpoint, the other 644 cICP cells, broad ICC/LUT/model families, HDR/gain maps and profile
 composition retain separate requirements.
 
 Every exact selector also executes independent exact anchors: near-black sRGB

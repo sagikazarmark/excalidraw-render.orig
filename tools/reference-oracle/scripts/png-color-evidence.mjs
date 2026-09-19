@@ -13,7 +13,7 @@ const ROOT = resolve(ORACLE, "../..");
 const INPUT = "tests/oracle/png-color/inputs.json";
 const PROFILE = "tests/oracle/reference-profiles/revision-1.json";
 const mode = process.argv[2];
-assert.ok(["probe", "generate", "verify"].includes(mode));
+assert.ok(["probe", "generate", "verify", "extend"].includes(mode));
 assert.equal(process.env.REFERENCE_ORACLE_CANONICAL, "1");
 assert.equal(process.version, "v24.16.0");
 const profile = JSON.parse(readFileSync(resolve(ROOT, PROFILE)));
@@ -23,6 +23,14 @@ const options = { exportBackground: false, exportEmbedScene: false, exportPaddin
   maxWidthOrHeight: null, viewBackgroundColor: "#ffffff" };
 const sha256 = data => createHash("sha256").update(data).digest("hex");
 const descriptor = path => ({ path, sha256: sha256(readFileSync(resolve(ROOT, path))) });
+const output = resolve(ROOT, mode === "probe" ? "target/png-color-probe.json" : "tests/oracle/png-color/reference.json");
+let previous;
+if (mode === "extend") {
+  assert.match(process.argv[3] ?? "", /^[a-f0-9]{64}$/, "extend requires the reviewed prior record digest");
+  const bytes = readFileSync(output);
+  assert.equal(sha256(bytes), process.argv[3], "stale extension base");
+  previous = JSON.parse(bytes);
+}
 async function collect(order) {
   const browser = await chromium.launch({ args: profile.browser.launch.explicitArguments, chromiumSandbox: false, headless: true });
   try {
@@ -71,7 +79,19 @@ const record = { schema: "excalidraw-render/png-color-reference/v1", sources: [I
   collection: mode === "probe" ? "exploratory only; one process" : "Official v0.18.1; pinned Chromium149; two fresh processes in forward/reverse order; fresh context per case; network none",
   cases: rows.map(row => { const { svg, ...output } = first[row.id]; return { ...row, scene: sceneFor(row), reference: { ...output, ...(svg ? { svg_sha256: sha256(Buffer.from(svg)) } : {}) } }; }) };
 const bytes = Buffer.from(JSON.stringify(record, null, 2) + "\n");
-const output = resolve(ROOT, mode === "probe" ? "target/png-color-probe.json" : "tests/oracle/png-color/reference.json");
-if (mode === "verify") assert.deepEqual(bytes, readFileSync(output));
+if (mode === "extend") {
+  for (const field of ["schema", "options", "visual_class", "collection"]) assert.deepEqual(record[field], previous[field]);
+  assert.deepEqual(record.sources.map(s => s.path), previous.sources.map(s => s.path));
+  const changedSources = new Set([INPUT, "tools/reference-oracle/scripts/png-color-evidence.mjs", "tools/reference-oracle/run-png-color.sh"]);
+  for (const source of previous.sources) if (!changedSources.has(source.path)) {
+    assert.deepEqual(record.sources.find(s => s.path === source.path), source, "extension changed a frozen producer/judgment source");
+  }
+  const byId = new Map(record.cases.map(row => [row.id, row]));
+  assert.equal(byId.size, record.cases.length);
+  assert.ok(record.cases.length > previous.cases.length, "extension has no additions");
+  for (const row of previous.cases) assert.deepEqual(byId.get(row.id), row, `${row.id}: extension changed existing evidence`);
+  writeFileSync(output, bytes);
+  console.log(`Preserved all ${previous.cases.length} prior cases byte-for-byte`);
+} else if (mode === "verify") assert.deepEqual(bytes, readFileSync(output));
 else writeFileSync(output, bytes, { flag: "wx" });
 console.log(`${mode}: ${rows.length} PNG color cases; sha256:${sha256(bytes)}`);

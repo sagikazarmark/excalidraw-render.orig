@@ -22,12 +22,7 @@ fn check_group(group: &str, count: usize) {
             .unwrap();
         reference::png(&reference::base64(&row["reference"]["png"]))
     };
-    for (right, wrong) in [
-        ("chrm-srgb-d50-100000", "chrm-srgb-100000"),
-        ("srgb-over-chrm", "chrm-p3-100000"),
-        ("icc-over-chrm", "chrm-p3-100000"),
-        ("cicp-over-chrm", "chrm-p3-100000"),
-    ] {
+    let assert_discriminates = |right: &str, wrong: &str| {
         let result = excalidraw_render_compare::compare(
             &reference_image(right),
             &reference_image(wrong),
@@ -37,6 +32,29 @@ fn check_group(group: &str, count: usize) {
         )
         .unwrap();
         assert!(!result.passed(), "{right} does not discriminate {wrong}");
+    };
+    for (right, wrong) in [
+        ("chrm-srgb-d50-100000", "chrm-srgb-100000"),
+        ("srgb-over-chrm", "chrm-p3-100000"),
+        ("icc-over-chrm", "chrm-p3-100000"),
+        ("cicp-over-chrm", "chrm-p3-100000"),
+    ] {
+        assert_discriminates(right, wrong);
+    }
+    if group == "cicp" {
+        for (primary, wrong_primary) in [(4, 1), (5, 1), (6, 1), (8, 1), (10, 1), (22, 1)] {
+            let right = format!("cicp-p{primary}-t8-r1");
+            let wrong = format!("cicp-p{wrong_primary}-t8-r1");
+            assert_discriminates(&right, &wrong);
+        }
+        // H.273 defines primary codes 6 and 7 as equivalent, unlike the
+        // distinct white points of cinema-P3 (11) and display-P3 (12).
+        for transfer in [1, 4, 5, 8, 13] {
+            assert_eq!(
+                reference_image(&format!("cicp-p6-t{transfer}-r1")),
+                reference_image(&format!("cicp-p7-t{transfer}-r1"))
+            );
+        }
     }
     assert_eq!(evidence["sources"].as_array().unwrap().len(), 6);
     for source in evidence["sources"].as_array().unwrap() {
@@ -156,12 +174,50 @@ fn metadata_precedence_and_recovery_match_the_contract() {
 }
 #[test]
 fn sdr_cicp_candidates_match_the_reference() {
-    check_group("cicp", 60);
+    primary_space_exact_anchors();
+    check_group("cicp", 220);
+}
+
+#[test]
+fn primary_space_exact_anchors() {
+    let evidence = reference::evidence();
+    let image = |id: &str, opaque: bool| {
+        let row = evidence["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == id)
+            .unwrap();
+        reference::png(&reference::base64(
+            &row["reference"][if opaque { "opaque_png" } else { "png" }],
+        ))
+    };
+    let observed = image("cicp-p10-t1-r1-c6-d8", false);
+    // The authored field's (9,6) pixel has [128,128,128,255].
+    assert_eq!(&observed.rgba()[99 * 4..100 * 4], &[121, 121, 121, 255]);
+    assert_eq!(
+        pixel(&[(*b"cICP", vec![10, 1, 0, 1])], 128),
+        [121, 121, 121, 255]
+    );
+    // Cinema-P3 and display-P3 differ only by white point. Their difference
+    // here is inside the image budget, so pin a discriminating opaque anchor
+    // instead: authored pixel (2,0) is [2,2,64,255] in the companion.
+    for (primary, expected) in [(11, [20, 20, 143, 255]), (12, [22, 22, 143, 255])] {
+        let observed = image(&format!("cicp-p{primary}-t8-r1-c6-d8"), true);
+        assert_eq!(&observed.rgba()[8..12], &expected);
+        assert_eq!(
+            pixel_rgb(&[(*b"cICP", vec![primary, 8, 0, 1])], [2, 2, 64]),
+            expected
+        );
+    }
 }
 
 fn pixel(chunks: &[([u8; 4], Vec<u8>)], value: u8) -> Vec<u8> {
+    pixel_rgb(chunks, [value; 3])
+}
+fn pixel_rgb(chunks: &[([u8; 4], Vec<u8>)], rgb: [u8; 3]) -> Vec<u8> {
     let source = crate::common::codec_fixtures::png_with_chunks_before_idat(
-        &crate::common::codec_fixtures::png_rgba(1, 1, &[[value, value, value, 255]]),
+        &crate::common::codec_fixtures::png_rgba(1, 1, &[[rgb[0], rgb[1], rgb[2], 255]]),
         chunks,
     );
     let data = format!(
@@ -192,7 +248,7 @@ fn exact_transfer_and_metadata_anchors() {
             "{:x}",
             Sha256::digest(include_bytes!("../common/png_color_reference.rs"))
         ),
-        "ce1e824f60bd42a0e6ef550da95490a662fbbef62c9d88913a9942592b5e7f2e"
+        "6c7401880aceab56b742f313a1f2b2ba681d22a06508c3fab61432816fb925ce"
     );
     let evidence = reference::evidence();
     let icc = evidence["cases"]

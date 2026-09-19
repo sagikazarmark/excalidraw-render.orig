@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use moxcms::{
     Chromaticity, CicpColorPrimaries, CicpProfile, ColorPrimaries, ColorProfile, Layout,
-    MatrixCoefficients, ToneReprCurve, TransferCharacteristics, TransformOptions, XyY,
+    MatrixCoefficients, ToneReprCurve, TransferCharacteristics, TransformOptions, XyY, Xyzd,
 };
 
 use super::png::PngSemantics;
@@ -157,6 +157,19 @@ fn cicp_color_profile(cicp: [u8; 4]) -> Result<ColorProfile, ResolveError> {
         matrix_coefficients,
         full_range: cicp[3] == 1,
     });
+    if matches!(color_primaries, CicpColorPrimaries::Xyz) {
+        // The generic xy -> XYZ constructor normalizes each primary to Y=1,
+        // collapsing the zero-luminance X/Z axes. Preserve the XYZ basis and
+        // its equal-energy white, then let the CMS adapt it to the D50 PCS.
+        let signaling = profile.cicp;
+        profile.update_rgb_colorimetry_triplet(
+            XyY::new(1.0 / 3.0, 1.0 / 3.0, 1.0),
+            Xyzd::new(1.0, 0.0, 0.0),
+            Xyzd::new(0.0, 1.0, 0.0),
+            Xyzd::new(0.0, 0.0, 1.0),
+        );
+        profile.cicp = signaling;
+    }
     // SkNamedTransferFn follows H.273's reference EOTF (BT.1886 gamma 2.4),
     // rather than inverting the camera OETF for these display-referred codes.
     if matches!(cicp[1], 1 | 6 | 11 | 14 | 15) {

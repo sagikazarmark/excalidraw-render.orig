@@ -11,18 +11,18 @@ pub const REFERENCE: &[u8] = include_bytes!(concat!(
 pub fn evidence() -> Value {
     assert_eq!(
         format!("{:x}", Sha256::digest(REFERENCE)),
-        "402845da735653bfbaf00e76f80726425f0cc84446c0ad4fbfd21f095127494c"
+        "285e8a10eb2ad47c74f7f12ff1b0f130621a41d6eea0d6f68fd47412f5d14629"
     );
     let record: Value = serde_json::from_slice(REFERENCE).unwrap();
     assert_eq!(record["schema"], "excalidraw-render/png-color-reference/v1");
     assert_eq!(record["visual_class"], "geometry-image");
-    assert_eq!(record["cases"].as_array().unwrap().len(), 340);
+    assert_eq!(record["cases"].as_array().unwrap().len(), 500);
     let rows = record["cases"].as_array().unwrap();
     let ids: std::collections::BTreeSet<_> =
         rows.iter().map(|r| r["id"].as_str().unwrap()).collect();
     assert_eq!(ids.len(), rows.len());
     let mut expected = std::collections::BTreeSet::new();
-    for p in [1, 9, 12] {
+    for p in [1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 22] {
         for t in [1, 4, 5, 8, 13] {
             for r in [0, 1] {
                 for depth in [8, 16] {
