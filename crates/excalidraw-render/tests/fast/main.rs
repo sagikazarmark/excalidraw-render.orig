@@ -46,6 +46,7 @@ mod image_edge_coverage;
 mod image_field_contract;
 mod image_resampling;
 mod image_viewport_rounding;
+mod jpeg_contract;
 mod license_bundle;
 mod linear_rotation_render;
 mod missing_glyph_render;
