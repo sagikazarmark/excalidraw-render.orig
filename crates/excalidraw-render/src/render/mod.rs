@@ -1,5 +1,14 @@
 mod accounting;
 mod asset;
+#[cfg(test)]
+pub(crate) use asset::{with_cms_failure, with_cms_failure_after, CmsSite};
+#[cfg(test)]
+pub(crate) fn stage4_render_trace(
+    scene: &crate::SceneDocument,
+    request: &crate::RenderRequest,
+) -> (Result<crate::RenderOutcome, crate::RenderError>, Vec<u8>) {
+    render_with_trace(crate::catalog::REVISION_1.profile(), scene, request)
+}
 mod bound_text;
 mod diagnostics;
 #[cfg(not(test))]

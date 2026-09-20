@@ -1,0 +1,30 @@
+
+running 25 tests
+test png_stage4_contract::all_orientation_cells_preserve_source_and_permute_pixels ... ok
+test png_stage4_contract::authored_case_cardinalities_are_explicit ... ok
+test png_stage4_contract::apng_one_frame_subframes_blend_and_disposal_are_qualified ... ok
+test png_stage4_contract::incompatible_icc_models_preserve_svg_and_recover_projections ... ok
+test png_stage4_contract::invalid_orientation_is_ignored_but_duplicate_chunks_fail ... ok
+test png_stage4_contract::lut_lab_pcs_missing_intent_tables_and_mab_stages_are_qualified ... ok
+test png_stage4_contract::lut_profiles_select_tables_and_recover_unsupported_classes ... ok
+test png_stage4_contract::apng_sequence_counts_and_later_streams_fail_before_passthrough ... ok
+test png_stage4_contract::malformed_chunks_fail_and_unknown_ancillary_survives ... ok
+test png_stage4_contract::malformed_iccp_has_explicit_ignore_or_recovery_contracts ... ok
+test png_stage4_contract::palettes_and_transparency_chunks_have_strict_sample_contracts ... ok
+test png_stage4_contract::profile_projection_shares_identities_but_charges_occurrences_tracer ... ok
+test png_stage4_contract::profile_validation_and_decode_limits_have_exact_boundaries ... ok
+test png_stage4_contract::reserved_cicp_fields_preserve_svg_and_recover_projections ... ok
+test png_stage4_contract::review_adam7_narrow_multiline_subframes_preserve_rows_and_validate_later_indexes ... ok
+test png_stage4_contract::review_icc_common_headers_are_checked_on_every_path ... ok
+test png_stage4_contract::review_icc_declaration_bounds_both_tag_table_and_tag_data ... ok
+test png_stage4_contract::review_lower_depth_transparency_keys_never_alias_after_truncation ... ok
+test png_stage4_contract::gray_icc_profiles_transform_expanded_samples ... ok
+test png_stage4_contract::sampled_icc_curves_and_descriptive_metadata_have_independent_pixel_contracts ... ok
+test png_stage4_contract::scanline_streams_and_adam7_extents_are_fully_validated ... ok
+test png_stage4_contract::streaming_validation_drains_bounded_output_across_split_input ... ok
+test png_stage4_contract::sample_color_orientation_animation_axes_compose ... ok
+test png_stage4_contract::malformed_png_headers_chunks_and_streams_have_complete_recovery ... ok
+test png_stage4_contract::complete_profile_composition_matches_independent_reference ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 547 filtered out; finished in 35.57s
+

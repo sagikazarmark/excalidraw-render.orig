@@ -918,9 +918,9 @@ impl PdfPlan {
                 &format!(
                     concat!(
                         "/Type /XObject\n/Subtype /Image\n/Width {}\n/Height {}\n",
-                        "/ColorSpace /CS1\n/BitsPerComponent 8\n/SMask {} 0 R\n"
+                        "/ColorSpace [/ICCBased {} 0 R]\n/BitsPerComponent 8\n/Interpolate true\n/SMask {} 0 R\n"
                     ),
-                    asset.width, asset.height, mask_object
+                    asset.width, asset.height, ICC_PROFILE_OBJECT, mask_object
                 ),
                 rgb,
             )?;
@@ -929,7 +929,7 @@ impl PdfPlan {
                 &format!(
                     concat!(
                         "/Type /XObject\n/Subtype /Image\n/Width {}\n/Height {}\n",
-                        "/ColorSpace /DeviceGray\n/BitsPerComponent 8\n"
+                        "/ColorSpace /DeviceGray\n/BitsPerComponent 8\n/Interpolate true\n"
                     ),
                     asset.width, asset.height
                 ),

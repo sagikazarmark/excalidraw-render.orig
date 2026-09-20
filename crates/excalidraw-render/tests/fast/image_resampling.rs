@@ -1,7 +1,8 @@
 //! PNG resamples an axis-aligned raster image once per destination pixel
 //! centre, as the pinned Chromium canvas's `drawImage` does (#165): a bilinear
 //! sample at each device pixel's centre under the exact fractional mapping,
-//! painted as one constant block of subpixels, so an upscaled image's texel
+//! with four-bit fractional weights and a truncated premultiplied sum, painted
+//! as one constant block of subpixels, so an upscaled image's texel
 //! boundaries fall where the canvas puts them and a 1:1 image is its own
 //! texels. Sampling the image at every subpixel centre of the fixed
 //! supersample and box-filtering instead blurred a 1:1 image by
@@ -95,20 +96,21 @@ fn an_upscaled_image_has_the_canvas_bilinear_ramp_between_texel_centres() {
     // and 7/8 of the way. The top row (source v = -0.375 and -0.125, on the
     // first texel row) reads black then white. Here every texel centre and
     // every clamp boundary falls on a subpixel boundary, so the four subpixel
-    // samples averaged to the same values; the test pins the canvas
-    // positions of the ramp rather than the fix.
+    // samples averaged to nearly the same values. The exact bytes below were
+    // checked in two fresh Chromium 149.0.7827.55 processes during Stage 4:
+    // the canvas truncates 255 * 1/8 and 255 * 3/8 rather than rounding them.
     let png = render_png(&checker_scene(
         r#""x":0,"y":0,"width":8,"height":8,"angle":0,"opacity":100,"scale":[1,1]"#,
     ));
     let row: Vec<u8> = (0..8).map(|x| level(png.pixel(10 + x, 10))).collect();
-    assert_eq!(row, [0, 0, 32, 96, 159, 223, 255, 255]);
+    assert_eq!(row, [0, 0, 31, 95, 159, 223, 255, 255]);
     // The second texel row (device rows 16 and 17) is white then black.
     let row: Vec<u8> = (0..8).map(|x| level(png.pixel(10 + x, 17))).collect();
-    assert_eq!(row, [255, 255, 223, 159, 96, 32, 0, 0]);
+    assert_eq!(row, [255, 255, 223, 159, 95, 31, 0, 0]);
     // The middle rows ramp vertically as well: device row 13 (source
     // v = 0.375) mixes the two texel rows 5/8 to 3/8, so the leftmost pixel
     // (source u past the left edge, the first column) is 3/8 white.
-    assert_eq!(level(png.pixel(10, 13)), 96);
+    assert_eq!(level(png.pixel(10, 13)), 95);
     assert_eq!(level(png.pixel(17, 13)), 159);
 }
 
@@ -118,12 +120,13 @@ fn a_texel_centre_inside_a_destination_pixel_is_sampled_once_not_averaged() {
     // has its centre `1.5 / 3 = 0.5` exactly on the first texel's centre, so
     // the canvas reads the texel itself (black in the top row); averaging four
     // subpixel samples, two of them past the centre on the ramp toward white,
-    // read 11 instead. Pixels 2 and 3 ramp at 1/3 and 2/3.
+    // read 11 instead. Pixels 2 and 3 map to 1/3 and 2/3, which Chromium's
+    // four-bit weights truncate to 5/16 and 10/16, giving levels 79 and 159.
     let png = render_png(&checker_scene(
         r#""x":0,"y":0,"width":6,"height":6,"angle":0,"opacity":100,"scale":[1,1]"#,
     ));
     let row: Vec<u8> = (0..6).map(|x| level(png.pixel(10 + x, 10))).collect();
-    assert_eq!(row, [0, 0, 85, 170, 255, 255]);
+    assert_eq!(row, [0, 0, 79, 159, 255, 255]);
     // At a half-pixel offset (x = 0.5, 8x8) the snapped rectangle starts at
     // device column 11 and pixel 12's centre maps onto the first texel's
     // centre exactly (source u = 0): a pure texel, not the 8-level blend the
@@ -133,7 +136,7 @@ fn a_texel_centre_inside_a_destination_pixel_is_sampled_once_not_averaged() {
     ));
     assert_eq!(png.pixel(10, 10), CLEAR);
     let row: Vec<u8> = (11..19).map(|x| level(png.pixel(x, 10))).collect();
-    assert_eq!(row, [0, 0, 64, 128, 191, 255, 255, 255]);
+    assert_eq!(row, [0, 0, 63, 127, 191, 255, 255, 255]);
 }
 
 #[test]

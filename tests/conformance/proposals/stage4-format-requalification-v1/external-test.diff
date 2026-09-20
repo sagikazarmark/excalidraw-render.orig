@@ -1,0 +1,62 @@
+--- before/crates/excalidraw-render/tests/stage4_typography.rs
++++ after/crates/excalidraw-render/tests/stage4_typography.rs
+@@ -2,7 +2,9 @@
+ //! checks reference pixels, independently of the candidate's approval status.
+ use std::io::Cursor;
+ 
+-use excalidraw_render::{FrameOptions, OutputFormat, RenderRequest, Renderer, SceneDocument, Sizing};
++use excalidraw_render::{
++    FrameOptions, OutputFormat, RenderRequest, Renderer, SceneDocument, Sizing,
++};
+ use excalidraw_render_compare::{compare, CanonicalRgba8, ComparisonMode, VisualClass};
+ 
+ #[test]
+@@ -79,7 +81,9 @@
+     // Excalifont family metrics: 886 ascent, -374 descent, UPEM 1000;
+     // 1.25 line height gives baseline (886 + (1250 - 1260)/2)/1000.
+     let baseline = font_size * 0.881;
+-    let (sin, cos) = angle.sin_cos();
++    // This external test authors its input coordinates with pinned libm;
++    // the renderer's private portable_math module is not part of its API.
++    let (sin, cos) = (libm::sin(angle), libm::cos(angle));
+     let x = origin[0] + sin * baseline - width / 2.0 + cos * width / 2.0 - sin * height / 2.0;
+     let y = origin[1] - cos * baseline - height / 2.0 + sin * width / 2.0 + cos * height / 2.0;
+     for (key, value) in [
+@@ -182,16 +186,16 @@
+     ] {
+         for (sign, aligned) in [(1.0, positive_aligned), (-1.0, negative_aligned)] {
+             let value: f64 = sign * coefficient;
+-            assert_phase_axis(20.0, value.asin(), 1.0, [false, aligned]);
+-            assert_phase_axis(20.0, value.acos(), 1.0, [aligned, false]);
++            assert_phase_axis(20.0, libm::asin(value), 1.0, [false, aligned]);
++            assert_phase_axis(20.0, libm::acos(value), 1.0, [aligned, false]);
+         }
+     }
+     // These f64 coefficients become exact signed ties on admission to SkScalar.
+     // Testing the f64 coefficient directly would choose the opposite phase grid.
+     let positive: f64 = half - 1.0 / 137_438_953_472.0; // 2^-37
+     let negative: f64 = -half - 1.0 / 68_719_476_736.0; // 2^-36
+-    assert_phase_axis(20.0, positive.asin(), 1.0, [false, false]);
+-    assert_phase_axis(20.0, negative.asin(), 1.0, [false, true]);
++    assert_phase_axis(20.0, libm::asin(positive), 1.0, [false, false]);
++    assert_phase_axis(20.0, libm::asin(negative), 1.0, [false, true]);
+ }
+ 
+ #[test]
+@@ -201,11 +205,11 @@
+     assert_phase_axis(20.0, 0.0001, 1.0, [false, true]);
+     assert_phase_axis(20.0, -0.0001, 1.0, [false, true]);
+     assert_phase_axis(20.0, 0.125, 1.0, [false, false]);
+-    assert_phase_axis(80.0, inside.asin(), 1.0, [false, true]);
+-    assert_phase_axis(80.0, outside.asin(), 1.0, [false, false]);
+-    assert_phase_axis(20.0, inside.asin(), 2.0, [false, false]);
+-    assert_phase_axis(20.0, (inside / 2.0).asin(), 2.0, [false, true]);
+-    assert_phase_axis(20.0, (outside / 2.0).asin(), 2.0, [false, false]);
++    assert_phase_axis(80.0, libm::asin(inside), 1.0, [false, true]);
++    assert_phase_axis(80.0, libm::asin(outside), 1.0, [false, false]);
++    assert_phase_axis(20.0, libm::asin(inside), 2.0, [false, false]);
++    assert_phase_axis(20.0, libm::asin(inside / 2.0), 2.0, [false, true]);
++    assert_phase_axis(20.0, libm::asin(outside / 2.0), 2.0, [false, false]);
+     assert_phase_axis(128.0, 0.0, 2.0, [false, true]);
+     assert_phase_axis(128.125, 0.0, 2.0, [false, false]);
+ }

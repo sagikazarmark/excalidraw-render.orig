@@ -12,17 +12,18 @@ coverage is complete or the chosen primary owners have received human approval.
 | Existing focused-case labels | 118 | Current approved manifests via execution inventory |
 | Surface field × applicable format | 605 | `fieldDispositions[].scope.formats` |
 | Diagnostic × declared format rule | 122 | `registryMappings[].formatRules` |
-| Manifest tolerance-exception scopes | 24 | Case + variant + format + region |
+| Manifest tolerance-exception scopes | 22 | Case + variant + format + region |
 | Codec/profile obligations | 999 | 51 base facets plus 948 PNG/APNG inventory obligations |
 | Interactions | 4 | Explicit spec-anchored policy |
 | Closure obligations | 4 | Explicit unfinished inventory/layer/PDF/target work |
-| **Total** | **1,876** | |
+| **Total** | **1,874** | |
 
-1,740 primary owners are proposed (118 case labels, the AVIF rejection test,
+1,800 primary owners are selected in the proposed global ledger (118 case labels, the AVIF rejection test,
 119 diagnostic/format obligations, all 605 current surface-field/format obligations,
 all 180 PNG/APNG sample-vector cells, three PNG precision/alpha obligations,
 seven SDR metadata/profile obligations, all 704 enumerated cICP cells and three
-PNG gain-map obligations).
+PNG gain-map obligations, all 32 EXIF cells, 19 further PNG qualification rows,
+five PNG umbrella facets and four global interactions).
 Three generic-fallback entries have approved
 exclusions. The PNG/APNG inventory expansion preserved all 928 prior dispositions
 and added 948 obligations; the sample tranches assign 60 static and 120 APNG
@@ -34,9 +35,18 @@ adds another 160. The [BT.1886 transfer stage](../../../docs/research/png-cicp-t
 adds 176; its [remaining non-PQ/HLG stage](../../../docs/research/png-cicp-transfer-ownership.md#stage-2--remaining-non-pqhlg-transfers)
 adds 220. The [Stage 3 HDR/gain-map qualification](../../../docs/research/png-hdr-gain-map-ownership.md)
 adds the remaining 88 PQ/HLG cells and the three PNG gain-map obligations.
-Current totals are **1,743 assigned/excluded and 133 gaps**. The cICP product
-and pinned decoder's ignored PNG gain signaling are characterized; broader HDR
-metadata, ICC families, profile-axis composition and umbrella facets remain gaps. See
+The [Stage 4 qualification](../../../docs/research/png-stage4-ownership.md) adds
+59 test owners after [parent-review remediation](../../../docs/research/png-stage4-review.md)
+for ICC/LUT, orientation, malformed inputs, APNG controls, composition, projection
+boundaries and interactions. The [approved release representative v7](../../../docs/research/png-stage4-v7-approved-owner.md)
+adds the 60th Stage-4 owner. Current totals are **1,803 assigned/excluded and 71
+gaps**. All 948 enumerated PNG/APNG inventory obligations now have proposed owners.
+Broader HDR metadata, four PNG and 41 other-codec umbrella facets remain gaps.
+The representative interaction is now assigned through the strict adapter to
+`representative.stage4-frames-text-assets.v7`, under the user's
+[exact scoped approval](https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5749841192).
+Its approved release consumer returns three supplemental execution receipts;
+v4/v6 remain historical evidence. Global ledger approval remains pending. See
 [the PNG/APNG inventory assessment](../../../docs/research/png-profile-ownership.md).
 The 21 metadata failure assignments use
 the explicit library-test adapter and are assessed in [the metadata audit](../../../docs/research/metadata-failure-ownership.md).
@@ -103,10 +113,21 @@ The three media-type assignments have a
 The four closure obligations prevent that remaining scope from disappearing
 behind a zero-gap claim for only the current coarse inventory.
 
-The execution rows and native baseline are unchanged. Stage 3's reviewed Skia
-attribution correction refreshes three license-consumer source anchors in the
-inventory and consequently this ledger's catalog binding; all execution keys,
-criteria and ownership dispositions are preserved. The native baseline still
+The [Stage 4 binding reconciliation](../../../docs/research/png-stage4-binding-reconciliation.md)
+applies the user-approved §8.5 authority transition, the proven `fuzz.codecs`
+locator refresh, and 101 focused-tested owner-source bindings. All 168 complete
+execution records, criterion/disposition semantics and three approved exclusions
+are preserved. Inventory/catalog/ledger validation now passes without stale
+locators; global coverage and approval remain incomplete.
+
+The [final six-case PNG requalification](../../../docs/research/png-stage4-final-metadata-application.md)
+applies the user's exact batch approval: four remeasured whole-PNG exceptions and
+two withdrawals now passing canonical budgets. Only those two unowned tolerance
+obligations were retired. It refreshes 122 authority and 12 case-owner manifest
+bindings while preserving all other criteria/dispositions and three exclusions.
+All 168 semantic execution identities remain; 18 manifest-derived input digests
+changed and the other 150 full execution records are identical. Both affected
+parity targets now pass. The native baseline is unchanged and still
 binds the old inventory descriptor and needs parent clean-commit collection and
 reapproval; see the [review correction audit](../../../docs/research/png-hdr-gain-map-ownership.md#parent-review-corrections-and-adaptation-provenance).
 This ledger does not replace baseline approval subjects or rerender their evidence.

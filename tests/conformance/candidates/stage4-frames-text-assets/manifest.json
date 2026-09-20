@@ -1,0 +1,120 @@
+{
+  "schema": "excalidraw-render/representative-candidate/v1",
+  "case_id": "representative.stage4-frames-text-assets.v1",
+  "layer": "representative",
+  "compatibility_revision": 1,
+  "approval": null,
+  "originating_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85",
+  "coverage": [
+    "interaction:frames-text-assets"
+  ],
+  "license": {
+    "expression": "MIT OR Apache-2.0",
+    "copyright": "Copyright 2026 excalidraw-render contributors"
+  },
+  "purpose": "Frames/clips, selectable text, raster/nested SVG, safe links and embedded metadata in every output format",
+  "reference_profile_sha256": "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71",
+  "comparison": {
+    "visual_class": "geometry-image",
+    "changed_pixel_fraction": [
+      1,
+      400
+    ],
+    "minimum_ssim": 0.999,
+    "exceptions": []
+  },
+  "request": {
+    "padding": 0,
+    "include_background": false,
+    "frame_options": {
+      "enabled": true,
+      "clip": true,
+      "name": false,
+      "outline": false
+    },
+    "metadata": {
+      "embedded_scene": true,
+      "provenance": true,
+      "diagnostic_summary": true
+    }
+  },
+  "semantic_expectations": {
+    "frame_clip": true,
+    "selectable_text": "Stage four",
+    "raster_sources_preserved_in_svg": true,
+    "nested_svg_vector_in_pdf": true,
+    "links": [
+      "https://example.com/text",
+      "https://example.com/raster"
+    ],
+    "embedded_scene": true,
+    "complete_reports": []
+  },
+  "files": [
+    {
+      "path": "scene.json",
+      "byte_length": 3670,
+      "sha256": "adfc116d54feb2873000c32041177f4a735fbe0340a6902b458bc088cb4086b7"
+    },
+    {
+      "path": "raster.png",
+      "byte_length": 78,
+      "sha256": "afc5d525582c247f7151da758cf50d350bc3e4f52ded45cdfa161193599f6a1d"
+    },
+    {
+      "path": "nested.svg",
+      "byte_length": 166,
+      "sha256": "a28798ab75854879768160ef7c283dd75a37a1878134a69f62f08091bc0c5f6a"
+    },
+    {
+      "path": "official.svg",
+      "byte_length": 9451,
+      "sha256": "0a1ea3e2ec79b1ae95c7f5180435406fb558956ad794c4adbf7072d909ca0bb0"
+    },
+    {
+      "path": "official.png",
+      "byte_length": 3855,
+      "sha256": "f4617d05ac40ffa94de75bb969afe4a4c9f9ab7fcec3b566056e46d0706030bb"
+    },
+    {
+      "path": "official-png.rgba",
+      "byte_length": 96000,
+      "sha256": "a2281124985ad5c541b340878c3db71518ea2e046d1eda3bb3742384b5243370"
+    },
+    {
+      "path": "provenance.json",
+      "byte_length": 1399,
+      "sha256": "578cc142a45b3f50c6da105fc06d54ae79544f65b9130021676847f2c21f4000"
+    },
+    {
+      "path": "expected-report-svg.json",
+      "byte_length": 37,
+      "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    },
+    {
+      "path": "expected-report-png.json",
+      "byte_length": 37,
+      "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    },
+    {
+      "path": "expected-report-pdf.json",
+      "byte_length": 37,
+      "sha256": "1f3ef3870c85fb0e7d2b51453022c07aeb8ac52c6d60ce82cf9a6320b538798b"
+    },
+    {
+      "path": "native.svg",
+      "byte_length": 19636,
+      "sha256": "09dca78b419499fb413735d477dcc737e40fd0f25e6473dfb2a60d9d3d1a3c8a"
+    },
+    {
+      "path": "native.png",
+      "byte_length": 5112,
+      "sha256": "579edffda1cb7ff3106630cf776e0ef807846e927781f4b0a8ec2636f554991f"
+    },
+    {
+      "path": "native.pdf",
+      "byte_length": 104476,
+      "sha256": "a23df374067d24a3e21fb9b3a0d5e5ea3b0fdb65bf9a6b558cb859429f6efb9f"
+    }
+  ]
+}

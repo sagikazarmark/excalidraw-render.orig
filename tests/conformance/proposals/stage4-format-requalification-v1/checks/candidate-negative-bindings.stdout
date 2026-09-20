@@ -1,0 +1,23 @@
+
+running 18 tests
+test conformance_candidate_exceptions::tests::scoped_fixed_pdf_requires_the_exact_validated_colourspec_bridge ... ok
+test conformance_candidate_exceptions::tests::scoped_proposal_rejects_scope_limit_cause_and_proof_mutations ... ok
+test conformance_candidate_gate::tests::approval_mutations_prevent_execution_and_preparation_never_grants_approval ... ok
+test conformance_candidate_gate::tests::candidate_paths_cannot_escape_the_repository ... ok
+test conformance_candidate_gate::tests::existing_candidate_materialization_is_immutable ... ok
+test conformance_candidate_gate::tests::producer_sets_reject_missing_duplicate_stale_and_detached_entries ... ok
+test conformance_candidate_gate::tests::provenance_inspection_never_promotes_measurements_to_approval ... ok
+test conformance_candidate_gate::tests::provenance_requires_every_viewer_and_font_audit_producer ... ok
+test conformance_candidate_gate::tests::scoped_exception_records_are_inside_the_case_approval_subject ... ok
+test conformance_candidate_gate::tests::withdrawn_v1_subject_is_never_approval_ready ... ok
+test conformance_candidate_native::tests::cli_success_alone_does_not_satisfy_the_report_contract ... ok
+test conformance_candidate_exceptions::tests::scoped_proposals_recompute_pixels_and_cannot_hide_png_or_passing_crop ... ok
+test conformance_candidate_native::tests::release_qualification_binds_actual_command_and_profile ... ok
+test conformance_candidate_native::tests::report_and_artifact_are_independent_replay_gates ... ok
+test conformance_candidate_semantics::tests::detached_or_corrupted_semantic_objects_never_pass ... ok
+test conformance_candidate::tests::provenance_derivation_rejects_mutations_without_repairing_evidence ... ok
+test conformance_candidate_exceptions::tests::scoped_evaluation_ignores_forged_stored_judgment_booleans ... ok
+test conformance_candidate_native::tests::fresh_native_replay_rejects_rehashed_artifacts_reports_sources_and_builds ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 85 filtered out; finished in 1.46s
+

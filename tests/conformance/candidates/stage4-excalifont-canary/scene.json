@@ -1,0 +1,42 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "elements": [
+    {
+      "id": "text",
+      "type": "text",
+      "x": 20,
+      "y": 30,
+      "width": 90,
+      "height": 72,
+      "angle": 0.125,
+      "strokeColor": "#1e66f5",
+      "opacity": 70,
+      "fontSize": 20,
+      "fontFamily": 5,
+      "text": "One two three\nFour",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "lineHeight": 1.2,
+      "frameId": null,
+      "updated": 1,
+      "backgroundColor": "transparent",
+      "fillStyle": "hachure",
+      "strokeWidth": 1,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "groupIds": [],
+      "index": "a0",
+      "seed": 1,
+      "version": 1,
+      "versionNonce": 1,
+      "isDeleted": false,
+      "boundElements": null,
+      "link": null,
+      "locked": false,
+      "originalText": "One two three\nFour"
+    }
+  ],
+  "appState": {},
+  "files": {}
+}

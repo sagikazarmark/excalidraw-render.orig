@@ -2281,8 +2281,12 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 name = "xtask"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "excalidraw-render-assets-base",
+ "excalidraw-render-compare",
  "jsonschema",
+ "libm",
+ "miniz_oxide 0.8.9",
  "png 0.17.16",
  "roxmltree",
  "rustybuzz",

@@ -1,0 +1,4 @@
+    Checking excalidraw-render v0.1.0 (/home/laborant/excalidraw-render.orig/crates/excalidraw-render)
+    Checking xtask v0.1.0 (/home/laborant/excalidraw-render.orig/xtask)
+    Checking excalidraw-render-cli v0.1.0 (/home/laborant/excalidraw-render.orig/crates/excalidraw-render-cli)
+    Finished `dev` profile [unoptimized] target(s) in 11.11s

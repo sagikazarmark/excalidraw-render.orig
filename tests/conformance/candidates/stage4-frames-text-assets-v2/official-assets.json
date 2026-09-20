@@ -1,0 +1,54 @@
+{
+  "fonts": [
+    {
+      "css": {
+        "family": "Cascadia",
+        "stretch": "normal",
+        "style": "normal",
+        "unicode_range": [
+          "U+0-10FFFF"
+        ],
+        "weight": 400
+      },
+      "sfnt": {
+        "face_index": 0,
+        "family": "Cascadia Code",
+        "media_type": "font/ttf",
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v2/assets/official-font-0.sfnt",
+        "sha256": "78cbbefc56fba7a121530e14d6d48a15454a5d0f88f02c880cd62c4dd2a9e6e3",
+        "stretch": "normal",
+        "style": "normal",
+        "weight": 400
+      },
+      "source": {
+        "media_type": "font/woff2",
+        "sha256": "34bd3f706dcd4333c3aee1ff8c67e434ab35ceafd7d605647211e84bf188838b"
+      }
+    }
+  ],
+  "images": [
+    {
+      "canonical": {
+        "media_type": "image/svg+xml",
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v2/assets/official-image-0.svg",
+        "sha256": "a28798ab75854879768160ef7c283dd75a37a1878134a69f62f08091bc0c5f6a"
+      },
+      "source": {
+        "media_type": "image/svg+xml",
+        "sha256": "a28798ab75854879768160ef7c283dd75a37a1878134a69f62f08091bc0c5f6a"
+      }
+    },
+    {
+      "canonical": {
+        "media_type": "image/png",
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v2/assets/official-image-1.png",
+        "sha256": "7601625e03d39d2afebfa4e8e2f4788313fad8a287a0f554de15a4ceafdc61f1"
+      },
+      "source": {
+        "media_type": "image/png",
+        "sha256": "7601625e03d39d2afebfa4e8e2f4788313fad8a287a0f554de15a4ceafdc61f1"
+      }
+    }
+  ],
+  "schema": "excalidraw-render/svg-viewer-asset-declaration/v1"
+}

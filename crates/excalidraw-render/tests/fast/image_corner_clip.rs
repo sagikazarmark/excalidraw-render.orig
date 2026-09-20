@@ -76,7 +76,7 @@ fn a_rounded_image_is_clipped_to_the_official_corner_radius_in_every_format() {
         pdf.contains(" c\nW\nn\n"),
         "PDF clip is not a path clip: {pdf}"
     );
-    assert!(pdf.contains("W\nn\n40 0 0 40 0 0 cm\n/Im0 Do"));
+    assert!(pdf.contains("W\nn\n40 0 0 -40 0 40 cm\n/Im0 Do"));
     assert!(!pdf.contains("0 0 40 40 re"));
 }
 
@@ -96,7 +96,7 @@ fn an_unrounded_image_keeps_its_rectangular_bounds_in_every_format() {
 
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
-    assert!(pdf.contains("0 0 40 40 re\nW\nn\n40 0 0 40 0 0 cm\n/Im0 Do"));
+    assert!(pdf.contains("0 0 40 40 re\nW\nn\n40 0 0 -40 0 40 cm\n/Im0 Do"));
 }
 
 #[test]
@@ -166,7 +166,7 @@ fn the_corner_clip_stays_in_element_space_when_the_image_is_cropped_and_flipped(
     assert!(pdf.contains(concat!(
         " c\nW\nn\n",
         "0 0 20 20 re\nW\nn\n",
-        "-30 0 0 -20 30 20 cm\n/Im0 Do"
+        "-30 0 0 20 30 0 cm\n/Im0 Do"
     )));
 }
 

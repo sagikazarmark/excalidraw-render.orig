@@ -642,14 +642,11 @@ impl PdfPlan {
                     } else {
                         (content_height, content_y)
                     };
-                    // svg2pdf Forms already invert SVG's Y axis; compensate by
-                    // drawing the form Y-inverted in place, within the
-                    // rectangle the flip has put it in, not about the
-                    // element's center.
-                    if asset.sanitized_svg.is_some() {
-                        image_offset_y += image_scale_y;
-                        image_scale_y = -image_scale_y;
-                    }
+                    // PDF image samples start at the unit image's upper edge;
+                    // svg2pdf Forms likewise invert SVG's Y axis. Compensate
+                    // both within the content rectangle after element flips.
+                    image_offset_y += image_scale_y;
+                    image_scale_y = -image_scale_y;
                     push_matrix(
                         &mut content,
                         image_scale_x,

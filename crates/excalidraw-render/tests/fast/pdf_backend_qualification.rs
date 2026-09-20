@@ -35,7 +35,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     );
     assert_eq!(
         format!("{:x}", Sha256::digest(PROJECT_STRUCTURE)),
-        "b6cbc6049556ae87780a83e9c252f64193594bf37c9d6a2f18a80434b31cb7b9"
+        "442f0cb2580a4066d64bcb924eaa6e070252faca2fa2b37fa4f34c81ff600b1b"
     );
     let first = render_project_operations();
     let second = render_project_operations();
@@ -56,7 +56,7 @@ fn complete_project_operation_matrix_is_deterministic_and_vector_first() {
     // start head's 0.5, so the content stream and `operation_sha256` moved.
     assert_eq!(
         format!("{:x}", Sha256::digest(first.artifact().bytes())),
-        "b053159dc6ea0649e6c0fa5840196ccb81db6b41b7eb69d0181392851017ee43"
+        "50180ecf1822d7d573ea78cc6375cd3f83af8ef2748422b7e9b3d52a1b7ba6dc"
     );
 
     let pdf = pdf_text(first.artifact().bytes());

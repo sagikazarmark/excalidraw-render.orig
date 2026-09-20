@@ -1,0 +1,632 @@
+{
+  "schema": "excalidraw-render/pdf-backend-blocked-requalification/v1",
+  "status": "blocked-pdfjs-asymmetric-source-colour-control",
+  "approval": null,
+  "approval_subject_sha256": null,
+  "blocker": "Pinned PDF.js failed the asymmetric source colour oracle on the old baseline PDF and on the current PDF. The protected scene has one constant black texel and cannot expose this discrepancy. No scope, colour expectation, profile or production code was changed to absorb it.",
+  "base": {
+    "commit": "629930b4ce4e8d09d4f44a42c495278aab0ead15",
+    "worktree_clean": true,
+    "executable_sha256": "954bc7d116941db79adaa6177c55f392769532219c7a4babd607d63f8b64f190",
+    "profile": "release",
+    "rustc": "1.97.1",
+    "native_runs": 2
+  },
+  "approved_pdf": {
+    "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved.pdf",
+    "byte_length": 226840,
+    "sha256": "b053159dc6ea0649e6c0fa5840196ccb81db6b41b7eb69d0181392851017ee43"
+  },
+  "candidate_pdf": {
+    "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate.pdf",
+    "byte_length": 226873,
+    "sha256": "4cb446a2555072f98fe714ab2c2808e1ad0211b876e5c7ced5a95200261b7d06"
+  },
+  "protected_expectation": {
+    "path": "tests/conformance/pdf-backend-qualification/project-operations-structure.json",
+    "byte_length": 987,
+    "sha256": "b6cbc6049556ae87780a83e9c252f64193594bf37c9d6a2f18a80434b31cb7b9"
+  },
+  "proposed_expectation": {
+    "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/proposed-structure.json",
+    "byte_length": 987,
+    "sha256": "7a72349584495c74b887e20192ca2601a3ac32f0228ec776c9d53e203bb14c08"
+  },
+  "old_structure_passed": true,
+  "current_against_old_passed": false,
+  "current_against_proposed_passed": true,
+  "failed_old_expectation_checks": [
+    {
+      "actual": "ebf933b7a43e6d53730578e44562484e2aa04eb4cc0d47af7c876625e054de16",
+      "expected": "678bb667b05d6ec652516f202d4e9b17e7960fb0f52b8f030b93de62e201fb6e",
+      "id": "operation-sequence-sha256",
+      "passed": false
+    },
+    {
+      "actual": "4a981dfce4603756ec561dc8afaf0a1d5d14d2e86146763635d27a76429baca8",
+      "expected": "e33789145c274e9363302378e4d76b2bc3aed2643b1c456a758abf6389ad6b64",
+      "id": "structural-inventory-sha256",
+      "passed": false
+    }
+  ],
+  "structural_differences": [
+    {
+      "path": "/document/file_ids/0",
+      "before": "b:51d16aa38a42573925ba89faf7a53a90",
+      "after": "b:7170cb7f440f179d838df500feeabdec"
+    },
+    {
+      "path": "/document/file_ids/1",
+      "before": "b:51d16aa38a42573925ba89faf7a53a90",
+      "after": "b:7170cb7f440f179d838df500feeabdec"
+    },
+    {
+      "path": "/pages/0/images/0/interpolate",
+      "before": false,
+      "after": true
+    },
+    {
+      "path": "/pages/0/images/1/interpolate",
+      "before": false,
+      "after": true
+    },
+    {
+      "path": "/pages/0/operations/377/operands/3",
+      "before": "40",
+      "after": "-40"
+    },
+    {
+      "path": "/pages/0/operations/377/operands/5",
+      "before": "0",
+      "after": "40"
+    }
+  ],
+  "protected_scene_viewers": [
+    {
+      "viewer": "pdfium",
+      "protected_scene_byte_identical": true,
+      "changed_pixels": 0,
+      "ssim_bits": "3ff0000000000000",
+      "source_roi": {
+        "expected_rgba": [
+          64,
+          64,
+          64,
+          255
+        ],
+        "interior_roi": [
+          375,
+          56,
+          30,
+          29
+        ],
+        "orientation_observable": false,
+        "passed": true,
+        "source_gray_alpha": [
+          0,
+          255
+        ],
+        "source_size": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "viewer": "pdfjs",
+      "protected_scene_byte_identical": true,
+      "changed_pixels": 0,
+      "ssim_bits": "3ff0000000000000",
+      "source_roi": {
+        "expected_rgba": [
+          64,
+          64,
+          64,
+          255
+        ],
+        "interior_roi": [
+          375,
+          56,
+          30,
+          29
+        ],
+        "orientation_observable": false,
+        "passed": true,
+        "source_gray_alpha": [
+          0,
+          255
+        ],
+        "source_size": [
+          1,
+          1
+        ]
+      }
+    }
+  ],
+  "asymmetric_control_corners": [
+    {
+      "file": "orientation-approved-pdfium.rgba",
+      "samples": [
+        {
+          "x": 5,
+          "y": 5,
+          "rgba": [
+            0,
+            0,
+            255,
+            255
+          ]
+        },
+        {
+          "x": 34,
+          "y": 5,
+          "rgba": [
+            255,
+            255,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 5,
+          "y": 34,
+          "rgba": [
+            255,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 34,
+          "y": 34,
+          "rgba": [
+            0,
+            255,
+            0,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "file": "orientation-approved-pdfjs.rgba",
+      "samples": [
+        {
+          "x": 5,
+          "y": 5,
+          "rgba": [
+            0,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 34,
+          "y": 5,
+          "rgba": [
+            0,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 5,
+          "y": 34,
+          "rgba": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "x": 34,
+          "y": 34,
+          "rgba": [
+            0,
+            0,
+            0,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "file": "orientation-candidate-diagnostic-pdfjs.rgba",
+      "samples": [
+        {
+          "x": 5,
+          "y": 5,
+          "rgba": [
+            255,
+            255,
+            255,
+            255
+          ]
+        },
+        {
+          "x": 34,
+          "y": 5,
+          "rgba": [
+            0,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 5,
+          "y": 34,
+          "rgba": [
+            0,
+            0,
+            0,
+            255
+          ]
+        },
+        {
+          "x": 34,
+          "y": 34,
+          "rgba": [
+            0,
+            0,
+            0,
+            255
+          ]
+        }
+      ]
+    }
+  ],
+  "profiles_and_tools": [
+    {
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+      "byte_length": 4159,
+      "sha256": "9267d525bd682a338a5d7927747d508bfca17447598f7d3454c9137b091c99ad"
+    },
+    {
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
+      "byte_length": 4072,
+      "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"
+    },
+    {
+      "path": "tests/conformance/structure-profiles/canonical-pdf-structure-v1.json",
+      "byte_length": 4828,
+      "sha256": "48af54a0bdb6c8ef099cd2c5bcc979674e21eb51c074507fb8a747d57eb4b1a6"
+    },
+    {
+      "path": "tests/conformance/comparator-profiles/canonical-visual-v1.json",
+      "byte_length": 4460,
+      "sha256": "e969fd7a3bc49ff3014b2cd3b3622cd18abddbc9371744d4e47927d0484bcfc7"
+    },
+    {
+      "path": "tools/pdf-harness/run-structure.sh",
+      "byte_length": 1127,
+      "sha256": "bfb72b9bb4cd119ddbda650bbe9fb39637c547e2afef72e415bd291402e2387c"
+    },
+    {
+      "path": "tools/pdf-harness/structure/inspect.py",
+      "byte_length": 43778,
+      "sha256": "2c21d36a3dbc6edd55193f286da6845a2bc797bc97f185ca096088e61cf0c8f9"
+    },
+    {
+      "path": "tools/pdf-harness/structure/qpdf.lock.json",
+      "byte_length": 482,
+      "sha256": "797ae7690ce0a044a6482c9e52ce1542bc54de0cfabd99c6a365ae9288de5fd1"
+    },
+    {
+      "path": "tools/pdf-harness/run-pdfium.sh",
+      "byte_length": 943,
+      "sha256": "1f6ceb77d6f90bbeb5c7727279f13a37b1fe3d695744b82389631ba9e03bc819"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium/render.py",
+      "byte_length": 6188,
+      "sha256": "2b3f28ba7633f739cdd1b8617361f8d1a82f51f62204286598e38a5d29ad1c6d"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium.lock.json",
+      "byte_length": 666,
+      "sha256": "0df950516087c77e43df29b44273dfb414512c9a884dfb196988d7c20232ad90"
+    },
+    {
+      "path": "tools/pdf-harness/run-pdfjs.sh",
+      "byte_length": 1141,
+      "sha256": "a944fd3b5e3e09daca96d372341585b3b17442b3421bf7697eb865d1abc8d82e"
+    },
+    {
+      "path": "tools/pdf-harness/pdfjs/render.mjs",
+      "byte_length": 3416,
+      "sha256": "7386887b7b697c49fbe2c1095a94df86315bb0c15353f51eb4d03d1ba9c9a1ad"
+    },
+    {
+      "path": "tools/pdf-harness/pdfjs/package-lock.json",
+      "byte_length": 8850,
+      "sha256": "887c2194fe05e87250486f4e6c8da341d0fb51748e14c3b4cf94a16455740c60"
+    },
+    {
+      "path": "target/pdf-harness/qpdf/bin/qpdf",
+      "byte_length": 22672,
+      "sha256": "bfc1708204fd1ae0c7b49e7cda737e35e89e509286974d1729366f1a58d697b3"
+    },
+    {
+      "path": "target/pdf-harness/qpdf/lib/libqpdf.so.30",
+      "byte_length": 4443712,
+      "sha256": "8c3a493fc59b65ad1c332a08c4d0470bc03eb89faa9dd444c102206e659fcaa3"
+    },
+    {
+      "path": "target/pdf-harness/pdfium/pypdfium2_raw/libpdfium.so",
+      "byte_length": 7619024,
+      "sha256": "61c9f745c6296a1050599a99a1ed985036411b591a11bd2a41bafe530ecb4f33"
+    },
+    {
+      "path": "tools/pdf-harness/pdfjs/node_modules/@napi-rs/canvas-linux-x64-gnu/skia.linux-x64-gnu.node",
+      "byte_length": 33393024,
+      "sha256": "c5cb5b774fca69c27a6a44979ef3a6c330515e28bf4ef9fe6c2506503e1ae849"
+    },
+    {
+      "path": "xtask/src/conformance_pdf_requalification.rs",
+      "byte_length": 24423,
+      "sha256": "68fe5f0c4f4e0c052143a4651050263a83476f482f1e9509d0df423d61f6d303"
+    },
+    {
+      "path": "xtask/src/conformance_candidate_native.rs",
+      "byte_length": 24966,
+      "sha256": "7e099327183b17c2b91bd7201fb8cb08315e533e16551772b176273611e7a370"
+    },
+    {
+      "path": "xtask/src/main.rs",
+      "byte_length": 26095,
+      "sha256": "202942ac9d492a698828c9d90d8fa987e7625ade47c676a429e0829cd2407934"
+    }
+  ],
+  "files": [
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-pdfium-repeat-runtime.json",
+      "byte_length": 242,
+      "sha256": "05c920e183787b22c805c3ac703ec50f017e9cad583450d9d90bb4252bbeaa84"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-pdfium-repeat.rgba",
+      "byte_length": 416000,
+      "sha256": "8b6b02bc587434fc22775bd5749efc2bc73e6777ece8b4ebd69916ea357847bb"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-pdfium-runtime.json",
+      "byte_length": 242,
+      "sha256": "05c920e183787b22c805c3ac703ec50f017e9cad583450d9d90bb4252bbeaa84"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-pdfium.rgba",
+      "byte_length": 416000,
+      "sha256": "8b6b02bc587434fc22775bd5749efc2bc73e6777ece8b4ebd69916ea357847bb"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-pdfjs-repeat-runtime.json",
+      "byte_length": 215,
+      "sha256": "56336b34cf8ffc710ab4de0b441493a554e2b2722246c72402cf76e1375f40d8"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-pdfjs-repeat.rgba",
+      "byte_length": 416000,
+      "sha256": "99c1915e82eb51b925990396c0aedbaff22347a4901429a93223bfb9a780c488"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-pdfjs-runtime.json",
+      "byte_length": 215,
+      "sha256": "56336b34cf8ffc710ab4de0b441493a554e2b2722246c72402cf76e1375f40d8"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-pdfjs.rgba",
+      "byte_length": 416000,
+      "sha256": "99c1915e82eb51b925990396c0aedbaff22347a4901429a93223bfb9a780c488"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-repeat-report.json",
+      "byte_length": 419,
+      "sha256": "bc01210173711535ed07e2075758d2f3b7cda6556fb528024baafa5ae5ce8fb9"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-repeat.pdf",
+      "byte_length": 226840,
+      "sha256": "b053159dc6ea0649e6c0fa5840196ccb81db6b41b7eb69d0181392851017ee43"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-report.json",
+      "byte_length": 419,
+      "sha256": "bc01210173711535ed07e2075758d2f3b7cda6556fb528024baafa5ae5ce8fb9"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-structure-repeat.json",
+      "byte_length": 107126,
+      "sha256": "96f87703afcebd3032bcf54ae9850a9dac69406c07eebc05b5424eb103491f89"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved-structure.json",
+      "byte_length": 107126,
+      "sha256": "96f87703afcebd3032bcf54ae9850a9dac69406c07eebc05b5424eb103491f89"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/approved.pdf",
+      "byte_length": 226840,
+      "sha256": "b053159dc6ea0649e6c0fa5840196ccb81db6b41b7eb69d0181392851017ee43"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-pdfium-repeat-runtime.json",
+      "byte_length": 242,
+      "sha256": "05c920e183787b22c805c3ac703ec50f017e9cad583450d9d90bb4252bbeaa84"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-pdfium-repeat.rgba",
+      "byte_length": 416000,
+      "sha256": "8b6b02bc587434fc22775bd5749efc2bc73e6777ece8b4ebd69916ea357847bb"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-pdfium-runtime.json",
+      "byte_length": 242,
+      "sha256": "05c920e183787b22c805c3ac703ec50f017e9cad583450d9d90bb4252bbeaa84"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-pdfium.rgba",
+      "byte_length": 416000,
+      "sha256": "8b6b02bc587434fc22775bd5749efc2bc73e6777ece8b4ebd69916ea357847bb"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-pdfjs-repeat-runtime.json",
+      "byte_length": 215,
+      "sha256": "56336b34cf8ffc710ab4de0b441493a554e2b2722246c72402cf76e1375f40d8"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-pdfjs-repeat.rgba",
+      "byte_length": 416000,
+      "sha256": "99c1915e82eb51b925990396c0aedbaff22347a4901429a93223bfb9a780c488"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-pdfjs-runtime.json",
+      "byte_length": 215,
+      "sha256": "56336b34cf8ffc710ab4de0b441493a554e2b2722246c72402cf76e1375f40d8"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-pdfjs.rgba",
+      "byte_length": 416000,
+      "sha256": "99c1915e82eb51b925990396c0aedbaff22347a4901429a93223bfb9a780c488"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-repeat-report.json",
+      "byte_length": 419,
+      "sha256": "d5edea0e911129cda178efb090482b9548aaf0570eb34297aa216b16eb4670c1"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-repeat.pdf",
+      "byte_length": 226873,
+      "sha256": "4cb446a2555072f98fe714ab2c2808e1ad0211b876e5c7ced5a95200261b7d06"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-report.json",
+      "byte_length": 419,
+      "sha256": "d5edea0e911129cda178efb090482b9548aaf0570eb34297aa216b16eb4670c1"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-structure-repeat.json",
+      "byte_length": 107130,
+      "sha256": "94644d8a3b772b70f24ecb95c6ee66db76ae99081d3beecf13547fa9ae620cad"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate-structure.json",
+      "byte_length": 107130,
+      "sha256": "94644d8a3b772b70f24ecb95c6ee66db76ae99081d3beecf13547fa9ae620cad"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/candidate.pdf",
+      "byte_length": 226873,
+      "sha256": "4cb446a2555072f98fe714ab2c2808e1ad0211b876e5c7ced5a95200261b7d06"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-pdfium-repeat-runtime.json",
+      "byte_length": 238,
+      "sha256": "f77650103d309011c4dd8a9ddb027e031521ee9518a4c24af7588bd485e54729"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-pdfium-repeat.rgba",
+      "byte_length": 6400,
+      "sha256": "40a29eab7c97da152cee463d1ca75244ea4442332070755e7eb246c11f58c625"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-pdfium-runtime.json",
+      "byte_length": 238,
+      "sha256": "f77650103d309011c4dd8a9ddb027e031521ee9518a4c24af7588bd485e54729"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-pdfium.rgba",
+      "byte_length": 6400,
+      "sha256": "40a29eab7c97da152cee463d1ca75244ea4442332070755e7eb246c11f58c625"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-pdfjs-repeat-runtime.json",
+      "byte_length": 211,
+      "sha256": "15bb8bbdfda610fd65337f809ebb77073e18239e3fc83277dae1ca56a9a31deb"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-pdfjs-repeat.rgba",
+      "byte_length": 6400,
+      "sha256": "f28ad26f6bbbec1b0771cda7239e925c391cee54dfe5ce9f0143d4eb54c2ab4d"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-pdfjs-runtime.json",
+      "byte_length": 211,
+      "sha256": "15bb8bbdfda610fd65337f809ebb77073e18239e3fc83277dae1ca56a9a31deb"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-pdfjs.rgba",
+      "byte_length": 6400,
+      "sha256": "f28ad26f6bbbec1b0771cda7239e925c391cee54dfe5ce9f0143d4eb54c2ab4d"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-repeat-report.json",
+      "byte_length": 417,
+      "sha256": "391128587d853260d6bf33623171e16efca267a7c470de11fe2047b7f1d102a3"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-repeat.pdf",
+      "byte_length": 2136,
+      "sha256": "98c72177ac6ea753566dd5dc98955499aecc9601f0c895087a6fa4b78fee4478"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved-report.json",
+      "byte_length": 417,
+      "sha256": "391128587d853260d6bf33623171e16efca267a7c470de11fe2047b7f1d102a3"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-approved.pdf",
+      "byte_length": 2136,
+      "sha256": "98c72177ac6ea753566dd5dc98955499aecc9601f0c895087a6fa4b78fee4478"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-candidate-diagnostic-pdfjs.rgba",
+      "byte_length": 6400,
+      "sha256": "591f28cd82f9ecce27cb54af4a6ad94e0f014d84f3136b42904e7e213e0cd7ae"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-candidate-diagnostic-report.json",
+      "byte_length": 417,
+      "sha256": "35d482fe27f2f7c0fa8c2513df3d3ba5c8cc1f16742a89792695ec443fbdff5d"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-candidate-diagnostic.pdf",
+      "byte_length": 2174,
+      "sha256": "02496c45a767261e9830c474cc2f8016f4a69023dc518dff3073f007a0fe802a"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-control.scene.json",
+      "byte_length": 407,
+      "sha256": "a089ee1b1016d15d18e38f49c9c5cb125880deb9a56be26d6fe6a45a9ee1c4ce"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-source.png",
+      "byte_length": 86,
+      "sha256": "a108791d9edc1d9c37644a45ce29d4a20e479711db97daf85375b82924e8fa22"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/pdfium-source-roi.json",
+      "byte_length": 156,
+      "sha256": "7fdf9c061975537901531c65a263cd8606bc7b5afb8bad367cc1c63f71b17d94"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/pdfjs-source-roi.json",
+      "byte_length": 156,
+      "sha256": "7fdf9c061975537901531c65a263cd8606bc7b5afb8bad367cc1c63f71b17d94"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/proposed-structure-result.json",
+      "byte_length": 107126,
+      "sha256": "f99f7f3f8083d540cf8b0935d7616275c03069853347088456ebc8a36550a91e"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/proposed-structure.json",
+      "byte_length": 987,
+      "sha256": "7a72349584495c74b887e20192ca2601a3ac32f0228ec776c9d53e203bb14c08"
+    }
+  ]
+}

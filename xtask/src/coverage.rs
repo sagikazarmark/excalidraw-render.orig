@@ -20,9 +20,10 @@ const TARGETS: [&str; 2] = ["wasm32-unknown-unknown", "x86_64-unknown-linux-gnu"
 mod ownership;
 mod snapshots;
 pub use ownership::{
-    extend_ownership, ownership_catalog, ownership_subject, record_library_test_owner,
+    extend_ownership, ownership_authority_migration, ownership_catalog, ownership_subject,
+    reconcile_stage4_bindings, record_library_test_owner, record_representative_owner,
     record_test_owner, refresh_library_test_owner_source, refresh_test_owner_source,
-    seed_ownership, verify_ownership,
+    seed_ownership, verify_ownership, verify_representative_owner,
 };
 mod traces;
 pub use snapshots::{
@@ -159,6 +160,12 @@ fn add_row(rows: &mut BTreeMap<String, BTreeSet<String>>, id: String, candidate:
 
 fn derive_inventory() -> Result<Inventory, String> {
     let requirements: Requirements = parse(&read(REQUIREMENTS)?)?;
+    derive_inventory_with_requirements(requirements, descriptor(REQUIREMENTS)?)
+}
+fn derive_inventory_with_requirements(
+    requirements: Requirements,
+    requirements_descriptor: Descriptor,
+) -> Result<Inventory, String> {
     if requirements.schema != "excalidraw-render/coverage-requirements/v1" {
         return Err("unexpected coverage requirements schema".into());
     }
@@ -201,7 +208,7 @@ fn derive_inventory() -> Result<Inventory, String> {
     let mut sources = vec![
         descriptor(REGISTRY)?,
         descriptor(SURFACE)?,
-        descriptor(REQUIREMENTS)?,
+        requirements_descriptor,
         catalog.clone(),
     ];
     let mut rows = BTreeMap::new();

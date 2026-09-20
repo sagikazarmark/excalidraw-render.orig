@@ -1,0 +1,2355 @@
+{
+  "after_files": [
+    {
+      "path": "tests/conformance/coverage/requirements.json",
+      "sha256": "f409dcd3b2e204fe5b4b825d4aa6bac2c576f45a5d82ae129f29b7d331718b9b"
+    },
+    {
+      "path": "tests/conformance/coverage/inventory.json",
+      "sha256": "3c01839cc8ab14f7092591607b847a2c3d5cb3f797b0c233441f3f217782e91b"
+    },
+    {
+      "path": "tests/conformance/coverage/ownership.json",
+      "sha256": "fdc86c8ab6e29371d13f95a0190735286aca764ef0c1c1f3e663a889a33402b5"
+    }
+  ],
+  "approval": null,
+  "assessment": {
+    "path": "docs/research/stage4-png-device-phase-assessment.md",
+    "sha256": "286a8aaf93d0050608baac9cb86c074fbd513bf20fdc616dc034a5db1cd24e40"
+  },
+  "assignment_count": 1876,
+  "authorization": "User explicitly authorized the draft PNG rule, locator-only reconciliation, focused-tested owner source refresh and the one native PNG canary change; no maintainer/case/baseline approval is implied.",
+  "before_files": [
+    {
+      "path": "tests/conformance/coverage/requirements.json",
+      "sha256": "806d3fa98354cab1cff3b4103b4c262f47cfcd440805fe0fbdc709a7b6b53b44"
+    },
+    {
+      "path": "tests/conformance/coverage/inventory.json",
+      "sha256": "9db3087526fc25ca1a68ab5f3270ef863765e7f009684fe66d41446747869245"
+    },
+    {
+      "path": "tests/conformance/coverage/ownership.json",
+      "sha256": "6882c37db5a89ebcccce0ee0b0a5bf399cbcc891cb20a10e19f3bfea1e0d7788"
+    }
+  ],
+  "canary_qualification": {
+    "path": "tests/conformance/candidates/stage4-excalifont-canary/qualification.json",
+    "sha256": "f05f408b7187af1b2ae5edb7c451179afb50d0f1bcb752926e610067ab431e87"
+  },
+  "execution_count": 168,
+  "gaps": 74,
+  "inventory_locator_authority_ids": [
+    "case-label:arrow.elbowed",
+    "case-label:arrowhead.circle-outline",
+    "case-label:arrowhead.crowfoot",
+    "case-label:arrowhead.crowfoot-one",
+    "case-label:arrowhead.dot",
+    "case-label:arrowhead.filled",
+    "case-label:arrowhead.outline",
+    "case-label:arrowhead.roughness-clamp",
+    "case-label:arrowhead.triangle",
+    "case-label:bound-text.align",
+    "case-label:bound-text.diamond",
+    "case-label:bound-text.ellipse",
+    "case-label:bound-text.mask-gap",
+    "case-label:bound-text.rectangle",
+    "case-label:bound-text.scene-bounds",
+    "case-label:bound-text.stored-placement",
+    "case-label:bounds.elbow-arrow-linear-path",
+    "case-label:bounds.rotated-diamond",
+    "case-label:bounds.rotated-ellipse",
+    "case-label:bounds.rotated-line",
+    "case-label:element.arrow",
+    "case-label:element.diamond",
+    "case-label:element.ellipse",
+    "case-label:element.embeddable",
+    "case-label:element.freedraw",
+    "case-label:element.group",
+    "case-label:element.iframe",
+    "case-label:element.opacity",
+    "case-label:element.rectangle",
+    "case-label:element.text",
+    "case-label:element.text.bound",
+    "case-label:export.dark-mode",
+    "case-label:export.embed-scene",
+    "case-label:export.max-dimension",
+    "case-label:export.no-background",
+    "case-label:export.padding",
+    "case-label:export.scale",
+    "case-label:fill.closed-line",
+    "case-label:fill.cross-hatch",
+    "case-label:fill.dashed",
+    "case-label:fill.hachure",
+    "case-label:fill.solid",
+    "case-label:fill.zigzag",
+    "case-label:fill.zigzag-line",
+    "case-label:font.cjk-propagation",
+    "case-label:font.comic-shanns",
+    "case-label:font.emoji-fallback",
+    "case-label:font.excalifont",
+    "case-label:font.helvetica-metadata-metrics",
+    "case-label:font.liberation-sans-substitution",
+    "case-label:font.lilita-one",
+    "case-label:font.missing-glyph",
+    "case-label:font.mixed-script",
+    "case-label:font.reserved-name-alias",
+    "case-label:font.virgil",
+    "case-label:frame.clip",
+    "case-label:frame.dark-mode",
+    "case-label:frame.empty-name",
+    "case-label:frame.magic-outline",
+    "case-label:frame.name",
+    "case-label:frame.name-truncation",
+    "case-label:frame.nested",
+    "case-label:frame.outline",
+    "case-label:frame.outline-opacity",
+    "case-label:freehand.loop-fill",
+    "case-label:freehand.loop-fill-roughness",
+    "case-label:freehand.loop-fill-seed",
+    "case-label:freehand.recorded-pressure",
+    "case-label:freehand.simulated-pressure",
+    "case-label:image.bmp",
+    "case-label:image.crop",
+    "case-label:image.dark-mode-nested-svg",
+    "case-label:image.dark-mode-raster",
+    "case-label:image.edge-coverage",
+    "case-label:image.flip",
+    "case-label:image.fractional-viewport",
+    "case-label:image.gif",
+    "case-label:image.ico",
+    "case-label:image.jpeg",
+    "case-label:image.nested-svg",
+    "case-label:image.png",
+    "case-label:image.rounded",
+    "case-label:image.rounded-crop",
+    "case-label:image.rounded-flip",
+    "case-label:image.rounded-rotation",
+    "case-label:image.webp",
+    "case-label:legacy.font-string",
+    "case-label:legacy.stroke-sharpness",
+    "case-label:link.admitted",
+    "case-label:link.unsafe-omitted",
+    "case-label:reference.direct-png",
+    "case-label:reference.svg",
+    "case-label:rough.outline",
+    "case-label:roughness.cartoonist",
+    "case-label:roughness.cartoonist-curve-fill",
+    "case-label:roughness.cartoonist-fill-vertices",
+    "case-label:roundness.adaptive",
+    "case-label:roundness.adaptive-value",
+    "case-label:roundness.curve",
+    "case-label:roundness.ignored",
+    "case-label:roundness.legacy",
+    "case-label:stroke.dashed",
+    "case-label:stroke.dotted",
+    "case-label:stroke.width-4",
+    "case-label:text.align",
+    "case-label:text.bidi",
+    "case-label:text.bidi-base-direction",
+    "case-label:text.bidi-mirroring",
+    "case-label:text.line-endings",
+    "case-label:text.line-height-detection",
+    "case-label:text.line-height-family-metadata",
+    "case-label:text.paragraph-separator",
+    "case-label:text.stored-wrapped-text",
+    "case-label:text.vertical-align",
+    "case-label:text.wrapping",
+    "case-label:transform.rotation",
+    "case-label:transform.rotation-center.canvas-curve-box",
+    "case-label:transform.rotation-center.svg-points-box"
+  ],
+  "new_catalog_sha256": "59cf9f6032d7bf916f9e2e336f3cb567bf4ef09477c70470976ccf525b663fba",
+  "old_catalog_sha256": "fb90d519e1ddb2a21b40357df48ab47f02efdce02403705f8890e9e1e7ef5001",
+  "owner_source_changes": [
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/static_png_asset_render.rs",
+        "sha256": "035e15f5cd1783062deba54f60be11fa2037d1fede0988f54a4e1cf9b8bf7265"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/static_png_asset_render.rs",
+        "sha256": "f7e38118b3838b65deb07b0caa96b77271a510884a1e6b8ee95519587a54b051"
+      },
+      "obligation": "codec:avif:rejection"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:animation"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:apng:blend-disposal"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:apng:late-data"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:apng:one-frame"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:apng:sequence-counts"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:apng:subframe"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:cicp:invalid-fields"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:composition:qualified-axes"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:default-frame"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o1:big:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o1:big:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o1:little:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o1:little:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o2:big:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o2:big:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o2:little:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o2:little:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o3:big:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o3:big:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o3:little:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o3:little:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o4:big:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o4:big:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o4:little:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o4:little:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o5:big:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o5:big:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o5:little:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o5:little:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o6:big:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o6:big:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o6:little:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o6:little:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o7:big:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o7:big:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o7:little:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o7:little:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o8:big:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o8:big:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o8:little:after-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:exif:o8:little:before-idat"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:icc:gray"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:icc:lut"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:icc:malformed"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:icc:unsupported-models"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/src/png_projection_contract.rs",
+        "sha256": "063741f25a877ffa800d9dfad2d85ffc982c3400a5aba10eb46117ee770dce84"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/src/png_projection_contract.rs",
+        "sha256": "b46d71eacbb4008de64631e62926c60b1b02d607407187470ff37e6f806f6720"
+      },
+      "obligation": "codec:png:limits:projection"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:limits:validation"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:malformed"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:malformed:chunks"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:malformed:ihdr"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:malformed:palette-trns"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:malformed:scanlines"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:orientation"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:orientation:invalid"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:palette:suggested-truecolor"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "85c060c4eea57c2ac27a828ca750e624c0ac101af1e3a30bf9ccab646c174666"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/png_stage4_contract.rs",
+        "sha256": "9232176f198035c06994ae5e21189b190fb2b92d57e2cbf275338f109ec6a8e7"
+      },
+      "obligation": "codec:png:passthrough"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/stage4_interaction_contract.rs",
+        "sha256": "a2a3358bd8ac93fe930ee2e237ae89a93a32ccf5d8fad5f8d60cac15eed70676"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/stage4_interaction_contract.rs",
+        "sha256": "2d52a5b21388a517f535b67875f5c81a857c4960ec2d07102c4b2abb16b58881"
+      },
+      "obligation": "interaction:dark-mode-nested-svg-pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/stage4_interaction_contract.rs",
+        "sha256": "a2a3358bd8ac93fe930ee2e237ae89a93a32ccf5d8fad5f8d60cac15eed70676"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/stage4_interaction_contract.rs",
+        "sha256": "2d52a5b21388a517f535b67875f5c81a857c4960ec2d07102c4b2abb16b58881"
+      },
+      "obligation": "interaction:frame-batch-limits"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/crop:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/crop:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/crop:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/fileId:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/fileId:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/fileId:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/scale:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/scale:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/scale:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/status:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/status:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:element.image:/status:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/$key:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/$key:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/$key:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/dataURL:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/dataURL:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/dataURL:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/id:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/id:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/id:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/mimeType:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/mimeType:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:file_record:/mimeType:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/height:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/height:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/height:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/naturalHeight:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/naturalHeight:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/naturalHeight:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/naturalWidth:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/naturalWidth:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/naturalWidth:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/width:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/width:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/width:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/x:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/x:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/x:svg"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/y:pdf"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/y:png"
+    },
+    {
+      "after": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "2149d913be045a76c023db2d2b691871e5138680c69f8dc38605a03265fb963e"
+      },
+      "before": {
+        "path": "crates/excalidraw-render/tests/fast/image_field_contract.rs",
+        "sha256": "b088b1812fee7a4992fc8f6e4d18607b1cc7213968d0d0a5129d2c766a0e88f1"
+      },
+      "obligation": "surface:nested.image_crop:/y:svg"
+    }
+  ],
+  "preserved_exclusions": [
+    {
+      "disposition": {
+        "approval": {
+          "approval_subject_sha256": "sha256:09f7fa37c60a486122398bd73fc125bf7d1d90701802b4223ef33375d35877d1",
+          "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166",
+          "approved_at": "2026-09-16",
+          "approved_by": "sagikazarmark"
+        },
+        "proof": {
+          "anchor": "## Revision-1 reachability conclusion",
+          "source": {
+            "path": "docs/research/known-element-replacement-reachability.md",
+            "sha256": "ff81adaf36f6f2f09ce298ba33307e8d82ad1a93c812096ebb1e0e96044a8226"
+          }
+        },
+        "reason": "The current revision-1 supported-kind dispatch cannot emit this generic diagnostic; unavailable geometry and image failures retain narrower replacement causes. See the reviewed control-flow proof and its invalidation conditions.",
+        "status": "excluded"
+      },
+      "id": "diagnostic:compatibility.known-element-replaced:pdf"
+    },
+    {
+      "disposition": {
+        "approval": {
+          "approval_subject_sha256": "sha256:2a2ec2b1b8f34d58a024436b0bc1071e5e9261928b8f58b1fe8c2e0accbd5f97",
+          "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166",
+          "approved_at": "2026-09-16",
+          "approved_by": "sagikazarmark"
+        },
+        "proof": {
+          "anchor": "## Revision-1 reachability conclusion",
+          "source": {
+            "path": "docs/research/known-element-replacement-reachability.md",
+            "sha256": "ff81adaf36f6f2f09ce298ba33307e8d82ad1a93c812096ebb1e0e96044a8226"
+          }
+        },
+        "reason": "The current revision-1 supported-kind dispatch cannot emit this generic diagnostic; unavailable geometry and image failures retain narrower replacement causes. See the reviewed control-flow proof and its invalidation conditions.",
+        "status": "excluded"
+      },
+      "id": "diagnostic:compatibility.known-element-replaced:png"
+    },
+    {
+      "disposition": {
+        "approval": {
+          "approval_subject_sha256": "sha256:707ec4c5b195ba59dc1771f799a8f84e75c8ac7b6ad3f20b58a4e38e0a7f9b3b",
+          "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5700122166",
+          "approved_at": "2026-09-16",
+          "approved_by": "sagikazarmark"
+        },
+        "proof": {
+          "anchor": "## Revision-1 reachability conclusion",
+          "source": {
+            "path": "docs/research/known-element-replacement-reachability.md",
+            "sha256": "ff81adaf36f6f2f09ce298ba33307e8d82ad1a93c812096ebb1e0e96044a8226"
+          }
+        },
+        "reason": "The current revision-1 supported-kind dispatch cannot emit this generic diagnostic; unavailable geometry and image failures retain narrower replacement causes. See the reviewed control-flow proof and its invalidation conditions.",
+        "status": "excluded"
+      },
+      "id": "diagnostic:compatibility.known-element-replaced:svg"
+    }
+  ],
+  "schema": "excalidraw-render/stage4-binding-reconciliation/v1",
+  "spec": {
+    "path": "docs/renderer-spec-v1.md",
+    "sha256": "628acb6d7cf2e2756b1d0bacbab3aab9ee73b548df5252057747f7ea17270243"
+  },
+  "spec_authority_ids": [
+    "closure:all-five-layers",
+    "closure:atomic-profile-inventory",
+    "closure:pdf-judgments",
+    "closure:process-target-equality",
+    "codec:avif:rejection",
+    "codec:bmp:alpha",
+    "codec:bmp:color-profile",
+    "codec:bmp:default-frame",
+    "codec:bmp:limits",
+    "codec:bmp:malformed",
+    "codec:bmp:orientation",
+    "codec:bmp:passthrough",
+    "codec:gif:alpha",
+    "codec:gif:animation",
+    "codec:gif:color-profile",
+    "codec:gif:default-frame",
+    "codec:gif:limits",
+    "codec:gif:malformed",
+    "codec:gif:orientation",
+    "codec:gif:passthrough",
+    "codec:ico:alpha",
+    "codec:ico:color-profile",
+    "codec:ico:default-frame",
+    "codec:ico:limits",
+    "codec:ico:malformed",
+    "codec:ico:orientation",
+    "codec:ico:passthrough",
+    "codec:jpeg:alpha",
+    "codec:jpeg:color-profile",
+    "codec:jpeg:default-frame",
+    "codec:jpeg:hdr-gain-map",
+    "codec:jpeg:limits",
+    "codec:jpeg:malformed",
+    "codec:jpeg:orientation",
+    "codec:jpeg:passthrough",
+    "codec:nested-svg:pdf-fallback",
+    "codec:nested-svg:references",
+    "codec:nested-svg:sanitization",
+    "codec:png:alpha",
+    "codec:png:alpha:16bit-transparency-key",
+    "codec:png:alpha:premultiplication-rounding",
+    "codec:png:animation",
+    "codec:png:apng:blend-disposal",
+    "codec:png:apng:late-data",
+    "codec:png:apng:one-frame",
+    "codec:png:apng:sequence-counts",
+    "codec:png:apng:subframe",
+    "codec:png:cicp:invalid-fields",
+    "codec:png:cicp:rgba16:p10:t10:r0",
+    "codec:png:cicp:rgba16:p10:t10:r1",
+    "codec:png:cicp:rgba16:p10:t11:r0",
+    "codec:png:cicp:rgba16:p10:t11:r1",
+    "codec:png:cicp:rgba16:p10:t12:r0",
+    "codec:png:cicp:rgba16:p10:t12:r1",
+    "codec:png:cicp:rgba16:p10:t13:r0",
+    "codec:png:cicp:rgba16:p10:t13:r1",
+    "codec:png:cicp:rgba16:p10:t14:r0",
+    "codec:png:cicp:rgba16:p10:t14:r1",
+    "codec:png:cicp:rgba16:p10:t15:r0",
+    "codec:png:cicp:rgba16:p10:t15:r1",
+    "codec:png:cicp:rgba16:p10:t16:r0",
+    "codec:png:cicp:rgba16:p10:t16:r1",
+    "codec:png:cicp:rgba16:p10:t17:r0",
+    "codec:png:cicp:rgba16:p10:t17:r1",
+    "codec:png:cicp:rgba16:p10:t18:r0",
+    "codec:png:cicp:rgba16:p10:t18:r1",
+    "codec:png:cicp:rgba16:p10:t1:r0",
+    "codec:png:cicp:rgba16:p10:t1:r1",
+    "codec:png:cicp:rgba16:p10:t4:r0",
+    "codec:png:cicp:rgba16:p10:t4:r1",
+    "codec:png:cicp:rgba16:p10:t5:r0",
+    "codec:png:cicp:rgba16:p10:t5:r1",
+    "codec:png:cicp:rgba16:p10:t6:r0",
+    "codec:png:cicp:rgba16:p10:t6:r1",
+    "codec:png:cicp:rgba16:p10:t7:r0",
+    "codec:png:cicp:rgba16:p10:t7:r1",
+    "codec:png:cicp:rgba16:p10:t8:r0",
+    "codec:png:cicp:rgba16:p10:t8:r1",
+    "codec:png:cicp:rgba16:p10:t9:r0",
+    "codec:png:cicp:rgba16:p10:t9:r1",
+    "codec:png:cicp:rgba16:p11:t10:r0",
+    "codec:png:cicp:rgba16:p11:t10:r1",
+    "codec:png:cicp:rgba16:p11:t11:r0",
+    "codec:png:cicp:rgba16:p11:t11:r1",
+    "codec:png:cicp:rgba16:p11:t12:r0",
+    "codec:png:cicp:rgba16:p11:t12:r1",
+    "codec:png:cicp:rgba16:p11:t13:r0",
+    "codec:png:cicp:rgba16:p11:t13:r1",
+    "codec:png:cicp:rgba16:p11:t14:r0",
+    "codec:png:cicp:rgba16:p11:t14:r1",
+    "codec:png:cicp:rgba16:p11:t15:r0",
+    "codec:png:cicp:rgba16:p11:t15:r1",
+    "codec:png:cicp:rgba16:p11:t16:r0",
+    "codec:png:cicp:rgba16:p11:t16:r1",
+    "codec:png:cicp:rgba16:p11:t17:r0",
+    "codec:png:cicp:rgba16:p11:t17:r1",
+    "codec:png:cicp:rgba16:p11:t18:r0",
+    "codec:png:cicp:rgba16:p11:t18:r1",
+    "codec:png:cicp:rgba16:p11:t1:r0",
+    "codec:png:cicp:rgba16:p11:t1:r1",
+    "codec:png:cicp:rgba16:p11:t4:r0",
+    "codec:png:cicp:rgba16:p11:t4:r1",
+    "codec:png:cicp:rgba16:p11:t5:r0",
+    "codec:png:cicp:rgba16:p11:t5:r1",
+    "codec:png:cicp:rgba16:p11:t6:r0",
+    "codec:png:cicp:rgba16:p11:t6:r1",
+    "codec:png:cicp:rgba16:p11:t7:r0",
+    "codec:png:cicp:rgba16:p11:t7:r1",
+    "codec:png:cicp:rgba16:p11:t8:r0",
+    "codec:png:cicp:rgba16:p11:t8:r1",
+    "codec:png:cicp:rgba16:p11:t9:r0",
+    "codec:png:cicp:rgba16:p11:t9:r1",
+    "codec:png:cicp:rgba16:p12:t10:r0",
+    "codec:png:cicp:rgba16:p12:t10:r1",
+    "codec:png:cicp:rgba16:p12:t11:r0",
+    "codec:png:cicp:rgba16:p12:t11:r1",
+    "codec:png:cicp:rgba16:p12:t12:r0",
+    "codec:png:cicp:rgba16:p12:t12:r1",
+    "codec:png:cicp:rgba16:p12:t13:r0",
+    "codec:png:cicp:rgba16:p12:t13:r1",
+    "codec:png:cicp:rgba16:p12:t14:r0",
+    "codec:png:cicp:rgba16:p12:t14:r1",
+    "codec:png:cicp:rgba16:p12:t15:r0",
+    "codec:png:cicp:rgba16:p12:t15:r1",
+    "codec:png:cicp:rgba16:p12:t16:r0",
+    "codec:png:cicp:rgba16:p12:t16:r1",
+    "codec:png:cicp:rgba16:p12:t17:r0",
+    "codec:png:cicp:rgba16:p12:t17:r1",
+    "codec:png:cicp:rgba16:p12:t18:r0",
+    "codec:png:cicp:rgba16:p12:t18:r1",
+    "codec:png:cicp:rgba16:p12:t1:r0",
+    "codec:png:cicp:rgba16:p12:t1:r1",
+    "codec:png:cicp:rgba16:p12:t4:r0",
+    "codec:png:cicp:rgba16:p12:t4:r1",
+    "codec:png:cicp:rgba16:p12:t5:r0",
+    "codec:png:cicp:rgba16:p12:t5:r1",
+    "codec:png:cicp:rgba16:p12:t6:r0",
+    "codec:png:cicp:rgba16:p12:t6:r1",
+    "codec:png:cicp:rgba16:p12:t7:r0",
+    "codec:png:cicp:rgba16:p12:t7:r1",
+    "codec:png:cicp:rgba16:p12:t8:r0",
+    "codec:png:cicp:rgba16:p12:t8:r1",
+    "codec:png:cicp:rgba16:p12:t9:r0",
+    "codec:png:cicp:rgba16:p12:t9:r1",
+    "codec:png:cicp:rgba16:p1:t10:r0",
+    "codec:png:cicp:rgba16:p1:t10:r1",
+    "codec:png:cicp:rgba16:p1:t11:r0",
+    "codec:png:cicp:rgba16:p1:t11:r1",
+    "codec:png:cicp:rgba16:p1:t12:r0",
+    "codec:png:cicp:rgba16:p1:t12:r1",
+    "codec:png:cicp:rgba16:p1:t13:r0",
+    "codec:png:cicp:rgba16:p1:t13:r1",
+    "codec:png:cicp:rgba16:p1:t14:r0",
+    "codec:png:cicp:rgba16:p1:t14:r1",
+    "codec:png:cicp:rgba16:p1:t15:r0",
+    "codec:png:cicp:rgba16:p1:t15:r1",
+    "codec:png:cicp:rgba16:p1:t16:r0",
+    "codec:png:cicp:rgba16:p1:t16:r1",
+    "codec:png:cicp:rgba16:p1:t17:r0",
+    "codec:png:cicp:rgba16:p1:t17:r1",
+    "codec:png:cicp:rgba16:p1:t18:r0",
+    "codec:png:cicp:rgba16:p1:t18:r1",
+    "codec:png:cicp:rgba16:p1:t1:r0",
+    "codec:png:cicp:rgba16:p1:t1:r1",
+    "codec:png:cicp:rgba16:p1:t4:r0",
+    "codec:png:cicp:rgba16:p1:t4:r1",
+    "codec:png:cicp:rgba16:p1:t5:r0",
+    "codec:png:cicp:rgba16:p1:t5:r1",
+    "codec:png:cicp:rgba16:p1:t6:r0",
+    "codec:png:cicp:rgba16:p1:t6:r1",
+    "codec:png:cicp:rgba16:p1:t7:r0",
+    "codec:png:cicp:rgba16:p1:t7:r1",
+    "codec:png:cicp:rgba16:p1:t8:r0",
+    "codec:png:cicp:rgba16:p1:t8:r1",
+    "codec:png:cicp:rgba16:p1:t9:r0",
+    "codec:png:cicp:rgba16:p1:t9:r1",
+    "codec:png:cicp:rgba16:p22:t10:r0",
+    "codec:png:cicp:rgba16:p22:t10:r1",
+    "codec:png:cicp:rgba16:p22:t11:r0",
+    "codec:png:cicp:rgba16:p22:t11:r1",
+    "codec:png:cicp:rgba16:p22:t12:r0",
+    "codec:png:cicp:rgba16:p22:t12:r1",
+    "codec:png:cicp:rgba16:p22:t13:r0",
+    "codec:png:cicp:rgba16:p22:t13:r1",
+    "codec:png:cicp:rgba16:p22:t14:r0",
+    "codec:png:cicp:rgba16:p22:t14:r1",
+    "codec:png:cicp:rgba16:p22:t15:r0",
+    "codec:png:cicp:rgba16:p22:t15:r1",
+    "codec:png:cicp:rgba16:p22:t16:r0",
+    "codec:png:cicp:rgba16:p22:t16:r1",
+    "codec:png:cicp:rgba16:p22:t17:r0",
+    "codec:png:cicp:rgba16:p22:t17:r1",
+    "codec:png:cicp:rgba16:p22:t18:r0",
+    "codec:png:cicp:rgba16:p22:t18:r1",
+    "codec:png:cicp:rgba16:p22:t1:r0",
+    "codec:png:cicp:rgba16:p22:t1:r1",
+    "codec:png:cicp:rgba16:p22:t4:r0",
+    "codec:png:cicp:rgba16:p22:t4:r1",
+    "codec:png:cicp:rgba16:p22:t5:r0",
+    "codec:png:cicp:rgba16:p22:t5:r1",
+    "codec:png:cicp:rgba16:p22:t6:r0",
+    "codec:png:cicp:rgba16:p22:t6:r1",
+    "codec:png:cicp:rgba16:p22:t7:r0",
+    "codec:png:cicp:rgba16:p22:t7:r1",
+    "codec:png:cicp:rgba16:p22:t8:r0",
+    "codec:png:cicp:rgba16:p22:t8:r1",
+    "codec:png:cicp:rgba16:p22:t9:r0",
+    "codec:png:cicp:rgba16:p22:t9:r1",
+    "codec:png:cicp:rgba16:p4:t10:r0",
+    "codec:png:cicp:rgba16:p4:t10:r1",
+    "codec:png:cicp:rgba16:p4:t11:r0",
+    "codec:png:cicp:rgba16:p4:t11:r1",
+    "codec:png:cicp:rgba16:p4:t12:r0",
+    "codec:png:cicp:rgba16:p4:t12:r1",
+    "codec:png:cicp:rgba16:p4:t13:r0",
+    "codec:png:cicp:rgba16:p4:t13:r1",
+    "codec:png:cicp:rgba16:p4:t14:r0",
+    "codec:png:cicp:rgba16:p4:t14:r1",
+    "codec:png:cicp:rgba16:p4:t15:r0",
+    "codec:png:cicp:rgba16:p4:t15:r1",
+    "codec:png:cicp:rgba16:p4:t16:r0",
+    "codec:png:cicp:rgba16:p4:t16:r1",
+    "codec:png:cicp:rgba16:p4:t17:r0",
+    "codec:png:cicp:rgba16:p4:t17:r1",
+    "codec:png:cicp:rgba16:p4:t18:r0",
+    "codec:png:cicp:rgba16:p4:t18:r1",
+    "codec:png:cicp:rgba16:p4:t1:r0",
+    "codec:png:cicp:rgba16:p4:t1:r1",
+    "codec:png:cicp:rgba16:p4:t4:r0",
+    "codec:png:cicp:rgba16:p4:t4:r1",
+    "codec:png:cicp:rgba16:p4:t5:r0",
+    "codec:png:cicp:rgba16:p4:t5:r1",
+    "codec:png:cicp:rgba16:p4:t6:r0",
+    "codec:png:cicp:rgba16:p4:t6:r1",
+    "codec:png:cicp:rgba16:p4:t7:r0",
+    "codec:png:cicp:rgba16:p4:t7:r1",
+    "codec:png:cicp:rgba16:p4:t8:r0",
+    "codec:png:cicp:rgba16:p4:t8:r1",
+    "codec:png:cicp:rgba16:p4:t9:r0",
+    "codec:png:cicp:rgba16:p4:t9:r1",
+    "codec:png:cicp:rgba16:p5:t10:r0",
+    "codec:png:cicp:rgba16:p5:t10:r1",
+    "codec:png:cicp:rgba16:p5:t11:r0",
+    "codec:png:cicp:rgba16:p5:t11:r1",
+    "codec:png:cicp:rgba16:p5:t12:r0",
+    "codec:png:cicp:rgba16:p5:t12:r1",
+    "codec:png:cicp:rgba16:p5:t13:r0",
+    "codec:png:cicp:rgba16:p5:t13:r1",
+    "codec:png:cicp:rgba16:p5:t14:r0",
+    "codec:png:cicp:rgba16:p5:t14:r1",
+    "codec:png:cicp:rgba16:p5:t15:r0",
+    "codec:png:cicp:rgba16:p5:t15:r1",
+    "codec:png:cicp:rgba16:p5:t16:r0",
+    "codec:png:cicp:rgba16:p5:t16:r1",
+    "codec:png:cicp:rgba16:p5:t17:r0",
+    "codec:png:cicp:rgba16:p5:t17:r1",
+    "codec:png:cicp:rgba16:p5:t18:r0",
+    "codec:png:cicp:rgba16:p5:t18:r1",
+    "codec:png:cicp:rgba16:p5:t1:r0",
+    "codec:png:cicp:rgba16:p5:t1:r1",
+    "codec:png:cicp:rgba16:p5:t4:r0",
+    "codec:png:cicp:rgba16:p5:t4:r1",
+    "codec:png:cicp:rgba16:p5:t5:r0",
+    "codec:png:cicp:rgba16:p5:t5:r1",
+    "codec:png:cicp:rgba16:p5:t6:r0",
+    "codec:png:cicp:rgba16:p5:t6:r1",
+    "codec:png:cicp:rgba16:p5:t7:r0",
+    "codec:png:cicp:rgba16:p5:t7:r1",
+    "codec:png:cicp:rgba16:p5:t8:r0",
+    "codec:png:cicp:rgba16:p5:t8:r1",
+    "codec:png:cicp:rgba16:p5:t9:r0",
+    "codec:png:cicp:rgba16:p5:t9:r1",
+    "codec:png:cicp:rgba16:p6:t10:r0",
+    "codec:png:cicp:rgba16:p6:t10:r1",
+    "codec:png:cicp:rgba16:p6:t11:r0",
+    "codec:png:cicp:rgba16:p6:t11:r1",
+    "codec:png:cicp:rgba16:p6:t12:r0",
+    "codec:png:cicp:rgba16:p6:t12:r1",
+    "codec:png:cicp:rgba16:p6:t13:r0",
+    "codec:png:cicp:rgba16:p6:t13:r1",
+    "codec:png:cicp:rgba16:p6:t14:r0",
+    "codec:png:cicp:rgba16:p6:t14:r1",
+    "codec:png:cicp:rgba16:p6:t15:r0",
+    "codec:png:cicp:rgba16:p6:t15:r1",
+    "codec:png:cicp:rgba16:p6:t16:r0",
+    "codec:png:cicp:rgba16:p6:t16:r1",
+    "codec:png:cicp:rgba16:p6:t17:r0",
+    "codec:png:cicp:rgba16:p6:t17:r1",
+    "codec:png:cicp:rgba16:p6:t18:r0",
+    "codec:png:cicp:rgba16:p6:t18:r1",
+    "codec:png:cicp:rgba16:p6:t1:r0",
+    "codec:png:cicp:rgba16:p6:t1:r1",
+    "codec:png:cicp:rgba16:p6:t4:r0",
+    "codec:png:cicp:rgba16:p6:t4:r1",
+    "codec:png:cicp:rgba16:p6:t5:r0",
+    "codec:png:cicp:rgba16:p6:t5:r1",
+    "codec:png:cicp:rgba16:p6:t6:r0",
+    "codec:png:cicp:rgba16:p6:t6:r1",
+    "codec:png:cicp:rgba16:p6:t7:r0",
+    "codec:png:cicp:rgba16:p6:t7:r1",
+    "codec:png:cicp:rgba16:p6:t8:r0",
+    "codec:png:cicp:rgba16:p6:t8:r1",
+    "codec:png:cicp:rgba16:p6:t9:r0",
+    "codec:png:cicp:rgba16:p6:t9:r1",
+    "codec:png:cicp:rgba16:p7:t10:r0",
+    "codec:png:cicp:rgba16:p7:t10:r1",
+    "codec:png:cicp:rgba16:p7:t11:r0",
+    "codec:png:cicp:rgba16:p7:t11:r1",
+    "codec:png:cicp:rgba16:p7:t12:r0",
+    "codec:png:cicp:rgba16:p7:t12:r1",
+    "codec:png:cicp:rgba16:p7:t13:r0",
+    "codec:png:cicp:rgba16:p7:t13:r1",
+    "codec:png:cicp:rgba16:p7:t14:r0",
+    "codec:png:cicp:rgba16:p7:t14:r1",
+    "codec:png:cicp:rgba16:p7:t15:r0",
+    "codec:png:cicp:rgba16:p7:t15:r1",
+    "codec:png:cicp:rgba16:p7:t16:r0",
+    "codec:png:cicp:rgba16:p7:t16:r1",
+    "codec:png:cicp:rgba16:p7:t17:r0",
+    "codec:png:cicp:rgba16:p7:t17:r1",
+    "codec:png:cicp:rgba16:p7:t18:r0",
+    "codec:png:cicp:rgba16:p7:t18:r1",
+    "codec:png:cicp:rgba16:p7:t1:r0",
+    "codec:png:cicp:rgba16:p7:t1:r1",
+    "codec:png:cicp:rgba16:p7:t4:r0",
+    "codec:png:cicp:rgba16:p7:t4:r1",
+    "codec:png:cicp:rgba16:p7:t5:r0",
+    "codec:png:cicp:rgba16:p7:t5:r1",
+    "codec:png:cicp:rgba16:p7:t6:r0",
+    "codec:png:cicp:rgba16:p7:t6:r1",
+    "codec:png:cicp:rgba16:p7:t7:r0",
+    "codec:png:cicp:rgba16:p7:t7:r1",
+    "codec:png:cicp:rgba16:p7:t8:r0",
+    "codec:png:cicp:rgba16:p7:t8:r1",
+    "codec:png:cicp:rgba16:p7:t9:r0",
+    "codec:png:cicp:rgba16:p7:t9:r1",
+    "codec:png:cicp:rgba16:p8:t10:r0",
+    "codec:png:cicp:rgba16:p8:t10:r1",
+    "codec:png:cicp:rgba16:p8:t11:r0",
+    "codec:png:cicp:rgba16:p8:t11:r1",
+    "codec:png:cicp:rgba16:p8:t12:r0",
+    "codec:png:cicp:rgba16:p8:t12:r1",
+    "codec:png:cicp:rgba16:p8:t13:r0",
+    "codec:png:cicp:rgba16:p8:t13:r1",
+    "codec:png:cicp:rgba16:p8:t14:r0",
+    "codec:png:cicp:rgba16:p8:t14:r1",
+    "codec:png:cicp:rgba16:p8:t15:r0",
+    "codec:png:cicp:rgba16:p8:t15:r1",
+    "codec:png:cicp:rgba16:p8:t16:r0",
+    "codec:png:cicp:rgba16:p8:t16:r1",
+    "codec:png:cicp:rgba16:p8:t17:r0",
+    "codec:png:cicp:rgba16:p8:t17:r1",
+    "codec:png:cicp:rgba16:p8:t18:r0",
+    "codec:png:cicp:rgba16:p8:t18:r1",
+    "codec:png:cicp:rgba16:p8:t1:r0",
+    "codec:png:cicp:rgba16:p8:t1:r1",
+    "codec:png:cicp:rgba16:p8:t4:r0",
+    "codec:png:cicp:rgba16:p8:t4:r1",
+    "codec:png:cicp:rgba16:p8:t5:r0",
+    "codec:png:cicp:rgba16:p8:t5:r1",
+    "codec:png:cicp:rgba16:p8:t6:r0",
+    "codec:png:cicp:rgba16:p8:t6:r1",
+    "codec:png:cicp:rgba16:p8:t7:r0",
+    "codec:png:cicp:rgba16:p8:t7:r1",
+    "codec:png:cicp:rgba16:p8:t8:r0",
+    "codec:png:cicp:rgba16:p8:t8:r1",
+    "codec:png:cicp:rgba16:p8:t9:r0",
+    "codec:png:cicp:rgba16:p8:t9:r1",
+    "codec:png:cicp:rgba16:p9:t10:r0",
+    "codec:png:cicp:rgba16:p9:t10:r1",
+    "codec:png:cicp:rgba16:p9:t11:r0",
+    "codec:png:cicp:rgba16:p9:t11:r1",
+    "codec:png:cicp:rgba16:p9:t12:r0",
+    "codec:png:cicp:rgba16:p9:t12:r1",
+    "codec:png:cicp:rgba16:p9:t13:r0",
+    "codec:png:cicp:rgba16:p9:t13:r1",
+    "codec:png:cicp:rgba16:p9:t14:r0",
+    "codec:png:cicp:rgba16:p9:t14:r1",
+    "codec:png:cicp:rgba16:p9:t15:r0",
+    "codec:png:cicp:rgba16:p9:t15:r1",
+    "codec:png:cicp:rgba16:p9:t16:r0",
+    "codec:png:cicp:rgba16:p9:t16:r1",
+    "codec:png:cicp:rgba16:p9:t17:r0",
+    "codec:png:cicp:rgba16:p9:t17:r1",
+    "codec:png:cicp:rgba16:p9:t18:r0",
+    "codec:png:cicp:rgba16:p9:t18:r1",
+    "codec:png:cicp:rgba16:p9:t1:r0",
+    "codec:png:cicp:rgba16:p9:t1:r1",
+    "codec:png:cicp:rgba16:p9:t4:r0",
+    "codec:png:cicp:rgba16:p9:t4:r1",
+    "codec:png:cicp:rgba16:p9:t5:r0",
+    "codec:png:cicp:rgba16:p9:t5:r1",
+    "codec:png:cicp:rgba16:p9:t6:r0",
+    "codec:png:cicp:rgba16:p9:t6:r1",
+    "codec:png:cicp:rgba16:p9:t7:r0",
+    "codec:png:cicp:rgba16:p9:t7:r1",
+    "codec:png:cicp:rgba16:p9:t8:r0",
+    "codec:png:cicp:rgba16:p9:t8:r1",
+    "codec:png:cicp:rgba16:p9:t9:r0",
+    "codec:png:cicp:rgba16:p9:t9:r1",
+    "codec:png:cicp:rgba8:p10:t10:r0",
+    "codec:png:cicp:rgba8:p10:t10:r1",
+    "codec:png:cicp:rgba8:p10:t11:r0",
+    "codec:png:cicp:rgba8:p10:t11:r1",
+    "codec:png:cicp:rgba8:p10:t12:r0",
+    "codec:png:cicp:rgba8:p10:t12:r1",
+    "codec:png:cicp:rgba8:p10:t13:r0",
+    "codec:png:cicp:rgba8:p10:t13:r1",
+    "codec:png:cicp:rgba8:p10:t14:r0",
+    "codec:png:cicp:rgba8:p10:t14:r1",
+    "codec:png:cicp:rgba8:p10:t15:r0",
+    "codec:png:cicp:rgba8:p10:t15:r1",
+    "codec:png:cicp:rgba8:p10:t16:r0",
+    "codec:png:cicp:rgba8:p10:t16:r1",
+    "codec:png:cicp:rgba8:p10:t17:r0",
+    "codec:png:cicp:rgba8:p10:t17:r1",
+    "codec:png:cicp:rgba8:p10:t18:r0",
+    "codec:png:cicp:rgba8:p10:t18:r1",
+    "codec:png:cicp:rgba8:p10:t1:r0",
+    "codec:png:cicp:rgba8:p10:t1:r1",
+    "codec:png:cicp:rgba8:p10:t4:r0",
+    "codec:png:cicp:rgba8:p10:t4:r1",
+    "codec:png:cicp:rgba8:p10:t5:r0",
+    "codec:png:cicp:rgba8:p10:t5:r1",
+    "codec:png:cicp:rgba8:p10:t6:r0",
+    "codec:png:cicp:rgba8:p10:t6:r1",
+    "codec:png:cicp:rgba8:p10:t7:r0",
+    "codec:png:cicp:rgba8:p10:t7:r1",
+    "codec:png:cicp:rgba8:p10:t8:r0",
+    "codec:png:cicp:rgba8:p10:t8:r1",
+    "codec:png:cicp:rgba8:p10:t9:r0",
+    "codec:png:cicp:rgba8:p10:t9:r1",
+    "codec:png:cicp:rgba8:p11:t10:r0",
+    "codec:png:cicp:rgba8:p11:t10:r1",
+    "codec:png:cicp:rgba8:p11:t11:r0",
+    "codec:png:cicp:rgba8:p11:t11:r1",
+    "codec:png:cicp:rgba8:p11:t12:r0",
+    "codec:png:cicp:rgba8:p11:t12:r1",
+    "codec:png:cicp:rgba8:p11:t13:r0",
+    "codec:png:cicp:rgba8:p11:t13:r1",
+    "codec:png:cicp:rgba8:p11:t14:r0",
+    "codec:png:cicp:rgba8:p11:t14:r1",
+    "codec:png:cicp:rgba8:p11:t15:r0",
+    "codec:png:cicp:rgba8:p11:t15:r1",
+    "codec:png:cicp:rgba8:p11:t16:r0",
+    "codec:png:cicp:rgba8:p11:t16:r1",
+    "codec:png:cicp:rgba8:p11:t17:r0",
+    "codec:png:cicp:rgba8:p11:t17:r1",
+    "codec:png:cicp:rgba8:p11:t18:r0",
+    "codec:png:cicp:rgba8:p11:t18:r1",
+    "codec:png:cicp:rgba8:p11:t1:r0",
+    "codec:png:cicp:rgba8:p11:t1:r1",
+    "codec:png:cicp:rgba8:p11:t4:r0",
+    "codec:png:cicp:rgba8:p11:t4:r1",
+    "codec:png:cicp:rgba8:p11:t5:r0",
+    "codec:png:cicp:rgba8:p11:t5:r1",
+    "codec:png:cicp:rgba8:p11:t6:r0",
+    "codec:png:cicp:rgba8:p11:t6:r1",
+    "codec:png:cicp:rgba8:p11:t7:r0",
+    "codec:png:cicp:rgba8:p11:t7:r1",
+    "codec:png:cicp:rgba8:p11:t8:r0",
+    "codec:png:cicp:rgba8:p11:t8:r1",
+    "codec:png:cicp:rgba8:p11:t9:r0",
+    "codec:png:cicp:rgba8:p11:t9:r1",
+    "codec:png:cicp:rgba8:p12:t10:r0",
+    "codec:png:cicp:rgba8:p12:t10:r1",
+    "codec:png:cicp:rgba8:p12:t11:r0",
+    "codec:png:cicp:rgba8:p12:t11:r1",
+    "codec:png:cicp:rgba8:p12:t12:r0",
+    "codec:png:cicp:rgba8:p12:t12:r1",
+    "codec:png:cicp:rgba8:p12:t13:r0",
+    "codec:png:cicp:rgba8:p12:t13:r1",
+    "codec:png:cicp:rgba8:p12:t14:r0",
+    "codec:png:cicp:rgba8:p12:t14:r1",
+    "codec:png:cicp:rgba8:p12:t15:r0",
+    "codec:png:cicp:rgba8:p12:t15:r1",
+    "codec:png:cicp:rgba8:p12:t16:r0",
+    "codec:png:cicp:rgba8:p12:t16:r1",
+    "codec:png:cicp:rgba8:p12:t17:r0",
+    "codec:png:cicp:rgba8:p12:t17:r1",
+    "codec:png:cicp:rgba8:p12:t18:r0",
+    "codec:png:cicp:rgba8:p12:t18:r1",
+    "codec:png:cicp:rgba8:p12:t1:r0",
+    "codec:png:cicp:rgba8:p12:t1:r1",
+    "codec:png:cicp:rgba8:p12:t4:r0",
+    "codec:png:cicp:rgba8:p12:t4:r1",
+    "codec:png:cicp:rgba8:p12:t5:r0",
+    "codec:png:cicp:rgba8:p12:t5:r1",
+    "codec:png:cicp:rgba8:p12:t6:r0",
+    "codec:png:cicp:rgba8:p12:t6:r1",
+    "codec:png:cicp:rgba8:p12:t7:r0",
+    "codec:png:cicp:rgba8:p12:t7:r1",
+    "codec:png:cicp:rgba8:p12:t8:r0",
+    "codec:png:cicp:rgba8:p12:t8:r1",
+    "codec:png:cicp:rgba8:p12:t9:r0",
+    "codec:png:cicp:rgba8:p12:t9:r1",
+    "codec:png:cicp:rgba8:p1:t10:r0",
+    "codec:png:cicp:rgba8:p1:t10:r1",
+    "codec:png:cicp:rgba8:p1:t11:r0",
+    "codec:png:cicp:rgba8:p1:t11:r1",
+    "codec:png:cicp:rgba8:p1:t12:r0",
+    "codec:png:cicp:rgba8:p1:t12:r1",
+    "codec:png:cicp:rgba8:p1:t13:r0",
+    "codec:png:cicp:rgba8:p1:t13:r1",
+    "codec:png:cicp:rgba8:p1:t14:r0",
+    "codec:png:cicp:rgba8:p1:t14:r1",
+    "codec:png:cicp:rgba8:p1:t15:r0",
+    "codec:png:cicp:rgba8:p1:t15:r1",
+    "codec:png:cicp:rgba8:p1:t16:r0",
+    "codec:png:cicp:rgba8:p1:t16:r1",
+    "codec:png:cicp:rgba8:p1:t17:r0",
+    "codec:png:cicp:rgba8:p1:t17:r1",
+    "codec:png:cicp:rgba8:p1:t18:r0",
+    "codec:png:cicp:rgba8:p1:t18:r1",
+    "codec:png:cicp:rgba8:p1:t1:r0",
+    "codec:png:cicp:rgba8:p1:t1:r1",
+    "codec:png:cicp:rgba8:p1:t4:r0",
+    "codec:png:cicp:rgba8:p1:t4:r1",
+    "codec:png:cicp:rgba8:p1:t5:r0",
+    "codec:png:cicp:rgba8:p1:t5:r1",
+    "codec:png:cicp:rgba8:p1:t6:r0",
+    "codec:png:cicp:rgba8:p1:t6:r1",
+    "codec:png:cicp:rgba8:p1:t7:r0",
+    "codec:png:cicp:rgba8:p1:t7:r1",
+    "codec:png:cicp:rgba8:p1:t8:r0",
+    "codec:png:cicp:rgba8:p1:t8:r1",
+    "codec:png:cicp:rgba8:p1:t9:r0",
+    "codec:png:cicp:rgba8:p1:t9:r1",
+    "codec:png:cicp:rgba8:p22:t10:r0",
+    "codec:png:cicp:rgba8:p22:t10:r1",
+    "codec:png:cicp:rgba8:p22:t11:r0",
+    "codec:png:cicp:rgba8:p22:t11:r1",
+    "codec:png:cicp:rgba8:p22:t12:r0",
+    "codec:png:cicp:rgba8:p22:t12:r1",
+    "codec:png:cicp:rgba8:p22:t13:r0",
+    "codec:png:cicp:rgba8:p22:t13:r1",
+    "codec:png:cicp:rgba8:p22:t14:r0",
+    "codec:png:cicp:rgba8:p22:t14:r1",
+    "codec:png:cicp:rgba8:p22:t15:r0",
+    "codec:png:cicp:rgba8:p22:t15:r1",
+    "codec:png:cicp:rgba8:p22:t16:r0",
+    "codec:png:cicp:rgba8:p22:t16:r1",
+    "codec:png:cicp:rgba8:p22:t17:r0",
+    "codec:png:cicp:rgba8:p22:t17:r1",
+    "codec:png:cicp:rgba8:p22:t18:r0",
+    "codec:png:cicp:rgba8:p22:t18:r1",
+    "codec:png:cicp:rgba8:p22:t1:r0",
+    "codec:png:cicp:rgba8:p22:t1:r1",
+    "codec:png:cicp:rgba8:p22:t4:r0",
+    "codec:png:cicp:rgba8:p22:t4:r1",
+    "codec:png:cicp:rgba8:p22:t5:r0",
+    "codec:png:cicp:rgba8:p22:t5:r1",
+    "codec:png:cicp:rgba8:p22:t6:r0",
+    "codec:png:cicp:rgba8:p22:t6:r1",
+    "codec:png:cicp:rgba8:p22:t7:r0",
+    "codec:png:cicp:rgba8:p22:t7:r1",
+    "codec:png:cicp:rgba8:p22:t8:r0",
+    "codec:png:cicp:rgba8:p22:t8:r1",
+    "codec:png:cicp:rgba8:p22:t9:r0",
+    "codec:png:cicp:rgba8:p22:t9:r1",
+    "codec:png:cicp:rgba8:p4:t10:r0",
+    "codec:png:cicp:rgba8:p4:t10:r1",
+    "codec:png:cicp:rgba8:p4:t11:r0",
+    "codec:png:cicp:rgba8:p4:t11:r1",
+    "codec:png:cicp:rgba8:p4:t12:r0",
+    "codec:png:cicp:rgba8:p4:t12:r1",
+    "codec:png:cicp:rgba8:p4:t13:r0",
+    "codec:png:cicp:rgba8:p4:t13:r1",
+    "codec:png:cicp:rgba8:p4:t14:r0",
+    "codec:png:cicp:rgba8:p4:t14:r1",
+    "codec:png:cicp:rgba8:p4:t15:r0",
+    "codec:png:cicp:rgba8:p4:t15:r1",
+    "codec:png:cicp:rgba8:p4:t16:r0",
+    "codec:png:cicp:rgba8:p4:t16:r1",
+    "codec:png:cicp:rgba8:p4:t17:r0",
+    "codec:png:cicp:rgba8:p4:t17:r1",
+    "codec:png:cicp:rgba8:p4:t18:r0",
+    "codec:png:cicp:rgba8:p4:t18:r1",
+    "codec:png:cicp:rgba8:p4:t1:r0",
+    "codec:png:cicp:rgba8:p4:t1:r1",
+    "codec:png:cicp:rgba8:p4:t4:r0",
+    "codec:png:cicp:rgba8:p4:t4:r1",
+    "codec:png:cicp:rgba8:p4:t5:r0",
+    "codec:png:cicp:rgba8:p4:t5:r1",
+    "codec:png:cicp:rgba8:p4:t6:r0",
+    "codec:png:cicp:rgba8:p4:t6:r1",
+    "codec:png:cicp:rgba8:p4:t7:r0",
+    "codec:png:cicp:rgba8:p4:t7:r1",
+    "codec:png:cicp:rgba8:p4:t8:r0",
+    "codec:png:cicp:rgba8:p4:t8:r1",
+    "codec:png:cicp:rgba8:p4:t9:r0",
+    "codec:png:cicp:rgba8:p4:t9:r1",
+    "codec:png:cicp:rgba8:p5:t10:r0",
+    "codec:png:cicp:rgba8:p5:t10:r1",
+    "codec:png:cicp:rgba8:p5:t11:r0",
+    "codec:png:cicp:rgba8:p5:t11:r1",
+    "codec:png:cicp:rgba8:p5:t12:r0",
+    "codec:png:cicp:rgba8:p5:t12:r1",
+    "codec:png:cicp:rgba8:p5:t13:r0",
+    "codec:png:cicp:rgba8:p5:t13:r1",
+    "codec:png:cicp:rgba8:p5:t14:r0",
+    "codec:png:cicp:rgba8:p5:t14:r1",
+    "codec:png:cicp:rgba8:p5:t15:r0",
+    "codec:png:cicp:rgba8:p5:t15:r1",
+    "codec:png:cicp:rgba8:p5:t16:r0",
+    "codec:png:cicp:rgba8:p5:t16:r1",
+    "codec:png:cicp:rgba8:p5:t17:r0",
+    "codec:png:cicp:rgba8:p5:t17:r1",
+    "codec:png:cicp:rgba8:p5:t18:r0",
+    "codec:png:cicp:rgba8:p5:t18:r1",
+    "codec:png:cicp:rgba8:p5:t1:r0",
+    "codec:png:cicp:rgba8:p5:t1:r1",
+    "codec:png:cicp:rgba8:p5:t4:r0",
+    "codec:png:cicp:rgba8:p5:t4:r1",
+    "codec:png:cicp:rgba8:p5:t5:r0",
+    "codec:png:cicp:rgba8:p5:t5:r1",
+    "codec:png:cicp:rgba8:p5:t6:r0",
+    "codec:png:cicp:rgba8:p5:t6:r1",
+    "codec:png:cicp:rgba8:p5:t7:r0",
+    "codec:png:cicp:rgba8:p5:t7:r1",
+    "codec:png:cicp:rgba8:p5:t8:r0",
+    "codec:png:cicp:rgba8:p5:t8:r1",
+    "codec:png:cicp:rgba8:p5:t9:r0",
+    "codec:png:cicp:rgba8:p5:t9:r1",
+    "codec:png:cicp:rgba8:p6:t10:r0",
+    "codec:png:cicp:rgba8:p6:t10:r1",
+    "codec:png:cicp:rgba8:p6:t11:r0",
+    "codec:png:cicp:rgba8:p6:t11:r1",
+    "codec:png:cicp:rgba8:p6:t12:r0",
+    "codec:png:cicp:rgba8:p6:t12:r1",
+    "codec:png:cicp:rgba8:p6:t13:r0",
+    "codec:png:cicp:rgba8:p6:t13:r1",
+    "codec:png:cicp:rgba8:p6:t14:r0",
+    "codec:png:cicp:rgba8:p6:t14:r1",
+    "codec:png:cicp:rgba8:p6:t15:r0",
+    "codec:png:cicp:rgba8:p6:t15:r1",
+    "codec:png:cicp:rgba8:p6:t16:r0",
+    "codec:png:cicp:rgba8:p6:t16:r1",
+    "codec:png:cicp:rgba8:p6:t17:r0",
+    "codec:png:cicp:rgba8:p6:t17:r1",
+    "codec:png:cicp:rgba8:p6:t18:r0",
+    "codec:png:cicp:rgba8:p6:t18:r1",
+    "codec:png:cicp:rgba8:p6:t1:r0",
+    "codec:png:cicp:rgba8:p6:t1:r1",
+    "codec:png:cicp:rgba8:p6:t4:r0",
+    "codec:png:cicp:rgba8:p6:t4:r1",
+    "codec:png:cicp:rgba8:p6:t5:r0",
+    "codec:png:cicp:rgba8:p6:t5:r1",
+    "codec:png:cicp:rgba8:p6:t6:r0",
+    "codec:png:cicp:rgba8:p6:t6:r1",
+    "codec:png:cicp:rgba8:p6:t7:r0",
+    "codec:png:cicp:rgba8:p6:t7:r1",
+    "codec:png:cicp:rgba8:p6:t8:r0",
+    "codec:png:cicp:rgba8:p6:t8:r1",
+    "codec:png:cicp:rgba8:p6:t9:r0",
+    "codec:png:cicp:rgba8:p6:t9:r1",
+    "codec:png:cicp:rgba8:p7:t10:r0",
+    "codec:png:cicp:rgba8:p7:t10:r1",
+    "codec:png:cicp:rgba8:p7:t11:r0",
+    "codec:png:cicp:rgba8:p7:t11:r1",
+    "codec:png:cicp:rgba8:p7:t12:r0",
+    "codec:png:cicp:rgba8:p7:t12:r1",
+    "codec:png:cicp:rgba8:p7:t13:r0",
+    "codec:png:cicp:rgba8:p7:t13:r1",
+    "codec:png:cicp:rgba8:p7:t14:r0",
+    "codec:png:cicp:rgba8:p7:t14:r1",
+    "codec:png:cicp:rgba8:p7:t15:r0",
+    "codec:png:cicp:rgba8:p7:t15:r1",
+    "codec:png:cicp:rgba8:p7:t16:r0",
+    "codec:png:cicp:rgba8:p7:t16:r1",
+    "codec:png:cicp:rgba8:p7:t17:r0",
+    "codec:png:cicp:rgba8:p7:t17:r1",
+    "codec:png:cicp:rgba8:p7:t18:r0",
+    "codec:png:cicp:rgba8:p7:t18:r1",
+    "codec:png:cicp:rgba8:p7:t1:r0",
+    "codec:png:cicp:rgba8:p7:t1:r1",
+    "codec:png:cicp:rgba8:p7:t4:r0",
+    "codec:png:cicp:rgba8:p7:t4:r1",
+    "codec:png:cicp:rgba8:p7:t5:r0",
+    "codec:png:cicp:rgba8:p7:t5:r1",
+    "codec:png:cicp:rgba8:p7:t6:r0",
+    "codec:png:cicp:rgba8:p7:t6:r1",
+    "codec:png:cicp:rgba8:p7:t7:r0",
+    "codec:png:cicp:rgba8:p7:t7:r1",
+    "codec:png:cicp:rgba8:p7:t8:r0",
+    "codec:png:cicp:rgba8:p7:t8:r1",
+    "codec:png:cicp:rgba8:p7:t9:r0",
+    "codec:png:cicp:rgba8:p7:t9:r1",
+    "codec:png:cicp:rgba8:p8:t10:r0",
+    "codec:png:cicp:rgba8:p8:t10:r1",
+    "codec:png:cicp:rgba8:p8:t11:r0",
+    "codec:png:cicp:rgba8:p8:t11:r1",
+    "codec:png:cicp:rgba8:p8:t12:r0",
+    "codec:png:cicp:rgba8:p8:t12:r1",
+    "codec:png:cicp:rgba8:p8:t13:r0",
+    "codec:png:cicp:rgba8:p8:t13:r1",
+    "codec:png:cicp:rgba8:p8:t14:r0",
+    "codec:png:cicp:rgba8:p8:t14:r1",
+    "codec:png:cicp:rgba8:p8:t15:r0",
+    "codec:png:cicp:rgba8:p8:t15:r1",
+    "codec:png:cicp:rgba8:p8:t16:r0",
+    "codec:png:cicp:rgba8:p8:t16:r1",
+    "codec:png:cicp:rgba8:p8:t17:r0",
+    "codec:png:cicp:rgba8:p8:t17:r1",
+    "codec:png:cicp:rgba8:p8:t18:r0",
+    "codec:png:cicp:rgba8:p8:t18:r1",
+    "codec:png:cicp:rgba8:p8:t1:r0",
+    "codec:png:cicp:rgba8:p8:t1:r1",
+    "codec:png:cicp:rgba8:p8:t4:r0",
+    "codec:png:cicp:rgba8:p8:t4:r1",
+    "codec:png:cicp:rgba8:p8:t5:r0",
+    "codec:png:cicp:rgba8:p8:t5:r1",
+    "codec:png:cicp:rgba8:p8:t6:r0",
+    "codec:png:cicp:rgba8:p8:t6:r1",
+    "codec:png:cicp:rgba8:p8:t7:r0",
+    "codec:png:cicp:rgba8:p8:t7:r1",
+    "codec:png:cicp:rgba8:p8:t8:r0",
+    "codec:png:cicp:rgba8:p8:t8:r1",
+    "codec:png:cicp:rgba8:p8:t9:r0",
+    "codec:png:cicp:rgba8:p8:t9:r1",
+    "codec:png:cicp:rgba8:p9:t10:r0",
+    "codec:png:cicp:rgba8:p9:t10:r1",
+    "codec:png:cicp:rgba8:p9:t11:r0",
+    "codec:png:cicp:rgba8:p9:t11:r1",
+    "codec:png:cicp:rgba8:p9:t12:r0",
+    "codec:png:cicp:rgba8:p9:t12:r1",
+    "codec:png:cicp:rgba8:p9:t13:r0",
+    "codec:png:cicp:rgba8:p9:t13:r1",
+    "codec:png:cicp:rgba8:p9:t14:r0",
+    "codec:png:cicp:rgba8:p9:t14:r1",
+    "codec:png:cicp:rgba8:p9:t15:r0",
+    "codec:png:cicp:rgba8:p9:t15:r1",
+    "codec:png:cicp:rgba8:p9:t16:r0",
+    "codec:png:cicp:rgba8:p9:t16:r1",
+    "codec:png:cicp:rgba8:p9:t17:r0",
+    "codec:png:cicp:rgba8:p9:t17:r1",
+    "codec:png:cicp:rgba8:p9:t18:r0",
+    "codec:png:cicp:rgba8:p9:t18:r1",
+    "codec:png:cicp:rgba8:p9:t1:r0",
+    "codec:png:cicp:rgba8:p9:t1:r1",
+    "codec:png:cicp:rgba8:p9:t4:r0",
+    "codec:png:cicp:rgba8:p9:t4:r1",
+    "codec:png:cicp:rgba8:p9:t5:r0",
+    "codec:png:cicp:rgba8:p9:t5:r1",
+    "codec:png:cicp:rgba8:p9:t6:r0",
+    "codec:png:cicp:rgba8:p9:t6:r1",
+    "codec:png:cicp:rgba8:p9:t7:r0",
+    "codec:png:cicp:rgba8:p9:t7:r1",
+    "codec:png:cicp:rgba8:p9:t8:r0",
+    "codec:png:cicp:rgba8:p9:t8:r1",
+    "codec:png:cicp:rgba8:p9:t9:r0",
+    "codec:png:cicp:rgba8:p9:t9:r1",
+    "codec:png:color-profile",
+    "codec:png:color:chrm",
+    "codec:png:color:gama-linear",
+    "codec:png:color:gama-nonlinear",
+    "codec:png:color:precedence",
+    "codec:png:color:srgb-intents",
+    "codec:png:composition:qualified-axes",
+    "codec:png:default-frame",
+    "codec:png:exif:o1:big:after-idat",
+    "codec:png:exif:o1:big:before-idat",
+    "codec:png:exif:o1:little:after-idat",
+    "codec:png:exif:o1:little:before-idat",
+    "codec:png:exif:o2:big:after-idat",
+    "codec:png:exif:o2:big:before-idat",
+    "codec:png:exif:o2:little:after-idat",
+    "codec:png:exif:o2:little:before-idat",
+    "codec:png:exif:o3:big:after-idat",
+    "codec:png:exif:o3:big:before-idat",
+    "codec:png:exif:o3:little:after-idat",
+    "codec:png:exif:o3:little:before-idat",
+    "codec:png:exif:o4:big:after-idat",
+    "codec:png:exif:o4:big:before-idat",
+    "codec:png:exif:o4:little:after-idat",
+    "codec:png:exif:o4:little:before-idat",
+    "codec:png:exif:o5:big:after-idat",
+    "codec:png:exif:o5:big:before-idat",
+    "codec:png:exif:o5:little:after-idat",
+    "codec:png:exif:o5:little:before-idat",
+    "codec:png:exif:o6:big:after-idat",
+    "codec:png:exif:o6:big:before-idat",
+    "codec:png:exif:o6:little:after-idat",
+    "codec:png:exif:o6:little:before-idat",
+    "codec:png:exif:o7:big:after-idat",
+    "codec:png:exif:o7:big:before-idat",
+    "codec:png:exif:o7:little:after-idat",
+    "codec:png:exif:o7:little:before-idat",
+    "codec:png:exif:o8:big:after-idat",
+    "codec:png:exif:o8:big:before-idat",
+    "codec:png:exif:o8:little:after-idat",
+    "codec:png:exif:o8:little:before-idat",
+    "codec:png:gain-map:admission",
+    "codec:png:gain-map:precedence",
+    "codec:png:gain-map:sdr-base",
+    "codec:png:hdr-gain-map",
+    "codec:png:icc:gray",
+    "codec:png:icc:lut",
+    "codec:png:icc:malformed",
+    "codec:png:icc:rgb-v2-matrix-trc",
+    "codec:png:icc:rgb-v4-matrix-trc",
+    "codec:png:icc:unsupported-models",
+    "codec:png:limits",
+    "codec:png:limits:projection",
+    "codec:png:limits:validation",
+    "codec:png:malformed",
+    "codec:png:malformed:chunks",
+    "codec:png:malformed:ihdr",
+    "codec:png:malformed:palette-trns",
+    "codec:png:malformed:scanlines",
+    "codec:png:orientation",
+    "codec:png:orientation:invalid",
+    "codec:png:palette:suggested-truecolor",
+    "codec:png:passthrough",
+    "codec:png:precision:16bit",
+    "codec:png:sample:apng-included-default:gray-alpha16:intrinsic:adam7",
+    "codec:png:sample:apng-included-default:gray-alpha16:intrinsic:none",
+    "codec:png:sample:apng-included-default:gray-alpha8:intrinsic:adam7",
+    "codec:png:sample:apng-included-default:gray-alpha8:intrinsic:none",
+    "codec:png:sample:apng-included-default:gray16:key:adam7",
+    "codec:png:sample:apng-included-default:gray16:key:none",
+    "codec:png:sample:apng-included-default:gray16:none:adam7",
+    "codec:png:sample:apng-included-default:gray16:none:none",
+    "codec:png:sample:apng-included-default:gray1:key:adam7",
+    "codec:png:sample:apng-included-default:gray1:key:none",
+    "codec:png:sample:apng-included-default:gray1:none:adam7",
+    "codec:png:sample:apng-included-default:gray1:none:none",
+    "codec:png:sample:apng-included-default:gray2:key:adam7",
+    "codec:png:sample:apng-included-default:gray2:key:none",
+    "codec:png:sample:apng-included-default:gray2:none:adam7",
+    "codec:png:sample:apng-included-default:gray2:none:none",
+    "codec:png:sample:apng-included-default:gray4:key:adam7",
+    "codec:png:sample:apng-included-default:gray4:key:none",
+    "codec:png:sample:apng-included-default:gray4:none:adam7",
+    "codec:png:sample:apng-included-default:gray4:none:none",
+    "codec:png:sample:apng-included-default:gray8:key:adam7",
+    "codec:png:sample:apng-included-default:gray8:key:none",
+    "codec:png:sample:apng-included-default:gray8:none:adam7",
+    "codec:png:sample:apng-included-default:gray8:none:none",
+    "codec:png:sample:apng-included-default:indexed1:none:adam7",
+    "codec:png:sample:apng-included-default:indexed1:none:none",
+    "codec:png:sample:apng-included-default:indexed1:palette-full:adam7",
+    "codec:png:sample:apng-included-default:indexed1:palette-full:none",
+    "codec:png:sample:apng-included-default:indexed1:palette-prefix:adam7",
+    "codec:png:sample:apng-included-default:indexed1:palette-prefix:none",
+    "codec:png:sample:apng-included-default:indexed2:none:adam7",
+    "codec:png:sample:apng-included-default:indexed2:none:none",
+    "codec:png:sample:apng-included-default:indexed2:palette-full:adam7",
+    "codec:png:sample:apng-included-default:indexed2:palette-full:none",
+    "codec:png:sample:apng-included-default:indexed2:palette-prefix:adam7",
+    "codec:png:sample:apng-included-default:indexed2:palette-prefix:none",
+    "codec:png:sample:apng-included-default:indexed4:none:adam7",
+    "codec:png:sample:apng-included-default:indexed4:none:none",
+    "codec:png:sample:apng-included-default:indexed4:palette-full:adam7",
+    "codec:png:sample:apng-included-default:indexed4:palette-full:none",
+    "codec:png:sample:apng-included-default:indexed4:palette-prefix:adam7",
+    "codec:png:sample:apng-included-default:indexed4:palette-prefix:none",
+    "codec:png:sample:apng-included-default:indexed8:none:adam7",
+    "codec:png:sample:apng-included-default:indexed8:none:none",
+    "codec:png:sample:apng-included-default:indexed8:palette-full:adam7",
+    "codec:png:sample:apng-included-default:indexed8:palette-full:none",
+    "codec:png:sample:apng-included-default:indexed8:palette-prefix:adam7",
+    "codec:png:sample:apng-included-default:indexed8:palette-prefix:none",
+    "codec:png:sample:apng-included-default:rgb16:key:adam7",
+    "codec:png:sample:apng-included-default:rgb16:key:none",
+    "codec:png:sample:apng-included-default:rgb16:none:adam7",
+    "codec:png:sample:apng-included-default:rgb16:none:none",
+    "codec:png:sample:apng-included-default:rgb8:key:adam7",
+    "codec:png:sample:apng-included-default:rgb8:key:none",
+    "codec:png:sample:apng-included-default:rgb8:none:adam7",
+    "codec:png:sample:apng-included-default:rgb8:none:none",
+    "codec:png:sample:apng-included-default:rgba16:intrinsic:adam7",
+    "codec:png:sample:apng-included-default:rgba16:intrinsic:none",
+    "codec:png:sample:apng-included-default:rgba8:intrinsic:adam7",
+    "codec:png:sample:apng-included-default:rgba8:intrinsic:none",
+    "codec:png:sample:apng-separate-default:gray-alpha16:intrinsic:adam7",
+    "codec:png:sample:apng-separate-default:gray-alpha16:intrinsic:none",
+    "codec:png:sample:apng-separate-default:gray-alpha8:intrinsic:adam7",
+    "codec:png:sample:apng-separate-default:gray-alpha8:intrinsic:none",
+    "codec:png:sample:apng-separate-default:gray16:key:adam7",
+    "codec:png:sample:apng-separate-default:gray16:key:none",
+    "codec:png:sample:apng-separate-default:gray16:none:adam7",
+    "codec:png:sample:apng-separate-default:gray16:none:none",
+    "codec:png:sample:apng-separate-default:gray1:key:adam7",
+    "codec:png:sample:apng-separate-default:gray1:key:none",
+    "codec:png:sample:apng-separate-default:gray1:none:adam7",
+    "codec:png:sample:apng-separate-default:gray1:none:none",
+    "codec:png:sample:apng-separate-default:gray2:key:adam7",
+    "codec:png:sample:apng-separate-default:gray2:key:none",
+    "codec:png:sample:apng-separate-default:gray2:none:adam7",
+    "codec:png:sample:apng-separate-default:gray2:none:none",
+    "codec:png:sample:apng-separate-default:gray4:key:adam7",
+    "codec:png:sample:apng-separate-default:gray4:key:none",
+    "codec:png:sample:apng-separate-default:gray4:none:adam7",
+    "codec:png:sample:apng-separate-default:gray4:none:none",
+    "codec:png:sample:apng-separate-default:gray8:key:adam7",
+    "codec:png:sample:apng-separate-default:gray8:key:none",
+    "codec:png:sample:apng-separate-default:gray8:none:adam7",
+    "codec:png:sample:apng-separate-default:gray8:none:none",
+    "codec:png:sample:apng-separate-default:indexed1:none:adam7",
+    "codec:png:sample:apng-separate-default:indexed1:none:none",
+    "codec:png:sample:apng-separate-default:indexed1:palette-full:adam7",
+    "codec:png:sample:apng-separate-default:indexed1:palette-full:none",
+    "codec:png:sample:apng-separate-default:indexed1:palette-prefix:adam7",
+    "codec:png:sample:apng-separate-default:indexed1:palette-prefix:none",
+    "codec:png:sample:apng-separate-default:indexed2:none:adam7",
+    "codec:png:sample:apng-separate-default:indexed2:none:none",
+    "codec:png:sample:apng-separate-default:indexed2:palette-full:adam7",
+    "codec:png:sample:apng-separate-default:indexed2:palette-full:none",
+    "codec:png:sample:apng-separate-default:indexed2:palette-prefix:adam7",
+    "codec:png:sample:apng-separate-default:indexed2:palette-prefix:none",
+    "codec:png:sample:apng-separate-default:indexed4:none:adam7",
+    "codec:png:sample:apng-separate-default:indexed4:none:none",
+    "codec:png:sample:apng-separate-default:indexed4:palette-full:adam7",
+    "codec:png:sample:apng-separate-default:indexed4:palette-full:none",
+    "codec:png:sample:apng-separate-default:indexed4:palette-prefix:adam7",
+    "codec:png:sample:apng-separate-default:indexed4:palette-prefix:none",
+    "codec:png:sample:apng-separate-default:indexed8:none:adam7",
+    "codec:png:sample:apng-separate-default:indexed8:none:none",
+    "codec:png:sample:apng-separate-default:indexed8:palette-full:adam7",
+    "codec:png:sample:apng-separate-default:indexed8:palette-full:none",
+    "codec:png:sample:apng-separate-default:indexed8:palette-prefix:adam7",
+    "codec:png:sample:apng-separate-default:indexed8:palette-prefix:none",
+    "codec:png:sample:apng-separate-default:rgb16:key:adam7",
+    "codec:png:sample:apng-separate-default:rgb16:key:none",
+    "codec:png:sample:apng-separate-default:rgb16:none:adam7",
+    "codec:png:sample:apng-separate-default:rgb16:none:none",
+    "codec:png:sample:apng-separate-default:rgb8:key:adam7",
+    "codec:png:sample:apng-separate-default:rgb8:key:none",
+    "codec:png:sample:apng-separate-default:rgb8:none:adam7",
+    "codec:png:sample:apng-separate-default:rgb8:none:none",
+    "codec:png:sample:apng-separate-default:rgba16:intrinsic:adam7",
+    "codec:png:sample:apng-separate-default:rgba16:intrinsic:none",
+    "codec:png:sample:apng-separate-default:rgba8:intrinsic:adam7",
+    "codec:png:sample:apng-separate-default:rgba8:intrinsic:none",
+    "codec:png:sample:static:gray-alpha16:intrinsic:adam7",
+    "codec:png:sample:static:gray-alpha16:intrinsic:none",
+    "codec:png:sample:static:gray-alpha8:intrinsic:adam7",
+    "codec:png:sample:static:gray-alpha8:intrinsic:none",
+    "codec:png:sample:static:gray16:key:adam7",
+    "codec:png:sample:static:gray16:key:none",
+    "codec:png:sample:static:gray16:none:adam7",
+    "codec:png:sample:static:gray16:none:none",
+    "codec:png:sample:static:gray1:key:adam7",
+    "codec:png:sample:static:gray1:key:none",
+    "codec:png:sample:static:gray1:none:adam7",
+    "codec:png:sample:static:gray1:none:none",
+    "codec:png:sample:static:gray2:key:adam7",
+    "codec:png:sample:static:gray2:key:none",
+    "codec:png:sample:static:gray2:none:adam7",
+    "codec:png:sample:static:gray2:none:none",
+    "codec:png:sample:static:gray4:key:adam7",
+    "codec:png:sample:static:gray4:key:none",
+    "codec:png:sample:static:gray4:none:adam7",
+    "codec:png:sample:static:gray4:none:none",
+    "codec:png:sample:static:gray8:key:adam7",
+    "codec:png:sample:static:gray8:key:none",
+    "codec:png:sample:static:gray8:none:adam7",
+    "codec:png:sample:static:gray8:none:none",
+    "codec:png:sample:static:indexed1:none:adam7",
+    "codec:png:sample:static:indexed1:none:none",
+    "codec:png:sample:static:indexed1:palette-full:adam7",
+    "codec:png:sample:static:indexed1:palette-full:none",
+    "codec:png:sample:static:indexed1:palette-prefix:adam7",
+    "codec:png:sample:static:indexed1:palette-prefix:none",
+    "codec:png:sample:static:indexed2:none:adam7",
+    "codec:png:sample:static:indexed2:none:none",
+    "codec:png:sample:static:indexed2:palette-full:adam7",
+    "codec:png:sample:static:indexed2:palette-full:none",
+    "codec:png:sample:static:indexed2:palette-prefix:adam7",
+    "codec:png:sample:static:indexed2:palette-prefix:none",
+    "codec:png:sample:static:indexed4:none:adam7",
+    "codec:png:sample:static:indexed4:none:none",
+    "codec:png:sample:static:indexed4:palette-full:adam7",
+    "codec:png:sample:static:indexed4:palette-full:none",
+    "codec:png:sample:static:indexed4:palette-prefix:adam7",
+    "codec:png:sample:static:indexed4:palette-prefix:none",
+    "codec:png:sample:static:indexed8:none:adam7",
+    "codec:png:sample:static:indexed8:none:none",
+    "codec:png:sample:static:indexed8:palette-full:adam7",
+    "codec:png:sample:static:indexed8:palette-full:none",
+    "codec:png:sample:static:indexed8:palette-prefix:adam7",
+    "codec:png:sample:static:indexed8:palette-prefix:none",
+    "codec:png:sample:static:rgb16:key:adam7",
+    "codec:png:sample:static:rgb16:key:none",
+    "codec:png:sample:static:rgb16:none:adam7",
+    "codec:png:sample:static:rgb16:none:none",
+    "codec:png:sample:static:rgb8:key:adam7",
+    "codec:png:sample:static:rgb8:key:none",
+    "codec:png:sample:static:rgb8:none:adam7",
+    "codec:png:sample:static:rgb8:none:none",
+    "codec:png:sample:static:rgba16:intrinsic:adam7",
+    "codec:png:sample:static:rgba16:intrinsic:none",
+    "codec:png:sample:static:rgba8:intrinsic:adam7",
+    "codec:png:sample:static:rgba8:intrinsic:none",
+    "codec:webp:alpha",
+    "codec:webp:animation",
+    "codec:webp:color-profile",
+    "codec:webp:default-frame",
+    "codec:webp:limits",
+    "codec:webp:malformed",
+    "codec:webp:orientation",
+    "codec:webp:passthrough",
+    "interaction:dark-mode-nested-svg-pdf",
+    "interaction:diagnostic-order",
+    "interaction:frame-batch-limits",
+    "interaction:frames-text-assets"
+  ],
+  "spec_only_catalog_sha256": "1f6cc7cd79145cb47b928283356d2a941a9e36efde5f26d68fb8e299cbd6b7d8"
+}

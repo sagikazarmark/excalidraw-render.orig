@@ -233,6 +233,13 @@ pub(super) fn decode_static_jpeg(
     orientation: Option<u8>,
 ) -> Result<DecodedRaster, ResolveError> {
     let source_color_space = match &color_normalization {
+        ColorNormalization::Lut(lut) => {
+            if lut.first().ok_or(ResolveError::DecodeFailed)?.gray() {
+                ColorSpace::Luma
+            } else {
+                ColorSpace::RGB
+            }
+        }
         ColorNormalization::Profile(profile) => match profile.color_space {
             DataColorSpace::Rgb => ColorSpace::RGB,
             DataColorSpace::Gray => ColorSpace::Luma,
@@ -254,21 +261,40 @@ pub(super) fn decode_static_jpeg(
     if rgb.len() != expected_rgb {
         return Err(ResolveError::JpegDecodeFailed);
     }
-    if let ColorNormalization::Profile(profile) = color_normalization {
+    if let ColorNormalization::Lut(lut) = color_normalization {
+        let lut = lut.first().ok_or(ResolveError::DecodeFailed)?;
+        if lut.gray() {
+            let size = usize::try_from(pixels.checked_mul(3).ok_or(ResolveError::Memory)?)
+                .map_err(|_| ResolveError::Memory)?;
+            rgb.try_reserve_exact(size.saturating_sub(rgb.len()))
+                .map_err(|_| ResolveError::Memory)?;
+            rgb.resize(size, 0);
+            for i in (0..pixels as usize).rev() {
+                let g = rgb[i];
+                let p = lut.pixel([g; 3])?;
+                rgb[i * 3..i * 3 + 3].copy_from_slice(&p);
+            }
+        } else {
+            for p in rgb.chunks_exact_mut(3) {
+                let output = lut.pixel([p[0], p[1], p[2]])?;
+                p.copy_from_slice(&output);
+            }
+        }
+    } else if let ColorNormalization::Profile(profile) = color_normalization {
         let srgb = ColorProfile::new_srgb();
         let (source_layout, source_is_gray) = match profile.color_space {
             DataColorSpace::Rgb => (Layout::Rgb, false),
             DataColorSpace::Gray => (Layout::Gray, true),
             _ => return Err(ResolveError::Unsupported),
         };
-        let transform = profile
-            .create_transform_8bit(
+        let transform = super::color::cms_operation(super::color::CmsSite::Construct, || {
+            profile.create_transform_8bit(
                 source_layout,
                 &srgb,
                 Layout::Rgb,
                 TransformOptions::default(),
             )
-            .map_err(|_| ResolveError::Unsupported)?;
+        })?;
         let source = try_copy(&rgb)?;
         if source_is_gray {
             let rgb_size = usize::try_from(pixels.checked_mul(3).ok_or(ResolveError::Memory)?)
@@ -277,9 +303,9 @@ pub(super) fn decode_static_jpeg(
                 .map_err(|_| ResolveError::Memory)?;
             rgb.resize(rgb_size, 0);
         }
-        transform
-            .transform(&source, &mut rgb)
-            .map_err(|_| ResolveError::Unsupported)?;
+        super::color::cms_operation(super::color::CmsSite::Execute, || {
+            transform.transform(&source, &mut rgb)
+        })?;
     } else if matches!(color_normalization, ColorNormalization::LinearSrgb) {
         for channel in &mut rgb {
             *channel = LINEAR_TO_SRGB[usize::from(*channel)];

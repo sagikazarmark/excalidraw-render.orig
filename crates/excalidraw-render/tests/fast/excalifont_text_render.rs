@@ -90,9 +90,13 @@ fn excalifont_text_renders_semantically_in_every_format() {
                 assert!(png.rgba.as_chunks::<4>().0.iter().any(|pixel| {
                     pixel[2] > pixel[0] && pixel[2] > pixel[1] && pixel[3] == 255
                 }));
+                // User-approved draft §8.5 per-glyph device phases. Independent
+                // pinned Chromium replay of this same rotated scene: 0 changed
+                // pixels, SSIM bits 3feffa5b1c4f155c; SVG/PDF canaries unchanged.
+                // See docs/research/png-stage4-binding-reconciliation.md.
                 assert_eq!(
                     artifact_sha256(&first),
-                    "cb90c943bc71d5eec983bf2c933e1c3c16dd4ca7b5fc14ba79f0230404209534"
+                    "9b2da5d13b6a2c672ab80be51edbeeb9491195b57939dea9f48e80e3887f3b95"
                 );
             }
             OutputFormat::Pdf => {

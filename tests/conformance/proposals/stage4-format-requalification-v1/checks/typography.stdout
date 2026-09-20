@@ -1,0 +1,11 @@
+
+running 6 tests
+test quarter_pixel_halfway_ties_choose_the_positive_device_coordinate ... ok
+test canvas_mask_cutoff_is_strictly_above_256_device_pixels ... ok
+test quarter_turn_text_snaps_the_perpendicular_device_axis ... ok
+test rotated_canvas_glyph_origins_match_the_reference_typography_crop ... ok
+test alignment_uses_export_matrix_not_font_size_or_supersample ... ok
+test font_cache_alignment_matches_pinned_signed_threshold_controls ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+

@@ -1,0 +1,10 @@
+{
+  "byte_length": 6400,
+  "height": 40,
+  "layout": "top-left-row-major",
+  "pdfium": "152.0.7947.0",
+  "pixel_format": "straight-alpha-srgb-rgba8",
+  "pypdfium2": "5.12.1",
+  "sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+  "width": 40
+}

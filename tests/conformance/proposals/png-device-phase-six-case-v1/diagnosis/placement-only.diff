@@ -1,0 +1,49 @@
+diff --git a/home/laborant/excalidraw-render.orig/crates/excalidraw-render/src/render/png.rs b/tmp/opencode/six-phase-probe/renderer/src/render/png.rs
+index c41206b..2ff6ca3 100644
+--- a/home/laborant/excalidraw-render.orig/crates/excalidraw-render/src/render/png.rs
++++ b/tmp/opencode/six-phase-probe/renderer/src/render/png.rs
+@@ -569,6 +569,30 @@ impl PngTransform {
+         font_size: f64,
+         multiplier: u32,
+     ) -> Result<Option<tiny_skia::Path>, FormatEncodeError> {
++        // Temporary diagnosis: prove per-glyph ranges partition the original
++        // outline, including empty glyphs and concatenated fallback/bidi runs.
++        let mut cursor = 0;
++        for glyph in &label.glyphs {
++            assert_eq!(glyph.outline.start, cursor, "outline gap/overlap");
++            assert!(glyph.outline.end <= label.path.operations.len());
++            assert!(glyph.x.is_finite() && glyph.y.is_finite());
++            cursor = glyph.outline.end;
++        }
++        assert_eq!(cursor, label.path.operations.len(), "unowned contours");
++        for run in &label.runs {
++            assert!(run.glyph_start <= run.glyph_end && run.glyph_end <= label.glyphs.len());
++        }
++        let mode = std::env::var("SIX_PHASE_MODE").unwrap_or_default();
++        if mode == "legacy" {
++            // The former whole-line baseline placement, independent of ranges.
++            let mut transform = self;
++            if self.b == 0.0 && self.c == 0.0 {
++                let baseline = self.d * label.baseline + self.f;
++                transform.f += (baseline + 0.5).floor() - baseline;
++            }
++            let transform = transform.raster_transform(multiplier)?;
++            return Ok(label_path(&label.path)?.and_then(|path| path.transform(transform)));
++        }
+         let operations = &label.path.operations;
+         let point_capacity = operations.len().checked_mul(3).ok_or_else(png_size_error)?;
+         let mut builder = PathBuilder::with_capacity(operations.len(), point_capacity);
+@@ -601,6 +625,13 @@ impl PngTransform {
+                 ((x * x_grid + 0.5).floor() / x_grid - x,
+                  (y * y_grid + 0.5).floor() / y_grid - y)
+             };
++            // Diagnostic-only assertions for these six axis-aligned scenes.
++            assert_eq!(self.b, 0.0);
++            assert_eq!(self.c, 0.0);
++            let prior_baseline = self.d * label.baseline + self.f;
++            let prior_dy = (prior_baseline + 0.5).floor() - prior_baseline;
++            assert!((dy - prior_dy).abs() < 1e-9, "baseline changed");
++            assert!(dx.abs() <= 0.125 + 1e-9, "phase exceeds half-quarter");
+             let outline = operations.get(glyph.outline.clone()).ok_or_else(|| {
+                 FormatEncodeError::Encoding("PNG glyph outline range is invalid".to_owned())
+             })?;

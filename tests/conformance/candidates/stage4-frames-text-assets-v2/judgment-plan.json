@@ -1,0 +1,8 @@
+{
+  "whole_class": "geometry-image",
+  "crops": [
+    {"id":"typography","x":10,"y":10,"width":124,"height":30,"class":"typography"},
+    {"id":"non-text","x":36,"y":38,"width":164,"height":46,"class":"geometry-image"}
+  ],
+  "exceptions": []
+}

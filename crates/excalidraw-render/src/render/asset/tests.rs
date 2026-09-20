@@ -16,8 +16,7 @@ use super::*;
 // `tests/fast/static_*_asset_render.rs` modules and this suite encode the same
 // bytes; they are pure encoders with no dependency on either crate spelling,
 // which is what lets one file serve both compilation units.
-#[path = "../../../tests/common/codec_fixtures.rs"]
-mod fixtures;
+use crate::codec_fixtures as fixtures;
 
 use fixtures::*;
 

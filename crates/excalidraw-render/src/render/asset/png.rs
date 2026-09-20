@@ -4,7 +4,7 @@
 //! re-encoding a nested raster receives before it is embedded in sanitized
 //! SVG.
 
-use std::io::Cursor;
+use std::io::{self, Read};
 
 use super::color::{finish_rgba, normalize_rgba, ColorNormalization};
 use super::orientation::{exif_orientation, orient_rgba, oriented_dimensions};
@@ -111,6 +111,15 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
     let mut idat_ended = false;
     let mut saw_iend = false;
     let mut saw_exif = false;
+    let mut bit_depth = 0;
+    let mut palette_entries = 0;
+    let mut saw_trns = false;
+    let mut frame_controls = 0_u32;
+    let mut sequence = 0_u32;
+    let mut frame_dimensions = None;
+    let mut frame_has_data = false;
+    let mut data_kind = None;
+    let mut data_stream: Option<PngDataStream> = None;
     let mut semantics = PngSemantics::default();
     while offset < bytes.len() {
         let header_end = offset.checked_add(8).ok_or(ResolveError::DecodeFailed)?;
@@ -149,6 +158,18 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
         if crc.finalize() != expected_crc {
             return Err(ResolveError::DecodeFailed);
         }
+        // IDAT is consecutive; APNG permits ancillary chunks between fdAT
+        // pieces of the same frame (PNG 3 §4.9.2). Only a new frame or image
+        // boundary ends that compressed stream.
+        if data_kind.is_some_and(|kind| {
+            kind != chunk_type
+                && (kind == *b"IDAT" || matches!(&chunk_type, b"fcTL" | b"IEND" | b"IDAT"))
+        }) {
+            if let Some(stream) = data_stream.take() {
+                stream.finish()?;
+            }
+            data_kind = None;
+        }
         idat_ended |= saw_idat && &chunk_type != b"IDAT";
         match &chunk_type {
             b"IHDR" if chunk_index == 0 && length == 13 => {
@@ -162,7 +183,7 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
                         .try_into()
                         .map_err(|_| ResolveError::DecodeFailed)?,
                 );
-                let bit_depth = data[8];
+                bit_depth = data[8];
                 let png_color_type = data[9];
                 let valid_depth = matches!(
                     (png_color_type, bit_depth),
@@ -191,6 +212,62 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
                 }
             }
             b"acTL" => return Err(ResolveError::DecodeFailed),
+            b"fcTL" => {
+                if length != 26
+                    || semantics.animation_frames == 0
+                    || (frame_controls != 0 && !frame_has_data)
+                    || frame_controls >= semantics.animation_frames
+                {
+                    return Err(ResolveError::DecodeFailed);
+                }
+                check_sequence(data, &mut sequence)?;
+                let word = |at| -> Result<u32, ResolveError> {
+                    Ok(u32::from_be_bytes(
+                        data[at..at + 4]
+                            .try_into()
+                            .map_err(|_| ResolveError::DecodeFailed)?,
+                    ))
+                };
+                let (w, h, x, y) = (word(4)?, word(8)?, word(12)?, word(16)?);
+                let (canvas_w, canvas_h) = dimensions.ok_or(ResolveError::DecodeFailed)?;
+                if w == 0
+                    || h == 0
+                    || x.checked_add(w).is_none_or(|v| v > canvas_w)
+                    || y.checked_add(h).is_none_or(|v| v > canvas_h)
+                    || data[24] > 2
+                    || data[25] > 1
+                    || (!saw_idat && (w, h, x, y) != (canvas_w, canvas_h, 0, 0))
+                {
+                    return Err(ResolveError::DecodeFailed);
+                }
+                frame_dimensions = Some((w, h));
+                frame_controls += 1;
+                frame_has_data = false;
+            }
+            b"fdAT" => {
+                if length < 4
+                    || !saw_idat
+                    || frame_controls == 0
+                    || (frame_has_data && data_kind != Some(*b"fdAT"))
+                {
+                    return Err(ResolveError::DecodeFailed);
+                }
+                check_sequence(data, &mut sequence)?;
+                if data_stream.is_none() {
+                    data_stream = Some(PngDataStream::new(
+                        frame_dimensions.ok_or(ResolveError::DecodeFailed)?,
+                        color_type.ok_or(ResolveError::DecodeFailed)?,
+                        bit_depth,
+                        bytes[28] == 1,
+                    )?);
+                }
+                data_stream
+                    .as_mut()
+                    .ok_or(ResolveError::DecodeFailed)?
+                    .push(&data[4..])?;
+                data_kind = Some(*b"fdAT");
+                frame_has_data = true;
+            }
             b"cICP" if length == 4 && !saw_plte && !saw_idat && semantics.cicp.is_none() => {
                 semantics.cicp = Some(data.try_into().map_err(|_| ResolveError::DecodeFailed)?);
             }
@@ -204,15 +281,56 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
             b"PLTE"
                 if !saw_plte
                     && !saw_idat
+                    && !saw_trns
                     && matches!(color_type, Some(2 | 3 | 6))
                     && length > 0
                     && length <= 768
+                    && (!matches!(color_type, Some(3)) || length / 3 <= (1_usize << bit_depth))
                     && length % 3 == 0 =>
             {
                 saw_plte = true;
+                palette_entries = length / 3;
             }
             b"PLTE" => return Err(ResolveError::DecodeFailed),
-            b"IDAT" if dimensions.is_some() && !idat_ended => saw_idat = true,
+            b"tRNS" => {
+                if saw_trns
+                    || saw_idat
+                    || !match color_type {
+                        Some(0) => length == 2,
+                        Some(2) => length == 6,
+                        Some(3) => saw_plte && length > 0 && length <= palette_entries,
+                        _ => false,
+                    }
+                {
+                    return Err(ResolveError::DecodeFailed);
+                }
+                saw_trns = true;
+                if matches!(color_type, Some(0 | 2)) {
+                    let maximum = (1_u32 << bit_depth) - 1;
+                    for sample in data.chunks_exact(2) {
+                        if u32::from(u16::from_be_bytes([sample[0], sample[1]])) > maximum {
+                            return Err(ResolveError::DecodeFailed);
+                        }
+                    }
+                }
+            }
+            b"IDAT" if dimensions.is_some() && !idat_ended => {
+                if data_stream.is_none() {
+                    data_stream = Some(PngDataStream::new(
+                        dimensions.ok_or(ResolveError::DecodeFailed)?,
+                        color_type.ok_or(ResolveError::DecodeFailed)?,
+                        bit_depth,
+                        bytes[28] == 1,
+                    )?);
+                }
+                data_stream
+                    .as_mut()
+                    .ok_or(ResolveError::DecodeFailed)?
+                    .push(data)?;
+                data_kind = Some(*b"IDAT");
+                saw_idat = true;
+                frame_has_data = true;
+            }
             b"IDAT" => return Err(ResolveError::DecodeFailed),
             b"IEND" if length == 0 && saw_idat && (!matches!(color_type, Some(3)) || saw_plte) => {
                 saw_iend = true;
@@ -238,6 +356,9 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
     if !saw_iend || offset != bytes.len() {
         return Err(ResolveError::DecodeFailed);
     }
+    if frame_controls != semantics.animation_frames || (frame_controls != 0 && !frame_has_data) {
+        return Err(ResolveError::DecodeFailed);
+    }
     let (source_width, source_height) = dimensions.ok_or(ResolveError::DecodeFailed)?;
     let (width, height) = oriented_dimensions(
         source_width,
@@ -248,8 +369,80 @@ pub(super) fn validate_static_png(bytes: &[u8]) -> Result<(u32, u32, PngSemantic
     Ok((width, height, semantics))
 }
 
+/// png 0.17 closes an fdAT stream at any intervening ancillary chunk. Feed
+/// its sample decoder a borrowed chunk view without the legal, non-sample
+/// ancillary chunks inside a frame. The outer validator has already checked
+/// every original chunk/CRC and EXIF; SVG still retains those original octets.
+/// Metadata with pre-IDAT ordering requirements remains visible to the decoder.
+struct PngFrameReader<'a> {
+    remaining: &'a [u8],
+    segment: &'a [u8],
+    in_frame: bool,
+}
+impl<'a> PngFrameReader<'a> {
+    fn new(bytes: &'a [u8]) -> Self {
+        let (segment, remaining) = bytes.split_at(bytes.len().min(8));
+        Self {
+            remaining,
+            segment,
+            in_frame: false,
+        }
+    }
+}
+impl Read for PngFrameReader<'_> {
+    fn read(&mut self, output: &mut [u8]) -> io::Result<usize> {
+        if output.is_empty() {
+            return Ok(0);
+        }
+        while self.segment.is_empty() && !self.remaining.is_empty() {
+            let invalid = || io::Error::from(io::ErrorKind::InvalidData);
+            let header = self.remaining.get(..8).ok_or_else(invalid)?;
+            let length = u32::from_be_bytes(header[..4].try_into().map_err(|_| invalid())?);
+            let end = usize::try_from(length)
+                .map_err(|_| invalid())?
+                .checked_add(12)
+                .ok_or_else(invalid)?;
+            let segment = self.remaining.get(..end).ok_or_else(invalid)?;
+            self.remaining = self.remaining.get(end..).ok_or_else(invalid)?;
+            let kind = &header[4..8];
+            let ordered = matches!(
+                kind,
+                b"acTL"
+                    | b"fcTL"
+                    | b"cICP"
+                    | b"gAMA"
+                    | b"cHRM"
+                    | b"iCCP"
+                    | b"sRGB"
+                    | b"sBIT"
+                    | b"tRNS"
+                    | b"bKGD"
+                    | b"hIST"
+                    | b"pHYs"
+                    | b"sPLT"
+                    | b"mDCV"
+                    | b"cLLI"
+            );
+            if self.in_frame && kind != b"fdAT" && kind[0].is_ascii_lowercase() && !ordered {
+                continue;
+            }
+            if kind == b"fcTL" {
+                self.in_frame = false;
+            }
+            if kind == b"fdAT" {
+                self.in_frame = true;
+            }
+            self.segment = segment;
+        }
+        let count = output.len().min(self.segment.len());
+        output[..count].copy_from_slice(&self.segment[..count]);
+        self.segment = &self.segment[count..];
+        Ok(count)
+    }
+}
+
 fn validate_png_stream(bytes: &[u8], width: u32, height: u32) -> Result<(), ResolveError> {
-    let mut decoder = png::Decoder::new(Cursor::new(bytes));
+    let mut decoder = png::Decoder::new(PngFrameReader::new(bytes));
     decoder.set_transformations(png::Transformations::IDENTITY);
     let logical_bytes = 1_048_576_u64
         .checked_add(32_u64.saturating_mul(u64::from(width.max(height))))
@@ -273,11 +466,150 @@ fn validate_png_stream(bytes: &[u8], width: u32, height: u32) -> Result<(), Reso
         .map_err(|_| ResolveError::Memory)?;
     frame.resize(reader.output_buffer_size(), 0);
     for _ in 0..frame_count {
-        reader
+        let output = reader
             .next_frame(&mut frame)
             .map_err(|_| ResolveError::DecodeFailed)?;
+        if output.color_type == png::ColorType::Indexed {
+            let entries = reader
+                .info()
+                .palette
+                .as_ref()
+                .ok_or(ResolveError::DecodeFailed)?
+                .len()
+                / 3;
+            let depth = output.bit_depth as usize;
+            let row_bytes = (output.width as usize * depth).div_ceil(8);
+            let stride = if reader.info().interlaced {
+                reader.output_line_size(width)
+            } else {
+                row_bytes
+            };
+            for y in 0..output.height as usize {
+                let start = y.checked_mul(stride).ok_or(ResolveError::DecodeFailed)?;
+                let end = start
+                    .checked_add(row_bytes)
+                    .ok_or(ResolveError::DecodeFailed)?;
+                let row = frame.get(start..end).ok_or(ResolveError::DecodeFailed)?;
+                for x in 0..output.width as usize {
+                    let index = (row[x * depth / 8] >> (8 - depth - x * depth % 8))
+                        & ((1_u16 << depth) - 1) as u8;
+                    if usize::from(index) >= entries {
+                        return Err(ResolveError::DecodeFailed);
+                    }
+                }
+            }
+        }
     }
     reader.finish().map_err(|_| ResolveError::DecodeFailed)
+}
+
+fn check_sequence(data: &[u8], expected: &mut u32) -> Result<(), ResolveError> {
+    let sequence = u32::from_be_bytes(
+        data.get(..4)
+            .ok_or(ResolveError::DecodeFailed)?
+            .try_into()
+            .map_err(|_| ResolveError::DecodeFailed)?,
+    );
+    if sequence != *expected {
+        return Err(ResolveError::DecodeFailed);
+    }
+    *expected = expected.checked_add(1).ok_or(ResolveError::DecodeFailed)?;
+    Ok(())
+}
+
+/// The decoder intentionally tolerates excess decompressed bytes. Validation
+/// must instead consume exactly the declared scanlines, including the checksum.
+/// Fixed inflate state and scratch fit the existing 1 MiB decoder envelope;
+/// excess output stops at the first block, never an unbounded expansion.
+struct PngDataStream {
+    state: miniz_oxide::inflate::stream::InflateState,
+    remaining: u64,
+    ended: bool,
+}
+impl PngDataStream {
+    fn new(
+        (width, height): (u32, u32),
+        color: u8,
+        depth: u8,
+        interlaced: bool,
+    ) -> Result<Self, ResolveError> {
+        let channels = match color {
+            0 | 3 => 1,
+            2 => 3,
+            4 => 2,
+            6 => 4,
+            _ => return Err(ResolveError::DecodeFailed),
+        };
+        let passes = if interlaced {
+            &[
+                (0, 0, 8, 8),
+                (4, 0, 8, 8),
+                (0, 4, 4, 8),
+                (2, 0, 4, 4),
+                (0, 2, 2, 4),
+                (1, 0, 2, 2),
+                (0, 1, 1, 2),
+            ][..]
+        } else {
+            &[(0, 0, 1, 1)][..]
+        };
+        let mut remaining = 0_u64;
+        for &(x, y, dx, dy) in passes {
+            let w = u64::from(width.saturating_sub(x)).div_ceil(dx);
+            let h = u64::from(height.saturating_sub(y)).div_ceil(dy);
+            if w != 0 && h != 0 {
+                let bytes = (w * channels * u64::from(depth)).div_ceil(8) + 1;
+                remaining = remaining
+                    .checked_add(bytes.checked_mul(h).ok_or(ResolveError::DecodeFailed)?)
+                    .ok_or(ResolveError::DecodeFailed)?;
+            }
+        }
+        Ok(Self {
+            state: miniz_oxide::inflate::stream::InflateState::new(miniz_oxide::DataFormat::Zlib),
+            remaining,
+            ended: false,
+        })
+    }
+    fn push(&mut self, mut data: &[u8]) -> Result<(), ResolveError> {
+        use miniz_oxide::{MZFlush, MZStatus};
+        let mut output = [0; 4096];
+        let mut drain = false;
+        while !data.is_empty() || drain {
+            if self.ended {
+                return Err(ResolveError::DecodeFailed);
+            }
+            let result = miniz_oxide::inflate::stream::inflate(
+                &mut self.state,
+                data,
+                &mut output,
+                MZFlush::None,
+            );
+            self.remaining = self
+                .remaining
+                .checked_sub(result.bytes_written as u64)
+                .ok_or(ResolveError::DecodeFailed)?;
+            data = data
+                .get(result.bytes_consumed..)
+                .ok_or(ResolveError::DecodeFailed)?;
+            match result.status {
+                Ok(MZStatus::StreamEnd) => self.ended = true,
+                Ok(MZStatus::Ok) if result.bytes_consumed != 0 || result.bytes_written != 0 => {}
+                Err(miniz_oxide::MZError::Buf) if data.is_empty() && result.bytes_written == 0 => {
+                    break
+                }
+                _ => return Err(ResolveError::DecodeFailed),
+            }
+            drain = !self.ended && result.bytes_written == output.len();
+        }
+        Ok(())
+    }
+    fn finish(self) -> Result<(), ResolveError> {
+        if self.ended && self.remaining == 0 {
+            Ok(())
+        } else {
+            Err(ResolveError::DecodeFailed)
+        }
+    }
 }
 
 pub(super) fn decode_static_png(
@@ -289,7 +621,7 @@ pub(super) fn decode_static_png(
     if let ColorNormalization::Hdr(hdr) = color_normalization {
         return decode_hdr_png(bytes, pixels, &hdr, orientation);
     }
-    let mut decoder = png::Decoder::new(Cursor::new(bytes));
+    let mut decoder = png::Decoder::new(PngFrameReader::new(bytes));
     decoder.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
     let logical_bytes = pixels
         .checked_mul(8)
@@ -315,6 +647,30 @@ pub(super) fn decode_static_png(
     let output = reader
         .next_frame(&mut decoded)
         .map_err(|_| ResolveError::DecodeFailed)?;
+    // png 0.17 writes Adam7 rows at the IHDR canvas stride even for narrow
+    // APNG subframes. Repack those rows before interpreting a packed frame.
+    if reader.info().interlaced {
+        let source_stride = reader.output_line_size(reader.info().width);
+        for y in 0..output.height as usize {
+            let start = y
+                .checked_mul(source_stride)
+                .ok_or(ResolveError::DecodeFailed)?;
+            let end = start
+                .checked_add(output.line_size)
+                .ok_or(ResolveError::DecodeFailed)?;
+            let target = y
+                .checked_mul(output.line_size)
+                .ok_or(ResolveError::DecodeFailed)?;
+            if end > decoded.len()
+                || target
+                    .checked_add(output.line_size)
+                    .is_none_or(|n| n > decoded.len())
+            {
+                return Err(ResolveError::DecodeFailed);
+            }
+            decoded.copy_within(start..end, target);
+        }
+    }
     decoded.truncate(output.buffer_size());
     let rgba_size = usize::try_from(pixels.checked_mul(4).ok_or(ResolveError::Memory)?)
         .map_err(|_| ResolveError::Memory)?;
@@ -403,7 +759,7 @@ fn decode_hdr_png(
     hdr: &super::hdr::Hdr,
     orientation: Option<u8>,
 ) -> Result<DecodedRaster, ResolveError> {
-    let mut decoder = png::Decoder::new(Cursor::new(bytes));
+    let mut decoder = png::Decoder::new(PngFrameReader::new(bytes));
     decoder.set_transformations(png::Transformations::EXPAND);
     decoder.set_limits(png::Limits {
         bytes: usize::try_from(

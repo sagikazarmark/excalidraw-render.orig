@@ -1,0 +1,46 @@
+{
+  "schema": "excalidraw-render/representative-reference/v1",
+  "sources": [
+    {
+      "path": "tools/reference-oracle/scripts/stage4-representative.mjs",
+      "sha256": "e858d936fb4430338d6a89ccaa4ad8f3364c0a57acd98c95a2143a93a015b5b5"
+    },
+    {
+      "path": "tools/reference-oracle/run-stage4-representative.sh",
+      "sha256": "baa993ef5fd26c0d3ebeae27b6abc9db3d4361d2ed0a3c913b3185b0ffe46a3a"
+    },
+    {
+      "path": "tools/reference-oracle/scripts/canonical-json.mjs",
+      "sha256": "6d0c4cc012d77b1fc69d9a0009b0a04be053c295822d3e065137c8d12de5374e"
+    },
+    {
+      "path": "tests/oracle/reference-profiles/revision-1.json",
+      "sha256": "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71"
+    },
+    {
+      "path": "tests/oracle/reference-profiles/revision-1-assets.json",
+      "sha256": "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a"
+    }
+  ],
+  "options": {
+    "exportBackground": false,
+    "exportEmbedScene": true,
+    "exportPadding": 0,
+    "exportScale": 1,
+    "exportWithDarkMode": false,
+    "frameRendering": {
+      "enabled": true,
+      "clip": true,
+      "name": false,
+      "outline": false
+    },
+    "maxWidthOrHeight": null,
+    "viewBackgroundColor": "#ffffff"
+  },
+  "width": 200,
+  "height": 120,
+  "fresh_process_runs": 2,
+  "browser": "149.0.7827.55",
+  "official_release": "v0.18.1",
+  "network": "none"
+}

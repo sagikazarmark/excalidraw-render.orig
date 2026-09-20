@@ -1,0 +1,13 @@
+{
+  "schema": "excalidraw-render/format-application-attempt/v1",
+  "attempt_id": "cbc2b30a981b4391af4159ffb4bebe98",
+  "state": "applied",
+  "formatting_subject_sha256": "sha256:844e401e1601f0f36d8511f709ebe8834224d83340e2b10fd444dd545c39f6ef",
+  "representative_subject_sha256": "sha256:aaa772430f342a60807ef97255bf2296041cbcf23dff4c2aa4284052deb92454",
+  "started_at": "2026-09-20T18:15:05.310611+00:00",
+  "before_sha256": {
+    "tests/conformance/candidates/stage4-frames-text-assets-v8/manifest.json": "7468d08cef4853cec877b925d411b5e531457334f6506f9e77f1d91b060cee15",
+    "tests/conformance/candidates/registry.json": "2590fa1fb437444b603353fe9589aacc10827a5fe5d37e9fb61155d5c9028a2e",
+    "tests/conformance/coverage/ownership.json": "e8880dd039d49c6a69bf08b82ab0b7d3727d14b2ae78db333193bd9a1bdc5a38"
+  }
+}

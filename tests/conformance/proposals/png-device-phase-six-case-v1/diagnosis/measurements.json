@@ -1,0 +1,110 @@
+[
+  {
+    "canonical": false,
+    "case": "embeddable-links",
+    "changed": 410,
+    "mode": "current",
+    "ssim": 0.9967114218543928,
+    "ssim_bits": "3fefe50f5a0d41c1",
+    "svg_sha256": "3d1cca84278e95f0ff400eced95d0dc03a0babc67cb251e5d90b388804c04c47"
+  },
+  {
+    "canonical": false,
+    "case": "embeddable-links",
+    "changed": 394,
+    "mode": "legacy",
+    "ssim": 0.996641359605589,
+    "ssim_bits": "3fefe47c6bab1a76",
+    "svg_sha256": "3d1cca84278e95f0ff400eced95d0dc03a0babc67cb251e5d90b388804c04c47"
+  },
+  {
+    "canonical": false,
+    "case": "emoji-fallback",
+    "changed": 1184,
+    "mode": "current",
+    "ssim": 0.8834829864365987,
+    "ssim_bits": "3fec457e1caa29ce",
+    "svg_sha256": "256986b3362a8144b97ddf1903058b0be995570c6e6d8e49d76e00947240808f"
+  },
+  {
+    "canonical": false,
+    "case": "emoji-fallback",
+    "changed": 1187,
+    "mode": "legacy",
+    "ssim": 0.8836183429943029,
+    "ssim_bits": "3fec4699f9a9ccbb",
+    "svg_sha256": "256986b3362a8144b97ddf1903058b0be995570c6e6d8e49d76e00947240808f"
+  },
+  {
+    "canonical": false,
+    "case": "bidi-text",
+    "changed": 2375,
+    "mode": "current",
+    "ssim": 0.8900222182569175,
+    "ssim_bits": "3fec7b0fe0040f08",
+    "svg_sha256": "8d2ee2201734614eb78ce10191cd8a5b5b58225d6c6352ab855ede8f4d03696b"
+  },
+  {
+    "canonical": false,
+    "case": "bidi-text",
+    "changed": 2353,
+    "mode": "legacy",
+    "ssim": 0.8900035840752971,
+    "ssim_bits": "3fec7ae8cbdda354",
+    "svg_sha256": "8d2ee2201734614eb78ce10191cd8a5b5b58225d6c6352ab855ede8f4d03696b"
+  },
+  {
+    "canonical": false,
+    "case": "bidi-alignment",
+    "changed": 1903,
+    "mode": "current",
+    "ssim": 0.8363905899112435,
+    "ssim_bits": "3feac3b632cb3ae3",
+    "svg_sha256": "9c44385d48d504ba83214394fec3f5f8fb6c309d9b8a2f1e239e889e5d383e30"
+  },
+  {
+    "canonical": false,
+    "case": "bidi-alignment",
+    "changed": 1895,
+    "mode": "legacy",
+    "ssim": 0.8357045887677239,
+    "ssim_bits": "3feabe178cbbfbee",
+    "svg_sha256": "9c44385d48d504ba83214394fec3f5f8fb6c309d9b8a2f1e239e889e5d383e30"
+  },
+  {
+    "canonical": true,
+    "case": "text-line-endings",
+    "changed": 9,
+    "mode": "current",
+    "ssim": 0.9990016606868246,
+    "ssim_bits": "3feff7d254a99654",
+    "svg_sha256": "6c9fdf3afd92d3a054d6f015152f0f70a55241eeb5e8270523f23fd48553e8b3"
+  },
+  {
+    "canonical": false,
+    "case": "text-line-endings",
+    "changed": 15,
+    "mode": "legacy",
+    "ssim": 0.9983753066942144,
+    "ssim_bits": "3feff2b0c56c5701",
+    "svg_sha256": "6c9fdf3afd92d3a054d6f015152f0f70a55241eeb5e8270523f23fd48553e8b3"
+  },
+  {
+    "canonical": true,
+    "case": "text-alignment-vertical",
+    "changed": 20,
+    "mode": "current",
+    "ssim": 0.9993888979077394,
+    "ssim_bits": "3feffafe6d0ff9a4",
+    "svg_sha256": "dc2f192487cb1ee1230f11e632ab8d885a25dbe96bd0832d883aa6ace2e2adcb"
+  },
+  {
+    "canonical": false,
+    "case": "text-alignment-vertical",
+    "changed": 70,
+    "mode": "legacy",
+    "ssim": 0.9989756543412394,
+    "ssim_bits": "3feff79bca9caa96",
+    "svg_sha256": "dc2f192487cb1ee1230f11e632ab8d885a25dbe96bd0832d883aa6ace2e2adcb"
+  }
+]

@@ -1,0 +1,5 @@
+{
+  "crates/excalidraw-render/src/render/png.rs": "a089e88fb04f58f40ab186ead55a973048e5099995ad13a653be15006d0d2ade",
+  "crates/excalidraw-render/src/render/text.rs": "f8f36b8377a9ce437c1734099e6118941e33081998463d1035361e26addc24f7",
+  "crates/excalidraw-render/src/render/png/paint.rs": "c7d105d9dad483742df6e586fcd8fbee718d51fc95bce0144b669e8a8b9689ec"
+}

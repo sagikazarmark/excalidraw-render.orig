@@ -180,6 +180,10 @@ pub(super) struct ResolvedGlyph {
     /// The byte offset in the shaped display text where this glyph's cluster
     /// starts.
     pub(super) cluster: usize,
+    /// This glyph's contours in its label's shared outline. Empty glyphs keep
+    /// an empty range. PNG needs the boundary to position each cached glyph
+    /// independently on the canvas's device-subpixel grid.
+    pub(super) outline: std::ops::Range<usize>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -519,6 +523,7 @@ fn build_label(
     let mut resolved_glyphs = Vec::new();
     resolved_glyphs.try_reserve_exact(glyphs.glyph_infos().len())?;
     for (info, position) in glyphs.glyph_infos().iter().zip(glyphs.glyph_positions()) {
+        let outline_start = operations.len();
         let mut builder = GlyphOutlineBuilder {
             operations: &mut operations,
             failed: false,
@@ -545,14 +550,6 @@ fn build_label(
         let advance_1000 =
             u16::try_from((u64::from(advance) * 1_000 + units_per_em / 2) / units_per_em)
                 .map_err(|_| LabelError::InvalidFont)?;
-        resolved_glyphs.push(ResolvedGlyph {
-            id: glyph_id,
-            x: origin_x + (pen_x + i64::from(position.x_offset)) as f64 * scale,
-            y: baseline - (pen_y + i64::from(position.y_offset)) as f64 * scale,
-            advance_1000,
-            unicode,
-            cluster,
-        });
         if face
             .outline_glyph(GlyphId(glyph_id), &mut builder)
             .is_none()
@@ -563,6 +560,15 @@ fn build_label(
         if builder.failed {
             return Err(LabelError::Memory);
         }
+        resolved_glyphs.push(ResolvedGlyph {
+            id: glyph_id,
+            x: origin_x + (pen_x + i64::from(position.x_offset)) as f64 * scale,
+            y: baseline - (pen_y + i64::from(position.y_offset)) as f64 * scale,
+            advance_1000,
+            unicode,
+            cluster,
+            outline: outline_start..operations.len(),
+        });
         pen_x = pen_x.saturating_add(i64::from(position.x_advance));
         pen_y = pen_y.saturating_add(i64::from(position.y_advance));
     }
@@ -936,6 +942,11 @@ pub(super) fn layout_with_fallbacks(
             shift_label_x(&mut run, pen_x);
             let glyph_start = glyphs.len();
             let logical_glyphs = logical_glyph_indexes(&run.glyphs, &run_text, rtl, glyph_start)?;
+            let outline_start = operations.len();
+            for glyph in &mut run.glyphs {
+                glyph.outline.start += outline_start;
+                glyph.outline.end += outline_start;
+            }
             operations.try_reserve(run.path.operations.len())?;
             operations.extend(run.path.operations);
             glyphs.try_reserve(run.glyphs.len())?;
@@ -1673,14 +1684,7 @@ fn shape_official_line(
         let advance_1000 =
             u16::try_from((u64::from(advance_units) * 1_000 + units_per_em / 2) / units_per_em)
                 .map_err(|_| LabelError::InvalidFont)?;
-        resolved_glyphs.push(ResolvedGlyph {
-            id: glyph_id,
-            x: origin_x + (pen_x + i64::from(position.x_offset)) as f64 * scale,
-            y: baseline - (pen_y + i64::from(position.y_offset)) as f64 * scale,
-            advance_1000,
-            unicode,
-            cluster,
-        });
+        let outline_start = operations.len();
         let mut builder = GlyphOutlineBuilder {
             operations: &mut operations,
             failed: false,
@@ -1704,6 +1708,15 @@ fn shape_official_line(
         if !outlined && advance.is_none() {
             return Err(LabelError::InvalidFont);
         }
+        resolved_glyphs.push(ResolvedGlyph {
+            id: glyph_id,
+            x: origin_x + (pen_x + i64::from(position.x_offset)) as f64 * scale,
+            y: baseline - (pen_y + i64::from(position.y_offset)) as f64 * scale,
+            advance_1000,
+            unicode,
+            cluster,
+            outline: outline_start..operations.len(),
+        });
         pen_x = pen_x.saturating_add(i64::from(position.x_advance));
         pen_y = pen_y.saturating_add(i64::from(position.y_advance));
     }

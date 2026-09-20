@@ -1,0 +1,343 @@
+{
+  "schema": "excalidraw-render/stage4-image-colour-diagnosis/v1",
+  "inspection": {
+    "old": {
+      "pdf_sha256": "98c72177ac6ea753566dd5dc98955499aecc9601f0c895087a6fa4b78fee4478",
+      "rgb_object": "obj:7 0 R",
+      "rgb_dictionary": {
+        "/BitsPerComponent": 8,
+        "/ColorSpace": "/CS1",
+        "/Height": 2,
+        "/SMask": "8 0 R",
+        "/Subtype": "/Image",
+        "/Type": "/XObject",
+        "/Width": 2
+      },
+      "rgb_hex": "ff000000ff000000ffffff00",
+      "mask_object": "obj:8 0 R",
+      "mask_dictionary": {
+        "/BitsPerComponent": 8,
+        "/ColorSpace": "/DeviceGray",
+        "/Height": 2,
+        "/Subtype": "/Image",
+        "/Type": "/XObject",
+        "/Width": 2
+      },
+      "mask_hex": "ffffffff",
+      "used_colour_space": [
+        "/ICCBased",
+        "5 0 R"
+      ],
+      "icc_dictionary": {
+        "/Alternate": "/DeviceRGB",
+        "/N": 3
+      },
+      "icc_sha256": "20b2514b38138f0bd775cb08dbe06a7a68b736b3dba0881a2d6fa91636fd87be"
+    },
+    "current": {
+      "pdf_sha256": "02496c45a767261e9830c474cc2f8016f4a69023dc518dff3073f007a0fe802a",
+      "rgb_object": "obj:7 0 R",
+      "rgb_dictionary": {
+        "/BitsPerComponent": 8,
+        "/ColorSpace": "/CS1",
+        "/Height": 2,
+        "/Interpolate": true,
+        "/SMask": "8 0 R",
+        "/Subtype": "/Image",
+        "/Type": "/XObject",
+        "/Width": 2
+      },
+      "rgb_hex": "ff000000ff000000ffffff00",
+      "mask_object": "obj:8 0 R",
+      "mask_dictionary": {
+        "/BitsPerComponent": 8,
+        "/ColorSpace": "/DeviceGray",
+        "/Height": 2,
+        "/Interpolate": true,
+        "/Subtype": "/Image",
+        "/Type": "/XObject",
+        "/Width": 2
+      },
+      "mask_hex": "ffffffff",
+      "used_colour_space": [
+        "/ICCBased",
+        "5 0 R"
+      ],
+      "icc_dictionary": {
+        "/Alternate": "/DeviceRGB",
+        "/N": 3
+      },
+      "icc_sha256": "20b2514b38138f0bd775cb08dbe06a7a68b736b3dba0881a2d6fa91636fd87be"
+    }
+  },
+  "observations": [
+    {
+      "name": "old",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "40a29eab7c97da152cee463d1ca75244ea4442332070755e7eb246c11f58c625",
+      "fresh_runs": 2
+    },
+    {
+      "name": "old",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "f28ad26f6bbbec1b0771cda7239e925c391cee54dfe5ce9f0143d4eb54c2ab4d",
+      "fresh_runs": 2
+    },
+    {
+      "name": "current",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "current",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "591f28cd82f9ecce27cb54af4a6ad94e0f014d84f3136b42904e7e213e0cd7ae",
+      "fresh_runs": 2
+    }
+  ],
+  "large_control": {
+    "source_size": [
+      40,
+      40
+    ],
+    "independent_alpha_samples": 1600,
+    "observations": [
+      {
+        "viewer": "pdfium",
+        "exact_reference_raster_crop": [
+          178,
+          38,
+          22,
+          44
+        ],
+        "rgba_sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685",
+        "fresh_runs": 2
+      },
+      {
+        "viewer": "pdfjs",
+        "exact_reference_raster_crop": [
+          178,
+          38,
+          22,
+          44
+        ],
+        "rgba_sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845",
+        "fresh_runs": 2
+      }
+    ],
+    "role": "additional larger control, not replacement of the failed 2x2"
+  }
+}

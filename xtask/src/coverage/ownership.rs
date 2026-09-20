@@ -2,7 +2,12 @@
 //! selecting ownership never silently regenerates approved renderer snapshots.
 use super::*;
 use crate::conformance::verify_approval_for_issue;
+mod authority_migration;
 mod png_profiles;
+mod reconciliation;
+mod representative;
+pub use authority_migration::ownership_authority_migration;
+pub use reconciliation::reconcile_stage4_bindings;
 
 const POLICY: &str = "tests/conformance/coverage/ownership-policy.json";
 const LEDGER: &str = "tests/conformance/coverage/ownership.json";
@@ -46,6 +51,9 @@ struct Catalog {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 enum Owner {
+    Representative {
+        binding: representative::Binding,
+    },
     Case {
         case: String,
         manifest: Descriptor,
@@ -98,7 +106,20 @@ fn nonempty(value: &str) -> bool {
 }
 
 fn catalog() -> Result<Catalog, String> {
-    let inventory = load_inventory()?;
+    catalog_with_spec(&read("docs/renderer-spec-v1.md")?)
+}
+fn catalog_with_spec(spec_bytes: &[u8]) -> Result<Catalog, String> {
+    catalog_from_inventory(spec_bytes, load_inventory()?, descriptor(INVENTORY)?)
+}
+fn catalog_from_inventory(
+    spec_bytes: &[u8],
+    inventory: Inventory,
+    inventory_descriptor: Descriptor,
+) -> Result<Catalog, String> {
+    let spec_descriptor = Descriptor {
+        path: "docs/renderer-spec-v1.md".into(),
+        sha256: sha256(spec_bytes),
+    };
     let mut policy: Policy = parse(&read(POLICY)?)?;
     if policy.schema != "excalidraw-render/coverage-ownership-policy/v1" {
         return Err("invalid ownership policy schema".into());
@@ -113,7 +134,7 @@ fn catalog() -> Result<Catalog, String> {
         if row.id.starts_with("case-label:") {
             obligations.push(Obligation{id:row.id.clone(),category:"case-label".into(),
                 criterion:format!("Primary evidence for the existing local label {}. Format/profile sub-obligations are separate.",row.id),
-                authority:descriptor(INVENTORY)?,pointer:"/coverage".into(),candidates:row.candidates.clone()});
+                authority:inventory_descriptor.clone(),pointer:"/coverage".into(),candidates:row.candidates.clone()});
         }
     }
     for (index, field) in array(&surface, "fieldDispositions")?.iter().enumerate() {
@@ -143,11 +164,11 @@ fn catalog() -> Result<Catalog, String> {
     }
     let registry: Value = parse(&read(REGISTRY)?)?;
     let mut sources = vec![
-        descriptor(INVENTORY)?,
+        inventory_descriptor,
         surface_descriptor,
         descriptor(POLICY)?,
         descriptor(png_profiles::PATH)?,
-        descriptor("docs/renderer-spec-v1.md")?,
+        spec_descriptor.clone(),
     ];
     for case in array(&registry, "cases")? {
         let id = string(case, "id")?;
@@ -162,7 +183,7 @@ fn catalog() -> Result<Catalog, String> {
         }
         sources.push(descriptor(&path)?);
     }
-    let spec = String::from_utf8(read("docs/renderer-spec-v1.md")?).map_err(|e| e.to_string())?;
+    let spec = std::str::from_utf8(spec_bytes).map_err(|e| e.to_string())?;
     for row in policy.rows {
         if !matches!(
             row.category.as_str(),
@@ -180,7 +201,7 @@ fn catalog() -> Result<Catalog, String> {
             id: row.id,
             category: row.category,
             criterion: row.criterion,
-            authority: descriptor("docs/renderer-spec-v1.md")?,
+            authority: spec_descriptor.clone(),
             pointer: row.spec_anchor,
             candidates: vec![],
         });
@@ -503,6 +524,14 @@ fn validate(catalog: &Catalog, ledger: &Ledger, closed: bool) -> Result<usize, S
                     return Err("ownership rationale is empty".into());
                 }
                 match owner {
+                    Owner::Representative { binding } => {
+                        if row.category != "interaction" {
+                            return Err(
+                                "representative adapter requires the interaction obligation".into(),
+                            );
+                        }
+                        representative::verify(&row.id, binding)?;
+                    }
                     Owner::Case { case, manifest } => {
                         if row.category != "case-label" || !row.candidates.contains(case) {
                             return Err(format!(
@@ -750,6 +779,38 @@ pub fn record_library_test_owner(
     ids: &[String],
 ) -> Result<(), String> {
     record_owner("lib", module, function, rationale, ids)
+}
+pub fn verify_representative_owner(case: &str) -> Result<(), String> {
+    representative::approved_owner(case).map(|_| ())
+}
+pub fn record_representative_owner(case: &str, rationale: &str) -> Result<(), String> {
+    if !nonempty(rationale) {
+        return Err("ownership rationale is empty".into());
+    }
+    // Refuse an unknown, dead, stale or unapproved candidate before any ledger
+    // mutation, including when unrelated catalog bindings are currently stale.
+    let owner = representative::approved_owner(case)?;
+    let (catalog, mut ledger) = load()?;
+    if !ledger.approval.is_null() {
+        return Err("approved ownership requires a new reviewed decision".into());
+    }
+    validate(&catalog, &ledger, false)?;
+    let assignment = ledger
+        .assignments
+        .iter_mut()
+        .find(|r| r.id == representative::OBLIGATION)
+        .ok_or("missing representative interaction obligation")?;
+    if !matches!(assignment.disposition, Disposition::Gap { .. }) {
+        return Err("representative interaction already assigned".into());
+    }
+    assignment.disposition = Disposition::Owned {
+        owner,
+        rationale: rationale.into(),
+    };
+    validate(&catalog, &ledger, false)?;
+    let mut bytes = serde_json::to_vec_pretty(&ledger).map_err(|e| e.to_string())?;
+    bytes.push(b'\n');
+    fs::write(repo_root().join(LEDGER), bytes).map_err(|e| e.to_string())
 }
 fn record_owner(
     binary: &str,

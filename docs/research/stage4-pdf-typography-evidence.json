@@ -1,0 +1,108 @@
+{
+  "schema": "excalidraw-render/stage4-pdf-typography-diagnosis/v1",
+  "status": "diagnostic-only-not-an-approved-exception",
+  "base_commit": "629930b",
+  "candidate_directory": "tests/conformance/candidates/stage4-frames-text-assets-v4",
+  "pdfium_wheel": {"byte_length": 3701734, "sha256": "e10cbf41b21233ec5e20adfc170cf60edd77abead86a97dc708fff55a8a886c7"},
+  "repository_bindings": [
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/scene.json", "byte_length": 3774, "sha256": "f9b7d01d634a222effe360a172ceec9183de72390a43d5fd73d9a39872094dc4"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/native.pdf", "byte_length": 42926, "sha256": "95c399f0eaaee5bd0b2ae13a50a1a68171c0d5abaeab0b71bdf8816abda5817b"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/official.svg", "byte_length": 7063, "sha256": "c076a107dcbf6cdc235e464a13db0d890fd52c34bc3502448e0deb4bfbf762d3"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/judgment-plan.json", "byte_length": 299, "sha256": "73b8e2333b62ea403b05542b4ab8d363638cc6665928b6814e2fc0457d82b97f"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/judgments.json", "byte_length": 5418, "sha256": "db68683786feee02ae43ad979b34102522c74e4b1b75d88ebc5533e99470f287"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/chromium-text-profile.json", "byte_length": 2359, "sha256": "af37ecb5905bb47897d45b0592ee3cd2640f7c11a9982ce849c95ce16ee30c42"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/collection.json", "byte_length": 12966, "sha256": "881df9d46170d6e9dc341d0cecf5532a207f8e27fca824e66bce1e4b03d95020"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/official-chromium.rgba", "byte_length": 96000, "sha256": "100d99704264561daea15731b1809b5f1a3ea52b700235957faa2c22d7bb6f27"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/official-chromium.repeat.rgba", "byte_length": 96000, "sha256": "100d99704264561daea15731b1809b5f1a3ea52b700235957faa2c22d7bb6f27"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfium.rgba", "byte_length": 96000, "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfium.repeat.rgba", "byte_length": 96000, "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfjs.rgba", "byte_length": 96000, "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"},
+    {"path": "tests/conformance/candidates/stage4-frames-text-assets-v4/viewer-evidence/native-pdfjs.repeat.rgba", "byte_length": 96000, "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"},
+    {"path": "tools/pdf-harness/diagnostics/stage4-typography.py", "byte_length": 15075, "sha256": "dd168deb66a8027c3088a24eaabc68f204bd391193c72c5c564527e005b6791b"},
+    {"path": "tools/pdf-harness/diagnostics/stage4-typography-compare.rs", "byte_length": 1833, "sha256": "12c6210e44c1bc62d85f631c42dd30f910b48a6bc81417d6ff9c921e7223317d"},
+    {"path": "tools/pdf-harness/pdfium/render.py", "byte_length": 6188, "sha256": "2b3f28ba7633f739cdd1b8617361f8d1a82f51f62204286598e38a5d29ad1c6d"},
+    {"path": "tools/pdf-harness/pdfium/empty-fonts/.keep", "byte_length": 63, "sha256": "214f294fd6c8df5b4b53d84fd437aee8c30edbee74b929863e40ec2e6b3cf621"},
+    {"path": "tools/pdf-harness/pdfium.lock.json", "byte_length": 666, "sha256": "0df950516087c77e43df29b44273dfb414512c9a884dfb196988d7c20232ad90"},
+    {"path": "tools/pdf-harness/pdfjs/render.mjs", "byte_length": 3416, "sha256": "7386887b7b697c49fbe2c1095a94df86315bb0c15353f51eb4d03d1ba9c9a1ad"},
+    {"path": "tools/pdf-harness/pdfjs/package-lock.json", "byte_length": 8850, "sha256": "887c2194fe05e87250486f4e6c8da341d0fb51748e14c3b4cf94a16455740c60"},
+    {"path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json", "byte_length": 4159, "sha256": "9267d525bd682a338a5d7927747d508bfca17447598f7d3454c9137b091c99ad"},
+    {"path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json", "byte_length": 4072, "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"},
+    {"path": "tests/conformance/comparator-profiles/canonical-visual-v1.json", "byte_length": 4460, "sha256": "e969fd7a3bc49ff3014b2cd3b3622cd18abddbc9371744d4e47927d0484bcfc7"},
+    {"path": "crates/excalidraw-render-compare/src/lib.rs", "byte_length": 4306, "sha256": "59f84c68a787c76ef19f2b95688201e926f0816637f247b9aa8c9ed2578bd312"},
+    {"path": "crates/excalidraw-render-compare/src/comparison.rs", "byte_length": 15174, "sha256": "5988dd5f973171facf1ccc9712bef2e68e47af8f3947cd3213f21b1b320fb807"},
+    {"path": "crates/excalidraw-render-compare/src/pixelmatch.rs", "byte_length": 13171, "sha256": "1c505a0a266b0aa2779dcaa237483c28fe0bdbe4543cf43f88344844872d246d"},
+    {"path": "crates/excalidraw-render-compare/src/ssim.rs", "byte_length": 8186, "sha256": "4746f89206960465784bbddf13176b865232b472b20f02335c468e2d61aab007"}
+  ],
+  "upstream_sources": [
+    {"project": "pdfium", "revision": "d3e62278db7489af9e0b686835d1c8aca218c3d7", "path": "core/fxge/cfx_renderdevice.cpp", "url": "https://pdfium.googlesource.com/pdfium/+/d3e62278db7489af9e0b686835d1c8aca218c3d7/core/fxge/cfx_renderdevice.cpp", "byte_length": 62640, "sha256": "c589662e9217ed1c4bc51749812092ecbe58bafdaf3c081efbaa0c0d71dc323a"},
+    {"project": "pdfium", "revision": "d3e62278db7489af9e0b686835d1c8aca218c3d7", "path": "core/fxge/cfx_face.cpp", "url": "https://pdfium.googlesource.com/pdfium/+/d3e62278db7489af9e0b686835d1c8aca218c3d7/core/fxge/cfx_face.cpp", "byte_length": 48473, "sha256": "ecee300c385d266cc64ff1da3fc4c9518dd03499c2890ba3702cc97b21484d84"},
+    {"project": "skia", "revision": "53348aa333da02b77c4b5797e2de722f5abde7d0", "path": "src/core/SkGlyph.h", "url": "https://skia.googlesource.com/skia/+/53348aa333da02b77c4b5797e2de722f5abde7d0/src/core/SkGlyph.h", "byte_length": 24994, "sha256": "802e7787862184685be89e2aa56e9cb5a9d6b7fdf44b5d6c3ad8f9ad2233eae9"},
+    {"project": "skia", "revision": "53348aa333da02b77c4b5797e2de722f5abde7d0", "path": "src/core/SkGlyphRunPainter.cpp", "url": "https://skia.googlesource.com/skia/+/53348aa333da02b77c4b5797e2de722f5abde7d0/src/core/SkGlyphRunPainter.cpp", "byte_length": 19440, "sha256": "b2967f101af176e5e889125bd8f74941cb95c725086a4230dcdb780d9e501930"},
+    {"project": "skia", "revision": "53348aa333da02b77c4b5797e2de722f5abde7d0", "path": "src/core/SkStrikeSpec.cpp", "url": "https://skia.googlesource.com/skia/+/53348aa333da02b77c4b5797e2de722f5abde7d0/src/core/SkStrikeSpec.cpp", "byte_length": 8830, "sha256": "55c7add963fec51349375c75ff4c5e55a8de7fa3e44de26f2fd24ceeeae3bd88"},
+    {"project": "chromium", "revision": "149.0.7827.55", "path": "DEPS", "url": "https://chromium.googlesource.com/chromium/src/+/149.0.7827.55/DEPS", "byte_length": 187522, "sha256": "c4ab905e7b7970c39bce296ed0f86d89b782cb5d93ab07969c0aa68b683f31a7"}
+  ],
+  "controls": [
+    {"name": "stage4-original.rgba", "byte_length": 96000, "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"},
+    {"name": "stage4-original-pdfjs.rgba", "byte_length": 96000, "sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845"},
+    {"name": "stage4-quarter-pdfjs.rgba", "byte_length": 96000, "sha256": "814339962aa94ca95f637ae286fae1043a1b4e33005e188084ac3af4c054d5e2"},
+    {"name": "stage4-quarter-text.pdf", "byte_length": 42976, "sha256": "2f6012e44cb25a4e68942da75ef49a1f8378370e0e798e05223d17985ad90876"},
+    {"name": "stage4-quarter-text.rgba", "byte_length": 96000, "sha256": "aff8f818637102e5580fcad455939bcc20f547daa29c8df87c52abede099b87a"},
+    {"name": "stage4-single-y0.pdf", "byte_length": 42785, "sha256": "d202e8616f920bbef52fc9bdb338f969e4a4023f931c7878e30ec8bd7d7230e6"},
+    {"name": "stage4-single-y0.rgba", "byte_length": 96000, "sha256": "ded7432d0d4f07c9a125054ded43e27f519949ed09bc5c954f2f7fe8bfbbec23"},
+    {"name": "stage4-single-y0.125.pdf", "byte_length": 42793, "sha256": "a238a9a56a9b0cd8158c0fd1cebb6c67a10e666990afa6e6b04fe29badfd6da1"},
+    {"name": "stage4-single-y0.125.rgba", "byte_length": 96000, "sha256": "ded7432d0d4f07c9a125054ded43e27f519949ed09bc5c954f2f7fe8bfbbec23"},
+    {"name": "stage4-single-y0.25.pdf", "byte_length": 42792, "sha256": "2aace2b53bc437e32682eb2fac9e271cc1f39e19b45c343a5984c0c83683427e"},
+    {"name": "stage4-single-y0.25.rgba", "byte_length": 96000, "sha256": "ded7432d0d4f07c9a125054ded43e27f519949ed09bc5c954f2f7fe8bfbbec23"},
+    {"name": "stage4-single-y0.5.pdf", "byte_length": 42793, "sha256": "dd4666f787cccdd5d6eef33781d30675ef4d84d0ced9b0ce7eb8b17b263035f9"},
+    {"name": "stage4-single-y0.5.rgba", "byte_length": 96000, "sha256": "8b6511884b6bbadcb8a85f5af8e9557cfc983720052ab400495641195d25adc1"},
+    {"name": "stage4-single-run.pdf", "byte_length": 42793, "sha256": "53439c82fb279988d92cc3073e34513886d1363e9eb0f133651e06db51bfea7f"},
+    {"name": "stage4-single-run.rgba", "byte_length": 96000, "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"},
+    {"name": "stage4-text-clip.pdf", "byte_length": 42858, "sha256": "7c964e0f43e31efe94cb674a9ba06e4356a329976f8ea2a3205056160b918d05"},
+    {"name": "stage4-text-clip.rgba", "byte_length": 96000, "sha256": "bf1f85e16e47188c2decfcb580cd239a2dacfe04b5e191a789e1dde6ae6aeff7"},
+    {"name": "stage4-outlines.pdf", "byte_length": 53382, "sha256": "e1ccdf325cf4b46bbc164cf07796a029c253dc7902fcb44d23352ab15fbe92b8"},
+    {"name": "stage4-outlines.rgba", "byte_length": 96000, "sha256": "54d9d2f73a8b0544631792e0dff23541c7d90346e17905dadafbb39bbcbee6b6"},
+    {"name": "stage4-FPDF_RENDER_NO_SMOOTHTEXT.rgba", "byte_length": 96000, "sha256": "eae360a942a6d9b2f29e3447ffcb6358f4c7629b5a20ec9490ce77d667390cb6"},
+    {"name": "stage4-FPDF_LCD_TEXT.rgba", "byte_length": 96000, "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"},
+    {"name": "stage4-FPDF_PRINTING.rgba", "byte_length": 96000, "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"},
+    {"name": "stage4-FPDF_RENDER_FORCEHALFTONE.rgba", "byte_length": 96000, "sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685"}
+  ],
+  "comparisons": [
+    {"name": "stage4-original.rgba", "viewer": "pdfium", "regions": [
+      {"region": "whole", "changed_pixels": 118, "ssim": 0.9898474730435529, "ssim_bits": "3fefacd49b980278", "passed": false},
+      {"region": "typography", "changed_pixels": 118, "ssim": 0.9413564483014669, "ssim_bits": "3fee1f978eeaac28", "passed": false}
+    ]},
+    {"name": "stage4-single-run.rgba", "viewer": "pdfium", "regions": [
+      {"region": "whole", "changed_pixels": 118, "ssim": 0.9898474730435529, "ssim_bits": "3fefacd49b980278", "passed": false},
+      {"region": "typography", "changed_pixels": 118, "ssim": 0.9413564483014669, "ssim_bits": "3fee1f978eeaac28", "passed": false}
+    ]},
+    {"name": "stage4-outlines.rgba", "viewer": "pdfium", "regions": [
+      {"region": "whole", "changed_pixels": 19, "ssim": 0.9985056026038821, "ssim_bits": "3feff3c20581ce68", "passed": false},
+      {"region": "typography", "changed_pixels": 19, "ssim": 0.9916320519628264, "ssim_bits": "3fefbb73241b1013", "passed": false}
+    ]},
+    {"name": "stage4-text-clip.rgba", "viewer": "pdfium", "regions": [
+      {"region": "whole", "changed_pixels": 15, "ssim": 0.9985448858140402, "ssim_bits": "3feff41467851974", "passed": false},
+      {"region": "typography", "changed_pixels": 15, "ssim": 0.9918711425117517, "ssim_bits": "3fefbd688cdde462", "passed": false}
+    ]},
+    {"name": "stage4-quarter-text.rgba", "viewer": "pdfium", "regions": [
+      {"region": "whole", "changed_pixels": 85, "ssim": 0.9910480791988634, "ssim_bits": "3fefb6aa761d870e", "passed": false},
+      {"region": "typography", "changed_pixels": 85, "ssim": 0.9484572958568168, "ssim_bits": "3fee59c31d6b71a9", "passed": false}
+    ]},
+    {"name": "stage4-original-pdfjs.rgba", "viewer": "pdfjs", "regions": [
+      {"region": "whole", "changed_pixels": 16, "ssim": 0.998520923299333, "ssim_bits": "3feff3e226be27cf", "passed": false},
+      {"region": "typography", "changed_pixels": 16, "ssim": 0.9920016961872306, "ssim_bits": "3fefbe7a57566bff", "passed": true}
+    ]},
+    {"name": "stage4-quarter-pdfjs.rgba", "viewer": "pdfjs", "regions": [
+      {"region": "whole", "changed_pixels": 0, "ssim": 0.9999370752309106, "ssim_bits": "3fefff7c098596c1", "passed": true},
+      {"region": "typography", "changed_pixels": 0, "ssim": 0.9996543146625062, "ssim_bits": "3feffd2b0b98fbf7", "passed": true}
+    ]}
+  ],
+  "geometry_limits": {
+    "max_device_origin_error_exclusive": 0.000006,
+    "max_advance_error_inclusive": 1.43e-14,
+    "glyph_instruction_bytes": 0,
+    "single_y_displacements": [0, 0.125, 0.25, 0.5],
+    "single_y_changed_pixels": [0, 0, 0, 136],
+    "last_displacement_is_exact_one_row": true
+  },
+  "font_program": {"byte_length": 61948, "sha256": "a648fcf03710b94a05748575a4bc5ddb056b19806869326f140a7d4ccf3f8bbb"}
+}

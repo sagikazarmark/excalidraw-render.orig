@@ -1,0 +1,2417 @@
+{
+  "schema": "excalidraw-render/pdf-image-colour-cause/v1",
+  "classification": "pre-existing producer defect: named resource alias outside a content stream",
+  "cause": "Image XObjects serialize /ColorSpace /CS1. Unprimed PDF.js non-inline image parsing has resources=null and falls back to DeviceGray; priming /CS1 hides it in the cache. The RGB bytes, SMask and ICC profile are correct.",
+  "standard": {
+    "url": "https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf",
+    "sha256": "9de0ca9e8570d6209e8bd48a355be8eb6ec376acfc3fc3ae97cd8730351417ff",
+    "section": "7.8.3",
+    "printed_page": 82,
+    "physical_page": 90
+  },
+  "observations": [
+    {
+      "name": "old",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "40a29eab7c97da152cee463d1ca75244ea4442332070755e7eb246c11f58c625",
+      "fresh_runs": 2
+    },
+    {
+      "name": "old",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "f28ad26f6bbbec1b0771cda7239e925c391cee54dfe5ce9f0143d4eb54c2ab4d",
+      "fresh_runs": 2
+    },
+    {
+      "name": "current",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "current",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "591f28cd82f9ecce27cb54af4a6ad94e0f014d84f3136b42904e7e213e0cd7ae",
+      "fresh_runs": 2
+    },
+    {
+      "name": "old",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "40a29eab7c97da152cee463d1ca75244ea4442332070755e7eb246c11f58c625",
+      "fresh_runs": 2
+    },
+    {
+      "name": "old",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "f28ad26f6bbbec1b0771cda7239e925c391cee54dfe5ce9f0143d4eb54c2ab4d",
+      "fresh_runs": 2
+    },
+    {
+      "name": "current",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "current",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "591f28cd82f9ecce27cb54af4a6ad94e0f014d84f3136b42904e7e213e0cd7ae",
+      "fresh_runs": 2
+    },
+    {
+      "name": "roundtrip",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "roundtrip",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "591f28cd82f9ecce27cb54af4a6ad94e0f014d84f3136b42904e7e213e0cd7ae",
+      "fresh_runs": 2
+    },
+    {
+      "name": "no-mask",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "no-mask",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "591f28cd82f9ecce27cb54af4a6ad94e0f014d84f3136b42904e7e213e0cd7ae",
+      "fresh_runs": 2
+    },
+    {
+      "name": "device-rgb",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "device-rgb",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "5f486d676d189884a4a89fc00839275b8ad6479dd3f42be1f026ff79eb6bcff6",
+      "fresh_runs": 2
+    },
+    {
+      "name": "device-rgb-no-mask",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "device-rgb-no-mask",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "5f486d676d189884a4a89fc00839275b8ad6479dd3f42be1f026ff79eb6bcff6",
+      "fresh_runs": 2
+    },
+    {
+      "name": "interpolate-false",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "dfe99c7f520a901f69cae5cba15b7a2ac9fedc9fc034664c3b51ca1dd8e6afe9",
+      "fresh_runs": 2
+    },
+    {
+      "name": "interpolate-false",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "aa5459ef9e6dfff053f9939fff4ce2987826de1b90b97e03c270331404c14de9",
+      "fresh_runs": 2
+    },
+    {
+      "name": "size-4",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "3f252efb7d5ee6a55c3209958a7f631b67fb039dff52359d14e08b3abb1b4227",
+      "fresh_runs": 2
+    },
+    {
+      "name": "size-4",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          230,
+          230,
+          230,
+          255
+        ],
+        [
+          242,
+          242,
+          242,
+          255
+        ],
+        [
+          230,
+          230,
+          230,
+          255
+        ],
+        [
+          231,
+          231,
+          231,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "bb39899d3c431c186e80d52feb3941b0315e505ce5f0c7bcce4f6cad33c503dd",
+      "fresh_runs": 2
+    },
+    {
+      "name": "size-40",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "dfe99c7f520a901f69cae5cba15b7a2ac9fedc9fc034664c3b51ca1dd8e6afe9",
+      "fresh_runs": 2
+    },
+    {
+      "name": "size-40",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "c0302a20e20ba880ef14fc473ff189f416ec3db101e9488dedb762887e900282",
+      "fresh_runs": 2
+    },
+    {
+      "name": "prime-rgb",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "prime-rgb",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "5f486d676d189884a4a89fc00839275b8ad6479dd3f42be1f026ff79eb6bcff6",
+      "fresh_runs": 2
+    },
+    {
+      "name": "old",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "40a29eab7c97da152cee463d1ca75244ea4442332070755e7eb246c11f58c625",
+      "fresh_runs": 2
+    },
+    {
+      "name": "old",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "f28ad26f6bbbec1b0771cda7239e925c391cee54dfe5ce9f0143d4eb54c2ab4d",
+      "fresh_runs": 2
+    },
+    {
+      "name": "current",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "current",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "591f28cd82f9ecce27cb54af4a6ad94e0f014d84f3136b42904e7e213e0cd7ae",
+      "fresh_runs": 2
+    },
+    {
+      "name": "direct-icc",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "direct-icc",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "5f486d676d189884a4a89fc00839275b8ad6479dd3f42be1f026ff79eb6bcff6",
+      "fresh_runs": 2
+    },
+    {
+      "name": "direct-icc-no-mask",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "direct-icc-no-mask",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "5f486d676d189884a4a89fc00839275b8ad6479dd3f42be1f026ff79eb6bcff6",
+      "fresh_runs": 2
+    },
+    {
+      "name": "old-direct-icc",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "40a29eab7c97da152cee463d1ca75244ea4442332070755e7eb246c11f58c625",
+      "fresh_runs": 2
+    },
+    {
+      "name": "old-direct-icc",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "40a29eab7c97da152cee463d1ca75244ea4442332070755e7eb246c11f58c625",
+      "fresh_runs": 2
+    },
+    {
+      "name": "old",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "40a29eab7c97da152cee463d1ca75244ea4442332070755e7eb246c11f58c625",
+      "fresh_runs": 2
+    },
+    {
+      "name": "old",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ],
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "f28ad26f6bbbec1b0771cda7239e925c391cee54dfe5ce9f0143d4eb54c2ab4d",
+      "fresh_runs": 2
+    },
+    {
+      "name": "current",
+      "viewer": "pdfium",
+      "corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": true,
+      "rgba_sha256": "256db70b083e06caae3f4cc0032bec3da41e3f84b3c39237e87341eff69bbc07",
+      "fresh_runs": 2
+    },
+    {
+      "name": "current",
+      "viewer": "pdfjs",
+      "corners": [
+        [
+          255,
+          255,
+          255,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          0,
+          255
+        ]
+      ],
+      "expected_corners": [
+        [
+          255,
+          0,
+          0,
+          255
+        ],
+        [
+          0,
+          255,
+          0,
+          255
+        ],
+        [
+          0,
+          0,
+          255,
+          255
+        ],
+        [
+          255,
+          255,
+          0,
+          255
+        ]
+      ],
+      "source_colour_passed": false,
+      "rgba_sha256": "591f28cd82f9ecce27cb54af4a6ad94e0f014d84f3136b42904e7e213e0cd7ae",
+      "fresh_runs": 2
+    }
+  ],
+  "pre_canvas": {
+    "alias": {
+      "input": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/orientation-candidate-diagnostic.pdf",
+      "images": [
+        {
+          "id": "img_p0_1",
+          "width": 2,
+          "height": 2,
+          "kind": 3,
+          "data": [
+            255,
+            255,
+            255,
+            255,
+            0,
+            0,
+            0,
+            255,
+            0,
+            0,
+            0,
+            255,
+            0,
+            0,
+            0,
+            255
+          ]
+        }
+      ]
+    },
+    "direct_icc": {
+      "input": "target/stage4-image-colour-icc-proof/direct-icc.pdf",
+      "images": [
+        {
+          "id": "img_p0_1",
+          "width": 2,
+          "height": 2,
+          "kind": 3,
+          "data": [
+            255,
+            0,
+            0,
+            255,
+            0,
+            255,
+            0,
+            255,
+            0,
+            0,
+            255,
+            255,
+            255,
+            255,
+            0,
+            255
+          ]
+        }
+      ]
+    }
+  },
+  "larger_control": {
+    "source_size": [
+      40,
+      40
+    ],
+    "independent_alpha_samples": 1600,
+    "observations": [
+      {
+        "viewer": "pdfium",
+        "exact_reference_raster_crop": [
+          178,
+          38,
+          22,
+          44
+        ],
+        "rgba_sha256": "e871292ec41aea3d358e3896fbed30421708e0ff1f677136a29f3d18c49c3685",
+        "fresh_runs": 2
+      },
+      {
+        "viewer": "pdfjs",
+        "exact_reference_raster_crop": [
+          178,
+          38,
+          22,
+          44
+        ],
+        "rgba_sha256": "2f4f36ed90ef5ac440b6713a57ef7cb7b0d4fdc8ee7149fa9e00376912b71845",
+        "fresh_runs": 2
+      }
+    ],
+    "role": "additional larger control, not replacement of the failed 2x2",
+    "colour_selection_precedes_image": true
+  },
+  "bindings": [
+    {
+      "path": "tools/pdf-harness/diagnostics/stage4-image-colour.py",
+      "byte_length": 10394,
+      "sha256": "341ea9a41634a87d887e21a0d6384e07d452fb7029125b049d986f5a7ed20ab4"
+    },
+    {
+      "path": "tools/pdf-harness/diagnostics/stage4-image-decoded.mjs",
+      "byte_length": 1163,
+      "sha256": "c73288c42005331147979151830a35e36a38125e8081ff39ccdca7b8fb1ab89c"
+    },
+    {
+      "path": "tools/pdf-harness/diagnostics/stage4-image-colour-package.py",
+      "byte_length": 7863,
+      "sha256": "eaa72a2b9e2159b56e32865e05a2fa35e31f10d7307ec04c755aabe95eca0e35"
+    },
+    {
+      "path": "tools/pdf-harness/pdfjs/node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+      "byte_length": 2366081,
+      "sha256": "dde66d5cd41b7ac11df49b2c130162fceb15d17afe46f552b0fc072d00734a17"
+    },
+    {
+      "path": "crates/excalidraw-render/src/render/pdf.rs",
+      "byte_length": 62797,
+      "sha256": "99a8fcaaf632081b1bcb97e3c74ef36e4d94ee2633fada0435be211635c5311c"
+    },
+    {
+      "path": "tools/pdf-harness/pdfjs/package-lock.json",
+      "byte_length": 8850,
+      "sha256": "887c2194fe05e87250486f4e6c8da341d0fb51748e14c3b4cf94a16455740c60"
+    },
+    {
+      "path": "tools/pdf-harness/pdfjs/render.mjs",
+      "byte_length": 3416,
+      "sha256": "7386887b7b697c49fbe2c1095a94df86315bb0c15353f51eb4d03d1ba9c9a1ad"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium/render.py",
+      "byte_length": 6188,
+      "sha256": "2b3f28ba7633f739cdd1b8617361f8d1a82f51f62204286598e38a5d29ad1c6d"
+    },
+    {
+      "path": "tools/pdf-harness/pdfium.lock.json",
+      "byte_length": 666,
+      "sha256": "0df950516087c77e43df29b44273dfb414512c9a884dfb196988d7c20232ad90"
+    },
+    {
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfjs-v1.json",
+      "byte_length": 4072,
+      "sha256": "592c14b30bd0c3379f1e96bd609a8622f5a1f475d79c8de4bed5efba4a841125"
+    },
+    {
+      "path": "tests/conformance/viewer-profiles/canonical-pdf-pdfium-v1.json",
+      "byte_length": 4159,
+      "sha256": "9267d525bd682a338a5d7927747d508bfca17447598f7d3454c9137b091c99ad"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-frames-text-assets-v6/native.pdf",
+      "byte_length": 42926,
+      "sha256": "95c399f0eaaee5bd0b2ae13a50a1a68171c0d5abaeab0b71bdf8816abda5817b"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v1/blocked-proposal.json",
+      "byte_length": 21790,
+      "sha256": "b94d47b1bb48e526700f05983e107b8b2781583312a8f1324da06e85baaea538"
+    }
+  ],
+  "approval": null
+}

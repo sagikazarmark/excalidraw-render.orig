@@ -1,0 +1,48 @@
+{
+  "schema": "excalidraw-render/approved-pdf-pin-transition/v1",
+  "approval_subject_sha256": "sha256:c15e6bab141ac8080bac099932e5561bfcbee4c000f4957fec71e87d5e573389",
+  "approval": {
+    "approved_by": "sagikazarmark",
+    "approved_at": "2026-09-20",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5748855374",
+    "approval_subject_sha256": "sha256:c15e6bab141ac8080bac099932e5561bfcbee4c000f4957fec71e87d5e573389"
+  },
+  "decision_origin": "user-granted approval explicitly requested in this session; not agent self-approval",
+  "before_expectation": {
+    "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v2/before-project-operations-structure.json",
+    "byte_length": 987,
+    "sha256": "b6cbc6049556ae87780a83e9c252f64193594bf37c9d6a2f18a80434b31cb7b9"
+  },
+  "before_test": {
+    "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v2/before-pdf_backend_qualification.rs",
+    "byte_length": 9387,
+    "sha256": "fedf835ed08f63fd930fe01b403b85d959752dce66c6547057753efa33e8ceb5"
+  },
+  "before_verifier": {
+    "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v2/before-conformance_pdf_requalification.rs",
+    "byte_length": 25502,
+    "sha256": "3475575b87a55bc83ac76e68d076610e9114c663282b5c46624f4d83ff002e31"
+  },
+  "after_expectation": {
+    "path": "tests/conformance/pdf-backend-qualification/project-operations-structure.json",
+    "byte_length": 987,
+    "sha256": "442f0cb2580a4066d64bcb924eaa6e070252faca2fa2b37fa4f34c81ff600b1b"
+  },
+  "after_test": {
+    "path": "crates/excalidraw-render/tests/fast/pdf_backend_qualification.rs",
+    "byte_length": 9387,
+    "sha256": "cf5483a364d58d1e060111741d06f4fbec4630b4446b8c5782ef27ea4833d726"
+  },
+  "current_verifier": {
+    "path": "xtask/src/conformance_pdf_requalification.rs",
+    "byte_length": 33640,
+    "sha256": "c7ff711cef85fce00336a90270f5fbace6c0c06ac32d55659e7dd163d30bd93b"
+  },
+  "comment_snapshot": {
+    "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v2/user-approval-comment.json",
+    "byte_length": 4465,
+    "sha256": "b8d5863ffba66ef9a5ff849e9552562653523b1220602df62e7bac1e2cab2a98"
+  },
+  "protected_scope": "native project-operation canary, operation/inventory digests and derived expectation-file binding only",
+  "representative_baseline_and_global_approval_granted": false
+}

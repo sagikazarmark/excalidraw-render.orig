@@ -1,0 +1,92 @@
+[
+  {
+    "kind": "official",
+    "fonts": [
+      {
+        "woff2": "tests/conformance/candidates/stage4-frames-text-assets-v2/assets/official-font-0.woff2",
+        "source": {
+          "media_type": "font/woff2",
+          "sha256": "34bd3f706dcd4333c3aee1ff8c67e434ab35ceafd7d605647211e84bf188838b"
+        },
+        "css": {
+          "family": "Cascadia",
+          "style": "normal",
+          "weight": 400,
+          "stretch": "normal",
+          "unicode_range": [
+            "U+0-10FFFF"
+          ]
+        }
+      }
+    ],
+    "images": [
+      {
+        "source": {
+          "media_type": "image/svg+xml",
+          "sha256": "a28798ab75854879768160ef7c283dd75a37a1878134a69f62f08091bc0c5f6a"
+        },
+        "canonical": {
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v2/assets/official-image-0.svg",
+          "media_type": "image/svg+xml",
+          "sha256": "a28798ab75854879768160ef7c283dd75a37a1878134a69f62f08091bc0c5f6a"
+        }
+      },
+      {
+        "source": {
+          "media_type": "image/png",
+          "sha256": "7601625e03d39d2afebfa4e8e2f4788313fad8a287a0f554de15a4ceafdc61f1"
+        },
+        "canonical": {
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v2/assets/official-image-1.png",
+          "media_type": "image/png",
+          "sha256": "7601625e03d39d2afebfa4e8e2f4788313fad8a287a0f554de15a4ceafdc61f1"
+        }
+      }
+    ]
+  },
+  {
+    "kind": "native",
+    "fonts": [
+      {
+        "woff2": "tests/conformance/candidates/stage4-frames-text-assets-v2/assets/native-font-0.woff2",
+        "source": {
+          "media_type": "font/woff2",
+          "sha256": "c49c3704045218325586cb4a33f3ac91aa92160868c54f80f2a8515e7ce72b70"
+        },
+        "css": {
+          "family": "ExcalidrawRender-3",
+          "style": "normal",
+          "weight": 400,
+          "stretch": "normal",
+          "unicode_range": [
+            "U+0-10FFFF"
+          ]
+        }
+      }
+    ],
+    "images": [
+      {
+        "source": {
+          "media_type": "image/png",
+          "sha256": "7601625e03d39d2afebfa4e8e2f4788313fad8a287a0f554de15a4ceafdc61f1"
+        },
+        "canonical": {
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v2/assets/native-image-0.png",
+          "media_type": "image/png",
+          "sha256": "7601625e03d39d2afebfa4e8e2f4788313fad8a287a0f554de15a4ceafdc61f1"
+        }
+      },
+      {
+        "source": {
+          "media_type": "image/svg+xml",
+          "sha256": "f09b029a642e733c4687e764730fcb2a9eb3e9807e9f947ab653a13407014cb7"
+        },
+        "canonical": {
+          "path": "tests/conformance/candidates/stage4-frames-text-assets-v2/assets/native-image-1.svg",
+          "media_type": "image/svg+xml",
+          "sha256": "f09b029a642e733c4687e764730fcb2a9eb3e9807e9f947ab653a13407014cb7"
+        }
+      }
+    ]
+  }
+]

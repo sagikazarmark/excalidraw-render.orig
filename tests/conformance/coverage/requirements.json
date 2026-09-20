@@ -37,7 +37,7 @@
         {
           "source": {
             "path": "crates/excalidraw-render/tests/fast/static_png_asset_render.rs",
-            "sha256": "f7e38118b3838b65deb07b0caa96b77271a510884a1e6b8ee95519587a54b051"
+            "sha256": "02377311ef96aea23ba878915cf7d95819c5b0c281bb224857b60014338dc61b"
           },
           "anchor": "fn apng_is_preserved_in_svg_and_flattened_to_frame_zero_in_png_and_pdf()"
         }

@@ -596,7 +596,10 @@ fn assert_rgb_near(actual: [u8; 3], expected: [u8; 3]) {
 /// soft mask.
 fn image_xobject_streams(pdf: &[u8]) -> (Vec<u8>, Vec<u8>) {
     let pdf = inflate_streams(pdf);
-    let rgb = stream_after(&pdf, b"/ColorSpace /CS1\n/BitsPerComponent 8\n/SMask ");
+    let rgb = stream_after(
+        &pdf,
+        b"/ColorSpace [/ICCBased 5 0 R]\n/BitsPerComponent 8\n/Interpolate true\n/SMask ",
+    );
     let alpha = stream_after(&pdf, b"/ColorSpace /DeviceGray\n/BitsPerComponent 8\n");
     (rgb, alpha)
 }

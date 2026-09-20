@@ -1,0 +1,176 @@
+{
+  "schema": "excalidraw-render/stage4-representative-owner-transition/v1",
+  "approval": {
+    "approval_subject_sha256": "sha256:c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+    "approval_url": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5749841192",
+    "approved_at": "2026-09-20",
+    "approved_by": "sagikazarmark"
+  },
+  "approval_subject_sha256": "sha256:c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+  "before_ledger_sha256": "088c3dfd5fb1c864363da31b2efc1317a00737b294dccce60ef0400ce4e69c3b",
+  "after_ledger": {
+    "path": "tests/conformance/coverage/ownership.json",
+    "byte_length": 2414515,
+    "sha256": "a48720e66bab027d02ffccb21d482a5371f7344088935d20dd1f2c4df2d68262"
+  },
+  "before_assignment": {
+    "id": "interaction:frames-text-assets",
+    "disposition": {
+      "status": "gap",
+      "issue": 85,
+      "reason": "No reviewed primary owner assigned yet; candidate evidence is not complete coverage."
+    }
+  },
+  "after_assignment": {
+    "id": "interaction:frames-text-assets",
+    "disposition": {
+      "status": "owned",
+      "owner": {
+        "kind": "representative",
+        "binding": {
+          "case": "representative.stage4-frames-text-assets.v7",
+          "registry": {
+            "path": "tests/conformance/candidates/registry.json",
+            "sha256": "2590fa1fb437444b603353fe9589aacc10827a5fe5d37e9fb61155d5c9028a2e"
+          },
+          "manifest": {
+            "path": "tests/conformance/candidates/stage4-frames-text-assets-v7/manifest.json",
+            "sha256": "0a4b5339c4301cca8a98a4ce832d574dad24259f1017c9a3429e11f8784d4f4b"
+          },
+          "approval_subject_sha256": "sha256:c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+          "command": [
+            "cargo",
+            "run",
+            "--release",
+            "--locked",
+            "-p",
+            "xtask",
+            "--",
+            "conformance",
+            "candidate-verify",
+            "tests/conformance/candidates/stage4-frames-text-assets-v7"
+          ]
+        }
+      },
+      "rationale": "User-approved final release representative and exact three PDF exceptions, subject sha256:c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05; actual scoped decision https://github.com/sagikazarmark/excalidraw-render.orig/issues/85#issuecomment-5749841192. Strict release replay and registry receipts verified; see docs/research/png-stage4-v7-approved-owner.md."
+    }
+  },
+  "approved_manifest": {
+    "path": "tests/conformance/candidates/stage4-frames-text-assets-v7/manifest.json",
+    "byte_length": 26475,
+    "sha256": "0a4b5339c4301cca8a98a4ce832d574dad24259f1017c9a3429e11f8784d4f4b"
+  },
+  "registry": {
+    "path": "tests/conformance/candidates/registry.json",
+    "byte_length": 3828,
+    "sha256": "2590fa1fb437444b603353fe9589aacc10827a5fe5d37e9fb61155d5c9028a2e"
+  },
+  "comment_snapshot": {
+    "path": "tests/conformance/coverage/stage4-v7-approval-comment.json",
+    "byte_length": 4112,
+    "sha256": "2b1313a6f98a5728825810926e801b4634e5555a17cf3e84d3b6959c3d9db16c"
+  },
+  "consumer_receipts": {
+    "approval_required": true,
+    "approval_subject_sha256": "c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+    "case_id": "representative.stage4-frames-text-assets.v7",
+    "executions": [
+      {
+        "approval_subject_sha256": "c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+        "execution_key": "representative.stage4-frames-text-assets.v7:default:svg",
+        "judgments_sha256": "d27b34b512b10d74cdac574c78bf9f61761f268fc67e3073dea6c90184c602e8",
+        "native": {
+          "artifact_sha256": "6d27f04f4dad351ca4330895d90a6ab68a5e05e2d6e39f2e21cccffc72171743",
+          "format": "svg",
+          "fresh_process_runs": 2,
+          "report_sha256": "28d4485b1e107a379f99e3b6bbbe0c21506fa6df6361e1958841b8451c1be521"
+        },
+        "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+      },
+      {
+        "approval_subject_sha256": "c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+        "execution_key": "representative.stage4-frames-text-assets.v7:default:png",
+        "judgments_sha256": "d27b34b512b10d74cdac574c78bf9f61761f268fc67e3073dea6c90184c602e8",
+        "native": {
+          "artifact_sha256": "e6c206a45e03e4f1f634275d7537f096f53f2b22d990e39a820e47dd90757d93",
+          "format": "png",
+          "fresh_process_runs": 2,
+          "report_sha256": "5a1fa744c59f4b9ebfdbc8ab4c92ca84f15cc6b68db2755fd6b81c1a4e357f70"
+        },
+        "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+      },
+      {
+        "approval_subject_sha256": "c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+        "execution_key": "representative.stage4-frames-text-assets.v7:default:pdf",
+        "judgments_sha256": "d27b34b512b10d74cdac574c78bf9f61761f268fc67e3073dea6c90184c602e8",
+        "native": {
+          "artifact_sha256": "310ca74edc3ea7e69fc549739c45e05d90d7522704be1d94bb9f553084658265",
+          "format": "pdf",
+          "fresh_process_runs": 2,
+          "report_sha256": "28bf56d68a29bc7bebc0ab0d75a2913c40cced818845a63ce374705020db32cb"
+        },
+        "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+      }
+    ],
+    "schema": "excalidraw-render/representative-executions/v1"
+  },
+  "registry_receipts": {
+    "cases": [
+      {
+        "approval_required": true,
+        "approval_subject_sha256": "c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+        "case_id": "representative.stage4-frames-text-assets.v7",
+        "executions": [
+          {
+            "approval_subject_sha256": "c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+            "execution_key": "representative.stage4-frames-text-assets.v7:default:svg",
+            "judgments_sha256": "d27b34b512b10d74cdac574c78bf9f61761f268fc67e3073dea6c90184c602e8",
+            "native": {
+              "artifact_sha256": "6d27f04f4dad351ca4330895d90a6ab68a5e05e2d6e39f2e21cccffc72171743",
+              "format": "svg",
+              "fresh_process_runs": 2,
+              "report_sha256": "28d4485b1e107a379f99e3b6bbbe0c21506fa6df6361e1958841b8451c1be521"
+            },
+            "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+          },
+          {
+            "approval_subject_sha256": "c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+            "execution_key": "representative.stage4-frames-text-assets.v7:default:png",
+            "judgments_sha256": "d27b34b512b10d74cdac574c78bf9f61761f268fc67e3073dea6c90184c602e8",
+            "native": {
+              "artifact_sha256": "e6c206a45e03e4f1f634275d7537f096f53f2b22d990e39a820e47dd90757d93",
+              "format": "png",
+              "fresh_process_runs": 2,
+              "report_sha256": "5a1fa744c59f4b9ebfdbc8ab4c92ca84f15cc6b68db2755fd6b81c1a4e357f70"
+            },
+            "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+          },
+          {
+            "approval_subject_sha256": "c314cff42bdaac7fae932c4e7e4c8a9dc278b69a7077d9e4de37bc5cddf2fa05",
+            "execution_key": "representative.stage4-frames-text-assets.v7:default:pdf",
+            "judgments_sha256": "d27b34b512b10d74cdac574c78bf9f61761f268fc67e3073dea6c90184c602e8",
+            "native": {
+              "artifact_sha256": "310ca74edc3ea7e69fc549739c45e05d90d7522704be1d94bb9f553084658265",
+              "format": "pdf",
+              "fresh_process_runs": 2,
+              "report_sha256": "28bf56d68a29bc7bebc0ab0d75a2913c40cced818845a63ce374705020db32cb"
+            },
+            "semantics_sha256": "7a2903a28b6d7f94e9da36a2e532f84b20a59cb51aab29f984038706e5056701"
+          }
+        ],
+        "schema": "excalidraw-render/representative-executions/v1"
+      }
+    ],
+    "schema": "excalidraw-render/representative-corpus-results/v1"
+  },
+  "counts": {
+    "assignments": 1876,
+    "owned": 1800,
+    "excluded": 3,
+    "assigned_or_excluded": 1803,
+    "gaps": 73,
+    "new_stage4_owners": 60
+  },
+  "global_ledger_approval": null,
+  "baseline_178_and_fixed_size_moxcms_resource_gap": "remain open; not covered by representative approval"
+}

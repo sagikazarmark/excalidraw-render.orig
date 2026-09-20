@@ -15,6 +15,8 @@ mod bmp;
 mod color;
 mod gif;
 mod hdr;
+mod icc_lut;
+mod icc_matrix;
 mod ico;
 mod jpeg;
 mod orientation;
@@ -25,6 +27,8 @@ mod svg_coordinates;
 #[cfg(test)]
 mod tests;
 mod webp;
+#[cfg(test)]
+pub(crate) use color::{with_cms_failure, with_cms_failure_after, CmsSite};
 
 pub(super) use payload::data_url_decoded_len;
 
@@ -51,7 +55,6 @@ use webp::{
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use moxcms::ColorProfile;
 use sha2::{Digest as _, Sha256};
 
 use crate::{
@@ -561,6 +564,13 @@ impl Cache {
             }
             let work = payload_bytes
                 .checked_mul(5)
+                .and_then(|work| {
+                    work.checked_add(if media_kind == MediaKind::Png {
+                        animation_validation_work
+                    } else {
+                        0
+                    })
+                })
                 .and_then(|work| {
                     pixels
                         .checked_mul(4)
@@ -1307,24 +1317,18 @@ fn prepare_color_normalization(
             decoder
                 .icc_profile()
                 .map_or(Ok(ColorNormalization::None), |profile| {
-                    ColorProfile::new_from_slice(&profile)
-                        .map(Box::new)
-                        .map(ColorNormalization::Profile)
-                        .map_err(|_| ResolveError::Unsupported)
+                    color::parse_icc_profile(&profile)
                 })
         }
         RasterSemantics::Gif(_) => Ok(ColorNormalization::None),
         RasterSemantics::WebP(_) => {
             let mut decoder = webp_decoder(bytes)?;
-            decoder.icc_profile().map_err(map_webp_error)?.map_or(
-                Ok(ColorNormalization::None),
-                |profile| {
-                    ColorProfile::new_from_slice(&profile)
-                        .map(Box::new)
-                        .map(ColorNormalization::Profile)
-                        .map_err(|_| ResolveError::Unsupported)
-                },
-            )
+            decoder
+                .icc_profile()
+                .map_err(map_webp_error)?
+                .map_or(Ok(ColorNormalization::None), |profile| {
+                    color::parse_icc_profile(&profile)
+                })
         }
         RasterSemantics::Bmp(_) => Ok(ColorNormalization::None),
         RasterSemantics::Ico(semantics) => match &semantics.payload {

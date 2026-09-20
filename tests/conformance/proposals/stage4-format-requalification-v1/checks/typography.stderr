@@ -1,0 +1,18 @@
+warning: methods `scratch_bytes` and `generation_work` are never used
+   --> crates/excalidraw-render/src/render/metadata.rs:241:19
+    |
+ 87 | impl ArtifactMetadata {
+    | --------------------- methods in this implementation
+...
+241 |     pub(super) fn scratch_bytes(&self) -> u64 {
+    |                   ^^^^^^^^^^^^^
+...
+254 |     pub(super) fn generation_work(&self) -> u64 {
+    |                   ^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `excalidraw-render` (lib) generated 1 warning
+   Compiling excalidraw-render v0.1.0 (/home/laborant/excalidraw-render.orig/crates/excalidraw-render)
+    Finished `release` profile [optimized] target(s) in 48.10s
+     Running tests/stage4_typography.rs (target/release/deps/stage4_typography-6500613f90a4bc95)

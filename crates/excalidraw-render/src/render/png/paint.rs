@@ -249,27 +249,38 @@ pub(super) fn label_path(path: &LabelPath) -> Result<Option<tiny_skia::Path>, Fo
         .checked_mul(3)
         .ok_or_else(png_size_error)?;
     let mut builder = PathBuilder::with_capacity(path.operations.len(), point_capacity);
-    for operation in &path.operations {
+    append_label_path(&mut builder, &path.operations, |x, y| {
+        Ok((finite_f32(x, "PNG label x")?, finite_f32(y, "PNG label y")?))
+    })?;
+    // `finish` declines a lone move, which has nothing to fill either.
+    Ok(builder.finish())
+}
+
+pub(super) fn append_label_path(
+    builder: &mut PathBuilder,
+    operations: &[LabelPathOperation],
+    point: impl Fn(f64, f64) -> Result<(f32, f32), FormatEncodeError>,
+) -> Result<(), FormatEncodeError> {
+    for operation in operations {
         match operation {
-            LabelPathOperation::Move { x, y } => builder.move_to(
-                finite_f32(*x, "PNG fallback label x")?,
-                finite_f32(*y, "PNG fallback label y")?,
-            ),
-            LabelPathOperation::Line { x, y } => builder.line_to(
-                finite_f32(*x, "PNG fallback label x")?,
-                finite_f32(*y, "PNG fallback label y")?,
-            ),
+            LabelPathOperation::Move { x, y } => {
+                let (x, y) = point(*x, *y)?;
+                builder.move_to(x, y);
+            }
+            LabelPathOperation::Line { x, y } => {
+                let (x, y) = point(*x, *y)?;
+                builder.line_to(x, y);
+            }
             LabelPathOperation::Quadratic {
                 control_x,
                 control_y,
                 x,
                 y,
-            } => builder.quad_to(
-                finite_f32(*control_x, "PNG fallback label control x")?,
-                finite_f32(*control_y, "PNG fallback label control y")?,
-                finite_f32(*x, "PNG fallback label x")?,
-                finite_f32(*y, "PNG fallback label y")?,
-            ),
+            } => {
+                let (cx, cy) = point(*control_x, *control_y)?;
+                let (x, y) = point(*x, *y)?;
+                builder.quad_to(cx, cy, x, y);
+            }
             LabelPathOperation::Cubic {
                 control_1_x,
                 control_1_y,
@@ -277,19 +288,16 @@ pub(super) fn label_path(path: &LabelPath) -> Result<Option<tiny_skia::Path>, Fo
                 control_2_y,
                 x,
                 y,
-            } => builder.cubic_to(
-                finite_f32(*control_1_x, "PNG fallback label control x")?,
-                finite_f32(*control_1_y, "PNG fallback label control y")?,
-                finite_f32(*control_2_x, "PNG fallback label control x")?,
-                finite_f32(*control_2_y, "PNG fallback label control y")?,
-                finite_f32(*x, "PNG fallback label x")?,
-                finite_f32(*y, "PNG fallback label y")?,
-            ),
+            } => {
+                let (c1x, c1y) = point(*control_1_x, *control_1_y)?;
+                let (c2x, c2y) = point(*control_2_x, *control_2_y)?;
+                let (x, y) = point(*x, *y)?;
+                builder.cubic_to(c1x, c1y, c2x, c2y, x, y);
+            }
             LabelPathOperation::Close => builder.close(),
         }
     }
-    // `finish` declines a lone move, which has nothing to fill either.
-    Ok(builder.finish())
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

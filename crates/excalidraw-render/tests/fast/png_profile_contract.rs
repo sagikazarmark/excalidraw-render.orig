@@ -431,7 +431,18 @@ fn pdf_image_pixels(objects: &BTreeMap<usize, PdfObject>, width: usize, height: 
     };
     plane(rgb);
     // The direct writer binds canonical RGB through its sRGB ICC space.
-    assert_eq!(pdf_value(&rgb.dictionary, "/ColorSpace"), "/CS1");
+    assert_eq!(pdf_value(&rgb.dictionary, "/ColorSpace"), "/ICCBased");
+    let image_profile_id = pdf_reference(&rgb.dictionary, "/ICCBased");
+    assert_eq!(
+        rgb.dictionary
+            .split_once("/ColorSpace ")
+            .unwrap()
+            .1
+            .lines()
+            .next()
+            .unwrap(),
+        format!("[/ICCBased {image_profile_id} 0 R]")
+    );
     let spaces = page
         .split_once("/ColorSpace <<")
         .unwrap()
@@ -441,14 +452,20 @@ fn pdf_image_pixels(objects: &BTreeMap<usize, PdfObject>, width: usize, height: 
         .0;
     assert_eq!(pdf_value(spaces, "/CS1"), "/ICCBased");
     let profile_id = pdf_reference(spaces, "/ICCBased");
+    assert_eq!(
+        image_profile_id, profile_id,
+        "image and content resources must bind the same ICC object"
+    );
     let profile = &objects[&profile_id];
     assert_eq!(pdf_number(&profile.dictionary, "/N"), 3);
     assert_eq!(pdf_value(&profile.dictionary, "/Alternate"), "/DeviceRGB");
     assert_eq!(&profile.stream.as_ref().unwrap()[16..20], b"RGB ");
-    let intent = objects
+    let catalog = objects
         .values()
-        .find(|o| o.dictionary.contains("/Type /OutputIntent"))
+        .find(|o| o.dictionary.contains("/Type /Catalog"))
         .unwrap();
+    let intent = &objects[&pdf_reference(&catalog.dictionary, "/OutputIntents")];
+    assert_eq!(pdf_value(&intent.dictionary, "/Type"), "/OutputIntent");
     assert_eq!(
         pdf_reference(&intent.dictionary, "/DestOutputProfile"),
         profile_id
@@ -528,7 +545,7 @@ fn pdf_sample_oracle_rejects_detached_or_wrongly_bound_planes() {
         .0;
     let rgb_id = pdf_reference(&original[&page_id].dictionary, "/Im0");
     let mask_id = pdf_reference(&original[&rgb_id].dictionary, "/SMask");
-    for mutation in 0..3 {
+    for mutation in 0..6 {
         let mut objects = original.clone();
         match mutation {
             0 => {
@@ -547,6 +564,33 @@ fn pdf_sample_oracle_rejects_detached_or_wrongly_bound_planes() {
                 rgb.dictionary = rgb.dictionary.replace(
                     &format!("/SMask {mask_id} 0 R"),
                     &format!("/SMask {rgb_id} 0 R"),
+                );
+            }
+            3 => {
+                let rgb = objects.get_mut(&rgb_id).unwrap();
+                let profile = pdf_reference(&rgb.dictionary, "/ICCBased");
+                rgb.dictionary = rgb.dictionary.replace(
+                    &format!("/ColorSpace [/ICCBased {profile} 0 R]"),
+                    "/ColorSpace /CS1",
+                );
+            }
+            4 => {
+                let rgb = objects.get_mut(&rgb_id).unwrap();
+                let profile = pdf_reference(&rgb.dictionary, "/ICCBased");
+                rgb.dictionary = rgb.dictionary.replace(
+                    &format!("/ICCBased {profile} 0 R"),
+                    &format!("/ICCBased {mask_id} 0 R"),
+                );
+            }
+            5 => {
+                let catalog = objects
+                    .values_mut()
+                    .find(|o| o.dictionary.contains("/Type /Catalog"))
+                    .unwrap();
+                let intent = pdf_reference(&catalog.dictionary, "/OutputIntents");
+                catalog.dictionary = catalog.dictionary.replace(
+                    &format!("/OutputIntents [{intent} 0 R]"),
+                    &format!("/OutputIntents [{mask_id} 0 R]"),
                 );
             }
             _ => unreachable!(),

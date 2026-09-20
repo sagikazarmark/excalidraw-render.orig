@@ -111,7 +111,7 @@ fn crop_has_independent_pixel_and_vector_semantics() {
             ));
         } else {
             let pdf = crate::common::pdf_inspect::pdf_text(result.artifact().bytes());
-            assert!(pdf.contains("-40 0 0 -40 40 40 cm\n/Im0 Do"));
+            assert!(pdf.contains("-40 0 0 40 40 0 cm\n/Im0 Do"));
         }
     }
 }

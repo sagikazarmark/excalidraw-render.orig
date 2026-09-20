@@ -1,0 +1,9 @@
+
+running 4 tests
+test stage4_interaction_contract::lazy_frames_reset_limits_replay_assets_and_keep_errors_atomic ... ok
+test stage4_interaction_contract::source_image_projection_keeps_top_rows_and_canvas_filter_weights ... ok
+test stage4_interaction_contract::nested_svg_pdf_dark_mode_retains_the_specified_154_limitation ... ok
+test stage4_interaction_contract::representative_frames_text_assets_links_metadata_tracer ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 568 filtered out; finished in 0.12s
+

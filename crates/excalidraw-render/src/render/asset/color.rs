@@ -9,8 +9,9 @@ use std::io::Cursor;
 use std::sync::Arc;
 
 use moxcms::{
-    Chromaticity, CicpColorPrimaries, CicpProfile, ColorPrimaries, ColorProfile, Layout,
-    MatrixCoefficients, ToneReprCurve, TransferCharacteristics, TransformOptions, XyY, Xyzd,
+    Chromaticity, CicpColorPrimaries, CicpProfile, ColorPrimaries, ColorProfile, DataColorSpace,
+    Layout, MatrixCoefficients, ToneReprCurve, TransferCharacteristics, TransformOptions, XyY,
+    Xyzd,
 };
 
 use super::png::PngSemantics;
@@ -20,6 +21,7 @@ pub(super) enum ColorNormalization {
     None,
     LinearSrgb,
     Profile(Box<ColorProfile>),
+    Lut(Vec<super::icc_lut::Lut>),
     Hdr(Box<super::hdr::Hdr>),
 }
 
@@ -57,28 +59,56 @@ pub(super) fn normalize_rgba(
             }
             Ok(())
         }
+        ColorNormalization::Lut(lut) => {
+            let lut = lut.first().ok_or(ResolveError::DecodeFailed)?;
+            for p in rgba.chunks_exact_mut(4) {
+                if lut.gray() && (p[0] != p[1] || p[1] != p[2]) {
+                    return Err(ResolveError::Unsupported);
+                }
+                let rgb = lut.pixel([p[0], p[1], p[2]])?;
+                p[..3].copy_from_slice(&rgb);
+            }
+            Ok(())
+        }
         ColorNormalization::Profile(profile) => {
             let srgb = ColorProfile::new_srgb();
-            let transform = profile
-                .create_transform_16bit(
-                    Layout::Rgba,
+            let gray = profile.color_space == DataColorSpace::Gray;
+            let transform = cms_operation(CmsSite::Construct, || {
+                profile.create_transform_16bit(
+                    if gray {
+                        Layout::GrayAlpha
+                    } else {
+                        Layout::Rgba
+                    },
                     &srgb,
                     Layout::Rgba,
                     TransformOptions::default(),
                 )
-                .map_err(|_| ResolveError::Unsupported)?;
+            })?;
             // The 8-bit executor's 4096-entry output curve loses near-black
             // samples even in identity transforms. Use its higher-resolution
             // path and quantize once, with bounded scratch independent of size.
             let mut source = [0_u16; 1024];
             let mut output = [0_u16; 1024];
             for block in rgba.chunks_mut(source.len()) {
-                for (target, value) in source.iter_mut().zip(block.iter()) {
-                    *target = u16::from(*value) * 257;
-                }
-                transform
-                    .transform(&source[..block.len()], &mut output[..block.len()])
-                    .map_err(|_| ResolveError::Unsupported)?;
+                let source_len = if gray {
+                    for (pixel, target) in block.chunks_exact(4).zip(source.chunks_exact_mut(2)) {
+                        if pixel[0] != pixel[1] || pixel[1] != pixel[2] {
+                            return Err(ResolveError::Unsupported);
+                        }
+                        target[0] = u16::from(pixel[0]) * 257;
+                        target[1] = u16::from(pixel[3]) * 257;
+                    }
+                    block.len() / 2
+                } else {
+                    for (target, value) in source.iter_mut().zip(block.iter()) {
+                        *target = u16::from(*value) * 257;
+                    }
+                    block.len()
+                };
+                cms_operation(CmsSite::Execute, || {
+                    transform.transform(&source[..source_len], &mut output[..block.len()])
+                })?;
                 for (target, value) in block.iter_mut().zip(output.iter()) {
                     *target = ((u32::from(*value) * 255 + 32767) / 65535) as u8;
                 }
@@ -199,11 +229,149 @@ fn cicp_color_profile(cicp: [u8; 4]) -> Result<ColorProfile, ResolveError> {
 
 fn png_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, ResolveError> {
     if let Some(profile) = info.icc_profile.as_deref() {
-        return ColorProfile::new_from_slice(profile)
-            .map(Box::new)
-            .map(ColorNormalization::Profile)
-            .map_err(|_| ResolveError::Unsupported);
+        // Device-link, abstract and named-color profiles are not image source
+        // spaces. Parsing their tag tables alone does not establish a usable
+        // PNG interpretation. Direct SVG never invokes this projection step.
+        if !matches!(
+            profile.get(12..16),
+            Some(b"mntr" | b"scnr" | b"prtr" | b"spac")
+        ) {
+            return Err(ResolveError::Unsupported);
+        }
+        let bytes = validate_png_icc_direction(profile)?;
+        if bytes.get(16..20) == Some(b"GRAY")
+            && !matches!(
+                info.color_type,
+                png::ColorType::Grayscale | png::ColorType::GrayscaleAlpha
+            )
+        {
+            return Err(ResolveError::Unsupported);
+        }
+        if let Some(lut) = super::icc_lut::Lut::parse(bytes)? {
+            return Ok(ColorNormalization::Lut(lut.stored()?));
+        }
+        let had_saturation = super::icc_lut::has_tag(bytes, b"A2B2")?;
+        let profile = cms_parse(|| super::icc_matrix::parse(bytes))?;
+        if !matches!(
+            profile.color_space,
+            DataColorSpace::Rgb | DataColorSpace::Gray
+        ) || (profile.color_space == DataColorSpace::Gray
+            && !matches!(
+                info.color_type,
+                png::ColorType::Grayscale | png::ColorType::GrayscaleAlpha
+            ))
+        {
+            return Err(ResolveError::Unsupported);
+        }
+        if had_saturation
+            && profile.red_trc.is_none()
+            && profile.green_trc.is_none()
+            && profile.blue_trc.is_none()
+            && profile.gray_trc.is_none()
+        {
+            // skcms's default source priority is A2B0, then A2B1. An
+            // otherwise valid saturation-only space is not selected.
+            return png_legacy_color_profile(info);
+        }
+        return Ok(ColorNormalization::Profile(Box::new(profile)));
     }
+    png_legacy_color_profile(info)
+}
+
+pub(super) fn parse_icc_profile(bytes: &[u8]) -> Result<ColorNormalization, ResolveError> {
+    let bytes = validate_png_icc_direction(bytes)?;
+    if let Some(lut) = super::icc_lut::Lut::parse(bytes)? {
+        return Ok(ColorNormalization::Lut(lut.stored()?));
+    }
+    cms_parse(|| super::icc_matrix::parse(bytes))
+        .map(Box::new)
+        .map(ColorNormalization::Profile)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum CmsSite {
+    Parse,
+    Construct,
+    Execute,
+    Allocation,
+    ProgramAllocation,
+}
+pub(super) fn cms_error(error: moxcms::CmsError) -> ResolveError {
+    if matches!(error, moxcms::CmsError::OutOfMemory(_)) {
+        ResolveError::Memory
+    } else {
+        ResolveError::Unsupported
+    }
+}
+pub(super) fn cms_operation<T>(
+    site: CmsSite,
+    operation: impl FnOnce() -> Result<T, moxcms::CmsError>,
+) -> Result<T, ResolveError> {
+    if cms_refused(site) {
+        return Err(cms_error(moxcms::CmsError::OutOfMemory(1)));
+    }
+    operation().map_err(cms_error)
+}
+pub(super) fn cms_parse<T>(
+    operation: impl FnOnce() -> Result<T, ResolveError>,
+) -> Result<T, ResolveError> {
+    if cms_refused(CmsSite::Parse) {
+        return Err(cms_error(moxcms::CmsError::OutOfMemory(1)));
+    }
+    operation()
+}
+pub(super) fn cms_allocation<T>(
+    operation: impl FnOnce() -> Result<T, ResolveError>,
+) -> Result<T, ResolveError> {
+    if cms_refused(CmsSite::Allocation) {
+        return Err(ResolveError::Memory);
+    }
+    operation()
+}
+pub(super) fn cms_program_allocation<T>(
+    operation: impl FnOnce() -> Result<T, ResolveError>,
+) -> Result<T, ResolveError> {
+    if cms_refused(CmsSite::ProgramAllocation) {
+        return Err(ResolveError::Memory);
+    }
+    operation()
+}
+fn cms_refused(_site: CmsSite) -> bool {
+    #[cfg(test)]
+    {
+        CMS_FAILURE.with(|s| match s.get() {
+            Some((site, 0)) if site == _site => true,
+            Some((site, n)) if site == _site => {
+                s.set(Some((site, n - 1)));
+                false
+            }
+            _ => false,
+        })
+    }
+    #[cfg(not(test))]
+    {
+        false
+    }
+}
+#[cfg(test)]
+thread_local! {static CMS_FAILURE:std::cell::Cell<Option<(CmsSite,usize)>>=const {std::cell::Cell::new(None)};}
+#[cfg(test)]
+pub(crate) fn with_cms_failure<T>(site: CmsSite, body: impl FnOnce() -> T) -> T {
+    with_cms_failure_after(site, 0, body)
+}
+#[cfg(test)]
+pub(crate) fn with_cms_failure_after<T>(site: CmsSite, skip: usize, body: impl FnOnce() -> T) -> T {
+    struct Restore(Option<(CmsSite, usize)>);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            CMS_FAILURE.with(|s| s.set(self.0));
+        }
+    }
+    let _restore = Restore(CMS_FAILURE.with(|s| s.replace(Some((site, skip)))));
+    body()
+}
+
+fn png_legacy_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, ResolveError> {
     if info.srgb.is_some() {
         return Ok(ColorNormalization::None);
     }
@@ -279,4 +447,65 @@ fn png_color_profile(info: &png::Info<'_>) -> Result<ColorNormalization, Resolve
         profile.blue_trc = Some(curve);
     }
     Ok(ColorNormalization::Profile(Box::new(profile)))
+}
+
+fn validate_png_icc_direction(bytes: &[u8]) -> Result<&[u8], ResolveError> {
+    let word = |at| -> Result<usize, ResolveError> {
+        let data = bytes.get(at..at + 4).ok_or(ResolveError::Unsupported)?;
+        usize::try_from(u32::from_be_bytes(
+            data.try_into().map_err(|_| ResolveError::Unsupported)?,
+        ))
+        .map_err(|_| ResolveError::Unsupported)
+    };
+    let count = word(128)?;
+    // These invariants apply to every ICC execution path, including the owned
+    // LUT path which deliberately never invokes the dependency's parser.
+    if bytes.get(36..40) != Some(b"acsp") || !matches!(bytes.get(8), Some(2..=4)) || word(64)? > 3 {
+        return Err(ResolveError::Unsupported);
+    }
+    moxcms::ProfileClass::try_from(word(12)? as u32).map_err(cms_error)?;
+    DataColorSpace::try_from(word(16)? as u32).map_err(cms_error)?;
+    DataColorSpace::try_from(word(20)? as u32).map_err(cms_error)?;
+    if word(0)? > bytes.len() || word(0)? < 132 {
+        return Err(ResolveError::Unsupported);
+    }
+    let bytes = bytes.get(..word(0)?).ok_or(ResolveError::Unsupported)?;
+    let size = count
+        .checked_mul(12)
+        .and_then(|v| v.checked_add(132))
+        .ok_or(ResolveError::Unsupported)?;
+    let table = bytes.get(132..size).ok_or(ResolveError::Unsupported)?;
+    for tag in table.chunks_exact(12) {
+        let offset = usize::try_from(u32::from_be_bytes(
+            tag[4..8]
+                .try_into()
+                .map_err(|_| ResolveError::Unsupported)?,
+        ))
+        .map_err(|_| ResolveError::Unsupported)?;
+        let length = usize::try_from(u32::from_be_bytes(
+            tag[8..12]
+                .try_into()
+                .map_err(|_| ResolveError::Unsupported)?,
+        ))
+        .map_err(|_| ResolveError::Unsupported)?;
+        let end = offset
+            .checked_add(length)
+            .ok_or(ResolveError::Unsupported)?;
+        if offset < size || bytes.get(offset..end).is_none() {
+            return Err(ResolveError::Unsupported);
+        }
+        if matches!(&tag[..4], b"A2B0" | b"A2B1" | b"A2B2") {
+            let offset = usize::try_from(u32::from_be_bytes(
+                tag[4..8]
+                    .try_into()
+                    .map_err(|_| ResolveError::Unsupported)?,
+            ))
+            .map_err(|_| ResolveError::Unsupported)?;
+            let end = offset.checked_add(4).ok_or(ResolveError::Unsupported)?;
+            if !matches!(bytes.get(offset..end), Some(b"mft1" | b"mft2" | b"mAB ")) {
+                return Err(ResolveError::Unsupported);
+            }
+        }
+    }
+    Ok(bytes)
 }

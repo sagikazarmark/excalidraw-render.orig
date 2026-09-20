@@ -1,0 +1,58 @@
+{
+  "schema": "excalidraw-render/representative-reference/v1",
+  "sources": [
+    {
+      "path": "tools/reference-oracle/scripts/stage4-representative-v2.mjs",
+      "sha256": "b4b1674102f5f181e037e4dda3dfc35f36dd6c847a86c5957ca788815af47b58"
+    },
+    {
+      "path": "tools/reference-oracle/run-stage4-representative-v2.sh",
+      "sha256": "80adc1ec2fcd38bf0d5f81e24c181ffb6090f4cec0c34998650d03b1d2369404"
+    },
+    {
+      "path": "tools/reference-oracle/scripts/stage4-representative-v3.mjs",
+      "sha256": "80971fc96e480378d60eb378f75c2d6f0bb68ee392ce84cdc631347ff6aaca38"
+    },
+    {
+      "path": "tools/reference-oracle/run-stage4-representative-v3.sh",
+      "sha256": "284075d927b40663c61260ebb443b6442d76e88b18baa2c9c6acd63bb4b2df38"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-frames-text-assets/scene.json",
+      "sha256": "adfc116d54feb2873000c32041177f4a735fbe0340a6902b458bc088cb4086b7"
+    },
+    {
+      "path": "tests/conformance/candidates/stage4-frames-text-assets/nested.svg",
+      "sha256": "a28798ab75854879768160ef7c283dd75a37a1878134a69f62f08091bc0c5f6a"
+    },
+    {
+      "path": "tests/oracle/reference-profiles/revision-1.json",
+      "sha256": "1e08a342359ac1c7eed1384b8e027a8289257b46bdccbbad3a9980e786136b71"
+    },
+    {
+      "path": "tests/oracle/reference-profiles/revision-1-assets.json",
+      "sha256": "02685099e6a12632d77a3cac4c6d3acef291520e4fef93a675ee8be471245d9a"
+    }
+  ],
+  "options": {
+    "exportBackground": false,
+    "exportEmbedScene": true,
+    "exportPadding": 0,
+    "exportScale": 1,
+    "exportWithDarkMode": false,
+    "frameRendering": {
+      "enabled": true,
+      "clip": true,
+      "name": false,
+      "outline": false
+    },
+    "maxWidthOrHeight": null,
+    "viewBackgroundColor": "#ffffff"
+  },
+  "width": 200,
+  "height": 120,
+  "fresh_process_runs": 2,
+  "browser": "149.0.7827.55",
+  "official_release": "v0.18.1",
+  "network": "none"
+}

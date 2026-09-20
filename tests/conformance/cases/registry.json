@@ -1093,9 +1093,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/105",
           "format": "png",
-          "max_changed_pixels": 394,
-          "minimum_ssim_bits": "3fefe47c6bab1a76",
-          "reason": "Sub-pixel glyph coverage. With the placeholder label positioned by Excalidraw's Helvetica metadata metrics (decided on #105), the SVG document matches the official export under one rasterizer, SVG path geometry and the scene extent match exactly, and only interior glyph ink differs between the renderer's rasterizer and the browser's on the two label lines. The same class is recorded on #104 for the other text-bearing cases. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does; what remains is the two rasterizers' coverage of identically placed outlines and, for the Helvetica-family lines, the reference profile's light autohinting of the container's system Liberation Sans, whose x-height it snaps to the pixel grid (spec 8.5).",
+          "max_changed_pixels": 410,
+          "minimum_ssim_bits": "3fefe50f5a0d41c1",
+          "reason": "Sub-pixel glyph coverage and the existing #105 Helvetica-metadata/Liberation Sans substitution. Under the user-approved spec §8.5 per-glyph device-phase rule, these axis-aligned glyphs retain the whole-device-Y baseline and use quarter-device-pixel X origins; this replaces the former whole-line-only baseline placement. SVG path geometry, scene extent and document parity remain correct. The residual is interior label-glyph coverage between the rasterizers, including the pinned reference system Liberation Sans light autohinting/x-height behavior. The new exact limits are independently remeasured; they do not attribute the residual to obsolete whole-line placement.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -1811,18 +1811,7 @@
         "assets",
         "crops"
       ],
-      "exceptions": [
-        {
-          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/110",
-          "format": "png",
-          "max_changed_pixels": 15,
-          "minimum_ssim_bits": "3feff2b0c56c5701",
-          "reason": "Sub-pixel glyph coverage. CR and CRLF line endings break lines as LF does (decided on #110): the SVG document matches the official export exactly under one rasterizer and all six baselines agree to the last digit, including the restored 1.5 line height of the bare-CR element; only interior glyph ink differs between the renderer's rasterizer and the browser's across six Excalifont lines. The same class is recorded on #104, #105 and #108 for the other text-bearing cases. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does, so what remains is the two rasterizers' coverage of identically placed outlines.",
-          "region": "whole",
-          "variant": "default",
-          "viewer_profile": null
-        }
-      ],
+      "exceptions": [],
       "variants": [
         {
           "id": "default",
@@ -2221,9 +2210,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/121",
           "format": "png",
-          "max_changed_pixels": 1187,
-          "minimum_ssim_bits": "3fec4699f9a9ccbb",
-          "reason": "Spec 8.3's Noto Emoji substitution. U+1F600 and U+1F389 are absent from every official font chunk, so revision 1 shapes each from the complete monochrome Noto Emoji 3.003 face and reports one font.noto-emoji-substituted per affected occurrence (decided on #121). The official export has no bundled glyph for them either: its font list ends in the local-only Segoe UI Emoji, which the pinned container's fontconfig resolves to Noto Color Emoji 2.047, so the browser draws colour bitmap glyphs. The divergence is the emoji cells on both lines, colour bitmaps against monochrome outlines at near-identical advances, plus the trailing Latin word each cell shifts by at most three pixels. The leading Latin word on both lines differs only by the sub-pixel glyph-coverage class recorded on #104, #105, #108 and #110. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does, so what remains is the two rasterizers' coverage of identically placed outlines.",
+          "max_changed_pixels": 1184,
+          "minimum_ssim_bits": "3fec457e1caa29ce",
+          "reason": "Existing #121 monochrome emoji compatibility substitution: bundled Noto Emoji 3.003 replaces the reference Noto Color Emoji 2.047. Their glyph shapes and advances differ and move following text. Under the user-approved spec §8.5 per-glyph device-phase rule, these axis-aligned glyphs retain the whole-device-Y baseline and use quarter-device-pixel X origins; this replaces the former whole-line-only baseline placement. The temporary placement-only control reproduces the former measurement exactly, and current native output reproduces the new measurement. The fallback/advance difference remains the non-defect cause; per-glyph ranges and fallback-run partitions are intact.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -4865,9 +4854,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
           "format": "png",
-          "max_changed_pixels": 2353,
-          "minimum_ssim_bits": "3fec7ae8cbdda354",
-          "reason": "Spec 8.3's replacement glyph. No bundled face maps a Hebrew or Arabic scalar, so revision 1 shapes each as the deterministic basic-Latin ? from Liberation Sans and reports it as font.missing-glyph, and shapes the trailing paragraph separator U+2029 the same way (decided on #124 and #125). The official export has no bundled glyph for them either and falls through to the pinned container's system fonts: FreeSans for Hebrew in Excalifont text and the system Liberation Sans for Hebrew in Helvetica text, FreeSerif for Arabic in both, and FreeSans's blank advance for the separator. The divergence is each right-to-left cell against its ? glyphs and, on the same line, the Latin word or punctuation the differing advances displace toward the line's unanchored side; the anchored side agrees pixel for pixel (the leading words of the left-aligned lines, the trailing words of the right-aligned lines, the centres of the centred lines), so the visual run order, the digits placed before the Arabic run, the exclamation mark after the Hebrew run and the mirrored bracket pair, matches the official export. The Latin words differ only by the sub-pixel glyph-coverage class recorded on #104, #105, #108, #110, #153 and #169. With #169 the renderer snaps each line's baseline to the device pixel grid as the canvas does; what remains is the two rasterizers' coverage of identically placed outlines and, for the Helvetica-family lines, the reference profile's light autohinting of the container's system Liberation Sans, whose x-height it snaps to the pixel grid (spec 8.5).",
+          "max_changed_pixels": 2375,
+          "minimum_ssim_bits": "3fec7b0fe0040f08",
+          "reason": "Existing #152/#124/#125 deterministic missing-glyph compatibility substitution: unsupported Hebrew/Arabic and paragraph-separator scalars use the basic-Latin question mark from Liberation Sans instead of the reference fallback glyphs. Different advances displace adjacent text; bidi run order and paragraph behavior remain as specified. Under the user-approved spec §8.5 per-glyph device-phase rule, these axis-aligned glyphs retain the whole-device-Y baseline and use quarter-device-pixel X origins; this replaces the former whole-line-only baseline placement. A placement-only temporary control reproduces old/new measurements with unchanged SVG output and verified glyph/fallback/bidi outline partitions.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -6299,9 +6288,9 @@
         {
           "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
           "format": "png",
-          "max_changed_pixels": 1895,
-          "minimum_ssim_bits": "3feabe178cbbfbee",
-          "reason": "Spec 8.3's replacement glyph. No bundled face maps a Hebrew or Arabic scalar, so revision 1 shapes each as the deterministic basic-Latin ? from Liberation Sans and reports it as font.missing-glyph (decided on #124). The official export has no bundled glyph for them either and falls through to the pinned container's system fonts, FreeSans for Hebrew and FreeSerif for Arabic. The divergence is each right-to-left cell against its ? glyphs and, on the same line, the Latin word or digits the differing advances displace toward the line's unanchored side; the anchored side of every line agrees with the official canvas to within the glyph shapes (the left edges of the left-aligned lines at columns 11 and 12, the centres of the centred line at 160, the right edges of the right-aligned lines at 308 and 309), `world 123` of the right-to-left element's Latin-first line and `world` of the left-to-right element's Hebrew-first line are pixel-identical, and the visual order of both direction-mixed lines, `world 123 <Arabic> Hello` and `123 <Hebrew> world`, is the canvas's under the element-wide base direction (#166). The Latin words differ only by the two rasterizers' coverage of identically placed outlines after the baseline snap (#169).",
+          "max_changed_pixels": 1903,
+          "minimum_ssim_bits": "3feac3b632cb3ae3",
+          "reason": "Existing #152/#124/#125 deterministic basic-Latin question-mark fallback and its different advances for unsupported RTL scalars. Physical line anchoring and bidi order remain as specified. Under the user-approved spec §8.5 per-glyph device-phase rule, these axis-aligned glyphs retain the whole-device-Y baseline and use quarter-device-pixel X origins; this replaces the former whole-line-only baseline placement. The separate #168 SVG harness direction/paragraph limitation and its measured SVG pin remain unchanged. The direct-PNG limits are remeasured only for the approved per-glyph placement, with unchanged SVG output and verified outline/run partitions.",
           "region": "whole",
           "variant": "default",
           "viewer_profile": null
@@ -6435,18 +6424,7 @@
         "png": [],
         "svg": []
       },
-      "exceptions": [
-        {
-          "approving_issue": "https://github.com/sagikazarmark/excalidraw-render.orig/issues/152",
-          "format": "png",
-          "max_changed_pixels": 70,
-          "minimum_ssim_bits": "3feff79bca9caa96",
-          "reason": "Sub-pixel glyph coverage. Standalone text and bound labels paint at their stored coordinates with the stored wrapped text, the stored width anchoring each line and verticalAlign ignored (evidenced on #152): all three container paths match the official export byte for byte, the SVG document matches under one rasterizer (0 changed pixels, SSIM 1.0), the scene extent and all twelve baselines agree to the last digit, and in the direct PNG every glyph's horizontal placement agrees; only glyph ink differs between the renderer's rasterizer and the browser's canvas, with each line's baseline snapped to the device pixel grid as the canvas snaps it (#169), together with the roughness-0 stroke edges of the rectangle, ellipse and diamond. The same class is recorded on #104, #105, #108, #110 and #153 for the other text-bearing cases.",
-          "region": "whole",
-          "variant": "default",
-          "viewer_profile": null
-        }
-      ]
+      "exceptions": []
     },
     {
       "id": "focused.frame-name-truncation.v1",

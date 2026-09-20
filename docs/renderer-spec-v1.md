@@ -1416,24 +1416,66 @@ the supersample neither blurs nor widens it.
 
 Text placement follows the canvas's text rasterization as well (#169). The
 canvas draws every line of ordinary scene text, every frame name and every
-generated embeddable label with `fillText`, and Skia positions an
-axis-aligned glyph run's origin with horizontal subpixel precision while
-rounding its device y to `floor(y + 0.5)`. PNG therefore fills each such
-line's glyph outlines with the line's baseline snapped to the nearest whole
-device pixel, half-pixels rounding down the page (`floor(y + 0.5)`, so `.5`
-snaps to the next row), taken after the export scale in device pixels and
-applied to the whole line's outlines as one shift, while x stays fractional. A
-line whose element is rotated is not axis-aligned and keeps its exact
-baseline, as Skia positions a rotated run with subpixel precision on both
-axes. The snap is a raster placement detail of PNG alone: SVG and PDF carry
-the exact fractional baseline (the official SVG declares fractional `y` too),
-the compatibility placeholder's label, which the canvas never draws, keeps
-the exact baseline, and the semantic pixel-coverage charge is taken from the
-exact outlines (Section 13.2). With the snap, the vertical ink centroid of
-every line of a bundled face agrees with the official canvas raster to within
-the rasterizers' antialiasing noise; what remains of the sub-pixel glyph
-coverage class is the two rasterizers' coverage of identically placed
-outlines, and, for Helvetica-family text, the reference profile's own
+generated embeddable label with `fillText`. PNG MUST position each shaped
+glyph independently on the reference canvas's device-phase grid; a single
+whole-line shift does not reproduce the different phases of a rotated run.
+The phase is selected after the complete element transform and export scale,
+in final device pixels, before multiplication by the internal supersample.
+
+For local glyph origin `(gx, gy)` and local-to-device affine transform
+`(a,b,c,d,e,f)`, let `X = a*gx + c*gy + e` and `Y = b*gx + d*gy + f`.
+An axis-aligned baseline uses quarter-pixel phases along the baseline and
+whole pixels on the perpendicular device axis: a horizontal baseline uses
+`(qx,qy) = (4,1)`, and a vertical baseline uses `(1,4)`. Alignment is in device
+space; a quarter-turn baseline is vertical, not an oblique baseline merely
+because the source angle is nonzero. Other, non-axis-aligned rotated
+baselines use `(4,4)`.
+
+Classify alignment using the pinned Skia font-cache copy of the device matrix,
+not an arbitrary angular epsilon or raw `a == 0` / `b == 0` comparisons. For
+each coefficient `v`, admit it to binary32, multiply by `1024` in binary32,
+promote that product to binary64, then compute `floor(product + 0.5)`. The
+cache coefficient is that rounded value divided by `1024`; only whether it
+is zero affects classification. Test cached `b == 0` first for horizontal
+alignment, otherwise cached `a == 0` for vertical alignment, otherwise neither.
+This matrix includes export scale, but excludes font size and the internal
+supersample. In particular, admitted `+1/2048` rounds away from zero while
+`-1/2048` rounds to zero. The cache copy is used only to choose the phase grid:
+the actual device transform, glyph contours, and path-cutoff calculation retain
+their original precision.
+
+For either device coordinate, apply:
+
+```text
+snap(v, q) = floor(v*q + 0.5) / q
+dx = snap(X, qx) - X
+dy = snap(Y, qy) - Y
+```
+
+Translate only that glyph's transformed contours by `(dx,dy)`. Do not round
+each contour point or change advances, kerning, shaping offsets, or layout.
+Halfway ties choose the more positive device coordinate, including at
+negative coordinates: `snap(0.125,4) = 0.25`, `snap(-0.125,4) = 0`, and
+`snap(-0.5,1) = 0`. This is nearest-phase rounding with the pinned Skia
+eighth-pixel bias on quarter-pixel axes, not ties-to-even or ties-away-from-zero.
+
+Glyphs drawn through the large-text path route retain exact transformed
+origins. For font size `F` in local logical units, bypass the phase snap if
+either `F*F*(a*a+b*b) > 256*256` or `F*F*(c*c+d*d) > 256*256`. Equality stays
+on the mask-phase route. The threshold is in final device pixels, not local
+font units or supersampled pixels; a bypass adds no origin displacement.
+
+These are PNG raster-placement operations alone. Shared layout, glyph origins,
+advances and outlines remain exact; SVG and PDF retain exact fractional
+coordinates, including baselines (the official SVG declares fractional `y`
+too). The compatibility placeholder's label, which the canvas never draws,
+keeps its exact placement. Semantic pixel-coverage charges continue to use
+the exact outlines (Section 13.2). The scoped draft amendment, pinned source
+citations, boundary evidence and implementation assessment are recorded in
+[`stage4-png-device-phase-assessment.md`](research/stage4-png-device-phase-assessment.md).
+
+Residual coverage differences include the rasterizers' antialiasing of placed
+outlines and, for Helvetica-family text, the reference profile's own
 rendering of it: the reference has no bundled Helvetica and draws it with the
 container's system Liberation Sans, whose render parameters the pinned
 Chromium takes from fontconfig rather than from `--font-render-hinting=none`,

@@ -1,0 +1,7 @@
+# Preserve exact approved command output, including its final blank line.
+png-device-phase-six-case-v1/svg-parity-check.log whitespace=-blank-at-eof
+stage4-format-requalification-v1/checks/*.stdout whitespace=-blank-at-eof
+# Unified-diff blank context lines contain a required leading space.
+stage4-format-requalification-v1/diffs/**/*.diff whitespace=-blank-at-eol
+stage4-format-requalification-v1/external-test.diff whitespace=-blank-at-eol
+stage4-format-requalification-v2/review-fix.diff whitespace=-blank-at-eol

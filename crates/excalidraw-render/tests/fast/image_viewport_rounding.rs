@@ -56,7 +56,7 @@ fn an_uncropped_fractional_image_fills_the_rounded_viewport_in_svg_and_pdf_and_t
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
     assert!(
-        pdf.contains("0 0 41 40 re\nW\nn\n41 0 0 40 0 0 cm\n/Im0 Do"),
+        pdf.contains("0 0 41 40 re\nW\nn\n41 0 0 -40 0 40 cm\n/Im0 Do"),
         "PDF image viewport is not the rounded reference size: {pdf}"
     );
 
@@ -108,7 +108,7 @@ pub(super) fn a_flipped_fractional_image_mirrors_its_rounded_viewport_about_the_
     let pdf = render_artifact_without_background(&scene, OutputFormat::Pdf);
     let pdf = pdf_text(&pdf);
     assert!(
-        pdf.contains("-0.5 0 41 40 re\nW\nn\n-41 0 0 40 40.5 0 cm\n/Im0 Do"),
+        pdf.contains("-0.5 0 41 40 re\nW\nn\n-41 0 0 -40 40.5 40 cm\n/Im0 Do"),
         "PDF does not mirror the rounded viewport about the unrounded center: {pdf}"
     );
 
@@ -187,7 +187,7 @@ pub(super) fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewpo
     assert!(
         pdf.contains(concat!(
             "0 0 21 20.5 re\nW\nn\n",
-            "-30.75 0 0 -20.5 30.75 20.5 cm\n/Im0 Do"
+            "-30.75 0 0 20.5 30.75 0 cm\n/Im0 Do"
         )),
         "PDF lacks the reference visible rectangle and content matrix: {pdf}"
     );
@@ -197,12 +197,11 @@ pub(super) fn a_cropped_flipped_fractional_image_keeps_the_reference_mask_viewpo
     let png = render_png(&scene);
     assert_eq!((png.width, png.height), (40, 40));
     assert_eq!(png.pixel(14, 14), [255, 255, 0, 255]);
-    let magenta = png.pixel(25, 14);
-    assert!(magenta[0] > 240 && magenta[1] < 20 && magenta[2] > 240 && magenta[3] == 255);
-    let blue = png.pixel(14, 25);
-    assert!(blue[0] < 20 && blue[1] < 20 && blue[2] > 240 && blue[3] == 255);
-    let green = png.pixel(25, 25);
-    assert!(green[0] < 20 && green[1] > 225 && green[2] < 30 && green[3] == 255);
+    // Independently checked with stage4-sampling-probe.mjs in two fresh pinned
+    // Chromium processes. Four-bit sampling weights retain crop-edge bleed.
+    assert_eq!(png.pixel(25, 14), [239, 15, 255, 255]);
+    assert_eq!(png.pixel(14, 25), [0, 0, 255, 255]);
+    assert_eq!(png.pixel(25, 25), [15, 239, 0, 255]);
     // The element spans device [10, 30.5) on both axes: column 30 and row 30,
     // whose centres lie on the edges, are painted whole and opaque (#162).
     // Their colour blends the crop's edge with the column the crop leaves

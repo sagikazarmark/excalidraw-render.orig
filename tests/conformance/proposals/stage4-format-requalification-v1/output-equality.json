@@ -1,0 +1,436 @@
+{
+  "build": {
+    "build_command": [
+      "cargo",
+      "build",
+      "--release",
+      "--locked",
+      "-p",
+      "excalidraw-render-cli",
+      "--message-format=json-render-diagnostics"
+    ],
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "cargo_profile": {
+      "debug_assertions": false,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": false,
+      "test": false
+    },
+    "codegen_units": 1,
+    "debug": 0,
+    "executable_sha256": "d4252b1a73c41382f28392bfeff0ee3d37b549662099bf32aba404eeedc57869",
+    "incremental": false,
+    "lto": true,
+    "panic": "abort",
+    "profile": "release",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+    "rustflags": []
+  },
+  "comparisons": [
+    {
+      "id": "representative-svg",
+      "format": "svg",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "0",
+        "--no-background",
+        "--no-frame-names",
+        "--no-frame-outlines",
+        "--embed-scene",
+        "--embed-provenance",
+        "--embed-diagnostics"
+      ],
+      "artifact_sha256": "6d27f04f4dad351ca4330895d90a6ab68a5e05e2d6e39f2e21cccffc72171743",
+      "report_sha256": "28d4485b1e107a379f99e3b6bbbe0c21506fa6df6361e1958841b8451c1be521",
+      "old_artifact": {
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v7/native.svg",
+        "byte_length": 15314,
+        "sha256": "6d27f04f4dad351ca4330895d90a6ab68a5e05e2d6e39f2e21cccffc72171743"
+      },
+      "old_report": {
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v7/native-svg-report.json",
+        "byte_length": 416,
+        "sha256": "28d4485b1e107a379f99e3b6bbbe0c21506fa6df6361e1958841b8451c1be521"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "representative-png",
+      "format": "png",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "0",
+        "--no-background",
+        "--no-frame-names",
+        "--no-frame-outlines",
+        "--embed-scene",
+        "--embed-provenance",
+        "--embed-diagnostics"
+      ],
+      "artifact_sha256": "e6c206a45e03e4f1f634275d7537f096f53f2b22d990e39a820e47dd90757d93",
+      "report_sha256": "5a1fa744c59f4b9ebfdbc8ab4c92ca84f15cc6b68db2755fd6b81c1a4e357f70",
+      "old_artifact": {
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v7/native.png",
+        "byte_length": 5598,
+        "sha256": "e6c206a45e03e4f1f634275d7537f096f53f2b22d990e39a820e47dd90757d93"
+      },
+      "old_report": {
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v7/native-png-report.json",
+        "byte_length": 411,
+        "sha256": "5a1fa744c59f4b9ebfdbc8ab4c92ca84f15cc6b68db2755fd6b81c1a4e357f70"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "representative-pdf",
+      "format": "pdf",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "0",
+        "--no-background",
+        "--no-frame-names",
+        "--no-frame-outlines",
+        "--embed-scene",
+        "--embed-provenance",
+        "--embed-diagnostics"
+      ],
+      "artifact_sha256": "310ca74edc3ea7e69fc549739c45e05d90d7522704be1d94bb9f553084658265",
+      "report_sha256": "28bf56d68a29bc7bebc0ab0d75a2913c40cced818845a63ce374705020db32cb",
+      "old_artifact": {
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v7/native.pdf",
+        "byte_length": 42939,
+        "sha256": "310ca74edc3ea7e69fc549739c45e05d90d7522704be1d94bb9f553084658265"
+      },
+      "old_report": {
+        "path": "tests/conformance/candidates/stage4-frames-text-assets-v7/native-pdf-report.json",
+        "byte_length": 418,
+        "sha256": "28bf56d68a29bc7bebc0ab0d75a2913c40cced818845a63ce374705020db32cb"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "protected-pdf",
+      "format": "pdf",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--pdf-raster-fallback",
+        "forbid"
+      ],
+      "artifact_sha256": "50180ecf1822d7d573ea78cc6375cd3f83af8ef2748422b7e9b3d52a1b7ba6dc",
+      "report_sha256": "620062fe4aa304f7434a729932090503634aff1845397068c19fd1d5ea4f9c96",
+      "old_artifact": {
+        "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v2/candidate.pdf",
+        "byte_length": 226886,
+        "sha256": "50180ecf1822d7d573ea78cc6375cd3f83af8ef2748422b7e9b3d52a1b7ba6dc"
+      },
+      "old_report": {
+        "path": "tests/conformance/candidates/stage4-pdf-backend-requalification-v2/candidate-report.json",
+        "byte_length": 419,
+        "sha256": "620062fe4aa304f7434a729932090503634aff1845397068c19fd1d5ea4f9c96"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "embeddable-links-svg",
+      "format": "svg",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "3d1cca84278e95f0ff400eced95d0dc03a0babc67cb251e5d90b388804c04c47",
+      "report_sha256": "7136f76ce56f07abf063508cafb25583a42c834e8e51431296f2ab98efe9b66d",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/embeddable-links/native.svg",
+        "byte_length": 22150,
+        "sha256": "3d1cca84278e95f0ff400eced95d0dc03a0babc67cb251e5d90b388804c04c47"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/embeddable-links/svg-report.json",
+        "byte_length": 992,
+        "sha256": "7136f76ce56f07abf063508cafb25583a42c834e8e51431296f2ab98efe9b66d"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "embeddable-links-png",
+      "format": "png",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "deecb50bc9f96eaa2fade2d39dae4f1c1d6ee94d47aa2521d4cb791479fc1f09",
+      "report_sha256": "6be83406db13afb294638f29cdcea6f310ae74755f4bb4b263ff45a0a3886997",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/embeddable-links/native.png",
+        "byte_length": 19405,
+        "sha256": "deecb50bc9f96eaa2fade2d39dae4f1c1d6ee94d47aa2521d4cb791479fc1f09"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/embeddable-links/png-report.json",
+        "byte_length": 412,
+        "sha256": "6be83406db13afb294638f29cdcea6f310ae74755f4bb4b263ff45a0a3886997"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "emoji-fallback-svg",
+      "format": "svg",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "256986b3362a8144b97ddf1903058b0be995570c6e6d8e49d76e00947240808f",
+      "report_sha256": "6f4b384568a6a49ac8aceaa913527775ca91951f8717c52beda64892b044cde7",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/emoji-fallback/native.svg",
+        "byte_length": 20522,
+        "sha256": "256986b3362a8144b97ddf1903058b0be995570c6e6d8e49d76e00947240808f"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/emoji-fallback/svg-report.json",
+        "byte_length": 971,
+        "sha256": "6f4b384568a6a49ac8aceaa913527775ca91951f8717c52beda64892b044cde7"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "emoji-fallback-png",
+      "format": "png",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "532acb46b0be5c93b1094794a2ffe3e7402ae3e436fbf620001493c2db254259",
+      "report_sha256": "0f6b74ed63821906ae8e54c8b02220b987f49b3b3ed4fe5547a4b676ee13e66b",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/emoji-fallback/native.png",
+        "byte_length": 4866,
+        "sha256": "532acb46b0be5c93b1094794a2ffe3e7402ae3e436fbf620001493c2db254259"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/emoji-fallback/png-report.json",
+        "byte_length": 966,
+        "sha256": "0f6b74ed63821906ae8e54c8b02220b987f49b3b3ed4fe5547a4b676ee13e66b"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "bidi-text-svg",
+      "format": "svg",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "8d2ee2201734614eb78ce10191cd8a5b5b58225d6c6352ab855ede8f4d03696b",
+      "report_sha256": "652f96cf1d1cedd7b278fb570de2152e9a14d0488ff9db1fdbedd240e4be9287",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/bidi-text/native.svg",
+        "byte_length": 27111,
+        "sha256": "8d2ee2201734614eb78ce10191cd8a5b5b58225d6c6352ab855ede8f4d03696b"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/bidi-text/svg-report.json",
+        "byte_length": 15224,
+        "sha256": "652f96cf1d1cedd7b278fb570de2152e9a14d0488ff9db1fdbedd240e4be9287"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "bidi-text-png",
+      "format": "png",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "af843eea3bec6ec2ad22802b14abb6d57a17f1ff7b39e7422de7efa07d6af68b",
+      "report_sha256": "65cd76bbde276814f487ade8693cde6d80c6f34cc58abf6c2dac122a7861a292",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/bidi-text/native.png",
+        "byte_length": 12691,
+        "sha256": "af843eea3bec6ec2ad22802b14abb6d57a17f1ff7b39e7422de7efa07d6af68b"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/bidi-text/png-report.json",
+        "byte_length": 15220,
+        "sha256": "65cd76bbde276814f487ade8693cde6d80c6f34cc58abf6c2dac122a7861a292"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "bidi-alignment-svg",
+      "format": "svg",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "9c44385d48d504ba83214394fec3f5f8fb6c309d9b8a2f1e239e889e5d383e30",
+      "report_sha256": "5dc6400bec7f38645554327dbbdf37da4ecfb29cb9b4c19fc8bf6cd5872d511d",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/bidi-alignment/native.svg",
+        "byte_length": 20892,
+        "sha256": "9c44385d48d504ba83214394fec3f5f8fb6c309d9b8a2f1e239e889e5d383e30"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/bidi-alignment/svg-report.json",
+        "byte_length": 12681,
+        "sha256": "5dc6400bec7f38645554327dbbdf37da4ecfb29cb9b4c19fc8bf6cd5872d511d"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "bidi-alignment-png",
+      "format": "png",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "1066fe04f95c23958c871636b937bbf399d29046a0c88bfc97af3f5c335cb5e4",
+      "report_sha256": "d6f9c3d7e321dc6255cc00dc32132b3c6ac8097fd5c79c75b88011dc4eb7af6b",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/bidi-alignment/native.png",
+        "byte_length": 10009,
+        "sha256": "1066fe04f95c23958c871636b937bbf399d29046a0c88bfc97af3f5c335cb5e4"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/bidi-alignment/png-report.json",
+        "byte_length": 12677,
+        "sha256": "d6f9c3d7e321dc6255cc00dc32132b3c6ac8097fd5c79c75b88011dc4eb7af6b"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "text-line-endings-svg",
+      "format": "svg",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "6c9fdf3afd92d3a054d6f015152f0f70a55241eeb5e8270523f23fd48553e8b3",
+      "report_sha256": "801f3d2f958a8d628f2a1641a556cc97e305aadd3493771d7872af05b65e08b6",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/text-line-endings/native.svg",
+        "byte_length": 10254,
+        "sha256": "6c9fdf3afd92d3a054d6f015152f0f70a55241eeb5e8270523f23fd48553e8b3"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/text-line-endings/svg-report.json",
+        "byte_length": 416,
+        "sha256": "801f3d2f958a8d628f2a1641a556cc97e305aadd3493771d7872af05b65e08b6"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "text-line-endings-png",
+      "format": "png",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "769166186b203355cc574ec65295f4cfa7d458ac5316d819ee1d3990ec28e7fa",
+      "report_sha256": "8bf7fb23739d9aa1ec2c87e09a01dc0b5d452d24103cdf6387be675a5a8f8f32",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/text-line-endings/native.png",
+        "byte_length": 7747,
+        "sha256": "769166186b203355cc574ec65295f4cfa7d458ac5316d819ee1d3990ec28e7fa"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/text-line-endings/png-report.json",
+        "byte_length": 411,
+        "sha256": "8bf7fb23739d9aa1ec2c87e09a01dc0b5d452d24103cdf6387be675a5a8f8f32"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "text-alignment-vertical-svg",
+      "format": "svg",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "dc2f192487cb1ee1230f11e632ab8d885a25dbe96bd0832d883aa6ace2e2adcb",
+      "report_sha256": "924d6774c154b11808f3071bd322198e85211ac3f4f7af349476f8f1879106f6",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/text-alignment-vertical/native.svg",
+        "byte_length": 17899,
+        "sha256": "dc2f192487cb1ee1230f11e632ab8d885a25dbe96bd0832d883aa6ace2e2adcb"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/text-alignment-vertical/svg-report.json",
+        "byte_length": 416,
+        "sha256": "924d6774c154b11808f3071bd322198e85211ac3f4f7af349476f8f1879106f6"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    },
+    {
+      "id": "text-alignment-vertical-png",
+      "format": "png",
+      "fresh_process_runs": 2,
+      "request_args": [
+        "--compatibility-revision",
+        "1",
+        "--padding",
+        "10"
+      ],
+      "artifact_sha256": "c5e1491faa836c0eab2dd5daab1ace756b6c1a0873158aca983c16aceeafd054",
+      "report_sha256": "7584dcd2c5becba49765edb693df82af9af76c7adc96cd430a486a768542e940",
+      "old_artifact": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/text-alignment-vertical/native.png",
+        "byte_length": 33343,
+        "sha256": "c5e1491faa836c0eab2dd5daab1ace756b6c1a0873158aca983c16aceeafd054"
+      },
+      "old_report": {
+        "path": "tests/conformance/proposals/png-device-phase-six-case-v1/native/text-alignment-vertical/png-report.json",
+        "byte_length": 412,
+        "sha256": "7584dcd2c5becba49765edb693df82af9af76c7adc96cd430a486a768542e940"
+      },
+      "artifact_and_complete_report_byte_identical": true
+    }
+  ],
+  "comparisons_count": 16,
+  "all_old_new_bytes_and_reports_equal": true,
+  "protected_viewer_pairs_equal": true,
+  "v8_viewers_equal_v7": true
+}

@@ -56,6 +56,62 @@ use super::rough::{Drawing, Fill, FillKind};
 use super::text::{ResolvedLabel, ResolvedText};
 use super::{freedraw, FormatEncodeError, SvgTreeCache};
 
+/// Chromium's ordinary N32 image shader uses four fractional bits per bilinear
+/// axis and truncates the weighted premultiplied sum. Full-precision weights
+/// are observably different on magnified alpha ramps (even with opaque colors).
+fn canvas_bilinear_samples(
+    layer: &mut Pixmap,
+    source: PixmapRef<'_>,
+    transform: Transform,
+) -> Result<(), FormatEncodeError> {
+    let inverse = transform.invert().ok_or_else(|| {
+        FormatEncodeError::Encoding("noninvertible image sampling transform".into())
+    })?;
+    let width = layer.width() as usize;
+    let (sw, sh) = (source.width() as usize, source.height() as usize);
+    let axis = |v: f32, size: usize| -> Result<(usize, usize, u32), FormatEncodeError> {
+        if !v.is_finite() {
+            return Err(FormatEncodeError::Encoding(
+                "nonfinite image sample coordinate".into(),
+            ));
+        }
+        let p = (v - 0.5).clamp(0., (size - 1) as f32);
+        let low = p.floor() as usize;
+        Ok((
+            low,
+            (low + 1).min(size - 1),
+            ((p - low as f32) * 16.).floor() as u32,
+        ))
+    };
+    for (i, pixel) in layer.data_mut().chunks_exact_mut(4).enumerate() {
+        let (x, y) = ((i % width) as f32 + 0.5, (i / width) as f32 + 0.5);
+        let (x0, x1, wx) = axis(inverse.sx * x + inverse.kx * y + inverse.tx, sw)?;
+        let (y0, y1, wy) = axis(inverse.ky * x + inverse.sy * y + inverse.ty, sh)?;
+        let mut sum = [0_u32; 4];
+        for (sx, sy, weight) in [
+            (x0, y0, (16 - wx) * (16 - wy)),
+            (x1, y0, wx * (16 - wy)),
+            (x0, y1, (16 - wx) * wy),
+            (x1, y1, wx * wy),
+        ] {
+            let start = sy
+                .checked_mul(sw)
+                .and_then(|v| v.checked_add(sx))
+                .and_then(|v| v.checked_mul(4))
+                .ok_or_else(png_size_error)?;
+            let end = start.checked_add(4).ok_or_else(png_size_error)?;
+            let rgba = source.data().get(start..end).ok_or_else(png_size_error)?;
+            for (s, v) in sum.iter_mut().zip(rgba) {
+                *s += u32::from(*v) * weight;
+            }
+        }
+        for (target, value) in pixel.iter_mut().zip(sum) {
+            *target = (value >> 8) as u8;
+        }
+    }
+    Ok(())
+}
+
 #[derive(Debug)]
 pub(super) struct PngPlan {
     width: u32,
@@ -525,30 +581,71 @@ impl PngTransform {
         self
     }
 
-    /// The raster transform that fills one text line's glyph outlines, with
-    /// the line's baseline snapped to the device pixel grid the way the
-    /// reference canvas's text rasterization snaps it (spec 8.5, #169): Skia
-    /// positions an axis-aligned glyph run's origin with horizontal subpixel
-    /// precision and rounds its device y to `floor(y + 0.5)`, so every line the
-    /// canvas draws with `fillText` sits on a whole device pixel while its x
-    /// stays fractional. `baseline` is the line's baseline in the element's own
-    /// space; the snap is taken after the export scale, in device pixels, and
-    /// shifts the whole line's outlines by the same amount. A rotated line is
-    /// not axis-aligned and keeps the exact baseline, as Skia positions a
-    /// rotated run with subpixel precision on both axes.
-    fn text_line_transform(
+    /// Canvas glyph masks use quarter-pixel origins, not arbitrary fractional
+    /// origins. Skia's SkPackedGlyphID has two subpixel bits and rounds with
+    /// an eighth-pixel bias before truncation. The axis perpendicular to an
+    /// axis-aligned baseline instead rounds to a whole pixel (#169).
+    ///
+    /// Apply this independently to each glyph after the device transform;
+    /// shifting a whole rotated line cannot reproduce its different phases.
+    /// Chromium 149 pins Skia 53348aa333da02b77c4b5797e2de722f5abde7d0:
+    /// SkGlyph.h, prepare_for_direct_mask_drawing in SkGlyphRunPainter.cpp,
+    /// and the 256-device-pixel path cutoff in SkStrikeSpec.cpp.
+    fn canvas_text_path(
         self,
-        baseline: f64,
+        label: &ResolvedLabel,
+        font_size: f64,
         multiplier: u32,
-    ) -> Result<Transform, FormatEncodeError> {
-        if self.b != 0.0 || self.c != 0.0 {
-            return self.raster_transform(multiplier);
+    ) -> Result<Option<tiny_skia::Path>, FormatEncodeError> {
+        let operations = &label.path.operations;
+        let point_capacity = operations.len().checked_mul(3).ok_or_else(png_size_error)?;
+        let mut builder = PathBuilder::with_capacity(operations.len(), point_capacity);
+        let draw_as_path = font_size * font_size * (self.a * self.a + self.b * self.b)
+            > 256.0 * 256.0
+            || font_size * font_size * (self.c * self.c + self.d * self.d) > 256.0 * 256.0;
+        // SkScalerContext's sk_relax classifies the font-cache device matrix:
+        // admit each coefficient to SkScalar, multiply by 1024 in binary32,
+        // then sk_float_round promotes to binary64 before adding 0.5/floor.
+        // Font size and the raster supersample are not part of this matrix.
+        // Only zero classification is needed; never round the actual geometry.
+        let cache_axis_is_zero =
+            |value: f64| (f64::from((value as f32) * 1024.0) + 0.5).floor() == 0.0;
+        // Match computeAxisAlignmentForHText's horizontal-first precedence.
+        let (x_grid, y_grid) = if cache_axis_is_zero(self.b) {
+            (4.0, 1.0)
+        } else if cache_axis_is_zero(self.a) {
+            (1.0, 4.0)
+        } else {
+            (4.0, 4.0)
+        };
+        for glyph in &label.glyphs {
+            let x = self.a * glyph.x + self.c * glyph.y + self.e;
+            let y = self.b * glyph.x + self.d * glyph.y + self.f;
+            let (dx, dy) = if draw_as_path {
+                (0.0, 0.0)
+            } else {
+                (
+                    (x * x_grid + 0.5).floor() / x_grid - x,
+                    (y * y_grid + 0.5).floor() / y_grid - y,
+                )
+            };
+            let outline = operations.get(glyph.outline.clone()).ok_or_else(|| {
+                FormatEncodeError::Encoding("PNG glyph outline range is invalid".to_owned())
+            })?;
+            paint::append_label_path(&mut builder, outline, |x, y| {
+                Ok((
+                    finite_f32(
+                        (self.a * x + self.c * y + self.e + dx) * f64::from(multiplier),
+                        "PNG glyph x",
+                    )?,
+                    finite_f32(
+                        (self.b * x + self.d * y + self.f + dy) * f64::from(multiplier),
+                        "PNG glyph y",
+                    )?,
+                ))
+            })?;
         }
-        let device_baseline = self.d * baseline + self.f;
-        let snapped = (device_baseline + 0.5).floor();
-        let mut snapped_transform = self;
-        snapped_transform.f += snapped - device_baseline;
-        snapped_transform.raster_transform(multiplier)
+        Ok(builder.finish())
     }
 
     fn raster_image_transform(
@@ -941,15 +1038,19 @@ impl PngPlan {
                             let label_transform =
                                 element_transform.with_local_offset(0.0, *generated_label_offset_y);
                             for line in &label.lines {
-                                let Some(path) = label_path(&line.path)? else {
+                                let Some(path) = label_transform.canvas_text_path(
+                                    line,
+                                    label.font_size,
+                                    SUBPIXEL_SCALE,
+                                )?
+                                else {
                                     continue;
                                 };
                                 surface.fill_path(
                                     &path,
                                     &paint,
                                     FillRule::Winding,
-                                    label_transform
-                                        .text_line_transform(line.baseline, SUBPIXEL_SCALE)?,
+                                    Transform::identity(),
                                     paint_mask,
                                 );
                             }
@@ -1049,14 +1150,17 @@ impl PngPlan {
                             );
                         }
                         if let Some(name) = name {
-                            if let Some(path) = label_path(&name.label.path)? {
+                            if let Some(path) = name.transform.canvas_text_path(
+                                &name.label,
+                                super::text::FRAME_NAME_FONT_SIZE,
+                                SUBPIXEL_SCALE,
+                            )? {
                                 let paint = solid_paint(name.color, 1.0)?;
                                 surface.fill_path(
                                     &path,
                                     &paint,
                                     FillRule::Winding,
-                                    name.transform
-                                        .text_line_transform(name.label.baseline, SUBPIXEL_SCALE)?,
+                                    Transform::identity(),
                                     None,
                                 );
                             }
@@ -1075,14 +1179,16 @@ impl PngPlan {
                         }
                         let paint = solid_paint(*color, *opacity)?;
                         for line in &text.lines {
-                            let Some(path) = label_path(&line.path)? else {
+                            let Some(path) =
+                                transform.canvas_text_path(line, text.font_size, SUBPIXEL_SCALE)?
+                            else {
                                 continue;
                             };
                             surface.fill_path(
                                 &path,
                                 &paint,
                                 FillRule::Winding,
-                                transform.text_line_transform(line.baseline, SUBPIXEL_SCALE)?,
+                                Transform::identity(),
                                 paint_mask,
                             );
                         }
@@ -1291,30 +1397,7 @@ impl PngPlan {
                                         subject: "png_image_resample_surface",
                                     },
                                 )?;
-                                let layer_rect = Rect::from_xywh(
-                                    0.0,
-                                    0.0,
-                                    finite_f32(f64::from(layer_width), "PNG image layer width")?,
-                                    finite_f32(f64::from(layer_height), "PNG image layer height")?,
-                                )
-                                .ok_or_else(png_size_error)?;
-                                layer.fill_rect(
-                                    layer_rect,
-                                    &tiny_skia::Paint {
-                                        shader: tiny_skia::Pattern::new(
-                                            pixmap,
-                                            tiny_skia::SpreadMode::Pad,
-                                            image_paint.quality,
-                                            1.0,
-                                            sampling_transform,
-                                        ),
-                                        blend_mode: tiny_skia::BlendMode::Source,
-                                        anti_alias: false,
-                                        force_hq_pipeline: false,
-                                    },
-                                    Transform::identity(),
-                                    None,
-                                );
+                                canvas_bilinear_samples(&mut layer, pixmap, sampling_transform)?;
                                 let integer_blit = sampling_transform.sx == 1.0
                                     && sampling_transform.sy == 1.0
                                     && sampling_transform.kx == 0.0

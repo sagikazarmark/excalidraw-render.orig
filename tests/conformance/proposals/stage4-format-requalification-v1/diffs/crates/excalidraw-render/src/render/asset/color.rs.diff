@@ -1,0 +1,82 @@
+--- before/crates/excalidraw-render/src/render/asset/color.rs
++++ after/crates/excalidraw-render/src/render/asset/color.rs
+@@ -251,7 +251,7 @@
+             return Ok(ColorNormalization::Lut(lut.stored()?));
+         }
+         let had_saturation = super::icc_lut::has_tag(bytes, b"A2B2")?;
+-        let profile = cms_parse(||super::icc_matrix::parse(bytes))?;
++        let profile = cms_parse(|| super::icc_matrix::parse(bytes))?;
+         if !matches!(
+             profile.color_space,
+             DataColorSpace::Rgb | DataColorSpace::Gray
+@@ -283,7 +283,7 @@
+     if let Some(lut) = super::icc_lut::Lut::parse(bytes)? {
+         return Ok(ColorNormalization::Lut(lut.stored()?));
+     }
+-    cms_parse(||super::icc_matrix::parse(bytes))
++    cms_parse(|| super::icc_matrix::parse(bytes))
+         .map(Box::new)
+         .map(ColorNormalization::Profile)
+ }
+@@ -312,8 +312,12 @@
+     }
+     operation().map_err(cms_error)
+ }
+-pub(super) fn cms_parse<T>(operation:impl FnOnce()->Result<T,ResolveError>)->Result<T,ResolveError>{
+-    if cms_refused(CmsSite::Parse){return Err(cms_error(moxcms::CmsError::OutOfMemory(1)));}
++pub(super) fn cms_parse<T>(
++    operation: impl FnOnce() -> Result<T, ResolveError>,
++) -> Result<T, ResolveError> {
++    if cms_refused(CmsSite::Parse) {
++        return Err(cms_error(moxcms::CmsError::OutOfMemory(1)));
++    }
+     operation()
+ }
+ pub(super) fn cms_allocation<T>(
+@@ -335,7 +339,14 @@
+ fn cms_refused(_site: CmsSite) -> bool {
+     #[cfg(test)]
+     {
+-        CMS_FAILURE.with(|s|match s.get(){Some((site,0)) if site==_site=>true,Some((site,n)) if site==_site=>{s.set(Some((site,n-1)));false},_=>false})
++        CMS_FAILURE.with(|s| match s.get() {
++            Some((site, 0)) if site == _site => true,
++            Some((site, n)) if site == _site => {
++                s.set(Some((site, n - 1)));
++                false
++            }
++            _ => false,
++        })
+     }
+     #[cfg(not(test))]
+     {
+@@ -346,17 +357,17 @@
+ thread_local! {static CMS_FAILURE:std::cell::Cell<Option<(CmsSite,usize)>>=const {std::cell::Cell::new(None)};}
+ #[cfg(test)]
+ pub(crate) fn with_cms_failure<T>(site: CmsSite, body: impl FnOnce() -> T) -> T {
+-    with_cms_failure_after(site,0,body)
++    with_cms_failure_after(site, 0, body)
+ }
+ #[cfg(test)]
+-pub(crate) fn with_cms_failure_after<T>(site:CmsSite,skip:usize,body:impl FnOnce()->T)->T {
+-    struct Restore(Option<(CmsSite,usize)>);
++pub(crate) fn with_cms_failure_after<T>(site: CmsSite, skip: usize, body: impl FnOnce() -> T) -> T {
++    struct Restore(Option<(CmsSite, usize)>);
+     impl Drop for Restore {
+         fn drop(&mut self) {
+             CMS_FAILURE.with(|s| s.set(self.0));
+         }
+     }
+-    let _restore = Restore(CMS_FAILURE.with(|s| s.replace(Some((site,skip)))));
++    let _restore = Restore(CMS_FAILURE.with(|s| s.replace(Some((site, skip)))));
+     body()
+ }
+ 
+@@ -449,7 +460,7 @@
+     let count = word(128)?;
+     // These invariants apply to every ICC execution path, including the owned
+     // LUT path which deliberately never invokes the dependency's parser.
+-    if bytes.get(36..40)!=Some(b"acsp") || !matches!(bytes.get(8),Some(2..=4)) || word(64)?>3 {
++    if bytes.get(36..40) != Some(b"acsp") || !matches!(bytes.get(8), Some(2..=4)) || word(64)? > 3 {
+         return Err(ResolveError::Unsupported);
+     }
+     moxcms::ProfileClass::try_from(word(12)? as u32).map_err(cms_error)?;

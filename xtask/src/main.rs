@@ -1,5 +1,12 @@
 mod catalog;
 mod conformance;
+mod conformance_candidate;
+mod conformance_candidate_exceptions;
+mod conformance_candidate_gate;
+mod conformance_candidate_native;
+mod conformance_candidate_semantics;
+mod conformance_pdf_bridge;
+mod conformance_pdf_requalification;
 mod coverage;
 mod pdf_viewers;
 mod svg_font_subset_runner;
@@ -86,6 +93,19 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             no_more_args(args)?;
             println!("{}", coverage::ownership_catalog()?);
         }
+        Some("ownership-authority-migration") => {
+            let base = required_arg(&mut args, "previous spec commit hash")?;
+            let hash = required_arg(&mut args, "reviewed new spec SHA-256")?;
+            let note = required_arg(&mut args, "review note repository path")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&coverage::ownership_authority_migration(
+                    &base, &hash, &note
+                )?)
+                .map_err(|e| e.to_string())?
+            );
+        }
         Some("seed-ownership") => {
             no_more_args(args)?;
             println!("{}", coverage::seed_ownership()?);
@@ -108,6 +128,27 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
             let function = required_arg(&mut args, "test function")?;
             let rationale = required_arg(&mut args, "reviewed rationale")?;
             coverage::record_test_owner(&module, &function, &rationale, &args.collect::<Vec<_>>())?;
+        }
+        Some("reconcile-stage4-bindings") => {
+            let proof = required_arg(&mut args, "qualified native canary record")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&coverage::reconcile_stage4_bindings(&proof)?)
+                    .map_err(|e| e.to_string())?
+            );
+        }
+        Some("verify-representative-owner") => {
+            let case = required_arg(&mut args, "representative case")?;
+            no_more_args(args)?;
+            coverage::verify_representative_owner(&case)?;
+            println!("verified approved representative owner {case}");
+        }
+        Some("record-representative-owner") => {
+            let case = required_arg(&mut args, "representative case")?;
+            let rationale = required_arg(&mut args, "reviewed rationale")?;
+            no_more_args(args)?;
+            coverage::record_representative_owner(&case, &rationale)?;
         }
         Some("record-library-test-owner") => {
             let module = required_arg(&mut args, "library test module")?;
@@ -230,11 +271,151 @@ fn run_conformance(mut args: impl Iterator<Item = String>) -> Result<(), String>
                 println!("verified {case_id}");
             }
             println!("verified {} registered cases", case_ids.len());
+            conformance_candidate_gate::verify_registry()?;
         }
         Some("approval-subject") => {
             let case_id = required_arg(&mut args, "case ID")?;
             no_more_args(args)?;
             println!("sha256:{}", conformance::approval_subject(&case_id)?);
+        }
+        Some("candidate-approval-subject") => {
+            let directory = required_arg(&mut args, "candidate directory")?;
+            no_more_args(args)?;
+            println!(
+                "sha256:{}",
+                conformance_candidate_gate::verify(&directory, false)?
+            );
+        }
+        Some("candidate-prepare-assets") => {
+            let directory = required_arg(&mut args, "candidate directory")?;
+            no_more_args(args)?;
+            conformance_candidate::prepare_assets(&directory)?;
+        }
+        Some("candidate-compare") => {
+            let path = required_arg(&mut args, "viewer collection")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_candidate::comparisons(&path)?)
+                    .map_err(|e| e.to_string())?
+            );
+        }
+        Some("candidate-semantics") => {
+            let path = required_arg(&mut args, "candidate directory")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_candidate_semantics::verify(
+                    &conformance::repo_root().join(path)
+                )?)
+                .map_err(|e| e.to_string())?
+            );
+        }
+        Some("candidate-materialize") => {
+            let path = required_arg(&mut args, "candidate directory")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_candidate_gate::materialize(&path)?)
+                    .map_err(|e| e.to_string())?
+            );
+        }
+        Some("candidate-verify") => {
+            let path = required_arg(&mut args, "candidate directory")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_candidate_gate::execute(&path)?)
+                    .map_err(|e| e.to_string())?
+            );
+        }
+        Some("candidate-native-capture") => {
+            let path = required_arg(&mut args, "candidate directory")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_candidate_native::capture(&path)?)
+                    .map_err(|e| e.to_string())?
+            );
+        }
+        Some("candidate-native-check") => {
+            let path = required_arg(&mut args, "candidate directory")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_candidate_native::replay(&path)?)
+                    .map_err(|e| e.to_string())?
+            );
+        }
+        Some("qualify-excalifont-canary") => {
+            let path = required_arg(&mut args, "independent canary evidence directory")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_candidate_native::qualify_text_canary(
+                    &path
+                )?)
+                .map_err(|e| e.to_string())?
+            );
+        }
+        Some("candidate-inspect") => {
+            let path = required_arg(&mut args, "candidate directory")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_candidate_gate::inspect(&path)?)
+                    .map_err(|e| e.to_string())?
+            );
+        }
+        Some("candidate-propose-exceptions") => {
+            let path = required_arg(&mut args, "candidate directory")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_candidate_exceptions::prepare(&path)?)
+                    .map_err(|e| e.to_string())?
+            );
+        }
+        Some("candidate-revise") => {
+            let path = required_arg(&mut args, "new candidate directory")?;
+            no_more_args(args)?;
+            conformance_candidate_gate::revise(&path)?;
+        }
+        Some("candidate-executions") => {
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_candidate_gate::execute_registry()?)
+                    .map_err(|e| e.to_string())?
+            );
+        }
+        Some("candidate-pdf-requalify") => {
+            let path = required_arg(&mut args, "evidence directory")?;
+            let baseline = required_arg(&mut args, "protected baseline PDF")?;
+            let executable = required_arg(&mut args, "clean baseline executable")?;
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_pdf_requalification::collect(
+                    &path,
+                    &baseline,
+                    &executable
+                )?)
+                .map_err(|e| e.to_string())?
+            );
+        }
+        Some("pdf-requalification-subject") => {
+            let path = required_arg(&mut args, "requalification directory")?;
+            no_more_args(args)?;
+            println!("sha256:{}", conformance_pdf_requalification::verify(&path)?);
+        }
+        Some("collect-pdf-colorspace-bridge") => {
+            no_more_args(args)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&conformance_pdf_bridge::collect()?)
+                    .map_err(|e| e.to_string())?
+            );
         }
         Some("record-approval") => {
             let case_id = required_arg(&mut args, "case ID")?;
@@ -417,7 +598,7 @@ fn usage() -> String {
         "usage: cargo run --locked -p xtask -- ",
         "catalog <import <local-dist-prod>|import-license-sources <local-path>|materialize|verify|",
         "reviewed-decodes-approval-subject|record-reviewed-decodes-approval> | ",
-        "conformance <inventory|ownership-catalog|seed-ownership|extend-ownership|verify-ownership|record-test-owner|record-library-test-owner|refresh-test-owner-source|refresh-library-test-owner-source|ownership-approval-subject|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|record-approval|",
+        "conformance <inventory|ownership-catalog|seed-ownership|extend-ownership|verify-ownership|record-test-owner|record-library-test-owner|refresh-test-owner-source|refresh-library-test-owner-source|ownership-approval-subject|inventory-digest|verify-inventory|verify-results|stage-traces|aggregate-traces|join-trace-results|verify-joined-results|verify-native-snapshots|stage-wasm-snapshots|verify-wasm-snapshots|report-wasm-snapshots|stage-native-baseline|native-baseline-approval-subject|record-native-baseline-approval|verify-native-baseline|replay-native-snapshots|verify-closure|generate|reproduce|verify|verify-all|approval-subject|candidate-approval-subject|record-approval|",
         "verify-svg-viewers|verify-svg-font-subsets|verify-svg-font-subset-release|materialize-svg-font-subset-target|materialize-svg-font-subset-cross-target|aggregate-svg-font-subset-targets|record-svg-font-subset-target-aggregate|svg-font-subset-approval-subject|record-svg-font-subset-approval|generate-svg-font-subset-rust-report|materialize-svg-font-subset-evidence|svg-viewer-approval-subject|record-svg-viewer-approval|",
         "verify-pdf-viewers|refresh-pdf-viewer-dependencies|pdf-viewer-approval-subject|record-pdf-viewer-approval> ",
         "[case-id] [approval fields]"
