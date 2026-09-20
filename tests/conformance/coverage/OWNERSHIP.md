@@ -7,6 +7,18 @@ coverage is complete or the chosen primary owners have received human approval.
 
 ## Current scope
 
+### JPEG color/sampling extension
+
+The [JPEG matrix](../../../docs/research/jpeg-color-sampling-qualification.md)
+adds 38 narrow untagged 8-bit color/sampling requirements, with 17 proposed test
+owners and 21 concrete [#187](https://github.com/sagikazarmark/excalidraw-render.orig/issues/187)
+gaps. All prior 1,874 dispositions, including the eight coarse JPEG facets,
+are preserved. **Current totals: 1,912 obligations, 1,820 assigned/excluded
+(1,817 owners and three exclusions), 92 gaps.** The tables and Stage-4 narrative
+below remain the prior 1,874-obligation checkpoint; the codec/profile category
+now has 1,037 obligations. The current representative is approved V8, as recorded
+in the [Stage-4 completion audit](../../../docs/research/png-stage4-completion.md).
+
 | Obligation family | Count | Source |
 | --- | ---: | --- |
 | Existing focused-case labels | 118 | Current approved manifests via execution inventory |

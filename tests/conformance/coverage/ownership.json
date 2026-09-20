@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "6ff4b1b746aa45d07874e5735eececdada2775bb535d75960d651e0afe2cf92d",
+  "catalog_sha256": "1507cde0e7d246bc09b5be3c4689810838833975e4b14993a449643c7dd44ff7",
   "approval": null,
   "assignments": [
     {
@@ -2025,6 +2025,667 @@
         "status": "gap",
         "issue": 82,
         "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:cmyk-1x1-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:cmyk-1x1-progressive",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:gray-1x1-baseline",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:gray-1x1-progressive",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:rgb-1x1-baseline",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:rgb-1x1-progressive",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x1-baseline",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x1-progressive",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x2-baseline",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x2-progressive",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x4-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-1x4-progressive",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x1-baseline",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x1-progressive",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x2-baseline",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x2-progressive",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x4-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-2x4-progressive",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x1-baseline",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x1-progressive",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x2-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycbcr-4x2-progressive",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_color_contract.rs",
+            "sha256": "15dc5009cdc7c72ec2b8b3e6d616402dd4ba66cef1a997439f1568717f4c113b"
+          },
+          "function": "qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_color_contract::qualified_gray_rgb_and_ycbcr_cells_pass_both_reference_authorities",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independently collected official canvas and SVG color authorities pass canonical GeometryImage budgets for both authored patterns; exact original SVG bytes, dimensions, opaque alpha, complete empty reports, bound PDF samples, and fresh native replay. Narrow untagged 8-bit matrix cells only; #187 failures and all coarse JPEG facets stay gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x1-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x1-progressive",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x2-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x2-progressive",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x4-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-1x4-progressive",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x1-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x1-progressive",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x2-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x2-progressive",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x4-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-2x4-progressive",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x1-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x1-progressive",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x2-baseline",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
+      }
+    },
+    {
+      "id": "codec:jpeg:color-sampling:ycck-4x2-progressive",
+      "disposition": {
+        "status": "gap",
+        "issue": 187,
+        "reason": "JPEG color/sampling matrix cell needs both reference-authority gates; see #187 for current sampling/color defects. Coarse facets remain open."
       }
     },
     {
