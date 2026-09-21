@@ -3027,7 +3027,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3051,9 +3051,30 @@
     {
       "id": "codec:jpeg:icc:gray-baseline-opposite-model-single",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
@@ -3064,7 +3085,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3093,7 +3114,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3122,7 +3143,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3151,7 +3172,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3180,7 +3201,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3204,25 +3225,88 @@
     {
       "id": "codec:jpeg:icc:gray-baseline-v2-g1-ordered",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
       "id": "codec:jpeg:icc:gray-baseline-v2-g1-reverse",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
       "id": "codec:jpeg:icc:gray-baseline-v2-g1-single",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
@@ -3233,7 +3317,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3262,7 +3346,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3291,7 +3375,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3320,7 +3404,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3344,25 +3428,88 @@
     {
       "id": "codec:jpeg:icc:gray-baseline-v4-g1-ordered",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
       "id": "codec:jpeg:icc:gray-baseline-v4-g1-reverse",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
       "id": "codec:jpeg:icc:gray-baseline-v4-g1-single",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
@@ -3373,7 +3520,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3402,7 +3549,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3431,7 +3578,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3460,7 +3607,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3484,9 +3631,30 @@
     {
       "id": "codec:jpeg:icc:gray-progressive-opposite-model-single",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
@@ -3497,7 +3665,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3526,7 +3694,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3555,7 +3723,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3584,7 +3752,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3613,7 +3781,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3637,25 +3805,88 @@
     {
       "id": "codec:jpeg:icc:gray-progressive-v2-g1-ordered",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
       "id": "codec:jpeg:icc:gray-progressive-v2-g1-reverse",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
       "id": "codec:jpeg:icc:gray-progressive-v2-g1-single",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
@@ -3666,7 +3897,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3695,7 +3926,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3724,7 +3955,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3753,7 +3984,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3777,25 +4008,88 @@
     {
       "id": "codec:jpeg:icc:gray-progressive-v4-g1-ordered",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
       "id": "codec:jpeg:icc:gray-progressive-v4-g1-reverse",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
       "id": "codec:jpeg:icc:gray-progressive-v4-g1-single",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
@@ -3806,7 +4100,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3835,7 +4129,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3864,7 +4158,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -3893,7 +4187,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3917,9 +4211,30 @@
     {
       "id": "codec:jpeg:icc:rgb-baseline-opposite-model-single",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
@@ -3930,7 +4245,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3959,7 +4274,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -3988,7 +4303,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4017,7 +4332,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4046,7 +4361,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4075,7 +4390,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4104,7 +4419,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4133,7 +4448,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4162,7 +4477,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4191,7 +4506,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4220,7 +4535,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4249,7 +4564,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4278,7 +4593,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4307,7 +4622,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4336,7 +4651,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4365,7 +4680,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4394,7 +4709,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4423,7 +4738,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4452,7 +4767,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4476,9 +4791,30 @@
     {
       "id": "codec:jpeg:icc:rgb-progressive-opposite-model-single",
       "disposition": {
-        "status": "gap",
-        "issue": 188,
-        "reason": "JPEG ICC cell requires independent color/precedence or strict recovery qualification; gray precision and model mismatches remain under #188."
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
+          },
+          "binary": "fast",
+          "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "User-reviewed #188 JPEG ICC precision/model correction: frozen independent 160-vector matrix, exact reconstructed APP2, report/source/extent/alpha/replay contracts and canonical qualified sample colors. See tests/conformance/proposals/jpeg188-requalification-v1/; no whole-PDF/ICC-wide or resource closure implied."
       }
     },
     {
@@ -4489,7 +4825,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4518,7 +4854,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4547,7 +4883,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4576,7 +4912,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4605,7 +4941,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4634,7 +4970,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4663,7 +4999,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4692,7 +5028,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4721,7 +5057,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation",
           "binary": "fast",
@@ -4750,7 +5086,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4779,7 +5115,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4808,7 +5144,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4837,7 +5173,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4866,7 +5202,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4895,7 +5231,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4924,7 +5260,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4953,7 +5289,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -4982,7 +5318,7 @@
           "kind": "test",
           "source": {
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
-            "sha256": "2e306fa2dc1d8e3b05d13496564777613d832b5c83de119e2c2928b6f99dfaaa"
+            "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
           "function": "rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities",
           "binary": "fast",
@@ -36550,16 +36886,16 @@
         "owner": {
           "kind": "representative",
           "binding": {
-            "case": "representative.stage4-frames-text-assets.v9",
+            "case": "representative.stage4-frames-text-assets.v10",
             "registry": {
               "path": "tests/conformance/candidates/registry.json",
-              "sha256": "fbb3fb617089b2204433916cf8887626fb692a50b269a0ffc23c2c48c903aae4"
+              "sha256": "e578337798ef50096b3f4e9dd4ddeb57150cf722f4b201bd8ace89f033bb7266"
             },
             "manifest": {
-              "path": "tests/conformance/candidates/stage4-frames-text-assets-v9/manifest.json",
-              "sha256": "473f95c569ece715bf531d893bc6e9eb82ed346f2a2be968ba08cf6e687be0cf"
+              "path": "tests/conformance/candidates/stage4-frames-text-assets-v10/manifest.json",
+              "sha256": "4898ca5091e30f4bae6e6dd4d36809ae177258f19bf0014786bc336509968031"
             },
-            "approval_subject_sha256": "sha256:00f193a54cf4076911ec0a679c6f82e50c09d4b75502b1a88c5de3d8e1b6858d",
+            "approval_subject_sha256": "sha256:a6f7f0d2c2fd7f1a5142c24edfc4696e54d5bc1811271b12bd0f195db0276f15",
             "command": [
               "cargo",
               "run",
@@ -36570,7 +36906,7 @@
               "--",
               "conformance",
               "candidate-verify",
-              "tests/conformance/candidates/stage4-frames-text-assets-v9"
+              "tests/conformance/candidates/stage4-frames-text-assets-v10"
             ]
           }
         },

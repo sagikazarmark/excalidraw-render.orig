@@ -1,0 +1,17 @@
+{
+  "approval": null,
+  "fresh_old_source_commit": "b01f2dbbd88409b7c715a8ed434a33d4f38ed6b3",
+  "previous_capture": {
+    "path": "tests/conformance/proposals/jpeg187-requalification-v1/final-current/snapshots/snapshots.json",
+    "byte_length": 535456,
+    "sha256": "bfadcc150b8505cb47fec6992002f6e5aaf38d7938594a0921ff210b5fb5171d"
+  },
+  "fresh_capture": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v1/old/snapshots/snapshots.json",
+    "byte_length": 435653,
+    "sha256": "6e375d88fdb145b50d9b31135532abf8cd4861deef38ea3ac05ff58133ecfb63"
+  },
+  "identical_records": 168,
+  "total": 168,
+  "note": "Fresh OLD producer captured; prior bytes not relabeled as b01f2db evidence."
+}

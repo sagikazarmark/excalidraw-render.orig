@@ -1,0 +1,2 @@
+    Finished `release` profile [optimized] target(s) in 0.06s
+     Running `target/release/xtask conformance verify-representative-owner representative.stage4-frames-text-assets.v10`

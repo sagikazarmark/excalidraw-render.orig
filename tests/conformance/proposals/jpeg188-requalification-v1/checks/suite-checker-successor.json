@@ -1,0 +1,24 @@
+{
+  "approval": null,
+  "purpose": "Strict exact raw-log pending-failure classification before invoking unchanged frozen seal/verify; no test failure relabeled passing.",
+  "frozen_checker": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v1/workflow.py",
+    "byte_length": 28814,
+    "sha256": "c7fe2ae0acee1e30d0b87f5ac16b8b8389910184ca020b23ff31ac89b60d1fcc"
+  },
+  "new_unbound_checker": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v1/suite-verification.py",
+    "byte_length": 8926,
+    "sha256": "527383b0b146509e25466f9dd4089a4f6a84274837fff71369ca8a6790553547"
+  },
+  "preserved_original_qualification": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v1/checks/parent-qualification.json",
+    "byte_length": 34963,
+    "sha256": "eb1cf9b6303ce733ab0f2229846434d6448f71291bb481364dd007e3da746987"
+  },
+  "preserved_draft": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v1/capture-draft-subject.json",
+    "byte_length": 297231,
+    "sha256": "b24c75c5b525bd0db04e97e265517643d3c7253b21a243fe2530a07069ffc9c9"
+  }
+}

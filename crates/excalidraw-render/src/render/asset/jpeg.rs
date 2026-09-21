@@ -229,9 +229,51 @@ fn validate_jpeg_markers(bytes: &[u8]) -> Result<(), ResolveError> {
 pub(super) fn decode_static_jpeg(
     bytes: &[u8],
     pixels: u64,
-    color_normalization: ColorNormalization,
+    mut color_normalization: ColorNormalization,
     orientation: Option<u8>,
 ) -> Result<DecodedRaster, ResolveError> {
+    let mut decoder = jpeg_decoder(bytes);
+    decoder
+        .decode_headers()
+        .map_err(|_| ResolveError::JpegDecodeFailed)?;
+    let component_count = decoder
+        .info()
+        .ok_or(ResolveError::JpegDecodeFailed)?
+        .components;
+    // The pinned JPEG reference ignores a valid gray profile on a
+    // three-component source, rather than converting RGB into profile gray.
+    // An RGB profile on a gray source is valid: the decoder expands its samples.
+    let gray_profile = match &color_normalization {
+        ColorNormalization::Profile(profile) => profile.color_space == DataColorSpace::Gray,
+        _ => false,
+    };
+    if component_count == 3 && gray_profile {
+        if let ColorNormalization::Profile(profile) = &color_normalization {
+            if profile.gray_trc.is_none()
+                || profile.pcs != DataColorSpace::Xyz
+                || !matches!(
+                    profile.profile_class,
+                    moxcms::ProfileClass::InputDevice
+                        | moxcms::ProfileClass::DisplayDevice
+                        | moxcms::ProfileClass::OutputDevice
+                        | moxcms::ProfileClass::ColorSpace
+                )
+            {
+                return Err(ResolveError::Unsupported);
+            }
+            // Ignore only a usable source profile; a recognized header alone
+            // must not bypass malformed TRC/PCS validation or typed CMS errors.
+            super::color::cms_operation(super::color::CmsSite::Construct, || {
+                profile.create_transform_16bit(
+                    Layout::Gray,
+                    &ColorProfile::new_srgb(),
+                    Layout::Rgb,
+                    TransformOptions::default(),
+                )
+            })?;
+        }
+        color_normalization = ColorNormalization::None;
+    }
     let source_color_space = match &color_normalization {
         ColorNormalization::Lut(lut) => {
             if lut.first().ok_or(ResolveError::DecodeFailed)?.gray() {
@@ -248,19 +290,11 @@ pub(super) fn decode_static_jpeg(
         ColorNormalization::None | ColorNormalization::LinearSrgb => ColorSpace::RGB,
         ColorNormalization::Hdr(_) => return Err(ResolveError::Unsupported),
     };
-    let mut decoder = jpeg_decoder(bytes);
-    decoder
-        .decode_headers()
-        .map_err(|_| ResolveError::JpegDecodeFailed)?;
     // Read four-component data without zune's rounded multiply-by-K. The
     // reference's untagged JPEG projection truncates that operation (#187).
     // Preserve the existing gray-profile route and normalize RGB before CMS.
     // Adobe's header color tag is provisional for three-component images;
     // zune resolves those to RGB/YCbCr only during decoder setup.
-    let component_count = decoder
-        .info()
-        .ok_or(ResolveError::JpegDecodeFailed)?
-        .components;
     let raw_space = match (
         decoder.input_colorspace(),
         source_color_space,
@@ -334,25 +368,62 @@ pub(super) fn decode_static_jpeg(
             DataColorSpace::Gray => (Layout::Gray, true),
             _ => return Err(ResolveError::Unsupported),
         };
-        let transform = super::color::cms_operation(super::color::CmsSite::Construct, || {
-            profile.create_transform_8bit(
-                source_layout,
-                &srgb,
-                Layout::Rgb,
-                TransformOptions::default(),
-            )
-        })?;
-        let source = try_copy(&rgb)?;
-        if source_is_gray {
+        if component_count == 1 {
+            let transform = super::color::cms_operation(super::color::CmsSite::Construct, || {
+                profile.create_transform_16bit(
+                    source_layout,
+                    &srgb,
+                    Layout::Rgb,
+                    TransformOptions::default(),
+                )
+            })?;
             let rgb_size = usize::try_from(pixels.checked_mul(3).ok_or(ResolveError::Memory)?)
                 .map_err(|_| ResolveError::Memory)?;
+            let source_channels = if source_is_gray { 1 } else { 3 };
+            let pixel_count = rgb.len() / source_channels;
             rgb.try_reserve_exact(rgb_size.saturating_sub(rgb.len()))
                 .map_err(|_| ResolveError::Memory)?;
             rgb.resize(rgb_size, 0);
+            // Process backwards so RGB expansion cannot overwrite unread gray.
+            // This also handles an RGB profile on expanded gray samples.
+            // Fixed scratch avoids an image-sized source copy. Expand exact
+            // 8-bit lattice samples; quantize the higher-resolution CMS once.
+            let mut source = [0_u16; 768];
+            let mut output = [0_u16; 768];
+            let mut end = pixel_count;
+            while end > 0 {
+                let start = end.saturating_sub(256);
+                let count = end - start;
+                for (target, &value) in source[..count * source_channels]
+                    .iter_mut()
+                    .zip(&rgb[start * source_channels..end * source_channels])
+                {
+                    *target = u16::from(value) * 257;
+                }
+                super::color::cms_operation(super::color::CmsSite::Execute, || {
+                    transform
+                        .transform(&source[..count * source_channels], &mut output[..count * 3])
+                })?;
+                for (target, &value) in rgb[start * 3..end * 3].iter_mut().zip(&output[..count * 3])
+                {
+                    *target = ((u32::from(value) * 255 + 32767) / 65535) as u8;
+                }
+                end = start;
+            }
+        } else {
+            let transform = super::color::cms_operation(super::color::CmsSite::Construct, || {
+                profile.create_transform_8bit(
+                    source_layout,
+                    &srgb,
+                    Layout::Rgb,
+                    TransformOptions::default(),
+                )
+            })?;
+            let source = try_copy(&rgb)?;
+            super::color::cms_operation(super::color::CmsSite::Execute, || {
+                transform.transform(&source, &mut rgb)
+            })?;
         }
-        super::color::cms_operation(super::color::CmsSite::Execute, || {
-            transform.transform(&source, &mut rgb)
-        })?;
     } else if matches!(color_normalization, ColorNormalization::LinearSrgb) {
         for channel in &mut rgb {
             *channel = LINEAR_TO_SRGB[usize::from(*channel)];

@@ -1,0 +1,3 @@
+    Finished `release` profile [optimized] target(s) in 0.09s
+     Running `target/release/xtask conformance verify-ownership`
+error: stale ownership evidence

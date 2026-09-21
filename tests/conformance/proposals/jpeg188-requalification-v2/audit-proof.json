@@ -1,0 +1,54 @@
+{
+  "schema": "excalidraw-render/jpeg188-rerun-receipt-review-fix/v1",
+  "approval": null,
+  "original_checker": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v1/workflow.py",
+    "byte_length": 28814,
+    "sha256": "c7fe2ae0acee1e30d0b87f5ac16b8b8389910184ca020b23ff31ac89b60d1fcc"
+  },
+  "new_verifier": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v2/verify.py",
+    "byte_length": 20173,
+    "sha256": "726f71a1124f66647184f2f4d360e33bddae699c364a5d7d011b8ac4d9bca018"
+  },
+  "tests": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v2/test_verify.py",
+    "byte_length": 11460,
+    "sha256": "e6eac21ccf18361e90a3ee15aecae18861d06d4146d55ea8ca6314d9bc373704"
+  },
+  "stdout": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v2/checks/tests.stdout",
+    "byte_length": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stderr": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v2/checks/tests.stderr",
+    "byte_length": 2388,
+    "sha256": "28ab57fa28bfccc645a70ee0643715d47750a5ff6b2a5331058d344414f8e862"
+  },
+  "tests_passed": 17,
+  "required_successful_test_counts": [
+    103,
+    5,
+    1
+  ],
+  "test_identities": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v2/target-identities.json",
+    "byte_length": 11207,
+    "sha256": "991f0d1438c8867b42c1e30c7415f34a6c398c81d04704358a5f628e1d1ac2f7"
+  },
+  "receipt_fields": [
+    "exact command/cwd/environment/exit zero",
+    "stdout/stderr descriptors",
+    "production and representative subjects",
+    "before/after current source and post-approval metadata bindings",
+    "full unique test identities and exact successful counts",
+    "exact three-format approved artifact/report/judgment/semantic receipts"
+  ],
+  "fresh_verification_policy": "Every verify-applied independently repeats exact bounded 109-test command and five approved CLI checks; saved summaries alone cannot establish resolution.",
+  "transaction_policy": "persist actual decision and preimages before writes; applied only after actual tests/consumers and receipt validation; restore preimages and preserve failed logs on error; no automatic retry",
+  "mocked_tests_not_live_approval": true,
+  "preserved_v1_v10_files": 553,
+  "frozen_files_unchanged": 4315,
+  "production_xtask_renderer_tests_or_capture_changed": false
+}

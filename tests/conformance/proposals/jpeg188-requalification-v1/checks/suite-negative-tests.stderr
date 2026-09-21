@@ -1,0 +1,14 @@
+test_frozen_authorization_scope_rejects_other_issue_and_nonaffirmative_decisions (__main__.ApprovalScope.test_frozen_authorization_scope_rejects_other_issue_and_nonaffirmative_decisions) ... ok
+test_actual_completed_run_totals_and_exact_five_failures (__main__.RawClassification.test_actual_completed_run_totals_and_exact_five_failures) ... ok
+test_different_error_message_rejected (__main__.RawClassification.test_different_error_message_rejected) ... ok
+test_duplicate_or_missing_pass_listing_rejected (__main__.RawClassification.test_duplicate_or_missing_pass_listing_rejected) ... ok
+test_extra_error_and_hidden_message_rejected (__main__.RawClassification.test_extra_error_and_hidden_message_rejected) ... ok
+test_optimized_checker_exits_before_sealing (__main__.RawClassification.test_optimized_checker_exits_before_sealing) ... ok
+test_truncated_command_missing_summary_rejected (__main__.RawClassification.test_truncated_command_missing_summary_rejected) ... ok
+test_unknown_failure_identity_rejected_even_with_same_count (__main__.RawClassification.test_unknown_failure_identity_rejected_even_with_same_count) ... ok
+test_wrong_counts_or_relabelled_target_rejected (__main__.RawClassification.test_wrong_counts_or_relabelled_target_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.048s
+
+OK

@@ -1,0 +1,15 @@
+
+running 10 tests
+test jpeg_icc_contract::evidence_has_closed_matrix_and_reconstructible_app2_profiles ... ok
+test jpeg_icc_contract::gray_precision_probe_discriminates_8bit_from_16bit ... ok
+test jpeg_icc_contract::invalid_gray_profiles_are_not_silently_ignored_on_rgb_sources ... ok
+test jpeg_icc_contract::gray_trc_profile_on_ycbcr_preserves_untagged_pixels ... ok
+test jpeg_icc_contract::gray_profile_precision_handles_small_extents_and_scratch_boundaries ... ok
+test jpeg_icc_contract::recovery_gates_reject_changed_extents_and_non_rgba_png ... ok
+test jpeg_icc_contract::malformed_profiles_and_sequences_have_exact_recovery_and_source_preservation ... ok
+test jpeg_icc_contract::multipart_profiles_preserve_semantics_and_discriminate_ignored_icc ... ok
+test jpeg_icc_contract::corrected_gray_precision_and_model_mismatches_match_reference ... ok
+test jpeg_icc_contract::rgb_and_gamma22_gray_icc_profiles_match_both_reference_authorities ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 585 filtered out; finished in 4.28s
+

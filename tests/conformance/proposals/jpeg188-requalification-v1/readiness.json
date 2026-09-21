@@ -1,0 +1,26 @@
+{
+  "approval": null,
+  "status": "awaiting-parent-production-tests-and-explicit-freeze",
+  "current_capture_started": false,
+  "old_capture": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v1/old/snapshots/snapshots.json",
+    "byte_length": 435653,
+    "sha256": "6e375d88fdb145b50d9b31135532abf8cd4861deef38ea3ac05ff58133ecfb63"
+  },
+  "old_168_records_equal_previous": 168,
+  "test_result": {
+    "path": "tests/conformance/proposals/jpeg188-requalification-v1/checks/readiness-tests.stderr",
+    "byte_length": 2171,
+    "sha256": "2812c25bcedf0dc9d2e0baa01d23568b496b7d1e51f2e4d0e557778badd44dcf"
+  },
+  "tests_passed": 16,
+  "bridge_constant_only": "v3-to-v4",
+  "pending_counts": {
+    "assignments": 1992,
+    "owned": 1912,
+    "excluded": 3,
+    "assigned_or_excluded": 1915,
+    "gaps": 77
+  },
+  "needed_from_parent": "final qualified selector mapping for exact 16 ICC additions, final source-bound checks and explicit freeze"
+}
