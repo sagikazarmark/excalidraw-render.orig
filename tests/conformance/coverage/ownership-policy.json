@@ -3018,6 +3018,318 @@
       "category": "codec-profile",
       "criterion": "GIF gif87a-application: independently reconstructed authored malformed LZW/container control with exact all-format decode-failed reports, missing-asset recovery equivalence, extents and replay; GIF87a extension rejection is strict revision policy, not browser evidence. Exact owner executes closed-matrix, bounded independent LZW, reconstruction and negative gates; no codec-umbrella claim.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-no-gce",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-no-gce: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-transparent",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-transparent: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-opaque",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-opaque: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-transparent-comment",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-transparent-comment: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-transparent-application",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-transparent-application: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-transparent-plain-text",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-transparent-plain-text: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-transparent-plain-text-opaque",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-transparent-plain-text-opaque: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-duplicate-transparent-opaque",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-duplicate-transparent-opaque: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-duplicate-opaque-transparent",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-duplicate-opaque-transparent: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-duplicate-index0-index1",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-duplicate-index0-index1: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-user-input-long-delay",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-user-input-long-delay: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-global-trailing-gce",
+      "category": "codec-profile",
+      "criterion": "GIF static-global-trailing-gce: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-no-gce",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-no-gce: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-transparent",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-transparent: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-opaque",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-opaque: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-transparent-comment",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-transparent-comment: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-transparent-application",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-transparent-application: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-transparent-plain-text",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-transparent-plain-text: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-transparent-plain-text-opaque",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-transparent-plain-text-opaque: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-duplicate-transparent-opaque",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-duplicate-transparent-opaque: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-duplicate-opaque-transparent",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-duplicate-opaque-transparent: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-duplicate-index0-index1",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-duplicate-index0-index1: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-user-input-long-delay",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-user-input-long-delay: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:static-local-trailing-gce",
+      "category": "codec-profile",
+      "criterion": "GIF static-local-trailing-gce: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:two-frame-global-later-no-gce",
+      "category": "codec-profile",
+      "criterion": "GIF two-frame-global-later-no-gce: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:two-frame-global-later-transparent",
+      "category": "codec-profile",
+      "criterion": "GIF two-frame-global-later-transparent: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:two-frame-global-later-opaque",
+      "category": "codec-profile",
+      "criterion": "GIF two-frame-global-later-opaque: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:two-frame-global-first-transparent-later-no-gce",
+      "category": "codec-profile",
+      "criterion": "GIF two-frame-global-first-transparent-later-no-gce: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:two-frame-local-later-no-gce",
+      "category": "codec-profile",
+      "criterion": "GIF two-frame-local-later-no-gce: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:two-frame-local-later-transparent",
+      "category": "codec-profile",
+      "criterion": "GIF two-frame-local-later-transparent: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:two-frame-local-later-opaque",
+      "category": "codec-profile",
+      "criterion": "GIF two-frame-local-later-opaque: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:two-frame-local-first-transparent-later-no-gce",
+      "category": "codec-profile",
+      "criterion": "GIF two-frame-local-first-transparent-later-no-gce: both frozen first-display probes match actual pinned-browser GCE/extension behavior with exact source reconstruction, SVG octets, PNG/PDF samples, alpha/extents, reports and replay; preserve distinct authored scope hypotheses, treat duplicate/orphan GCE as non-normative behavior, and prove frame-zero capture without claiming later-display or Plain Text glyph rendering. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:early-bad-palette-index",
+      "category": "codec-profile",
+      "criterion": "GIF early-bad-palette-index: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:late-bad-palette-index",
+      "category": "codec-profile",
+      "criterion": "GIF late-bad-palette-index: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:early-undefined-lzw",
+      "category": "codec-profile",
+      "criterion": "GIF early-undefined-lzw: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:late-undefined-lzw",
+      "category": "codec-profile",
+      "criterion": "GIF late-undefined-lzw: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:early-truncated-gce",
+      "category": "codec-profile",
+      "criterion": "GIF early-truncated-gce: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:late-truncated-gce",
+      "category": "codec-profile",
+      "criterion": "GIF late-truncated-gce: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:early-out-of-bounds",
+      "category": "codec-profile",
+      "criterion": "GIF early-out-of-bounds: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:late-out-of-bounds",
+      "category": "codec-profile",
+      "criterion": "GIF late-out-of-bounds: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:early-truncated-subblocks",
+      "category": "codec-profile",
+      "criterion": "GIF early-truncated-subblocks: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:late-truncated-subblocks",
+      "category": "codec-profile",
+      "criterion": "GIF late-truncated-subblocks: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:early-invalid-end",
+      "category": "codec-profile",
+      "criterion": "GIF early-invalid-end: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:late-invalid-end",
+      "category": "codec-profile",
+      "criterion": "GIF late-invalid-end: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:early-minimum-code-size-1",
+      "category": "codec-profile",
+      "criterion": "GIF early-minimum-code-size-1: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:late-minimum-code-size-1",
+      "category": "codec-profile",
+      "criterion": "GIF late-minimum-code-size-1: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:early-early-eoi",
+      "category": "codec-profile",
+      "criterion": "GIF early-early-eoi: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:late-early-eoi",
+      "category": "codec-profile",
+      "criterion": "GIF late-early-eoi: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:early-missing-eoi",
+      "category": "codec-profile",
+      "criterion": "GIF early-missing-eoi: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:late-missing-eoi",
+      "category": "codec-profile",
+      "criterion": "GIF late-missing-eoi: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:early-truncated-palette",
+      "category": "codec-profile",
+      "criterion": "GIF early-truncated-palette: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:gif:control:late-truncated-palette",
+      "category": "codec-profile",
+      "criterion": "GIF late-truncated-palette: independently reconstructed authored fault in the specified early/later image, preserving exact positive prefix where applicable; validate whole-file rejection before source passthrough/default-frame projection, exact all-format decode-failed report/recovery, extents, replay and discriminating positive/EOI controls; no browser rejection claim. Each exact owner executes binding, matrix, discrimination and negative gates.",
+      "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "16922cca016b9eee821d54c8043dbaa9dc5e886d1a8605e80eb7224e08f5b84a",
+  "catalog_sha256": "3c7826ba46f5ba80b2f53c42c70ac73bdfdd58b612efd1bf1ae0bc1a8382c7a8",
   "approval": null,
   "assignments": [
     {
@@ -1913,6 +1913,1514 @@
         "status": "gap",
         "issue": 82,
         "reason": "Existing codec tests cover portions of this facet; enumerate all accepted subprofiles and exact canonical vectors before claiming complete facet ownership."
+      }
+    },
+    {
+      "id": "codec:gif:control:early-bad-palette-index",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:early-early-eoi",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:early-invalid-end",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:early-minimum-code-size-1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:early-missing-eoi",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:early-out-of-bounds",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:early-truncated-gce",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:early-truncated-palette",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:early-truncated-subblocks",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:early-undefined-lzw",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:late-bad-palette-index",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:late-early-eoi",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:late-invalid-end",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:late-minimum-code-size-1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:late-missing-eoi",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:late-out-of-bounds",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:late-truncated-gce",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:late-truncated-palette",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:late-truncated-subblocks",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:late-undefined-lzw",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "malformed_early_and_late_frames_have_exact_recovery",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::malformed_early_and_late_frames_have_exact_recovery",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-duplicate-index0-index1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-duplicate-opaque-transparent",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-duplicate-transparent-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-no-gce",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-trailing-gce",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-transparent",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-transparent-application",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-transparent-comment",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-transparent-plain-text",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-transparent-plain-text-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-global-user-input-long-delay",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-duplicate-index0-index1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-duplicate-opaque-transparent",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-duplicate-transparent-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-no-gce",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-trailing-gce",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-transparent",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-transparent-application",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-transparent-comment",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-transparent-plain-text",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-transparent-plain-text-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:static-local-user-input-long-delay",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:two-frame-global-first-transparent-later-no-gce",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:two-frame-global-later-no-gce",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:two-frame-global-later-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:two-frame-global-later-transparent",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:two-frame-local-first-transparent-later-no-gce",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:two-frame-local-later-no-gce",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:two-frame-local-later-opaque",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
+      }
+    },
+    {
+      "id": "codec:gif:control:two-frame-local-later-transparent",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/gif_control_contract.rs",
+            "sha256": "375092aed1b375273d0e3ebe8afecec7050a138379da68443b4fa3dc2b62aa02"
+          },
+          "function": "controls_match_frozen_reference_first_display",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "gif_control_contract::controls_match_frozen_reference_first_display",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Independent frozen first-display observations and exact early/later malformed recovery, source/prefix reconstruction, extent/alpha/report/replay and negative gates. Preserve Plain Text author/reference discrepancy; duplicate/orphan GCE probes are non-normative and later composites remain unqualified. See docs/research/gif-control-qualification.md."
       }
     },
     {

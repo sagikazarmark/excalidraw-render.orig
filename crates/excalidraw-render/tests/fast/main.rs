@@ -40,6 +40,7 @@ mod frame_field_contract;
 mod frame_render;
 mod freedraw_render;
 mod geometry_style_contract;
+mod gif_control_contract;
 mod gif_first_frame_contract;
 mod gif_lzw_contract;
 mod helvetica_text_render;
