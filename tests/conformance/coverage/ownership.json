@@ -1,7 +1,7 @@
 {
   "schema": "excalidraw-render/coverage-ownership/v1",
   "compatibility_revision": 1,
-  "catalog_sha256": "3d04acf9566e9ad075c4679912aef1cf26bde39dc814d84bdff630111077123a",
+  "catalog_sha256": "620d73c740ad418ccda2bc0143c29ae91983c8f8c0c1d06ed980f58012d5a139",
   "approval": null,
   "assignments": [
     {
@@ -3012,6 +3012,1628 @@
       }
     },
     {
+      "id": "codec:jpeg:exif-precedence:baseline-big-absent-tag-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-bad-magic-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-8",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-3-6",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-6-3",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-tags-3-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-tags-6-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-early-3-late-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-early-6-late-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-invalid-tag-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-invalid-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-late-only",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-tag-then-invalid",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-absent-tag",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-bad-magic",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-invalid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-absent-tag-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-bad-magic-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-8",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-3-6",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-6-3",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-tags-3-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-tags-6-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-early-3-late-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-early-6-late-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-invalid-tag-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-invalid-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-late-only",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-tag-then-invalid",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-absent-tag",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-bad-magic",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-invalid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-absent-tag-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-bad-magic-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-between-scans-only",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-8",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-3-6",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-6-3",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-tags-3-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-tags-6-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-3-between-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-3-late-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-6-between-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-6-late-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-invalid-tag-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-invalid-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-late-only",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-tag-then-invalid",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-absent-tag",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-bad-magic",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-invalid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-absent-tag-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-bad-magic-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-between-scans-only",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-1",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-8",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-3-6",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-6-3",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-tags-3-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-tags-6-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-3-between-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-3-late-6",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-6-between-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-6-late-3",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-invalid-tag-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-invalid-then-valid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-late-only",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-tag-then-invalid",
+      "disposition": {
+        "status": "owned",
+        "owner": {
+          "kind": "test",
+          "source": {
+            "path": "crates/excalidraw-render/tests/fast/jpeg_exif_contract.rs",
+            "sha256": "c89497971868303727ba02610a05fd49a64ea5894408a4fe6f71fbc5b1288159"
+          },
+          "function": "qualified_exif_precedence_matches_reference",
+          "binary": "fast",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--release",
+            "-p",
+            "excalidraw-render",
+            "--test",
+            "fast",
+            "jpeg_exif_contract::qualified_exif_precedence_matches_reference",
+            "--",
+            "--exact"
+          ]
+        },
+        "rationale": "Both independent browser patterns, exact APP1/source reconstruction, discriminating orientation permutations, canonical PNG/bound-PDF samples, SVG octets, dimensions, full reports and replay. Narrow duplicate/late EXIF cell only. See docs/research/jpeg-exif-precedence-qualification.md; 36 #189 failing cells remain gaps."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-absent-tag",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-bad-magic",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-invalid",
+      "disposition": {
+        "status": "gap",
+        "issue": 189,
+        "reason": "JPEG EXIF precedence cell requires exact independent orientation/reference and format gates; duplicate APP1 and invalid-first IFD cases remain under #189."
+      }
+    },
+    {
       "id": "codec:jpeg:hdr-gain-map",
       "disposition": {
         "status": "gap",
@@ -3058,8 +4680,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -3232,8 +4854,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -3261,8 +4883,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -3290,8 +4912,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -3435,8 +5057,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -3464,8 +5086,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -3493,8 +5115,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -3638,8 +5260,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -3812,8 +5434,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -3841,8 +5463,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -3870,8 +5492,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -4015,8 +5637,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -4044,8 +5666,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -4073,8 +5695,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -4218,8 +5840,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",
@@ -4798,8 +6420,8 @@
             "path": "crates/excalidraw-render/tests/fast/jpeg_icc_contract.rs",
             "sha256": "7f9950fce0e3cf804142a9f351fc9eed522265b10f52791fb9abe0d2ad3d1387"
           },
-          "binary": "fast",
           "function": "corrected_gray_precision_and_model_mismatches_match_reference",
+          "binary": "fast",
           "command": [
             "cargo",
             "test",

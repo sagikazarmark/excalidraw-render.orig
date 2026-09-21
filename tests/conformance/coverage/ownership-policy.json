@@ -1062,6 +1062,498 @@
       "category": "codec-profile",
       "criterion": "JPEG ICC rgb-progressive-v2-g1-inconsistent-count: both frozen ramp/edge vectors, exact extent/opaque-alpha/report/replay gates and SVG source-byte preservation where admitted; exact decode-failed recovery and missing-asset artifact equivalence under the existing strict contract, independently characterize browser behavior without claiming visual parity of rejected input. Bounded profile/layout evidence, not whole-PDF viewer or exhaustive ICC qualification.",
       "spec_anchor": "### 8.2 Raster and Nested-SVG Assets"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-1",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-control-1: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-control-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-control-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-control-8",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-control-8: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-duplicate-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-duplicate-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-invalid-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-invalid-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-valid-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-absent-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-absent-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-absent-tag",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-valid-then-absent-tag: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-bad-magic-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-bad-magic-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-then-bad-magic",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-valid-then-bad-magic: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-tags-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-duplicate-tags-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-duplicate-tags-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-duplicate-tags-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-invalid-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-invalid-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-valid-tag-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-valid-tag-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-late-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-late-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-early-3-late-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-early-3-late-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-little-early-6-late-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-little-early-6-late-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-1",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-control-1: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-control-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-control-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-control-8",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-control-8: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-duplicate-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-duplicate-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-invalid-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-invalid-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-valid-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-absent-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-absent-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-absent-tag",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-valid-then-absent-tag: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-bad-magic-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-bad-magic-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-then-bad-magic",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-valid-then-bad-magic: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-tags-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-duplicate-tags-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-duplicate-tags-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-duplicate-tags-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-invalid-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-invalid-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-valid-tag-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-valid-tag-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-late-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-late-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-early-3-late-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-early-3-late-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:baseline-big-early-6-late-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF baseline-big-early-6-late-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-1",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-control-1: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-control-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-control-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-control-8",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-control-8: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-duplicate-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-duplicate-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-invalid-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-invalid-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-valid-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-absent-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-absent-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-absent-tag",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-valid-then-absent-tag: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-bad-magic-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-bad-magic-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-then-bad-magic",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-valid-then-bad-magic: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-tags-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-duplicate-tags-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-duplicate-tags-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-duplicate-tags-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-invalid-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-invalid-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-valid-tag-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-valid-tag-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-late-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-late-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-3-late-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-early-3-late-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-6-late-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-early-6-late-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-between-scans-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-between-scans-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-3-between-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-early-3-between-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-little-early-6-between-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-little-early-6-between-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-1",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-control-1: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-control-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-control-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-control-8",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-control-8: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-duplicate-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-duplicate-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-invalid-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-invalid-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-valid-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-absent-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-absent-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-absent-tag",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-valid-then-absent-tag: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-bad-magic-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-bad-magic-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-then-bad-magic",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-valid-then-bad-magic: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-tags-6-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-duplicate-tags-6-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-duplicate-tags-3-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-duplicate-tags-3-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-invalid-tag-then-valid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-invalid-tag-then-valid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-valid-tag-then-invalid",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-valid-tag-then-invalid: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-late-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-late-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-3-late-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-early-3-late-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-6-late-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-early-6-late-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-between-scans-only",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-between-scans-only: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-3-between-6",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-early-3-between-6: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
+    },
+    {
+      "id": "codec:jpeg:exif-precedence:progressive-big-early-6-between-3",
+      "category": "codec-profile",
+      "criterion": "JPEG EXIF progressive-big-early-6-between-3: both fixed asymmetric ramp/edge vectors follow independently collected first-APP1/IFD orientation and late-marker precedence, with exact source reconstruction, SVG octets, output/page/image extents, opaque alpha, reports and replay. PNG and bound PDF image samples pass their respective canonical reference authorities; independent permutations distinguish identity/180/90/270 degrees. No full-PDF viewer or exhaustive TIFF-chain claim.",
+      "spec_anchor": "applies the format-specific orientation"
     }
   ]
 }
